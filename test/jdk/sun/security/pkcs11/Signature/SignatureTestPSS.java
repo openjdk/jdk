@@ -35,7 +35,7 @@ import java.security.spec.PSSParameterSpec;
 import jtreg.SkippedException;
 
 /**
- * @test id=old_alg
+ * @test id=sha
  * @bug 8080462 8226651 8242332
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..
@@ -44,7 +44,7 @@ import jtreg.SkippedException;
  */
 
 /**
- * @test id=new_alg
+ * @test id=sha3
  * @bug 8080462 8226651 8242332
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..

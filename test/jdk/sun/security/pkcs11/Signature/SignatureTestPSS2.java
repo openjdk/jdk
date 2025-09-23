@@ -36,7 +36,7 @@ import java.security.SignatureException;
 import java.util.stream.IntStream;
 
 /**
- * @test id=old_alg
+ * @test id=sha
  * @bug 8244154 8242332
  * @summary Generate a <digest>withRSASSA-PSS signature and verify it using
  *         PKCS11 provider
@@ -46,7 +46,7 @@ import java.util.stream.IntStream;
  */
 
 /**
- * @test id=new_alg
+ * @test id=sha3
  * @bug 8244154 8242332
  * @summary Generate a <digest>withRSASSA-PSS signature and verify it using
  *         PKCS11 provider
