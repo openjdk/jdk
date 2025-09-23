@@ -292,27 +292,44 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   return result;
 }
 
+HeapWord* SerialHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
+  HeapWord* result = _young_gen->par_allocate(size);
+  if (result != nullptr) {
+    return result;
+  }
+  // Try old-gen allocation for non-TLAB.
+  if (!is_tlab) {
+    // If it's too large for young-gen or heap is too full.
+    if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
+      result = _old_gen->par_allocate(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   for (uint try_count = 1; /* break */; try_count++) {
-    result = _young_gen->par_allocate(size);
+    result = mem_allocate_cas_noexpand(size, is_tlab);
     if (result != nullptr) {
       break;
-    }
-    // Try old-gen allocation for non-TLAB.
-    if (!is_tlab) {
-      // If it's too large for young-gen or heap is too full.
-      if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
-        result = _old_gen->par_allocate(size);
-        if (result != nullptr) {
-          break;
-        }
-      }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
       MutexLocker ml(Heap_lock);
+
+      // Re-try after acquiring the lock, because a GC might have occurred
+      // while waiting for this lock.
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        break;
+      }
+
       gc_count_before = total_collections();
     }
 
@@ -321,6 +338,11 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
     if (op.gc_succeeded()) {
       result = op.result();
       break;
+    }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
     }
 
     // Give a warning if we seem to be looping forever.
@@ -335,15 +357,9 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   return result;
 }
 
-HeapWord* SerialHeap::mem_allocate(size_t size,
-                                   bool* gc_overhead_limit_was_exceeded) {
+HeapWord* SerialHeap::mem_allocate(size_t size) {
   return mem_allocate_work(size,
                            false /* is_tlab */);
-}
-
-bool SerialHeap::must_clear_all_soft_refs() {
-  return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
-         _gc_cause == GCCause::_wb_full_gc;
 }
 
 bool SerialHeap::is_young_gc_safe() const {
@@ -498,7 +514,7 @@ void SerialHeap::scan_evacuated_objs(YoungGenScanClosure* young_cl,
 
 void SerialHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
-  bool clear_soft_refs = must_clear_all_soft_refs();
+  bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
   if (!full) {
     bool success = do_young_collection(clear_soft_refs);

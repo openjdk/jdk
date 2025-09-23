@@ -750,7 +750,7 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
     if (_last_append_entry == nullptr) {
       _last_append_entry = new_entry;
       assert(first_append_entry() == nullptr, "boot loader's append class path entry list not empty");
-      Atomic::release_store(&_first_append_entry_list, new_entry);
+      AtomicAccess::release_store(&_first_append_entry_list, new_entry);
     } else {
       _last_append_entry->set_next(new_entry);
       _last_append_entry = new_entry;
@@ -1306,24 +1306,6 @@ void ClassLoader::record_result_for_builtin_loader(s2 classpath_index, InstanceK
 
   AOTClassLocationConfig::dumptime_update_max_used_index(classpath_index);
   result->set_shared_classpath_index(classpath_index);
-
-#if INCLUDE_CDS_JAVA_HEAP
-  if (CDSConfig::is_dumping_heap() && AllowArchivingWithJavaAgent && result->defined_by_boot_loader() &&
-      classpath_index < 0 && redefined) {
-    // When dumping the heap (which happens only during static dump), classes for the built-in
-    // loaders are always loaded from known locations (jimage, classpath or modulepath),
-    // so classpath_index should always be >= 0.
-    // The only exception is when a java agent is used during dump time (for testing
-    // purposes only). If a class is transformed by the agent, the AOTClassLocation of
-    // this class may point to an unknown location. This may break heap object archiving,
-    // which requires all the boot classes to be from known locations. This is an
-    // uncommon scenario (even in test cases). Let's simply disable heap object archiving.
-    ResourceMark rm;
-    log_warning(aot)("heap objects cannot be written because class %s maybe modified by ClassFileLoadHook.",
-                     result->external_name());
-    CDSConfig::disable_heap_dumping();
-  }
-#endif // INCLUDE_CDS_JAVA_HEAP
 }
 
 void ClassLoader::record_hidden_class(InstanceKlass* ik) {
