@@ -91,7 +91,7 @@ public:
       end = _end;
     }
     stringStream ss;
-    // Exact matching
+    // Exact matching -- we can do a HT lookup.
     ss.print("%.*s", (int)(end - _p), _p);
     MemTag mem_tag = MemTagFactory::tag_maybe(ss.freeze());
     if (mem_tag != mtNone) {
@@ -105,8 +105,17 @@ public:
     MemTag match = mtNone;
     bool matched = false;
     MemTagFactory::iterate_tags([&](MemTag mt) {
+      const char* hn_name = MemTagFactory::human_readable_name_of(mt);
+      if (strcmp(ss.freeze(), hn_name) == 0) {
+        matched = true;
+        match = mt;
+        return false;
+      }
+
       const char* name = MemTagFactory::name_of(mt);
-      if (strlen(name) < 2) {
+      char* position = strstr(name, "mt");
+      if (position == nullptr || position == name) {
+        // Must be found and be a prefix
         return true;
       }
       if (strcmp(name + 2, ss.freeze()) == 0) {
@@ -114,6 +123,7 @@ public:
         match = mt;
         return false;
       }
+      return true;
     });
     if (matched) {
       *out = match;
