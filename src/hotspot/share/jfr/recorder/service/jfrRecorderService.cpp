@@ -461,7 +461,7 @@ void JfrRecorderService::invoke_safepoint_clear() {
 void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _storage.clear();
-  _checkpoint_manager.notify_threads();
+  _checkpoint_manager.notify_threads(true);
   _chunkwriter.set_time_stamp();
   JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();

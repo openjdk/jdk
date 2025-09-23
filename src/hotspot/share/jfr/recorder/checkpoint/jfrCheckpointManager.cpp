@@ -566,7 +566,7 @@ size_t JfrCheckpointManager::write_static_type_set_and_threads() {
 void JfrCheckpointManager::on_rotation() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   JfrTypeManager::on_rotation();
-  notify_threads(false);
+  notify_threads();
 }
 
 void JfrCheckpointManager::clear_type_set() {
@@ -703,7 +703,7 @@ class JfrNotifyClosure : public StackObj {
   }
 };
 
-void JfrCheckpointManager::notify_threads(bool clear /* true */) {
+void JfrCheckpointManager::notify_threads(bool clear /* false */) {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   JfrNotifyClosure tc(clear);
   JfrJavaThreadIterator iter;
