@@ -91,6 +91,7 @@ public:
       end = _end;
     }
     stringStream ss;
+    // Exact matching
     ss.print("%.*s", (int)(end - _p), _p);
     MemTag mem_tag = MemTagFactory::tag_maybe(ss.freeze());
     if (mem_tag != mtNone) {
@@ -98,6 +99,28 @@ public:
       _p = end;
       return true;
     }
+    // Hotspot MemTags are prepended with 'mt', but MallocLimit allows
+    // the user to skip them. It also allows matching with the human readable name.
+    // Both of these cases forces a linear search.
+    MemTag match = mtNone;
+    bool matched = false;
+    MemTagFactory::iterate_tags([&](MemTag mt) {
+      const char* name = MemTagFactory::name_of(mt);
+      if (strlen(name) < 2) {
+        return true;
+      }
+      if (strcmp(name + 2, ss.freeze()) == 0) {
+        matched = true;
+        match = mt;
+        return false;
+      }
+    });
+    if (matched) {
+      *out = match;
+      _p = end + 2;
+      return true;
+    }
+
     return false;
   }
 

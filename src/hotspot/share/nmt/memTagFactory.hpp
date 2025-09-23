@@ -88,9 +88,9 @@ struct NameToTagTable {
   void put_if_absent(MemTag tag, const char* name);
 
   MemTag tag_of(const char* name);
+  MemTag tag_of_hn(const char* human_readable_name);
 
   const char* name_of(MemTag tag);
-
   const char* human_readable_name_of(MemTag tag);
 
   void set_human_readable_name_of(MemTag tag, const char* hrn);
@@ -161,6 +161,16 @@ struct MemTagFactory {
   static MemTag tag_maybe(const char* name) {
     NmtMemTagLocker ntml;
     return _instance->tag_maybe(name);
+  }
+
+  template<typename F>
+  static iterate_tags(F f) {
+    int num_tags = number_of_tags();
+    for (int i = 0; i < num_tags; i++) {
+      if(!f(static_cast<MemTag>(i))) {
+        return;
+      }
+    }
   }
 };
 

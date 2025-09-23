@@ -68,6 +68,7 @@ MemTag NameToTagTable::tag_of(const char* name) {
   }
   return mtNone;
 }
+
 const char* NameToTagTable::name_of(MemTag tag) {
   return names.at(index(tag));
 }
@@ -78,6 +79,7 @@ const char* NameToTagTable::human_readable_name_of(MemTag tag) {
   }
   return nullptr;
 }
+
 void NameToTagTable::set_human_readable_name_of(MemTag tag, const char* hrn) {
   MemTagI i = index(tag);
   const char* copy = os::strdup(hrn);
