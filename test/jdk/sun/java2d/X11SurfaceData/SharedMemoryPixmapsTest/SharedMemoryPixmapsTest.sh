@@ -22,6 +22,7 @@
 # questions.
 #
 
+# @test
 # @key headful
 # @bug 6363434 6588884
 # @summary Verify that shared memory pixmaps are not broken
