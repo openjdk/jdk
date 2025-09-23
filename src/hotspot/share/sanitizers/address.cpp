@@ -28,8 +28,10 @@
 #include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
+
 #include <dlfcn.h>
 #include <stdio.h>
+
 
 static const char* g_asan_report = nullptr;
 typedef void (*callback_setter_t) (void (*callback)(const char *));

@@ -27,6 +27,7 @@
 
 #ifdef ADDRESS_SANITIZER
 #include "memory/allStatic.hpp"
+
 #include <sanitizer/asan_interface.h>
 #endif
 
