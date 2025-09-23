@@ -25,13 +25,13 @@
  * @test id=default
  * @bug 8349670
  * @summary Test 100 continue response handling
- * @run testng/othervm InputRead100Test
+ * @run junit/othervm InputRead100Test
  */
 /**
  * @test id=preferIPv6
  * @bug 8349670
  * @summary Test 100 continue response handling ipv6
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputRead100Test
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true InputRead100Test
  */
 import java.io.BufferedReader;
 import java.io.IOException;
