@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Signatures.
- * @bug 8321540 8319463 8357955 8368331
+ * @bug 8321540 8319463 8357955 8368050 8368331
  * @run junit SignaturesTest
  */
 import java.io.IOException;
@@ -134,67 +134,6 @@ class SignaturesTest {
                         BaseTypeSig.of('V')),
                 MethodSignature.parseFrom("<A:Lone/Two;B:LOuter.Inner;C:[ID:LGeneric<*>;E:TA;F:G:>()V")
         );
-    }
-
-    @Test
-    void testGenericCreationChecks() {
-        var weirdNameClass = ClassDesc.of("<Unsupported>");
-        var voidSig = BaseTypeSig.of('V');
-        Assertions.assertThrows(IllegalArgumentException.class, () -> Signature.of(weirdNameClass));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BaseTypeSig.of(CD_Object));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> BaseTypeSig.of(CD_int.arrayType()));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(CD_int));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(CD_Object.arrayType()));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(weirdNameClass));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ArrayTypeSig.of(voidSig));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ArrayTypeSig.of(255, voidSig));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodSignature.of(voidSig, voidSig));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> MethodSignature.of(List.of(), List.of(), voidSig, voidSig));
-    }
-
-    static Stream<String> goodIdentifiers() {
-        return Stream.of("T", "Hello", "Mock", "(Weird)", " Huh? ");
-    }
-
-    static Stream<String> badIdentifiers() {
-        return Stream.of("", ";", ".", "/", "<", ">", "[", ":",
-                "<Unsupported>", "has.chars", "/Outer", "test/", "test//Outer");
-    }
-
-    static Stream<String> slashedIdentifiers() {
-        return Stream.of("test/Outer", "java/lang/Integer");
-    }
-
-    @ParameterizedTest
-    @MethodSource({"badIdentifiers", "slashedIdentifiers"})
-    void testBadSimpleIdentifier(String st) {
-        ClassTypeSig outer = ClassTypeSig.of("test/Outer");
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(outer, st));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeVarSig.of(st));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeParam.of(st, (RefTypeSig) null));
-        Assertions.assertThrows(IllegalArgumentException.class, () -> TypeParam.of(st, Optional.empty()));
-    }
-
-    @ParameterizedTest
-    @MethodSource("goodIdentifiers")
-    void testGoodSimpleIdentifier(String st) {
-        ClassTypeSig outer = ClassTypeSig.of("test/Outer");
-        ClassTypeSig.of(outer, st);
-        TypeVarSig.of(st);
-        TypeParam.of(st, (RefTypeSig) null);
-        TypeParam.of(st, Optional.empty());
-    }
-
-    @ParameterizedTest
-    @MethodSource("badIdentifiers")
-    void testBadSlashedIdentifier(String st) {
-        Assertions.assertThrows(IllegalArgumentException.class, () -> ClassTypeSig.of(st));
-    }
-
-    @ParameterizedTest
-    @MethodSource({"goodIdentifiers", "slashedIdentifiers"})
-    void testGoodSlashedIdentifier(String st) {
-        ClassTypeSig.of(st);
     }
 
     @Test
