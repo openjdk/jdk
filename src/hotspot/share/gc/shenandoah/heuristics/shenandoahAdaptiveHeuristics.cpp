@@ -240,13 +240,14 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
 
+  // Track allocation rate even if we decide to start a cycle for other reasons.
+  double rate = _allocation_rate.sample(allocated);
+
   if (_start_gc_is_pending) {
     log_trigger("GC start is already pending");
     return true;
   }
 
-  // Track allocation rate even if we decide to start a cycle for other reasons.
-  double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
   size_t min_threshold = min_free_threshold();
@@ -379,7 +380,7 @@ double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccoun
   }
 }
 
-double ShenandoahAllocationRate::sample(size_t allocated, bool force_update) {
+double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {

@@ -38,7 +38,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   void allocation_counter_reset();
 
   double force_sample(size_t allocated, size_t &unaccounted_bytes_allocated);
-  double sample(size_t allocated, bool force_update = false);
+  double sample(size_t allocated);
 
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
