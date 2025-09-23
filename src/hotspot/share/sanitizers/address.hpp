@@ -75,10 +75,12 @@
   } while (false)
 #endif
 
+#ifdef ADDRESS_SANITIZER
 struct Asan : public AllStatic {
   static void initialize();
   // Returns the ASAN report text; nullptr if no ASAN error happened.
   static const char* report();
 };
+#endif
 
 #endif // SHARE_SANITIZERS_ADDRESS_HPP
