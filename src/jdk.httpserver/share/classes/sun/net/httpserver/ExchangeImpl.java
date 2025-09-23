@@ -66,7 +66,6 @@ class ExchangeImpl {
     }
 
     private static final String HEAD = "HEAD";
-    private static final String GET = "GET";
 
     /* streams which take care of the HTTP protocol framing
      * and are passed up to higher layers
