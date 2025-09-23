@@ -126,7 +126,7 @@ public class BasicTest {
     }
 
     @Test
-    public void test() throws Exception {
+    void test() throws Exception {
         try {
             initialize();
             warmup(false);

@@ -77,7 +77,7 @@ public class BadPushPromiseTest {
     static URI uri;
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         server = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         HttpServerAdapters.HttpTestHandler handler = new ServerPushHandler(MAIN_RESPONSE_BODY);
         server.addHandler(handler, "/");
@@ -88,7 +88,7 @@ public class BadPushPromiseTest {
     }
 
     @AfterAll
-    public static void teardown() {
+    static void teardown() {
         server.stop();
     }
 
@@ -96,7 +96,7 @@ public class BadPushPromiseTest {
      * Malformed push promise headers should kill the connection
      */
     @Test
-    public void test() throws Exception {
+    void test() {
         HttpClient client = HttpClient.newHttpClient();
 
         for (int i=0; i< BAD_HEADERS.size(); i++) {

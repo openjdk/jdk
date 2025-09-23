@@ -51,7 +51,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 
@@ -69,25 +68,24 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ConnectionFlowControlTest {
 
-    static SSLContext sslContext;
-    static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
-    static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
-    static String http2URI;
-    static String https2URI;
-    final AtomicInteger reqid = new AtomicInteger();
+    private static SSLContext sslContext;
+    private static HttpTestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static HttpTestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String http2URI;
+    private static String https2URI;
+    private final AtomicInteger reqid = new AtomicInteger();
 
-    static Stream<Arguments> variants() {
-        return Stream.of(
-                Arguments.of(http2URI),
-                Arguments.of(https2URI)
-        );
+    static Object[][] variants() {
+        return new Object[][] {
+                {http2URI},
+                {https2URI},
+        };
     }
 
     @ParameterizedTest
@@ -130,7 +128,7 @@ public class ConnectionFlowControlTest {
                         if (i < max - 1) {
                             // the connection window might be exceeded at i == max - 2, which
                             // means that the last request could go on a new connection.
-                            assertEquals(ckey, label, "Unexpected key for " + query);
+                            assertEquals(label, ckey, "Unexpected key for " + query);
                         }
                     } catch (AssertionError ass) {
                         // since we won't pull all responses, the client
@@ -156,7 +154,7 @@ public class ConnectionFlowControlTest {
                         if (i < max - 1) {
                             // the connection window might be exceeded at i == max - 2, which
                             // means that the last request could go on a new connection.
-                            assertEquals(ckey, label, "Unexpected key for " + query);
+                            assertEquals(label, ckey, "Unexpected key for " + query);
                         }
                         int wait = uri.startsWith("https://") ? 500 : 250;
                         try (InputStream is = response.body()) {
@@ -209,7 +207,7 @@ public class ConnectionFlowControlTest {
             var response = client.send(request, BodyHandlers.ofString());
             if (label != null) {
                 String ckey = response.headers().firstValue("X-Connection-Key").get();
-                assertNotEquals(ckey, label);
+                assertNotEquals(label, ckey);
                 System.out.printf("last request %s sent on different connection as expected:" +
                         "\n\tlast: %s\n\tprevious: %s%n", query, ckey, label);
             }
@@ -241,7 +239,7 @@ public class ConnectionFlowControlTest {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -261,12 +259,12 @@ public class ConnectionFlowControlTest {
         http2TestServerLocal.setExchangeSupplier(FCHttp2TestExchange::new);
         https2TestServerLocal.setExchangeSupplier(FCHttp2TestExchange::new);
 
-        http2TestServerLocal.start();
-        https2TestServerLocal.start();
+        http2TestServer.start();
+        https2TestServer.start();
     }
 
     @AfterAll
-    public static void teardown() throws Exception {
+    static void teardown() throws Exception {
         http2TestServer.stop();
         https2TestServer.stop();
     }

@@ -41,7 +41,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -62,7 +61,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
-import java.util.stream.Stream;
 
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
@@ -89,11 +87,11 @@ public class BadHeadersTest {
         of(entry("hello", "world!"), entry(":status", "200"))                      // Pseudo header is not the first one
     );
 
-    static SSLContext sslContext;
-    static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    static String http2URI;
-    static String https2URI;
+    private static SSLContext sslContext;
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String http2URI;
+    private static String https2URI;
 
     /**
      * A function that returns a list of 1) one HEADERS frame ( with an empty
@@ -131,20 +129,19 @@ public class BadHeadersTest {
                 return frames;
             };
 
-    static Stream<Arguments> variants() {
-        return Stream.of(
-                Arguments.of(http2URI,  false, oneContinuation),
-                Arguments.of(https2URI, false, oneContinuation),
-                Arguments.of(http2URI,  true,  oneContinuation),
-                Arguments.of(https2URI, true,  oneContinuation),
+    static Object[][] variants() {
+        return new Object[][] {
+                { http2URI, false, oneContinuation },
+                { https2URI, false, oneContinuation },
+                { http2URI, true, oneContinuation },
+                { https2URI, true, oneContinuation },
 
-                Arguments.of(http2URI,  false, byteAtATime),
-                Arguments.of(https2URI, false, byteAtATime),
-                Arguments.of(http2URI,  true,  byteAtATime),
-                Arguments.of(https2URI, true,  byteAtATime)
-        );
+                {http2URI, false, byteAtATime },
+                {https2URI, false, byteAtATime },
+                {http2URI, true, byteAtATime },
+                {https2URI, true, byteAtATime },
+        };
     }
-
 
     @ParameterizedTest
     @MethodSource("variants")
@@ -244,7 +241,7 @@ public class BadHeadersTest {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -269,7 +266,7 @@ public class BadHeadersTest {
     }
 
     @AfterAll
-    public static void teardown() throws Exception {
+    static void teardown() throws Exception {
         http2TestServer.stop();
         https2TestServer.stop();
     }

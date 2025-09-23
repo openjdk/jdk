@@ -46,7 +46,6 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.util.stream.Stream;
 
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.ContinuationFrame;
@@ -64,7 +63,6 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_2;
@@ -72,14 +70,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class ContinuationFrameTest {
 
-    static SSLContext sslContext;
-    static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
-    static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
-    static String http2URI;
-    static String https2URI;
-    static String noBodyhttp2URI;
-    static String noBodyhttps2URI;
-    final static ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
+    private static SSLContext sslContext;
+    private static Http2TestServer http2TestServer;   // HTTP/2 ( h2c )
+    private static Http2TestServer https2TestServer;  // HTTP/2 ( h2  )
+    private static String http2URI;
+    private static String https2URI;
+    private static String noBodyhttp2URI;
+    private static String noBodyhttps2URI;
+    private final static ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
     /**
      * A function that returns a list of 1) a HEADERS frame ( with an empty
@@ -134,23 +132,23 @@ public class ContinuationFrameTest {
             return frames;
         };
 
-    static Stream<Arguments> variants() {
-        return Stream.of(
-                Arguments.of(http2URI,  false, oneContinuation),
-                Arguments.of(https2URI, false, oneContinuation),
-                Arguments.of(http2URI,  true,  oneContinuation),
-                Arguments.of(https2URI, true,  oneContinuation),
+    static Object[][] variants() {
+        return new Object[][] {
+                {http2URI,  false, oneContinuation},
+                {https2URI, false, oneContinuation},
+                {http2URI,  true,  oneContinuation},
+                {https2URI, true,  oneContinuation},
 
-                Arguments.of(noBodyhttp2URI,  false, twoContinuation),
-                Arguments.of(noBodyhttp2URI,  true,  twoContinuation),
-                Arguments.of(noBodyhttps2URI, false, twoContinuation),
-                Arguments.of(noBodyhttps2URI, true,  twoContinuation),
+                {noBodyhttp2URI,  false, twoContinuation},
+                {noBodyhttp2URI,  true,  twoContinuation},
+                {noBodyhttps2URI, false, twoContinuation},
+                {noBodyhttps2URI, true,  twoContinuation},
 
-                Arguments.of(http2URI,  false, byteAtATime),
-                Arguments.of(https2URI, false, byteAtATime),
-                Arguments.of(http2URI,  true,  byteAtATime),
-                Arguments.of(https2URI, true,  byteAtATime)
-        );
+                {http2URI,  false, byteAtATime},
+                {https2URI, false, byteAtATime},
+                {http2URI,  true,  byteAtATime},
+                {https2URI, true,  byteAtATime},
+        };
     }
 
     static final int ITERATION_COUNT = 20;
@@ -199,7 +197,7 @@ public class ContinuationFrameTest {
     }
 
     @BeforeAll
-    public static void setup() throws Exception {
+    static void setup() throws Exception {
         sslContext = new SimpleSSLContext().get();
         if (sslContext == null)
             throw new AssertionError("Unexpected null sslContext");
@@ -228,7 +226,7 @@ public class ContinuationFrameTest {
     }
 
     @AfterAll
-    public static void teardown() throws Exception {
+    static void teardown() throws Exception {
         AssertionError fail = TRACKER.check(500);
         try {
             http2TestServer.stop();
