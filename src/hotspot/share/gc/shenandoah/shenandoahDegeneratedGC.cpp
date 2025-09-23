@@ -310,23 +310,13 @@ void ShenandoahDegenGC::op_degenerated() {
 
   metrics.snap_after();
 
-  // The most common scenario for lack of good progress following a degenerated GC is an accumulation of floating
-  // garbage during the most recently aborted concurrent GC effort.  With generational GC, it is far more effective to
-  // reclaim this floating garbage with another degenerated cycle (which focuses on young generation and might require
-  // a pause of 200 ms) rather than a full GC cycle (which may require over 2 seconds with a 10 GB old generation).
-  //
-  // In generational mode, we'll only upgrade to full GC if we've done two degen cycles in a row and both indicated
-  // bad progress.  In non-generational mode, we'll preserve the original behavior, which is to upgrade to full
-  // immediately following a degenerated cycle with bad progress.  This preserves original behavior of non-generational
-  // Shenandoah to avoid introducing "surprising new behavior."  It also makes less sense with non-generational
-  // Shenandoah to replace a full GC with a degenerated GC, because both have similar pause times in non-generational
-  // mode.
+  // Decide if this cycle made good progress, and, if not, should it upgrade to a full GC.
   const bool progress = metrics.is_good_progress(_generation);
   ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
     heap->notify_gc_progress();
-  } else if (!heap->mode()->is_generational() || policy->should_upgrade_degenerated_gc()) {
+  } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
     op_degenerated_futile();
   }
 }
