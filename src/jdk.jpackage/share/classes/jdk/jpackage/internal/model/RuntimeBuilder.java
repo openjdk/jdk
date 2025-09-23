@@ -43,7 +43,7 @@ public interface RuntimeBuilder {
      * @param appImageLayout the app image where to create Java runtime.
      * @throws PackagerException if packaging error occurs
      */
-    void create(AppImageLayout appImageLayout) throws PackagerException;
+    void create(AppImageLayout appImageLayout);
 
     /**
      * Gets the default set of paths where to find Java modules.

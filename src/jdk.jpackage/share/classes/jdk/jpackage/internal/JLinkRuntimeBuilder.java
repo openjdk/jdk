@@ -50,7 +50,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
@@ -60,7 +60,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     @Override
-    public void create(AppImageLayout appImageLayout) throws PackagerException {
+    public void create(AppImageLayout appImageLayout) {
         var args = new ArrayList<String>();
         args.add("--output");
         args.add(appImageLayout.runtimeDirectory().toString());
@@ -75,7 +75,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         args.add(0, "jlink");
         Log.verbose(args, List.of(jlinkOut), retVal, -1);
         if (retVal != 0) {
-            throw new PackagerException("error.jlink.failed", jlinkOut);
+            throw new JPackageException(I18N.format("error.jlink.failed", jlinkOut));
         }
     }
 
