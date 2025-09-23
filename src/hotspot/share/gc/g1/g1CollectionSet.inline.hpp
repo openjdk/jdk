@@ -31,20 +31,24 @@
 
 template <class CardOrRangeVisitor>
 inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
-  uint length = groups_increment_length();
   uint offset =  _groups_inc_part_start;
-  if (length == 0) {
+  if (offset == 0) {
+    G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_cset_group()->card_set(), cl);
+  }
+
+  uint next_increment_length = groups_increment_length();
+  if (next_increment_length == 0) {
     return;
   }
 
-  uint start_pos = (worker_id * length) / num_workers;
+  uint start_pos = (worker_id * next_increment_length) / num_workers;
   uint cur_pos = start_pos;
   uint count = 0;
   do {
     G1HeapRegionRemSet::iterate_for_merge(_groups.at(offset + cur_pos)->card_set(), cl);
     cur_pos++;
     count++;
-    if (cur_pos == length) {
+    if (cur_pos == next_increment_length) {
       cur_pos = 0;
     }
   } while (cur_pos != start_pos);

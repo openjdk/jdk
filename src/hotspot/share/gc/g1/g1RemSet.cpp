@@ -1166,10 +1166,6 @@ public:
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
 
-        if (_initial_evacuation) {
-          G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
-        }
-
         g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
 
         G1MergeCardSetStats stats = merge.stats();
