@@ -23,10 +23,5 @@
  * questions.
  */
 
-provides jdk.jpackage.internal.Bundler with
-    jdk.jpackage.internal.WinAppBundler,
-    jdk.jpackage.internal.WinExeBundler,
-    jdk.jpackage.internal.WinMsiBundler;
-
 provides jdk.jpackage.internal.cli.CliBundlingEnvironment with
     jdk.jpackage.internal.WinBundlingEnvironment;
