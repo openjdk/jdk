@@ -373,9 +373,8 @@ bool HeapShared::archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgra
       }
     }
 
-    if (log_is_enabled(Debug, aot, heap)) {
+    if (LogTarget(Debug, aot, heap) log; log.is_enabled()) {
       ResourceMark rm;
-      LogTarget(Debug, aot, heap) log;
       LogStream out(log);
       out.print("Archived heap object " PTR_FORMAT " : %s ",
                 p2i(obj), obj->klass()->external_name());
@@ -1448,8 +1447,7 @@ class HeapShared::OopFieldPusher: public BasicOopIterateClosure {
         log_debug(aot, heap)("(%d) %s[%d] ==> " PTR_FORMAT " size %zu %s", _level,
                              _referencing_obj->klass()->external_name(), field_offset,
                              p2i(obj), obj->size() * HeapWordSize, obj->klass()->external_name());
-        if (log_is_enabled(Trace, aot, heap)) {
-          LogTarget(Trace, aot, heap) log;
+        if (LogTarget(Trace, aot, heap) log; log.is_enabled()) {
           LogStream out(log);
           obj->print_on(&out);
         }
@@ -1541,9 +1539,8 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     AOTMetaspace::unrecoverable_writing_error();
   }
 
-  if (log_is_enabled(Debug, aot, heap) && java_lang_Class::is_instance(orig_obj)) {
+  if (LogTarget(Debug, aot, heap) log; log.is_enabled() && java_lang_Class::is_instance(orig_obj)) {
     ResourceMark rm;
-    LogTarget(Debug, aot, heap) log;
     LogStream out(log);
     out.print("Found java mirror " PTR_FORMAT " ", p2i(orig_obj));
     Klass* k = java_lang_Class::as_Klass(orig_obj);
@@ -1697,8 +1694,7 @@ void HeapShared::archive_reachable_objects_from_static_field(InstanceKlass *k,
   log_debug(aot, heap)("Start archiving from: %s::%s (" PTR_FORMAT ")", klass_name, field_name, p2i(f));
 
   if (!CompressedOops::is_null(f)) {
-    if (log_is_enabled(Trace, aot, heap)) {
-      LogTarget(Trace, aot, heap) log;
+    if (LogTarget(Trace, aot, heap) log; log.is_enabled()) {
       LogStream out(log);
       f->print_on(&out);
     }

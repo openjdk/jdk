@@ -88,8 +88,7 @@ void MemTracker::initialize() {
   _tracking_level = level;
 
   // Log state right after NMT initialization
-  if (log_is_enabled(Info, nmt)) {
-    LogTarget(Info, nmt) lt;
+  if (LogTarget(Info, nmt) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("NMT initialized: %s", NMTUtil::tracking_level_to_string(_tracking_level));
     ls.print_cr("Preinit state: ");
