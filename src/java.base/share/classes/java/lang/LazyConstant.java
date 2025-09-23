@@ -95,8 +95,6 @@ import java.util.function.Supplier;
  * the lazy constant), an {@linkplain IllegalStateException} is thrown and the lazy
  * constant is not initialized.
  * <p>
- * If an invocation of the computing function is unsuccessful (i.e., the function throws),
- * the throwable is relayed to the caller and the lazy constant is not initialized.
  * If the computing function throws any unchecked exception or Error, that Throwable
  * is propagated to the caller, and the lazy constant remains uninitialized.
  * In other words, upon an unsuccessful invocation of the computing function,
@@ -104,7 +102,7 @@ import java.util.function.Supplier;
  * stored in the lazy constant.
  *
  * <h2 id="composition">Composing lazy constants</h2>
- * A lazy constant can depend on other computed constants, forming a dependency graph
+ * A lazy constant can depend on other lazy constants, forming a dependency graph
  * that can be lazily computed but where access to individual elements can still be
  * performant. In the following example, a single {@code Foo} and a {@code Bar}
  * instance (that is dependent on the {@code Foo} instance) are lazily created, both of
@@ -184,7 +182,7 @@ import java.util.function.Supplier;
  *          A {@code LazyConstant} that has a type parameter {@code T} that is an
  *          array type (of arbitrary rank) will only allow the JVM to treat the
  *          <em>array reference</em> as a constant but <em>not its components</em>.
- *          Instead, a {@linkplain List#ofLazy(int, IntFunction) a computed list} of
+ *          Instead, a {@linkplain List#ofLazy(int, IntFunction) lazy list} of
  *          arbitrary depth can be used, which provides constant components.
  *          More generally, a lazy constant can hold other lazy constants of
  *          arbitrary depth and still provide transitive constancy.
@@ -199,8 +197,8 @@ import java.util.function.Supplier;
  *          cyclic initialization may result in initialization errors per JLS 12.4.
  *
  * @implSpec Except for {@linkplain #equals(Object) equals(obj)} and
- *           {@linkplain #orElse(Object)} parameters; all method parameters must be
- *           <em>non-null</em> or a {@link NullPointerException} will be thrown.
+ *           {@linkplain #orElse(Object) orElse(other)} parameters; all method parameters
+ *           must be <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
  * @implNote
  *           A lazy constant is free to synchronize on itself. Hence, care must be
