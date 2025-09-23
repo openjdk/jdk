@@ -1793,7 +1793,8 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
     // as this is when we would normally expect a Phi as input. If the memory input
     // is in the loop body as well, then we can safely assume it is still correct as the entire
     // body was cloned as a unit
-    if (store && !outer_loop->is_member(get_loop(get_ctrl(store->in(MemNode::Memory))))) {
+    IdealLoopTree* input_loop = get_loop(get_ctrl(store->in(MemNode::Memory)));
+    if (store != nullptr && !outer_loop->is_member(input_loop)) {
       Node* mem_out = find_mem_out_outer_strip_mined(store, outer_loop);
       Node* store_new = old_new[store->_idx];
       store_new->set_req(MemNode::Memory, mem_out);
