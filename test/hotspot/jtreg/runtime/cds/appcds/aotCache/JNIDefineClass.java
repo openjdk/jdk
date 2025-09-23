@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary classes defined with JNI_DefineClass should be excluded from the AOT config file and AOT cache.
+ * @summary classes defined with JNI DefineClass should be excluded from the AOT config file and AOT cache.
  * @bug 8368182
  * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
@@ -125,13 +125,13 @@ class JNIDefineClassApp {
     }
 }
 
-// This class is loaded into the bootstrap loader using JNI_DEfineClass() with a null code source,
+// This class is loaded into the bootstrap loader using JNI DefineClass() with a null code source,
 // so it should be excluded from the AOT configuration (and hence excluded from AOT cache)
 class ExcludedDummy {
 
 }
 
-// This class is loaded into the bootstrap loader using JNI_DEfineClass() with a null code source,
+// This class is loaded into the bootstrap loader using JNI DefineClass() with a null code source,
 // so it should be excluded from the AOT configuration (and hence excluded from AOT cache)
 class ExcludedDummy2 {
 
