@@ -969,6 +969,11 @@ public final class Float16
      *      to be greater than negative zero.
      * </ul>
      *
+     * @apiNote
+     * For a discussion of differences between the total order of this
+     * method compared to the total order defined by the IEEE 754
+     * standard, see the note in {@link Double#compareTo(Double)}.
+     *
      * @param   anotherFloat16   the {@code Float16} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat16} is
      *          numerically equal to this {@code Float16}; a value

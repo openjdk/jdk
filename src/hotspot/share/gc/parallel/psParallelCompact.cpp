@@ -1065,9 +1065,7 @@ public:
 
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
-    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure,
-                                                 !NMethodToOopClosure::FixRelocations,
-                                                 true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure);
 
     thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1359,9 +1357,7 @@ public:
     _nworkers(nworkers) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-    if (nworkers > 1) {
-      Threads::change_thread_claim_token();
-    }
+    Threads::change_thread_claim_token();
   }
 
   ~PSAdjustTask() {

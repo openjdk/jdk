@@ -30,13 +30,14 @@
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
- * @run testng/timeout=480 MultiReleaseJarTest
+ * @run junit/timeout=480 MultiReleaseJarTest
  */
 
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import toolbox.JarTask;
 import toolbox.JavacTask;
@@ -44,6 +45,7 @@ import toolbox.Task;
 import toolbox.ToolBox;
 
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class MultiReleaseJarTest {
 
     private final String main1 =
@@ -84,7 +86,7 @@ public class MultiReleaseJarTest {
 
     private final ToolBox tb = new ToolBox();
 
-    @BeforeClass
+    @BeforeAll
     public void setup() throws Exception {
         tb.createDirectories("classes", "classes/META-INF/versions/9");
         new JavacTask(tb)
@@ -111,7 +113,7 @@ public class MultiReleaseJarTest {
         );
     }
 
-    @AfterClass
+    @AfterAll
     public void teardown() throws Exception {
         tb.deleteFiles(
                 "multi-release.jar",
@@ -120,8 +122,9 @@ public class MultiReleaseJarTest {
         );
     }
 
-    @Test(dataProvider="modes")
+    @ParameterizedTest
     // javac -d classes -cp multi-release.jar Main.java -> fails
+    @MethodSource("createModes")
     public void main1Runtime(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main1);
         Task.Result result = new JavacTask(tb, mode)
@@ -134,8 +137,9 @@ public class MultiReleaseJarTest {
 
     }
 
-    @Test(dataProvider="modes")
+    @ParameterizedTest
     // javac -d classes --release 8 -cp multi-release.jar Main.java -> succeeds
+    @MethodSource("createModes")
     public void main1Release8(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main1);
         Task.Result result = new JavacTask(tb, mode)
@@ -148,8 +152,9 @@ public class MultiReleaseJarTest {
         tb.deleteFiles("Main.java");
     }
 
-    @Test(dataProvider="modes")
+    @ParameterizedTest
     // javac -d classes --release 9 -cp multi-release.jar Main.java -> fails
+    @MethodSource("createModes")
     public void main1Release9(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main1);
         Task.Result result = new JavacTask(tb, mode)
@@ -162,8 +167,9 @@ public class MultiReleaseJarTest {
         tb.deleteFiles("Main.java");
     }
 
-    @Test(dataProvider="modes")
+    @ParameterizedTest
     // javac -d classes -cp multi-release.jar Main.java -> succeeds
+    @MethodSource("createModes")
     public void main2Runtime(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main2);
         Task.Result result = new JavacTask(tb, mode)
@@ -176,8 +182,9 @@ public class MultiReleaseJarTest {
 
     }
 
-    @Test(dataProvider="modes")
+    @ParameterizedTest
     // javac -d classes --release 8 -cp multi-release.jar Main.java -> fails
+    @MethodSource("createModes")
     public void main2Release8(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main2);
         Task.Result result = new JavacTask(tb, mode)
@@ -190,8 +197,9 @@ public class MultiReleaseJarTest {
         tb.deleteFiles("Main.java");
     }
 
-    @Test(dataProvider="modes")
+    @ParameterizedTest
     // javac -d classes --release 9 -cp multi-release.jar Main.java -> succeeds
+    @MethodSource("createModes")
     public void main2Release9(Task.Mode mode) throws Exception {
         tb.writeFile("Main.java", main2);
         Task.Result result = new JavacTask(tb, mode)
@@ -204,7 +212,6 @@ public class MultiReleaseJarTest {
         tb.deleteFiles("Main.java");
     }
 
-    @DataProvider(name="modes")
     public Object[][] createModes() {
         return new Object[][] {
             new Object[] {Task.Mode.API},
