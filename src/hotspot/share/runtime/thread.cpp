@@ -36,7 +36,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -290,7 +290,7 @@ Thread::~Thread() {
 
   ParkEvent::Release(_ParkEvent);
   // Set to null as a termination indicator for has_terminated().
-  Atomic::store(&_ParkEvent, (ParkEvent*)nullptr);
+  AtomicAccess::store(&_ParkEvent, (ParkEvent*)nullptr);
 
   delete handle_area();
   delete metadata_handles();
@@ -415,7 +415,7 @@ void Thread::start(Thread* thread) {
 bool Thread::claim_par_threads_do(uintx claim_token) {
   uintx token = _threads_do_token;
   if (token != claim_token) {
-    uintx res = Atomic::cmpxchg(&_threads_do_token, token, claim_token);
+    uintx res = AtomicAccess::cmpxchg(&_threads_do_token, token, claim_token);
     if (res == token) {
       return true;
     }
@@ -575,7 +575,7 @@ bool Thread::set_as_starting_thread(JavaThread* jt) {
 // about native mutex_t or HotSpot Mutex:: latency.
 
 void Thread::SpinAcquire(volatile int * adr) {
-  if (Atomic::cmpxchg(adr, 0, 1) == 0) {
+  if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) {
     return;   // normal fast-path return
   }
 
@@ -596,13 +596,12 @@ void Thread::SpinAcquire(volatile int * adr) {
         SpinPause();
       }
     }
-    if (Atomic::cmpxchg(adr, 0, 1) == 0) return;
+    if (AtomicAccess::cmpxchg(adr, 0, 1) == 0) return;
   }
 }
 
 void Thread::SpinRelease(volatile int * adr) {
   assert(*adr != 0, "invariant");
-  OrderAccess::fence();      // guarantee at least release consistency.
   // Roach-motel semantics.
   // It's safe if subsequent LDs and STs float "up" into the critical section,
   // but prior LDs and STs within the critical section can't be allowed
@@ -610,8 +609,7 @@ void Thread::SpinRelease(volatile int * adr) {
   // Loads and stores in the critical section - which appear in program
   // order before the store that releases the lock - must also appear
   // before the store that releases the lock in memory visibility order.
-  // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
-  // the ST of 0 into the lock-word which releases the lock, so fence
-  // more than covers this on all platforms.
-  *adr = 0;
+  // So we need a #loadstore|#storestore "release" memory barrier before
+  // the ST of 0 into the lock-word which releases the lock.
+  AtomicAccess::release_store(adr, 0);
 }

@@ -81,7 +81,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -295,29 +295,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
 
   const size_t region_cnt = end_region - beg_region;
   memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
-}
-
-void
-ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
-{
-  assert(is_region_aligned(beg), "not RegionSize aligned");
-  assert(is_region_aligned(end), "not RegionSize aligned");
-
-  size_t cur_region = addr_to_region_idx(beg);
-  const size_t end_region = addr_to_region_idx(end);
-  HeapWord* addr = beg;
-  while (cur_region < end_region) {
-    _region_data[cur_region].set_destination(addr);
-    _region_data[cur_region].set_destination_count(0);
-    _region_data[cur_region].set_source_region(cur_region);
-
-    // Update live_obj_size so the region appears completely full.
-    size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
-    _region_data[cur_region].set_live_obj_size(live_size);
-
-    ++cur_region;
-    addr += RegionSize;
-  }
 }
 
 // The total live words on src_region would overflow the target space, so find
@@ -826,7 +803,8 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   }
 }
 
-bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
+bool PSParallelCompact::check_maximum_compaction(bool should_do_max_compaction,
+                                                 size_t total_live_words,
                                                  MutableSpace* const old_space,
                                                  HeapWord* full_region_prefix_end) {
 
@@ -839,25 +817,17 @@ bool PSParallelCompact::check_maximum_compaction(size_t total_live_words,
   // Check if all live objs are too much for old-gen.
   const bool is_old_gen_too_full = (total_live_words >= old_space->capacity_in_words());
 
-  // JVM flags
-  const uint total_invocations = heap->total_full_collections();
-  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool is_interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
-
   // If all regions in old-gen are full
   const bool is_region_full =
     full_region_prefix_end >= _summary_data.region_align_down(old_space->top());
 
-  if (is_max_on_system_gc || is_old_gen_too_full || is_interval_ended || is_region_full) {
-    _maximum_compaction_gc_num = total_invocations;
-    return true;
-  }
-
-  return false;
+  return should_do_max_compaction
+      || is_max_on_system_gc
+      || is_old_gen_too_full
+      || is_region_full;
 }
 
-void PSParallelCompact::summary_phase()
+void PSParallelCompact::summary_phase(bool should_do_max_compaction)
 {
   GCTraceTime(Info, gc, phases) tm("Summary Phase", &_gc_timer);
 
@@ -880,9 +850,10 @@ void PSParallelCompact::summary_phase()
       _space_info[i].set_dense_prefix(space->bottom());
     }
 
-    bool maximum_compaction = check_maximum_compaction(total_live_words,
-                                                       old_space,
-                                                       full_region_prefix_end);
+    should_do_max_compaction = check_maximum_compaction(should_do_max_compaction,
+                                                        total_live_words,
+                                                        old_space,
+                                                        full_region_prefix_end);
     {
       GCTraceTime(Info, gc, phases) tm("Summary Phase: expand", &_gc_timer);
       // Try to expand old-gen in order to fit all live objs and waste.
@@ -891,7 +862,7 @@ void PSParallelCompact::summary_phase()
       ParallelScavengeHeap::heap()->old_gen()->try_expand_till_size(target_capacity_bytes);
     }
 
-    HeapWord* dense_prefix_end = maximum_compaction
+    HeapWord* dense_prefix_end = should_do_max_compaction
                                  ? full_region_prefix_end
                                  : compute_dense_prefix_for_old_space(old_space,
                                                                       full_region_prefix_end);
@@ -900,7 +871,6 @@ void PSParallelCompact::summary_phase()
 
     if (dense_prefix_end != old_space->bottom()) {
       fill_dense_prefix_end(id);
-      _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
     }
 
     // Compacting objs in [dense_prefix_end, old_space->top())
@@ -961,11 +931,7 @@ void PSParallelCompact::summary_phase()
   }
 }
 
-// This method invokes a full collection. The argument controls whether
-// soft-refs should be cleared or not.
-// Note that this method should only be called from the vm_thread while at a
-// safepoint.
-bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
+bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_compaction) {
   assert(SafepointSynchronize::is_at_safepoint(), "should be at safepoint");
   assert(Thread::current() == (Thread*)VMThread::vm_thread(),
          "should be in vm thread");
@@ -1020,7 +986,7 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs) {
 
     marking_phase(&_gc_tracer);
 
-    summary_phase();
+    summary_phase(should_do_max_compaction);
 
 #if COMPILER2_OR_JVMCI
     assert(DerivedPointerTable::is_active(), "Sanity");
@@ -1099,9 +1065,7 @@ public:
 
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
-    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure,
-                                                 !NMethodToOopClosure::FixRelocations,
-                                                 true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure);
 
     thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1308,7 +1272,7 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_
   const size_t stripe_size = num_regions_per_stripe * region_size;
 
   while (true) {
-    uint counter = Atomic::fetch_then_add(claim_counter, num_regions_per_stripe);
+    uint counter = AtomicAccess::fetch_then_add(claim_counter, num_regions_per_stripe);
     HeapWord* cur_stripe = bottom + counter * region_size;
     if (cur_stripe >= top) {
       break;
@@ -1393,9 +1357,7 @@ public:
     _nworkers(nworkers) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-    if (nworkers > 1) {
-      Threads::change_thread_claim_token();
-    }
+    Threads::change_thread_claim_token();
   }
 
   ~PSAdjustTask() {
@@ -1549,17 +1511,16 @@ void PSParallelCompact::forward_to_new_addr() {
 #ifdef ASSERT
 void PSParallelCompact::verify_forward() {
   HeapWord* const old_dense_prefix_addr = dense_prefix(SpaceId(old_space_id));
-  RegionData* old_region = _summary_data.region(_summary_data.addr_to_region_idx(old_dense_prefix_addr));
-  HeapWord* bump_ptr = old_region->partial_obj_size() != 0
-                       ? old_dense_prefix_addr + old_region->partial_obj_size()
-                       : old_dense_prefix_addr;
+  // The destination addr for the first live obj after dense-prefix.
+  HeapWord* bump_ptr = old_dense_prefix_addr
+                     + _summary_data.addr_to_region_ptr(old_dense_prefix_addr)->partial_obj_size();
   SpaceId bump_ptr_space = old_space_id;
 
   for (uint id = old_space_id; id < last_space_id; ++id) {
     MutableSpace* sp = PSParallelCompact::space(SpaceId(id));
-    HeapWord* dense_prefix_addr = dense_prefix(SpaceId(id));
+    // Only verify objs after dense-prefix, because those before dense-prefix are not moved (forwarded).
+    HeapWord* cur_addr = dense_prefix(SpaceId(id));
     HeapWord* top = sp->top();
-    HeapWord* cur_addr = dense_prefix_addr;
 
     while (cur_addr < top) {
       cur_addr = mark_bitmap()->find_obj_beg(cur_addr, top);

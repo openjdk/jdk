@@ -27,7 +27,7 @@
  * @summary Check that we don't leak FDs
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm/native/timeout=480 -Djdk.lang.Process.launchMechanism=posix_spawn -agentlib:FDLeaker FDLeakTest
+ * @run main/othervm/native -Djdk.lang.Process.launchMechanism=posix_spawn -agentlib:FDLeaker FDLeakTest
  */
 
 /**
@@ -35,7 +35,7 @@
  * @summary Check that we don't leak FDs
  * @requires os.family != "windows"
  * @library /test/lib
- * @run main/othervm/native/timeout=480 -Djdk.lang.Process.launchMechanism=fork -agentlib:FDLeaker FDLeakTest
+ * @run main/othervm/native -Djdk.lang.Process.launchMechanism=fork -agentlib:FDLeaker FDLeakTest
  */
 
 /**
@@ -43,7 +43,7 @@
  * @summary Check that we don't leak FDs
  * @requires os.family == "linux"
  * @library /test/lib
- * @run main/othervm/native/timeout=480 -Djdk.lang.Process.launchMechanism=vfork -agentlib:FDLeaker FDLeakTest
+ * @run main/othervm/native -Djdk.lang.Process.launchMechanism=vfork -agentlib:FDLeaker FDLeakTest
  */
 
 import jdk.test.lib.process.ProcessTools;

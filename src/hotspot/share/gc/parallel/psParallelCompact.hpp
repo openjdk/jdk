@@ -34,7 +34,7 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "oops/oop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 
 class ParallelScavengeHeap;
@@ -360,11 +360,6 @@ public:
   inline RegionData* region(size_t region_idx) const;
   inline size_t     region(const RegionData* const region_ptr) const;
 
-  // Fill in the regions covering [beg, end) so that no data moves; i.e., the
-  // destination of region n is simply the start of region n.  Both arguments
-  // beg and end must be region-aligned.
-  void summarize_dense_prefix(HeapWord* beg, HeapWord* end);
-
   HeapWord* summarize_split_space(size_t src_region, SplitInfo& split_info,
                                   HeapWord* destination, HeapWord* target_end,
                                   HeapWord** target_next);
@@ -443,7 +438,7 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
 {
   assert(_dc_and_los < dc_claimed, "already claimed");
   assert(_dc_and_los >= dc_one, "count would go negative");
-  Atomic::add(&_dc_and_los, dc_mask);
+  AtomicAccess::add(&_dc_and_los, dc_mask);
 }
 
 inline void ParallelCompactData::RegionData::set_completed()
@@ -466,36 +461,36 @@ inline bool ParallelCompactData::RegionData::claim_unsafe()
 inline void ParallelCompactData::RegionData::add_live_obj(size_t words)
 {
   assert(words <= (size_t)los_mask - live_obj_size(), "overflow");
-  Atomic::add(&_dc_and_los, static_cast<region_sz_t>(words));
+  AtomicAccess::add(&_dc_and_los, static_cast<region_sz_t>(words));
 }
 
 inline bool ParallelCompactData::RegionData::claim()
 {
   const region_sz_t los = static_cast<region_sz_t>(live_obj_size());
-  const region_sz_t old = Atomic::cmpxchg(&_dc_and_los, los, dc_claimed | los);
+  const region_sz_t old = AtomicAccess::cmpxchg(&_dc_and_los, los, dc_claimed | los);
   return old == los;
 }
 
 inline bool ParallelCompactData::RegionData::mark_normal() {
-  return Atomic::cmpxchg(&_shadow_state, UnusedRegion, NormalRegion) == UnusedRegion;
+  return AtomicAccess::cmpxchg(&_shadow_state, UnusedRegion, NormalRegion) == UnusedRegion;
 }
 
 inline bool ParallelCompactData::RegionData::mark_shadow() {
   if (_shadow_state != UnusedRegion) return false;
-  return Atomic::cmpxchg(&_shadow_state, UnusedRegion, ShadowRegion) == UnusedRegion;
+  return AtomicAccess::cmpxchg(&_shadow_state, UnusedRegion, ShadowRegion) == UnusedRegion;
 }
 
 inline void ParallelCompactData::RegionData::mark_filled() {
-  int old = Atomic::cmpxchg(&_shadow_state, ShadowRegion, FilledShadow);
+  int old = AtomicAccess::cmpxchg(&_shadow_state, ShadowRegion, FilledShadow);
   assert(old == ShadowRegion, "Fail to mark the region as filled");
 }
 
 inline bool ParallelCompactData::RegionData::mark_copied() {
-  return Atomic::cmpxchg(&_shadow_state, FilledShadow, CopiedShadow) == FilledShadow;
+  return AtomicAccess::cmpxchg(&_shadow_state, FilledShadow, CopiedShadow) == FilledShadow;
 }
 
 void ParallelCompactData::RegionData::shadow_to_normal() {
-  int old = Atomic::cmpxchg(&_shadow_state, ShadowRegion, NormalRegion);
+  int old = AtomicAccess::cmpxchg(&_shadow_state, ShadowRegion, NormalRegion);
   assert(old == ShadowRegion, "Fail to mark the region as finish");
 }
 
@@ -727,7 +722,8 @@ private:
   static void pre_compact();
   static void post_compact();
 
-  static bool check_maximum_compaction(size_t total_live_words,
+  static bool check_maximum_compaction(bool should_do_max_compaction,
+                                       size_t total_live_words,
                                        MutableSpace* const old_space,
                                        HeapWord* full_region_prefix_end);
 
@@ -742,7 +738,7 @@ private:
   // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
-  static void summary_phase();
+  static void summary_phase(bool should_do_max_compaction);
 
   static void adjust_pointers();
   static void forward_to_new_addr();
@@ -761,7 +757,10 @@ private:
 public:
   static void fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers);
 
-  static bool invoke(bool clear_all_soft_refs);
+  // This method invokes a full collection.
+  // clear_all_soft_refs controls whether soft-refs should be cleared or not.
+  // should_do_max_compaction controls whether all spaces for dead objs should be reclaimed.
+  static bool invoke(bool clear_all_soft_refs, bool should_do_max_compaction);
 
   template<typename Func>
   static void adjust_in_space_helper(SpaceId id, volatile uint* claim_counter, Func&& on_stripe);

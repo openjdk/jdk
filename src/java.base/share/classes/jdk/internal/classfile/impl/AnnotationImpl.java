@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
         implements Annotation {
     public AnnotationImpl {
         requireNonNull(className);
-        elements = List.copyOf(elements);
+        elements = Util.sanitizeU2List(elements);
     }
 
     @Override
@@ -189,7 +189,7 @@ public record AnnotationImpl(Utf8Entry className, List<AnnotationElement> elemen
     public record OfArrayImpl(List<AnnotationValue> values)
             implements AnnotationValue.OfArray {
         public OfArrayImpl {
-            values = List.copyOf(values);
+            values = Util.sanitizeU2List(values);
         }
 
         @Override

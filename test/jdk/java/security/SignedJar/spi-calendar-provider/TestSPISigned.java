@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +31,7 @@ import java.util.Calendar;
 import java.util.Locale;
 import java.util.List;
 import java.util.ArrayList;
+import java.net.URI;
 import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.Files;
@@ -54,12 +56,9 @@ import static java.util.Calendar.WEDNESDAY;
  */
 public class TestSPISigned {
 
-    private static final String TEST_CLASSES = System.getProperty("test.classes", ".");
     private static final String TEST_SRC = System.getProperty("test.src", ".");
 
     private static final Path META_INF_DIR = Paths.get(TEST_SRC, "provider", "meta");
-    private static final Path PROVIDER_PARENT = Paths.get(TEST_CLASSES, "..");
-    private static final Path PROVIDER_DIR = PROVIDER_PARENT.resolve("provider");
     private static final Path MODS_DIR = Paths.get("mods");
     private static final Path UNSIGNED_JAR = MODS_DIR.resolve("unsigned-with-locale.jar");
     private static final Path SIGNED_JAR = MODS_DIR.resolve("signed-with-locale.jar");
@@ -81,7 +80,9 @@ public class TestSPISigned {
             // Set up signed jar with custom calendar data provider
             //
             // 1. Create jar with custom CalendarDataProvider
-            JarUtils.createJarFile(UNSIGNED_JAR, PROVIDER_DIR);
+            var codeSource = baz.CalendarDataProviderImpl.class.getProtectionDomain().getCodeSource();
+            var providerDir = Path.of(URI.create(codeSource.getLocation().toString()));
+            JarUtils.createJarFile(UNSIGNED_JAR, providerDir);
             JarUtils.updateJarFile(UNSIGNED_JAR, META_INF_DIR);
             // create signer's keypair
             SecurityTools.keytool("-genkeypair -keyalg RSA -keystore ks " +

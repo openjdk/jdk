@@ -39,7 +39,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -809,7 +809,7 @@ jlong os::javaTimeNanos() {
   if (now <= prev) {
     return prev;   // same or retrograde time;
   }
-  const uint64_t obsv = Atomic::cmpxchg(&Bsd::_max_abstime, prev, now);
+  const uint64_t obsv = AtomicAccess::cmpxchg(&Bsd::_max_abstime, prev, now);
   assert(obsv >= prev, "invariant");   // Monotonicity
   // If the CAS succeeded then we're done and return "now".
   // If the CAS failed and the observed value "obsv" is >= now then
@@ -1599,8 +1599,6 @@ void os::numa_make_global(char *addr, size_t bytes) {
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint) {
 }
 
-bool os::numa_topology_changed()   { return false; }
-
 size_t os::numa_get_groups_num() {
   return 1;
 }
@@ -2135,14 +2133,14 @@ uint os::processor_id() {
   __asm__ ("cpuid\n\t" : "+a" (eax), "+b" (ebx), "+c" (ecx), "+d" (edx) : );
 
   uint apic_id = (ebx >> 24) & (processor_id_map_size - 1);
-  int processor_id = Atomic::load(&processor_id_map[apic_id]);
+  int processor_id = AtomicAccess::load(&processor_id_map[apic_id]);
 
   while (processor_id < 0) {
     // Assign processor id to APIC id
-    processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
+    processor_id = AtomicAccess::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
-      Atomic::store(&processor_id_map[apic_id], processor_id);
+      processor_id = AtomicAccess::fetch_then_add(&processor_id_next, 1) % os::processor_count();
+      AtomicAccess::store(&processor_id_map[apic_id], processor_id);
     }
   }
 
