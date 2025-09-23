@@ -85,10 +85,6 @@ class RegMask {
   // RM_SIZE_IN_INTS, but in number of machine words
   static const unsigned int RM_SIZE_IN_WORDS = LP64_ONLY(RM_SIZE_IN_INTS >> 1) NOT_LP64(RM_SIZE_IN_INTS);
 
-  // RM_SIZE_IN_INTS_MIN, but in number of machine words
-  static const unsigned int RM_SIZE_IN_WORDS_MIN =
-      LP64_ONLY(((RM_SIZE_IN_INTS_MIN + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_IN_INTS_MIN);
-
   // The last index (in machine words) of the (static) array of register mask
   // bits
   static const unsigned int RM_WORD_MAX_INDEX = RM_SIZE_IN_WORDS - 1U;
@@ -193,9 +189,8 @@ class RegMask {
   unsigned int _hwm;
 
   // The following diagram illustrates the internal representation of a RegMask
-  // (for a made-up platform with 10 registers and 4-bit
-  // words) that has been extended with two additional words to represent more
-  // stack locations:
+  // (for a made-up platform with 10 registers and 4-bit words) that has been
+  // extended with two additional words to represent more stack locations:
   //
   //                         _lwm=1   RM_SIZE_IN_WORDS=3 _hwm=3      _rm_size_in_words=5
   //                            |                  |      |                 |
@@ -414,7 +409,7 @@ public:
          };
 
   // A constructor only used by the ADLC output.  All mask fields are filled
-  // in directly.  Calls to this look something like RM(1,2,3,4);
+  // in directly.  Calls to this look something like RM(0xc0, 0x0, 0x0, false);
   RegMask(
 #   define BODY(I) int a##I,
       FORALL_BODY
