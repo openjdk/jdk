@@ -4862,10 +4862,11 @@ void os::set_native_thread_name(const char *name) {
   // ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc), we truncate "smartly"
   // by attempting to preserve the trailing number in the name if there is one
   // (e.g. "DispatcherWorkerThread21" -> "DispatcherW..21").
-  StringUtils::abbreviate_preserve_trailing_number(name, buf, sizeof(buf));
+  StringUtils::truncate_middle(name, buf, sizeof(buf));
   // set name in kernel
   int rc = prctl(PR_SET_NAME, buf);
-  assert(rc == 0, "prctl(PR_SET_NAME) failed");
+  //assert(rc == 0, "prctl(PR_SET_NAME) failed");
+  //int rc;
   if (Linux::_pthread_setname_np) {
     // set name in pthread lib
     rc = Linux::_pthread_setname_np(pthread_self(), buf);

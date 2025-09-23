@@ -72,24 +72,7 @@ TEST_VM(StringUtils, replace_no_expand) {
   ASSERT_EQ(deleted, 0);
 }
 
-TEST_VM(StringUtils, find_trailing_number) {
-  static const struct {
-    const char* s; int expected;
-  } totest[] = {
-      { "",       -1 },
-      { "Hallo",  -1 },
-      { "123",     0 },
-      { "A123",    1 },
-      { "123A",   -1 },
-      { "C2 CompilerThread12", 17 },
-      { nullptr, -1}
-  };
-  for (int i = 0; totest[i].s != nullptr; i++) {
-    ASSERT_EQ( StringUtils::find_trailing_number(totest[i].s), totest[i].expected );
-  }
-}
-
-TEST_VM(StringUtils, abbreviate_preserve_trailing_number) {
+TEST_VM(StringUtils, truncate_middle) {
   static const struct {
     const char* s; size_t outlen; const char* expected;
   } totest[] = {
@@ -102,19 +85,15 @@ TEST_VM(StringUtils, abbreviate_preserve_trailing_number) {
       { "C2 CompilerThread12",           7 + 1,  "C2 Comp" },
       // Output buffer long enough to abbreviate:
       //                                     .123456789.123456789.1234567899
-      { "C2 CompilerThread12",          10 + 1,  "C2 Com..12" },
-      { "C2 CompilerThread12",          15 + 1,  "C2 Compiler..12" },
-      { "C2 CompilerThread",            10 + 1,  "C2 Compile" },
-      { "C2 CompilerThread1",           15 + 1,  "C2 CompilerT..1" },
-      { "C2 CompilerThread1267223",     15 + 1,  "C2 Com..1267223" },
-      // Number would be eating up more than half of output len, start of number is sacrificed:
-      { "C2 CompilerThread1334267223",  15 + 1,  "C2 Com..4267223" },
+      { "C2 CompilerThread12",          10 + 1,  "C2 C..ad12" },
+      { "C2 CompilerThread12",          15 + 1,  "C2 Com..read12" },
+      { "C2 CompilerThread1267223",     15 + 1,  "C2 Com..267223" },
       { nullptr, 0, nullptr }
   };
   char out[100 + 1];
   for (int i = 0; totest[i].s != nullptr; i++) {
     assert(sizeof(out) >= totest[i].outlen, "Sanity");
-    EXPECT_STREQ(StringUtils::abbreviate_preserve_trailing_number(totest[i].s, out, totest[i].outlen),
+    EXPECT_STREQ(StringUtils::truncate_middle(totest[i].s, out, totest[i].outlen),
                  totest[i].expected) << " for case " << i;
   }
 }

@@ -55,19 +55,11 @@ public:
   // The matching is case insensitive.
   static bool is_star_match(const char* star_pattern, const char* str);
 
-  // Given a string that may or may not end on a decimal number, find position of that
-  // number. Returns -1 if no number was found to trail the string, or if string is empty.
-  static int find_trailing_number(const char* s);
-
   // Given a string of unknown length and an output buffer, fit string into output buffer such
-  // that:
-  // - plain copy if it fits
-  // - if it does not fit and it does not end in a number, truncate
-  // - if it does not fit and it ends in a number, truncate the middle while preserving
-  //   the trailing number. The resulting string will be assembled from <first part>..<number trail>,
-  //   e.g. "C1 CompilerThread2", limited to 15 chars, would be "C1 CompilerT..2"
+  // that we truncate the string in the middle, if needed.
+  //   e.g. "C1 CompilerThread2", limited to 15 chars, would be "C1 Com..Thread2"
   // Returns: out
-  static char* abbreviate_preserve_trailing_number(const char* s, char* out, size_t outlen);
+  static char* truncate_middle(const char* s, char* out, size_t outlen);
 
   class CommaSeparatedStringIterator {
   private:
