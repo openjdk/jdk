@@ -26,6 +26,7 @@
 #define SHARE_SANITIZERS_ADDRESS_HPP
 
 #ifdef ADDRESS_SANITIZER
+#include "memory/allStatic.hpp"
 #include <sanitizer/asan_interface.h>
 #endif
 
@@ -73,5 +74,11 @@
     }                                           \
   } while (false)
 #endif
+
+struct Asan : public AllStatic {
+  static void initialize();
+  // Returns the ASAN report text; nullptr if no ASAN error happened.
+  static const char* report();
+};
 
 #endif // SHARE_SANITIZERS_ADDRESS_HPP

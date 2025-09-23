@@ -60,6 +60,7 @@
 #include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
+#include "sanitizers/address.hpp"
 #include "sanitizers/ub.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
@@ -910,7 +911,19 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing date and time", _verbose)
     os::print_date_and_time(st, buf, sizeof(buf));
 
-  STEP_IF("printing thread", _verbose)
+#ifdef ADDRESS_SANITIZER
+  STEP_IF("printing ASAN error information", _verbose && Asan::report() != nullptr)
+    st->cr();
+    st->print_cr("------------------  A S A N ----------------");
+    st->cr();
+    st->print_cr("ASAN error information:");
+    // Note: Use print_raw, not print or print_cr, to avoid truncation
+    // (report can be longer than 2K)
+    st->print_raw(Asan::report());
+    st->cr();
+#endif // ADDRESS_SANITIZER
+
+    STEP_IF("printing thread", _verbose)
     st->cr();
     st->print_cr("---------------  T H R E A D  ---------------");
     st->cr();
