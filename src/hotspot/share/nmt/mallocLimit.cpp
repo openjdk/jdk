@@ -91,8 +91,9 @@ public:
       end = _end;
     }
     stringStream ss;
-    // Exact matching -- we can do a HT lookup.
+    // Extract the name from the full string.
     ss.print("%.*s", (int)(end - _p), _p);
+    // First, try for an exact name match.
     MemTag mem_tag = MemTagFactory::tag_maybe(ss.freeze());
     if (mem_tag != mtNone) {
       *out = mem_tag;
@@ -100,7 +101,7 @@ public:
       return true;
     }
     // Hotspot MemTags are prepended with 'mt', but MallocLimit allows
-    // the user to skip them. It also allows matching with the human readable name.
+    // the user to skip them when specifying a name. It also allows matching with the human readable name.
     // Both of these cases forces a linear search.
     MemTag match = mtNone;
     bool matched = false;
