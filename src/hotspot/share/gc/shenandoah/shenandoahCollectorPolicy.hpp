@@ -79,6 +79,11 @@ public:
   // cycles are very efficient and are worth tracking. Note that both degenerated and
   // concurrent cycles can be abbreviated.
   void record_success_concurrent(bool is_young, bool is_abbreviated);
+
+  // Record that a degenerated cycle has been completed. Note that such a cycle may or
+  // may not make "progress". We separately track the total number of degenerated cycles,
+  // the number of consecutive degenerated cycles and the number of consecutive cycles that
+  // fail ot make good progress.
   void record_degenerated(bool is_young, bool is_abbreviated, bool progress);
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
@@ -104,6 +109,7 @@ public:
     return _consecutive_degenerated_gcs;
   }
 
+  // Genshen will only upgrade to a full gc after the configured number of futile degenerated cycles.
   bool should_upgrade_degenerated_gc() const {
     return _consecutive_degenerated_gcs_without_progress >= CONSECUTIVE_BAD_DEGEN_PROGRESS_THRESHOLD;
   }
