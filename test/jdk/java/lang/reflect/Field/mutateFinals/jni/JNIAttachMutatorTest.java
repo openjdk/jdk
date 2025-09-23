@@ -26,7 +26,6 @@
  * @bug 8353835
  * @summary Test native thread attaching to the VM with JNI AttachCurrentThread and directly
  *    invoking Field.set to set a final field
- * @requires (os.family == "linux" | os.family == "mac")
  * @library /test/lib
  * @compile JNIAttachMutator.java
  * @run junit JNIAttachMutatorTest

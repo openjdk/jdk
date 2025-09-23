@@ -3446,7 +3446,7 @@ return mh1;
                     throw field.makeAccessException(msg, this);
                 }
                 // check if write access to final field allowed
-                if (!field.isStatic() && isAccessible && allowedModes != TRUSTED) {
+                if (!field.isStatic() && isAccessible) {
                     SharedSecrets.getJavaLangReflectAccess().checkAllowedToUnreflectFinalSetter(lookupClass, f);
                 }
             }

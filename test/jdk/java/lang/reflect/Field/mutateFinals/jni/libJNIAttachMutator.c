@@ -21,7 +21,11 @@
  * questions.
  */
 #include <stdio.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <pthread.h>
+#endif
 #include "jni.h"
 
 #define STACK_SIZE 0x100000
@@ -161,7 +165,20 @@ void* thread_main(void* arg) {
     return NULL;
 }
 
+#ifdef _WIN32
+static DWORD WINAPI win32_thread_main(void* p) {
+    thread_main(p);
+    return 0;
+}
+#endif
+
 JNIEXPORT void JNICALL Java_JNIAttachMutator_startThread(JNIEnv *env, jclass clazz) {
+#ifdef _WIN32
+    HANDLE handle = CreateThread(NULL, STACK_SIZE, win32_thread_main, NULL, 0, NULL);
+    if (handle == NULL) {
+        fprintf(stderr, "CreateThread failed: %d\n", GetLastError());
+    }
+#else
     pthread_t tid;
     pthread_attr_t attr;
 
@@ -171,4 +188,5 @@ JNIEXPORT void JNICALL Java_JNIAttachMutator_startThread(JNIEnv *env, jclass cla
     if (res != 0) {
         fprintf(stderr, "pthread_create failed: %d\n", res);
     }
+#endif
 }
