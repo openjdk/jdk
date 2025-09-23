@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8154364 8365626 8366254 8368156
+ * @bug 8154364 8365626 8366254
  * @summary Test of Files.isSameFile
  * @library .. /test/lib
  * @run junit IsSameFile
