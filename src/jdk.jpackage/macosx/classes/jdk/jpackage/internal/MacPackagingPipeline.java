@@ -599,6 +599,15 @@ final class MacPackagingPipeline {
         }
     }
 
+    private static final ApplicationLayout MAC_APPLICATION_LAYOUT = ApplicationLayout.build()
+            .launchersDirectory("Contents/MacOS")
+            .appDirectory("Contents/app")
+            .runtimeDirectory("Contents/runtime/Contents/Home")
+            .desktopIntegrationDirectory("Contents/Resources")
+            .appModsDirectory("Contents/app/mods")
+            .contentDirectory("Contents")
+            .create();
+
     static final MacApplicationLayout APPLICATION_LAYOUT = MacApplicationLayout.create(
-            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
+            MAC_APPLICATION_LAYOUT, Path.of("Contents/runtime"));
 }

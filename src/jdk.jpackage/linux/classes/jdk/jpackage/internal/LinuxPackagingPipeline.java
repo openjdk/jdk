@@ -106,6 +106,15 @@ final class LinuxPackagingPipeline {
         });
     }
 
+    private static final ApplicationLayout LINUX_APPLICATION_LAYOUT = ApplicationLayout.build()
+            .launchersDirectory("bin")
+            .appDirectory("lib/app")
+            .runtimeDirectory("lib/runtime")
+            .desktopIntegrationDirectory("lib")
+            .appModsDirectory("lib/app/mods")
+            .contentDirectory("lib")
+            .create();
+
     static final LinuxApplicationLayout APPLICATION_LAYOUT = LinuxApplicationLayout.create(
-            ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT, Path.of("lib/libapplauncher.so"));
+            LINUX_APPLICATION_LAYOUT, Path.of("lib/libapplauncher.so"));
 }

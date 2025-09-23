@@ -29,6 +29,7 @@ import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconReso
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -112,5 +113,10 @@ final class WinPackagingPipeline {
         }
     }
 
-    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
+    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayout.build()
+            .setAll("")
+            .appDirectory("app")
+            .runtimeDirectory("runtime")
+            .appModsDirectory(Path.of("app", "mods"))
+            .create();
 }
