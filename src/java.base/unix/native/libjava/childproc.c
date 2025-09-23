@@ -68,7 +68,7 @@ markCloseOnExec(int fd)
 }
 
 #if !defined(_AIX)
-  /* The /proc file System on AIX does not contain open system files
+  /* The /proc file system on AIX does not contain open system files
    * like /dev/random. Therefore we use a different approach and do
    * not need isAsciiDigit() or FD_DIR */
 static int
@@ -88,14 +88,12 @@ static int
 markDescriptorsCloseOnExec(void)
 {
 #if defined(_AIX)
-    /* We rely on the current childProcess() functions semantic.
-     * When the parent childProcess() function reaches the call of this function
-     * only the FDs 0,1,2 and 3 are further used until the exec() or the exit(-1).
-     * So we can close all FDs beginning with 4 (with fcntl(x, F_CLOSEM, 0); AIX
-     * provides a special fcntl call to close all open FDs greater equal x in one call).
-     * FD 3 is only used if the exec fails to report the reason to the JVM.
-     * It should not survive a passing exec(). So we can set the close_on_exec
-     * flag for FD 3. FDs 0,1 and 2 should survive the exec(), we do not change them.
+    /* On AIX, we cannot rely on proc file system iteration to find all open files. Since
+     * iteration over all possible file descriptors, and subsequently closing them, can
+     * take a very long time, we use a bulk close via `ioctl` that is available on AIX.
+     * Since we hard-close, we need to make sure to keep the fail pipe file descriptor
+     * alive until the exec call. Therefore we mark the fail pipe fd with close on exec
+     * like the other OSes do, but then proceed to hard-close file descriptors beyond that.
      */
     if (fcntl(STDERR_FILENO + 2, F_CLOSEM, 0) == -1 ||
         (markCloseOnExec(STDERR_FILENO + 1) == -1 && errno != EBADF)) {
