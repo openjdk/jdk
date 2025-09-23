@@ -90,7 +90,7 @@ final class LauncherFromOptions {
         NAME.ifPresentIn(options, builder::name);
 
         if (PREDEFINED_APP_IMAGE.findIn(options).isEmpty()) {
-            final var startupInfoBuilder = new LauncherStartupInfoBuilder2();
+            final var startupInfoBuilder = new LauncherStartupInfoBuilder();
 
             INPUT.ifPresentIn(options, startupInfoBuilder::inputDir);
             ARGUMENTS.ifPresentIn(options, startupInfoBuilder::defaultParameters);

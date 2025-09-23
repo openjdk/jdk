@@ -58,7 +58,7 @@ public class LauncherStartupInfoBuilderTest extends JUnitAdapter {
 
             HelloApp.createBundle(javaAppDesc, workDir);
 
-            final var builder = new LauncherStartupInfoBuilder2();
+            final var builder = new LauncherStartupInfoBuilder();
 
             builder.inputDir(workDir);
 
