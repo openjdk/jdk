@@ -1223,15 +1223,20 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
     nsr_merge_pointer = _igvn->transform(ConstraintCastNode::make_cast_for_type(cast->in(0), cast->in(1), new_t, ConstraintCastNode::RegularDependency, nullptr));
   }
 
+  GrowableArray<Node*> non_debug_edges_worklist;
   for (uint spi = 0; spi < safepoints.size(); spi++) {
     SafePointNode* sfpt = safepoints.at(spi)->as_SafePoint();
     JVMState *jvms      = sfpt->jvms();
     uint merge_idx      = (sfpt->req() - jvms->scloff());
     int debug_start     = jvms->debug_start();
 
+    sfpt->remove_non_debug_edges(non_debug_edges_worklist);
+
     SafePointScalarMergeNode* smerge = new SafePointScalarMergeNode(merge_t, merge_idx);
     smerge->init_req(0, _compile->root());
     _igvn->register_new_node_with_optimizer(smerge);
+
+    assert(sfpt->jvms()->endoff() == sfpt->req(), "no extra edges past debug info allowed");
 
     // The next two inputs are:
     //  (1) A copy of the original pointer to NSR objects.
@@ -1240,6 +1245,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
     // See more details of these fields in the declaration of SafePointScalarMergeNode
     sfpt->add_req(nsr_merge_pointer);
     sfpt->add_req(selector);
+    sfpt->jvms()->set_endoff(sfpt->req());
 
     for (uint i = 1; i < ophi->req(); i++) {
       Node* base = ophi->in(i);
@@ -1254,7 +1260,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       AllocateNode* alloc = ptn->ideal_node()->as_Allocate();
       SafePointScalarObjectNode* sobj = mexp.create_scalarized_object_description(alloc, sfpt);
       if (sobj == nullptr) {
-        return false;
+        return false; // non-recoverable failure; recompile
       }
 
       // Now make a pass over the debug information replacing any references
@@ -1273,6 +1279,9 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
     // reference to ophi that we need at _merge_pointer_idx. The line below make
     // sure the reference is maintained.
     sfpt->set_req(smerge->merge_pointer_idx(jvms), nsr_merge_pointer);
+
+    sfpt->restore_non_debug_edges(non_debug_edges_worklist);
+
     _igvn->_worklist.push(sfpt);
   }
 

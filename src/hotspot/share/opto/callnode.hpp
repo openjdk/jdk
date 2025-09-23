@@ -491,6 +491,9 @@ public:
     return _has_ea_local_in_scope;
   }
 
+  void remove_non_debug_edges(GrowableArray<Node*>& non_debug_edges);
+  void restore_non_debug_edges(GrowableArray<Node*>& non_debug_edges);
+
   void disconnect_from_root(PhaseIterGVN *igvn);
 
   // Standard Node stuff

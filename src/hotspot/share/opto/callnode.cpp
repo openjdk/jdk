@@ -1559,6 +1559,25 @@ void SafePointNode::disconnect_from_root(PhaseIterGVN *igvn) {
   }
 }
 
+void SafePointNode::remove_non_debug_edges(GrowableArray<Node*>& non_debug_edges) {
+  assert(non_debug_edges.is_empty(), "edges not processed");
+  while (req() > jvms()->endoff()) {
+    uint last = req() - 1;
+    non_debug_edges.push(in(last));
+    del_req(last);
+  }
+  assert(jvms()->endoff() == req(), "no extra edges past debug info allowed");
+}
+
+void SafePointNode::restore_non_debug_edges(GrowableArray<Node*>& non_debug_edges) {
+  assert(jvms()->endoff() == req(), "no extra edges past debug info allowed");
+  while (non_debug_edges.is_nonempty()) {
+    Node* non_debug_edge = non_debug_edges.pop();
+    add_req(non_debug_edge);
+  }
+  assert(non_debug_edges.is_empty(), "edges not processed");
+}
+
 //==============  SafePointScalarObjectNode  ==============
 
 SafePointScalarObjectNode::SafePointScalarObjectNode(const TypeOopPtr* tp, Node* alloc, uint first_index, uint depth, uint n_fields) :
