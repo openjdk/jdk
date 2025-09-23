@@ -64,7 +64,10 @@ private:
 public:
   // When this number of consecutive degenerated cycles fail to make progress
   // in generational mode, run a full GC. Non-generational modes will upgrade
-  // immediately when a degenerated cycle does not make progress.
+  // immediately when a degenerated cycle does not make progress. Many degenerated
+  // cycles are caused by floating garbage. It is more efficient to attempt
+  // a second degenerated cycle in the young generation to reclaim this memory,
+  // rather than running a lengthy full GC over the entire heap.
   static constexpr size_t CONSECUTIVE_BAD_DEGEN_PROGRESS_THRESHOLD = 2;
 
   ShenandoahCollectorPolicy();
