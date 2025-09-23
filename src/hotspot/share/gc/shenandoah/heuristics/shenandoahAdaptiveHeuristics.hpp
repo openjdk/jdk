@@ -73,9 +73,9 @@ public:
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                      RegionData* data, size_t size,
-                                                     size_t actual_free);
+                                                     size_t actual_free) override;
 
-  void record_cycle_start();
+  virtual void record_cycle_start() override;
   void record_success_concurrent();
   void record_success_degenerated();
   void record_success_full();
