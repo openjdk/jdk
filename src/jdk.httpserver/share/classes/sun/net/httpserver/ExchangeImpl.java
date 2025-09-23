@@ -56,7 +56,6 @@ class ExchangeImpl {
     boolean close;
     boolean closed;
     boolean http10 = false;
-    boolean upgrade;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -93,7 +92,6 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
-        this.upgrade = isUpgradeRequest(reqHdrs);
         /* ros only used for headers, body written directly to stream */
         this.ros = req.outputStream();
         this.ris = req.inputStream();
@@ -123,15 +121,6 @@ class ExchangeImpl {
 
     private boolean isHeadRequest() {
         return HEAD.equals(getRequestMethod());
-    }
-
-    // check if Upgrade connection
-    private boolean isUpgradeRequest(Headers headers) {
-        var values = headers.get("Connection");
-        return values != null
-            && headers.get("Upgrade") != null
-            && GET.equals(getRequestMethod())
-            && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
     }
 
     public void close () {
@@ -167,10 +156,7 @@ class ExchangeImpl {
         if (uis != null) {
             return uis;
         }
-        if (upgrade) {
-            uis = ris;
-            uis_orig = new FixedLengthInputStream (this, ris, 0);
-        } else if (reqContentLen == -1L) {
+        if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream (this, ris);
             uis = uis_orig;
         } else {
@@ -264,7 +250,7 @@ class ExchangeImpl {
             contentLen = 0;
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
         } else if (contentLen == 0) {
-            if (http10 || upgrade && rCode == 101) {
+            if (http10) {
                 o.setWrappedStream(new UndefLengthOutputStream (this, ros));
                 close = true;
             } else if (informational) {

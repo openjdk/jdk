@@ -51,9 +51,7 @@ import org.testng.annotations.Test;
 
 import static java.nio.charset.StandardCharsets.*;
 
-public class InputRead1xxTest {
-
-    private static final int msgCode = 101;
+public class InputRead100Test {
     private static final String someContext = "/context";
 
     static class ServerThreadFactory implements ThreadFactory {
@@ -105,7 +103,7 @@ public class InputRead1xxTest {
             server.start();
             System.out.println("Server started at port " + server.getAddress().getPort());
 
-            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16, 100);
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16);
         } finally {
             System.out.println("shutting server down");
             executor.shutdown();
@@ -114,84 +112,7 @@ public class InputRead1xxTest {
         System.out.println("Server finished.");
     }
 
-    @Test
-    public void testSendResponse() throws Exception {
-        System.out.println("testSendResponse()");
-        InetAddress loopback = InetAddress.getLoopbackAddress();
-        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
-        ExecutorService executor = Executors.newCachedThreadPool(new ServerThreadFactory());
-        server.setExecutor(executor);
-        try {
-            server.createContext(
-                someContext,
-                msg -> {
-                    System.err.println("Handling request: " + msg.getRequestURI());
-                    try {
-                        try {
-                            msg.sendResponseHeaders(msgCode, -1);
-                        } catch (IOException ioe) {
-                            ioe.printStackTrace();
-                        }
-                        msg.getRequestBody().read();
-                    } finally {
-                        // don't close the exchange and don't close any stream
-                        // to trigger the assertion.
-                        System.err.println("Request handled: " + msg.getRequestURI());
-                    }
-                });
-            server.start();
-            System.out.println("Server started at port " + server.getAddress().getPort());
-
-            runRawSocketHttpClient(loopback, server.getAddress().getPort(), -1, msgCode);
-        } finally {
-            System.out.println("shutting server down");
-            executor.shutdown();
-            server.stop(0);
-        }
-        System.out.println("Server finished.");
-    }
-
-    @Test
-    public void testCloseOutputStream() throws Exception {
-        System.out.println("testCloseOutputStream()");
-        InetAddress loopback = InetAddress.getLoopbackAddress();
-        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
-        ExecutorService executor = Executors.newCachedThreadPool(new ServerThreadFactory());
-        server.setExecutor(executor);
-        try {
-            server.createContext(
-                someContext,
-                msg -> {
-                    System.err.println("Handling request: " + msg.getRequestURI());
-                    byte[] reply = "Here is my reply!".getBytes(UTF_8);
-                    try {
-                        try {
-                            msg.sendResponseHeaders(msgCode, -1);
-                            msg.getResponseBody().write(reply);
-                            msg.getResponseBody().close();
-                            Thread.sleep(50);
-                        } catch (IOException | InterruptedException ie) {
-                            ie.printStackTrace();
-                        }
-                        BufferedReader r = new BufferedReader(new InputStreamReader(msg.getRequestBody()));
-                        r.read();
-                    } finally {
-                        System.err.println("Request handled: " + msg.getRequestURI());
-                    }
-                });
-            server.start();
-            System.out.println("Server started at port " + server.getAddress().getPort());
-
-            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 64 * 1024 + 16, msgCode);
-        } finally {
-            System.out.println("shutting server down");
-            executor.shutdown();
-            server.stop(0);
-        }
-        System.out.println("Server finished.");
-    }
-
-    static void runRawSocketHttpClient(InetAddress address, int port, int contentLength, int code)
+    static void runRawSocketHttpClient(InetAddress address, int port, int contentLength)
         throws Exception {
         Socket socket = null;
         PrintWriter writer = null;
@@ -210,12 +131,7 @@ public class InputRead1xxTest {
             writer.print("Accept: */*" + CRLF);
             writer.print("Content-Length: " + contentLength + CRLF);
             writer.print("Connection: keep-alive" + CRLF);
-            if (code == 101) {
-                writer.print("Connection: Upgrade" + CRLF);
-                writer.print("Upgrade: custom" + CRLF);
-            } else if (code == 100) {
-                writer.print("Expect: 100-continue" + CRLF);
-            }
+            writer.print("Expect: 100-continue" + CRLF);
             writer.print(CRLF); // Important, else the server will expect that
             // there's more into the request.
             writer.flush();
