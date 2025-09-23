@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,26 @@
  * @bug 6276188
  * @library ../../../../regtesthelpers
  * @build Util
- * @author Romain Guy
  * @summary Tests PRESSED and MOUSE_OVER and FOCUSED state for buttons with Synth.
  * @run main/othervm -Dsun.java2d.uiScale=1 bug6276188
  */
-import java.awt.*;
-import java.awt.image.*;
-import java.awt.event.*;
 
-import javax.swing.*;
-import javax.swing.plaf.synth.*;
+import java.io.File;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import java.awt.event.InputEvent;
+import javax.imageio.ImageIO;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.plaf.synth.SynthLookAndFeel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 public class bug6276188 {
 
@@ -44,12 +54,12 @@ public class bug6276188 {
     private static JFrame testFrame;
 
      // move away from cursor
-    private final static int OFFSET_X = -20;
-    private final static int OFFSET_Y = -20;
+    private final static int OFFSET_X = 20;
+    private final static int OFFSET_Y = 20;
 
     public static void main(String[] args) throws Throwable {
+        Robot robot = new Robot();
         try {
-            Robot robot = new Robot();
             robot.setAutoDelay(100);
 
             SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
@@ -79,6 +89,7 @@ public class bug6276188 {
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(2000);
 
             Color color = robot.getPixelColor(p.x - OFFSET_X, p.y - OFFSET_Y);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -89,7 +100,7 @@ public class bug6276188 {
                 Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                 Rectangle screen = new Rectangle(0, 0, (int) screenSize.getWidth(), (int) screenSize.getHeight());
                 BufferedImage img = robot.createScreenCapture(screen);
-                javax.imageio.ImageIO.write(img, "png", new java.io.File("image.png"));
+                ImageIO.write(img, "png", new File("image.png"));
                 throw new RuntimeException("Synth ButtonUI does not handle PRESSED & MOUSE_OVER state");
             }
         } finally {
