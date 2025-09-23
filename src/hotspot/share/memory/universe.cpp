@@ -183,6 +183,7 @@ int             Universe::_base_vtable_size = 0;
 bool            Universe::_bootstrapping = false;
 bool            Universe::_module_initialized = false;
 bool            Universe::_fully_initialized = false;
+volatile bool   Universe::_is_shutting_down = false;
 
 OopStorage*     Universe::_vm_weak = nullptr;
 OopStorage*     Universe::_vm_global = nullptr;
@@ -1344,7 +1345,14 @@ static void log_cpu_time() {
 }
 
 void Universe::before_exit() {
-  log_cpu_time();
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    log_cpu_time();
+    AtomicAccess::release_store(&_is_shutting_down, true);
+  }
+
   heap()->before_exit();
 
   // Print GC/heap related information.

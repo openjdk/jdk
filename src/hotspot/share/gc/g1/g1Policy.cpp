@@ -669,6 +669,7 @@ bool G1Policy::should_retain_evac_failed_region(uint index) const {
 }
 
 void G1Policy::record_pause_start_time() {
+  assert(!_g1h->is_shutting_down(), "Invariant!");
   Ticks now = Ticks::now();
   _cur_pause_start_sec = now.seconds();
 
@@ -1275,7 +1276,7 @@ void G1Policy::decide_on_concurrent_start_pause() {
 
   // We should not be starting a concurrent start pause if the concurrent mark
   // thread is terminating.
-  if (_g1h->concurrent_mark_is_terminating()) {
+  if (_g1h->is_shutting_down()) {
     return;
   }
 

@@ -28,6 +28,7 @@
 #include "memory/universe.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/cpuTimeUsage.hpp"

@@ -1024,7 +1024,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // There might actually have been scheduled multiple collections, but at that point we do
       // not care that much about performance and just do the work multiple times if needed.
       return (_g1h->collector_state()->clear_bitmap_in_progress() ||
-              _g1h->concurrent_mark_is_terminating()) &&
+              _g1h->is_shutting_down()) &&
               hr->is_old();
     }
 

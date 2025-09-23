@@ -480,6 +480,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
       log_warning(gc, alloc)("%s:  Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
     }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
   }
 
   ShouldNotReachHere();
@@ -713,6 +718,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         (try_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc, alloc)("%s: Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
+    }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
     }
   }
 
@@ -1551,10 +1561,6 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  return _cm_thread->should_terminate();
-}
-
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
@@ -1881,7 +1887,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
 
     // If VMOp skipped initiating concurrent marking cycle because
     // we're terminating, then we're done.
-    if (op.terminating()) {
+    if (is_shutting_down()) {
       LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
       return false;
     }
