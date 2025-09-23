@@ -93,8 +93,8 @@ public class bug4624207 implements ChangeListener, FocusListener {
 
             robot.keyPress(KeyEvent.VK_ALT);
             robot.keyPress(KeyEvent.VK_B);
-            robot.keyRelease(KeyEvent.VK_ALT);
             robot.keyRelease(KeyEvent.VK_B);
+            robot.keyRelease(KeyEvent.VK_ALT);
 
             robot.waitForIdle();
 
