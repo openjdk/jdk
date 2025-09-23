@@ -88,21 +88,21 @@ class CompactHashtableWriter: public StackObj {
 public:
   class Entry {
     unsigned int _hash;
-    u4 _value;
+    u4 _encoded_value;
 
   public:
     Entry() {}
-    Entry(unsigned int hash, u4 val) : _hash(hash), _value(val) {}
+    Entry(unsigned int hash, u4 val) : _hash(hash), _encoded_value(val) {}
 
     u4 value() {
-      return _value;
+      return _encoded_value;
     }
     unsigned int hash() {
       return _hash;
     }
 
     bool operator==(const CompactHashtableWriter::Entry& other) {
-      return (_value == other._value && _hash == other._hash);
+      return (_encoded_value == other._encoded_value && _hash == other._hash);
     }
   }; // class CompactHashtableWriter::Entry
 
@@ -162,35 +162,47 @@ private:
 // The size of buckets[] is 'num_buckets + 1'. Each entry of
 // buckets[] is a 32-bit encoding of the bucket type and bucket offset,
 // with the type in the left-most 2-bit and offset in the remaining 30-bit.
-// The last entry is a special type. It contains the end of the last
-// bucket.
 //
-// There are three types of buckets, regular buckets and value_only buckets and table_end
-// bucket. The value_only buckets have '01' in their highest 2-bit, and regular buckets have
-// '00' in their highest 2-bit, and table_end bucket has '11' in its highest 2-bit.
+// There are three types of buckets: regular, value_only, and table_end.
+//  . The regular buckets have '00' in their highest 2-bit.
+//  . The value_only buckets have '01' in their highest 2-bit.
+//  . There is only a single table_end bucket that marks the end of buckets[].
+//    It has '11' in its highest 2-bit.
 //
 // For regular buckets, each entry is 8 bytes in the entries[]:
-//   u4 hash;    // entry hash
-//   u4 value;   // it could be offset or index or any payload.
-//               // e.g. if it's an offset, can be used like below:
-//               //   YourEntryType* entry = (YourEntryType*)(base_address + offset)
-//               // check StringTable, SymbolTable and AdapterHandlerLibrary for its usage examples.
-// A regular bucket could also contains zero entry for empty bucket.
+//   u4 hash;          // entry hash
+//   u4 encoded_value; // A 32-bit encoding of the template type V. The template parameter DECODE
+//                     // converts this to type V. Many CompactHashtables encode a pointer as a 32-bit offset, where
+//                     //   V entry = (V)(base_address + offset)
+//                     // see StringTable, SymbolTable and AdapterHandlerLibrary for examples
 //
 // For value_only buckets, each entry has only the 4-byte 'value' in the entries[].
 //
-// For table_end bucket, there is no corresponding entry, i.e. it always contains zero entry.
+// The single table_end bucket has no corresponding entry.
 //
-// Example -- note that the second bucket is a VALUE_ONLY_BUCKET_TYPE so the hash code
-//            is skipped, and third bucket is an empty REGULAR_BUCKET_TYPE, the last is
-//            the TABLEEND_BUCKET_TYPE.
-// buckets[0, 4, 5(empty regular), 5, ...., N(table_end)]
-//         |  |  |                 |        |
-//         |  |  +--------+--------+        |
-//         |  |           |                 |
-//         |  +----+ +----+                 |
-//         v       v v                      v
-// entries[H,O,H,O,O,H,O,H,O.................]
+// The number of entries in bucket <i> can be calculated like this:
+//      my_offset   = _buckets[i]   & 0x3fffffff; // mask off top 2-bit
+//      next_offset = _buckets[i+1] & 0x3fffffff
+//  For REGULAR_BUCKET_TYPE
+//      num_entries = (next_offset - my_offset) / 8;
+//  For VALUE_ONLY_BUCKET_TYPE
+//      num_entries = (next_offset - my_offset) / 4;
+//
+// If bucket <i> is empty, we have my_offset == next_offset. Empty buckets are
+// always encoded as regular buckets.
+//
+// In the following example:
+//   - The 0-th bucket is a REGULAR_BUCKET_TYPE with two entries
+//   - The 1-st bucket is a VALUE_ONLY_BUCKET_TYPE with one entry.
+//   - The 2-th bucket is a REGULAR_BUCKET_TYPE with zeo entries.
+//
+// buckets[0, 4, 5(empty), 5, ...., N(table_end)]
+//         |  |  |         |        |
+//         |  |  +---+-----+        |
+//         |  |      |              |
+//         |  +----+ +              |
+//         v       v v              v
+// entries[H,O,H,O,O,H,O,H,O........]
 //
 // See CompactHashtable::lookup() for how the table is searched at runtime.
 // See CompactHashtableWriter::dump() for how the table is written at CDS
