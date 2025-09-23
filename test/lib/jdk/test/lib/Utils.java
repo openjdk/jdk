@@ -38,7 +38,6 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
@@ -50,8 +49,6 @@ import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.channels.SocketChannel;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -71,6 +68,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.CRC32C;
 
 import static java.lang.System.lineSeparator;
 import static jdk.test.lib.Asserts.assertTrue;
@@ -170,16 +168,11 @@ public final class Utils {
            var v = Runtime.version();
            // promotable builds have build number, and it's greater than 0
            if (v.build().orElse(0) > 0) {
-               // promotable build -> use 1st 8 bytes of md5($version)
-               try {
-                   var md = MessageDigest.getInstance("MD5");
-                   var bytes = v.toString()
-                                .getBytes(StandardCharsets.UTF_8);
-                   bytes = md.digest(bytes);
-                   SEED = ByteBuffer.wrap(bytes).getLong();
-               } catch (NoSuchAlgorithmException e) {
-                   throw new Error(e);
-               }
+               // promotable build -> generate a seed based on the version string
+               var bytes = v.toString().getBytes(StandardCharsets.UTF_8);
+               var crc = new CRC32C();
+               crc.update(bytes);
+               SEED = crc.getValue();
            } else {
                // "personal" build -> use random seed
                SEED = new Random().nextLong();
