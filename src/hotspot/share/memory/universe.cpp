@@ -584,6 +584,11 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
 }
 
 void Universe::fixup_mirrors(TRAPS) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // All mirrors of preloaded classes are already restored. No need to fix up.
+    return;
+  }
+
   // Bootstrap problem: all classes gets a mirror (java.lang.Class instance) assigned eagerly,
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
