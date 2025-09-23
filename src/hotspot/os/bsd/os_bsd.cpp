@@ -890,7 +890,7 @@ bool os::Bsd::is_process_root(pid_t pid) {
 // directory.
 //
 static const char VAR_FOLDERS[] = "/var/folders/";
-int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char *output_path, int output_size /* = PATH_MAX */) {
+int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char* output_path, int output_size) {
 
   // read the var/folders directory
   DIR* varfolders_dir = os::opendir(VAR_FOLDERS);
@@ -909,7 +909,7 @@ int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char *output_pat
 
       // absolute path to the bucket
       char bucket[PATH_MAX];
-      int b = snprintf(bucket, PATH_MAX, "%s%s/", VAR_FOLDERS, bucket_de->d_name);
+      int b = os::snprintf(bucket, PATH_MAX, "%s%s/", VAR_FOLDERS, bucket_de->d_name);
 
       // the total length of the absolute path must not exceed the buffer size
       if (b >= PATH_MAX || b < 0) {
@@ -933,7 +933,7 @@ int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char *output_pat
         // this means the subdirectory is the temporary directory of the user.
         //
         char perfdata_path[PATH_MAX];
-        int p = snprintf(perfdata_path, PATH_MAX, "%s%s/T/%s_%s/", bucket, subbucket_de->d_name, PERFDATA_NAME, user);
+        int p = os::snprintf(perfdata_path, PATH_MAX, "%s%s/T/%s_%s/", bucket, subbucket_de->d_name, PERFDATA_NAME, user);
 
         // the total length must not exceed the output buffer size
         if (p >= PATH_MAX || p < 0) {
@@ -944,7 +944,7 @@ int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char *output_pat
         if (os::file_exists(perfdata_path)) {
 
           // the return value of snprintf is not checked for the second time
-          return snprintf(output_path, output_size, "%s%s/T", bucket, subbucket_de->d_name);
+          return os::snprintf(output_path, output_size, "%s%s/T", bucket, subbucket_de->d_name);
         }
       }
       os::closedir(bucket_dir);

@@ -1177,7 +1177,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   // for linux, determine if vmid is for a containerized process
   int nspid = LINUX_ONLY(os::Linux::get_namespace_pid(vmid)) NOT_LINUX(-1);
   const char* luser = NOT_MACOS(get_user_name(vmid, &nspid, CHECK))
-    MACOS_ONLY(get_user_name(os::Bsd::get_process_uid(vmid)));
+                      MACOS_ONLY(get_user_name(os::Bsd::get_process_uid(vmid)));
 
   if (luser == nullptr) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(),
