@@ -25,7 +25,6 @@
  * @bug 8154364 8365626 8366254 8368156
  * @summary Test of Files.isSameFile
  * @library .. /test/lib
- * @build IsSameFile jdk.test.lib.util.FileUtils
  * @run junit IsSameFile
  */
 import java.io.IOException;
@@ -41,8 +40,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import jdk.test.lib.util.FileUtils;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -70,7 +67,7 @@ public class IsSameFile {
     @BeforeAll
     public void init() throws IOException {
         Path cwd = Path.of(System.getProperty("user.dir"));
-        home = Files.createTempDirectory(cwd, "TestISameFile");
+        home = Files.createTempDirectory(cwd, IsSameFile.class.getSimpleName());
 
         a = home.resolve("a");
         aa = home.resolve("a");
@@ -148,23 +145,14 @@ public class IsSameFile {
         fos.close();
     }
 
-    private Stream<Arguments> obj2ZipSource() throws IOException {
+    @Test
+    public void obj2Zip() throws IOException {
         deleteFiles();
         Files.createFile(a);
         zipStringToFile("quote.txt", "To be determined", b);
-        List<Arguments> list;
         try (FileSystem zipfs = FileSystems.newFileSystem(b)) {
-            list = new ArrayList<Arguments>();
-            list.add(Arguments.of(false, a, zipfs.getPath(b.toString())));
+            test(false, a, zipfs.getPath(b.toString()));
         }
-        return list.stream();
-    }
-
-    @ParameterizedTest
-    @MethodSource("obj2ZipSource")
-    public void obj2Zip(boolean expect, Path x, Path y)
-        throws IOException {
-        test(expect, x, y);
     }
 
     @ParameterizedTest
