@@ -916,7 +916,6 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
     st->print_cr("------------------  A S A N ----------------");
     st->cr();
-    st->print_cr("ASAN error information:");
     // Note: Use print_raw, not print or print_cr, to avoid truncation
     // (report can be longer than 2K)
     st->print_raw(Asan::report());
@@ -964,7 +963,6 @@ void VMError::report(outputStream* st, bool _verbose) {
 
     address stack_bottom = stack_top - stack_size;
     st->print("[" PTR_FORMAT "," PTR_FORMAT "]", p2i(stack_bottom), p2i(stack_top));
-
     frame fr = _context ? os::fetch_frame_from_context(_context)
                         : os::current_frame();
 
@@ -2198,6 +2196,14 @@ void VMError::controlled_crash(int how) {
         ThreadsListHandle tlh2;
         fatal("Force crash with a nested ThreadsListHandle.");
       }
+    }
+    case 18: {
+      // Trigger an error that should cause ASAN to report a double free or use-after-free.
+      // Please note that this is not 100% bullet-proof since it assumes that this block
+      // is not immediately repurposed by some other thread after free.
+      void* const p = os::malloc(4096, mtTest);
+      os::free(p);
+      os::free(p);
     }
     default:
       // If another number is given, give a generic crash.
