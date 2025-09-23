@@ -129,7 +129,7 @@ AC_DEFUN_ONCE([HOTSPOT_SETUP_MISC],
       AC_MSG_RESULT([determined at build time (default)])
     else
       # If we have a fixed value for SOURCE_DATE, use it as default
-      HOTSPOT_BUILD_TIME="$SOURCE_DATE_ISO_8601"
+      HOTSPOT_BUILD_TIME="$SOURCE_DATE_ISO_8601_FIXED"
       AC_MSG_RESULT([$HOTSPOT_BUILD_TIME (from --with-source-date)])
     fi
   fi

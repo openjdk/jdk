@@ -897,15 +897,15 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     # for the rest of configure.
     SOURCE_DATE_EPOCH="$SOURCE_DATE"
     if test "x$IS_GNU_DATE" = xyes; then
-      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+      SOURCE_DATE_ISO_8601_FIXED=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
     else
-      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+      SOURCE_DATE_ISO_8601_FIXED=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
     fi
   fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
-  AC_SUBST(SOURCE_DATE_ISO_8601)
+  AC_SUBST(SOURCE_DATE_ISO_8601_FIXED)
 ])
 
 ################################################################################
