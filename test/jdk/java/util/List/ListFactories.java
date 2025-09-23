@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.testng.annotations.DataProvider;
@@ -45,7 +47,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertNotEquals;
 import static org.testng.Assert.assertNotSame;
 import static org.testng.Assert.assertSame;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.fail;
 
 /*
@@ -107,6 +109,23 @@ public class ListFactories {
         ).iterator();
     }
 
+    @DataProvider(name="reversed")
+    public Iterator<Object[]> reversed() {
+        List<Object[]> reversed = new ArrayList<>();
+        Consumer<Object[]> addReversed = data -> {
+            @SuppressWarnings("unchecked")
+            List<String> act = (List<String>) data[0];
+            @SuppressWarnings("unchecked")
+            List<String> exp = new ArrayList<>((List<String>) data[1]);
+            Collections.reverse(exp);
+            reversed.add(a(act.reversed(), exp));
+        };
+        empty().forEachRemaining(addReversed);
+        nonempty().forEachRemaining(addReversed);
+        sublists().forEachRemaining(addReversed);
+        return reversed.iterator();
+    }
+
     @DataProvider(name="sublists")
     public Iterator<Object[]> sublists() {
         return asList(
@@ -143,6 +162,7 @@ public class ListFactories {
         empty().forEachRemaining(all::add);
         nonempty().forEachRemaining(all::add);
         sublists().forEachRemaining(all::add);
+        reversed().forEachRemaining(all::add);
         return all.iterator();
     }
 
@@ -382,5 +402,23 @@ public class ListFactories {
             ((ListIterator<Integer>) it).previous();
             fail("ListIterator operation succeeded on Iterator");
         } catch (ClassCastException|UnsupportedOperationException ignore) { }
+    }
+
+    @Test(dataProvider = "all")
+    public void getFirst(List<String> act, List<String> exp) {
+        if (!act.isEmpty()) {
+            assertEquals(act.getFirst(), exp.getFirst());
+        } else {
+            assertThrows(NoSuchElementException.class, act::getFirst);
+        }
+    }
+
+    @Test(dataProvider = "all")
+    public void getLast(List<String> act, List<String> exp) {
+        if (!act.isEmpty()) {
+            assertEquals(act.getLast(), exp.getLast());
+        } else {
+            assertThrows(NoSuchElementException.class, act::getLast);
+        }
     }
 }
