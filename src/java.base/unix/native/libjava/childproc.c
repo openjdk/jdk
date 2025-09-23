@@ -95,8 +95,8 @@ markDescriptorsCloseOnExec(void)
      * alive until the exec call. Therefore we mark the fail pipe fd with close on exec
      * like the other OSes do, but then proceed to hard-close file descriptors beyond that.
      */
-    if (fcntl(STDERR_FILENO + 2, F_CLOSEM, 0) == -1 ||
-        (markCloseOnExec(STDERR_FILENO + 1) == -1 && errno != EBADF)) {
+    if (fcntl(FAIL_FILENO + 1, F_CLOSEM, 0) == -1 ||
+        (markCloseOnExec(FAIL_FILENO) == -1 && errno != EBADF)) {
         return -1;
     }
 #else
