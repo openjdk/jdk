@@ -5498,7 +5498,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
     Node* use = users_of_control.at(i);
     for (uint j = 0; j < use->req(); j++) {
       if (use->in(j) == control) {
-        if (igvn) {
+        if (igvn != nullptr) {
           igvn->replace_input_of(use, j, call_control_proj);
         } else {
           use->set_req(j, call_control_proj);
