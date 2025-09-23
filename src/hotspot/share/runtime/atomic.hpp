@@ -182,6 +182,13 @@ class AtomicImpl {
 
   // Selection of Atomic<T> implementation class, based on T.  This function
   // is only used as the unevaluated operand for a decltype type specifier.
+#if defined(__clang_major__) && (__clang_major__ < 19)
+  // Make selector() public to work around a bug in clang versions < 19.
+  //   error: 'selector' is a private member of 'AtomicImpl'
+  // But the only reference is on the RHS of the Selected type alias a couple
+  // lines below, in this same class!
+public:
+#endif
   template<typename T> static auto selector();
 
 public:
