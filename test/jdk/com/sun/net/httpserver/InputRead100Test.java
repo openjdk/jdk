@@ -22,13 +22,13 @@
  */
 
 /**
- * @test
+ * @test id=default
  * @bug 8349670
  * @summary Test 100 continue response handling
  * @run testng/othervm InputRead100Test
  */
 /**
- * @test
+ * @test id=preferIPv6
  * @bug 8349670
  * @summary Test 100 continue response handling ipv6
  * @run testng/othervm -Djava.net.preferIPv6Addresses=true InputRead100Test
