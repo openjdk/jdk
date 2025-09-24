@@ -170,7 +170,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
         // Buffer next epoch message if necessary.
         if (this.readEpoch < recordEpoch) {
-            // Discard the record younger than the current epoch if:
+            // Discard the record younger than the current epcoh if:
             // 1. it is not a handshake message, or
             // 3. it is not of next epoch.
             if ((contentType != ContentType.HANDSHAKE.id &&
@@ -308,12 +308,6 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
         ByteBuffer[] srcs, int srcsOffset, int srcsLength) throws IOException {
 
         return bytesInCompletePacket(srcs[srcsOffset]);
-    }
-
-    @Override
-    public boolean t13keyChangeHsExceedsRecordBoundary() {
-        // DTLS 1.3 is not supported
-        return false;
     }
 
     private int bytesInCompletePacket(ByteBuffer packet) throws SSLException {

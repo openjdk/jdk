@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,9 +58,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
 
     // Cache for incomplete handshake messages.
     private ByteBuffer handshakeBuffer = null;
-
-    // mark for possible TLS13 RFC violation, if messages preceding key change do not align with record bounds
-    private boolean t13keyChangeHsExceedsRecordBoundary = false;
 
     SSLSocketInputRecord(HandshakeHash handshakeHash) {
         super(handshakeHash, SSLReadCipher.nullTlsReadCipher());
@@ -194,11 +191,6 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
             }
         }
         return plaintext;
-    }
-
-    @Override
-    public boolean t13keyChangeHsExceedsRecordBoundary() {
-        return t13keyChangeHsExceedsRecordBoundary;
     }
 
     @Override
@@ -384,7 +376,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                     // this check must be done here, as the handshakeBuffer is not accessible to the outer scope,
                     // therefore there is no way to check whether the handshake message was aligned with the boundary
                     if (nextPos < fragLim && SSLHandshake.precedesKeyChange(handshakeType)) {
-                        t13keyChangeHsExceedsRecordBoundary = true;
+                        setT13keyChangeHsExceedsRecordBoundary();
                     }
 
                     handshakeFrag.position(nextPos);
