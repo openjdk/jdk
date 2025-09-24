@@ -80,7 +80,8 @@ public class TestClone {
         );
     }
     // Explicitly checks if the cloned object has its own references for
-    // decimalFormat/defaultDecimalFormat/digitList
+    // "compactPatterns", "symbols", "decimalFormat", "defaultDecimalFormat",
+    // and "digitList"
     @ParameterizedTest
     @MethodSource("referenceFields")
     void whiteBoxTest(String fieldName, Class<?> type) throws Throwable {
