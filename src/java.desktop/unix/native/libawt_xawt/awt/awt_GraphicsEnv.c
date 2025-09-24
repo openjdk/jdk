@@ -1268,11 +1268,15 @@ Java_sun_awt_X11GraphicsDevice_pGetBounds(JNIEnv *env, jobject this, jint screen
                                                xinInfo[screen].width,
                                                xinInfo[screen].height);
                     XFree(xinInfo);
+                    if (!bounds) {
+                        return NULL;
+                    }
                 }
             } else {
                 jclass exceptionClass = (*env)->FindClass(env, "java/lang/IllegalArgumentException");
                 if (exceptionClass != NULL) {
                     (*env)->ThrowNew(env, exceptionClass, "Illegal screen index");
+                    return NULL;
                 }
             }
         }
