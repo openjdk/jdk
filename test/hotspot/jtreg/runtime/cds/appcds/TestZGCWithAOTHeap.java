@@ -92,13 +92,9 @@ public class TestZGCWithAOTHeap {
         if (!shouldStream && execWithZ) {
             // Only when dumping without streaming and executing with ZGC
             // do we expect there to be a problem.
-            if (!System.getProperty("os.name").startsWith("Windows")) {
-                // On windows, there can be a different failure mode due to being unable to
-                // map the archive at all.
-                out.shouldContain(HELLO);
-                out.shouldContain(errMsg);
-                out.shouldHaveExitValue(0);
-            }
+            out.shouldContain(HELLO);
+            out.shouldContain(errMsg);
+            out.shouldHaveExitValue(0);
         } else {
             out.shouldContain(HELLO);
             out.shouldNotContain(errMsg);
