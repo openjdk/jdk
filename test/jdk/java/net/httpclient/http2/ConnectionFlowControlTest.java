@@ -83,8 +83,8 @@ public class ConnectionFlowControlTest {
 
     static Object[][] variants() {
         return new Object[][] {
-                {http2URI},
-                {https2URI},
+                { http2URI },
+                { https2URI },
         };
     }
 

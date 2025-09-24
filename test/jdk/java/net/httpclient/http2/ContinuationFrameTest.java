@@ -134,20 +134,20 @@ public class ContinuationFrameTest {
 
     static Object[][] variants() {
         return new Object[][] {
-                {http2URI,  false, oneContinuation},
-                {https2URI, false, oneContinuation},
-                {http2URI,  true,  oneContinuation},
-                {https2URI, true,  oneContinuation},
+                { http2URI,        false, oneContinuation},
+                { https2URI,       false, oneContinuation},
+                { http2URI,        true,  oneContinuation},
+                { https2URI,       true,  oneContinuation},
 
-                {noBodyhttp2URI,  false, twoContinuation},
-                {noBodyhttp2URI,  true,  twoContinuation},
-                {noBodyhttps2URI, false, twoContinuation},
-                {noBodyhttps2URI, true,  twoContinuation},
+                { noBodyhttp2URI,  false, twoContinuation},
+                { noBodyhttp2URI,  true,  twoContinuation},
+                { noBodyhttps2URI, false, twoContinuation},
+                { noBodyhttps2URI, true,  twoContinuation},
 
-                {http2URI,  false, byteAtATime},
-                {https2URI, false, byteAtATime},
-                {http2URI,  true,  byteAtATime},
-                {https2URI, true,  byteAtATime},
+                { http2URI,        false, byteAtATime},
+                { https2URI,       false, byteAtATime},
+                { http2URI,        true,  byteAtATime},
+                { https2URI,       true,  byteAtATime},
         };
     }
 

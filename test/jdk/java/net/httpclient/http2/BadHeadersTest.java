@@ -131,15 +131,15 @@ public class BadHeadersTest {
 
     static Object[][] variants() {
         return new Object[][] {
-                { http2URI, false, oneContinuation },
+                { http2URI,  false, oneContinuation },
                 { https2URI, false, oneContinuation },
-                { http2URI, true, oneContinuation },
-                { https2URI, true, oneContinuation },
+                { http2URI,  true,  oneContinuation },
+                { https2URI, true,  oneContinuation },
 
-                {http2URI, false, byteAtATime },
-                {https2URI, false, byteAtATime },
-                {http2URI, true, byteAtATime },
-                {https2URI, true, byteAtATime },
+                { http2URI,  false, byteAtATime },
+                { https2URI, false, byteAtATime },
+                { http2URI,  true,  byteAtATime },
+                { https2URI, true,  byteAtATime },
         };
     }
 
