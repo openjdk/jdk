@@ -156,8 +156,7 @@ public abstract sealed class AbstractPoolEntry {
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int contentHash) {
             if (!ModifiedUtf.isValidLengthInConstantPool(s)) {
-                int encodedLength = ModifiedUtf.utfLen(s, 0);
-                throw Util.outOfRangeException(encodedLength, "utf8 length", "u2");
+                throw new IllegalArgumentException("utf8 length out of range of u2: " + ModifiedUtf.utfLen(s));
             }
             super(cpm, index, 0);
             this.rawBytes = null;
