@@ -6015,7 +6015,6 @@ void MacroAssembler::generate_fill(BasicType t, bool aligned,
 
   if (t == T_BYTE || t == T_SHORT) {
     Label L_fill_byte;
-    addptr(count, 1 << shift);
     BIND(L_fill_2_bytes);
     // fill trailing 2 bytes
     testl(count, 1<<(shift-1));
