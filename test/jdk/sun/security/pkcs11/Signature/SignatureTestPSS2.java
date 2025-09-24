@@ -52,17 +52,20 @@ import java.util.stream.IntStream;
  *         PKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main SignatureTestPSS2 new-alg
+ * @run main SignatureTestPSS2 sha3
  */
 public class SignatureTestPSS2 extends PKCS11Test {
 
     // PKCS11 does not support RSASSA-PSS keys yet
     private static final String KEYALG = "RSA";
-    private static String[] SIGALGS = {
+
+    private static String[] SIGALGS = null;
+
+    private static final String[] SHA_SIGALGS = {
             "SHA224withRSASSA-PSS", "SHA256withRSASSA-PSS",
             "SHA384withRSASSA-PSS", "SHA512withRSASSA-PSS"
     };
-    private static final String[] SIGALGS_NEW = {
+    private static final String[] SHA3_SIGALGS = {
             "SHA3-224withRSASSA-PSS", "SHA3-256withRSASSA-PSS",
             "SHA3-384withRSASSA-PSS", "SHA3-512withRSASSA-PSS"
     };
@@ -75,9 +78,8 @@ public class SignatureTestPSS2 extends PKCS11Test {
     private static final int UPDATE_TIMES = 2;
 
     public static void main(String[] args) throws Exception {
-        if (args.length>0 && "new-alg".equals(args[0])){
-            SIGALGS = SIGALGS_NEW;
-        }
+        SIGALGS = (args.length > 0 && "sha3".equals(args[0])) ? SHA3_SIGALGS : SHA_SIGALGS;
+
         main(new SignatureTestPSS2(), args);
     }
 

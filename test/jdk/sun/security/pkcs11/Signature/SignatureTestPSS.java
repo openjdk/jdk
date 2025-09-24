@@ -49,18 +49,20 @@ import jtreg.SkippedException;
  * @summary Generate a RSASSA-PSS signature and verify it using PKCS11 provider
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki
- * @run main SignatureTestPSS new-algS
+ * @run main SignatureTestPSS sha3
  */
 public class SignatureTestPSS extends PKCS11Test {
 
     private static final String SIGALG = "RSASSA-PSS";
 
     private static final int[] KEYSIZES = { 2048, 3072 };
-    private static String[] DIGESTS = {
+
+    private static String[] DIGESTS = null;
+
+    private static final String[] SHA_DIGESTS = {
             "SHA-224", "SHA-256", "SHA-384" , "SHA-512",
     };
-
-    private static final String[] DIGESTS_NEW = {
+    private static final String[] SHA3_DIGESTS = {
             "SHA3-224", "SHA3-256", "SHA3-384" , "SHA3-512"
     };
 
@@ -79,9 +81,8 @@ public class SignatureTestPSS extends PKCS11Test {
     private static boolean skipTest = true;
 
     public static void main(String[] args) throws Exception {
-        if (args.length>0 && "new-alg".equals(args[0])){
-            DIGESTS = DIGESTS_NEW;
-        }
+        DIGESTS = (args.length > 0 && "sha3".equals(args[0]))? SHA3_DIGESTS : SHA_DIGESTS;
+
         main(new SignatureTestPSS(), args);
     }
 
