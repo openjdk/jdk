@@ -906,6 +906,8 @@ oop AOTStreamedHeapLoader::get_root(int index) {
     // Materialized null sentinel object
     result = nullptr;
   }
+  // Acquire the root transitive object payload
+  OrderAccess::acquire();
   return result;
 }
 
