@@ -591,6 +591,7 @@ public:
       DepList<Record> _data;
     public:
       OptionalReturnType find(const Args&... args) {
+        TrainingDataLocker l;
         ArgumentsType a(args...);
         for (int i = 0; i < _data.length(); i++) {
           if (_data.at(i).arguments() == a) {
@@ -599,8 +600,11 @@ public:
         }
         return OptionalReturnType(false, ReturnType());
       }
-      bool append_if_missing(const ReturnType& result, const Args&... args) {
-        return _data.append_if_missing(Record(result, ArgumentsType(args...)));
+      void append_if_missing(const ReturnType& result, const Args&... args) {
+        TrainingDataLocker l;
+        if (l.can_add()) {
+          _data.append_if_missing(Record(result, ArgumentsType(args...)));
+        }
       }
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
