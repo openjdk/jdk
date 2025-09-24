@@ -240,13 +240,14 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   log_debug(gc)("should_start_gc? available: %zu, soft_max_capacity: %zu"
                 ", allocated: %zu", available, capacity, allocated);
 
+  // Track allocation rate even if we decide to start a cycle for other reasons.
+  double rate = _allocation_rate.sample(allocated);
+
   if (_start_gc_is_pending) {
     log_trigger("GC start is already pending");
     return true;
   }
 
-  // Track allocation rate even if we decide to start a cycle for other reasons.
-  double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
 
   size_t min_threshold = min_free_threshold();
@@ -360,16 +361,32 @@ ShenandoahAllocationRate::ShenandoahAllocationRate() :
   _rate_avg(int(ShenandoahAdaptiveSampleSizeSeconds * ShenandoahAdaptiveSampleFrequencyHz), ShenandoahAdaptiveDecayFactor) {
 }
 
+double ShenandoahAllocationRate::force_sample(size_t allocated, size_t &unaccounted_bytes_allocated) {
+  const double MinSampleTime = 0.002;    // Do not sample if time since last update is less than 2 ms
+  double now = os::elapsedTime();
+  double time_since_last_update = now -_last_sample_time;
+  if (time_since_last_update < MinSampleTime) {
+    unaccounted_bytes_allocated = allocated - _last_sample_value;
+    _last_sample_value = 0;
+    return 0.0;
+  } else {
+    double rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
+    _last_sample_time = now;
+    _last_sample_value = allocated;
+    unaccounted_bytes_allocated = 0;
+    return rate;
+  }
+}
+
 double ShenandoahAllocationRate::sample(size_t allocated) {
   double now = os::elapsedTime();
   double rate = 0.0;
   if (now - _last_sample_time > _interval_sec) {
-    if (allocated >= _last_sample_value) {
-      rate = instantaneous_rate(now, allocated);
-      _rate.add(rate);
-      _rate_avg.add(_rate.avg());
-    }
-
+    rate = instantaneous_rate(now, allocated);
+    _rate.add(rate);
+    _rate_avg.add(_rate.avg());
     _last_sample_time = now;
     _last_sample_value = allocated;
   }

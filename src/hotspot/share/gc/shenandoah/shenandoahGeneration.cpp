@@ -151,8 +151,8 @@ size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
   return AtomicAccess::load(&_bytes_allocated_since_gc_start);
 }
 
-void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  AtomicAccess::store(&_bytes_allocated_since_gc_start, (size_t)0);
+void ShenandoahGeneration::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
+  AtomicAccess::store(&_bytes_allocated_since_gc_start, initial_bytes_allocated);
 }
 
 void ShenandoahGeneration::increase_allocated(size_t bytes) {

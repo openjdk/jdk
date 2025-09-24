@@ -37,10 +37,12 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   explicit ShenandoahAllocationRate();
   void allocation_counter_reset();
 
+  double force_sample(size_t allocated, size_t &unaccounted_bytes_allocated);
   double sample(size_t allocated);
 
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
+
  private:
 
   double instantaneous_rate(double time, size_t allocated) const;
@@ -71,18 +73,18 @@ public:
 
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                      RegionData* data, size_t size,
-                                                     size_t actual_free);
+                                                     size_t actual_free) override;
 
-  void record_cycle_start();
-  void record_success_concurrent();
-  void record_success_degenerated();
-  void record_success_full();
+  virtual void record_cycle_start() override;
+  virtual void record_success_concurrent() override;
+  virtual void record_success_degenerated() override;
+  virtual void record_success_full() override;
 
-  virtual bool should_start_gc();
+  virtual bool should_start_gc() override;
 
-  virtual const char* name()     { return "Adaptive"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return false; }
+  virtual const char* name() override     { return "Adaptive"; }
+  virtual bool is_diagnostic() override   { return false; }
+  virtual bool is_experimental() override { return false; }
 
  private:
   // These are used to adjust the margin of error and the spike threshold
@@ -149,6 +151,13 @@ protected:
   inline void accept_trigger_with_type(Trigger trigger_type) {
     _last_trigger = trigger_type;
     ShenandoahHeuristics::accept_trigger();
+  }
+
+public:
+  virtual size_t force_alloc_rate_sample(size_t bytes_allocated) override {
+    size_t unaccounted_bytes;
+    _allocation_rate.force_sample(bytes_allocated, unaccounted_bytes);
+    return unaccounted_bytes;
   }
 };
 
