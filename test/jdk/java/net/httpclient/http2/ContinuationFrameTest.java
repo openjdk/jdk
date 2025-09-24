@@ -153,6 +153,22 @@ public class ContinuationFrameTest {
 
     static final int ITERATION_COUNT = 20;
 
+    static HttpClient sharedClient;
+    HttpClient httpClient(boolean shared) {
+        if (!shared || sharedClient == null) {
+            var client = HttpClient.newBuilder()
+                    .proxy(HttpClient.Builder.NO_PROXY)
+                    .sslContext(sslContext)
+                    .build();
+            if (sharedClient == null) {
+                sharedClient = client;
+            }
+            TRACKER.track(client);
+            return client;
+        }
+        return sharedClient;
+    }
+
     @ParameterizedTest
     @MethodSource("variants")
     void test(String uri,
@@ -165,11 +181,7 @@ public class ContinuationFrameTest {
         HttpClient client = null;
         for (int i=0; i< ITERATION_COUNT; i++) {
             if (!sameClient || client == null) {
-                client = HttpClient.newBuilder()
-                         .proxy(HttpClient.Builder.NO_PROXY)
-                         .sslContext(sslContext)
-                         .build();
-                TRACKER.track(client);
+                client = httpClient(sameClient);
             }
 
             HttpRequest request = HttpRequest.newBuilder(URI.create(uri))
@@ -227,6 +239,7 @@ public class ContinuationFrameTest {
 
     @AfterAll
     static void teardown() throws Exception {
+        sharedClient = null;
         AssertionError fail = TRACKER.check(500);
         try {
             http2TestServer.stop();
