@@ -1646,9 +1646,9 @@ public class KDC {
             System.out.println("Done");
         } else {
             try {
-                thread1.stop();
-                thread2.stop();
-                thread3.stop();
+                thread1.interrupt();
+                thread2.interrupt();
+                thread3.interrupt();
                 u1.close();
                 t1.close();
             } catch (Exception e) {
