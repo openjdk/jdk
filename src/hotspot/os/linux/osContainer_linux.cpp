@@ -103,6 +103,23 @@ const char * OSContainer::container_type() {
   return cgroup_subsystem->container_type();
 }
 
+bool OSContainer::available_memory_in_container(julong& value) {
+  jlong mem_limit = memory_limit_in_bytes();
+  jlong mem_usage = memory_usage_in_bytes();
+
+  if (mem_limit > 0 && mem_usage <= 0) {
+    log_debug(os, container)("container memory usage failed: " JLONG_FORMAT, mem_usage);
+  }
+
+  if (mem_limit <= 0 || mem_usage <= 0) {
+    return false;
+  }
+
+  value = mem_limit > mem_usage ? static_cast<julong>(mem_limit - mem_usage) : 0;
+
+  return true;
+}
+
 jlong OSContainer::memory_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->memory_limit_in_bytes();

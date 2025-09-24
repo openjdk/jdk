@@ -214,32 +214,19 @@ static bool suppress_primordial_thread_resolution = false;
 
 // utility functions
 
-julong os::Linux::available_memory_in_container() {
-  julong avail_mem = static_cast<julong>(-1L);
-  if (OSContainer::is_containerized()) {
-    jlong mem_limit = OSContainer::memory_limit_in_bytes();
-    jlong mem_usage;
-    if (mem_limit > 0 && (mem_usage = OSContainer::memory_usage_in_bytes()) < 1) {
-      log_debug(os, container)("container memory usage failed: " JLONG_FORMAT ", using host value", mem_usage);
-    }
-    if (mem_limit > 0 && mem_usage > 0) {
-      avail_mem = mem_limit > mem_usage ? (julong)mem_limit - (julong)mem_usage : 0;
-    }
-  }
-  return avail_mem;
-}
-
 bool os::available_memory(size_t& value) {
-  return Linux::available_memory(value);
-}
-
-bool os::Linux::available_memory(size_t& value) {
-  julong avail_mem = available_memory_in_container();
-  if (avail_mem != static_cast<julong>(-1L)) {
+  julong avail_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(avail_mem)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
     value = static_cast<size_t>(avail_mem);
     return true;
   }
+
+  return Linux::available_memory(value);
+}
+
+bool os::Linux::available_memory(size_t& value) {
+  julong avail_mem = static_cast<julong>(-1L);
 
   FILE *fp = os::fopen("/proc/meminfo", "r");
   if (fp != nullptr) {
@@ -265,24 +252,25 @@ bool os::Linux::available_memory(size_t& value) {
 }
 
 bool os::free_memory(size_t& value) {
+  julong free_mem = 0;
+  if (OSContainer::is_containerized() && OSContainer::available_memory_in_container(free_mem)) {
+    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
+    value = static_cast<size_t>(free_mem);
+    return true;
+  }
+
   return Linux::free_memory(value);
 }
 
 bool os::Linux::free_memory(size_t& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
-  julong free_mem = available_memory_in_container();
-  if (free_mem != static_cast<julong>(-1L)) {
-    log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    value = static_cast<size_t>(free_mem);
-    return true;
-  }
 
   int ret = sysinfo(&si);
   if (ret != 0) {
     return false;
   }
-  free_mem = (julong)si.freeram * si.mem_unit;
+  julong free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
   value = static_cast<size_t>(free_mem);
   return true;
