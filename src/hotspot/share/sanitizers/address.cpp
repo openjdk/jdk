@@ -26,7 +26,6 @@
 
 #include "logging/log.hpp"
 #include "sanitizers/address.hpp"
-#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
 
@@ -78,8 +77,8 @@ void Asan::initialize() {
   //
   // In hotspot ASAN builds, we replace the default ASAN reporter. The soft limit imposed by
   // "disable_coredump=1" is still in effect. But "abort_on_error" is not honored. Since we'd
-  // like to exhibit exactly the same behavior as the standard ASAN error reporter, we honor
-  // "abort_on_error=1" by ending the JVM with exit(3) (we just switch off CreateCoredumpOnCrash).
+  // like to exhibit exactly the same behavior as the standard ASAN error reporter, we disable
+  // core files if ASAN would inhibit them (we just switch off CreateCoredumpOnCrash).
   //
   // Thus:
   //     abort_on_error      disable_coredump       core file?
@@ -90,12 +89,15 @@ void Asan::initialize() {
   // (*) is the default if no ASAN options are specified.
 
   const char* const asan_options = getenv("ASAN_OPTIONS");
-  const bool abort_on_error = (asan_options != nullptr) && ::strstr(asan_options, "abort_on_error=1");
-  if (!abort_on_error) {
-    if (CreateCoredumpOnCrash && FLAG_IS_CMDLINE(CreateCoredumpOnCrash)) {
-      log_warning(asan)("CreateCoredumpOnCrash overruled by%s abort_on_error, core generation will be disabled.",
+  const bool asan_inhibits_cores = (asan_options == nullptr) ||
+                                   (::strstr(asan_options, "abort_on_error=1") == nullptr) ||
+                                   (::strstr(asan_options, "disable_coredump=0") == nullptr);
+  if (asan_inhibits_cores) {
+    if (CreateCoredumpOnCrash) {
+      log_info(asan)("CreateCoredumpOnCrash overruled by%s asan options. Core generation disabled.",
                         asan_options != nullptr ? "" : " default setting for");
-      log_warning(asan)("Use 'ASAN_OPTIONS=abort_on_error=1:disable_coredump=0:unmap_shadow_on_exit=1' to enable core generation.");
+      log_info(asan)("Use 'ASAN_OPTIONS=abort_on_error=1:disable_coredump=0:unmap_shadow_on_exit=1' "
+                     "to enable core generation.");
     }
     FLAG_SET_ERGO(CreateCoredumpOnCrash, false);
   }
