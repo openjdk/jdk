@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073
+ * @bug 8029661 8325164 8368073 8368514
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
@@ -42,7 +42,13 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import java.security.*;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
+import java.security.SecureRandom;
+import java.security.Security;
 
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -423,7 +429,7 @@ public final class FipsModeTLS12 extends SecmodTest {
         }
 
         private static SSLContext sslCtx;
-        private static void initSslContext() throws NoSuchAlgorithmException, NoSuchProviderException, KeyStoreException, UnrecoverableKeyException, KeyManagementException {
+        private static void initSslContext() throws Exception {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
             kmf.init(ks, passphrase);
 
