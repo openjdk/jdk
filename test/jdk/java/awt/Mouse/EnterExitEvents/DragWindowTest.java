@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,8 @@
  * @key headful
  * @bug 7154048
  * @summary Window created under a mouse does not receive mouse enter event.
- *     Mouse Entered/Exited events are wrongly generated during dragging the window
- *     from one component to another
- * @library ../../regtesthelpers
- * @build Util
- * @author alexandr.scherbatiy area=awt.event
+ *     Mouse Entered/Exited events are wrongly generated during dragging the
+ *     window from one component to another
  * @run main DragWindowTest
  */
 
@@ -50,76 +47,64 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
-import java.util.concurrent.Callable;
-
-import test.java.awt.regtesthelpers.Util;
-
 public class DragWindowTest {
-
     private static volatile int dragWindowMouseEnteredCount = 0;
-    private static volatile int dragWindowMouseReleasedCount = 0;
     private static volatile int buttonMouseEnteredCount = 0;
     private static volatile int labelMouseReleasedCount = 0;
+    private static volatile Point pointToClick;
+    private static volatile Point pointToDrag;
     private static MyDragWindow dragWindow;
     private static JLabel label;
     private static JButton button;
+    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        try {
+            Robot robot = new Robot();
+            robot.setAutoDelay(100);
 
-        Robot robot = new Robot();
-        robot.setAutoDelay(100);
+            SwingUtilities.invokeAndWait((Runnable) () -> createAndShowGUI());
 
-        SwingUtilities.invokeAndWait(new Runnable() {
+            robot.delay(250);
+            robot.waitForIdle();
 
-            @Override
-            public void run() {
-                createAndShowGUI();
+            SwingUtilities.invokeAndWait(() -> pointToClick = getCenterPoint(label));
+
+            robot.mouseMove(pointToClick.x, pointToClick.y);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+
+            if (dragWindowMouseEnteredCount != 1) {
+                throw new RuntimeException("No MouseEntered event on Drag Window!");
             }
-        });
 
-        robot.delay(250);
-        robot.waitForIdle();
-
-        Point pointToClick = Util.invokeOnEDT(new Callable<Point>() {
-
-            @Override
-            public Point call() throws Exception {
-                return getCenterPoint(label);
-            }
-        });
-
-
-        robot.mouseMove(pointToClick.x, pointToClick.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        if (dragWindowMouseEnteredCount != 1) {
-            throw new RuntimeException("No MouseEntered event on Drag Window!");
-        }
-
-        Point pointToDrag = Util.invokeOnEDT(new Callable<Point>() {
-
-            @Override
-            public Point call() throws Exception {
+            SwingUtilities.invokeAndWait(() -> {
                 button.addMouseListener(new ButtonMouseListener());
-                return getCenterPoint(button);
+                pointToDrag = getCenterPoint(button);
+            });
+
+            robot.delay(250);
+            robot.mouseMove(pointToDrag.x, pointToDrag.y);
+            robot.waitForIdle();
+
+            if (buttonMouseEnteredCount != 0) {
+                throw new RuntimeException("Extra MouseEntered event on button!");
             }
-        });
 
-        robot.mouseMove(pointToDrag.x, pointToDrag.y);
-        robot.waitForIdle();
+            robot.delay(250);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
 
-        if (buttonMouseEnteredCount != 0) {
-            throw new RuntimeException("Extra MouseEntered event on button!");
+            if (labelMouseReleasedCount != 1) {
+                throw new RuntimeException("No MouseReleased event on label!");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
-
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
-        robot.waitForIdle();
-
-        if (labelMouseReleasedCount != 1) {
-            throw new RuntimeException("No MouseReleased event on label!");
-        }
-
     }
 
     private static Point getCenterPoint(Component comp) {
@@ -129,8 +114,7 @@ public class DragWindowTest {
     }
 
     private static void createAndShowGUI() {
-
-        JFrame frame = new JFrame("Main Frame");
+        frame = new JFrame("DragWindowTest");
         frame.setSize(300, 200);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -149,7 +133,6 @@ public class DragWindowTest {
         frame.getContentPane().add(panel);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
     }
 
     private static Point getAbsoluteLocation(MouseEvent e) {
@@ -157,7 +140,6 @@ public class DragWindowTest {
     }
 
     static class MyDragWindow extends Window {
-
         static int d = 30;
 
         public MyDragWindow(Window parent, Point location) {
@@ -176,8 +158,6 @@ public class DragWindowTest {
     }
 
     static class LabelMouseListener extends MouseAdapter {
-
-        Point origin;
         Window parent;
 
         public LabelMouseListener(Window parent) {
@@ -210,20 +190,13 @@ public class DragWindowTest {
     }
 
     static class DragWindowMouseListener extends MouseAdapter {
-
         @Override
         public void mouseEntered(MouseEvent e) {
             dragWindowMouseEnteredCount++;
         }
-
-        @Override
-        public void mouseReleased(MouseEvent e) {
-            dragWindowMouseReleasedCount++;
-        }
     }
 
     static class ButtonMouseListener extends MouseAdapter {
-
         @Override
         public void mouseEntered(MouseEvent e) {
             buttonMouseEnteredCount++;
