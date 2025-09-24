@@ -486,7 +486,7 @@ TEST_VM(os_linux, set_thread_name) {
   test_set_thread_name("shortname", "shortname");
   test_set_thread_name("MyAllocationWorkerThread22", "MyAlloc..read22");
 
-  // restore old name again
+  // restore current name
   test_set_thread_name(buf, buf);
 }
 
