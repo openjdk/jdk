@@ -46,6 +46,7 @@ import sun.security.util.Debug;
 import sun.security.x509.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static sun.security.ssl.Utilities.LINE_SEP;
 
 /**
  * Implementation of SSL logger.
@@ -172,8 +173,14 @@ public final class SSLLogger {
                 logger.log(level, msg);
             } else {
                 try {
-                     logger.log(level, () -> msg + ":\n" +
-                             SSLSimpleFormatter.formatParameters(params));
+                    String formatted =
+                            SSLSimpleFormatter.formatParameters(params);
+                    // use the customized log method for SSLConsoleLogger
+                    if (logger instanceof SSLConsoleLogger) {
+                        logger.log(level, msg, formatted);
+                    } else {
+                        logger.log(level, msg + ":" + LINE_SEP + formatted);
+                    }
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -382,7 +389,7 @@ public final class SSLLogger {
 
         private static final MessageFormat messageCompactFormatNoParas =
             new MessageFormat(
-                "{0}|{1}|{2}|{3}|{4}|{5}|{6}\n",
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
                 Locale.ENGLISH);
 
         private static final MessageFormat messageFormatWithParas =
@@ -561,10 +568,10 @@ public final class SSLLogger {
                         if (isFirst) {
                             isFirst = false;
                         } else {
-                            extBuilder.append(",\n");
+                            extBuilder.append("," + LINE_SEP);
                         }
-                        extBuilder.append("{\n" +
-                            Utilities.indent(certExt.toString()) + "\n}");
+                        extBuilder.append("{" + LINE_SEP +
+                            Utilities.indent(certExt.toString()) + LINE_SEP +"}");
                     }
                     Object[] certFields = {
                         x509.getVersion(),
@@ -635,7 +642,7 @@ public final class SSLLogger {
                 //          "string c"
                 //        ]
                 StringBuilder builder = new StringBuilder(512);
-                builder.append("\"" + key + "\": [\n");
+                builder.append("\"" + key + "\": [" + LINE_SEP);
                 int len = strings.length;
                 for (int i = 0; i < len; i++) {
                     String string = strings[i];
@@ -643,7 +650,7 @@ public final class SSLLogger {
                     if (i != len - 1) {
                         builder.append(",");
                     }
-                    builder.append("\n");
+                    builder.append(LINE_SEP);
                 }
                 builder.append("      ]");
 

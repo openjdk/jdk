@@ -60,13 +60,16 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                 List.of("Produced ClientHello handshake message",
                         "supported_versions"));
         debugMessages.put("handshake-expand",
-                List.of("\"message\".*: \"Produced ClientHello handshake message"));
+                List.of("\"logger\".*: \"javax.net.ssl\",",
+                        "\"message\".*: \"Produced ClientHello handshake message",
+                        "\"specifics\".*:\\ \\["));
         debugMessages.put("keymanager", List.of("choosing key:"));
         debugMessages.put("packet", List.of("Raw write"));
         debugMessages.put("plaintext", List.of("Plaintext before ENCRYPTION"));
         debugMessages.put("record", List.of("handshake, length =", "WRITE:"));
         debugMessages.put("record-expand",
-                List.of("\"message\".*: \"READ: TLSv1.2 application_data"));
+                List.of("\"logger\".*: \"javax.net.ssl\",",
+                        "\"message\".*: \"READ: TLSv1.2 application_data"));
         debugMessages.put("session", List.of("Session initialized:"));
         debugMessages.put("sslctx", List.of("trigger seeding of SecureRandom"));
         debugMessages.put("ssl", List.of("jdk.tls.keyLimits:"));
@@ -81,7 +84,12 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         // "ALL" shouldn't be seen as a valid Level
         debugMessages.put("javax.net.debug.logger.ALL", List.of("ALL:"));
         debugMessages.put("javax.net.debug.logger",
-                List.of("FINE: adding as trusted certificates",
+                List.of("FINE: adding as trusted certificates:"
+                            + System.lineSeparator() +
+                            "  \"certificate\" : \\{",
+                        "FINE: Produced ClientHello handshake message:" +
+                            System.lineSeparator() +
+                            "\"ClientHello\": \\{",
                         "FINE: WRITE: TLSv1.3 application_data"));
     }
 
@@ -106,7 +114,8 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
                                 "sslctx", "trustmanager", "verbose")),
                 // allow expand option for more verbose output
                 Arguments.of(List.of("-Djavax.net.debug=ssl,handshake,expand"),
-                        List.of("handshake", "handshake-expand", "ssl", "verbose")),
+                        List.of("handshake", "handshake-expand",
+                                "ssl", "verbose")),
                 // filtering on record option, with expand
                 Arguments.of(List.of("-Djavax.net.debug=ssl:record,expand"),
                         List.of("record", "record-expand", "ssl")),
@@ -168,11 +177,23 @@ public class DebugPropertyValuesTest extends SSLSocketTemplate {
         OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(args);
         outputAnalyzer.shouldHaveExitValue(0);
         for (String s : debugMessages.keySet()) {
-            for (String output : debugMessages.get(s)) {
-                if (expected.contains(s)) {
+            List<String> patterns = debugMessages.get(s);
+            if (expected.contains(s)) {
+                for (String output : patterns) {
                     outputAnalyzer.shouldMatch(output);
-                } else {
-                    outputAnalyzer.shouldNotMatch(output);
+                }
+            } else {
+                // some debug messages overlap with each other. Only fail if
+                // all the messages in the list were unexpected
+                boolean allUnexpected = true;
+                for (String output : patterns) {
+                    if (!outputAnalyzer.contains(output)) {
+                        allUnexpected = false;
+                        break;
+                    }
+                }
+                if (allUnexpected) {
+                    throw new AssertionError("Unexpected output for key: " + s);
                 }
             }
         }

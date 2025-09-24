@@ -130,6 +130,13 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
     }
 
     @Override
+    String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                 QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyTypes), issuers, CheckType.CLIENT,
+                getAlgorithmConstraints(quicTLSEngine), null, null);
+    }
+
+    @Override
     public String chooseServerAlias(String keyType,
             Principal[] issuers, Socket socket) {
         return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
@@ -163,6 +170,16 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                          // certificate according to requested SNI extension.
                          //
                          // It is not a really HTTPS endpoint identification.
+    }
+
+    @Override
+    String chooseQuicServerAlias(String keyType,
+                                 X500Principal[] issuers,
+                                 QuicTLSEngineImpl quicTLSEngine) {
+        return chooseAlias(getKeyTypes(keyType), issuers, CheckType.SERVER,
+                getAlgorithmConstraints(quicTLSEngine),
+                X509TrustManagerImpl.getRequestedServerNames(quicTLSEngine),
+                "HTTPS");
     }
 
     @Override

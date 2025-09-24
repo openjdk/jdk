@@ -501,7 +501,7 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
   StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
-  AOTLinkedClassBulkLoader::serialize(soc, true);
+  AOTLinkedClassBulkLoader::serialize(soc);
   FinalImageRecipes::serialize(soc);
   TrainingData::serialize(soc);
   InstanceMirrorKlass::serialize_offsets(soc);
@@ -720,6 +720,7 @@ void VM_PopulateDumpSharedSpace::doit() {
   _map_info->set_cloned_vtables(CppVtables::vtables_serialized_base());
   _map_info->header()->set_class_location_config(cl_config);
 
+  HeapShared::delete_tables_with_raw_oops();
   CDSConfig::set_is_at_aot_safepoint(false);
 }
 
@@ -1076,11 +1077,6 @@ bool AOTMetaspace::write_static_archive(ArchiveBuilder* builder, FileMapInfo* ma
     return false;
   }
   builder->write_archive(map_info, heap_info);
-
-  if (AllowArchivingWithJavaAgent) {
-    aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
-            "for testing purposes only and should not be used in a production environment", CDSConfig::type_of_archive_being_loaded());
-  }
   return true;
 }
 
@@ -2001,7 +1997,7 @@ void AOTMetaspace::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer, (intptr_t)SharedBaseAddress);
-    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::serialize(&rc);
     DynamicArchive::setup_array_klasses();
   }
 
