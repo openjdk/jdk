@@ -439,8 +439,8 @@ bool VectorNode::is_maskall_type(const TypeLong* type, int vlen) {
   if (!type->is_con()) {
     return false;
   }
-  long mask = (-1ULL >> (64 - vlen));
-  long bit  = type->get_con() & mask;
+  jlong mask = (-1ULL >> (64 - vlen));
+  jlong bit = type->get_con() & mask;
   return bit == 0 || bit == mask;
 }
 
