@@ -113,8 +113,22 @@ public final class SignaturesImpl {
                 RefTypeSig classBound = null;
                 ArrayList<RefTypeSig> interfaceBounds = null;
                 require(':');
-                if (sig.charAt(sigp) != ':')
-                    classBound = referenceTypeSig();
+                if (sig.charAt(sigp) != ':') {
+                    int p = nextIdentifierEnd(sig, sigp);
+                    // For non-identifier chars:
+                    // . / < indicates class type (inner, package, type arg)
+                    // [ indicates array type
+                    // ; indicates class/type var type
+                    // > and : are illegal, such as in <P:R:>
+                    if (p < sig.length()) {
+                        char limit = sig.charAt(p);
+                        if (limit != '>' && limit != ':') {
+                            classBound = referenceTypeSig();
+                        }
+                    }
+                    // If classBound is absent here, we start tokenizing
+                    // next type parameter, which can trigger failures
+                }
                 while (match(':')) {
                     if (interfaceBounds == null)
                         interfaceBounds = new ArrayList<>();
