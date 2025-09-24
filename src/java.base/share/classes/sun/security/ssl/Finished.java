@@ -929,15 +929,15 @@ final class Finished {
                 }
             }
 
+            if (chc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "FINISHED messages must align with a record boundary");
+            }
+
             FinishedMessage fm = new FinishedMessage(chc, message);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming server Finished handshake message", fm);
-            }
-
-            if (chc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
-                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        "FINISHED messages must align with a record boundary");
             }
 
             // Save client verify data for secure renegotiation.
@@ -1077,15 +1077,15 @@ final class Finished {
                 }
             }
 
+            if (shc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                        "FINISHED messages must align with a record boundary");
+            }
+
             FinishedMessage fm = new FinishedMessage(shc, message);
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(
                         "Consuming client Finished handshake message", fm);
-            }
-
-            if (shc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
-                throw shc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        "FINISHED messages must align with a record boundary");
             }
 
             if (shc.conContext.secureRenegotiation) {

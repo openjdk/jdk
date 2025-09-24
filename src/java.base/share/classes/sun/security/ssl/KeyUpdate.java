@@ -190,15 +190,16 @@ final class KeyUpdate {
                 ByteBuffer message) throws IOException {
             // The consuming happens in client side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
-            KeyUpdateMessage km = new KeyUpdateMessage(hc, message);
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
-                SSLLogger.fine(
-                        "Consuming KeyUpdate post-handshake message", km);
-            }
 
             if (hc.negotiatedProtocol.useTLS13PlusSpec() && hc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
                 throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "KEYUPDATE messages must align with a record boundary");
+            }
+
+            KeyUpdateMessage km = new KeyUpdateMessage(hc, message);
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+                SSLLogger.fine(
+                        "Consuming KeyUpdate post-handshake message", km);
             }
 
             // Update read key and IV.

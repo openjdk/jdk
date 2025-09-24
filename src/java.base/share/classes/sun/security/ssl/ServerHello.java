@@ -1244,7 +1244,6 @@ final class ServerHello {
                         "CLIENT_HELLO messages must align with a record boundary");
             }
 
-
             chc.negotiatedCipherSuite = serverHello.cipherSuite;
             chc.handshakeHash.determine(
                     chc.negotiatedProtocol, chc.negotiatedCipherSuite);
