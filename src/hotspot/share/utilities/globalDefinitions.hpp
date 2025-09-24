@@ -536,6 +536,7 @@ const intptr_t NULL_WORD = 0;
 // JVM spec restrictions
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
+const int max_method_parameter_length = 255; // JVM spec, 22nd ed. section 4.3.3 (p.83)
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
