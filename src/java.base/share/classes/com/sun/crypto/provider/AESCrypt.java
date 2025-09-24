@@ -32,7 +32,7 @@ import java.util.Arrays;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 /**
- * Implements the AES cipher, which is based on the following sepcifications:
+ * Implementation of the AES cipher, which is based on the following documents:
  *
  * @spec https://csrc.nist.gov/csrc/media/projects/cryptographic-standards-and-guidelines/documents/aes-development/rijndael-ammended.pdf
  *
@@ -65,21 +65,6 @@ public final class AESCrypt extends SymmetricCipher {
     private int[][] sessionK = null;
     private int[] K = null;
 
-    // AES MixColumns
-    private static final byte[][] MC = {
-            {0x02, 0x03, 0x01, 0x01},
-            {0x01, 0x02, 0x03, 0x01},
-            {0x01, 0x01, 0x02, 0x03},
-            {0x03, 0x01, 0x01, 0x02}
-    };
-    // AES Inverse MixColumns
-    private static final byte[][] IMC = {
-            {0x0E, 0x0B, 0x0D, 0x09},
-            {0x09, 0x0E, 0x0B, 0x0D},
-            {0x0D, 0x09, 0x0E, 0x0B},
-            {0x0B, 0x0D, 0x09, 0x0E}
-    };
-
     // Round constant
     private static final int[] RCON = {
             0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
@@ -103,25 +88,6 @@ public final class AESCrypt extends SymmetricCipher {
             {(byte)0x70, (byte)0x3E, (byte)0xB5, (byte)0x66, (byte)0x48, (byte)0x03, (byte)0xF6, (byte)0x0E, (byte)0x61, (byte)0x35, (byte)0x57, (byte)0xB9, (byte)0x86, (byte)0xC1, (byte)0x1D, (byte)0x9E},
             {(byte)0xE1, (byte)0xF8, (byte)0x98, (byte)0x11, (byte)0x69, (byte)0xD9, (byte)0x8E, (byte)0x94, (byte)0x9B, (byte)0x1E, (byte)0x87, (byte)0xE9, (byte)0xCE, (byte)0x55, (byte)0x28, (byte)0xDF},
             {(byte)0x8C, (byte)0xA1, (byte)0x89, (byte)0x0D, (byte)0xBF, (byte)0xE6, (byte)0x42, (byte)0x68, (byte)0x41, (byte)0x99, (byte)0x2D, (byte)0x0F, (byte)0xB0, (byte)0x54, (byte)0xBB, (byte)0x16}
-    };
-
-    private static final byte[][] ISBOX = {
-            {(byte)0x52, (byte)0x09, (byte)0x6A, (byte)0xD5, (byte)0x30, (byte)0x36, (byte)0xA5, (byte)0x38, (byte)0xBF, (byte)0x40, (byte)0xA3, (byte)0x9E, (byte)0x81, (byte)0xF3, (byte)0xD7, (byte)0xFB},
-            {(byte)0x7C, (byte)0xE3, (byte)0x39, (byte)0x82, (byte)0x9B, (byte)0x2F, (byte)0xFF, (byte)0x87, (byte)0x34, (byte)0x8E, (byte)0x43, (byte)0x44, (byte)0xC4, (byte)0xDE, (byte)0xE9, (byte)0xCB},
-            {(byte)0x54, (byte)0x7B, (byte)0x94, (byte)0x32, (byte)0xA6, (byte)0xC2, (byte)0x23, (byte)0x3D, (byte)0xEE, (byte)0x4C, (byte)0x95, (byte)0x0B, (byte)0x42, (byte)0xFA, (byte)0xC3, (byte)0x4E},
-            {(byte)0x08, (byte)0x2E, (byte)0xA1, (byte)0x66, (byte)0x28, (byte)0xD9, (byte)0x24, (byte)0xB2, (byte)0x76, (byte)0x5B, (byte)0xA2, (byte)0x49, (byte)0x6D, (byte)0x8B, (byte)0xD1, (byte)0x25},
-            {(byte)0x72, (byte)0xF8, (byte)0xF6, (byte)0x64, (byte)0x86, (byte)0x68, (byte)0x98, (byte)0x16, (byte)0xD4, (byte)0xA4, (byte)0x5C, (byte)0xCC, (byte)0x5D, (byte)0x65, (byte)0xB6, (byte)0x92},
-            {(byte)0x6C, (byte)0x70, (byte)0x48, (byte)0x50, (byte)0xFD, (byte)0xED, (byte)0xB9, (byte)0xDA, (byte)0x5E, (byte)0x15, (byte)0x46, (byte)0x57, (byte)0xA7, (byte)0x8D, (byte)0x9D, (byte)0x84},
-            {(byte)0x90, (byte)0xD8, (byte)0xAB, (byte)0x00, (byte)0x8C, (byte)0xBC, (byte)0xD3, (byte)0x0A, (byte)0xF7, (byte)0xE4, (byte)0x58, (byte)0x05, (byte)0xB8, (byte)0xB3, (byte)0x45, (byte)0x06},
-            {(byte)0xD0, (byte)0x2C, (byte)0x1E, (byte)0x8F, (byte)0xCA, (byte)0x3F, (byte)0x0F, (byte)0x02, (byte)0xC1, (byte)0xAF, (byte)0xBD, (byte)0x03, (byte)0x01, (byte)0x13, (byte)0x8A, (byte)0x6B},
-            {(byte)0x3A, (byte)0x91, (byte)0x11, (byte)0x41, (byte)0x4F, (byte)0x67, (byte)0xDC, (byte)0xEA, (byte)0x97, (byte)0xF2, (byte)0xCF, (byte)0xCE, (byte)0xF0, (byte)0xB4, (byte)0xE6, (byte)0x73},
-            {(byte)0x96, (byte)0xAC, (byte)0x74, (byte)0x22, (byte)0xE7, (byte)0xAD, (byte)0x35, (byte)0x85, (byte)0xE2, (byte)0xF9, (byte)0x37, (byte)0xE8, (byte)0x1C, (byte)0x75, (byte)0xDF, (byte)0x6E},
-            {(byte)0x47, (byte)0xF1, (byte)0x1A, (byte)0x71, (byte)0x1D, (byte)0x29, (byte)0xC5, (byte)0x89, (byte)0x6F, (byte)0xB7, (byte)0x62, (byte)0x0E, (byte)0xAA, (byte)0x18, (byte)0xBE, (byte)0x1B},
-            {(byte)0xFC, (byte)0x56, (byte)0x3E, (byte)0x4B, (byte)0xC6, (byte)0xD2, (byte)0x79, (byte)0x20, (byte)0x9A, (byte)0xDB, (byte)0xC0, (byte)0xFE, (byte)0x78, (byte)0xCD, (byte)0x5A, (byte)0xF4},
-            {(byte)0x1F, (byte)0xDD, (byte)0xA8, (byte)0x33, (byte)0x88, (byte)0x07, (byte)0xC7, (byte)0x31, (byte)0xB1, (byte)0x12, (byte)0x10, (byte)0x59, (byte)0x27, (byte)0x80, (byte)0xEC, (byte)0x5F},
-            {(byte)0x60, (byte)0x51, (byte)0x7F, (byte)0xA9, (byte)0x19, (byte)0xB5, (byte)0x4A, (byte)0x0D, (byte)0x2D, (byte)0xE5, (byte)0x7A, (byte)0x9F, (byte)0x93, (byte)0xC9, (byte)0x9C, (byte)0xEF},
-            {(byte)0xA0, (byte)0xE0, (byte)0x3B, (byte)0x4D, (byte)0xAE, (byte)0x2A, (byte)0xF5, (byte)0xB0, (byte)0xC8, (byte)0xEB, (byte)0xBB, (byte)0x3C, (byte)0x83, (byte)0x53, (byte)0x99, (byte)0x61},
-            {(byte)0x17, (byte)0x2B, (byte)0x04, (byte)0x7E, (byte)0xBA, (byte)0x77, (byte)0xD6, (byte)0x26, (byte)0xE1, (byte)0x69, (byte)0x14, (byte)0x63, (byte)0x55, (byte)0x21, (byte)0x0C, (byte)0x7D}
     };
 
     private static final int[] T0 = {
@@ -919,40 +885,6 @@ public final class AESCrypt extends SymmetricCipher {
     }
 
     /**
-     * Add the round key to the block.
-     *
-     * @param state [in, out] the block to add the round key to.
-     * @param wi [in] the round key to add to the block.
-     * @param offset [in] the offset to the associated round key.
-     */
-    private void addRoundKey(int[] state, int[] wi, int offset) {
-        state[0] ^= wi[offset];
-        state[1] ^= wi[offset + 1];
-        state[2] ^= wi[offset + 2];
-        state[3] ^= wi[offset + 3];
-    }
-
-    /**
-     * Convert byte array to integer array with specified offset.
-     *
-     * @param ti [out] the output of converted integers.
-     * @param s [in] the byte array to be converted to integers.
-     * @param so [in] the offset in the input byte array.
-     */
-    private void initState(int[] ti, byte[] s, int so) {
-        int len = WB;
-
-        ti[0] = ((s[so] & 0xFF) << 24) | ((s[so + 1] & 0xFF) << 16)
-                | ((s[so + 2] & 0xFF) << 8) | (s[so + 3] & 0xFF);
-        ti[1] = ((s[so + 4] & 0xFF) << 24) | ((s[so + 5] & 0xFF) << 16)
-                | ((s[so + 6] & 0xFF) << 8) | (s[so + 7] & 0xFF);
-        ti[2] = ((s[so + 8] & 0xFF) << 24) | ((s[so + 9] & 0xFF) << 16)
-                | ((s[so + 10] & 0xFF) << 8) | (s[so + 11] & 0xFF);
-        ti[3] = ((s[so + 12] & 0xFF) << 24) | ((s[so + 13] & 0xFF) << 16)
-                | ((s[so + 14] & 0xFF) << 8) | (s[so + 15] & 0xFF);
-    }
-
-    /**
      * Convert integer array to byte array with specified offset.
      *
      * @param s [out] the output of converted bytes.
@@ -980,94 +912,6 @@ public final class AESCrypt extends SymmetricCipher {
     }
 
     /**
-     * Method for cipher processing of a round.
-     *
-     * @param state [in] the block to be processed.
-     * @param idx [in] the word index of the block.
-     * @param k [in] the round index.
-     *
-     * @return the processed word of the block.
-     */
-    private static final int round(int[] state, int idx, int ek) {
-        int len = WB;
-
-        // Utilize lookup tables for the three transformations to
-        // help mitigate against timing attacks.
-        int a0 = T0[(state[idx] >> 24) & 0xFF];
-        int a1 = T1[(state[(idx + 1) % len] >> 16) & 0xFF];
-        int a2 = T2[(state[(idx + 2) % len] >> 8) & 0xFF];
-        int a3 = T3[state[(idx + 3) % len] & 0xFF];
-        // Add columns and round key
-        return a0 ^ a1 ^ a2 ^ a3 ^ ek;
-    }
-
-    /**
-     * Method for inverse cipher processing of a round.
-     *
-     * @param state [in] the block to be processed.
-     * @param idx [in] the word index of the block.
-     * @param k [in] the round index.
-     *
-     * @return the processed word of the block.
-     */
-    private static final int invRound(int[] state, int idx, int iek) {
-        int len = WB;
-
-        // Utilize lookup tables for the three transformations to
-        // help mitigate against timing attacks.
-        int a0 = TI0[(state[idx] >> 24) & 0xFF];
-        int a1 = TI1[(state[(idx + 3) % len] >> 16) & 0xFF];
-        int a2 = TI2[(state[(idx + 2) % len] >> 8) & 0xFF];
-        int a3 = TI3[state[(idx + 1) % len] & 0xFF];
-        // Add columns and round key
-        return a0 ^ a1 ^ a2 ^ a3 ^ iek;
-    }
-
-    /**
-     * Method for cipher processing of last round.
-     *
-     * @param state [in] the block to be processed.
-     * @param idx [in] the word index of the block.
-     *
-     * @return the processed word of the block.
-     */
-    private int lastRound(int[] state, int idx) {
-        int len = WB;
-        int ek = expandedKey[(rounds * len) + idx];
-
-        // Utilize lookup tables for the three transformations to
-        // help mitigate against timing attacks.
-        int a0 = T2[(state[idx] >> 24) & 0xFF] & 0xFF000000;
-        int a1 = T3[(state[(idx + 1) % len] >> 16) & 0xFF] & 0xFF0000;
-        int a2 = T0[(state[(idx + 2) % len] >> 8) & 0xFF] & 0xFF00;
-        int a3 = T1[state[(idx + 3) % len] & 0xFF] & 0xFF;
-        // Add columns and round key
-        return a0 ^ a1 ^ a2 ^ a3 ^ ek;
-    }
-
-    /**
-     * Method for inverse cipher processing of last round.
-     *
-     * @param state [in] the block to be processed.
-     * @param idx [in] the word index of the block.
-     *
-     * @return the processed word of the block.
-     */
-    private int invLastRound(int[] state, int idx) {
-        int len = WB;
-        int iek = invExpandedKey[idx];
-
-        // Can only use byte instead of int array, but decreases performance by
-        // 0.4%.  No lookup table yields a 0.7% decrease.
-        int a0 = TI4[(state[idx] >> 24) & 0xFF] & 0xFF000000;
-        int a1 = TI4[(state[(idx + 3) % len] >> 16) & 0xFF] & 0xFF0000;
-        int a2 = TI4[(state[(idx + 2) % len] >> 8) & 0xFF] & 0xFF00;
-        int a3 = TI4[state[(idx + 1) % len] & 0xFF] & 0xFF;
-        // Add columns and round key
-        return a0 ^ a1 ^ a2 ^ a3 ^ iek;
-    }
-
-    /**
      * Method for one block of encryption.
      *
      * @param p [in] the plaintext to be encrypted.
@@ -1078,96 +922,183 @@ public final class AESCrypt extends SymmetricCipher {
     private void encryptJava(byte[] p, int po, byte[] c, int co) {
         int[] ti = new int[WB];
         int a0, a1, a2, a3;
-        int w = 4;
+        int w = 0;
 
-        initState(ti, p, po);
-        addRoundKey(ti, expandedKey, 0);
+        ti[0] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
+                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
+        ti[1] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
+                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
+        ti[2] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
+                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
+        ti[3] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
+                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = round(ti, 0, expandedKey[w++]);
-        a1 = round(ti, 1, expandedKey[w++]);
-        a2 = round(ti, 2, expandedKey[w++]);
-        a3 = round(ti, 3, expandedKey[w++]);
+        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
+        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
+        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
+        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
         if (rounds > AES_128_ROUNDS) {
-            a0 = round(ti, 0, expandedKey[w++]);
-            a1 = round(ti, 1, expandedKey[w++]);
-            a2 = round(ti, 2, expandedKey[w++]);
-            a3 = round(ti, 3, expandedKey[w++]);
+            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
+                    ^ expandedKey[w++];
+            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
+                    ^ expandedKey[w++];
+            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
+                    ^ expandedKey[w++];
+            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
+                    ^ expandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = round(ti, 0, expandedKey[w++]);
-            a1 = round(ti, 1, expandedKey[w++]);
-            a2 = round(ti, 2, expandedKey[w++]);
-            a3 = round(ti, 3, expandedKey[w++]);
+            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
+                    ^ expandedKey[w++];
+            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
+                    ^ expandedKey[w++];
+            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
+                    ^ expandedKey[w++];
+            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
+                    ^ expandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         if (rounds > AES_192_ROUNDS) {
-            a0 = round(ti, 0, expandedKey[w++]);
-            a1 = round(ti, 1, expandedKey[w++]);
-            a2 = round(ti, 2, expandedKey[w++]);
-            a3 = round(ti, 3, expandedKey[w++]);
+            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
+                    ^ expandedKey[w++];
+            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
+                    ^ expandedKey[w++];
+            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
+                    ^ expandedKey[w++];
+            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
+                    ^ expandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = round(ti, 0, expandedKey[w++]);
-            a1 = round(ti, 1, expandedKey[w++]);
-            a2 = round(ti, 2, expandedKey[w++]);
-            a3 = round(ti, 3, expandedKey[w++]);
+            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
+                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
+                    ^ expandedKey[w++];
+            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
+                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
+                    ^ expandedKey[w++];
+            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
+                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
+                    ^ expandedKey[w++];
+            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
+                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
+                    ^ expandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
-        a0 = lastRound(ti, 0);
-        a1 = lastRound(ti, 1);
-        a2 = lastRound(ti, 2);
-        a3 = lastRound(ti, 3);
+        a0 = T2[(ti[0] >> 24) & 0xFF] & 0xFF000000
+                ^ T3[(ti[1] >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti[2] >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti[3] & 0xFF] & 0xFF ^ expandedKey[w++];
+        a1 = T2[(ti[1] >> 24) & 0xFF] & 0xFF000000
+                ^ T3[(ti[2] >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti[3] >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti[0] & 0xFF] & 0xFF ^ expandedKey[w++];
+        a2 = T2[(ti[2] >> 24) & 0xFF] & 0xFF000000
+                ^ T3[(ti[3] >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti[0] >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti[1] & 0xFF] & 0xFF ^ expandedKey[w++];
+        a3 = T2[(ti[3] >> 24) & 0xFF] & 0xFF000000
+                ^ T3[(ti[0] >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti[1] >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti[2] & 0xFF] & 0xFF ^ expandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+
         finalState(c, ti, co);
     }
 
@@ -1182,95 +1113,225 @@ public final class AESCrypt extends SymmetricCipher {
     private void decryptJava(byte[] c, int co, byte[] p, int po) {
         int[] ti = new int[WB];
         int a0, a1, a2, a3;
-        int w = 8;
+        int w = 4;
 
-        initState(ti, c, co);
-        addRoundKey(ti, invExpandedKey, WB);
+        ti[0] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
+                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
+                ^ invExpandedKey[w++];
+        ti[1] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
+                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
+                ^ invExpandedKey[w++];
+        ti[2] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
+                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
+                ^ invExpandedKey[w++];
+        ti[3] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
+                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
+                ^ invExpandedKey[w++];
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-        a0 = invRound(ti, 0, invExpandedKey[w++]);
-        a1 = invRound(ti, 1, invExpandedKey[w++]);
-        a2 = invRound(ti, 2, invExpandedKey[w++]);
-        a3 = invRound(ti, 3, invExpandedKey[w++]);
+        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                ^ invExpandedKey[w++];
+        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                ^ invExpandedKey[w++];
+        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                ^ invExpandedKey[w++];
+        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                ^ invExpandedKey[w++];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
         if (rounds > AES_128_ROUNDS) {
-            a0 = invRound(ti, 0, invExpandedKey[w++]);
-            a1 = invRound(ti, 1, invExpandedKey[w++]);
-            a2 = invRound(ti, 2, invExpandedKey[w++]);
-            a3 = invRound(ti, 3, invExpandedKey[w++]);
+            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                    ^ invExpandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = invRound(ti, 0, invExpandedKey[w++]);
-            a1 = invRound(ti, 1, invExpandedKey[w++]);
-            a2 = invRound(ti, 2, invExpandedKey[w++]);
-            a3 = invRound(ti, 3, invExpandedKey[w++]);
+            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                    ^ invExpandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
         if (rounds > AES_192_ROUNDS) {
-            a0 = invRound(ti, 0, invExpandedKey[w++]);
-            a1 = invRound(ti, 1, invExpandedKey[w++]);
-            a2 = invRound(ti, 2, invExpandedKey[w++]);
-            a3 = invRound(ti, 3, invExpandedKey[w++]);
+            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                    ^ invExpandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
 
-            a0 = invRound(ti, 0, invExpandedKey[w++]);
-            a1 = invRound(ti, 1, invExpandedKey[w++]);
-            a2 = invRound(ti, 2, invExpandedKey[w++]);
-            a3 = invRound(ti, 3, invExpandedKey[w++]);
+            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
+                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
+                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
+                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
+                    ^ invExpandedKey[w++];
+            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
+                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
+                    ^ invExpandedKey[w++];
             ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         }
-        a0 = invLastRound(ti, 0);
-        a1 = invLastRound(ti, 1);
-        a2 = invLastRound(ti, 2);
-        a3 = invLastRound(ti, 3);
+        a0 = TI4[(ti[0] >> 24) & 0xFF] & 0xFF000000
+                ^ TI4[(ti[3] >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(ti[2] >> 8) & 0xFF] & 0xFF00
+                ^ TI4[ti[1] & 0xFF] & 0xFF
+                ^ invExpandedKey[0];
+        a1 = TI4[(ti[1] >> 24) & 0xFF] & 0xFF000000
+                ^ TI4[(ti[0] >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(ti[3] >> 8) & 0xFF] & 0xFF00
+                ^ TI4[ti[2] & 0xFF] & 0xFF
+                ^ invExpandedKey[1];
+        a2 = TI4[(ti[2] >> 24) & 0xFF] & 0xFF000000
+                ^ TI4[(ti[1] >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(ti[0] >> 8) & 0xFF] & 0xFF00
+                ^ TI4[ti[3] & 0xFF] & 0xFF
+                ^ invExpandedKey[2];
+        a3 = TI4[(ti[3] >> 24) & 0xFF] & 0xFF000000
+                ^ TI4[(ti[2] >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(ti[1] >> 8) & 0xFF] & 0xFF00
+                ^ TI4[ti[0] & 0xFF] & 0xFF
+                ^ invExpandedKey[3];
         ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
         finalState(p, ti, po);
     }
