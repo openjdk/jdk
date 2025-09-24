@@ -25,7 +25,6 @@
 
 
 #include "gc/shared/satbMarkQueue.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -297,7 +296,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
-  StrongRootsScope scope(nworkers);
+  ThreadsClaimTokenScope scope;
   TaskTerminator terminator(nworkers, task_queues());
 
   switch (_generation->type()) {
