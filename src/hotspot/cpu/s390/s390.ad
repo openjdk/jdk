@@ -860,6 +860,8 @@ source %{
 
 #define Z_DISP_SIZE Immediate::is_uimm12((long)opnd_array(1)->disp(ra_,this,2)) ?  4 : 6
 #define Z_DISP3_SIZE 6
+#define Z_DISP2_SIZE 4
+#define Z_DISP1_SIZE 2
 
 // Tertiary op of a LoadP or StoreP encoding.
 #define REGP_OP true
@@ -4062,6 +4064,7 @@ instruct stkI_to_regI(iRegI dst, stackSlotI src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "L       $dst,$src\t # stk reload int" %}
   opcode(L_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -4073,6 +4076,7 @@ instruct regI_to_stkI(stackSlotI dst, iRegI src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "ST      $src,$dst\t # stk spill int" %}
   opcode(ST_ZOPC);
   ins_encode(z_form_rt_mem(src, dst)); // rs=rt
@@ -4085,6 +4089,7 @@ instruct stkL_to_regL(iRegL dst, stackSlotL src) %{
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "LG      $dst,$src\t # stk reload long" %}
+  size(Z_DISP3_SIZE);
   opcode(LG_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
   ins_pipe(pipe_class_dummy);
@@ -4107,6 +4112,7 @@ instruct stkP_to_regP(iRegP dst, stackSlotP src) %{
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "LG      $dst,$src\t # stk reload ptr" %}
+  size(Z_DISP3_SIZE);
   opcode(LG_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
   ins_pipe(pipe_class_dummy);
@@ -4117,6 +4123,7 @@ instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "STG     $src,$dst\t # stk spill ptr" %}
   opcode(STG_ZOPC);
   ins_encode(z_form_rt_mem(src, dst)); // rs=rt
@@ -4152,6 +4159,7 @@ instruct stkD_to_regD(regD dst, stackSlotD src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LD(Y)   $dst,$src\t # stk reload double" %}
   opcode(LD_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -4381,6 +4389,7 @@ instruct loadTOC(iRegL dst) %{
   effect(DEF dst);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   // TODO: check why this attribute causes many unnecessary rematerializations.
   //
   // The graphs I saw just had high register pressure. Further the
@@ -4476,6 +4485,7 @@ instruct loadConI_0(iRegI dst, immI_0 src, flagsReg cr) %{
 instruct loadConUI16(iRegI dst, uimmI16 src) %{
   match(Set dst src);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "LLILL    $dst,$src" %}
   opcode(LLILL_ZOPC);
   ins_encode(z_riform_unsigned(dst, src) );
@@ -5322,6 +5332,7 @@ instruct membar_storestore() %{
 instruct castX2P(iRegP dst, iRegL src) %{
   match(Set dst (CastX2P src));
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "LGR     $dst,$src\t # CastX2P" %}
   ins_encode %{ __ lgr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -5331,6 +5342,7 @@ instruct castX2P(iRegP dst, iRegL src) %{
 instruct castP2X(iRegL dst, iRegP_N2P src) %{
   match(Set dst (CastP2X src));
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "LGR     $dst,$src\t # CastP2X" %}
   ins_encode %{ __ lgr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -5341,6 +5353,7 @@ instruct stfSSD(stackSlotD stkSlot, regD src) %{
   match(Set stkSlot src);   // chain rule
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ " STD   $src,$stkSlot\t # stk" %}
   opcode(STD_ZOPC);
   ins_encode(z_form_rt_mem(src, stkSlot));
@@ -5353,6 +5366,7 @@ instruct stfSSF(stackSlotF stkSlot, regF src) %{
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "STE   $src,$stkSlot\t # stk" %}
+  size(Z_DISP2_SIZE);
   opcode(STE_ZOPC);
   ins_encode(z_form_rt_mem(src, stkSlot));
   ins_pipe(pipe_class_dummy);
