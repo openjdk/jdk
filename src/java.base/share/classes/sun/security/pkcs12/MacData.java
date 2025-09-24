@@ -98,8 +98,14 @@ class MacData {
             }
             this.iterations = pbeSpec.getIterationCount();
             this.macSalt = pbeSpec.getSalt();
+
             String ps = this.digestAlgorithmParams.toString();
             this.kdfHmac = getKdfHmac(ps);
+            this.Hmac = getHmac(ps);
+
+            if (!this.kdfHmac.equals(this.Hmac)) {
+                throw new IOException("PRF and Hmac must be same");
+            }
             if (!(this.kdfHmac.equals("HmacSHA512") ||
                     this.kdfHmac.equals("HmacSHA256"))) {
                 throw new IOException("unsupported PBMAC1 Hmac");
@@ -281,6 +287,20 @@ class MacData {
         final String word2 = "And";
 
         String regex = Pattern.quote(word1) + "(.*?)" + Pattern.quote(word2);
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    public static String getHmac(String text) {
+        final String word2 = "And";
+
+        String regex = Pattern.quote(word2) + "(.*?)$";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(text);
 

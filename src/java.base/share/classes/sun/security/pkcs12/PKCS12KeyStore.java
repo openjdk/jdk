@@ -175,6 +175,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String macAlgorithm = null;
     private String pbmac1Hmac = null;
     private int macIterationCount = -1;
+    private boolean newKeystore;
 
     // the source of randomness
     private SecureRandom random;
@@ -1245,6 +1246,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         // -- MAC
         if (macAlgorithm == null) {
+            newKeystore = true;
             macAlgorithm = defaultMacAlgorithm();
         }
         if (macIterationCount < 0) {
@@ -1479,25 +1481,32 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         final PBEParameterSpec params;
         final String algName;
         final MacData macData;
-        final String kdfHmac;
+        String kdfHmac;
         int writeIterationCount = macIterationCount;
 
-        if (macAlgorithm.startsWith("PBEWith") ||
-                defaultMacAlgorithm().startsWith("PBEWith")) {
-            if (defaultMacAlgorithm().equals("PBEWithHmacSHA512")) {
-                kdfHmac = "HmacSHA512";
-            } else if (defaultMacAlgorithm().equals("PBEWithHmacSHA256")) {
-                kdfHmac = "HmacSHA256";
+        if (newKeystore) {
+            if (macAlgorithm.startsWith("PBEWith") ||
+                    defaultMacAlgorithm().startsWith("PBEWith")) {
+                kdfHmac = defaultMacAlgorithm().replace("PBEWith", "");
+                if (!(kdfHmac.equals("HmacSHA512") ||
+                        kdfHmac.equals("HmacSHA256"))) {
+                    kdfHmac = pbmac1Hmac; // use value associated with keystore
+                }
+                algName = "PBMAC1";
+                // Override with value of security property.
+                writeIterationCount = defaultMacIterationCount();
             } else {
-                // Use value currently associated with this keystore.
-                kdfHmac = pbmac1Hmac;
+                algName = macAlgorithm.substring(7);
+                kdfHmac = macAlgorithm;
             }
-            algName = "PBMAC1";
-            // Override with value of security property.
-            writeIterationCount = defaultMacIterationCount();
         } else {
-            algName = macAlgorithm.substring(7);
-            kdfHmac = macAlgorithm;
+            if (pbmac1Hmac != null) { // have PBMAC1 keystore
+                kdfHmac = pbmac1Hmac;
+                algName = "PBMAC1";
+            } else {
+                algName = macAlgorithm.substring(7);
+                kdfHmac = macAlgorithm;
+            }
         }
 
         params = new PBEParameterSpec(getSalt(), writeIterationCount);
@@ -1942,14 +1951,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private void processMacData(AlgorithmParameterSpec params,
             MacData macData, char[] password, byte[] data, String macAlgorithm)
             throws  Exception {
-        String kdfHmac;
+        final String kdfHmac;
+        String tmp;
 
-        if (macAlgorithm.equals("PBEWithHmacSHA256")) {
-            kdfHmac = "HmacSHA256";
-        } else if (macAlgorithm.equals("PBEWithHmacSHA512")) {
-            kdfHmac = "HmacSHA512";
-        } else {
+        tmp = macAlgorithm.replace("PBEWith", "");
+        if (!(tmp.equals("HmacSHA512") || tmp.equals("HmacSHA256"))) {
             kdfHmac = macAlgorithm;
+        } else {
+            kdfHmac = tmp;
         }
 
         var skf = SecretKeyFactory.getInstance(
@@ -2202,7 +2211,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         PBEParameterSpec params =
                                 new PBEParameterSpec(salt, ic);
                         processMacData(params, macData, password, authSafeData,
-                                "PBEWith" + pbmac1KdfHmac);
+                                macAlgorithm);
                     } else {
 
                         // Change SHA-1 to SHA1
