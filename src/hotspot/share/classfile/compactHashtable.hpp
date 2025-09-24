@@ -62,8 +62,8 @@ public:
 // The compact hash table writer. Used at dump time for writing out
 // the compact table to the shared archive.
 //
-// At dump time, the CompactHashtableWriter obtains all entries from the
-// a table (the table could be in any form of a collection of <hash, value> pair)
+// At dump time, the CompactHashtableWriter obtains all entries from
+// a table (the table could be in any form of a collection of <hash, encoded_value> pair)
 // and adds them to a new temporary hash table (_buckets). The hash
 // table size (number of buckets) is calculated using
 // '(num_entries + bucket_size - 1) / bucket_size'. The default bucket
@@ -78,8 +78,8 @@ public:
 // offsets are written to the archive as part of the compact table. The
 // bucket offset is encoded in the low 30-bit (0-29) and the bucket type
 // (regular or value_only) are encoded in bit[31, 30]. For buckets with more
-// than one entry, both hash and entry value are written to the
-// table. For buckets with only one entry, only the entry value is written
+// than one entry, both hash and encoded_value are written to the
+// table. For buckets with only one entry, only the encoded_value is written
 // to the table and the buckets are tagged as value_only in their type bits.
 // Buckets without entry are skipped from the table. Their offsets are
 // still written out for faster lookup.
@@ -92,9 +92,9 @@ public:
 
   public:
     Entry() {}
-    Entry(unsigned int hash, u4 val) : _hash(hash), _encoded_value(val) {}
+    Entry(unsigned int hash, u4 encoded_value) : _hash(hash), _encoded_value(encoded_value) {}
 
-    u4 value() {
+    u4 encoded_value() {
       return _encoded_value;
     }
     unsigned int hash() {
@@ -122,7 +122,7 @@ public:
   CompactHashtableWriter(int num_entries, CompactHashtableStats* stats);
   ~CompactHashtableWriter();
 
-  void add(unsigned int hash, u4 value);
+  void add(unsigned int hash, u4 encoded_value);
   void dump(SimpleCompactHashtable *cht, const char* table_name);
 
 private:
@@ -148,7 +148,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 // CompactHashtable is used to store the CDS archive's tables.
-// A table could be in any form of a collection of <hash, value> pair.
+// A table could be in any form of a collection of <hash, encoded_value> pair.
 //
 // Because these tables are read-only (no entries can be added/deleted) at run-time
 // and tend to have large number of entries, we try to minimize the footprint
@@ -176,7 +176,7 @@ private:
 //                     //   V entry = (V)(base_address + offset)
 //                     // see StringTable, SymbolTable and AdapterHandlerLibrary for examples
 //
-// For value_only buckets, each entry has only the 4-byte 'value' in the entries[].
+// For value_only buckets, each entry has only the 4-byte 'encoded_value' in the entries[].
 //
 // The single table_end bucket has no corresponding entry.
 //
@@ -192,9 +192,9 @@ private:
 // always encoded as regular buckets.
 //
 // In the following example:
-//   - The 0-th bucket is a REGULAR_BUCKET_TYPE with two entries
-//   - The 1-st bucket is a VALUE_ONLY_BUCKET_TYPE with one entry.
-//   - The 2-th bucket is a REGULAR_BUCKET_TYPE with zeo entries.
+//   - Bucket #0 is a REGULAR_BUCKET_TYPE with two entries
+//   - Bucket #1 is a VALUE_ONLY_BUCKET_TYPE with one entry.
+//   - Bucket #2 is a REGULAR_BUCKET_TYPE with zero entries.
 //
 // buckets[0, 4, 5(empty), 5, ...., N(table_end)]
 //         |  |  |         |        |
