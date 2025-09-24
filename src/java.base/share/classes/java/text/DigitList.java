@@ -46,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.math.FloatingDecimal;
 import jdk.internal.util.ArraysSupport;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * Digit List. Private to DecimalFormat.
@@ -321,9 +322,10 @@ final class DigitList implements Cloneable {
     void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
         FloatingDecimal.BinaryToASCIIConverter fdConverter =
                 FloatingDecimal.getBinaryToASCIIConverter(source, COMPAT);
+        assert !fdConverter.isExceptional();
+
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
-        assert !fdConverter.isExceptional();
 
         count = fdConverter.getDigits(digits);
 
@@ -729,6 +731,7 @@ final class DigitList implements Cloneable {
     }
 
     // The digit part of -9223372036854775808L
+    @Stable
     private static final byte[] LONG_MIN_REP = "9223372036854775808".getBytes(StandardCharsets.ISO_8859_1);
 
     public String toString() {
