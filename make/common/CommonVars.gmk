@@ -215,12 +215,9 @@ INTERIM_LANGTOOLS_ARGS := \
     --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
     $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
     #
-JAVAC_MAIN_CLASS := -m jdk.compiler.interim/com.sun.tools.javac.Main
-JAVADOC_MAIN_CLASS := -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
 
-# You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
-# Use = assignment to be able to override in bootcycle-spec.gmk
-NEW_JAVAC = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
+JAVADOC_MAIN_CLASS := -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
+# Use = assignment to pick up overridden INTERIM_LANGTOOLS_ARGS in bootcycle builds
 NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
 # CD is going away, but remains to cater for legacy makefiles.
