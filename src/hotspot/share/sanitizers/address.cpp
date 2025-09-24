@@ -26,41 +26,91 @@
 
 #include "logging/log.hpp"
 #include "sanitizers/address.hpp"
+#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
 
 #include <dlfcn.h>
 #include <stdio.h>
 
-
-static const char* g_asan_report = nullptr;
 typedef void (*callback_setter_t) (void (*callback)(const char *));
-static callback_setter_t callback_setter = nullptr;
+static callback_setter_t g_callback_setter = nullptr;
+static const char* g_report = nullptr;
 
 extern "C" void asan_error_callback(const char* report_text) {
-  // Keep things very short and simple here;
-  // Do use as little as possible of any hotspot infrastructure.
-  // We will print out the report text on stderr; then, we will
-  // end the JVM with a fatal error, resulting in hs-err file
-  // and core dump. VMError will also print the error report
-  // to the hs-err file.
-  g_asan_report = report_text;
+  // Please keep things very short and simple here and use as little
+  // as possible of any hotspot infrastructure. However shaky the JVM,
+  // we should always at least get the ASAN report on stderr.
+
+  // Note: this is threadsafe since ASAN synchronizes error reports
+  g_report = report_text;
+
+  // First, print off the bare error to stderr
   fprintf(stderr, "JVM caught ASAN Error\n");
   fprintf(stderr, "%s\n", report_text);
-  fatal("ASAN error caught");
-}
 
-const char* Asan::report() {
-  return g_asan_report;
+  // Then, let normal JVM error handling run its due course.
+  fatal("ASAN Error");
 }
 
 void Asan::initialize() {
-  callback_setter = (callback_setter_t) dlsym(RTLD_DEFAULT, "__asan_set_error_report_callback");
-  if (callback_setter) {
-    callback_setter(asan_error_callback);
-    log_info(asan)("JVM callback for ASAN errors successfully installed");
-  } else {
-    log_info(asan)("*** Failed to install JVM callback for ASAN. ASAN errors will not generate hs-err files. ***");
+
+  g_callback_setter = (callback_setter_t) dlsym(RTLD_DEFAULT, "__asan_set_error_report_callback");
+  if (g_callback_setter == nullptr) {
+    log_warning(asan)("*** Failed to install JVM callback for ASAN. ASAN errors will not generate hs-err files. ***");
+    return;
+  }
+
+  g_callback_setter(asan_error_callback);
+  log_info(asan)("JVM callback for ASAN errors successfully installed");
+
+  // Controlling core dump behavior:
+  //
+  // In hotspot, CreateCoredumpOnCrash decides whether to create a core dump (on Posix, whether to
+  // end the process with abort(3) or exit(3)).
+  //
+  // Core generation in the default ASAN reporter is controlled by two options:
+  // - "abort_on_error=0" (default) - end with exit(3), "abort_on_error=1" end with abort(3)
+  // - "disable_coredump=1" (default) disables cores by imposing a near-zero core soft limit.
+  // By default both options are set to prevent cores. That default makes sense since ASAN cores
+  // can get very large (due to the shadow map) and very numerous (ASAN is typically ran for
+  // large-scale integration tests, not targeted micro-tests).
+  //
+  // In hotspot ASAN builds, we replace the default ASAN reporter. The soft limit imposed by
+  // "disable_coredump=1" is still in effect. But "abort_on_error" is not honored. Since we'd
+  // like to exhibit exactly the same behavior as the standard ASAN error reporter, we honor
+  // "abort_on_error=1" by ending the JVM with exit(3) (we just switch off CreateCoredumpOnCrash).
+  //
+  // Thus:
+  //     abort_on_error      disable_coredump       core file?
+  //         0                   0                  No  (enforced by ergo-setting CreateCoredumpOnCrash=0)
+  // (*)     0                   1                  No  (enforced by ASAN-imposed soft limit)
+  //         1                   0                  Yes, unless -XX:-CreateCoredumpOnCrash set on command line
+  //         1                   1                  No  (enforced by ASAN-imposed soft limit)
+  // (*) is the default if no ASAN options are specified.
+
+  const char* const asan_options = getenv("ASAN_OPTIONS");
+  const bool abort_on_error = (asan_options != nullptr) && ::strstr(asan_options, "abort_on_error=1");
+  if (!abort_on_error) {
+    if (CreateCoredumpOnCrash && FLAG_IS_CMDLINE(CreateCoredumpOnCrash)) {
+      log_warning(asan)("CreateCoredumpOnCrash overruled by%s abort_on_error, core generation will be disabled.",
+                        asan_options != nullptr ? "" : " default setting for");
+      log_warning(asan)("Use 'ASAN_OPTIONS=abort_on_error=1:disable_coredump=0:unmap_shadow_on_exit=1' to enable core generation.");
+    }
+    FLAG_SET_ERGO(CreateCoredumpOnCrash, false);
+  }
+}
+
+bool Asan::had_error() {
+  return g_report != nullptr;
+}
+
+void Asan::report(outputStream* st) {
+  if (had_error()) {
+    // Use raw print here to avoid truncation.
+    st->print_raw(g_report);
+    st->cr();
+    st->cr();
   }
 }
 

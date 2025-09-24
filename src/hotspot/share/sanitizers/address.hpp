@@ -76,11 +76,13 @@
   } while (false)
 #endif
 
+class outputStream;
+
 #ifdef ADDRESS_SANITIZER
 struct Asan : public AllStatic {
   static void initialize();
-  // Returns the ASAN report text; nullptr if no ASAN error happened.
-  static const char* report();
+  static bool had_error();
+  static void report(outputStream* st);
 };
 #endif
 

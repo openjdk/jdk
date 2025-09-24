@@ -37,11 +37,9 @@
 // Note: this test can only run on debug since it relies on VMError::controlled_crash() which
 // only exists in debug builds.
 import java.io.File;
-import java.util.Arrays;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 
 public class AsanReportTest {
@@ -49,8 +47,11 @@ public class AsanReportTest {
     private static void do_test() throws Exception {
 
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "-Xmx100M",
-                "-XX:-CreateCoredumpOnCrash",
+                "-Xmx64M", "-XX:CompressedClassSpaceSize=64M",
+                // Default ASAN options should prevent core file generation, which should overrule +CreateCoredumpOnCrash.
+                // We test below.
+                "-XX:+CreateCoredumpOnCrash",
+                "-Xlog:asan",
                 // Switch off NMT since it can alter the error ASAN sees; we want the pure double free error
                 "-XX:NativeMemoryTracking=off",
                 // Causes double-free in controlled_crash
@@ -62,10 +63,12 @@ public class AsanReportTest {
         output.shouldNotHaveExitValue(0);
 
         // ASAN error should appear on stderr
+        output.shouldContain("CreateCoredumpOnCrash overruled");
         output.shouldContain("JVM caught ASAN Error");
-        output.shouldContain("# A fatal error has been detected by the Java Runtime Environment");
-        output.shouldMatch(".*AddressSanitizer.*double-free.*");
-        output.shouldContain("#  fatal error: ASAN error");
+        output.shouldMatch("AddressSanitizer.*double-free");
+        output.shouldMatch("# +A fatal error has been detected by the Java Runtime Environment");
+        output.shouldMatch("# +fatal error: ASAN");
+        output.shouldNotContain("Aborted (core dumped)");
 
         File hs_err_file = HsErrFileUtils.openHsErrFileFromOutput(output);
         Pattern[] pat = new Pattern[] {
@@ -74,7 +77,6 @@ public class AsanReportTest {
                 Pattern.compile(".*(crash_with_segfault|controlled_crash).*")
         };
         HsErrFileUtils.checkHsErrFileContent(hs_err_file, pat, false);
-
     }
 
     public static void main(String[] args) throws Exception {

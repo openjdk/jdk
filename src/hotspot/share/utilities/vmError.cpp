@@ -912,13 +912,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     os::print_date_and_time(st, buf, sizeof(buf));
 
 #ifdef ADDRESS_SANITIZER
-  STEP_IF("printing ASAN error information", _verbose && Asan::report() != nullptr)
+  STEP_IF("printing ASAN error information", _verbose && Asan::had_error())
     st->cr();
     st->print_cr("------------------  A S A N ----------------");
     st->cr();
-    // Note: Use print_raw, not print or print_cr, to avoid truncation
-    // (report can be longer than 2K)
-    st->print_raw(Asan::report());
+    Asan::report(st);
     st->cr();
 #endif // ADDRESS_SANITIZER
 
