@@ -234,6 +234,7 @@ class java_lang_String : AllStatic {
 class java_lang_Class : AllStatic {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+  friend class HeapShared;
 
  private:
 

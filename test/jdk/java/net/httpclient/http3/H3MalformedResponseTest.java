@@ -29,6 +29,7 @@ import jdk.internal.net.http.quic.TerminationCause;
 import jdk.internal.net.quic.QuicVersion;
 import jdk.test.lib.net.SimpleSSLContext;
 import jdk.test.lib.net.URIBuilder;
+import jdk.test.lib.Utils;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
@@ -368,7 +369,7 @@ public class H3MalformedResponseTest implements HttpServerAdapters {
             final HttpResponse<Void> response1 = client.sendAsync(
                             request,
                             BodyHandlers.discarding())
-                    .get(10, TimeUnit.SECONDS);
+                    .get(Utils.adjustTimeout(10), TimeUnit.SECONDS);
             fail("Expected the request to fail, got " + response1);
         } catch (TimeoutException e) {
             throw e;
