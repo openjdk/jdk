@@ -24,9 +24,15 @@
  */
 package jdk.jpackage.internal.model;
 
+import static jdk.jpackage.internal.cli.StandardOption.APPCLASS;
+import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
+import static jdk.jpackage.internal.cli.StandardOption.LAUNCHER_AS_SERVICE;
+import static jdk.jpackage.internal.cli.StandardOption.NAME;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import jdk.jpackage.internal.cli.Options;
 
 
 /**
@@ -70,12 +76,18 @@ public interface ExternalApplication {
      * Returns additional properties.
      * @return the additional properties
      */
-    Map<String, String> getExtra();
+    Options getExtra();
 
     /**
      * Additional launcher description.
+     *
+     * @param name    the name of the additional launcher, see
+     *                {@link Launcher#name()}
+     * @param service {@code true} if the additional launcher should be installed as
+     *                service, see {@link Launcher#isService()}
+     * @param extra   platform-specific properties of the additional launcher
      */
-    record LauncherInfo(String name, boolean service, Map<String, String> extra) {
+    record LauncherInfo(String name, boolean service, Options extra) {
         public LauncherInfo {
             Objects.requireNonNull(name);
             Objects.requireNonNull(extra);
@@ -83,5 +95,71 @@ public interface ExternalApplication {
                 throw new IllegalArgumentException();
             }
         }
+
+        public LauncherInfo(String name, boolean service) {
+            this(name, service, Options.concat());
+        }
+
+        public LauncherInfo(Options options) {
+            this(NAME.getFrom(options), LAUNCHER_AS_SERVICE.getFrom(options), options.copyWithout(NAME.id(), LAUNCHER_AS_SERVICE.id()));
+        }
+
+        /**
+         * Returns {@code Options} representation of this instance.
+         * <p>
+         * Return value contains {@link #NAME} and {@link #LAUNCHER_AS_SERVICE}
+         * values merged with the {@code Options} instance returned by the
+         * {@link #extra()} method.
+         *
+         * @return the {@code Options} representation of this instance
+         */
+        public Options asOptions() {
+            return Options.concat(Options.of(Map.of(NAME, name, LAUNCHER_AS_SERVICE, service)), extra);
+        }
+    }
+
+    static ExternalApplication create(Options appOptions, List<Options> addLauncherOptions) {
+        Objects.requireNonNull(appOptions);
+        Objects.requireNonNull(addLauncherOptions);
+
+        var addLaunchres = addLauncherOptions.stream().map(LauncherInfo::new).toList();
+
+        var appVersion = APP_VERSION.getFrom(appOptions);
+        var appName = NAME.getFrom(appOptions);
+        var mainClass = APPCLASS.getFrom(appOptions);
+        var extra = appOptions.copyWithout(APP_VERSION.id(), NAME.id(), APPCLASS.id());
+
+        return new ExternalApplication() {
+
+            @Override
+            public List<LauncherInfo> getAddLaunchers() {
+                return addLaunchres;
+            }
+
+            @Override
+            public String getAppVersion() {
+                return appVersion;
+            }
+
+            @Override
+            public String getAppName() {
+                return appName;
+            }
+
+            @Override
+            public String getLauncherName() {
+                return appName;
+            }
+
+            @Override
+            public String getMainClass() {
+                return mainClass;
+            }
+
+            @Override
+            public Options getExtra() {
+                return extra;
+            }
+        };
     }
 }

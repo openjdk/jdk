@@ -26,12 +26,15 @@ package jdk.jpackage.internal.model;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_APP_STORE;
+import static jdk.jpackage.internal.cli.StandardAppImageFileOption.MAC_SIGNED;
 
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import jdk.jpackage.internal.cli.OptionValue;
 import jdk.jpackage.internal.util.CompositeProxy;
 
 public interface MacApplication extends Application, MacApplicationMixin {
@@ -84,11 +87,11 @@ public interface MacApplication extends Application, MacApplicationMixin {
     }
 
     public enum ExtraAppImageFileField {
-        SIGNED("signed", app -> Boolean.toString(app.sign())),
-        APP_STORE("app-store", app -> Boolean.toString(app.appStore()));
+        SIGNED(MAC_SIGNED, app -> Boolean.toString(app.sign())),
+        APP_STORE(MAC_APP_STORE, app -> Boolean.toString(app.appStore()));
 
-        ExtraAppImageFileField(String fieldName, Function<MacApplication, String> getter) {
-            this.fieldName = fieldName;
+        ExtraAppImageFileField(OptionValue<?> option, Function<MacApplication, String> getter) {
+            this.fieldName = option.getName();
             this.getter = getter;
         }
 
