@@ -458,17 +458,18 @@ AC_DEFUN([UTIL_LOOKUP_PROGS],
 
 ################################################################################
 # Call UTIL_SETUP_TOOL with AC_CHECK_TOOLS to locate the tool. This will look
-# first for cross-compilation tools.
+# first for tools using the cross-compilation prefix, and then for tools without
+# this prefix. For each of these name variants, it will look first in the
+# toolchain path, and then in the normal path.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
-# $3: [path]
 AC_DEFUN([UTIL_LOOKUP_TOOLCHAIN_PROGS],
 [
   if test "x$ac_tool_prefix" = x; then
-    UTIL_LOOKUP_PROGS($1, $2, $3)
+    UTIL_LOOKUP_PROGS($1, $2, [$TOOLCHAIN_PATH:$PATH])
   else
     prefixed_names=$(for name in $2; do echo ${ac_tool_prefix}${name} $name; done)
-    UTIL_LOOKUP_PROGS($1, $prefixed_names, $3)
+    UTIL_LOOKUP_PROGS($1, $prefixed_names, [$TOOLCHAIN_PATH:$PATH])
   fi
 ])
 
@@ -497,10 +498,9 @@ AC_DEFUN([UTIL_REQUIRE_PROGS],
 # Like UTIL_LOOKUP_PROGS but fails if no tool was found.
 # $1: variable to set
 # $2: executable name (or list of names) to look for
-# $3: [path]
 AC_DEFUN([UTIL_REQUIRE_TOOLCHAIN_PROGS],
 [
-  UTIL_LOOKUP_TOOLCHAIN_PROGS($1, $2, $3)
+  UTIL_LOOKUP_TOOLCHAIN_PROGS($1, $2)
   UTIL_CHECK_NONEMPTY($1)
 ])
 

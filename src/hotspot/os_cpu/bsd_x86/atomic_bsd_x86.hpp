@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
 // Implementation of class atomic
 
 template<size_t byte_size>
-struct Atomic::PlatformAdd {
+struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
   D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order /* order */) const;
 
@@ -40,8 +40,8 @@ struct Atomic::PlatformAdd {
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
-                                                atomic_memory_order /* order */) const {
+inline D AtomicAccess::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
+                                                      atomic_memory_order /* order */) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));
   D old_value;
@@ -54,9 +54,9 @@ inline D Atomic::PlatformAdd<4>::fetch_then_add(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order /* order */) const {
+inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
+                                                   T exchange_value,
+                                                   atomic_memory_order /* order */) const {
   STATIC_ASSERT(4 == sizeof(T));
   __asm__ volatile (  "xchgl (%2),%0"
                     : "=r" (exchange_value)
@@ -67,10 +67,10 @@ inline T Atomic::PlatformXchg<4>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order /* order */) const {
+inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order /* order */) const {
   STATIC_ASSERT(1 == sizeof(T));
   __asm__ volatile (  "lock cmpxchgb %1,(%3)"
                     : "=a" (exchange_value)
@@ -81,10 +81,10 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order /* order */) const {
+inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order /* order */) const {
   STATIC_ASSERT(4 == sizeof(T));
   __asm__ volatile (  "lock cmpxchgl %1,(%3)"
                     : "=a" (exchange_value)
@@ -96,8 +96,8 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest,
 #ifdef AMD64
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
-                                                atomic_memory_order /* order */) const {
+inline D AtomicAccess::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
+                                                      atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(I));
   STATIC_ASSERT(8 == sizeof(D));
   D old_value;
@@ -110,9 +110,9 @@ inline D Atomic::PlatformAdd<8>::fetch_then_add(D volatile* dest, I add_value,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
-                                             T exchange_value,
-                                             atomic_memory_order /* order */) const {
+inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
+                                                   T exchange_value,
+                                                   atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(T));
   __asm__ __volatile__ ("xchgq (%2),%0"
                         : "=r" (exchange_value)
@@ -123,10 +123,10 @@ inline T Atomic::PlatformXchg<8>::operator()(T volatile* dest,
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order /* order */) const {
+inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(T));
   __asm__ __volatile__ (  "lock cmpxchgq %1,(%3)"
                         : "=a" (exchange_value)
@@ -145,25 +145,25 @@ extern "C" {
 
 template<>
 template<typename T>
-inline T Atomic::PlatformCmpxchg<8>::operator()(T volatile* dest,
-                                                T compare_value,
-                                                T exchange_value,
-                                                atomic_memory_order /* order */) const {
+inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order /* order */) const {
   STATIC_ASSERT(8 == sizeof(T));
   return cmpxchg_using_helper<int64_t>(_Atomic_cmpxchg_long, dest, compare_value, exchange_value);
 }
 
 // No direct support for 8-byte xchg; emulate using cmpxchg.
 template<>
-struct Atomic::PlatformXchg<8> : Atomic::XchgUsingCmpxchg<8> {};
+struct AtomicAccess::PlatformXchg<8> : AtomicAccess::XchgUsingCmpxchg<8> {};
 
 // No direct support for 8-byte add; emulate using cmpxchg.
 template<>
-struct Atomic::PlatformAdd<8> : Atomic::AddUsingCmpxchg<8> {};
+struct AtomicAccess::PlatformAdd<8> : AtomicAccess::AddUsingCmpxchg<8> {};
 
 template<>
 template<typename T>
-inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
+inline T AtomicAccess::PlatformLoad<8>::operator()(T const volatile* src) const {
   STATIC_ASSERT(8 == sizeof(T));
   volatile int64_t dest;
   _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(src), reinterpret_cast<volatile int64_t*>(&dest));
@@ -172,8 +172,8 @@ inline T Atomic::PlatformLoad<8>::operator()(T const volatile* src) const {
 
 template<>
 template<typename T>
-inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
-                                                 T store_value) const {
+inline void AtomicAccess::PlatformStore<8>::operator()(T volatile* dest,
+                                                       T store_value) const {
   STATIC_ASSERT(8 == sizeof(T));
   _Atomic_move_long(reinterpret_cast<const volatile int64_t*>(&store_value), reinterpret_cast<volatile int64_t*>(dest));
 }
@@ -181,7 +181,7 @@ inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
 #endif // AMD64
 
 template<>
-struct Atomic::PlatformOrderedStore<1, RELEASE_X_FENCE>
+struct AtomicAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const {
@@ -193,7 +193,7 @@ struct Atomic::PlatformOrderedStore<1, RELEASE_X_FENCE>
 };
 
 template<>
-struct Atomic::PlatformOrderedStore<2, RELEASE_X_FENCE>
+struct AtomicAccess::PlatformOrderedStore<2, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const {
@@ -205,7 +205,7 @@ struct Atomic::PlatformOrderedStore<2, RELEASE_X_FENCE>
 };
 
 template<>
-struct Atomic::PlatformOrderedStore<4, RELEASE_X_FENCE>
+struct AtomicAccess::PlatformOrderedStore<4, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const {
@@ -218,7 +218,7 @@ struct Atomic::PlatformOrderedStore<4, RELEASE_X_FENCE>
 
 #ifdef AMD64
 template<>
-struct Atomic::PlatformOrderedStore<8, RELEASE_X_FENCE>
+struct AtomicAccess::PlatformOrderedStore<8, RELEASE_X_FENCE>
 {
   template <typename T>
   void operator()(volatile T* p, T v) const {

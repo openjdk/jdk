@@ -48,8 +48,6 @@ struct G1CollectionSetCandidateInfo {
     ++_num_unreclaimed;
     return _num_unreclaimed < G1NumCollectionsKeepPinned;
   }
-
-  static int compare_region_gc_efficiency(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 };
 
 using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandidateInfo>;
@@ -91,7 +89,6 @@ public:
   }
 
   void add(G1HeapRegion* hr);
-  void add(G1CollectionSetCandidateInfo& hr_info);
 
   uint length() const { return (uint)_candidates.length(); }
 
@@ -102,7 +99,7 @@ public:
 
   void calculate_efficiency();
 
-  size_t liveness() const;
+  double liveness_percent() const;
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
@@ -235,10 +232,10 @@ public:
 
   void clear();
 
-  // Merge collection set candidates from marking into the current marking list
+  // Merge collection set candidates from marking into the current marking candidates
   // (which needs to be empty).
-  void set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
-                                   uint num_infos);
+  void set_candidates_from_marking(G1HeapRegion** candidates,
+                                   uint num_candidates);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
   // regions.

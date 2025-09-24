@@ -177,7 +177,7 @@ public:
       X1(GENEALOGY, genealogy);
       default:
         static char buffer[30];
-        snprintf(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
+        os::snprintf_checked(buffer, sizeof(buffer), "user_tag=0x%x(%d)", user_tag, user_tag);
         return buffer;
     }
   }
