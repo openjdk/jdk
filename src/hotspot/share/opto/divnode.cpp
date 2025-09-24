@@ -1198,44 +1198,76 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 //------------------------------Value------------------------------------------
-const Type* ModINode::Value(PhaseGVN* phase) const {
+static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node* in2, const BasicType bt) {
+  assert(bt == T_INT || bt == T_LONG, "unexpected basic type");
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in1);
+  const Type* t2 = phase->type(in2);
+  if (t1 == Type::TOP) { return Type::TOP; }
+  if (t2 == Type::TOP) { return Type::TOP; }
 
   // We always generate the dynamic check for 0.
   // 0 MOD X is 0
-  if( t1 == TypeInt::ZERO ) return TypeInt::ZERO;
+  if (t1 == TypeInteger::zero(bt)) { return t1; }
+
   // X MOD X is 0
-  if (in(1) == in(2)) {
-    return TypeInt::ZERO;
+  if (in1 == in2) {
+    return TypeInteger::zero(bt);
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
-  const TypeInt *i1 = t1->is_int();
-  const TypeInt *i2 = t2->is_int();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= 0 && i2->_lo >= 0 )
-      return TypeInt::POS;
-    // If both numbers are not constants, we know little.
-    return TypeInt::INT;
-  }
   // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeInt::POS;
+  if (t2 == TypeInteger::zero(bt)) {
+    return Type::TOP;
+  }
 
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jint && i2->get_con() == -1 )
-    return TypeInt::ZERO;
+  const TypeInteger* i1 = t1->is_integer(bt);
+  const TypeInteger* i2 = t2->is_integer(bt);
+  if (i1->is_con() && i2->is_con()) {
+    // We must be modulo'ing 2 int constants.
+    // Special case: min_jlong % '-1' is UB, and e.g., x86 triggers a division error.
+    // Any value % -1 is 0, so we can return 0 and avoid that scenario.
+    if (i2->get_con_as_long(bt) == -1) {
+      return TypeInteger::zero(bt);
+    }
+    return TypeInteger::make(i1->get_con_as_long(bt) % i2->get_con_as_long(bt), bt);
+  }
+  // We checked that t2 is not the zero constant. Hence, at least i2->_lo or i2->_hi must be non-zero,
+  // and hence its absoute value is bigger than zero. Hence, the magnitude of the divisor (i.e. the
+  // largest absolute value for any value in i2) must be in the range [1, 2^31] or [1, 2^63], depending
+  // on the BasicType.
+  julong divisor_magnitude = MAX2(g_uabs(i2->lo_as_long()), g_uabs(i2->hi_as_long()));
+  // JVMS lrem bytecode: "the magnitude of the result is always less than the magnitude of the divisor"
+  // "less than" means we can subtract 1 to get an inclusive upper bound in [0, 2^31-1] or [0, 2^63-1], respectively
+  jlong hi = static_cast<jlong>(divisor_magnitude - 1);
+  jlong lo = -hi;
+  // JVMS lrem bytecode: "the result of the remainder operation can be negative only if the dividend
+  // is negative and can be positive only if the dividend is positive"
+  // Note that with a dividend with bounds e.g. lo == -4 and hi == -1 can still result in values
+  // below lo; i.e., -3 % 3 == 0.
+  // That means we cannot restrict the bound that is closer to zero beyond knowing its sign (or zero).
+  if (i1->hi_as_long() <= 0) {
+    // all dividends are not positive, so the result is not positive
+    hi = 0;
+    // if the dividend is known to be closer to zero, use that as a lower limit
+    lo = MAX2(lo, i1->lo_as_long());
+  } else if (i1->lo_as_long() >= 0) {
+    // all dividends are not negative, so the result is not negative
+    lo = 0;
+    // if the dividend is known to be closer to zero, use that as an upper limit
+    hi = MIN2(hi, i1->hi_as_long());
+  } else {
+    // Mixed signs, so we don't know the sign of the result, but the result is
+    // either the dividend itself or a value closer to zero than the dividend,
+    // and it is closer to zero than the divisor.
+    // As we know i1->_lo < 0 and i1->_hi > 0, we can use these bounds directly.
+    lo = MAX2(lo, i1->lo_as_long());
+    hi = MIN2(hi, i1->hi_as_long());
+  }
+  return TypeInteger::make(lo, hi, MAX2(i1->_widen, i2->_widen), bt);
+}
 
-  return TypeInt::make( i1->get_con() % i2->get_con() );
+const Type* ModINode::Value(PhaseGVN* phase) const {
+  return mod_value(phase, in(1), in(2), T_INT);
 }
 
 //=============================================================================
@@ -1464,43 +1496,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value------------------------------------------
 const Type* ModLNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // We always generate the dynamic check for 0.
-  // 0 MOD X is 0
-  if( t1 == TypeLong::ZERO ) return TypeLong::ZERO;
-  // X MOD X is 0
-  if (in(1) == in(2)) {
-    return TypeLong::ZERO;
-  }
-
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
-
-  const TypeLong *i1 = t1->is_long();
-  const TypeLong *i2 = t2->is_long();
-  if( !i1->is_con() || !i2->is_con() ) {
-    if( i1->_lo >= CONST64(0) && i2->_lo >= CONST64(0) )
-      return TypeLong::POS;
-    // If both numbers are not constants, we know little.
-    return TypeLong::LONG;
-  }
-  // Mod by zero?  Throw exception at runtime!
-  if( !i2->get_con() ) return TypeLong::POS;
-
-  // We must be modulo'ing 2 float constants.
-  // Check for min_jint % '-1', result is defined to be '0'.
-  if( i1->get_con() == min_jlong && i2->get_con() == -1 )
-    return TypeLong::ZERO;
-
-  return TypeLong::make( i1->get_con() % i2->get_con() );
+  return mod_value(phase, in(1), in(2), T_LONG);
 }
 
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {

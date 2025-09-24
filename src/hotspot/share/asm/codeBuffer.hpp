@@ -33,8 +33,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/linkedlist.hpp"
-#include "utilities/resizableHashTable.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 template <typename T>
 static inline void put_native(address p, T x) {

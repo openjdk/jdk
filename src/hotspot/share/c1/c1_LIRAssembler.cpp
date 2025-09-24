@@ -194,8 +194,7 @@ void LIR_Assembler::emit_exception_entries(ExceptionInfoList* info_list) {
       XHandler* handler = handlers->handler_at(j);
       assert(handler->lir_op_id() != -1, "handler not processed by LinearScan");
       assert(handler->entry_code() == nullptr ||
-             handler->entry_code()->instructions_list()->last()->code() == lir_branch ||
-             handler->entry_code()->instructions_list()->last()->code() == lir_delay_slot, "last operation must be branch");
+             handler->entry_code()->instructions_list()->last()->code() == lir_branch, "last operation must be branch");
 
       if (handler->entry_pco() == -1) {
         // entry code not emitted yet
