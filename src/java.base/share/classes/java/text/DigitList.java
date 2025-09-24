@@ -320,10 +320,10 @@ final class DigitList implements Cloneable {
      * fractional digits to be converted.  If false, total digits.
      */
     void set(boolean isNegative, double source, int maximumDigits, boolean fixedPoint) {
+        assert Double.isFinite(source);
+
         FloatingDecimal.BinaryToASCIIConverter fdConverter =
                 FloatingDecimal.getBinaryToASCIIConverter(source, COMPAT);
-        assert !fdConverter.isExceptional();
-
         boolean hasBeenRoundedUp = fdConverter.digitsRoundedUp();
         boolean valueExactAsDecimal = fdConverter.decimalDigitsExact();
 
