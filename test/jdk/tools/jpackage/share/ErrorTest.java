@@ -401,16 +401,16 @@ public final class ErrorTest {
                     .error("error.main-jar-does-not-exist", "non-existent.jar"),
             // non-existent runtime
             testSpec().addArgs("--runtime-image", "non-existent.runtime")
-                    .error("message.runtime-image-dir-does-not-exist", "runtime-image", "non-existent.runtime"),
+                    .error("error.paramater-not-directory", "non-existent.runtime", "--runtime-image"),
             // non-existent app image
             testSpec().noAppDesc().nativeType().addArgs("--name", "foo", "--app-image", "non-existent.appimage")
                     .error("ERR_AppImageNotExist", "non-existent.appimage"),
             // non-existent resource-dir
             testSpec().addArgs("--resource-dir", "non-existent.dir")
-                    .error("message.resource-dir-does-not-exist", "resource-dir", "non-existent.dir"),
+                    .error("error.paramater-not-directory", "non-existent.dir", "--resource-dir"),
             // non-existent icon
             testSpec().addArgs("--icon", "non-existent.icon")
-                    .error("ERR_IconFileNotExit", cannedAbsolutePath("non-existent.icon")),
+                    .error("error.paramater-not-file", "non-existent.icon", "--icon"),
             // non-existent license file
             testSpec().nativeType().addArgs("--license-file", "non-existent.license")
                     .error("ERR_LicenseFileNotExit"),
@@ -541,7 +541,7 @@ public final class ErrorTest {
             testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.token())
                     .error("ERR_NoAddLauncherName"),
             testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
-                    .error("ERR_NoUniqueName")
+                    .error("error.launcher-duplicate-name", "foo")
         ));
     }
 
