@@ -291,18 +291,15 @@ private:
       return LogBitsPerLong;
     }
 
-    constexpr static uint64_t element_mask() {
-      return (1ULL << element_shift_count()) - 1;
-    }
-
     static int element_index(RVFeatureIndex feature) {
       int idx = feature >> element_shift_count();
       assert(idx < element_count(), "Features array index out of bounds");
       return idx;
     }
 
-    static uint64_t bit_mask(RVFeatureIndex feature) {
-      return (1ULL << (feature & element_mask()));
+    static uint64_t feature_bit(RVFeatureIndex feature) {
+      constexpr static uint64_t m = (1ULL << element_shift_count()) - 1;
+      return (1ULL << (feature & m));
     }
 
     static RVFeatureIndex convert(uint32_t index) {
@@ -324,19 +321,19 @@ private:
     void set_feature(uint32_t feature) {
       RVFeatureIndex f = convert(feature);
       int idx = element_index(f);
-      _features_bitmap[idx] |= bit_mask(f);
+      _features_bitmap[idx] |= feature_bit(f);
     }
 
     void clear_feature(uint32_t feature) {
       RVFeatureIndex f = convert(feature);
       int idx = element_index(f);
-      _features_bitmap[idx] &= ~bit_mask(f);
+      _features_bitmap[idx] &= ~feature_bit(f);
     }
 
     bool support_feature(uint32_t feature) {
       RVFeatureIndex f = convert(feature);
       int idx = element_index(f);
-      return (_features_bitmap[idx] & bit_mask(f)) != 0;
+      return (_features_bitmap[idx] & feature_bit(f)) != 0;
     }
   };
 
