@@ -31,8 +31,8 @@ package java.lang;
  *
  * @deprecated {@code Thread} originally specified a "{@code stop}" method to stop a
  *      victim thread by causing the victim thread to throw a {@code ThreadDeath}. It
- *      was inherently unsafe and deprecated in an early JDK release. The stop method
- *      has since been removed and {@code ThreadDeath} is deprecated, for removal.
+ *      was inherently unsafe and deprecated in an early JDK release. The {@code stop}
+ *      method has since been removed and {@code ThreadDeath} is deprecated, for removal.
  *
  * @since   1.0
  */
