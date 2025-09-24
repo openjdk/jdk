@@ -59,6 +59,7 @@ import sun.security.x509.X500Name;
  * @summary Apply certificate scope constraints to algorithms in
  *          "signature_algorithms" extension when
  *          "signature_algorithms_cert" extension is not being sent.
+ *          This test covers the server side for TLSv1.3.
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
  * @library /javax/net/ssl/templates
@@ -76,6 +77,14 @@ import sun.security.x509.X500Name;
  * Instead, we run a TLS handshake and check that certificate scope
  * constraints are being applied to algorithms in "signature_algorithms"
  * extension when "signature_algorithms_cert" extension is not being sent.
+ *
+ * Note that for TLSv1.2 disabling "signature_algorithms_cert" extension
+ * doesn't change anything for the signatures schemes list contained in
+ * CertificateRequest message. The TLSv1.2 CertificateRequest message
+ * doesn't contain extensions and includes the signatures schemes list
+ * directly (which is also an intersection of signature schemes allowed
+ * for handshake signatures and for the certificate signatures).
+ * This functionality is being tested by "DisableSignatureSchemePerScopeTLS12".
  */
 
 public class DisableCertSignAlgsExtForServerTLS13 extends SSLSocketTemplate {
@@ -125,7 +134,7 @@ public class DisableCertSignAlgsExtForServerTLS13 extends SSLSocketTemplate {
 
         if (disabled) {
             // Fails with "signature_algorithms_cert" extension disabled
-            // because in such case we use of an intersection of signature
+            // because in such case we use an intersection of signature
             // schemes allowed for handshake signatures and for the certificate
             // signatures for "signature_algorithms" extension.
             runAndCheckException(

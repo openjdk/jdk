@@ -27,6 +27,7 @@
  * @summary Apply certificate scope constraints to algorithms in
  *          "signature_algorithms" extension when
  *          "signature_algorithms_cert" extension is not being sent.
+ *          This test covers the client side for TLSv1.2.
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm DisableCertSignAlgsExtForClientTLS12
