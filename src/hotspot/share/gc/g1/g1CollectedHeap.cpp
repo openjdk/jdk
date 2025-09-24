@@ -480,6 +480,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
       log_warning(gc, alloc)("%s:  Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
     }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
   }
 
   ShouldNotReachHere();
@@ -713,6 +718,11 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         (try_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc, alloc)("%s: Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
+    }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
     }
   }
 
@@ -1551,10 +1561,6 @@ jint G1CollectedHeap::initialize() {
   return JNI_OK;
 }
 
-bool G1CollectedHeap::concurrent_mark_is_terminating() const {
-  return _cm_thread->should_terminate();
-}
-
 void G1CollectedHeap::stop() {
   // Stop all concurrent threads. We do this to make sure these threads
   // do not continue to execute and access resources (e.g. logging)
@@ -1881,7 +1887,7 @@ bool G1CollectedHeap::try_collect_concurrently(GCCause::Cause cause,
 
     // If VMOp skipped initiating concurrent marking cycle because
     // we're terminating, then we're done.
-    if (op.terminating()) {
+    if (is_shutting_down()) {
       LOG_COLLECT_CONCURRENTLY(cause, "skipped: terminating");
       return false;
     }
@@ -2511,13 +2517,7 @@ void G1CollectedHeap::update_perf_counter_cpu_time() {
 }
 
 void G1CollectedHeap::start_new_collection_set() {
-  // Clear current young cset group to allow adding.
-  // It is fine to clear it this late - evacuation does not add any remembered sets
-  // by itself, but only marks cards.
-  // The regions had their association to this group already removed earlier.
-  young_regions_cset_group()->clear();
-
-  collection_set()->start_incremental_building();
+  collection_set()->start();
 
   clear_region_attr();
 
@@ -2873,12 +2873,7 @@ void G1CollectedHeap::abandon_collection_set() {
   G1AbandonCollectionSetClosure cl;
   collection_set_iterate_all(&cl);
 
-  collection_set()->clear();
-  collection_set()->stop_incremental_building();
-
-  collection_set()->abandon_all_candidates();
-
-  young_regions_cset_group()->clear(true /* uninstall_group_cardset */);
+  collection_set()->abandon();
 }
 
 bool G1CollectedHeap::is_old_gc_alloc_region(G1HeapRegion* hr) {
@@ -3240,10 +3235,4 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
 void G1CollectedHeap::finish_codecache_marking_cycle() {
   CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
-}
-
-void G1CollectedHeap::prepare_group_cardsets_for_scan() {
-  young_regions_cardset()->reset_table_scanner_for_groups();
-
-  collection_set()->prepare_for_scan();
 }

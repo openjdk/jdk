@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +60,7 @@ public final class ModifiedUtf {
     /// [#utfLen(String, int)] skips scanning that prefix.
     ///
     /// @param str input string
-    public static int utfLen(String str) {
+    public static long utfLen(String str) {
         return utfLen(str, 0);
     }
 
@@ -72,12 +73,12 @@ public final class ModifiedUtf {
     /// @param countNonZeroAscii the number of non-zero ascii characters in the
     ///        prefix calculated by JLA.countNonZeroAscii(str)
     @ForceInline
-    public static int utfLen(String str, int countNonZeroAscii) {
-        int utflen = str.length();
-        for (int i = utflen - 1; i >= countNonZeroAscii; i--) {
+    public static long utfLen(String str, int countNonZeroAscii) {
+        long utflen = str.length();
+        for (int i = (int)utflen - 1; i >= countNonZeroAscii; i--) {
             int c = str.charAt(i);
             if (c >= 0x80 || c == 0)
-                utflen += (c >= 0x800) ? 2 : 1;
+                utflen += (c >= 0x800) ? 2L : 1L;
         }
         return utflen;
     }
@@ -99,8 +100,7 @@ public final class ModifiedUtf {
             return false;
         }
         // Check exact Modified UTF-8 length.
-        // The check strLen > CONSTANT_POOL_UTF8_MAX_BYTES above ensures that utfLen can't overflow here.
-        int utfLen = utfLen(str);
+        long utfLen = utfLen(str);
         return utfLen <= CONSTANT_POOL_UTF8_MAX_BYTES;
     }
 }
