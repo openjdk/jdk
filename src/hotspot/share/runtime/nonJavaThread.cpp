@@ -34,7 +34,6 @@
 #include "runtime/task.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/defaultStream.hpp"
-#include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -42,23 +41,15 @@
 
 // List of all NonJavaThreads and safe iteration over that list.
 
-class NonJavaThread::List {
-public:
-  NonJavaThread* volatile _head;
-  SingleWriterSynchronizer _protect;
-
-  List() : _head(nullptr), _protect() {}
-};
-
-NonJavaThread::List NonJavaThread::_the_list;
+DeferredStatic<NonJavaThread::List> NonJavaThread::_the_list;
 
 NonJavaThread::Iterator::Iterator() :
-  _protect_enter(_the_list._protect.enter()),
-  _current(AtomicAccess::load_acquire(&_the_list._head))
+  _protect_enter(_the_list->_protect.enter()),
+  _current(AtomicAccess::load_acquire(&_the_list->_head))
 {}
 
 NonJavaThread::Iterator::~Iterator() {
-  _the_list._protect.exit(_protect_enter);
+  _the_list->_protect.exit(_protect_enter);
 }
 
 void NonJavaThread::Iterator::step() {
@@ -76,8 +67,8 @@ void NonJavaThread::add_to_the_list() {
   MutexLocker ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
   // Initialize BarrierSet-related data before adding to list.
   BarrierSet::barrier_set()->on_thread_attach(this);
-  AtomicAccess::release_store(&_next, _the_list._head);
-  AtomicAccess::release_store(&_the_list._head, this);
+  AtomicAccess::release_store(&_next, _the_list->_head);
+  AtomicAccess::release_store(&_the_list->_head, this);
 }
 
 void NonJavaThread::remove_from_the_list() {
@@ -85,7 +76,7 @@ void NonJavaThread::remove_from_the_list() {
     MutexLocker ml(NonJavaThreadsList_lock, Mutex::_no_safepoint_check_flag);
     // Cleanup BarrierSet-related data before removing from list.
     BarrierSet::barrier_set()->on_thread_detach(this);
-    NonJavaThread* volatile* p = &_the_list._head;
+    NonJavaThread* volatile* p = &_the_list->_head;
     for (NonJavaThread* t = *p; t != nullptr; p = &t->_next, t = *p) {
       if (t == this) {
         *p = _next;
@@ -97,7 +88,7 @@ void NonJavaThread::remove_from_the_list() {
   // allowed, so do it while holding a dedicated lock.  Outside and distinct
   // from NJTList_lock in case an iteration attempts to lock it.
   MutexLocker ml(NonJavaThreadsListSync_lock, Mutex::_no_safepoint_check_flag);
-  _the_list._protect.synchronize();
+  _the_list->_protect.synchronize();
   _next = nullptr;                 // Safe to drop the link now.
 }
 
