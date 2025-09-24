@@ -30,8 +30,8 @@
 import java.lang.invoke.MethodHandles;
 import java.text.CompactNumberFormat;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
-import java.text.ParseException;
 import java.util.Locale;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 
@@ -55,11 +56,8 @@ public class TestClone {
             .mapToObj(num -> new Thread(() -> {
                 var clone = (NumberFormat) original.clone();
                 for (int i = 0; i < 1000; i++) {
-                    try {
-                        assertEquals(num, clone.parse(String.valueOf(num)).intValue());
-                    } catch (ParseException pe) {
-                        throw new RuntimeException(pe);
-                    }
+                    assertDoesNotThrow(() ->
+                        assertEquals(num, clone.parse(String.valueOf(num)).intValue()));
                 }
             })).toList();
         threads.forEach(Thread::start);
@@ -74,6 +72,8 @@ public class TestClone {
 
     private static Stream<Arguments> referenceFields() throws ClassNotFoundException {
         return Stream.of(
+            Arguments.of("compactPatterns", String[].class),
+            Arguments.of("symbols", DecimalFormatSymbols.class),
             Arguments.of("decimalFormat", DecimalFormat.class),
             Arguments.of("defaultDecimalFormat", DecimalFormat.class),
             Arguments.of("digitList", Class.forName("java.text.DigitList"))
@@ -84,7 +84,7 @@ public class TestClone {
     @ParameterizedTest
     @MethodSource("referenceFields")
     void whiteBoxTest(String fieldName, Class<?> type) throws Throwable {
-        var original= NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+        var original = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
         var clone = original.clone();
         var lookup = MethodHandles.privateLookupIn(CompactNumberFormat.class, MethodHandles.lookup());
 

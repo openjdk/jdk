@@ -2506,6 +2506,9 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public CompactNumberFormat clone() {
         CompactNumberFormat other = (CompactNumberFormat) super.clone();
+
+        // Cloning reference fields. Other fields (e.g., "positivePrefixPatterns")
+        // are not cloned since they are read-only constants after initialization.
         other.compactPatterns = compactPatterns.clone();
         other.symbols = (DecimalFormatSymbols) symbols.clone();
         other.decimalFormat = (DecimalFormat) decimalFormat.clone();
