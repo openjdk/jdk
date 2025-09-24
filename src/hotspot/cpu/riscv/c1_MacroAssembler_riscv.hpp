@@ -68,7 +68,7 @@ using MacroAssembler::null_check;
   // obj       : must point to the object to lock, contents preserved
   // basic_lock: must be x10 & must point to the basic lock, contents destroyed
   // temp      : temporary register, must not be scratch register t0 or t1
-  void unlock_object(Register swap, Register obj, Register lock, Register temp, Label& slow_case);
+  void unlock_object(Register swap, Register obj, Register basic_lock, Register temp, Label& slow_case);
 
   void initialize_object(
     Register obj,                      // result: pointer to object after successful allocation
