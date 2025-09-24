@@ -71,29 +71,3 @@ TEST_VM(StringUtils, replace_no_expand) {
   deleted = StringUtils::replace_no_expand(s2, "\n", "");
   ASSERT_EQ(deleted, 0);
 }
-
-TEST_VM(StringUtils, truncate_middle) {
-  static const struct {
-    const char* s; size_t outlen; const char* expected;
-  } totest[] = {
-      // No truncation needed
-      { "",       10, "" },
-      { "Hallo",  10, "Hallo" },
-      { "123",    10, "123" },
-      { "C2 CompilerThread1267223",    100 + 1,  "C2 CompilerThread1267223" },
-      // Output buffer too short, plain truncation expected:
-      { "C2 CompilerThread12",           7 + 1,  "C2 Comp" },
-      // Output buffer long enough to abbreviate:
-      //                                     .123456789.123456789.1234567899
-      { "C2 CompilerThread12",          10 + 1,  "C2 C..ad12" },
-      { "C2 CompilerThread12",          15 + 1,  "C2 Com..read12" },
-      { "C2 CompilerThread1267223",     15 + 1,  "C2 Com..267223" },
-      { nullptr, 0, nullptr }
-  };
-  char out[100 + 1];
-  for (int i = 0; totest[i].s != nullptr; i++) {
-    assert(sizeof(out) >= totest[i].outlen, "Sanity");
-    EXPECT_STREQ(StringUtils::truncate_middle(totest[i].s, out, totest[i].outlen),
-                 totest[i].expected) << " for case " << i;
-  }
-}

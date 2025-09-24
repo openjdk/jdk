@@ -143,22 +143,3 @@ ccstrlist StringUtils::CommaSeparatedStringIterator::canonicalize(ccstrlist opti
   canonicalized_list[i] = '\0';
   return canonicalized_list;
 }
-
-char* StringUtils::truncate_middle(const char* s, char* out, size_t outlen) {
-  precond(out != nullptr && s != nullptr && outlen > 0);
-  constexpr int dots = 2;
-  const int maxchars = checked_cast<int>(outlen) - 1;
-  const int l = checked_cast<int>(strlen(s));
-  // Impose some reasonable length below which we just truncate dumbly (4 chars each for head/tail)
-  constexpr int smart_truncation_threshold = dots + (4 * 2);
-  if (l <= maxchars || maxchars < smart_truncation_threshold) {
-    (void) os::snprintf(out, outlen, "%s", s); // plain copy, may or may not truncate
-  } else {
-    const int half = (maxchars - dots) / 2;
-    const char* tail = s + l - half;
-    (void) os::snprintf(out, outlen, "%.*s..%s", half, s, tail);
-  }
-  return out;
-}
-
-

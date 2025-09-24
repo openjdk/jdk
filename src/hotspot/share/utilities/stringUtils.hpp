@@ -55,12 +55,6 @@ public:
   // The matching is case insensitive.
   static bool is_star_match(const char* star_pattern, const char* str);
 
-  // Given a string of unknown length and an output buffer, fit string into output buffer such
-  // that we truncate the string in the middle, if needed.
-  //   e.g. "C1 CompilerThread2", limited to 15 chars, would be "C1 Com..Thread2"
-  // Returns: out
-  static char* truncate_middle(const char* s, char* out, size_t outlen);
-
   class CommaSeparatedStringIterator {
   private:
     char* _token;

@@ -4859,10 +4859,14 @@ void os::set_native_thread_name(const char *name) {
   char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
   // We may need to truncate the thread name. Since a common pattern is
   // for thread names is to be both longer than 15 chars and have a trailing number
-  // ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc), we truncate "smartly"
-  // by attempting to preserve the trailing number in the name if there is one
-  // (e.g. "DispatcherWorkerThread21" -> "DispatcherW..21").
-  StringUtils::truncate_middle(name, buf, sizeof(buf));
+  // ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc), we preserve the end
+  // of the thread name by truncating the middle (e.g. "DispatcherW..21").
+  const size_t len = strlen(name);
+  if (len < sizeof(buf)) {
+    strcpy(buf, name);
+  } else {
+    (void) os::snprintf(buf, sizeof(buf), "%.7s..%.6s", name, name + len - 6);
+  }
   // set name in kernel
   int rc = prctl(PR_SET_NAME, buf);
   assert(rc == 0, "prctl(PR_SET_NAME) failed");
