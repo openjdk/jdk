@@ -345,12 +345,10 @@ public class EventHandler implements Runnable {
                     public boolean eventReceived(Event event) {
                         if (event instanceof VMDisconnectEvent) {
                             display("receieved VMDisconnect");
-                            synchronized(EventHandler.this) {
-                                vmDisconnected = true;
-                                status = 0; // OK finish
-                                EventHandler.this.notifyAll();
-                                removeListener(this);
-                            }
+                            vmDisconnected = true;
+                            status = 0; // OK finish
+                            EventHandler.this.notifyAll();
+                            removeListener(this);
                             return true;
                         }
                         return false;
