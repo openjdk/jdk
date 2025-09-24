@@ -17,3 +17,7 @@ compiler/intrinsics/klass/TestIsPrimitive.java        0000000 generic-all
 # It has the assumption about unresolved Integer.
 # However when AOTClassLinking is enabled, Integer is always resolved at JVM start-up.
 compiler/ciReplay/TestInliningProtectionDomain.java   0000000 generic-all
+
+# These tests fail often with AotJdk due to JDK-8323727
+compiler/arguments/TestStressReflectiveCode.java 8323727 generic-all
+compiler/arraycopy/TestCloneWithStressReflectiveCode.java 8323727 generic-all
