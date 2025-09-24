@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
  * @test
  * @bug 7069824 8042360 8032842 8175539 8210443 8242010 8276302
  * @summary Verify implementation for Locale matching.
- * @run testng/othervm LocaleMatchingTest
+ * @run junit/othervm LocaleMatchingTest
  */
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -40,15 +44,14 @@ import java.util.Map;
 
 import static java.util.Locale.FilteringMode.*;
 import static java.util.Locale.LanguageRange.*;
-import static org.testng.Assert.*;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LocaleMatchingTest {
 
-    @DataProvider(name = "LRConstructorData")
-    Object[][] LRConstructorData() {
+    static Object[][] LRConstructorData() {
         return new Object[][] {
                 // Range, Weight
                 {"elvish", MAX_WEIGHT},
@@ -62,8 +65,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LRConstructorNPEData")
-    Object[][] LRConstructorNPEData() {
+    static Object[][] LRConstructorNPEData() {
         return new Object[][] {
                 // Range, Weight
                 {null, MAX_WEIGHT},
@@ -71,8 +73,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LRConstructorIAEData")
-    Object[][] LRConstructorIAEData() {
+    static Object[][] LRConstructorIAEData() {
         return new Object[][] {
                 // Range, Weight
                 {"ja", -0.8},
@@ -93,8 +94,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LRParseData")
-    Object[][] LRParseData() {
+    static Object[][] LRParseData() {
         return new Object[][] {
                 // Ranges, Expected result
                 {"Accept-Language: fr-FX, de-DE;q=0.5, fr-tp-x-FOO;q=0.1, "
@@ -139,8 +139,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LRParseIAEData")
-    Object[][] LRParseIAEData() {
+    static Object[][] LRParseIAEData() {
         return new Object[][] {
                 // Ranges
                 {""},
@@ -148,8 +147,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LRMapEquivalentsData")
-    Object[][] LRMapEquivalentsData() {
+    static Object[][] LRMapEquivalentsData() {
         return new Object[][] {
                 // Ranges, Map, Expected result
                 {LanguageRange.parse("zh, zh-TW;q=0.8, ar;q=0.9, EN, zh-HK, ja-JP;q=0.2, es;q=0.4"),
@@ -181,8 +179,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LFilterData")
-    Object[][] LFilterData() {
+    static Object[][] LFilterData() {
         return new Object[][] {
                 // Range, LanguageTags, FilteringMode, Expected locales
                 {"ja-JP, fr-FR", "de-DE, en, ja-JP-hepburn, fr, he, ja-Latn-JP",
@@ -203,8 +200,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LFilterNPEData")
-    Object[][] LFilterNPEData() {
+    static Object[][] LFilterNPEData() {
         return new Object[][] {
                 // Range, LanguageTags, FilteringMode
                 {"en;q=0.2, ja-*-JP, fr-JP", null, REJECT_EXTENDED_RANGES},
@@ -212,8 +208,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LFilterTagsData")
-    Object[][] LFilterTagsData() {
+    static Object[][] LFilterTagsData() {
         return new Object[][] {
                 // Range, LanguageTags, FilteringMode, Expected language tags
                 {"fr-FR, fr-BG;q=0.8, *;q=0.5, en;q=0", "en-US, fr-FR, fr-CA, fr-BG",
@@ -274,8 +269,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LLookupData")
-    Object[][] LLookupData() {
+    static Object[][] LLookupData() {
         return new Object[][] {
                 // Range, LanguageTags, Expected locale
                 {"en;q=0.2, *-JP;q=0.6, iw", "de-DE, en, ja-JP-hepburn, fr-JP, he", "he"},
@@ -284,8 +278,7 @@ public class LocaleMatchingTest {
         };
     }
 
-    @DataProvider(name = "LLookupTagData")
-    Object[][] LLookupTagData() {
+    static Object[][] LLookupTagData() {
         return new Object[][] {
                 // Range, LanguageTags, Expected language tag
                 {"en, *", "es, de, ja-JP", null},
@@ -298,117 +291,135 @@ public class LocaleMatchingTest {
     }
 
     @Test
-    public void testLRConstants() {
-        assertEquals(MIN_WEIGHT, 0.0, "    MIN_WEIGHT should be 0.0 but got "
+    void testLRConstants() {
+        assertEquals(0.0, MIN_WEIGHT, "    MIN_WEIGHT should be 0.0 but got "
                 + MIN_WEIGHT);
-        assertEquals(MAX_WEIGHT, 1.0, "    MAX_WEIGHT should be 1.0 but got "
+        assertEquals(1.0, MAX_WEIGHT, "    MAX_WEIGHT should be 1.0 but got "
                 + MAX_WEIGHT);
     }
 
-    @Test(dataProvider = "LRConstructorData")
-    public void testLRConstructors(String range, double weight) {
+    @MethodSource("LRConstructorData")
+    @ParameterizedTest
+    void testLRConstructors(String range, double weight) {
         LanguageRange lr;
         if (weight == MAX_WEIGHT) {
             lr = new LanguageRange(range);
         } else {
             lr = new LanguageRange(range, weight);
         }
-        assertEquals(lr.getRange(), range.toLowerCase(Locale.ROOT),
+        assertEquals(range.toLowerCase(Locale.ROOT), lr.getRange(),
                 "    LR.getRange() returned unexpected value. Expected: "
                         + range.toLowerCase(Locale.ROOT) + ", got: " + lr.getRange());
-        assertEquals(lr.getWeight(), weight,
+        assertEquals(weight, lr.getWeight(),
                 "    LR.getWeight() returned unexpected value. Expected: "
                         + weight + ", got: " + lr.getWeight());
     }
 
-    @Test(dataProvider = "LRConstructorNPEData", expectedExceptions = NullPointerException.class)
-    public void testLRConstructorNPE(String range, double weight) {
+    @MethodSource("LRConstructorNPEData")
+    @ParameterizedTest
+    void testLRConstructorNPE(String range, double weight) {
         if (weight == MAX_WEIGHT) {
-            new LanguageRange(range);
+            assertThrows(NullPointerException.class, () -> new LanguageRange(range));
         } else {
-            new LanguageRange(range, weight);
+            assertThrows(NullPointerException.class, () -> new LanguageRange(range, weight));
         }
     }
 
-    @Test(dataProvider = "LRConstructorIAEData", expectedExceptions = IllegalArgumentException.class)
-    public void testLRConstructorIAE(String range, double weight) {
+    @MethodSource("LRConstructorIAEData")
+    @ParameterizedTest
+    void testLRConstructorIAE(String range, double weight) {
         if (weight == MAX_WEIGHT) {
-            new LanguageRange(range);
+            assertThrows(IllegalArgumentException.class, () -> new LanguageRange(range));
         } else {
-            new LanguageRange(range, weight);
+            assertThrows(IllegalArgumentException.class, () -> new LanguageRange(range, weight));
         }
     }
 
     @Test
-    public void testLREquals() {
+    void testLREquals() {
         LanguageRange lr1 = new LanguageRange("ja", 1.0);
         LanguageRange lr2 = new LanguageRange("ja");
         LanguageRange lr3 = new LanguageRange("ja", 0.1);
         LanguageRange lr4 = new LanguageRange("en", 1.0);
 
-        assertEquals(lr1, lr2, "    LR(ja, 1.0).equals(LR(ja)) should return true.");
-        assertNotEquals(lr1, lr3, "    LR(ja, 1.0).equals(LR(ja, 0.1)) should return false.");
-        assertNotEquals(lr1, lr4, "    LR(ja, 1.0).equals(LR(en, 1.0)) should return false.");
+        assertEquals(lr2, lr1, "    LR(ja, 1.0).equals(LR(ja)) should return true.");
+        assertNotEquals(lr3, lr1, "    LR(ja, 1.0).equals(LR(ja, 0.1)) should return false.");
+        assertNotEquals(lr4, lr1, "    LR(ja, 1.0).equals(LR(en, 1.0)) should return false.");
         assertNotNull(lr1, "    LR(ja, 1.0).equals(null) should return false.");
-        assertNotEquals(lr1, "", "    LR(ja, 1.0).equals(\"\") should return false.");
+        assertNotEquals("", lr1, "    LR(ja, 1.0).equals(\"\") should return false.");
     }
 
-    @Test(dataProvider = "LRParseData")
-    public void testLRParse(String ranges, List<LanguageRange> expected) {
-        assertEquals(LanguageRange.parse(ranges), expected,
+    @MethodSource("LRParseData")
+    @ParameterizedTest
+    void testLRParse(String ranges, List<LanguageRange> expected) {
+        assertEquals(expected, LanguageRange.parse(ranges),
                 "    LR.parse(" + ranges + ") test failed.");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testLRParseNPE() {
-        LanguageRange.parse(null);
+    @Test
+    void testLRParseNPE() {
+        assertThrows(NullPointerException.class, () -> LanguageRange.parse(null));
     }
 
-    @Test(dataProvider = "LRParseIAEData", expectedExceptions = IllegalArgumentException.class)
-    public void testLRParseIAE(String ranges) {
-        LanguageRange.parse(ranges);
+    @MethodSource("LRParseIAEData")
+    @ParameterizedTest
+    void testLRParseIAE(String ranges) {
+        assertThrows(IllegalArgumentException.class, () -> LanguageRange.parse(ranges));
     }
 
-    @Test(dataProvider = "LRMapEquivalentsData")
-    public void testLRMapEquivalents(List<Locale.LanguageRange> priorityList,
+    @MethodSource("LRMapEquivalentsData")
+    @ParameterizedTest
+    void testLRMapEquivalents(List<Locale.LanguageRange> priorityList,
             Map<String,List<String>> map, List<LanguageRange> expected) {
-        assertEquals(LanguageRange.mapEquivalents(priorityList, map), expected,
+        assertEquals(expected, LanguageRange.mapEquivalents(priorityList, map),
                 "    LR.mapEquivalents() test failed.");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
-    public void testLRMapEquivalentsNPE() {
-        LanguageRange.mapEquivalents(null, Map.of("ja", List.of("ja", "ja-Hira")));
+    @Test
+    void testLRMapEquivalentsNPE() {
+        assertThrows(NullPointerException.class,
+                () -> LanguageRange.mapEquivalents(null, Map.of("ja", List.of("ja", "ja-Hira"))));
     }
 
-    @Test(dataProvider = "LFilterData")
-    public void testLFilter(String ranges, String tags, FilteringMode mode, String expectedLocales) {
+    @MethodSource("LFilterData")
+    @ParameterizedTest
+    void testLFilter(String ranges, String tags, FilteringMode mode, String expectedLocales) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<Locale> tagList = generateLocales(tags);
         String actualLocales =
                 showLocales(Locale.filter(priorityList, tagList, mode));
-        assertEquals(actualLocales, expectedLocales, showErrorMessage("    L.Filter(" + mode + ")",
+        assertEquals(expectedLocales, actualLocales, showErrorMessage("    L.Filter(" + mode + ")",
                 ranges, tags, expectedLocales, actualLocales));
     }
 
-    @Test(dataProvider = "LFilterNPEData", expectedExceptions = NullPointerException.class)
-    public void testLFilterNPE(String ranges, String tags, FilteringMode mode) {
-        List<LanguageRange> priorityList = LanguageRange.parse(ranges);
-        List<Locale> tagList = generateLocales(tags);
-        showLocales(Locale.filter(priorityList, tagList, mode));
+    @MethodSource("LFilterNPEData")
+    @ParameterizedTest
+    void testLFilterNPE(String ranges, String tags, FilteringMode mode) {
+        if (ranges == null) {
+            // Ranges are null
+            assertThrows(NullPointerException.class, () -> LanguageRange.parse(ranges));
+        } else {
+            // Tags are null
+            List<LanguageRange> priorityList = LanguageRange.parse(ranges);
+            List<Locale> tagList = generateLocales(tags);
+            assertThrows(NullPointerException.class,
+                    () -> showLocales(Locale.filter(priorityList, tagList, mode)));
+        }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testLFilterIAE() {
+    @Test
+    void testLFilterIAE() {
         String ranges = "en;q=0.2, ja-*-JP, fr-JP";
         String tags = "de-DE, en, ja-JP-hepburn, fr, he, ja-Latn-JP";
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<Locale> tagList = generateLocales(tags);
-        showLocales(Locale.filter(priorityList, tagList, REJECT_EXTENDED_RANGES));
+        assertThrows(IllegalArgumentException.class,
+                () -> showLocales(Locale.filter(priorityList, tagList, REJECT_EXTENDED_RANGES)));
     }
 
-    @Test(dataProvider = "LFilterTagsData")
-    public void testLFilterTags(String ranges, String tags, FilteringMode mode, String expectedTags) {
+    @MethodSource("LFilterTagsData")
+    @ParameterizedTest
+    void testLFilterTags(String ranges, String tags, FilteringMode mode, String expectedTags) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<String> tagList = generateLanguageTags(tags);
         String actualTags;
@@ -417,36 +428,39 @@ public class LocaleMatchingTest {
         } else {
             actualTags = showLanguageTags(Locale.filterTags(priorityList, tagList, mode));
         }
-        assertEquals(actualTags, expectedTags,
+        assertEquals(expectedTags, actualTags,
                 showErrorMessage("    L.FilterTags(" + (mode != null ? mode : "") + ")",
                         ranges, tags, expectedTags, actualTags));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testLFilterTagsIAE() {
+    @Test
+    void testLFilterTagsIAE() {
         String ranges = "de-*-DE";
         String tags = "de-DE, de-de, de-Latn-DE, de-Latf-DE, de-DE-x-goethe, "
                 + "de-Latn-DE-1996, de-Deva-DE, de, de-x-DE, de-Deva";
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
-        showLanguageTags(Locale.filterTags(priorityList, generateLanguageTags(tags), REJECT_EXTENDED_RANGES));
+        assertThrows(IllegalArgumentException.class,
+                () -> showLanguageTags(Locale.filterTags(priorityList, generateLanguageTags(tags), REJECT_EXTENDED_RANGES)));
     }
 
-    @Test(dataProvider = "LLookupData")
-    public void testLLookup(String ranges, String tags, String expectedLocale) {
+    @MethodSource("LLookupData")
+    @ParameterizedTest
+    void testLLookup(String ranges, String tags, String expectedLocale) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<Locale> localeList = generateLocales(tags);
         String actualLocale =
                 Locale.lookup(priorityList, localeList).toLanguageTag();
-        assertEquals(actualLocale, expectedLocale, showErrorMessage("    L.Lookup()",
+        assertEquals(expectedLocale, actualLocale, showErrorMessage("    L.Lookup()",
                 ranges, tags, expectedLocale, actualLocale));
     }
 
-    @Test(dataProvider = "LLookupTagData")
-    public void testLLookupTag(String ranges, String tags, String expectedTag) {
+    @MethodSource("LLookupTagData")
+    @ParameterizedTest
+    void testLLookupTag(String ranges, String tags, String expectedTag) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<String> tagList = generateLanguageTags(tags);
         String actualTag = Locale.lookupTag(priorityList, tagList);
-        assertEquals(actualTag, expectedTag, showErrorMessage("    L.LookupTag()",
+        assertEquals(expectedTag, actualTag, showErrorMessage("    L.LookupTag()",
                 ranges, tags, expectedTag, actualTag));
     }
 

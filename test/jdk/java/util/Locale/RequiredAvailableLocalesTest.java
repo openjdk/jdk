@@ -20,33 +20,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
+
+/*
  * @test
  * @bug 8276186 8174269
  * @summary Checks whether getAvailableLocales() returns at least Locale.ROOT and
  *      Locale.US instances.
- * @run testng RequiredAvailableLocalesTest
+ * @run junit RequiredAvailableLocalesTest
  */
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.text.*;
+import java.text.BreakIterator;
+import java.text.Collator;
+import java.text.DateFormat;
+import java.text.DateFormatSymbols;
+import java.text.DecimalFormatSymbols;
+import java.text.NumberFormat;
 import java.time.format.DecimalStyle;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Locale;
+import java.util.Set;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@Test
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class RequiredAvailableLocalesTest {
 
     private static final Set<Locale> REQUIRED_LOCALES = Set.of(Locale.ROOT, Locale.US);
     private static final MethodType ARRAY_RETURN_TYPE = MethodType.methodType(Locale.class.arrayType());
     private static final MethodType SET_RETURN_TYPE = MethodType.methodType(Set.class);
 
-    @DataProvider
-    public Object[][] availableLocalesClasses() {
+    static Object[][] availableLocalesClasses() {
         return new Object[][] {
             {BreakIterator.class, ARRAY_RETURN_TYPE},
             {Calendar.class, ARRAY_RETURN_TYPE},
@@ -60,8 +68,9 @@ public class RequiredAvailableLocalesTest {
         };
     }
 
-    @Test (dataProvider = "availableLocalesClasses")
-    public void checkRequiredLocales(Class<?> c, MethodType mt) throws Throwable {
+    @MethodSource("availableLocalesClasses")
+    @ParameterizedTest
+    void checkRequiredLocales(Class<?> c, MethodType mt) throws Throwable {
         var ret = MethodHandles.lookup().findStatic(c, "getAvailableLocales", mt).invoke();
 
         if (ret instanceof Locale[] a) {
