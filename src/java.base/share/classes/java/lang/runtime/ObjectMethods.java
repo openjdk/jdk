@@ -58,15 +58,16 @@ public final class ObjectMethods {
     private static final MethodHandle TRUE = MethodHandles.constant(boolean.class, true);
     private static final MethodHandle ZERO = MethodHandles.zero(int.class);
     private static final MethodHandle CLASS_IS_INSTANCE;
-    private static final MethodHandle OBJECTS_EQUALS;
-    private static final MethodHandle OBJECTS_HASHCODE;
-    private static final MethodHandle OBJECTS_TOSTRING;
+    private static final MethodHandle IS_NULL;
+    private static final MethodHandle IS_ARG0_NULL;
+    private static final MethodHandle IS_ARG1_NULL;
     private static final MethodHandle OBJECT_EQ;
     private static final MethodHandle HASH_COMBINER;
+    private static final MethodType MT_OBJECT_BOOLEAN = MethodType.methodType(boolean.class, Object.class);
+    private static final MethodType MT_INT = MethodType.methodType(int.class);
 
     private static final HashMap<Class<?>, MethodHandle> primitiveEquals = new HashMap<>();
     private static final HashMap<Class<?>, MethodHandle> primitiveHashers = new HashMap<>();
-    private static final HashMap<Class<?>, MethodHandle> primitiveToString = new HashMap<>();
 
     static {
         try {
@@ -76,12 +77,12 @@ public final class ObjectMethods {
 
             CLASS_IS_INSTANCE = publicLookup.findVirtual(Class.class, "isInstance",
                                                          MethodType.methodType(boolean.class, Object.class));
-            OBJECTS_EQUALS = publicLookup.findStatic(Objects.class, "equals",
-                                                     MethodType.methodType(boolean.class, Object.class, Object.class));
-            OBJECTS_HASHCODE = publicLookup.findStatic(Objects.class, "hashCode",
-                                                       MethodType.methodType(int.class, Object.class));
-            OBJECTS_TOSTRING = publicLookup.findStatic(Objects.class, "toString",
-                                                       MethodType.methodType(String.class, Object.class));
+
+            var objectsIsNull = publicLookup.findStatic(Objects.class, "isNull",
+                                                        MethodType.methodType(boolean.class, Object.class));
+            IS_NULL = objectsIsNull;
+            IS_ARG0_NULL = MethodHandles.dropArguments(objectsIsNull, 1, Object.class);
+            IS_ARG1_NULL = MethodHandles.dropArguments(objectsIsNull, 0, Object.class);
 
             OBJECT_EQ = lookup.findStatic(OBJECT_METHODS_CLASS, "eq",
                                           MethodType.methodType(boolean.class, Object.class, Object.class));
@@ -121,23 +122,6 @@ public final class ObjectMethods {
                                                                  MethodType.methodType(int.class, double.class)));
             primitiveHashers.put(boolean.class, lookup.findStatic(Boolean.class, "hashCode",
                                                                   MethodType.methodType(int.class, boolean.class)));
-
-            primitiveToString.put(byte.class, lookup.findStatic(Byte.class, "toString",
-                                                                MethodType.methodType(String.class, byte.class)));
-            primitiveToString.put(short.class, lookup.findStatic(Short.class, "toString",
-                                                                 MethodType.methodType(String.class, short.class)));
-            primitiveToString.put(char.class, lookup.findStatic(Character.class, "toString",
-                                                                MethodType.methodType(String.class, char.class)));
-            primitiveToString.put(int.class, lookup.findStatic(Integer.class, "toString",
-                                                               MethodType.methodType(String.class, int.class)));
-            primitiveToString.put(long.class, lookup.findStatic(Long.class, "toString",
-                                                                MethodType.methodType(String.class, long.class)));
-            primitiveToString.put(float.class, lookup.findStatic(Float.class, "toString",
-                                                                 MethodType.methodType(String.class, float.class)));
-            primitiveToString.put(double.class, lookup.findStatic(Double.class, "toString",
-                                                                  MethodType.methodType(String.class, double.class)));
-            primitiveToString.put(boolean.class, lookup.findStatic(Boolean.class, "toString",
-                                                                   MethodType.methodType(String.class, boolean.class)));
         }
         catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
@@ -159,24 +143,23 @@ public final class ObjectMethods {
     private static boolean eq(boolean a, boolean b) { return a == b; }
 
     /** Get the method handle for combining two values of a given type */
-    private static MethodHandle equalator(Class<?> clazz) {
-        return (clazz.isPrimitive()
-                ? primitiveEquals.get(clazz)
-                : OBJECTS_EQUALS.asType(MethodType.methodType(boolean.class, clazz, clazz)));
+    private static MethodHandle equalator(MethodHandles.Lookup lookup, Class<?> clazz) throws Throwable {
+        if (clazz.isPrimitive())
+            return primitiveEquals.get(clazz);
+        MethodType mt = MethodType.methodType(boolean.class, clazz, clazz);
+        return MethodHandles.guardWithTest(IS_ARG0_NULL.asType(mt),
+                                           IS_ARG1_NULL.asType(mt),
+                                           lookup.findVirtual(clazz, "equals", MT_OBJECT_BOOLEAN).asType(mt));
     }
 
     /** Get the hasher for a value of a given type */
-    private static MethodHandle hasher(Class<?> clazz) {
-        return (clazz.isPrimitive()
-                ? primitiveHashers.get(clazz)
-                : OBJECTS_HASHCODE.asType(MethodType.methodType(int.class, clazz)));
-    }
-
-    /** Get the stringifier for a value of a given type */
-    private static MethodHandle stringifier(Class<?> clazz) {
-        return (clazz.isPrimitive()
-                ? primitiveToString.get(clazz)
-                : OBJECTS_TOSTRING.asType(MethodType.methodType(String.class, clazz)));
+    private static MethodHandle hasher(MethodHandles.Lookup lookup, Class<?> clazz) throws Throwable {
+        if (clazz.isPrimitive())
+            return primitiveHashers.get(clazz);
+        MethodType mt = MethodType.methodType(int.class, clazz);
+        return MethodHandles.guardWithTest(IS_NULL.asType(MethodType.methodType(boolean.class, clazz)),
+                                           MethodHandles.dropArguments(MethodHandles.zero(int.class), 0, clazz),
+                                           lookup.findVirtual(clazz, "hashCode", MT_INT).asType(mt));
     }
 
     /**
@@ -185,8 +168,8 @@ public final class ObjectMethods {
      * @param getters         the list of getters
      * @return the method handle
      */
-    private static MethodHandle makeEquals(Class<?> receiverClass,
-                                          List<MethodHandle> getters) {
+    private static MethodHandle makeEquals(MethodHandles.Lookup lookup, Class<?> receiverClass,
+                                           List<MethodHandle> getters) throws Throwable {
         MethodType rr = MethodType.methodType(boolean.class, receiverClass, receiverClass);
         MethodType ro = MethodType.methodType(boolean.class, receiverClass, Object.class);
         MethodHandle instanceFalse = MethodHandles.dropArguments(FALSE, 0, receiverClass, Object.class); // (RO)Z
@@ -196,7 +179,7 @@ public final class ObjectMethods {
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
         for (MethodHandle getter : getters) {
-            MethodHandle equalator = equalator(getter.type().returnType()); // (TT)Z
+            MethodHandle equalator = equalator(lookup, getter.type().returnType()); // (TT)Z
             MethodHandle thisFieldEqual = MethodHandles.filterArguments(equalator, 0, getter, getter); // (RR)Z
             accumulator = MethodHandles.guardWithTest(thisFieldEqual, accumulator, instanceFalse.asType(rr));
         }
@@ -212,13 +195,13 @@ public final class ObjectMethods {
      * @param getters         the list of getters
      * @return the method handle
      */
-    private static MethodHandle makeHashCode(Class<?> receiverClass,
-                                            List<MethodHandle> getters) {
+    private static MethodHandle makeHashCode(MethodHandles.Lookup lookup, Class<?> receiverClass,
+                                             List<MethodHandle> getters) throws Throwable {
         MethodHandle accumulator = MethodHandles.dropArguments(ZERO, 0, receiverClass); // (R)I
 
         // @@@ Use loop combinator instead?
         for (MethodHandle getter : getters) {
-            MethodHandle hasher = hasher(getter.type().returnType()); // (T)I
+            MethodHandle hasher = hasher(lookup, getter.type().returnType()); // (T)I
             MethodHandle hashThisField = MethodHandles.filterArguments(hasher, 0, getter);    // (R)I
             MethodHandle combineHashes = MethodHandles.filterArguments(HASH_COMBINER, 0, accumulator, hashThisField); // (RR)I
             accumulator = MethodHandles.permuteArguments(combineHashes, accumulator.type(), 0, 0); // adapt (R)I to (RR)I
@@ -403,12 +386,12 @@ public final class ObjectMethods {
             case "equals"   -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(boolean.class, recordClass, Object.class)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                yield makeEquals(recordClass, getterList);
+                yield makeEquals(lookup, recordClass, getterList);
             }
             case "hashCode" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(int.class, recordClass)))
                     throw new IllegalArgumentException("Bad method type: " + methodType);
-                yield makeHashCode(recordClass, getterList);
+                yield makeHashCode(lookup, recordClass, getterList);
             }
             case "toString" -> {
                 if (methodType != null && !methodType.equals(MethodType.methodType(String.class, recordClass)))
