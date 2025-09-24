@@ -868,7 +868,7 @@ void nmethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all
       if (unloading_occurred) {
         // If class unloading occurred we first clear ICs where the cached metadata
         // is referring to an unloaded klass or method.
-        CompiledIC_at(&iter)->clean_metadata();;
+        CompiledIC_at(&iter)->clean_metadata();
       }
 
       clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), clean_all);
