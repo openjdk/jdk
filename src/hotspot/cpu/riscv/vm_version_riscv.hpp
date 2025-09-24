@@ -246,6 +246,7 @@ class VM_Version : public Abstract_VM_Version {
   static NAME##RVExtFeatureValue NAME;                                                  \
 
   RV_EXT_FEATURE_FLAGS(DECLARE_RV_EXT_FEATURE)
+  #undef DECLARE_RV_EXT_FEATURE
 
   // Non-extension features
   //
@@ -266,6 +267,7 @@ class VM_Version : public Abstract_VM_Version {
   static NAME##RVNonExtFeatureValue NAME;                                          \
 
   RV_NON_EXT_FEATURE_FLAGS(DECLARE_RV_NON_EXT_FEATURE)
+  #undef DECLARE_RV_NON_EXT_FEATURE
 
 private:
   // Utility for AOT CPU feature store/check.
