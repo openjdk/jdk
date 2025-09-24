@@ -4857,10 +4857,11 @@ uint os::processor_id() {
 
 void os::set_native_thread_name(const char *name) {
   char buf[16]; // according to glibc manpage, 16 chars incl. '/0'
-  // We may need to truncate the thread name. Since a common pattern is
-  // for thread names is to be both longer than 15 chars and have a trailing number
-  // ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc), we preserve the end
-  // of the thread name by truncating the middle (e.g. "DispatcherW..21").
+  // We may need to truncate the thread name. Since a common pattern
+  // for thread names is to be both longer than 15 chars and have a
+  // trailing number ("DispatcherWorkerThread21", "C2 CompilerThread#54" etc),
+  // we preserve the end of the thread name by truncating the middle
+  // (e.g. "Dispatc..read21").
   const size_t len = strlen(name);
   if (len < sizeof(buf)) {
     strcpy(buf, name);
