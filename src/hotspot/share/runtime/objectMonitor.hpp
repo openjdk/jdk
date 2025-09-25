@@ -360,10 +360,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
  public:
   void      enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark);
   bool      enter_for(JavaThread* locking_thread);
-  bool      enter(JavaThread* current);
+  bool      enter(JavaThread* current, bool post_jvmti_events = true);
   bool      try_enter(JavaThread* current, bool check_for_recursion = true);
   bool      spin_enter(JavaThread* current);
-  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark);
+  void      enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark& contention_mark, bool post_jvmti_events = true);
   void      exit(JavaThread* current, bool not_suspended = true);
   bool      resume_operation(JavaThread* current, ObjectWaiter* node, ContinuationWrapper& cont);
   void      wait(jlong millis, bool interruptible, TRAPS);
