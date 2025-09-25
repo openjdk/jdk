@@ -904,7 +904,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder appendInstant() {
-        appendInternal(new InstantPrinterParser(-2));
+        appendInternal(new InstantPrinterParser(-2, false));
         return this;
     }
 
@@ -948,7 +948,7 @@ public final class DateTimeFormatterBuilder {
         if (fractionalDigits < -1 || fractionalDigits > 9) {
             throw new IllegalArgumentException("The fractional digits must be from -1 to 9 inclusive but was " + fractionalDigits);
         }
-        appendInternal(new InstantPrinterParser(fractionalDigits));
+        appendInternal(new InstantPrinterParser(fractionalDigits, false));
         return this;
     }
 
@@ -1076,7 +1076,7 @@ public final class DateTimeFormatterBuilder {
         if (style != TextStyle.FULL && style != TextStyle.SHORT) {
             throw new IllegalArgumentException("Style must be either full or short");
         }
-        appendInternal(new LocalizedOffsetIdPrinterParser(style));
+        appendInternal(new LocalizedOffsetIdPrinterParser(style, false));
         return this;
     }
 
@@ -1128,7 +1128,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneRegionId()
      */
     public DateTimeFormatterBuilder appendZoneId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zoneId(), "ZoneId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zoneId(), "ZoneId()", false));
         return this;
     }
 
@@ -1183,7 +1183,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneId()
      */
     public DateTimeFormatterBuilder appendZoneRegionId() {
-        appendInternal(new ZoneIdPrinterParser(QUERY_REGION_ONLY, "ZoneRegionId()"));
+        appendInternal(new ZoneIdPrinterParser(QUERY_REGION_ONLY, "ZoneRegionId()", false));
         return this;
     }
 
@@ -1239,7 +1239,7 @@ public final class DateTimeFormatterBuilder {
      * @see #appendZoneId()
      */
     public DateTimeFormatterBuilder appendZoneOrOffsetId() {
-        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zone(), "ZoneOrOffsetId()"));
+        appendInternal(new ZoneIdPrinterParser(TemporalQueries.zone(), "ZoneOrOffsetId()", false));
         return this;
     }
 
@@ -1276,7 +1276,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder appendZoneText(TextStyle textStyle) {
-        appendInternal(new ZoneTextPrinterParser(textStyle, null, false));
+        appendInternal(new ZoneTextPrinterParser(textStyle, null, false, false));
         return this;
     }
 
@@ -1320,7 +1320,7 @@ public final class DateTimeFormatterBuilder {
     public DateTimeFormatterBuilder appendZoneText(TextStyle textStyle,
                                                    Set<ZoneId> preferredZones) {
         Objects.requireNonNull(preferredZones, "preferredZones");
-        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones, false));
+        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones, false, false));
         return this;
     }
     //----------------------------------------------------------------------
@@ -1358,7 +1358,7 @@ public final class DateTimeFormatterBuilder {
      * @since 9
      */
     public DateTimeFormatterBuilder appendGenericZoneText(TextStyle textStyle) {
-        appendInternal(new ZoneTextPrinterParser(textStyle, null, true));
+        appendInternal(new ZoneTextPrinterParser(textStyle, null, true, false));
         return this;
     }
 
@@ -1385,7 +1385,7 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendGenericZoneText(TextStyle textStyle,
                                                           Set<ZoneId> preferredZones) {
-        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones, true));
+        appendInternal(new ZoneTextPrinterParser(textStyle, preferredZones, true, false));
         return this;
     }
 
@@ -1410,7 +1410,7 @@ public final class DateTimeFormatterBuilder {
      * @return this, for chaining, not null
      */
     public DateTimeFormatterBuilder appendChronologyId() {
-        appendInternal(new ChronoPrinterParser(null));
+        appendInternal(new ChronoPrinterParser(null, false));
         return this;
     }
 
@@ -1425,7 +1425,7 @@ public final class DateTimeFormatterBuilder {
      */
     public DateTimeFormatterBuilder appendChronologyText(TextStyle textStyle) {
         Objects.requireNonNull(textStyle, "textStyle");
-        appendInternal(new ChronoPrinterParser(textStyle));
+        appendInternal(new ChronoPrinterParser(textStyle, false));
         return this;
     }
 
@@ -1632,7 +1632,7 @@ public final class DateTimeFormatterBuilder {
             case SHORT_STANDALONE -> style = TextStyle.SHORT;
             case NARROW_STANDALONE -> style = TextStyle.NARROW;
         }
-        appendInternal(new DayPeriodPrinterParser(style));
+        appendInternal(new DayPeriodPrinterParser(style, false));
         return this;
     }
 
@@ -2476,11 +2476,10 @@ public final class DateTimeFormatterBuilder {
          *
          * @param context  the context to format using, not null
          * @param buf  the buffer to append to, not null
-         * @param optional  whether this printer is optional, true if formatting is optional
          * @return false if unable to query the value from the date-time, true otherwise
          * @throws DateTimeException if the date-time cannot be printed successfully
          */
-        boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional);
+        boolean format(DateTimePrintContext context, StringBuilder buf);
 
         /**
          * Parses text into date-time information.
@@ -2497,6 +2496,15 @@ public final class DateTimeFormatterBuilder {
          * @throws IndexOutOfBoundsException if the position is invalid
          */
         int parse(DateTimeParseContext context, CharSequence text, int position);
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        default DateTimePrinterParser withOptional(boolean optional) {
+            return this;
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -2522,19 +2530,23 @@ public final class DateTimeFormatterBuilder {
          * @param optional  the optional flag to set in the copy
          * @return the new printer-parser, not null
          */
+        @Override
         public CompositePrinterParser withOptional(boolean optional) {
             if (optional == this.optional) {
                 return this;
+            }
+            DateTimePrinterParser[] printerParsers = this.printerParsers.clone();
+            for (int i = 0; i < printerParsers.length; i++) {
+                printerParsers[i] = printerParsers[i].withOptional(optional);
             }
             return new CompositePrinterParser(printerParsers, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             int length = buf.length();
-            boolean effectiveOptional = optional | this.optional;
             for (DateTimePrinterParser pp : printerParsers) {
-                if (!pp.format(context, buf, effectiveOptional)) {
+                if (!pp.format(context, buf)) {
                     buf.setLength(length);  // reset buffer
                     return true;
                 }
@@ -2605,9 +2617,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             int preLen = buf.length();
-            if (printerParser.format(context, buf, optional) == false) {
+            if (printerParser.format(context, buf) == false) {
                 return false;
             }
             int len = buf.length() - preLen;
@@ -2674,7 +2686,7 @@ public final class DateTimeFormatterBuilder {
         LENIENT;
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             return true;  // nothing to do here
         }
 
@@ -2716,7 +2728,7 @@ public final class DateTimeFormatterBuilder {
             this.value = value;
         }
 
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             return true;
         }
 
@@ -2742,7 +2754,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             buf.append(literal);
             return true;
         }
@@ -2792,7 +2804,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             buf.append(literal);
             return true;
         }
@@ -2844,6 +2856,7 @@ public final class DateTimeFormatterBuilder {
         final int maxWidth;
         private final SignStyle signStyle;
         final int subsequentWidth;
+        final boolean optional;
 
         /**
          * Constructor.
@@ -2860,6 +2873,7 @@ public final class DateTimeFormatterBuilder {
             this.maxWidth = maxWidth;
             this.signStyle = signStyle;
             this.subsequentWidth = 0;
+            this.optional = false;
         }
 
         /**
@@ -2873,12 +2887,28 @@ public final class DateTimeFormatterBuilder {
          *  -1 if fixed width due to active adjacent parsing
          */
         protected NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth) {
+            this(field, minWidth, maxWidth, signStyle, subsequentWidth, false);
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param field  the field to format, not null
+         * @param minWidth  the minimum field width, from 1 to 19
+         * @param maxWidth  the maximum field width, from minWidth to 19
+         * @param signStyle  the positive/negative sign style, not null
+         * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater,
+         *  -1 if fixed width due to active adjacent parsing
+         * @param optional  true if the field is optional
+         */
+        protected NumberPrinterParser(TemporalField field, int minWidth, int maxWidth, SignStyle signStyle, int subsequentWidth, boolean optional) {
             // validated by caller
             this.field = field;
             this.minWidth = minWidth;
             this.maxWidth = maxWidth;
             this.signStyle = signStyle;
             this.subsequentWidth = subsequentWidth;
+            this.optional = optional;
         }
 
         /**
@@ -2890,7 +2920,14 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, -1);
+            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, -1, optional);
+        }
+
+        public NumberPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, subsequentWidth, optional);
         }
 
         /**
@@ -2900,11 +2937,11 @@ public final class DateTimeFormatterBuilder {
          * @return a new updated printer-parser, not null
          */
         NumberPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
+            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long valueLong = context.getValue(field, optional);
             if (valueLong == null) {
                 return false;
@@ -3129,7 +3166,7 @@ public final class DateTimeFormatterBuilder {
          */
         private ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
                 int baseValue, ChronoLocalDate baseDate) {
-            this(field, minWidth, maxWidth, baseValue, baseDate, 0);
+            this(field, minWidth, maxWidth, baseValue, baseDate, 0, false);
             if (minWidth < 1 || minWidth > 10) {
                 throw new IllegalArgumentException("The minWidth must be from 1 to 10 inclusive but was " + minWidth);
             }
@@ -3162,10 +3199,25 @@ public final class DateTimeFormatterBuilder {
          * @param subsequentWidth the subsequentWidth for this instance
          */
         private ReducedPrinterParser(TemporalField field, int minWidth, int maxWidth,
-                int baseValue, ChronoLocalDate baseDate, int subsequentWidth) {
-            super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+                int baseValue, ChronoLocalDate baseDate, int subsequentWidth, boolean optional) {
+            super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth, optional);
             this.baseValue = baseValue;
             this.baseDate = baseDate;
+        }
+
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public ReducedPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate, subsequentWidth, optional);
         }
 
         @Override
@@ -3229,7 +3281,7 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate, -1);
+            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate, -1, optional);
         }
 
         /**
@@ -3241,7 +3293,7 @@ public final class DateTimeFormatterBuilder {
         @Override
         ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
             return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate,
-                    this.subsequentWidth + subsequentWidth);
+                    this.subsequentWidth + subsequentWidth, optional);
         }
 
         /**
@@ -3281,7 +3333,7 @@ public final class DateTimeFormatterBuilder {
          * @param decimalPoint  whether to output the localized decimal point symbol
          */
         private NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint) {
-            this(minWidth, maxWidth, decimalPoint, 0);
+            this(minWidth, maxWidth, decimalPoint, 0, false);
             if (minWidth < 0 || minWidth > 9) {
                 throw new IllegalArgumentException("Minimum width must be from 0 to 9 inclusive but was " + minWidth);
             }
@@ -3301,9 +3353,10 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum width to output, from 0 to 9
          * @param decimalPoint  whether to output the localized decimal point symbol
          * @param subsequentWidth the subsequentWidth for this instance
+         * @param optional whether to output nanos as optional
          */
-        private NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
-            super(NANO_OF_SECOND, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+        private NanosPrinterParser(int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth, boolean optional) {
+            super(NANO_OF_SECOND, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth, optional);
             this.decimalPoint = decimalPoint;
         }
 
@@ -3317,7 +3370,7 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, -1);
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, -1, optional);
         }
 
         /**
@@ -3328,7 +3381,21 @@ public final class DateTimeFormatterBuilder {
          */
         @Override
         NanosPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth);
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth, optional);
+        }
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public NanosPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new NanosPrinterParser(minWidth, maxWidth, decimalPoint, subsequentWidth, optional);
         }
 
         /**
@@ -3359,7 +3426,7 @@ public final class DateTimeFormatterBuilder {
         };
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
@@ -3474,7 +3541,7 @@ public final class DateTimeFormatterBuilder {
          * @param decimalPoint  whether to output the localized decimal point symbol
          */
         private FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
-            this(field, minWidth, maxWidth, decimalPoint, 0);
+            this(field, minWidth, maxWidth, decimalPoint, 0, false);
             Objects.requireNonNull(field, "field");
             if (field.range().isFixed() == false) {
                 throw new IllegalArgumentException("Field must have a fixed set of values: " + field);
@@ -3499,9 +3566,10 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum width to output, from 0 to 9
          * @param decimalPoint  whether to output the localized decimal point symbol
          * @param subsequentWidth the subsequentWidth for this instance
+         * @param optional  whether the field is optional
          */
-        private FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth) {
-            super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+        private FractionPrinterParser(TemporalField field, int minWidth, int maxWidth, boolean decimalPoint, int subsequentWidth, boolean optional) {
+            super(field, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth, optional);
             this.decimalPoint = decimalPoint;
             ValueRange range = field.range();
             this.minBD = BigDecimal.valueOf(range.getMinimum());
@@ -3518,7 +3586,22 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, -1);
+            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, -1, optional);
+        }
+
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public FractionPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, subsequentWidth, optional);
         }
 
         /**
@@ -3529,7 +3612,7 @@ public final class DateTimeFormatterBuilder {
          */
         @Override
         FractionPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth);
+            return new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint, this.subsequentWidth + subsequentWidth, optional);
         }
 
         /**
@@ -3548,7 +3631,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
@@ -3675,6 +3758,7 @@ public final class DateTimeFormatterBuilder {
         private final TemporalField field;
         private final TextStyle textStyle;
         private final DateTimeTextProvider provider;
+        private final boolean optional;
         /**
          * The cached number printer parser.
          * Immutable and volatile, so no synchronization needed.
@@ -3689,14 +3773,27 @@ public final class DateTimeFormatterBuilder {
          * @param provider  the text provider, not null
          */
         private TextPrinterParser(TemporalField field, TextStyle textStyle, DateTimeTextProvider provider) {
+            this(field, textStyle, provider, false);
+        }
+
+        /**
+         * Constructor.
+         *
+         * @param field  the field to output, not null
+         * @param textStyle  the text style, not null
+         * @param provider  the text provider, not null
+         * @param optional  true if optional
+         */
+        private TextPrinterParser(TemporalField field, TextStyle textStyle, DateTimeTextProvider provider, boolean optional) {
             // validated by caller
             this.field = field;
             this.textStyle = textStyle;
             this.provider = provider;
+            this.optional = optional;
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long value = context.getValue(field, optional);
             if (value == null) {
                 return false;
@@ -3709,7 +3806,7 @@ public final class DateTimeFormatterBuilder {
                 text = provider.getText(chrono, field, value, textStyle, context.getLocale());
             }
             if (text == null) {
-                return numberPrinterParser().format(context, buf, optional);
+                return numberPrinterParser().format(context, buf);
             }
             buf.append(text);
             return true;
@@ -3785,13 +3882,29 @@ public final class DateTimeFormatterBuilder {
         private static final long SECONDS_PER_10000_YEARS = 146097L * 25L * 86400L;
         private static final long SECONDS_0000_TO_1970 = ((146097L * 5L) - (30L * 365L + 7L)) * 86400L;
         private final int fractionalDigits;
+        private final boolean optional;
 
-        private InstantPrinterParser(int fractionalDigits) {
+        private InstantPrinterParser(int fractionalDigits, boolean optional) {
             this.fractionalDigits = fractionalDigits;
+            this.optional = optional;
+        }
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public InstantPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new InstantPrinterParser(fractionalDigits, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             // use INSTANT_SECONDS, thus this code is not bound by Instant.MAX
             Long inSecs = context.getValue(INSTANT_SECONDS, optional);
             Long inNanos = null;
@@ -3943,6 +4056,7 @@ public final class DateTimeFormatterBuilder {
         private final String noOffsetText;
         private final int type;
         private final int style;
+        private final boolean optional;
 
         /**
          * Constructor.
@@ -3956,6 +4070,28 @@ public final class DateTimeFormatterBuilder {
             this.type = checkPattern(pattern);
             this.style = type % 11;
             this.noOffsetText = noOffsetText;
+            this.optional = false;
+        }
+
+        private OffsetIdPrinterParser(int type, String noOffsetText, boolean optional) {
+            this.type = type;
+            this.style = type % 11;
+            this.noOffsetText = noOffsetText;
+            this.optional = optional;
+        }
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public OffsetIdPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new OffsetIdPrinterParser(type, noOffsetText, optional);
         }
 
         private int checkPattern(String pattern) {
@@ -3976,7 +4112,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
             if (offsetSecs == null) {
                 return false;
@@ -4259,14 +4395,31 @@ public final class DateTimeFormatterBuilder {
      */
     static final class LocalizedOffsetIdPrinterParser implements DateTimePrinterParser {
         private final TextStyle style;
+        private final boolean optional;
 
         /**
          * Constructor.
          *
          * @param style  the style, not null
+         * @param optional  whether the offset is optional
          */
-        LocalizedOffsetIdPrinterParser(TextStyle style) {
+        LocalizedOffsetIdPrinterParser(TextStyle style, boolean optional) {
             this.style = style;
+            this.optional = optional;
+        }
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public LocalizedOffsetIdPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new LocalizedOffsetIdPrinterParser(style, optional);
         }
 
         private static StringBuilder appendHMS(StringBuilder buf, int t) {
@@ -4275,7 +4428,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long offsetSecs = context.getValue(OFFSET_SECONDS, optional);
             if (offsetSecs == null) {
                 return false;
@@ -4428,20 +4581,48 @@ public final class DateTimeFormatterBuilder {
         private final TextStyle textStyle;
 
         /** The preferred zoneid map */
-        private Set<String> preferredZones;
+        private final Set<String> preferredZones;
 
         /**  Display in generic time-zone format. True in case of pattern letter 'v' */
         private final boolean isGeneric;
-        private ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones, boolean isGeneric) {
-            super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")");
-            this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
-            this.isGeneric = isGeneric;
-            if (preferredZones != null && preferredZones.size() != 0) {
-                this.preferredZones = new HashSet<>();
-                for (ZoneId id : preferredZones) {
-                    this.preferredZones.add(id.getId());
-                }
+        private final boolean optional;
+
+        private ZoneTextPrinterParser(TextStyle textStyle, Set<ZoneId> preferredZones, boolean isGeneric, boolean optional) {
+           this(zoneIdMap(preferredZones), textStyle, isGeneric, optional);
+        }
+
+        private static Set<String> zoneIdMap(Set<ZoneId> preferredZones) {
+            if (preferredZones == null || preferredZones.isEmpty()) {
+                return null;
             }
+            Set<String> set = new HashSet<>();
+            for (ZoneId id : preferredZones) {
+                set.add(id.getId());
+            }
+
+            return set;
+        }
+
+        public ZoneTextPrinterParser(Set<String> preferredZones, TextStyle textStyle, boolean isGeneric, boolean optional) {
+            super(TemporalQueries.zone(), "ZoneText(" + textStyle + ")", optional);
+            this.textStyle = textStyle;
+            this.preferredZones = preferredZones;
+            this.isGeneric = isGeneric;
+            this.optional = optional;
+        }
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public ZoneTextPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new ZoneTextPrinterParser(preferredZones, textStyle, isGeneric, optional);
         }
 
         static final int UNDEFINED = -1;
@@ -4489,7 +4670,7 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             ZoneId zone = context.getValue(TemporalQueries.zoneId(), optional);
             if (zone == null) {
                 return false;
@@ -4604,14 +4785,30 @@ public final class DateTimeFormatterBuilder {
     static class ZoneIdPrinterParser implements DateTimePrinterParser {
         private final TemporalQuery<ZoneId> query;
         private final String description;
+        private final boolean optional;
 
-        private ZoneIdPrinterParser(TemporalQuery<ZoneId> query, String description) {
+        private ZoneIdPrinterParser(TemporalQuery<ZoneId> query, String description, boolean optional) {
             this.query = query;
             this.description = description;
+            this.optional = optional;
+        }
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public ZoneIdPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new ZoneIdPrinterParser(query, description, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             ZoneId zone = context.getValue(query, optional);
             if (zone == null) {
                 return false;
@@ -5029,14 +5226,31 @@ public final class DateTimeFormatterBuilder {
     static final class ChronoPrinterParser implements DateTimePrinterParser {
         /** The text style to output, null means the ID. */
         private final TextStyle textStyle;
+        private final boolean optional;
 
-        private ChronoPrinterParser(TextStyle textStyle) {
+        private ChronoPrinterParser(TextStyle textStyle, boolean optional) {
             // validated by caller
             this.textStyle = textStyle;
+            this.optional = optional;
+        }
+
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public ChronoPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new ChronoPrinterParser(textStyle, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Chronology chrono = context.getValue(TemporalQueries.chronology(), optional);
             if (chrono == null) {
                 return false;
@@ -5133,9 +5347,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Chronology chrono = Chronology.from(context.getTemporal());
-            return formatter(context.getLocale(), chrono).toPrinterParser(false).format(context, buf, optional);
+            return formatter(context.getLocale(), chrono).toPrinterParser(false).format(context, buf);
         }
 
         @Override
@@ -5198,7 +5412,7 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum field width, from minWidth to 19
          */
         private WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth) {
-            this(chr, count, minWidth, maxWidth, 0);
+            this(chr, count, minWidth, maxWidth, 0, false);
         }
 
         /**
@@ -5210,10 +5424,11 @@ public final class DateTimeFormatterBuilder {
          * @param maxWidth  the maximum field width, from minWidth to 19
          * @param subsequentWidth  the width of subsequent non-negative numbers, 0 or greater,
          * -1 if fixed width due to active adjacent parsing
+         * @param optional  true if optional
          */
         private WeekBasedFieldPrinterParser(char chr, int count, int minWidth, int maxWidth,
-                int subsequentWidth) {
-            super(null, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth);
+                int subsequentWidth, boolean optional) {
+            super(null, minWidth, maxWidth, SignStyle.NOT_NEGATIVE, subsequentWidth, optional);
             this.chr = chr;
             this.count = count;
         }
@@ -5228,7 +5443,7 @@ public final class DateTimeFormatterBuilder {
             if (subsequentWidth == -1) {
                 return this;
             }
-            return new WeekBasedFieldPrinterParser(chr, count, minWidth, maxWidth, -1);
+            return new WeekBasedFieldPrinterParser(chr, count, minWidth, maxWidth, -1, optional);
         }
 
         /**
@@ -5240,12 +5455,27 @@ public final class DateTimeFormatterBuilder {
         @Override
         WeekBasedFieldPrinterParser withSubsequentWidth(int subsequentWidth) {
             return new WeekBasedFieldPrinterParser(chr, count, minWidth, maxWidth,
-                    this.subsequentWidth + subsequentWidth);
+                    this.subsequentWidth + subsequentWidth, optional);
+        }
+
+
+        /**
+         * Returns a copy of this printer-parser with the optional flag changed.
+         *
+         * @param optional  the optional flag to set in the copy
+         * @return the new printer-parser, not null
+         */
+        @Override
+        public WeekBasedFieldPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new WeekBasedFieldPrinterParser(chr, count, minWidth, maxWidth, subsequentWidth, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
-            return printerParser(context.getLocale()).format(context, buf, optional);
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
+            return printerParser(context.getLocale()).format(context, buf);
         }
 
         @Override
@@ -5268,11 +5498,11 @@ public final class DateTimeFormatterBuilder {
                     field = weekDef.weekBasedYear();
                     if (count == 2) {
                         return new ReducedPrinterParser(field, 2, 2, 0, ReducedPrinterParser.BASE_DATE,
-                                this.subsequentWidth);
+                                this.subsequentWidth, optional);
                     } else {
                         return new NumberPrinterParser(field, count, 19,
                                 (count < 4) ? SignStyle.NORMAL : SignStyle.EXCEEDS_PAD,
-                                this.subsequentWidth);
+                                this.subsequentWidth, optional);
                     }
                 case 'e':
                 case 'c':
@@ -5335,20 +5565,30 @@ public final class DateTimeFormatterBuilder {
      */
     static final class DayPeriodPrinterParser implements DateTimePrinterParser {
         private final TextStyle textStyle;
+        private final boolean optional;
         private static final ConcurrentMap<Locale, LocaleStore> DAYPERIOD_LOCALESTORE = new ConcurrentHashMap<>();
 
         /**
          * Constructor.
          *
          * @param textStyle  the text style, not null
+         * @param optional  true if optional
          */
-        private DayPeriodPrinterParser(TextStyle textStyle) {
+        private DayPeriodPrinterParser(TextStyle textStyle, boolean optional) {
             // validated by caller
             this.textStyle = textStyle;
+            this.optional = optional;
+        }
+
+        public DayPeriodPrinterParser withOptional(boolean optional) {
+            if (optional == this.optional) {
+                return this;
+            }
+            return new DayPeriodPrinterParser(textStyle, optional);
         }
 
         @Override
-        public boolean format(DateTimePrintContext context, StringBuilder buf, boolean optional) {
+        public boolean format(DateTimePrintContext context, StringBuilder buf) {
             Long hod = context.getValue(HOUR_OF_DAY, optional);
             if (hod == null) {
                 return false;

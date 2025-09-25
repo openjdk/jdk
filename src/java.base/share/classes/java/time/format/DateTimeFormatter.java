@@ -1902,11 +1902,11 @@ public final class DateTimeFormatter {
         try {
             DateTimePrintContext context = new DateTimePrintContext(temporal, this);
             if (appendable instanceof StringBuilder) {
-                printerParser.format(context, (StringBuilder) appendable, false);
+                printerParser.format(context, (StringBuilder) appendable);
             } else {
                 // buffer output to avoid writing to appendable in case of error
                 StringBuilder buf = new StringBuilder(32);
-                printerParser.format(context, buf, false);
+                printerParser.format(context, buf);
                 appendable.append(buf);
             }
         } catch (IOException ex) {
