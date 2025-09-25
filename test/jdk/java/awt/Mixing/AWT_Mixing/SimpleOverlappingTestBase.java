@@ -159,12 +159,27 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         JFrame ancestor = (JFrame) (testedComponent.getTopLevelAncestor());
         if (ancestor != null) {
             final CountDownLatch latch = new CountDownLatch(1);
+
             ancestor.addFocusListener(new FocusAdapter() {
                 @Override public void focusGained(FocusEvent e) {
                     latch.countDown();
                 }
             });
             ancestor.requestFocus();
+        } else {
+            latch.countDown();
+        }
+        try {
+            boolean await = latch.await(1, TimeUnit.SECONDS);
+            if (!await) {
+                throw new RuntimeException("Ancestor frame didn't receive " +
+                        "focus");
+            }
+            clickAndBlink(robot, lLoc);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
             try {
                 if (!latch.await(1L, TimeUnit.SECONDS)) {
                     throw new RuntimeException(
@@ -179,6 +194,7 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         if (ancestor != null && isMultiFramesTest()) {
             ancestor.dispose();
         }
+
 
         return wasLWClicked;
     }
