@@ -23,32 +23,38 @@
 
 /*
  * @test
- * @bug 8349583 8365820
- * @summary Add mechanism to disable signature schemes based on their TLS scope.
- *          This test only covers TLS 1.3.
+ * @bug 8365820
+ * @summary Apply certificate scope constraints to algorithms in
+ *          "signature_algorithms" extension when
+ *          "signature_algorithms_cert" extension is not being sent.
+ *          This test covers the client side for TLSv1.3.
  * @library /javax/net/ssl/templates
  *          /test/lib
- * @run main/othervm DisableSignatureSchemePerScopeTLS13
+ * @run main/othervm DisableCertSignAlgsExtForClientTLS13
  */
 
-
 import static jdk.test.lib.Asserts.assertFalse;
-import static jdk.test.lib.Asserts.assertTrue;
 
 import java.security.Security;
 import java.util.List;
 
-public class DisableSignatureSchemePerScopeTLS13
-        extends DisableSignatureSchemePerScopeTLS12 {
+// Test disabled signature_algorithms_cert extension on the client side
+// for TLSv1.3.
+public class DisableCertSignAlgsExtForClientTLS13 extends
+        DisableCertSignAlgsExtForClientTLS12 {
 
-    protected DisableSignatureSchemePerScopeTLS13() throws Exception {
+    protected DisableCertSignAlgsExtForClientTLS13()
+            throws Exception {
         super();
     }
 
     public static void main(String[] args) throws Exception {
         Security.setProperty(
                 "jdk.tls.disabledAlgorithms", DISABLED_CONSTRAINTS);
-        new DisableSignatureSchemePerScopeTLS13().run();
+        // Disable signature_algorithms_cert extension for the client.
+        System.setProperty("jdk.tls.client.disableExtensions",
+                "signature_algorithms_cert");
+        new DisableCertSignAlgsExtForClientTLS13().run();
     }
 
     @Override
@@ -71,18 +77,6 @@ public class DisableSignatureSchemePerScopeTLS13
                 assertFalse(sigAlgsSS.contains(ss), "Signature Scheme " + ss
                         + " present in ClientHello's"
                         + " signature_algorithms extension"));
-
-        // Get signature_algorithms_cert extension signature schemes.
-        List<String> sigAlgsCertSS = getSigSchemesCliHello(
-                extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
-                SIG_ALGS_CERT_EXT);
-
-        // These signature schemes MUST be present in
-        // signature_algorithms_cert extension.
-        TLS13_CERT_ONLY.forEach(ss ->
-                assertTrue(sigAlgsCertSS.contains(ss), "Signature Scheme " + ss
-                        + " isn't present in ClientHello's"
-                        + " signature_algorithms_cert extension"));
     }
 
     // TLSv1.3 sends CertificateRequest signature schemes in
