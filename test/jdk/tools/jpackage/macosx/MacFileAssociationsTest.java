@@ -88,7 +88,7 @@ public class MacFileAssociationsTest {
 
     private static void checkArrayValue(PListReader plist, String key,
             List<String> values) {
-        List<String> result = plist.queryArrayValue(key);
+        List<String> result = plist.queryStringArrayValue(key);
         TKit.assertStringListEquals(values, result, String.format(
                 "Check value of %s plist key", key));
     }

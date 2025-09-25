@@ -32,11 +32,13 @@ import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import javax.xml.parsers.ParserConfigurationException;
+import jdk.jpackage.internal.util.PListReader.Raw;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -51,7 +53,7 @@ public class PListReaderTest {
     enum QueryType {
         STRING(PListReader::queryValue),
         BOOLEAN(PListReader::queryBoolValue),
-        STRING_ARRAY(PListReader::queryArrayValue);
+        STRING_ARRAY(PListReader::queryStringArrayValue);
 
         QueryType(BiFunction<PListReader, String, ?> queryMethod) {
             this.queryMethod = Objects.requireNonNull(queryMethod);
@@ -219,6 +221,96 @@ public class PListReaderTest {
         assertEquals("A", actualValue);
     }
 
+    @Test
+    public void test_toMap() throws ParserConfigurationException, SAXException, IOException {
+        var xml = xmlToString(
+                "<key>AppName</key>",
+                "<string>Hello</string>",
+                "<key>AppVersion</key>",
+                "<real>1.0</real>",
+                "<key>Release</key>",
+                "<true/>",
+                "<key>Debug</key>",
+                "<false/>",
+                "<key>ReleaseDate</key>",
+                "<date>2025-09-24T09:23:00Z</date>",
+                "<key>UserData</key>",
+                "<dict>",
+                "  <key>Foo</key>",
+                "  <array>",
+                "    <string>Str</string>",
+                "    <array>",
+                "      <string>Another Str</string>",
+                "      <true/>",
+                "      <false/>",
+                "    </array>",
+                "  </array>",
+                "</dict>",
+                "<key>Checksum</key>",
+                "<data>7841ff0076cdde93bdca02cfd332748c40620ce4</data>",
+                "<key>Plugins</key>",
+                "<array>",
+                "  <dict>",
+                "    <key>PluginName</key>",
+                "    <string>Foo</string>",
+                "    <key>Priority</key>",
+                "    <integer>13</integer>",
+                "    <key>History</key>",
+                "    <array>",
+                "      <string>New File</string>",
+                "      <string>Another New File</string>",
+                "    </array>",
+                "  </dict>",
+                "  <dict>",
+                "    <key>PluginName</key>",
+                "    <string>Bar</string>",
+                "    <key>Priority</key>",
+                "    <real>23</real>",
+                "    <key>History</key>",
+                "    <array/>",
+                "  </dict>",
+                "</array>"
+        );
+
+        var actual = new PListReader(xml.getBytes(StandardCharsets.UTF_8)).toMap();
+
+        var expected = Map.of(
+                "AppName", new Raw("Hello", Raw.Type.STRING),
+                "AppVersion", new Raw("1.0", Raw.Type.REAL),
+                "Release", new Raw(Boolean.TRUE.toString(), Raw.Type.BOOLEAN),
+                "Debug", new Raw(Boolean.FALSE.toString(), Raw.Type.BOOLEAN),
+                "ReleaseDate", new Raw("2025-09-24T09:23:00Z", Raw.Type.DATE),
+                "Checksum", new Raw("7841ff0076cdde93bdca02cfd332748c40620ce4", Raw.Type.DATA),
+                "UserData", Map.of(
+                        "Foo", List.of(
+                                new Raw("Str", Raw.Type.STRING),
+                                List.of(
+                                        new Raw("Another Str", Raw.Type.STRING),
+                                        new Raw(Boolean.TRUE.toString(), Raw.Type.BOOLEAN),
+                                        new Raw(Boolean.FALSE.toString(), Raw.Type.BOOLEAN)
+                                )
+                        )
+                ),
+                "Plugins", List.of(
+                        Map.of(
+                                "PluginName", new Raw("Foo", Raw.Type.STRING),
+                                "Priority", new Raw("13", Raw.Type.INTEGER),
+                                "History", List.of(
+                                        new Raw("New File", Raw.Type.STRING),
+                                        new Raw("Another New File", Raw.Type.STRING)
+                                )
+                        ),
+                        Map.of(
+                                "PluginName", new Raw("Bar", Raw.Type.STRING),
+                                "Priority", new Raw("23", Raw.Type.REAL),
+                                "History", List.of()
+                        )
+                )
+        );
+
+        assertEquals(expected, actual);
+    }
+
     private static List<QueryValueTestSpec> testQueryValue() {
         return List.of(
                 testSpec().expectedValue("A").xml("<key>foo</key><string>A</string>").create(),
@@ -228,7 +320,7 @@ public class PListReaderTest {
                 testSpec().expectedValue(Boolean.FALSE).xml("<key>foo</key><false/>").create(),
                 testSpec(QueryType.BOOLEAN).xml("<key>foo</key><True/>").create(),
                 testSpec(QueryType.BOOLEAN).xml("<key>foo</key><False/>").create(),
-                testSpec().expectedValue(List.of("foo", "bar")).xml("<key>foo</key><array><string>foo</string><string>bar</string></array>").create(),
+                testSpec().expectedValue(List.of("foo", "bar")).xml("<key>foo</key><array><string>foo</string><random/><dict/><string>bar</string><true/></array>").create(),
                 testSpec().expectedValue(List.of()).xml("<key>foo</key><array/>").create(),
                 testSpec(QueryType.STRING_ARRAY).xml("<key>foo</key><Array/>").create(),
                 testSpec().expectedValue("A").xml("<key>foo</key><string>A</string><string>B</string>").create(),
@@ -248,7 +340,9 @@ public class PListReaderTest {
         final List<String> content = new ArrayList<>();
         content.add("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         content.add("<plist version=\"1.0\">");
+        content.add("<dict>");
         content.addAll(List.of(xml));
+        content.add("</dict>");
         content.add("</plist>");
         return String.join("", content.toArray(String[]::new));
     }

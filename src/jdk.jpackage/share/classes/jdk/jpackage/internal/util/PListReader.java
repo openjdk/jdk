@@ -24,21 +24,145 @@
  */
 package jdk.jpackage.internal.util;
 
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
-import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+/**
+ * Property list (plist) file reader.
+ */
 public final class PListReader {
 
+    public record Raw(String value, Type type) {
+
+        public enum Type {
+            STRING,
+            BOOLEAN,
+            REAL,
+            INTEGER,
+            DATE,
+            DATA;
+
+            private static Optional<Type> fromElementName(String name) {
+                switch (name) {
+                    case "string" -> {
+                        return Optional.of(STRING);
+                    }
+                    case "true" -> {
+                        return Optional.of(BOOLEAN);
+                    }
+                    case "false" -> {
+                        return Optional.of(BOOLEAN);
+                    }
+                    case "real" -> {
+                        return Optional.of(REAL);
+                    }
+                    case "integer" -> {
+                        return Optional.of(INTEGER);
+                    }
+                    case "date" -> {
+                        return Optional.of(DATE);
+                    }
+                    case "data" -> {
+                        return Optional.of(DATA);
+                    }
+                    default -> {
+                        return Optional.empty();
+                    }
+                }
+            }
+        }
+
+        public Raw {
+            Objects.requireNonNull(value);
+            Objects.requireNonNull(type);
+        }
+
+        private static Optional<Raw> tryCreate(Element e) {
+            return Type.fromElementName(e.getNodeName()).map(type -> {
+                if (type == Type.BOOLEAN) {
+                    if ("true".equals(e.getNodeName())) {
+                        return new Raw(Boolean.TRUE.toString(), type);
+                    } else {
+                        return new Raw(Boolean.FALSE.toString(), type);
+                    }
+                } else {
+                    return new Raw(e.getTextContent(), type);
+                }
+            });
+        }
+    }
+
+    /**
+     * Returns the contents of the the underlying "dict" element as a Map.
+     * <p>
+     * The keys in the returned map are names of the keys.
+     * <p>
+     * Values of "dict" properties are stored as {@code Map<String, Object>} objects.
+     * <p>
+     * Values of "array" properties are stored as {@code List<Object>} objects.
+     * <p>
+     * Values of other properties are stored as {@code Raw} objects.
+     *
+     * @return the contents of the the underlying "dict" element as a Map
+     */
+    public Map<String, Object> toMap() {
+        Map<String, Object> reply = new HashMap<>();
+        var nodes = root.getChildNodes();
+        String key = null;
+        for (int i = 0; i != nodes.getLength(); i++) {
+            if (nodes.item(i) instanceof Element e) {
+                var name = e.getNodeName();
+                if ("key".equals(name) && key == null) {
+                    key = e.getTextContent();
+                } else if (key != null) {
+                    switch (name) {
+                        case "dict" -> {
+                            reply.put(key, new PListReader(e).toMap());
+                            key = null;
+                        }
+                        case "array" -> {
+                            reply.put(key, readArray(e).toList());
+                            key = null;
+                        }
+                        default -> {
+                            var raw = Raw.tryCreate(e).orElse(null);
+                            if (raw != null) {
+                                reply.put(key, raw);
+                                key = null;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return reply;
+    }
+
+    /**
+     * Returns the value of the given string key in the underlying "dict" element.
+     *
+     * @param keyName the name of a string key whose value to query
+     * @return the value of the string key with the specified name in the underlying
+     *         "dict" element
+     * @throws NoSuchElementException if there is no string key with the given name
+     *                                in the underlying "dict" element
+     */
     public String queryValue(String keyName) {
         final var node = getNode(keyName);
         switch (node.getNodeName()) {
@@ -51,6 +175,15 @@ public final class PListReader {
         }
     }
 
+    /**
+     * Returns the value of the given boolean key in the underlying "dict" element.
+     *
+     * @param keyName the name of a boolean key whose value to query
+     * @return the value of the boolean key with the specified name in the
+     *         underlying "dict" element
+     * @throws NoSuchElementException if there is no string key with the given name
+     *                                in the underlying "dict" element
+     */
     public boolean queryBoolValue(String keyName) {
         final var node = getNode(keyName);
         switch (node.getNodeName()) {
@@ -66,13 +199,52 @@ public final class PListReader {
         }
     }
 
-    public List<String> queryArrayValue(String keyName) {
+    /**
+     * Returns the value of the given array key in the underlying "dict" element as
+     * a list of strings.
+     * <p>
+     * Processes the result of calling {@link #queryArrayValue(String)} on the
+     * specified key by filtering {@link Raw} instances of type
+     * {@link Raw.Type#STRING}.
+     *
+     * @param keyName the name of an array key whose value to query
+     * @return the value of the array key with the specified name in the underlying
+     *         "dict" element
+     * @throws NoSuchElementException if there is no array key with the given name
+     *                                in the underlying "dict" element
+     */
+    public List<String> queryStringArrayValue(String keyName) {
+        return queryArrayValue(keyName).map(v -> {
+            if (v instanceof Raw r) {
+                if (r.type() == Raw.Type.STRING) {
+                    return r.value();
+                }
+            }
+            return (String)null;
+        }).filter(Objects::nonNull).toList();
+    }
+
+    /**
+     * Returns the value of the given array key in the underlying "dict" element as
+     * a stream of {@link Object}-s.
+     * <p>
+     * Values of "dict" array items are stored as {@code Map<String, Object>} objects.
+     * <p>
+     * Values of "array" array items are stored as {@code List<Object>} objects.
+     * <p>
+     * Values of other types are stored as {@code Raw} objects.
+     *
+     * @param keyName the name of an array key whose value to query
+     * @return the value of the array key with the specified name in the underlying
+     *         "dict" element
+     * @throws NoSuchElementException if there is no array key with the given name
+     *                                in the underlying "dict" element
+     */
+    public Stream<Object> queryArrayValue(String keyName) {
         final var node = getNode(keyName);
         switch (node.getNodeName()) {
             case "array" -> {
-                return XmlUtils.toStream(node.getChildNodes()).filter(n -> {
-                    return n.getNodeName().equals("string");
-                }).map(Node::getTextContent).toList();
+                return readArray(node);
             }
             default -> {
                 throw new NoSuchElementException();
@@ -80,18 +252,58 @@ public final class PListReader {
         }
     }
 
-    public PListReader(Node doc) {
-        this.root = Objects.requireNonNull(doc);
+    /**
+     * Creates plist reader from the given node.
+     * <p>
+     * If the name of the specified node is an element with the name "dict", the
+     * reader is bound to the given node; otherwise, it is bound to the
+     * {@code /plist/dict} element.
+     *
+     * @param node the node
+     * @throws NoSuchElementException if the specified node is not an element with
+     *                                name "dict" and there is no
+     *                                {@code /plist/dict} node in the document
+     */
+    public PListReader(Node node) {
+        Objects.requireNonNull(node);
+        if (node.getNodeName().equals("dict")) {
+            this.root = node;
+        } else {
+            final var xPath = XPathFactory.newInstance().newXPath();
+            this.root = Optional.ofNullable(toSupplier(() -> {
+                return (Node) xPath.evaluate("/plist[1]/dict[1]", node, XPathConstants.NODE);
+            }).get()).orElseThrow(NoSuchElementException::new);
+        }
     }
 
     public PListReader(byte[] xmlData) throws ParserConfigurationException, SAXException, IOException {
         this(XmlUtils.initDocumentBuilder().parse(new ByteArrayInputStream(xmlData)));
     }
 
+    public Stream<Object> readArray(Node node) {
+        return XmlUtils.toStream(node.getChildNodes()).map(n -> {
+            if (n instanceof Element e) {
+                switch (e.getNodeName()) {
+                    case "dict" -> {
+                        return Optional.of(new PListReader(e).toMap());
+                    }
+                    case "array" -> {
+                        return Optional.of(readArray(e).toList());
+                    }
+                    default -> {
+                        return Raw.tryCreate(e);
+                    }
+                }
+            } else {
+                return Optional.<Raw>empty();
+            }
+        }).filter(Optional::isPresent).map(Optional::get);
+    }
+
     private Node getNode(String keyName) {
         final var xPath = XPathFactory.newInstance().newXPath();
-        final var query = String.format("//*[preceding-sibling::key = \"%s\"][1]", keyName);
-        return Optional.ofNullable(ThrowingSupplier.toSupplier(() -> {
+        final var query = String.format("*[preceding-sibling::key = \"%s\"][1]", keyName);
+        return Optional.ofNullable(toSupplier(() -> {
             return (Node) xPath.evaluate(query, root, XPathConstants.NODE);
         }).get()).orElseThrow(NoSuchElementException::new);
     }
