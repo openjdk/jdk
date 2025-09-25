@@ -600,13 +600,11 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
                                                   &old_gen_cl);
 
   {
-    StrongRootsScope srs(0);
     RootScanClosure oop_closure{this};
     CLDScanClosure cld_closure{this};
 
-    MarkingNMethodClosure nmethod_closure(&oop_closure,
-                                          NMethodToOopClosure::FixRelocations,
-                                          false /* keepalive_nmethods */);
+    NMethodToOopClosure nmethod_closure(&oop_closure,
+                                        NMethodToOopClosure::FixRelocations);
 
     // Starting tracing from roots, there are 4 kinds of roots in young-gc.
     //
