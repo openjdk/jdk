@@ -34,8 +34,8 @@
 #include "testutils.hpp"
 #include "unittest.hpp"
 
-#include <sys/prctl.h>
 #include <sys/mman.h>
+#include <sys/prctl.h>
 
 static bool using_explicit_hugepages()  { return UseLargePages && !UseTransparentHugePages; }
 
