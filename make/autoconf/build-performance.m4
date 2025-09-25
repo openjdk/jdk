@@ -130,18 +130,18 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
     memory_gb=`expr $MEMORY_SIZE / 1024`
     # Pick the lowest of memory in gb and number of cores.
     if test "$memory_gb" -lt "$NUM_CORES"; then
-      CONF_JOBS="$memory_gb"
+      JOBS="$memory_gb"
     else
-      CONF_JOBS="$NUM_CORES"
+      JOBS="$NUM_CORES"
     fi
-    if test "$CONF_JOBS" -eq "0"; then
-      CONF_JOBS=1
+    if test "$JOBS" -eq "0"; then
+      JOBS=1
     fi
-    AC_MSG_RESULT([$CONF_JOBS])
+    AC_MSG_RESULT([$JOBS])
   else
-    CONF_JOBS=$with_jobs
+    JOBS=$with_jobs
   fi
-  AC_SUBST(CONF_JOBS)
+  AC_SUBST(JOBS)
 ])
 
 AC_DEFUN_ONCE([BPERF_SETUP_TEST_JOBS],
@@ -150,11 +150,11 @@ AC_DEFUN_ONCE([BPERF_SETUP_TEST_JOBS],
   AC_ARG_WITH(test-jobs, [AS_HELP_STRING([--with-test-jobs],
       [number of parallel tests jobs to run @<:@based on build jobs@:>@])])
   if test "x$with_test_jobs" = x; then
-      CONF_TEST_JOBS=0
+      TEST_JOBS=0
   else
-      CONF_TEST_JOBS=$with_test_jobs
+      TEST_JOBS=$with_test_jobs
   fi
-  AC_SUBST(CONF_TEST_JOBS)
+  AC_SUBST(TEST_JOBS)
 ])
 
 AC_DEFUN([BPERF_SETUP_CCACHE],
