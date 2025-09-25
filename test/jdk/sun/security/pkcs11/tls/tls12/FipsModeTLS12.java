@@ -33,7 +33,8 @@
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.2
  *      -Djdk.tls.useExtendedMasterSecret=false
  *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS12
- * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet
+ * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet.
+ *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS12
  */
 
