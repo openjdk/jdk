@@ -124,7 +124,7 @@ class G1RegionsLargerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
 // G1RegionToSpaceMapper implementation where the region granularity is smaller
 // than the commit granularity.
-// Basically, the contents of one OS page span several regions.
+// Basically, the contents of one OS page spans several regions.
 class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
   size_t _regions_per_page;
   // Lock to prevent bitmap updates and the actual underlying
@@ -164,48 +164,6 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     return result;
   }
 
-  // Given increasing integers, applies the method OnNewRange(size_t range_start, size_t range_size)
-  // in the constructor all ranges of consecutive indexes. Consecutive means that
-  // the difference between integers is 1.
-  // Call apply_last() to cover the last range.
-  template <typename OnNewRange>
-  class RangeApplicator {
-    size_t const NoIndex = SIZE_MAX;
-
-    size_t _cur_start;
-    size_t _cur_end;
-
-    OnNewRange _on_new_range;
-
-  public:
-    RangeApplicator(OnNewRange on_new_range) : _cur_start(NoIndex), _cur_end(NoIndex), _on_new_range(on_new_range) { }
-    ~RangeApplicator() {
-      assert(_cur_start == NoIndex, "must be, missing application of lambda");
-      assert(_cur_end == NoIndex, "must be, missing application of lambda");
-    }
-
-    void next_value(size_t index) {
-      assert(_cur_end == NoIndex || _cur_end < index, "Given indexes must be ascending");
-
-      if (_cur_start == NoIndex) {
-        _cur_start = _cur_end = index;
-      } else if (_cur_end + 1 != index) {
-        _on_new_range(_cur_start, _cur_end - _cur_start + 1);
-        _cur_start = _cur_end = index;
-      } else {
-        _cur_end = index;
-      }
-    }
-
-    void apply_last() {
-      if (_cur_start != NoIndex) {
-        assert(_cur_end != NoIndex, "must be");
-        _on_new_range(_cur_start, _cur_end - _cur_start + 1);
-        _cur_start = _cur_end = NoIndex;
-      }
-    }
-  };
-
  public:
   G1RegionsSmallerThanCommitSizeMapper(ReservedSpace rs,
                                        size_t actual_size,
@@ -220,6 +178,21 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     guarantee((page_size * commit_factor) >= alloc_granularity, "allocation granularity smaller than commit granularity");
   }
 
+  size_t find_first_uncommitted(size_t page, size_t end) {
+    assert(page < end, "must be");
+    while (page < end && is_page_committed(page)) {
+      page++;
+    }
+    return MIN2(page, end);
+  }
+
+  size_t find_first_committed(size_t page, size_t end) {
+    while (page < end && !is_page_committed(page)) {
+      page++;
+    }
+    return MIN2(page, end);
+  }
+
   virtual void commit_regions(uint start_idx, size_t num_regions, WorkerThreads* pretouch_workers) {
     uint region_limit = (uint)(start_idx + num_regions);
     assert(num_regions > 0, "Must commit at least one region");
@@ -228,48 +201,48 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
 
     size_t const NoPage = SIZE_MAX;
 
-    size_t first_committed = NoPage;
-    size_t num_committed = 0;
+    size_t first_newly_committed = NoPage;
+    size_t num_committed_pages = 0;
 
-    size_t start_page = region_idx_to_page_idx(start_idx);
-    size_t end_page = region_idx_to_page_idx(region_limit - 1);
+    size_t const start_page = region_idx_to_page_idx(start_idx);
+    size_t const end_page = region_idx_to_page_idx(region_limit - 1) + 1;
 
     bool all_zero_filled = true;
 
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
     {
-      auto commit_range = [&](size_t page_start, size_t size_in_pages) {
-        if (!commit_pages(page_start, size_in_pages)) {
-          all_zero_filled = false;
-        }
-      };
-      RangeApplicator range(commit_range);
-
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-      for (size_t page = start_page; page <= end_page; page++) {
-        if (!is_page_committed(page)) {
-          // Page not committed.
-          if (num_committed == 0) {
-            first_committed = page;
-          }
-          num_committed++;
+      log_debug(gc,ihop)("commit-regions start-region %u num_regions %zu start-page %zu end-page %zu", start_idx, num_regions, start_page, end_page);
+      for (size_t page = start_page; page < end_page; /* empty */) {
+        size_t uncommitted_l = find_first_uncommitted(page, end_page);
+        size_t committed_r = find_first_committed(uncommitted_l + 1, end_page);
 
-          range.next_value(page);
-        } else {
-          // Page already committed.
+        size_t num_uncommitted_pages_found = committed_r - uncommitted_l;
+        if (num_committed_pages == 0 && num_uncommitted_pages_found != 0) {
+          first_newly_committed = uncommitted_l;
+        }
+        num_committed_pages += num_uncommitted_pages_found;
+
+        log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, committed_r, num_uncommitted_pages_found);
+
+        if (num_uncommitted_pages_found > 0 &&
+            !commit_pages(uncommitted_l, num_uncommitted_pages_found)) {
           all_zero_filled = false;
         }
+
+        page = committed_r + 1;
       }
-      range.apply_last();
+
+      all_zero_filled &= (num_committed_pages == (end_page - start_page));
 
       // Update the commit map for the given range. Not using the par_set_range
       // since updates to _region_commit_map for this mapper is protected by _lock.
       _region_commit_map.set_range(start_idx, region_limit, BitMap::unknown_range);
     }
 
-    if (AlwaysPreTouch && num_committed > 0) {
-      _storage.pretouch(first_committed, num_committed, pretouch_workers);
+    if (AlwaysPreTouch && num_committed_pages > 0) {
+      _storage.pretouch(first_newly_committed, num_committed_pages, pretouch_workers);
     }
 
     fire_on_commit(start_idx, num_regions, all_zero_filled);
@@ -281,30 +254,36 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     assert(_region_commit_map.find_first_clear_bit(start_idx, region_limit) == region_limit,
            "Should only be committed regions in the range [%u, %u)", start_idx, region_limit);
 
-    size_t start_page = region_idx_to_page_idx(start_idx);
-    size_t end_page = region_idx_to_page_idx(region_limit - 1);
-
-    auto uncommit_range = [&](size_t page_start, size_t size_in_pages) {
-      _storage.uncommit(page_start, size_in_pages);
-    };
-    RangeApplicator r(uncommit_range);
+    size_t const start_page = region_idx_to_page_idx(start_idx);
+    size_t const end_page = region_idx_to_page_idx(region_limit - 1) + 1;
 
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
+
+    log_debug(gc,ihop)("uncommit-regions start-region %u num_regions %zu start-page %zu end-page %zu", start_idx, num_regions, start_page, end_page);
+
     // Clear commit map for the given range. Not using the par_clear_range since
     // updates to _region_commit_map for this mapper is protected by _lock.
     _region_commit_map.clear_range(start_idx, region_limit, BitMap::unknown_range);
 
-    for (size_t page = start_page; page <= end_page; page++) {
+    for (size_t page = start_page; page < end_page; /* empty */) {
       // We know all pages were committed before clearing the map. If the
       // the page is still marked as committed after the clear we should
       // not uncommit it.
-      if (!is_page_committed(page)) {
-        r.next_value(page);
+      size_t uncommitted_l = find_first_uncommitted(page, end_page);
+      size_t committed_r = find_first_committed(uncommitted_l + 1, end_page);
+
+      size_t num_uncommitted_pages_found = committed_r - uncommitted_l;
+
+      log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, committed_r, num_uncommitted_pages_found);
+
+      if (num_uncommitted_pages_found > 0) {
+        _storage.uncommit(uncommitted_l, num_uncommitted_pages_found);
       }
+
+      page = committed_r + 1;
     }
-    r.apply_last();
   }
 };
 
