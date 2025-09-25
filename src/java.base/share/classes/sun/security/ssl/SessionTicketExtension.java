@@ -278,6 +278,8 @@ final class SessionTicketExtension {
                 aad.putInt(keyID).put(compressed);
                 c.updateAAD(aad);
 
+                // use getOutputSize to avoid a ShortBufferException
+                // from providers that require oversized buffers. See JDK-8368514.
                 ByteBuffer out = ByteBuffer.allocate(
                         c.getOutputSize(data.remaining()));
                 c.doFinal(data, out);
