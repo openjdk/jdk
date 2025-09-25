@@ -287,7 +287,7 @@ public:
     _chunk_bitmap(mtGC) {
 
     _num_evac_fail_regions = _evac_failure_regions->num_regions_evac_failed();
-    _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region();
+    _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region_for_scan();
 
     _chunk_size = static_cast<uint>(G1HeapRegion::GrainWords / _num_chunks_per_region);
 
@@ -300,7 +300,7 @@ public:
   double worker_cost() const override {
     assert(_evac_failure_regions->has_regions_evac_failed(), "Should not call this if there were no evacuation failures");
 
-    double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
+    double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region_for_scan() / G1RestoreRetainedRegionChunksPerWorker;
     return workers_per_region * _evac_failure_regions->num_regions_evac_failed();
   }
 
@@ -480,43 +480,6 @@ public:
   }
 };
 
-class RedirtyLoggedCardTableEntryClosure : public G1CardTableEntryClosure {
-  size_t _num_dirtied;
-  G1CollectedHeap* _g1h;
-  G1CardTable* _g1_ct;
-  G1EvacFailureRegions* _evac_failure_regions;
-
-  G1HeapRegion* region_for_card(CardValue* card_ptr) const {
-    return _g1h->heap_region_containing(_g1_ct->addr_for(card_ptr));
-  }
-
-  bool will_become_free(G1HeapRegion* hr) const {
-    // A region will be freed by during the FreeCollectionSet phase if the region is in the
-    // collection set and has not had an evacuation failure.
-    return _g1h->is_in_cset(hr) && !_evac_failure_regions->contains(hr->hrm_index());
-  }
-
-public:
-  RedirtyLoggedCardTableEntryClosure(G1CollectedHeap* g1h, G1EvacFailureRegions* evac_failure_regions) :
-    G1CardTableEntryClosure(),
-    _num_dirtied(0),
-    _g1h(g1h),
-    _g1_ct(g1h->card_table()),
-    _evac_failure_regions(evac_failure_regions) { }
-
-  void do_card_ptr(CardValue* card_ptr) override {
-    G1HeapRegion* hr = region_for_card(card_ptr);
-
-    // Should only dirty cards in regions that won't be freed.
-    if (!will_become_free(hr)) {
-      *card_ptr = G1CardTable::dirty_card_val();
-      _num_dirtied++;
-    }
-  }
-
-  size_t num_dirtied()   const { return _num_dirtied; }
-};
-
 class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTask : public G1AbstractSubTask {
   G1EvacFailureRegions* _evac_failure_regions;
   G1HeapRegionClaimer _claimer;
@@ -569,48 +532,6 @@ public:
   void do_work(uint worker_id) override {
     ProcessEvacuationFailedRegionsClosure cl;
     _evac_failure_regions->par_iterate(&cl, &_claimer, worker_id);
-  }
-};
-
-class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
-  BufferNodeList* _rdc_buffers;
-  uint _num_buffer_lists;
-  G1EvacFailureRegions* _evac_failure_regions;
-
-public:
-  RedirtyLoggedCardsTask(G1EvacFailureRegions* evac_failure_regions, BufferNodeList* rdc_buffers, uint num_buffer_lists) :
-    G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
-    _rdc_buffers(rdc_buffers),
-    _num_buffer_lists(num_buffer_lists),
-    _evac_failure_regions(evac_failure_regions) { }
-
-  double worker_cost() const override {
-    // Needs more investigation.
-    return G1CollectedHeap::heap()->workers()->active_workers();
-  }
-
-  void do_work(uint worker_id) override {
-    RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
-
-    uint start = worker_id;
-    for (uint i = 0; i < _num_buffer_lists; i++) {
-      uint index = (start + i) % _num_buffer_lists;
-
-      BufferNode* next = Atomic::load(&_rdc_buffers[index]._head);
-      BufferNode* tail = Atomic::load(&_rdc_buffers[index]._tail);
-
-      while (next != nullptr) {
-        BufferNode* node = next;
-        next = Atomic::cmpxchg(&_rdc_buffers[index]._head, node, (node != tail ) ? node->next() : nullptr);
-        if (next == node) {
-          cl.apply_to_buffer(node, worker_id);
-          next = (node != tail ) ? node->next() : nullptr;
-        } else {
-          break; // If there is contention, move to the next BufferNodeList
-        }
-      }
-    }
-    record_work_item(worker_id, 0, cl.num_dirtied());
   }
 };
 
@@ -797,7 +718,6 @@ public:
     JFREventForRegion event(r, _worker_id);
     TimerForRegion timer(timer_for_region(r));
 
-
     if (r->is_young()) {
       assert_tracks_surviving_words(r);
       r->record_surv_words_in_group(_surviving_young_words[r->young_index_in_cset()]);
@@ -869,7 +789,7 @@ public:
   virtual ~FreeCollectionSetTask() {
     Ticks serial_time = Ticks::now();
 
-    bool has_new_retained_regions = Atomic::load(&_num_retained_regions) != 0;
+    bool has_new_retained_regions = AtomicAccess::load(&_num_retained_regions) != 0;
     if (has_new_retained_regions) {
       G1CollectionSetCandidates* candidates = _g1h->collection_set()->candidates();
       candidates->sort_by_efficiency();
@@ -904,28 +824,38 @@ public:
     // Report per-region type timings.
     cl.report_timing();
 
-    Atomic::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
+    AtomicAccess::add(&_num_retained_regions, cl.num_retained_regions(), memory_order_relaxed);
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsTask : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask2::ResizeTLABsAndSwapCardTableTask : public G1AbstractSubTask {
   G1JavaThreadsListClaimer _claimer;
 
   // There is not much work per thread so the number of threads per worker is high.
   static const uint ThreadsPerWorker = 250;
 
 public:
-  ResizeTLABsTask() : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker) { }
+  ResizeTLABsAndSwapCardTableTask()
+    : G1AbstractSubTask(G1GCPhaseTimes::ResizeThreadLABs), _claimer(ThreadsPerWorker)
+  {
+    G1BarrierSet::g1_barrier_set()->swap_global_card_table();
+  }
 
   void do_work(uint worker_id) override {
-    class ResizeClosure : public ThreadClosure {
+
+    class ResizeAndSwapCardTableClosure : public ThreadClosure {
     public:
 
       void do_thread(Thread* thread) {
-        static_cast<JavaThread*>(thread)->tlab().resize();
+        if (UseTLAB && ResizeTLAB) {
+          static_cast<JavaThread*>(thread)->tlab().resize();
+        }
+
+        G1BarrierSet::g1_barrier_set()->update_card_table_base(thread);
       }
-    } cl;
-    _claimer.apply(&cl);
+    } resize_and_swap_cl;
+
+    _claimer.apply(&resize_and_swap_cl);
   }
 
   double worker_cost() const override {
@@ -968,13 +898,8 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   if (evac_failure_regions->has_regions_evac_failed()) {
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,
-                                               per_thread_states->rdc_buffers(),
-                                               per_thread_states->num_workers()));
 
-  if (UseTLAB && ResizeTLAB) {
-    add_parallel_task(new ResizeTLABsTask());
-  }
+  add_parallel_task(new ResizeTLABsAndSwapCardTableTask());
   add_parallel_task(new FreeCollectionSetTask(evacuation_info,
                                               per_thread_states->surviving_young_words(),
                                               evac_failure_regions));

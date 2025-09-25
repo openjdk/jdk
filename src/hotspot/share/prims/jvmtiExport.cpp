@@ -418,6 +418,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
 JvmtiThreadState*
 JvmtiExport::get_jvmti_thread_state(JavaThread *thread, bool allow_suspend) {
   assert(thread == JavaThread::current(), "must be current thread");
+  assert(thread->thread_state() == _thread_in_vm, "thread should be in vm");
   if (thread->is_vthread_mounted() && thread->jvmti_thread_state() == nullptr) {
     JvmtiEventController::thread_started(thread);
     if (allow_suspend && thread->is_suspended()) {
@@ -1826,47 +1827,50 @@ void JvmtiExport::post_method_entry(JavaThread *thread, Method* method, frame cu
 }
 
 void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame current_frame) {
+  // At this point we only have the address of a "raw result" and
+  // we just call into the interpreter to convert this into a jvalue.
+  // This method always makes transition to vm and back where GC can happen.
+  // So it is needed to preserve result and then restore it
+  // even if events are not actually posted.
+  // Saving oop_result into value.j is deferred until jvmti state is ready.
   HandleMark hm(thread);
   methodHandle mh(thread, method);
-
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
-
-  if (state == nullptr || !state->is_interp_only_mode()) {
-    // for any thread that actually wants method exit, interp_only_mode is set
-    return;
-  }
-
   Handle result;
+  oop oop_result;
   jvalue value;
   value.j = 0L;
-
-  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
-    // At this point we only have the address of a "raw result" and
-    // we just call into the interpreter to convert this into a jvalue.
-    oop oop_result;
-    BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
-    assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
-           "Stack shouldn't be empty");
-    if (is_reference_type(type)) {
-      result = Handle(thread, oop_result);
-      value.l = JNIHandles::make_local(thread, result());
-    }
+  BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
+  assert(mh->is_native() || type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+         "Stack shouldn't be empty");
+  if (is_reference_type(type)) {
+    result = Handle(thread, oop_result);
   }
-
-  // Do not allow NotifyFramePop to add new FramePop event request at
-  // depth 0 as it is already late in the method exiting dance.
-  state->set_top_frame_is_exiting();
-
-  // Deferred transition to VM, so we can stash away the return oop before GC.
+  JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
+  bool interp_only; // might be changed in JRT_BLOCK_END
   JRT_BLOCK
-    post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
+    state = get_jvmti_thread_state(thread);
+    interp_only = state != nullptr && state->is_interp_only_mode();
+    if (interp_only) {
+      if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+        // Deferred saving Object result into value.
+        if (is_reference_type(type)) {
+          value.l = JNIHandles::make_local(thread, result());
+        }
+      }
+
+      // Do not allow NotifyFramePop to add new FramePop event request at
+      // depth 0 as it is already late in the method exiting dance.
+      state->set_top_frame_is_exiting();
+
+      post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
+    }
   JRT_BLOCK_END
-
-  // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow
-  // adding FramePop event requests as no safepoint can happen before removing activation.
-  state->clr_top_frame_is_exiting();
-
+  if (interp_only) {
+    // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava destructor. Now it is safe to allow
+    // adding FramePop event requests as no safepoint can happen before removing activation.
+    state->clr_top_frame_is_exiting();
+  }
   if (result.not_null() && !mh->is_native()) {
     // We have to restore the oop on the stack for interpreter frames
     *(oop*)current_frame.interpreter_frame_tos_address() = result();
