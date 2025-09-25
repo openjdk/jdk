@@ -279,7 +279,8 @@ public final class FipsModeTLS12 extends SecmodTest {
 
                 SSLEngine clientSSLEngine = engineToTest[0];
                 SSLEngine serverSSLEngine = engineToTest[1];
-                // Check that session resumption works
+                // The first connection needs to do a full handshake.
+                // Verify that subsequent handshakes use resumption.
                 clientSSLEngine.setEnableSessionCreation(firstSession);
                 firstSession = false;
                 // SSLEngine code based on RedhandshakeFinished.java
