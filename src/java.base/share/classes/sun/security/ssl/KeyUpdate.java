@@ -191,7 +191,8 @@ final class KeyUpdate {
             // The consuming happens in client side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
 
-            if (hc.negotiatedProtocol.useTLS13PlusSpec() && hc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
+            if (hc.negotiatedProtocol.useTLS13PlusSpec()
+                    && hc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
                 throw hc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
                         "KEYUPDATE messages must align with a record boundary");
             }

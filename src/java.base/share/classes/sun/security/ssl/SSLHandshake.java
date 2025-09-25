@@ -532,7 +532,11 @@ enum SSLHandshake implements SSLConsumer, HandshakeProducer {
         return false;
     }
 
-    static boolean precedesKeyChange(byte id) {
+    /**
+     * Whether the handshake message with a given id precedes a key change
+     * in (D)TLS1.3
+     */
+    static boolean t13PrecedesKeyChange(byte id) {
         return id == SSLHandshake.CLIENT_HELLO.id ||
                 id == SSLHandshake.END_OF_EARLY_DATA.id ||
                 id == SERVER_HELLO.id ||

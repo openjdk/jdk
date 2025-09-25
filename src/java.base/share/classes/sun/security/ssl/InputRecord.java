@@ -158,7 +158,7 @@ abstract class InputRecord implements Record, Closeable {
         return t13keyChangeHsExceedsRecordBoundary;
     }
 
-    protected final void setT13keyChangeHsExceedsRecordBoundary() {
+    protected final void markT13keyChangeHsExceedsRecordBoundary() {
         t13keyChangeHsExceedsRecordBoundary = true;
     }
 
