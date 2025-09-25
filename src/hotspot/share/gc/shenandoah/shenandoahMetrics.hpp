@@ -25,22 +25,22 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 
 class ShenandoahMetricsSnapshot : public StackObj {
 private:
-  ShenandoahHeap* _heap;
+  ShenandoahGeneration* _generation;
   size_t _used_before, _used_after;
   double _if_before, _if_after;
   double _ef_before, _ef_after;
 
 public:
-  ShenandoahMetricsSnapshot();
+  explicit ShenandoahMetricsSnapshot(ShenandoahGeneration* generation);
 
   void snap_before();
   void snap_after();
 
-  bool is_good_progress(ShenandoahGeneration *generation);
+  bool is_good_progress() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP

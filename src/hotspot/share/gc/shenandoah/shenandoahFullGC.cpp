@@ -104,13 +104,13 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
-  ShenandoahMetricsSnapshot metrics;
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  ShenandoahMetricsSnapshot metrics(heap->global_generation());
   metrics.snap_before();
 
   // Perform full GC
   do_it(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::handle_completion(heap);
@@ -118,7 +118,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   metrics.snap_after();
 
-  if (metrics.is_good_progress(heap->global_generation())) {
+  if (metrics.is_good_progress()) {
     heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
