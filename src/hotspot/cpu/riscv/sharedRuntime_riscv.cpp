@@ -1004,14 +1004,14 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ bnez(c_rarg2, call_thaw);
 
-    address tr_call;
+    address call_pc;
     {
       Assembler::IncompressibleScope scope(masm);
       // Make sure the call is patchable
       __ align(NativeInstruction::instruction_size);
 
-      tr_call = __ reloc_call(resolve);
-      if (tr_call == nullptr) {
+      call_pc = __ reloc_call(resolve);
+      if (call_pc == nullptr) {
         fatal("CodeCache is full at gen_continuation_enter");
       }
 
@@ -1020,7 +1020,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     }
     __ j(exit);
 
-    address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1039,14 +1039,14 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bnez(c_rarg2, call_thaw);
 
-  address tr_call;
+  address call_pc;
   {
     Assembler::IncompressibleScope scope(masm);
     // Make sure the call is patchable
     __ align(NativeInstruction::instruction_size);
 
-    tr_call = __ reloc_call(resolve);
-    if (tr_call == nullptr) {
+    call_pc = __ reloc_call(resolve);
+    if (call_pc == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
 
@@ -1097,7 +1097,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ jr(x11); // the exception handler
   }
 
-  address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }

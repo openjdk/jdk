@@ -846,17 +846,6 @@ protected:
     store_base<STORE_WIDTH_DOUBLEWORD>(Rs2, Rs1, offset);
   }
 
-  static uint32_t encode_csrrw(Register Rd, const uint32_t csr, Register Rs1) {
-    guarantee(is_uimm12(csr), "csr is invalid");
-    uint32_t insn = 0;
-    patch((address)&insn, 6, 0, 0b1110011);
-    patch((address)&insn, 14, 12, 0b001);
-    patch_reg((address)&insn, 7, Rd);
-    patch_reg((address)&insn, 15, Rs1);
-    patch((address)&insn, 31, 20, csr);
-    return insn;
-  }
-
 #define INSN(NAME, op, funct3)                                                        \
   void NAME(Register Rd, const uint32_t csr, Register Rs1) {                          \
     guarantee(is_uimm12(csr), "csr is invalid");                                      \
@@ -924,6 +913,17 @@ protected:
   }
 
  public:
+
+  static uint32_t encode_csrrw(Register Rd, const uint32_t csr, Register Rs1) {
+    guarantee(is_uimm12(csr), "csr is invalid");
+    uint32_t insn = 0;
+    patch((address)&insn, 6, 0, 0b1110011);
+    patch((address)&insn, 14, 12, 0b001);
+    patch_reg((address)&insn, 7, Rd);
+    patch_reg((address)&insn, 15, Rs1);
+    patch((address)&insn, 31, 20, csr);
+    return insn;
+  }
 
   static uint32_t encode_jal(Register Rd, const int32_t offset) {
     guarantee(is_simm21(offset) && ((offset % 2) == 0), "offset is invalid.");
