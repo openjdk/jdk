@@ -75,6 +75,7 @@ endif
 # least for now.
 # Utils.gmk must be included before FileUtils.gmk, since it uses some of the
 # basic utility functions there.
+include $(TOPDIR)/make/common/CommonVars.gmk
 include $(TOPDIR)/make/common/Utils.gmk
 include $(TOPDIR)/make/common/FileUtils.gmk
 
