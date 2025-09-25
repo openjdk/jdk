@@ -55,6 +55,9 @@ public class PListReaderTest {
     enum QueryType {
         STRING(PListReader::queryValue),
         BOOLEAN(PListReader::queryBoolValue),
+        DICT((plistReader, keyName) -> {
+            return plistReader.queryDictValue(keyName).toMap(true);
+        }),
         STRING_ARRAY(PListReader::queryStringArrayValue),
         RAW_ARRAY((plistReader, keyName) -> {
             return plistReader.queryArrayValue(keyName, false).toList();
@@ -125,7 +128,7 @@ public class PListReaderTest {
                 } else if (v instanceof List<?>) {
                     queryType(QueryType.STRING_ARRAY);
                 } else if (v instanceof Map<?, ?>) {
-                    queryType(QueryType.TO_MAP_RECURSIVE);
+                    queryType(QueryType.DICT);
                 }
                 return this;
             }
@@ -214,7 +217,9 @@ public class PListReaderTest {
                 "<key>boolean-false-key</key>",
                 "<false/>",
                 "<key>array-key</key>",
-                "<array><string>b</string></array>");
+                "<array><string>b</string></array>",
+                "<key>dict-key</key>",
+                "<dict><key>nested-dict-key</key><integer>345</integer></dict>");
 
         List<TestSpec> testSpecs = new ArrayList<>();
 
@@ -223,15 +228,24 @@ public class PListReaderTest {
                 testSpecs.add(builder.keyName("boolean-true-key").create());
                 testSpecs.add(builder.keyName("boolean-false-key").create());
                 testSpecs.add(builder.keyName("array-key").create());
+                testSpecs.add(builder.keyName("dict-key").create());
             }
             case BOOLEAN -> {
                 testSpecs.add(builder.keyName("string-key").create());
                 testSpecs.add(builder.keyName("array-key").create());
+                testSpecs.add(builder.keyName("dict-key").create());
             }
             case STRING_ARRAY, RAW_ARRAY, RAW_ARRAY_RECURSIVE -> {
                 testSpecs.add(builder.keyName("string-key").create());
                 testSpecs.add(builder.keyName("boolean-true-key").create());
                 testSpecs.add(builder.keyName("boolean-false-key").create());
+                testSpecs.add(builder.keyName("dict-key").create());
+            }
+            case DICT -> {
+                testSpecs.add(builder.keyName("string-key").create());
+                testSpecs.add(builder.keyName("boolean-true-key").create());
+                testSpecs.add(builder.keyName("boolean-false-key").create());
+                testSpecs.add(builder.keyName("array-key").create());
             }
             case TO_MAP, TO_MAP_RECURSIVE -> {
                 throw new UnsupportedOperationException();
@@ -239,6 +253,15 @@ public class PListReaderTest {
         }
 
         testSpecs.forEach(TestSpec::test);
+
+        builder.keyName(null).expect(Map.of(
+                "string-key", new Raw("a", Raw.Type.STRING),
+                "boolean-true-key", new Raw(Boolean.TRUE.toString(), Raw.Type.BOOLEAN),
+                "boolean-false-key", new Raw(Boolean.FALSE.toString(), Raw.Type.BOOLEAN),
+                "array-key", List.of(new Raw("b", Raw.Type.STRING)),
+                "dict-key", Map.of("nested-dict-key", new Raw("345", Raw.Type.INTEGER))
+        )).queryType(QueryType.TO_MAP_RECURSIVE).create().test();
+
     }
 
     @ParameterizedTest
@@ -344,7 +367,7 @@ public class PListReaderTest {
                 )
         );
 
-        builder.expect(expected).create().test();
+        builder.expect(expected).queryType(QueryType.TO_MAP_RECURSIVE).create().test();
     }
 
     private static List<TestSpec> test() {
@@ -368,6 +391,8 @@ public class PListReaderTest {
                 testSpec().expect("A").xml("<key>foo</key><string>A</string><string>B</string>"),
                 testSpec().expect("A").xml("<key>foo</key><string>A</string><key>foo</key><string>B</string>"),
 
+                testSpec().expect(Map.of()).xml("<key>foo</key><dict/>"),
+
                 //
                 // Test that if there are multiple keys with the same name, all but the first are ignored.
                 //
@@ -390,11 +415,14 @@ public class PListReaderTest {
                 // Test empty arrays.
                 //
                 testSpec().expect(List.of()).queryType(QueryType.RAW_ARRAY_RECURSIVE).xml("<key>foo</key><array/>"),
-                testSpec().expect(List.of()).queryType(QueryType.RAW_ARRAY).xml("<key>foo</key><array/>"),
+                testSpec().expect(List.of()).queryType(QueryType.RAW_ARRAY).xml("<key>foo</key><array/>")
 
-                //
-                // Test toMap() method.
-                //
+        ).map(TestSpec.Builder::create).forEach(data::add);
+
+        //
+        // Test toMap() method.
+        //
+        Stream.of(
                 testSpec().expect(Map.of()).xml(),
                 testSpec().expect(Map.of()).xml("<key>foo</key><key>bar</key>"),
                 testSpec().expect(Map.of()).xml("<string>A</string><key>bar</key>"),
@@ -403,8 +431,9 @@ public class PListReaderTest {
                 testSpec().expect(Map.of("foo", new Raw("A", Raw.Type.STRING))).xml("<key>foo</key><string>A</string><string>B</string>"),
                 testSpec().expect(Map.of("foo", new Raw("A", Raw.Type.STRING))).xml("<key>foo</key><string>A</string> hello <key>foo</key> bye <string>B</string>"),
                 testSpec().expect(Map.of("foo", new Raw("A", Raw.Type.STRING), "Foo", new Raw("B", Raw.Type.STRING))).xml("<key>foo</key><string>A</string><key>Foo</key><string>B</string>")
-
-        ).map(TestSpec.Builder::create).forEach(data::add);
+        ).map(builder -> {
+            return builder.queryType(QueryType.TO_MAP_RECURSIVE);
+        }).map(TestSpec.Builder::create).forEach(data::add);
 
         var arrayTestSpec = testSpec().expect(List.of(
                 new Raw("Hello", Raw.Type.STRING),

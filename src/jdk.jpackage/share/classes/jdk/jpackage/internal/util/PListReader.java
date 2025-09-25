@@ -111,7 +111,7 @@ public final class PListReader {
     /**
      * Returns the contents of the the underlying "dict" element as a Map.
      * <p>
-     * The keys in the returned map are names of the keys.
+     * The keys in the returned map are names of the properties.
      * <p>
      * Values of nested "dict" properties are stored as {@code Map<String, Object>}
      * or {@code PListReader} objects depending on the value of the
@@ -150,13 +150,14 @@ public final class PListReader {
     }
 
     /**
-     * Returns the value of the given string key in the underlying "dict" element.
+     * Returns the value of the given string property in the underlying "dict"
+     * element.
      *
-     * @param keyName the name of a string key whose value to query
-     * @return the value of the string key with the specified name in the underlying
-     *         "dict" element
-     * @throws NoSuchElementException if there is no string key with the given name
-     *                                in the underlying "dict" element
+     * @param keyName the name of a string property whose value to query
+     * @return the value of the string property with the specified name in the
+     *         underlying "dict" element
+     * @throws NoSuchElementException if there is no string property with the given
+     *                                name in the underlying "dict" element
      */
     public String queryValue(String keyName) {
         final var node = getNode(keyName);
@@ -169,15 +170,38 @@ public final class PListReader {
             }
         }
     }
+    
+    /**
+     * Returns the value of the given "dict" property in the underlying "dict"
+     * element.
+     *
+     * @param keyName the name of a "dict" property whose value to query
+     * @return the value of the "dict" property with the specified name in the
+     *         underlying "dict" element
+     * @throws NoSuchElementException if there is no "dict" property with the given
+     *                                name in the underlying "dict" element
+     */
+    public PListReader queryDictValue(String keyName) {
+        final var node = getNode(keyName);
+        switch (node.getNodeName()) {
+            case "dict" -> {
+                return new PListReader(node);
+            }
+            default -> {
+                throw new NoSuchElementException();
+            }
+        }
+    }
 
     /**
-     * Returns the value of the given boolean key in the underlying "dict" element.
+     * Returns the value of the given boolean property in the underlying "dict"
+     * element.
      *
-     * @param keyName the name of a boolean key whose value to query
-     * @return the value of the boolean key with the specified name in the
+     * @param keyName the name of a boolean property whose value to query
+     * @return the value of the boolean property with the specified name in the
      *         underlying "dict" element
-     * @throws NoSuchElementException if there is no string key with the given name
-     *                                in the underlying "dict" element
+     * @throws NoSuchElementException if there is no string property with the given
+     *                                name in the underlying "dict" element
      */
     public boolean queryBoolValue(String keyName) {
         final var node = getNode(keyName);
@@ -195,18 +219,18 @@ public final class PListReader {
     }
 
     /**
-     * Returns the value of the given array key in the underlying "dict" element as
-     * a list of strings.
+     * Returns the value of the given array property in the underlying "dict"
+     * element as a list of strings.
      * <p>
      * Processes the result of calling {@link #queryArrayValue(String)} on the
-     * specified key by filtering {@link Raw} instances of type
+     * specified property name by filtering {@link Raw} instances of type
      * {@link Raw.Type#STRING}.
      *
-     * @param keyName the name of an array key whose value to query
-     * @return the value of the array key with the specified name in the underlying
-     *         "dict" element
-     * @throws NoSuchElementException if there is no array key with the given name
-     *                                in the underlying "dict" element
+     * @param keyName the name of an array property whose value to query
+     * @return the value of the array property with the specified name in the
+     *         underlying "dict" element
+     * @throws NoSuchElementException if there is no array property with the given
+     *                                name in the underlying "dict" element
      */
     public List<String> queryStringArrayValue(String keyName) {
         return queryArrayValue(keyName, false).map(v -> {
@@ -220,8 +244,8 @@ public final class PListReader {
     }
 
     /**
-     * Returns the value of the given array key in the underlying "dict" element as
-     * a stream of {@link Object}-s.
+     * Returns the value of the given array property in the underlying "dict"
+     * element as a stream of {@link Object}-s.
      * <p>
      * Values of "dict" array items are stored as {@code Map<String, Object>} or
      * {@code PListReader} objects depending on the value of the
@@ -231,13 +255,13 @@ public final class PListReader {
      * <p>
      * Values of other types are stored as {@code Raw} objects.
      *
-     * @param keyName           the name of an array key whose value to query
+     * @param keyName           the name of an array property whose value to query
      * @param fetchDictionaries controls the type of objects of "dict" elements. If
      *                          the value is {@code true},
      *                          {@code Map<String, Object>} type is used, and
      *                          {@code PListReader} type otherwise.
-     * @return the value of the array key with the specified name in the underlying
-     *         "dict" element
+     * @return the value of the array property with the specified name in the
+     *         underlying "dict" element
      * @throws NoSuchElementException if there is no array key with the given name
      *                                in the underlying "dict" element
      */
@@ -256,9 +280,9 @@ public final class PListReader {
     /**
      * Creates plist reader from the given node.
      * <p>
-     * If the name of the specified node is an element with the name "dict", the
-     * reader is bound to the given node; otherwise, it is bound to the
-     * {@code /plist/dict} element.
+     * If the specified node is an element with the name "dict", the reader is bound
+     * to the specified node; otherwise, it is bound to the {@code /plist/dict}
+     * element in the document.
      *
      * @param node the node
      * @throws NoSuchElementException if the specified node is not an element with
