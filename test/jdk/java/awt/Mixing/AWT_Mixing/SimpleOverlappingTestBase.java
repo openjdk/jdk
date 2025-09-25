@@ -66,6 +66,10 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         this.useDefaultClickValidation = defaultClickValidation;
     }
 
+    protected boolean isMultiFramesTest(){
+        return true;
+    }
+
     public SimpleOverlappingTestBase() {
         this(true);
     }
@@ -152,9 +156,10 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         /* this is a workaround for certain jtreg(?) focus issue:
            tests fail starting after failing mixing tests but always pass alone.
          */
-        JFrame ancestor = (JFrame)(testedComponent.getTopLevelAncestor());
-        final CountDownLatch latch = new CountDownLatch(1);
+        JFrame ancestor = (JFrame) (testedComponent.getTopLevelAncestor());
         if (ancestor != null) {
+            final CountDownLatch latch = new CountDownLatch(1);
+
             ancestor.addFocusListener(new FocusAdapter() {
                 @Override public void focusGained(FocusEvent e) {
                     latch.countDown();
@@ -175,6 +180,22 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
             throw new RuntimeException(e);
         }
 
+            try {
+                if (!latch.await(1L, TimeUnit.SECONDS)) {
+                    throw new RuntimeException(
+                            "Ancestor frame didn't receive focus");
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        clickAndBlink(robot, lLoc);
+        if (ancestor != null && isMultiFramesTest()) {
+            ancestor.dispose();
+        }
+
+
         return wasLWClicked;
     }
 
@@ -191,5 +212,4 @@ public abstract class SimpleOverlappingTestBase extends OverlappingTestBase {
         }
         return false;
     }
-
 }

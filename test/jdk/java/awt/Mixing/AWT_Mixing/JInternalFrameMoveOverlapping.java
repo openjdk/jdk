@@ -34,7 +34,6 @@ import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JInternalFrame } component during move.
- * <p>See <a href="http://monaco.sfbay.sun.com/detail.jsf?cr=6985399">CR6768230</a> for details and base class for test info.
  */
 /*
  * @test
