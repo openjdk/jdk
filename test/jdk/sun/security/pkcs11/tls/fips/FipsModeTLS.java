@@ -32,10 +32,10 @@
  * @library /test/lib ../..
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.2
  *      -Djdk.tls.useExtendedMasterSecret=false
- *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS12
+ *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS
  * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet.
  *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669
- * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS12
+ * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS
  */
 
 import java.io.File;
@@ -75,7 +75,7 @@ import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
-public final class FipsModeTLS12 extends SecmodTest {
+public final class FipsModeTLS extends SecmodTest {
 
     private static final boolean enableDebug = true;
 
@@ -104,8 +104,8 @@ public final class FipsModeTLS12 extends SecmodTest {
             testTlsAuthenticationCodeGeneration();
 
             // Self-integrity test (complete TLS communication)
-            testTLS12SunPKCS11Communication.initSslContext();
-            testTLS12SunPKCS11Communication.run();
+            testTLSSunPKCS11Communication.initSslContext();
+            testTLSSunPKCS11Communication.run();
 
             System.out.println("Test PASS - OK");
         } else {
@@ -272,7 +272,7 @@ public final class FipsModeTLS12 extends SecmodTest {
         }
     }
 
-    private static class testTLS12SunPKCS11Communication {
+    private static class testTLSSunPKCS11Communication {
         public static void run() throws Exception {
             SSLEngine[][] enginesToTest = getSSLEnginesToTest();
             boolean firstSession = true;
