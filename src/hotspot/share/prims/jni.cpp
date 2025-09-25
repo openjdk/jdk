@@ -3847,6 +3847,14 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
     return JNI_ERR;
   }
 
+  // Make thread name visible to OS
+  if (thread_name != nullptr) {
+    thread->set_native_thread_name(thread_name);
+  } else {
+    ResourceMark rm;
+    thread->set_native_thread_name(thread->name());
+  }
+
   // Update the _monitor_owner_id with the tid value.
   thread->set_monitor_owner_id(java_lang_Thread::thread_id(thread->threadObj()));
 
