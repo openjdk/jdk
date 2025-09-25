@@ -1470,11 +1470,11 @@ void os::print_memory_info(outputStream* st) {
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
   physical_memory_size_type phys_mem = os::physical_memory();
-  st->print(", physical " UINT64_FORMAT "k",
+  st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
   physical_memory_size_type avail_mem = 0;
   (void)os::available_memory(avail_mem);
-  st->print("(" UINT64_FORMAT "k free)",
+  st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
 
   if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {

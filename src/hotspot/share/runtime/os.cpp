@@ -1188,9 +1188,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   physical_memory_size_type mem = phys_mem/G;
   if (mem == 0) {  // for low memory systems
     mem = phys_mem/M;
-    st->print("%d cores, " UINT64_FORMAT "M, ", processor_count(), mem);
+    st->print("%d cores, " PHYS_MEM_TYPE_FORMAT "M, ", processor_count(), mem);
   } else {
-    st->print("%d cores, " UINT64_FORMAT "G, ", processor_count(), mem);
+    st->print("%d cores, " PHYS_MEM_TYPE_FORMAT "G, ", processor_count(), mem);
   }
   get_summary_os_info(buf, buflen);
   st->print_raw(buf);

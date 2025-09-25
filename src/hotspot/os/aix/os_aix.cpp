@@ -2192,7 +2192,7 @@ jint os::init_2(void) {
   os::Posix::init_2();
 
   trcVerbose("processor count: %d", os::_processor_count);
-  trcVerbose("physical memory: " UINT64_FORMAT, Aix::_physical_memory);
+  trcVerbose("physical memory: " PHYS_MEM_TYPE_FORMAT, Aix::_physical_memory);
 
   // Initially build up the loaded dll map.
   LoadedLibraries::reload();

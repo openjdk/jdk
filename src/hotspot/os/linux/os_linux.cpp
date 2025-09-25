@@ -349,7 +349,7 @@ bool os::free_swap_space(physical_memory_size_type& value) {
     }
     // unlimited or not supported. Fall through to return host value
     log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
-                            " container_mem_limit=" JLONG_FORMAT " returning host value: " UINT64_FORMAT,
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: " PHYS_MEM_TYPE_FORMAT,
                             mem_swap_limit, mem_limit, host_free_swap_val);
   }
   value = host_free_swap_val;
@@ -366,7 +366,7 @@ physical_memory_size_type os::physical_memory() {
   }
 
   physical_memory_size_type phys_mem = Linux::physical_memory();
-  log_trace(os)("total system memory: " UINT64_FORMAT, phys_mem);
+  log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
 }
 
@@ -2610,11 +2610,11 @@ void os::print_memory_info(outputStream* st) {
   struct sysinfo si;
   sysinfo(&si);
   physical_memory_size_type phys_mem = physical_memory();
-  st->print(", physical " UINT64_FORMAT "k",
+  st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
   physical_memory_size_type avail_mem = 0;
   (void)os::available_memory(avail_mem);
-  st->print("(" UINT64_FORMAT "k free)",
+  st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
   st->print(", swap " UINT64_FORMAT "k",
             ((jlong)si.totalswap * si.mem_unit) >> 10);

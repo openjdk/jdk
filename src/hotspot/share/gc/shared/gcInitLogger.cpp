@@ -63,7 +63,7 @@ void GCInitLogger::print_cpu() {
 
 void GCInitLogger::print_memory() {
   physical_memory_size_type memory = os::physical_memory();
-  log_info_p(gc, init)("Memory: " UINT64_FORMAT "%s",
+  log_info_p(gc, init)("Memory: " PHYS_MEM_TYPE_FORMAT "%s",
                        byte_size_in_proper_unit(memory), proper_unit_for_byte_size(memory));
 }
 
