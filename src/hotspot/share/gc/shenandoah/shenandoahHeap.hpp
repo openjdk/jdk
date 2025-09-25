@@ -206,8 +206,11 @@ public:
   void initialize_serviceability() override;
 
   void print_heap_on(outputStream* st)         const override;
-  void print_gc_on(outputStream *st)           const override;
+  void print_gc_on(outputStream* st)           const override;
   void print_heap_regions_on(outputStream* st) const;
+
+  // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
+  void process_gc_stats() const;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;

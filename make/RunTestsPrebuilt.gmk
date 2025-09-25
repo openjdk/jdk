@@ -131,7 +131,7 @@ $(eval $(call SetupVariable,MAKE,make,NO_CHECK))
 $(eval $(call SetupVariable,BASH,bash,NO_CHECK))
 
 # Check optional variables
-$(eval $(call SetupVariable,JIB_JAR,OPTIONAL))
+$(eval $(call SetupVariable,JIB_HOME,OPTIONAL))
 
 # Now that we have verified that we have the required variables available, we
 # can include the prebuilt spec file ourselves, without an ephemeral spec
@@ -265,7 +265,7 @@ $(call CreateNewSpec, $(NEW_SPEC), \
     SYMBOLS_IMAGE_DIR := $(SYMBOLS_IMAGE_DIR), \
     MAKE := $(MAKE), \
     BASH := $(BASH), \
-    JIB_JAR := $(JIB_JAR), \
+    JIB_HOME := $(JIB_HOME), \
     FIXPATH_BASE := $(FIXPATH_BASE), \
     FIXPATH := $(FIXPATH), \
     OPENJDK_TARGET_OS := $(OPENJDK_TARGET_OS), \
@@ -295,6 +295,7 @@ test-prebuilt:
         # ExecuteWithLog is called in RunTests.gmk. The PrepareFailureLogs macro
         # is unfortunately not available at this point.
 	$(call MakeDir, $(MAKESUPPORT_OUTPUTDIR)/failure-logs)
+	$(call MakeDir, $(JAVA_TMP_DIR))
 	@$(RM) -f $(MAKESUPPORT_OUTPUTDIR)/exit-with-error
         # We need to fill the FindTest cache before entering RunTests.gmk.
 	@cd $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) SPEC=$(SPEC) \
