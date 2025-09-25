@@ -1559,8 +1559,9 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
   switch(id) {
     case vmIntrinsics::_ghash_processBlocks:
-      if (has_Crypto_GHASH()) {
-        return true;
+      if (!has_Crypto_GHASH()) {
+        os::breakpoint();
+        return false;
       }
       break;
     case vmIntrinsics::_aescrypt_encryptBlock:
@@ -1570,38 +1571,82 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     case vmIntrinsics::_electronicCodeBook_encryptAESCrypt:
     case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
     case vmIntrinsics::_galoisCounterMode_AESCrypt:
-      if(has_Crypto_AES()) {
-        return true;
+      if(!has_Crypto_AES()) {
+        os::breakpoint();
+        return false;
       }
       break;
     case vmIntrinsics::_counterMode_AESCrypt:
-      if(has_Crypto_AES_CTR()) {
-        return true;
+      if(!has_Crypto_AES_CTR()) {
+        os::breakpoint();
+        return false;
       }
       break;
     case vmIntrinsics::_sha_implCompress:
-      if(has_Crypto_SHA1()) {
-        return true;
+      if(!has_Crypto_SHA1() || !has_Crypto_SHA()) {
+        os::breakpoint();
+        return false;
       }
       break;
     case vmIntrinsics::_sha2_implCompress:
-      if(has_Crypto_SHA256()) {
-        return true;
+      if(!has_Crypto_SHA256() || !has_Crypto_SHA()) {
+        os::breakpoint();
+        return false;
       }
       break;
     case vmIntrinsics::_sha5_implCompress:
-      if(has_Crypto_SHA512()) {
-        return true;
+      if(!has_Crypto_SHA512() || !has_Crypto_SHA()) {
+        os::breakpoint();
+        return false;
       }
       break;
-    case vmIntrinsics::_updateBytesCRC32:
-    case vmIntrinsics::_updateBytesCRC32C:
-    case vmIntrinsics::_multiplyToLen:
-    case vmIntrinsics::_montgomeryMultiply:
-    case vmIntrinsics::_montgomerySquare:
-      return true;
+    case vmIntrinsics::_digestBase_implCompressMB:
+      if(!(has_Crypto_SHA1() || has_Crypto_SHA256() || has_Crypto_SHA512()) || !has_Crypto_SHA()) {
+        os::breakpoint();
+        return false;
+      }
+      break;
+    case vmIntrinsics::_md5_implCompress:
+    case vmIntrinsics::_double_keccak:
+    case vmIntrinsics::_sha3_implCompress:
+    case vmIntrinsics::_chacha20Block:
+    case vmIntrinsics::_kyberNtt:
+    case vmIntrinsics::_kyberInverseNtt:
+    case vmIntrinsics::_kyberNttMult:
+    case vmIntrinsics::_kyberAddPoly_2:
+    case vmIntrinsics::_kyberAddPoly_3:
+    case vmIntrinsics::_kyber12To16:
+    case vmIntrinsics::_kyberBarrettReduce:
+    case vmIntrinsics::_dilithiumAlmostNtt:
+    case vmIntrinsics::_dilithiumAlmostInverseNtt:
+    case vmIntrinsics::_dilithiumNttMult:
+    case vmIntrinsics::_dilithiumMontMulByConstant:
+    case vmIntrinsics::_dilithiumDecomposePoly:
+    case vmIntrinsics::_base64_encodeBlock:
+    case vmIntrinsics::_base64_decodeBlock:
+    case vmIntrinsics::_poly1305_processBlocks:
+    case vmIntrinsics::_intpoly_montgomeryMult_P256:
+    case vmIntrinsics::_intpoly_assign:
+    case vmIntrinsics::_vectorizedMismatch:
+    case vmIntrinsics::_updateBytesAdler32:
+    case vmIntrinsics::_updateByteBufferAdler32:
+#ifdef COMPILER2
+    case vmIntrinsics::_vectorizedHashCode:
+    case vmIntrinsics::_squareToLen:
+    case vmIntrinsics::_mulAdd:
+    case vmIntrinsics::_isDigit:
+    case vmIntrinsics::_isLowerCase:
+    case vmIntrinsics::_isUpperCase:
+    case vmIntrinsics::_isWhitespace:
+    case vmIntrinsics::_dcopySign:
+    case vmIntrinsics::_fcopySign:
+    case vmIntrinsics::_dsignum:
+    case vmIntrinsics::_fsignum:
+#endif //COMPILER2
+      os::breakpoint();
+      return false;
     default:
       return true;
   }
-  return false;
+  return true;
 }
