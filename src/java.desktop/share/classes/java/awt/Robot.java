@@ -844,7 +844,7 @@ public class Robot {
      *          and {@code 60,000} milliseconds inclusive
      * @since   26
      */
-    public synchronized void waitForIdle(int delayValue) {
+    public void waitForIdle(int delayValue) {
         waitForIdle();
         delay(delayValue);
     }
