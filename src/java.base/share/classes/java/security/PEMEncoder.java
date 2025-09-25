@@ -86,18 +86,18 @@ import java.util.concurrent.locks.ReentrantLock;
  *  ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code KeyPair} : PRIVATE KEY</li>
- *  <li>{@code KeyPair} (if configured with Encryption) : ENCRYPTED PRIVATE KEY
+ *  <li>{@code KeyPair} (if configured with encryption) : ENCRYPTED PRIVATE KEY
  *  </li>
  *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
  *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
- *  <li>{@code PKCS8EncodedKeySpec} (if configured with Encryption) :
+ *  <li>{@code PKCS8EncodedKeySpec} (if configured with encryption) :
  *  ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code PEM} : {@code PEM.type()}</li>
  *  </ul>
  *
  * <p> This class is immutable and thread-safe.
  *
- * <p> Here is an example of encoding a {@code PrivateKey} object:
+ * <p> Here is an example of encoding a private key object:
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of();
  *     byte[] pemData = pe.encode(privKey);
@@ -120,6 +120,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
+ * @spec https://www.rfc-editor.org/info/rfc5958
+ *       RFC 5958: Asymmetric Key Packages
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
@@ -253,7 +255,8 @@ public final class PEMEncoder {
      * Returns a new {@code PEMEncoder} instance configured for encryption
      * with the default algorithm and a given password.
      *
-     * <p> Only {@link PrivateKey} objects can be encrypted with this newly
+     * <p> Only {@link PrivateKey}, {@link KeyPair}, and
+     * {@link PKCS8EncodedKeySpec} objects can be encoded with this newly
      * configured instance.  Encoding other {@link DEREncodable} objects will
      * throw an {@code IllegalArgumentException}.
      *

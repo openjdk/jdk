@@ -287,7 +287,7 @@ class PEMData {
         -----END RSA PRIVATE KEY-----
         """, RSAPrivateKey.class, "SunRsaSign");
 
-    static final Entry ecsecp256ekpi = new Entry("ecsecp256epki",
+    static final Entry ecsecp256ekpi = new Entry("ecsecp256ekpi",
         """
         -----BEGIN ENCRYPTED PRIVATE KEY-----
         MIH0MF8GCSqGSIb3DQEFDTBSMDEGCSqGSIb3DQEFDDAkBBDhqUj1Oadj1GZXUMXT

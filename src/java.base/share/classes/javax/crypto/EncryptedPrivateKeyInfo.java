@@ -566,7 +566,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
         Objects.requireNonNull(password, "password cannot be null");
 
         DEREncodable d = Pem.toDEREncodable(
-            Pem.decryptEncoding(encoded, password), true,null);
+            Pem.decryptEncoding(encoded, password), true, null);
         return switch (d) {
             case KeyPair kp -> kp;
             case PrivateKey ignored -> throw new InvalidKeyException(
@@ -761,6 +761,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
             return factory.generateSecret(keySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new IllegalArgumentException(e);
+        } finally {
+            keySpec.clearPassword();
         }
     }
 }

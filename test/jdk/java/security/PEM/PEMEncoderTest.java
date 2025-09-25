@@ -121,7 +121,7 @@ public class PEMEncoderTest {
         String s = encoder.withEncryption(PEMData.ecsecp256ekpi.password()).encodeToString(kp);
         kp = d.withDecryption(PEMData.ecsecp256ekpi.password()).decode(s, KeyPair.class);
         var newPriv = kp.getPrivate();
-        if (Arrays.compare(origPriv.getEncoded(), newPriv.getEncoded()) != 0) {
+        if (!Arrays.equals(origPriv.getEncoded(), newPriv.getEncoded())) {
             throw new AssertionError("compare fails");
         }
     }

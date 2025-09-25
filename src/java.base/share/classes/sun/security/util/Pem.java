@@ -370,8 +370,11 @@ public class Pem {
         SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
         PKCS8EncodedKeySpec p8KeySpec =
             ekpi.getKeySpec(skf.generateSecret(keySpec));
-
-        return p8KeySpec.getEncoded();
+        byte[] result = p8KeySpec.getEncoded();
+            SharedSecrets.getJavaSecuritySpecAccess().
+                clearEncodedKeySpec(p8KeySpec);
+            keySpec.clearPassword();
+        return result;
     }
 
 
@@ -407,6 +410,9 @@ public class Pem {
                 kf = KeyFactory.getInstance(p8key.getAlgorithm(), provider);
             }
         } catch (NoSuchAlgorithmException e) {
+            p8key.clear();
+            SharedSecrets.getJavaSecuritySpecAccess().
+                clearEncodedKeySpec(p8KeySpec);
             throw new InvalidKeyException("Unable to find the algorithm: " +
                 p8key.getAlgorithm(), e);
         }

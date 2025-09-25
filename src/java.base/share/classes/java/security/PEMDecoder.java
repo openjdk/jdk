@@ -46,16 +46,16 @@ import java.util.Objects;
  * {@code PEMDecoder} implements a decoder for Privacy-Enhanced Mail (PEM) data.
  * PEM is a textual encoding used to store and transfer security
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRLs).  It is defined in RFC 1421 and RFC 7468.  A PEM structure
- * consists of Base64-encoded binary data enclosed by a type-identifying header
+ * lists (CRLs).  It is defined in RFC 1421 and RFC 7468. PEM consists of a
+ * Base64-formatted binary encoding enclosed by a type-identifying header
  * and footer.
  *
  * <p> The {@link #decode(String)} and {@link #decode(InputStream)}
- * methods return an instance of a class matching the PEM type and
- * implementing {@link DEREncodable}.
+ * methods return an instance of a class that matches the PEM type and
+ * implements {@link DEREncodable}.
  *
- * <p> Supported PEM types and their decoded {@code DEREncodable} classes
- * include:
+ * <p> The following lists the supported PEM types and the {@code DEREncodable}
+ * types that each are decoded as:
  * <ul>
  *  <li>CERTIFICATE : {@code X509Certificate}</li>
  *  <li>X509 CRL : {@code X509CRL}</li>
@@ -69,17 +69,17 @@ import java.util.Objects;
  *  public key)</li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with
- *  Decryption)</li>
+ *  decryption)</li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code KeyPair} (if configured with
- *  Decryption)</li>
+ *  decryption)</li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code PKCS8EncodedKeySpec} (if configured with
- *  Decryption)</li>
+ *  decryption)</li>
  *  <li>Other types : {@code PEM} </li>
  * </ul>
  *
  * <p> For {@code PublicKey} and {@code PrivateKey} types, an algorithm-specific
- * subclass is returned if the algorithm is supported. For example an
- * ECPublicKey and ECPrivateKey for Elliptic Curve keys.
+ * subclass is returned if the algorithm is supported. For example, an
+ * {@code ECPublicKey} and {@code ECPrivateKey} for Elliptic Curve keys.
  *
  * <p> If the PEM type does not have a corresponding class,
  * {@code decode(String)} and {@code decode(InputStream)} will return a
@@ -87,15 +87,16 @@ import java.util.Objects;
  *
  * <p> The {@link #decode(String, Class)} and
  * {@link #decode(InputStream, Class)} methods take a class parameter
- * to specify the returned {@code DEREncodable} type. These
- * methods are useful when extracting or changing the return class.
- * For example, if the PEM contains both a public and private keys, specifying
+ * which specifies type of {@code DEREncodable} that is returned. These methods
+ * are useful to avoid casting the return type when the PEM type is known, or
+ * when extracting a specific type when there is more than one choice.
+ * For example, if the PEM contains both a public and private key, specifying
  * {@code PrivateKey.class} returns only the private key.
  * If the class parameter specifies {@code X509EncodedKeySpec.class}, the
- * public key encoding is returned in that class.  Any type of PEM data can be
- * decoded into a {@code PEM} object by specifying {@code PEM.class}.
- * If the class parameter doesn't match the PEM content, a
- * {@linkplain ClassCastException} will be thrown.
+ * public key encoding is returned in an instance of the X509EncodedKeySpec
+ * class.  Any type of PEM data can be decoded into a {@code PEM} object by
+ * specifying {@code PEM.class}. If the class parameter doesn't match the PEM
+ * content, a {@linkplain ClassCastException} will be thrown.
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
  * with {@link #withFactory(Provider)} and/or

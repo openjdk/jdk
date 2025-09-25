@@ -243,15 +243,24 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
 
     // Parse the SEC1v2 encoding to extract public key, if available.
     public static BitArray parsePublicBits(byte[] privateBytes) {
+        DerValue seq = null;
         try {
-            DerValue seq = new DerValue(privateBytes);
+            seq = new DerValue(privateBytes);
             if (seq.tag == DerValue.tag_Sequence) {
                 int version = seq.data.getInteger();
                 if (version == 1) { // EC
-                    byte[] oct = seq.data.getOctetString();
+                    byte[] oct = seq.data.getOctetString();  // private key
                     Arrays.fill(oct, (byte) 0x0);
                     if (seq.data.available() != 0) {
                         DerValue derValue = seq.data.getDerValue();
+                        // check for optional [0] EC domain parameters
+                        if (derValue.isContextSpecific((byte) 0)) {
+                            if (seq.data.available() == 0) {
+                                return null;
+                            }
+                            derValue = seq.data.getDerValue();
+                        }
+                        // [1] public key
                         if (derValue.isContextSpecific((byte) 1)) {
                             derValue = derValue.data.getDerValue();
                             return derValue.getUnalignedBitString();
@@ -261,6 +270,10 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             }
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
+        } finally {
+            if (seq != null) {
+                seq.clear();
+            }
         }
         return null;
     }

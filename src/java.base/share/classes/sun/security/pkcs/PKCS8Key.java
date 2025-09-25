@@ -34,10 +34,8 @@ import sun.security.x509.X509Key;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.security.*;
-import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 
 /**
@@ -109,7 +107,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
     /**
      * Constructor that takes both public and private encodings.  If
-     * pubEncoding is null, a V1 PKCS8 encoding is created; otherwise, V2 is
+     * publicEncoding is null, a V1 PKCS8 encoding is created; otherwise, V2 is
      * encoded.
      */
     public PKCS8Key(byte[] publicEncoding, byte[] privateEncoding)
@@ -118,6 +116,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         if (publicEncoding != null) {
             if (pubKeyEncoded != null) {
                 if (!Arrays.equals(pubKeyEncoded, publicEncoding)) {
+                    Arrays.fill(privKeyMaterial, (byte) 0x0);
                     throw new InvalidKeyException("PrivateKey " +
                         "encoding has a public key that does not match " +
                         "the given PublicKey");
@@ -298,19 +297,22 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
      * With a given encoded Public and Private key, generate and return a
      * PKCS8v2 DER-encoded byte[].
      *
-     * @param pubKeyEncoded DER-encoded PublicKey, this maybe null.
+     * @param pubKeyEncoded DER-encoded PublicKey, this may be null.
      * @param privKeyEncoded DER-encoded PrivateKey
      * @return DER-encoded byte array
      * @throws IOException thrown on encoding failure
      */
     public static byte[] getEncoded(byte[] pubKeyEncoded, byte[] privKeyEncoded)
         throws IOException {
+        PKCS8Key pkcs8Key;
         try {
-            return new PKCS8Key(pubKeyEncoded, privKeyEncoded).
-                generateEncoding();
+            pkcs8Key = new PKCS8Key(pubKeyEncoded, privKeyEncoded);
         } catch (InvalidKeyException e) {
             throw new IOException(e);
         }
+        byte[] result = pkcs8Key.generateEncoding().clone();
+        pkcs8Key.clear();
+        return result;
     }
 
     /**

@@ -37,10 +37,10 @@ import java.util.Objects;
  * {@code PEM} is a {@link DEREncodable} that represents Privacy-Enhanced
  * Mail (PEM) data by its type and Base64 content.
  *
- * <p> Methods {@link PEMDecoder#decode(String)} and
- * {@link PEMDecoder#decode(InputStream)} return a {@code PEM} object when no
- * cryptographic object is available to represent the data type.
- * If {@code PEM} is desired instead of an available cryptographic object,
+ * <p> The {@link PEMDecoder#decode(String)} and
+ * {@link PEMDecoder#decode(InputStream)} methods return a {@code PEM} object
+ * when the data type cannot be represented by a cryptographic object.
+ * If {@code PEM} is desired instead of a cryptographic object, the
  * decoding methods {@link PEMDecoder#decode(String, Class)} or
  * {@link PEMDecoder#decode(InputStream, Class)} are used with
  * {@code PEM.class} as an argument.
@@ -49,7 +49,7 @@ import java.util.Objects;
  * encode methods in {@link PEMEncoder} or the {@link #toString()} method.
  *
  * <p> When constructing a {@code PEM} instance, {@code type} and
- * {@code content} may not be {@code null}.
+ * {@code content} must not be {@code null}.
  *
  * <p>No validation is performed during instantiation to ensure that
  * {@code type} conforms to {@code RFC 7468} or other legacy formats, that
@@ -57,13 +57,13 @@ import java.util.Objects;
  * {@code type}.
 
  * Common {@code type} values include, but are not limited to:
- * CERTIFICATE, CERTIFICATE REQUEST, ATTRIBUTE CERTIFICATE, X509 CRL, PKCS7, CMS,
- * PRIVATE KEY, ENCRYPTED PRIVATE KEY, RSA PRIVATE KEY, or PUBLIC KEY.
+ * CERTIFICATE, CERTIFICATE REQUEST, ATTRIBUTE CERTIFICATE, X509 CRL, PKCS7,
+ * CMS, PRIVATE KEY, ENCRYPTED PRIVATE KEY, RSA PRIVATE KEY, or PUBLIC KEY.
  *
- * <p> {@code leadingData} may be null if no non-PEM data preceded PEM header
- * during decoding.  {@code leadingData} can be useful for reading metadata
- * that accompanies PEM data. {@code leadingData} is not defensively copied and
- * the {@link #leadingData()} method does not return a clone.
+ * <p> {@code leadingData} may be null if there was no data preceding the PEM
+ * header during decoding.  {@code leadingData} can be useful for reading
+ * metadata that accompanies PEM data. {@code leadingData} is not defensively
+ * copied and the {@link #leadingData()} method does not return a clone.
  *
  * @param type the type identifier from the PEM header, without PEM syntax
  *             labels; for example, for a public key, {@code type} would be
@@ -136,7 +136,7 @@ public record PEM(String type, String content, byte[] leadingData)
     }
 
     /**
-     * Returns a Base64 decoded byte array of {@code content}
+     * Returns a Base64 decoded byte array of {@code content}.
      *
      * @return a decoded byte array of {@code content}
      * @throws IllegalArgumentException on a decoding error
