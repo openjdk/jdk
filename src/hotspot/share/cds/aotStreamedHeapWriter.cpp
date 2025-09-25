@@ -122,7 +122,7 @@ int AOTStreamedHeapWriter::cmp_dfs_order(oop* o1, oop* o2) {
 
 void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassShared>* roots) {
   Stack<oop, mtClassShared> dfs_stack;
-  _dfs_order_table = new (mtClassShared) SourceObjectToDFSOrderTable(8, 0x3fffffff);
+  _dfs_order_table = new (mtClassShared) SourceObjectToDFSOrderTable(8, max_table_capacity);
   _roots_highest_dfs = NEW_C_HEAP_ARRAY(int, roots->length(), mtClassShared);
   _dfs_to_archive_object_table = NEW_C_HEAP_ARRAY(size_t, _source_objs->length() + 1, mtClassShared);
 
