@@ -35,6 +35,7 @@
 #include "runtime/osThread.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/exceptions.hpp"
 
 AOTThread* AOTThread::_aot_thread;
 
@@ -85,8 +86,8 @@ void AOTThread::materialize_thread_object() {
 
   EXCEPTION_MARK;
 
-  HandleMark hm(JavaThread::current());
-  Handle thread_oop = JavaThread::create_system_thread_object("AOTThread", JavaThread::current());
+  HandleMark hm(THREAD);
+  Handle thread_oop = JavaThread::create_system_thread_object("AOTThread", CHECK);
 
   java_lang_Thread::release_set_thread(thread_oop(), _aot_thread);
   _aot_thread->set_threadOopHandles(thread_oop());
