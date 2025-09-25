@@ -160,7 +160,6 @@ address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = nullptr;
-int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = nullptr;
 pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
@@ -4376,10 +4375,6 @@ void os::init(void) {
   // _main_thread points to the thread that created/loaded the JVM.
   Linux::_main_thread = pthread_self();
 
-  // retrieve entry point for pthread_setname_np
-  Linux::_pthread_setname_np =
-    (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
-
   check_pax();
 
   // Check the availability of MADV_POPULATE_WRITE.
@@ -4868,15 +4863,12 @@ void os::set_native_thread_name(const char *name) {
   } else {
     (void) os::snprintf(buf, sizeof(buf), "%.7s..%.6s", name, name + len - 6);
   }
-  // set name in kernel
+  // Note: we use the system call here instead of calling pthread_setname_np
+  // since this is the only way to make ASAN aware of our thread names. Even
+  // though ASAN intercepts both prctl and pthread_setname_np, it only processes
+  // the thread name given to the former.
   int rc = prctl(PR_SET_NAME, buf);
   assert(rc == 0, "prctl(PR_SET_NAME) failed");
-  if (Linux::_pthread_setname_np) {
-    // set name in pthread lib
-    rc = Linux::_pthread_setname_np(pthread_self(), buf);
-    // ERANGE should not happen; all other errors should just be ignored.
-    assert(rc != ERANGE, "pthread_setname_np failed");
-  }
 }
 
 ////////////////////////////////////////////////////////////////////////////////
