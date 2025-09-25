@@ -428,7 +428,14 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::root(int root_index, Stack<AOTHe
 int oop_handle_cmp(const void* left, const void* right) {
   oop* left_handle = *(oop**)left;
   oop* right_handle = *(oop**)right;
-  return uintptr_t(right_handle) - uintptr_t(left_handle);
+
+  if (right_handle > left_handle) {
+    return 1;
+  } else if (left_handle > right_handle) {
+    return -1;
+  }
+
+  return 0;
 }
 
 class InflateReferenceOopClosure : public BasicOopIterateClosure {

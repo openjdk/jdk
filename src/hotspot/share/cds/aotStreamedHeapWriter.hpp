@@ -40,7 +40,7 @@ class MemRegion;
 
 #if INCLUDE_CDS_JAVA_HEAP
 class AOTStreamedHeapWriter : AllStatic {
-  class EmbeddedOopRelocator;
+  class EmbeddedOopMapper;
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 
   // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).
@@ -117,7 +117,7 @@ class AOTStreamedHeapWriter : AllStatic {
   static void copy_forwarding_to_buffer();
   static void copy_roots_max_dfs_to_buffer(int roots_length);
 
-  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveStreamedHeapInfo* info);
+  static void map_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveStreamedHeapInfo* info);
   static bool is_in_requested_range(oop o);
   static oop requested_obj_from_buffer_offset(size_t offset);
 

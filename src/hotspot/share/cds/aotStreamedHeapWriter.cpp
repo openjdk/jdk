@@ -133,7 +133,6 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
   }
 
   int dfs_order = 0;
-  int max_dfs_index = 0;
 
   for (int i = 0; i < roots->length(); ++i) {
     oop root = roots->at(i);
@@ -155,13 +154,12 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
       }
       _dfs_order_table->put(cast_from_oop<void*>(obj), ++dfs_order);
       _dfs_order_table->maybe_grow();
-      max_dfs_index = MAX2(dfs_order, max_dfs_index);
 
       FollowOopIterateClosure cl(&dfs_stack, obj, AOTReferenceObjSupport::check_if_ref_obj(obj));
       obj->oop_iterate(&cl);
     }
 
-    _roots_highest_dfs[i] = max_dfs_index;
+    _roots_highest_dfs[i] = dfs_order;
   }
 
   _source_objs->sort(cmp_dfs_order);
@@ -173,7 +171,7 @@ void AOTStreamedHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
   allocate_buffer();
   order_source_objs(roots);
   copy_source_objs_to_buffer(roots);
-  relocate_embedded_oops(roots, heap_info);
+  map_embedded_oops(roots, heap_info);
   populate_archive_heap_info(heap_info);
 }
 
@@ -421,21 +419,21 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
   }
 }
 
-class AOTStreamedHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
+class AOTStreamedHeapWriter::EmbeddedOopMapper: public BasicOopIterateClosure {
   oop _src_obj;
   address _buffered_obj;
   CHeapBitMap* _oopmap;
   bool _is_java_lang_ref;
 
 public:
-  EmbeddedOopRelocator(oop src_obj, address buffered_obj, CHeapBitMap* oopmap)
+  EmbeddedOopMapper(oop src_obj, address buffered_obj, CHeapBitMap* oopmap)
     : _src_obj(src_obj),
       _buffered_obj(buffered_obj),
       _oopmap(oopmap),
       _is_java_lang_ref(AOTReferenceObjSupport::check_if_ref_obj(src_obj)) {}
 
-  void do_oop(narrowOop *p) { EmbeddedOopRelocator::do_oop_work(p); }
-  void do_oop(      oop *p) { EmbeddedOopRelocator::do_oop_work(p); }
+  void do_oop(narrowOop *p) { EmbeddedOopMapper::do_oop_work(p); }
+  void do_oop(      oop *p) { EmbeddedOopMapper::do_oop_work(p); }
 
 private:
   template <typename T>
@@ -458,8 +456,8 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 }
 
 // Update all oop fields embedded in the buffered objects
-void AOTStreamedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                                        ArchiveStreamedHeapInfo* heap_info) {
+void AOTStreamedHeapWriter::map_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
+                                              ArchiveStreamedHeapInfo* heap_info) {
   size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size / oopmap_unit);
@@ -471,8 +469,8 @@ void AOTStreamedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtCla
     address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
 
     update_header_for_buffered_addr(buffered_obj, src_obj, src_obj->klass());
-    EmbeddedOopRelocator relocator(src_obj, buffered_obj, heap_info->oopmap());
-    src_obj->oop_iterate(&relocator);
+    EmbeddedOopMapper mapper(src_obj, buffered_obj, heap_info->oopmap());
+    src_obj->oop_iterate(&mapper);
     HeapShared::remap_dumped_metadata(src_obj, buffered_obj);
   };
 
