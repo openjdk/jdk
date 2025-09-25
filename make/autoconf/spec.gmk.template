@@ -46,25 +46,8 @@ SPEC := @SPEC@
 # Path to autoconf if overridden by the user, to be used by "make reconfigure"
 AUTOCONF := @AUTOCONF@
 
-# SPACE and COMMA are defined in MakeBase.gmk, but they are also used in
-# some definitions here, and are needed if MakeBase.gmk is not included before
-# this file.
-X :=
-SPACE := $(X) $(X)
-COMMA := ,
-
 # What make to use for main processing, after bootstrapping top-level Makefile.
 MAKE := @MAKE@
-
-# Make sure all shell commands are executed with a proper locale
-export LC_ALL := @LOCALE_USED@
-
-# Make sure we override any local CLASSPATH variable
-export CLASSPATH := @CLASSPATH@
-
-# The default make arguments
-MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
-    MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" $(MAKE_LOG_VARS)
 
 OUTPUT_SYNC_SUPPORTED := @OUTPUT_SYNC_SUPPORTED@
 OUTPUT_SYNC := @OUTPUT_SYNC@
@@ -72,7 +55,6 @@ OUTPUT_SYNC := @OUTPUT_SYNC@
 # Override the shell with bash
 BASH := @BASH@
 BASH_ARGS := @BASH_ARGS@
-SHELL := $(BASH) $(BASH_ARGS)
 
 # The "human readable" name of this configuration
 CONF_NAME := @CONF_NAME@
@@ -121,9 +103,33 @@ OPENJDK_BUILD_CPU_ARCH := @OPENJDK_BUILD_CPU_ARCH@
 OPENJDK_BUILD_CPU_BITS := @OPENJDK_BUILD_CPU_BITS@
 OPENJDK_BUILD_CPU_ENDIAN := @OPENJDK_BUILD_CPU_ENDIAN@
 
+OPENJDK_BUILD_CPU_LEGACY := @OPENJDK_BUILD_CPU_LEGACY@
+OPENJDK_BUILD_CPU_LEGACY_LIB := @OPENJDK_BUILD_CPU_LEGACY_LIB@
 OPENJDK_BUILD_LIBC := @OPENJDK_BUILD_LIBC@
 
-OPENJDK_BUILD_OS_INCLUDE_SUBDIR := @OPENJDK_TARGET_OS_INCLUDE_SUBDIR@
+OPENJDK_BUILD_OS_INCLUDE_SUBDIR := @OPENJDK_BUILD_OS_INCLUDE_SUBDIR@
+
+HOTSPOT_BUILD_OS := @HOTSPOT_BUILD_OS@
+HOTSPOT_BUILD_OS_TYPE := @HOTSPOT_BUILD_OS_TYPE@
+HOTSPOT_BUILD_CPU := @HOTSPOT_BUILD_CPU@
+HOTSPOT_BUILD_CPU_ARCH := @HOTSPOT_BUILD_CPU_ARCH@
+HOTSPOT_BUILD_CPU_DEFINE := @HOTSPOT_BUILD_CPU_DEFINE@
+HOTSPOT_BUILD_LIBC := @HOTSPOT_BUILD_LIBC@
+
+OPENJDK_BUILD_CFLAGS_JDKLIB := @OPENJDK_BUILD_CFLAGS_JDKLIB@
+OPENJDK_BUILD_CXXFLAGS_JDKLIB := @OPENJDK_BUILD_CXXFLAGS_JDKLIB@
+OPENJDK_BUILD_LDFLAGS_JDKLIB := @OPENJDK_BUILD_LDFLAGS_JDKLIB@
+OPENJDK_BUILD_CFLAGS_JDKEXE := @OPENJDK_BUILD_CFLAGS_JDKEXE@
+OPENJDK_BUILD_CXXFLAGS_JDKEXE := @OPENJDK_BUILD_CXXFLAGS_JDKEXE@
+OPENJDK_BUILD_LDFLAGS_JDKEXE := @OPENJDK_BUILD_LDFLAGS_JDKEXE@
+
+OPENJDK_BUILD_JVM_CFLAGS := @OPENJDK_BUILD_JVM_CFLAGS@
+OPENJDK_BUILD_JVM_LDFLAGS := @OPENJDK_BUILD_JVM_LDFLAGS@
+OPENJDK_BUILD_JVM_ASFLAGS := @OPENJDK_BUILD_JVM_ASFLAGS@
+OPENJDK_BUILD_JVM_LIBS := @OPENJDK_BUILD_JVM_LIBS@
+
+OPENJDK_BUILD_FDLIBM_CFLAGS := @OPENJDK_BUILD_FDLIBM_CFLAGS@
+BUILD_CC_DISABLE_WARNING_PREFIX := @BUILD_CC_DISABLE_WARNING_PREFIX@
 
 # Target platform value in ModuleTarget class file attribute.
 OPENJDK_MODULE_TARGET_PLATFORM := @OPENJDK_MODULE_TARGET_PLATFORM@
@@ -135,12 +141,7 @@ RELEASE_FILE_LIBC := @RELEASE_FILE_LIBC@
 
 SOURCE_DATE := @SOURCE_DATE@
 ISO_8601_FORMAT_STRING := @ISO_8601_FORMAT_STRING@
-
-ifneq ($(SOURCE_DATE), updated)
-  # For "updated" source date value, these are set in InitSupport.gmk
-  export SOURCE_DATE_EPOCH := $(SOURCE_DATE)
-  SOURCE_DATE_ISO_8601 := @SOURCE_DATE_ISO_8601@
-endif
+SOURCE_DATE_ISO_8601_FIXED := @SOURCE_DATE_ISO_8601_FIXED@
 
 LIBM := @LIBM@
 LIBDL := @LIBDL@
@@ -149,22 +150,8 @@ LIBPTHREAD := @LIBPTHREAD@
 WINENV_ROOT := @WINENV_ROOT@
 WINENV_PREFIX := @WINENV_PREFIX@
 
-ifneq ($(findstring windows.wsl, @OPENJDK_BUILD_OS_ENV@), )
-  # Tell WSL to convert PATH between linux and windows
-  export WSLENV := PATH/l
-else ifeq (@OPENJDK_BUILD_OS_ENV@, windows.msys2)
-  # Prohibit msys2 from attempting any path wrangling
-  export MSYS2_ARG_CONV_EXCL := "*"
-endif
-
 # Save the original path before replacing it with the Visual Studio tools
 ORIGINAL_PATH := @ORIGINAL_PATH@
-
-ifeq (@TOOLCHAIN_TYPE@, microsoft)
-  # The Visual Studio toolchain needs the PATH to be adjusted to include
-  # Visual Studio tools.
-  export PATH := @TOOLCHAIN_PATH@:$(PATH)
-endif
 
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
 SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
@@ -230,8 +217,6 @@ VERSION_NUMBER_FOUR_POSITIONS := @VERSION_NUMBER_FOUR_POSITIONS@
 VERSION_STRING := @VERSION_STRING@
 # The short version string, without trailing zeroes and just PRE, if present.
 VERSION_SHORT := @VERSION_SHORT@
-# The Java specification version. It usually equals the feature version number.
-VERSION_SPECIFICATION := @VERSION_FEATURE@
 # A GA version is defined by the PRE string being empty. Rather than testing for
 # that, this variable defines it with true/false.
 VERSION_IS_GA := @VERSION_IS_GA@
@@ -250,57 +235,6 @@ VERSION_CLASSFILE_MINOR := @VERSION_CLASSFILE_MINOR@
 VERSION_DOCS_API_SINCE := @VERSION_DOCS_API_SINCE@
 
 JDK_SOURCE_TARGET_VERSION := @JDK_SOURCE_TARGET_VERSION@
-
-# Convenience CFLAGS settings for passing version information into native programs.
-VERSION_CFLAGS = \
-    -DVERSION_FEATURE=$(VERSION_FEATURE) \
-    -DVERSION_INTERIM=$(VERSION_INTERIM) \
-    -DVERSION_UPDATE=$(VERSION_UPDATE) \
-    -DVERSION_PATCH=$(VERSION_PATCH) \
-    -DVERSION_EXTRA1=$(VERSION_EXTRA1) \
-    -DVERSION_EXTRA2=$(VERSION_EXTRA2) \
-    -DVERSION_EXTRA3=$(VERSION_EXTRA3) \
-    -DVERSION_PRE='"$(VERSION_PRE)"' \
-    -DVERSION_BUILD=$(VERSION_BUILD) \
-    -DVERSION_OPT='"$(VERSION_OPT)"' \
-    -DVERSION_NUMBER='"$(VERSION_NUMBER)"' \
-    -DVERSION_STRING='"$(VERSION_STRING)"' \
-    -DVERSION_SHORT='"$(VERSION_SHORT)"' \
-    -DVERSION_SPECIFICATION='"$(VERSION_SPECIFICATION)"' \
-    -DVERSION_DATE='"$(VERSION_DATE)"' \
-    -DVENDOR_VERSION_STRING='"$(VENDOR_VERSION_STRING)"' \
-    -DVERSION_CLASSFILE_MAJOR=$(VERSION_CLASSFILE_MAJOR) \
-    -DVERSION_CLASSFILE_MINOR=$(VERSION_CLASSFILE_MINOR) \
-    #
-
-ifneq ($(COMPANY_NAME), )
-  # COMPANY_NAME is set to "N/A" in make/conf/branding.conf by default,
-  # but can be customized with the '--with-vendor-name' configure option.
-  # Only export "VENDOR" to the build if COMPANY_NAME contains a real value.
-  # Otherwise the default value for VENDOR, which is used to set the "java.vendor"
-  # and "java.vm.vendor" properties is hard-coded into the source code (i.e. in
-  # VersionProps.java.template in the jdk for "java.vendor" and
-  # vm_version.cpp in the VM for "java.vm.vendor")
-  ifneq ($(COMPANY_NAME), N/A)
-    VERSION_CFLAGS += -DVENDOR='"$(COMPANY_NAME)"'
-  endif
-endif
-
-# Only export VENDOR_URL, VENDOR_URL_BUG and VENDOR_VM_URL_BUG to the build if
-# they are not empty. Otherwise, default values which are defined in the sources
-# will be used.
-ifneq ($(VENDOR_URL), )
-  VERSION_CFLAGS += -DVENDOR_URL='"$(VENDOR_URL)"'
-endif
-ifneq ($(VENDOR_URL_BUG), )
-  VERSION_CFLAGS += -DVENDOR_URL_BUG='"$(VENDOR_URL_BUG)"'
-endif
-ifneq ($(VENDOR_URL_VM_BUG), )
-  VERSION_CFLAGS += -DVENDOR_URL_VM_BUG='"$(VENDOR_URL_VM_BUG)"'
-endif
-
-# Different naming strings generated from the above information.
-RUNTIME_NAME = $(PRODUCT_NAME) $(PRODUCT_SUFFIX)
 
 # How to compile the code: release, fastdebug or slowdebug
 DEBUG_LEVEL := @DEBUG_LEVEL@
@@ -343,22 +277,8 @@ ENABLE_FULL_DOCS := @ENABLE_FULL_DOCS@
 # You can run $(JDK_OUTPUTDIR)/bin/java
 
 OUTPUTDIR := @OUTPUTDIR@
-# Colon left out to be able to override IMAGES_OUTPUTDIR for bootcycle-images
-SUPPORT_OUTPUTDIR = $(OUTPUTDIR)/support
-BUILDTOOLS_OUTPUTDIR = $(OUTPUTDIR)/buildtools
 
-HOTSPOT_OUTPUTDIR = $(OUTPUTDIR)/hotspot
-JDK_OUTPUTDIR = $(OUTPUTDIR)/jdk
-IMAGES_OUTPUTDIR = $(OUTPUTDIR)/images
-BUNDLES_OUTPUTDIR = $(OUTPUTDIR)/bundles
-TESTMAKE_OUTPUTDIR = $(OUTPUTDIR)/test-make
-MAKESUPPORT_OUTPUTDIR = $(OUTPUTDIR)/make-support
-
-JAVA_TMP_DIR = $(SUPPORT_OUTPUTDIR)/javatmp
-
-# This does not get overridden in a bootcycle build
 CONFIGURESUPPORT_OUTPUTDIR := @CONFIGURESUPPORT_OUTPUTDIR@
-BUILDJDK_OUTPUTDIR = $(OUTPUTDIR)/buildjdk
 
 BUILD_FAILURE_HANDLER := @BUILD_FAILURE_HANDLER@
 
@@ -388,21 +308,6 @@ BOOT_JDK := @BOOT_JDK@
 
 EXTERNAL_BUILDJDK_PATH := @EXTERNAL_BUILDJDK_PATH@
 
-ifneq ($(EXTERNAL_BUILDJDK_PATH), )
-  EXTERNAL_BUILDJDK := true
-  CREATE_BUILDJDK := false
-  BUILD_JDK := $(EXTERNAL_BUILDJDK_PATH)
-else
-  EXTERNAL_BUILDJDK := false
-  ifeq ($(COMPILE_TYPE), cross)
-    CREATE_BUILDJDK := true
-    BUILD_JDK := $(BUILDJDK_OUTPUTDIR)/jdk
-  else
-    CREATE_BUILDJDK := false
-    BUILD_JDK := $(JDK_OUTPUTDIR)
-  endif
-endif
-
 # Whether the boot jdk jar supports --date=TIMESTAMP
 BOOT_JDK_JAR_SUPPORTS_DATE := @BOOT_JDK_JAR_SUPPORTS_DATE@
 
@@ -413,13 +318,10 @@ OLDEST_BOOT_JDK_VERSION := @OLDEST_BOOT_JDK_VERSION@
 NUM_CORES := @NUM_CORES@
 MEMORY_SIZE := @MEMORY_SIZE@
 ENABLE_JAVAC_SERVER := @ENABLE_JAVAC_SERVER@
-# Store javac server synchronization files here, and
-# the javac server log files.
-JAVAC_SERVER_DIR = $(MAKESUPPORT_OUTPUTDIR)/javacservers
 
 # Number of parallel jobs to use for compilation
-JOBS ?= @JOBS@
-TEST_JOBS ?= @TEST_JOBS@
+CONF_JOBS := @CONF_JOBS@
+CONF_TEST_JOBS := @CONF_TEST_JOBS@
 
 # Default make target
 DEFAULT_MAKE_TARGET := @DEFAULT_MAKE_TARGET@
@@ -537,7 +439,7 @@ ADLC_LANGSTD_CXXFLAGS := @ADLC_LANGSTD_CXXFLAGS@
 ADLC_LDFLAGS := @ADLC_LDFLAGS@
 
 # Tools that potentially need to be cross compilation aware.
-CC := @CCACHE@ @ICECC@ @CC@
+CC := @CC@
 
 # CFLAGS used to compile the jdk native libraries (C-code)
 CFLAGS_JDKLIB := @CFLAGS_JDKLIB@
@@ -563,7 +465,7 @@ EXTRA_CXXFLAGS := @EXTRA_CXXFLAGS@
 EXTRA_LDFLAGS := @EXTRA_LDFLAGS@
 EXTRA_ASFLAGS := @EXTRA_ASFLAGS@
 
-CXX := @CCACHE@ @ICECC@ @CXX@
+CXX := @CXX@
 
 CPP := @CPP@
 
@@ -594,8 +496,8 @@ LIBCXX := @LIBCXX@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
-BUILD_CC := @BUILD_ICECC@ @BUILD_CC@
-BUILD_CXX := @BUILD_ICECC@ @BUILD_CXX@
+BUILD_CC := @BUILD_CC@
+BUILD_CXX := @BUILD_CXX@
 BUILD_LD := @BUILD_LD@
 BUILD_LDCXX := @BUILD_LDCXX@
 BUILD_AS := @BUILD_AS@
@@ -646,76 +548,23 @@ OBJ_SUFFIX := @OBJ_SUFFIX@
 
 STRIPFLAGS := @STRIPFLAGS@
 
-JAVA_FLAGS_TMPDIR := -Djava.io.tmpdir=$(JAVA_TMP_DIR)
-JAVA_FLAGS := @JAVA_FLAGS@ $(JAVA_FLAGS_TMPDIR)
+JAVA_FLAGS := @JAVA_FLAGS@
 JAVA_FLAGS_BIG := @JAVA_FLAGS_BIG@
 JAVA_FLAGS_SMALL := @JAVA_FLAGS_SMALL@
 BUILD_JAVA_FLAGS_SMALL := @BUILD_JAVA_FLAGS_SMALL@
 JAVA_TOOL_FLAGS_SMALL := @JAVA_TOOL_FLAGS_SMALL@
 
-# The *_CMD variables are defined separately to be easily overridden in bootcycle-spec.gmk
-# for bootcycle-images build. Make sure to keep them in sync. Do not use the *_CMD
-# versions of the variables directly.
-JAVA_CMD := @JAVA@
-JAVAC_CMD := @JAVAC@
-JAVADOC_CMD := @JAVADOC@
-JAR_CMD := @JAR@
-JLINK_CMD := @FIXPATH@ $(BUILD_JDK)/bin/jlink
-JMOD_CMD := @FIXPATH@ $(BUILD_JDK)/bin/jmod
-# These variables are meant to be used. They are defined with = instead of := to make
-# it possible to override only the *_CMD variables.
-JAVA = $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
-JAVA_SMALL = $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
-JAVAC = $(JAVAC_CMD)
-JAVADOC = $(JAVADOC_CMD)
-JAR = $(JAR_CMD)
-JLINK = $(JLINK_CMD)
-JMOD = $(JMOD_CMD)
+# Do not use the *_CMD versions of the variables directly.
+JAVA_CMD := @JAVA_CMD@
+JAVAC_CMD := @JAVAC_CMD@
+JAVADOC_CMD := @JAVADOC_CMD@
+JAR_CMD := @JAR_CMD@
 
 JTREG_JDK := @JTREG_JDK@
-JTREG_JAVA = @FIXPATH@ $(JTREG_JDK)/bin/java $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
 
-BUILD_JAVA_FLAGS := @BOOTCYCLE_JVM_ARGS_BIG@
-BUILD_JAVA = @FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS)
-BUILD_JAVA_SMALL = @FIXPATH@ $(BUILD_JDK)/bin/java $(BUILD_JAVA_FLAGS_SMALL)
-BUILD_JAVAC = @FIXPATH@ $(BUILD_JDK)/bin/javac
-BUILD_JAR = @FIXPATH@ $(BUILD_JDK)/bin/jar
+BOOTCYCLE_JVM_ARGS_BIG := @BOOTCYCLE_JVM_ARGS_BIG@
 
 DOCS_REFERENCE_JAVADOC := @DOCS_REFERENCE_JAVADOC@
-
-# A file containing a way to uniquely identify the source code revision that
-# the build was created from
-SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
-
-# Interim langtools modules and arguments
-INTERIM_LANGTOOLS_BASE_MODULES := java.compiler jdk.compiler jdk.internal.md jdk.javadoc
-INTERIM_LANGTOOLS_MODULES := $(addsuffix .interim, $(INTERIM_LANGTOOLS_BASE_MODULES))
-INTERIM_LANGTOOLS_ADD_EXPORTS := \
-    --add-exports java.base/sun.reflect.annotation=jdk.compiler.interim \
-    --add-exports java.base/jdk.internal.jmod=jdk.compiler.interim \
-    --add-exports java.base/jdk.internal.misc=jdk.compiler.interim \
-    --add-exports java.base/sun.invoke.util=jdk.compiler.interim \
-    --add-exports java.base/jdk.internal.javac=java.compiler.interim \
-    --add-exports java.base/jdk.internal.javac=jdk.compiler.interim \
-    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
-    --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim \
-    #
-INTERIM_LANGTOOLS_MODULES_COMMA := $(strip $(subst $(SPACE),$(COMMA),$(strip \
-    $(INTERIM_LANGTOOLS_MODULES))))
-INTERIM_LANGTOOLS_ARGS := \
-    --limit-modules java.base,jdk.zipfs,$(INTERIM_LANGTOOLS_MODULES_COMMA) \
-    --add-modules $(INTERIM_LANGTOOLS_MODULES_COMMA) \
-    --module-path $(BUILDTOOLS_OUTPUTDIR)/interim_langtools_modules \
-    --patch-module java.base=$(BUILDTOOLS_OUTPUTDIR)/gensrc/java.base.interim \
-    $(INTERIM_LANGTOOLS_ADD_EXPORTS) \
-    #
-JAVAC_MAIN_CLASS := -m jdk.compiler.interim/com.sun.tools.javac.Main
-JAVADOC_MAIN_CLASS := -m jdk.javadoc.interim/jdk.javadoc.internal.tool.Main
-
-# You run the new javac using the boot jdk with $(BOOT_JDK)/bin/java $(NEW_JAVAC) ...
-# Use = assignment to be able to override in bootcycle-spec.gmk
-NEW_JAVAC = $(INTERIM_LANGTOOLS_ARGS) $(JAVAC_MAIN_CLASS)
-NEW_JAVADOC = $(INTERIM_LANGTOOLS_ARGS) $(JAVADOC_MAIN_CLASS)
 
 JMOD_COMPRESS := @JMOD_COMPRESS@
 JLINK_KEEP_PACKAGED_MODULES := @JLINK_KEEP_PACKAGED_MODULES@
@@ -729,8 +578,6 @@ AWK := @AWK@
 BASENAME := @BASENAME@
 CAT := @CAT@
 CCACHE := @CCACHE@
-# CD is going away, but remains to cater for legacy makefiles.
-CD := cd
 CHMOD := @CHMOD@
 CMAKE := @CMAKE@
 CODESIGN := @CODESIGN@
@@ -781,7 +628,6 @@ MT := @MT@
 RC := @RC@
 DUMPBIN := @DUMPBIN@
 PATHTOOL := @PATHTOOL@
-WSLPATH := @WSLPATH@
 LDD := @LDD@
 OTOOL := @OTOOL@
 READELF := @READELF@
@@ -846,110 +692,11 @@ OS_VERSION_MICRO := @OS_VERSION_MICRO@
 # Arm SVE
 SVE_CFLAGS := @SVE_CFLAGS@
 
-# Images directory definitions
-JDK_IMAGE_SUBDIR := jdk
-JRE_IMAGE_SUBDIR := jre
-JCOV_IMAGE_SUBDIR := jdk-jcov
-STATIC_JDK_IMAGE_SUBDIR := static-jdk
-
-# Colon left out to be able to override output dir for bootcycle-images
-JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JDK_IMAGE_SUBDIR)
-JRE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JRE_IMAGE_SUBDIR)
-STATIC_JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(STATIC_JDK_IMAGE_SUBDIR)
-JCOV_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(JCOV_IMAGE_SUBDIR)
-
-# Test image, as above
-TEST_IMAGE_SUBDIR := test
-TEST_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(TEST_IMAGE_SUBDIR)
-
-# Symbols image
-SYMBOLS_IMAGE_SUBDIR := symbols
-SYMBOLS_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
-
-# Interim image
-INTERIM_JMODS_DIR := $(SUPPORT_OUTPUTDIR)/interim-jmods
-INTERIM_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/interim-image
-
-# Docs image
-DOCS_JDK_IMAGE_SUBDIR := docs
-DOCS_JDK_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_JDK_IMAGE_SUBDIR)
-DOCS_JAVASE_IMAGE_SUBDIR := docs-javase
-DOCS_JAVASE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_JAVASE_IMAGE_SUBDIR)
-DOCS_REFERENCE_IMAGE_SUBDIR := docs-reference
-DOCS_REFERENCE_IMAGE_DIR = $(IMAGES_OUTPUTDIR)/$(DOCS_REFERENCE_IMAGE_SUBDIR)
-# Output docs directly into image
-DOCS_OUTPUTDIR := $(DOCS_JDK_IMAGE_DIR)
-
-# Static libs image
-STATIC_LIBS_IMAGE_SUBDIR := static-libs
-STATIC_LIBS_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(STATIC_LIBS_IMAGE_SUBDIR)
-
-# Graal static libs image
-STATIC_LIBS_GRAAL_IMAGE_SUBDIR := static-libs-graal
-STATIC_LIBS_GRAAL_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(STATIC_LIBS_GRAAL_IMAGE_SUBDIR)
-
-# Graal builder image
-GRAAL_BUILDER_IMAGE_SUBDIR := graal-builder-jdk
-GRAAL_BUILDER_IMAGE_DIR := $(IMAGES_OUTPUTDIR)/$(GRAAL_BUILDER_IMAGE_SUBDIR)
-
-# Macosx bundles directory definitions
-JDK_MACOSX_BUNDLE_SUBDIR := jdk-bundle
-JRE_MACOSX_BUNDLE_SUBDIR := jre-bundle
-JDK_MACOSX_BUNDLE_SUBDIR_SIGNED := jdk-bundle-signed
-JRE_MACOSX_BUNDLE_SUBDIR_SIGNED := jre-bundle-signed
-JDK_MACOSX_BUNDLE_DIR = $(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR)
-JRE_MACOSX_BUNDLE_DIR = $(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR)
-JDK_MACOSX_BUNDLE_DIR_SIGNED = $(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR_SIGNED)
-JRE_MACOSX_BUNDLE_DIR_SIGNED = $(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR_SIGNED)
-JDK_MACOSX_BUNDLE_TOP_SUBDIR = jdk-$(VERSION_NUMBER).jdk
-JRE_MACOSX_BUNDLE_TOP_SUBDIR = jre-$(VERSION_NUMBER).jre
-JDK_MACOSX_CONTENTS_SUBDIR = $(JDK_MACOSX_BUNDLE_TOP_SUBDIR)/Contents
-JRE_MACOSX_CONTENTS_SUBDIR = $(JRE_MACOSX_BUNDLE_TOP_SUBDIR)/Contents
-JDK_MACOSX_CONTENTS_DIR = $(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_CONTENTS_SUBDIR)
-JRE_MACOSX_CONTENTS_DIR = $(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_CONTENTS_SUBDIR)
-JDK_MACOSX_BUNDLE_TOP_DIR = $(JDK_MACOSX_BUNDLE_DIR)/$(JDK_MACOSX_BUNDLE_TOP_SUBDIR)
-JRE_MACOSX_BUNDLE_TOP_DIR = $(JRE_MACOSX_BUNDLE_DIR)/$(JRE_MACOSX_BUNDLE_TOP_SUBDIR)
-
-# Bundle names
-ifneq ($(VERSION_BUILD), )
-  BASE_NAME := $(VERSION_SHORT)+$(VERSION_BUILD)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
-else
-  BASE_NAME := $(VERSION_SHORT)_$(OPENJDK_TARGET_BUNDLE_PLATFORM)
-endif
-
-ifeq ($(DEBUG_LEVEL), fastdebug)
-  DEBUG_PART := -debug
-else ifneq ($(DEBUG_LEVEL), release)
-  DEBUG_PART := -$(DEBUG_LEVEL)
-endif
-ifeq ($(OPENJDK_TARGET_OS), windows)
-  JDK_BUNDLE_EXTENSION := zip
-else
-  JDK_BUNDLE_EXTENSION := tar.gz
-endif
-JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
-JRE_BUNDLE_NAME := jre-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
-JDK_SYMBOLS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin$(DEBUG_PART)-symbols.tar.gz
-TEST_DEMOS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests-demos$(DEBUG_PART).tar.gz
-TEST_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-tests$(DEBUG_PART).tar.gz
-DOCS_JDK_BUNDLE_NAME := jdk-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
-DOCS_JAVASE_BUNDLE_NAME := javase-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
-DOCS_REFERENCE_BUNDLE_NAME := jdk-reference-$(BASE_NAME)_doc-api-spec$(DEBUG_PART).tar.gz
-STATIC_LIBS_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs$(DEBUG_PART).tar.gz
-STATIC_LIBS_GRAAL_BUNDLE_NAME := jdk-$(BASE_NAME)_bin-static-libs-graal$(DEBUG_PART).tar.gz
-STATIC_JDK_BUNDLE_NAME := static-jdk-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
-JCOV_BUNDLE_NAME := jdk-jcov-$(BASE_NAME)_bin$(DEBUG_PART).$(JDK_BUNDLE_EXTENSION)
-
-JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_BUNDLE_NAME)
-JRE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JRE_BUNDLE_NAME)
-JDK_SYMBOLS_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JDK_SYMBOLS_BUNDLE_NAME)
-TEST_DEMOS_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(TEST_DEMOS_BUNDLE_NAME)
-TEST_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(TEST_BUNDLE_NAME)
-DOCS_JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_JDK_BUNDLE_NAME)
-DOCS_JAVASE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_JAVASE_BUNDLE_NAME)
-DOCS_REFERENCE_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(DOCS_REFERENCE_BUNDLE_NAME)
-STATIC_JDK_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(STATIC_JDK_BUNDLE_NAME)
-JCOV_BUNDLE := $(BUNDLES_OUTPUTDIR)/$(JCOV_BUNDLE_NAME)
+BUILD_ICECC := @BUILD_ICECC@
+ICECC := @ICECC@
+TOOLCHAIN_PATH := @TOOLCHAIN_PATH@
+LOCALE_USED := @LOCALE_USED@
+CLASSPATH := @CLASSPATH@
 
 # This macro is called to allow inclusion of closed source counterparts.
 # Unless overridden in closed sources, it expands to nothing.
@@ -960,4 +707,4 @@ define IncludeCustomExtension
 endef
 
 # Include the custom-spec.gmk file if it exists
--include $(dir @SPEC@)/custom-spec.gmk
+-include $(dir $(SPEC))/custom-spec.gmk

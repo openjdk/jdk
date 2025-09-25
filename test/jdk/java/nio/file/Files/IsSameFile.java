@@ -25,7 +25,6 @@
  * @bug 8154364 8365626 8366254
  * @summary Test of Files.isSameFile
  * @library .. /test/lib
- * @build IsSameFile jdk.test.lib.util.FileUtils
  * @run junit IsSameFile
  */
 import java.io.IOException;
@@ -41,8 +40,6 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import jdk.test.lib.util.FileUtils;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,19 +61,18 @@ public class IsSameFile {
     private Path aa;
     private Path b;
     private Path c;
-    private List<Path> allFiles;
 
     private boolean supportsSymbolicLinks;
 
     @BeforeAll
     public void init() throws IOException {
-        home = Files.createTempDirectory("TestIsSameFile");
+        Path cwd = Path.of(System.getProperty("user.dir"));
+        home = Files.createTempDirectory(cwd, IsSameFile.class.getSimpleName());
 
-        allFiles = new ArrayList();
-        allFiles.add(a = home.resolve("a"));
-        allFiles.add(aa = home.resolve("a"));
-        allFiles.add(b = home.resolve("b"));
-        allFiles.add(c = home.resolve("c"));
+        a = home.resolve("a");
+        aa = home.resolve("a");
+        b = home.resolve("b");
+        c = home.resolve("c");
 
         supportsSymbolicLinks = TestUtil.supportsSymbolicLinks(home);
     }
@@ -86,7 +82,7 @@ public class IsSameFile {
     }
 
     public void deleteFiles() throws IOException {
-        for (Path p : allFiles)
+        for (Path p : Files.list(home).toList())
             Files.deleteIfExists(p);
     }
 
@@ -149,21 +145,14 @@ public class IsSameFile {
         fos.close();
     }
 
-    private Stream<Arguments> obj2ZipSource() throws IOException {
+    @Test
+    public void obj2Zip() throws IOException {
         deleteFiles();
         Files.createFile(a);
         zipStringToFile("quote.txt", "To be determined", b);
-        FileSystem zipfs = FileSystems.newFileSystem(b);
-        List<Arguments> list = new ArrayList<Arguments>();
-        list.add(Arguments.of(false, a, zipfs.getPath(b.toString())));
-        return list.stream();
-    }
-
-    @ParameterizedTest
-    @MethodSource("obj2ZipSource")
-    public void obj2Zip(boolean expect, Path x, Path y)
-        throws IOException {
-        test(expect, x, y);
+        try (FileSystem zipfs = FileSystems.newFileSystem(b)) {
+            test(false, a, zipfs.getPath(b.toString()));
+        }
     }
 
     @ParameterizedTest
@@ -257,23 +246,18 @@ public class IsSameFile {
         deleteFiles();
         Path target = home.resolve("target");
         Files.createFile(target);
-        allFiles.add(target);
 
-        Path L2 = Path.of("link2");
+        Path L2 = home.resolve("link2");
         Files.createSymbolicLink(L2, target);
-        allFiles.add(L2);
 
-        Path L1 = Path.of("link1");
+        Path L1 = home.resolve("link1");
         Files.createSymbolicLink(L1, L2);
-        allFiles.add(L1);
 
-        Path L4 = Path.of("link4");
+        Path L4 = home.resolve("link4");
         Files.createSymbolicLink(L4, target);
-        allFiles.add(L4);
 
-        Path L3 = Path.of("link3");
+        Path L3 = home.resolve("link3");
         Files.createSymbolicLink(L3, L4);
-        allFiles.add(L3);
 
         List<Arguments> list = new ArrayList<Arguments>();
         list.add(Arguments.of(true, L1, L3));
@@ -296,27 +280,21 @@ public class IsSameFile {
         deleteFiles();
         Path target = home.resolve("target");
         Files.createFile(target);
-        allFiles.add(target);
 
-        Path L2 = Path.of("link2");
+        Path L2 = home.resolve("link2");
         Files.createSymbolicLink(L2, target);
-        allFiles.add(L2);
 
-        Path L1 = Path.of("link1");
+        Path L1 = home.resolve("link1");
         Files.createSymbolicLink(L1, L2);
-        allFiles.add(L1);
 
         Path cible = home.resolve("cible");
         Files.createFile(cible);
-        allFiles.add(cible);
 
-        Path L4 = Path.of("link4");
+        Path L4 = home.resolve("link4");
         Files.createSymbolicLink(L4, cible);
-        allFiles.add(L4);
 
-        Path L3 = Path.of("link3");
+        Path L3 = home.resolve("link3");
         Files.createSymbolicLink(L3, L4);
-        allFiles.add(L3);
 
         List<Arguments> list = new ArrayList<Arguments>();
         list.add(Arguments.of(false, L1, L3));
@@ -338,23 +316,19 @@ public class IsSameFile {
     private Stream<Arguments> unequalNotFollowingSource() throws IOException {
         deleteFiles();
 
-        Path doesNotExist = Path.of("doesNotExist");
+        Path doesNotExist = home.resolve("doesNotExist");
 
-        Path L2 = Path.of("link2");
+        Path L2 = home.resolve("link2");
         Files.createSymbolicLink(L2, doesNotExist);
-        allFiles.add(L2);
 
-        Path L1 = Path.of("link1");
+        Path L1 = home.resolve("link1");
         Files.createSymbolicLink(L1, L2);
-        allFiles.add(L1);
 
-        Path L4 = Path.of("link4");
+        Path L4 = home.resolve("link4");
         Files.createSymbolicLink(L4, doesNotExist);
-        allFiles.add(L4);
 
-        Path L3 = Path.of("link3");
+        Path L3 = home.resolve("link3");
         Files.createSymbolicLink(L3, L4);
-        allFiles.add(L3);
 
         List<Arguments> list = new ArrayList<Arguments>();
         list.add(Arguments.of(false, L1, L3));
@@ -378,13 +352,10 @@ public class IsSameFile {
         deleteFiles();
         Path target = home.resolve("target");
         Files.createFile(target);
-        allFiles.add(target);
         Path[] links = new Path[4];
-        links[3] = Files.createSymbolicLink(Path.of("link4"), target);
-        allFiles.add(links[3]);
+        links[3] = Files.createSymbolicLink(home.resolve("link4"), target);
         for (int i = 3; i > 0; i--) {
-            links[i-1] = Files.createSymbolicLink(Path.of("link"+i), links[i]);
-            allFiles.add(links[i-1]);
+            links[i-1] = Files.createSymbolicLink(home.resolve("link"+i), links[i]);
         }
 
         List<Arguments> list = new ArrayList<Arguments>();
@@ -414,15 +385,11 @@ public class IsSameFile {
         deleteFiles();
         Path target = home.resolve("target");
         Files.createFile(target);
-        allFiles.add(target);
         Path[] links = new Path[4];
-        links[3] = Files.createSymbolicLink(Path.of("link4"), target);
-        allFiles.add(links[3]);
+        links[3] = Files.createSymbolicLink(home.resolve("link4"), target);
         Files.delete(target);
-        allFiles.remove(target);
         for (int i = 3; i > 0; i--) {
-            links[i-1] = Files.createSymbolicLink(Path.of("link"+i), links[i]);
-            allFiles.add(links[i-1]);
+            links[i-1] = Files.createSymbolicLink(home.resolve("link"+i), links[i]);
         }
 
         List<Arguments> list = new ArrayList<Arguments>();
@@ -454,9 +421,9 @@ public class IsSameFile {
         Path link1 = home.resolve("L1");
         Path link2 = home.resolve("L2");
         Path link3 = home.resolve("L3");
-        allFiles.add(Files.createSymbolicLink(link1, link2));
-        allFiles.add(Files.createSymbolicLink(link2, link3));
-        allFiles.add(Files.createSymbolicLink(link3, link1));
+        Files.createSymbolicLink(link1, link2);
+        Files.createSymbolicLink(link2, link3);
+        Files.createSymbolicLink(link3, link1);
 
         List<Arguments> list = new ArrayList<Arguments>();
         list.add(Arguments.of(true, link1, link2));
