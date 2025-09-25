@@ -360,9 +360,11 @@ void MacroAssembler::post_call_nop() {
   if (!Continuations::enabled()) {
     return;
   }
-  InlineSkippedInstructionsCounter skipCounter(this);
-  nop();
-  li32(zr, 0);
+  relocate(post_call_nop_Relocation::spec(), [&] {
+    InlineSkippedInstructionsCounter skipCounter(this);
+    nop();
+    li32(zr, 0);
+  });
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
