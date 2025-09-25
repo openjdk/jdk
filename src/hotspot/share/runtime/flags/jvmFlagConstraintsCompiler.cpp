@@ -355,7 +355,7 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
    }
 
   int minimum_alignment = 16;
-#if (defined(X86) || defined(S390)) && !defined(AMD64)
+#if (defined(X86) && !defined(AMD64)) || defined(S390)
   minimum_alignment = 4;
 #endif
 
