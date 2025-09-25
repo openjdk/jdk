@@ -86,33 +86,34 @@ import java.util.Objects;
  * {@link PEM}.
  *
  * <p> The {@link #decode(String, Class)} and
- * {@link #decode(InputStream, Class)} methods take a class parameter
- * which specifies type of {@code DEREncodable} that is returned. These methods
+ * {@link #decode(InputStream, Class)} methods take a class parameter which
+ * specifies the type of {@code DEREncodable} that is returned. These methods
  * are useful to avoid casting the return type when the PEM type is known, or
  * when extracting a specific type when there is more than one choice.
  * For example, if the PEM contains both a public and private key, specifying
  * {@code PrivateKey.class} returns only the private key.
  * If the class parameter specifies {@code X509EncodedKeySpec.class}, the
- * public key encoding is returned in an instance of the X509EncodedKeySpec
- * class.  Any type of PEM data can be decoded into a {@code PEM} object by
- * specifying {@code PEM.class}. If the class parameter doesn't match the PEM
- * content, a {@linkplain ClassCastException} will be thrown.
+ * public key encoding is returned in an instance of the
+ * {@code X509EncodedKeySpec} class.  Any type of PEM data can be decoded into
+ * a {@code PEM} object by specifying {@code PEM.class}. If the class parameter
+ * doesn't match the PEM content, a {@linkplain ClassCastException} will be
+ * thrown.
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
  * with {@link #withFactory(Provider)} and/or
- * {@link #withDecryption(char[])}. {@link #withFactory(Provider)}
- * restricts decoding to {@link KeyFactory} and
- * {@link CertificateFactory} instances from the specified {@code Provider}.
+ * {@link #withDecryption(char[])}. The {@link #withFactory(Provider)} method
+ * uses the specified provider to produce cryptographic objects from
+ * {@link KeyFactory} and{@link CertificateFactory}.
  * {@link #withDecryption(char[])} configures the decoder to process
  * encrypted private key PEM data using the given password.
- * If decryption fails, a {@link RuntimeException} is thrown.
+ * If decryption fails, a {@link IllegalArgumentException} is thrown.
  * If an encrypted private key PEM is processed by a decoder not configured
  * for decryption, an {@link EncryptedPrivateKeyInfo} object is returned.
  * Decryption configured instances will decode unencrypted PEM.
  *
  * <p> This class is immutable and thread-safe.
  *
- * <p> Here is an example of decoding a {@code PrivateKey} object:
+ * <p> Here is an example of decoding a private key object:
  * {@snippet lang = java:
  *     PEMDecoder pd = PEMDecoder.of();
  *     PrivateKey priKey = pd.decode(priKeyPEM, PrivateKey.class);
@@ -137,6 +138,8 @@ import java.util.Objects;
  *
  * @spec https://www.rfc-editor.org/info/rfc1421
  *       RFC 1421: Privacy Enhancement for Internet Electronic Mail
+ * @spec https://www.rfc-editor.org/info/rfc5958
+ *       RFC 5958: Asymmetric Key Packages
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
