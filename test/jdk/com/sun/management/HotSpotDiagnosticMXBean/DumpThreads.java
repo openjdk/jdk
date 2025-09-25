@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8284161 8287008 8309406 8356870
+ * @bug 8284161 8287008 8309406 8356870 8365057
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @requires vm.continuations
  * @modules java.base/jdk.internal.vm jdk.management
