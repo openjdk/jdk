@@ -103,6 +103,7 @@
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
 #include "services/threadService.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
@@ -573,7 +574,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Set the _monitor_owner_id now since we will run Java code before the Thread instance
   // is even created. The same value will be assigned to the Thread instance on init.
-  main_thread->set_monitor_owner_id(ThreadIdentifier::next());
+  const int64_t main_thread_tid = ThreadIdentifier::next();
+  guarantee(main_thread_tid == 3, "Must equal the PRIMORDIAL_TID used in Threads.java");
+  main_thread->set_monitor_owner_id(main_thread_tid);
 
   if (!Thread::set_as_starting_thread(main_thread)) {
     vm_shutdown_during_initialization(
