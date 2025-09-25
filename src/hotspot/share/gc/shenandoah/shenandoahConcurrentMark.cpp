@@ -93,10 +93,12 @@ private:
   ShenandoahConcurrentMark* _cm;
   TaskTerminator*           _terminator;
   bool                      _dedup_string;
+  ThreadsClaimTokenScope    _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
 
 public:
   ShenandoahFinalMarkingTask(ShenandoahConcurrentMark* cm, TaskTerminator* terminator, bool dedup_string) :
-    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string) {
+    WorkerTask("Shenandoah Final Mark"), _cm(cm), _terminator(terminator), _dedup_string(dedup_string),
+    _threads_claim_token_scope() {
   }
 
   void work(uint worker_id) {
@@ -296,7 +298,6 @@ void ShenandoahConcurrentMark::finish_mark_work() {
   uint nworkers = heap->workers()->active_workers();
   task_queues()->reserve(nworkers);
 
-  ThreadsClaimTokenScope scope;
   TaskTerminator terminator(nworkers, task_queues());
 
   switch (_generation->type()) {
