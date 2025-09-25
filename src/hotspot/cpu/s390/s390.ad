@@ -5365,8 +5365,8 @@ instruct stfSSF(stackSlotF stkSlot, regF src) %{
   match(Set stkSlot src);   // chain rule
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  format %{ "STE   $src,$stkSlot\t # stk" %}
   size(Z_DISP2_SIZE);
+  format %{ "STE   $src,$stkSlot\t # stk" %}
   opcode(STE_ZOPC);
   ins_encode(z_form_rt_mem(src, stkSlot));
   ins_pipe(pipe_class_dummy);
@@ -5909,6 +5909,7 @@ instruct addI_reg_reg_CISC(iRegI dst, iRegI src, flagsReg cr) %{
   match(Set dst (AddI dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP1_SIZE);
   format %{ "AR      $dst,$src\t # int  CISC ALU" %}
   opcode(AR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -5937,6 +5938,7 @@ instruct addI_reg_imm16_CISC(iRegI dst, immI16 con, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "AHI     $dst,$con\t # int  CISC ALU" %}
   opcode(AHI_ZOPC);
   ins_encode(z_riform_signed(dst, con));
@@ -5951,6 +5953,7 @@ instruct addI_reg_imm16_RISC(iRegI dst, iRegI src, immI16 con, flagsReg cr) %{
   predicate( VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "AHIK    $dst,$src,$con\t # int  RISC ALU" %}
   opcode(AHIK_ZOPC);
   ins_encode(z_rieform_d(dst, src, con));
@@ -6022,6 +6025,7 @@ instruct addI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "A(Y)    $dst, $src\t # int" %}
   opcode(AY_ZOPC, A_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -6062,6 +6066,7 @@ instruct addL_reg_reg_CISC(iRegL dst, iRegL src, flagsReg cr) %{
   match(Set dst (AddL dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "AGR     $dst, $src\t # long CISC ALU" %}
   opcode(AGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6122,6 +6127,7 @@ instruct addL_reg_imm16_CISC(iRegL dst, immL16 con, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "AGHI    $dst,$con\t # long CISC ALU" %}
   opcode(AGHI_ZOPC);
   ins_encode(z_riform_signed(dst, con));
@@ -6225,6 +6231,7 @@ instruct addP_reg_reg_CISC(iRegP dst, iRegL src, flagsReg cr) %{
   predicate(!PreferLAoverADD && !VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "ALGR    $dst,$src\t # ptr CICS ALU" %}
   opcode(ALGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6239,6 +6246,7 @@ instruct addP_reg_reg_RISC(iRegP dst, iRegP_N2P src1, iRegL src2, flagsReg cr) %
   predicate(!PreferLAoverADD && VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "ALGRK   $dst,$src1,$src2\t # ptr RISC ALU" %}
   opcode(ALGRK_ZOPC);
   ins_encode(z_rrfform(dst, src1, src2));
@@ -6265,6 +6273,7 @@ instruct addP_reg_imm16_CISC(iRegP dst, immL16 src, flagsReg cr) %{
   predicate(!PreferLAoverADD && !VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "AGHI    $dst,$src\t # ptr CISC ALU" %}
   opcode(AGHI_ZOPC);
   ins_encode(z_riform_signed(dst, src));
@@ -6278,6 +6287,7 @@ instruct addP_reg_imm16_RISC(iRegP dst, iRegP_N2P src, immL16 con, flagsReg cr) 
   predicate(!PreferLAoverADD && VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "ALGHSIK $dst,$src,$con\t # ptr RISC ALU" %}
   opcode(ALGHSIK_ZOPC);
   ins_encode(z_rieform_d(dst, src, con));
@@ -6301,6 +6311,7 @@ instruct addP_reg_imm32(iRegP dst, immL32 src, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_HIGH);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "AGFI    $dst,$src\t # ptr" %}
   opcode(AGFI_ZOPC);
   ins_encode(z_rilform_signed(dst, src));
@@ -6336,6 +6347,7 @@ instruct addP_reg_reg_imm20(iRegP dst, memoryRegP src1, iRegL src2, immL20 con) 
   predicate(PreferLAoverADD);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LAY     $dst,$con($src1,$src2)\t # ptr d20(x,b)" %}
   opcode(LAY_ZOPC);
   ins_encode(z_rxyform_imm_reg_reg(dst, con, src1, src2));
@@ -6347,6 +6359,7 @@ instruct addP_regN_reg_imm20(iRegP dst, iRegP_N2P src1, iRegL src2, immL20 con) 
   predicate( PreferLAoverADD && CompressedOops::base() == nullptr && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LAY     $dst,$con($src1,$src2)\t # ptr d20(x,b)" %}
   opcode(LAY_ZOPC);
   ins_encode(z_rxyform_imm_reg_reg(dst, con, src1, src2));
@@ -6375,6 +6388,7 @@ instruct subI_reg_reg_CISC(iRegI dst, iRegI src, flagsReg cr) %{
   match(Set dst (SubI dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP1_SIZE);
   format %{ "SR      $dst,$src\t # int  CISC ALU" %}
   opcode(SR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -6398,6 +6412,7 @@ instruct subI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "S(Y)    $dst, $src\t # int" %}
   opcode(SY_ZOPC, S_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -6420,6 +6435,7 @@ instruct subL_reg_reg_CISC(iRegL dst, iRegL src, flagsReg cr) %{
   match(Set dst (SubL dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "SGR     $dst,$src\t # int  CISC ALU" %}
   opcode(SGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6491,6 +6507,7 @@ instruct mulI_reg_imm16(iRegI dst, immI16 con) %{
   match(Set dst (MulI dst con));
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "MHI     $dst,$con" %}
   opcode(MHI_ZOPC);
   ins_encode(z_riform_signed(dst,con));
@@ -6512,6 +6529,7 @@ instruct mulI_Reg_mem(iRegI dst, memory src)%{
   match(Set dst (MulI dst (LoadI src)));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "MS(Y)   $dst, $src\t # int" %}
   opcode(MSY_ZOPC, MS_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -6524,6 +6542,7 @@ instruct mulL_reg_regI(iRegL dst, iRegI src) %{
   match(Set dst (MulL dst (ConvI2L src)));
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "MSGFR   $dst $src\t # long/int" %}
   opcode(MSGFR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6545,6 +6564,7 @@ instruct mulL_reg_imm16(iRegL dst, immL16 src) %{
   match(Set dst (MulL dst src));
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "MGHI    $dst,$src\t # long" %}
   opcode(MGHI_ZOPC);
   ins_encode(z_riform_signed(dst, src));
@@ -7212,6 +7232,7 @@ instruct rotrI_reg_immI8(iRegI dst, iRegI src, immI8 rshift, immI8 lshift) %{
   match(Set dst (OrI (URShiftI src rshift) (LShiftI src lshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x1f));
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "RLL     $dst,$src,$rshift\t # ROTR32" %}
   opcode(RLL_ZOPC);
   ins_encode(z_rsyform_const(dst, src, rshift));
@@ -7223,6 +7244,7 @@ instruct rotrL_reg_immI8(iRegL dst, iRegL src, immI8 rshift, immI8 lshift) %{
   match(Set dst (OrL (URShiftL src rshift) (LShiftL src lshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x3f));
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "RLLG    $dst,$src,$rshift\t # ROTR64" %}
   opcode(RLLG_ZOPC);
   ins_encode(z_rsyform_const(dst, src, rshift));
@@ -7837,6 +7859,7 @@ instruct sqrtD_mem(regD dst, memoryRX src) %{
   // CC remains unchanged.
   ins_cost(ALU_MEMORY_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "SQDB     $dst,$src\t # doubleMemory" %}
   opcode(SQDB_ZOPC);
   ins_encode(z_form_rt_memFP(dst, src));
@@ -7862,6 +7885,7 @@ instruct andI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "N(Y)    $dst, $src\t # int" %}
   opcode(NY_ZOPC, N_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -7982,6 +8006,7 @@ instruct orI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "O(Y)    $dst, $src\t # int" %}
   opcode(OY_ZOPC, O_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8050,6 +8075,7 @@ instruct orL_reg_uimm32(iRegI dst, uimmL32 con, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_HIGH);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "OILF    $dst,$con\t # long" %}
   opcode(OILF_ZOPC);
   ins_encode(z_rilform_unsigned(dst,con));
@@ -8074,6 +8100,7 @@ instruct xorI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "X(Y)    $dst, $src\t # int" %}
   opcode(XY_ZOPC, X_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8330,6 +8357,7 @@ instruct convI2L_mem_zex(iRegL dst, memory src, immL_32bits mask) %{
   match(Set dst (AndL (ConvI2L (LoadI src)) mask));
   // Uses load_const_optmized, so size can vary.
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LLGF    $dst, $src \t # zero-extend int to long" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8378,6 +8406,7 @@ instruct MoveI2F_stack_reg(regF dst, stackSlotI src) %{
   match(Set dst (MoveI2F src));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "LE      $dst,$src\t # MoveI2F" %}
   opcode(LE_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -8460,6 +8489,7 @@ instruct convL2D_reg(regD dst, iRegL src) %{
 instruct convL2I_reg(iRegI dst, iRegL src) %{
   match(Set dst (ConvL2I src));
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP1_SIZE);
   format %{ "LR      $dst,$src\t # long->int (if needed)" %}
   ins_encode %{ __ lr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -8493,6 +8523,7 @@ instruct rangeCheck_iReg_uimmI16(cmpOpT cmp, iRegI length, uimmI16 index, label 
             Matcher::branches_to_uncommon_trap(_leaf));
   ins_cost(1);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -8511,6 +8542,7 @@ instruct rangeCheck_iReg_iReg(cmpOpT cmp, iRegI index, iRegI length, label labl,
             Matcher::branches_to_uncommon_trap(_leaf));
   ins_cost(1);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -8529,6 +8561,7 @@ instruct rangeCheck_uimmI16_iReg(cmpOpT cmp, iRegI index, uimmI16 length, label 
             Matcher::branches_to_uncommon_trap(_leaf));
   ins_cost(1);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -9223,6 +9256,7 @@ instruct absI_reg(iRegI dst, iRegI src, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_LOW);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP1_SIZE);
   format %{ "LPR     $dst, $src" %}
   opcode(LPR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -9234,6 +9268,7 @@ instruct absL_reg(iRegL dst, iRegL src, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_LOW);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "LPGR     $dst, $src" %}
   opcode(LPGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -9245,6 +9280,7 @@ instruct negabsI_reg(iRegI dst, iRegI src, immI_0 zero, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_LOW);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP1_SIZE);
   format %{ "LNR     $dst, $src" %}
   opcode(LNR_ZOPC);
   ins_encode(z_rrform(dst, src));
