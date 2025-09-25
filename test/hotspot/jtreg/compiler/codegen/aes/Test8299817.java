@@ -61,7 +61,6 @@ public class Test8299817 {
     private static final int SEG_MAX   = 11;
     private static final int SHOW_ARRAY_LIMIT = 72;
     private static final boolean DEBUG_MODE = false;
-    private static final boolean LIMIT_MODE = false;
 
     public static void main(String[] args) throws Exception {
         if (!DEBUG_MODE) {
@@ -88,11 +87,6 @@ public class Test8299817 {
                 ivBytes[i] = (byte)0;
             }
             ivBytes[15] = (byte)1;
-        }
-        if (LIMIT_MODE) {
-            for (int i = 0; i < 16; i++) {
-                ivBytes[i] = (byte)0xff;
-            }
         }
         IvParameterSpec iv = new IvParameterSpec(ivBytes);
 
