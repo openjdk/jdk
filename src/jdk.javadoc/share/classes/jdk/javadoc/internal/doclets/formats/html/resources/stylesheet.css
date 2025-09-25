@@ -73,7 +73,7 @@ body {
     --selected-link-color: #4a698a;
     /* Background colors for generated tables */
     --table-header-color: #ebeff4;
-    --even-row-color: #ffffff;
+    --even-row-color: #fdfdfe;
     --odd-row-color: #f0f0f2;
     /* Text color for page title */
     --title-color: #2c4557;
@@ -116,7 +116,7 @@ body {
 body.theme-dark {
     --body-text-color: #e8e8e8;
     --block-text-color: #e8e8e8;
-    --body-background-color: #222528;
+    --body-background-color: #1f2124;
     --section-background-color: var(--body-background-color);
     --detail-background-color: var(--body-background-color);
     --code-background-color: #303940;
@@ -136,10 +136,10 @@ body.theme-dark {
     --title-color: #fff;
     --link-color: #94badb;
     --link-color-active: #e8a351;
-    --toc-background-color: #31363c;
+    --toc-background-color: #2f3439;
     --toc-highlight-color: var(--subnav-background-color);
     --toc-hover-color: #3f4146;
-    --snippet-background-color: #2d363c;
+    --snippet-background-color: #2c353b;
     --snippet-text-color: var(--block-text-color);
     --snippet-highlight-color: #f7c590;
     --pre-background-color: var(--snippet-background-color);
@@ -168,7 +168,7 @@ body.theme-dark {
     body {
         --body-text-color: #e8e8e8;
         --block-text-color: #e8e8e8;
-        --body-background-color: #222528;
+        --body-background-color: #1f2124;
         --section-background-color: var(--body-background-color);
         --detail-background-color: var(--body-background-color);
         --code-background-color: #303940;
@@ -188,10 +188,10 @@ body.theme-dark {
         --title-color: #fff;
         --link-color: #94badb;
         --link-color-active: #e8a351;
-        --toc-background-color: #31363c;
+        --toc-background-color: #2f3439;
         --toc-highlight-color: var(--subnav-background-color);
         --toc-hover-color: #3f4146;
-        --snippet-background-color: #2d363c;
+        --snippet-background-color: #2c353b;
         --snippet-text-color: var(--block-text-color);
         --snippet-highlight-color: #f7c590;
         --pre-background-color: var(--snippet-background-color);
@@ -214,8 +214,8 @@ body.theme-dark {
     }
 
     body.theme-light {
-        --body-text-color: #282828;
-        --block-text-color: #282828;
+        --body-text-color: #181818;
+        --block-text-color: #181818;
         --body-background-color: #ffffff;
         --section-background-color: var(--body-background-color);
         --detail-background-color: var(--body-background-color);
@@ -231,7 +231,7 @@ body.theme-dark {
         --selected-text-color: #253441;
         --selected-link-color: #4a698a;
         --table-header-color: #ebeff4;
-        --even-row-color: #ffffff;
+        --even-row-color: #fdfdfe;
         --odd-row-color: #f0f0f2;
         --title-color: #2c4557;
         --link-color: #437291;
