@@ -35,6 +35,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -146,6 +147,15 @@ public class TimeoutResponseTestSupport {
                 String connectionKey = exchange.getConnectionKey();
                 LOGGER.log("Server[%s] has received request (connectionKey=%s)", serverId, connectionKey);
                 try (exchange) {
+
+                    // Short-circuit on `HEAD` requests.
+                    // They are used for admitting established connections to the pool.
+                    if ("HEAD".equals(exchange.getRequestMethod())) {
+                        LOGGER.log("Server[%s] is responding to the `HEAD` request (connectionKey=%s)", serverId, connectionKey);
+                        exchange.sendResponseHeaders(200, 0);
+                        return;
+                    }
+
                     switch (SERVER_HANDLER_BEHAVIOUR) {
 
                         case BLOCK_BEFORE_HEADER_DELIVERY:
@@ -199,7 +209,7 @@ public class TimeoutResponseTestSupport {
             Duration perBytePauseDuration = Duration.ofMillis(100);
             assertTrue(
                     perBytePauseDuration.multipliedBy(CONTENT_LENGTH).compareTo(TIMEOUT) > 0,
-                    "Per-byte pause duration (%s) must be long enough exceed the timeout (%s) when delivering the content (%s bytes)".formatted(
+                    "Per-byte pause duration (%s) must be long enough to exceed the timeout (%s) when delivering the content (%s bytes)".formatted(
                             perBytePauseDuration, TIMEOUT, CONTENT_LENGTH));
             try (OutputStream responseBody = exchange.getResponseBody()) {
                 for (int i = 0; i < CONTENT_LENGTH; i++) {
@@ -213,14 +223,21 @@ public class TimeoutResponseTestSupport {
             }
         }
 
-        public HttpClient createClient() {
+        public HttpClient createClientWithEstablishedConnection() throws IOException, InterruptedException {
             Version version = server.getVersion();
-            return HttpServerAdapters
+            HttpClient client = HttpServerAdapters
                     .createClientBuilderFor(version)
                     .version(version)
                     .sslContext(SSL_CONTEXT)
                     .proxy(NO_PROXY)
                     .build();
+            // Ensure an established connection is admitted to the pool. This
+            // helps to cross out any possibilities of a timeout before a
+            // request makes it to the server handler. For instance, consider
+            // HTTP/1.1 to HTTP/2 upgrades, or long-running TLS handshakes.
+            HttpRequest headRequest = HttpRequest.newBuilder(this.request.uri()).version(version).HEAD().build();
+            client.send(headRequest, HttpResponse.BodyHandlers.discarding());
+            return client;
         }
 
         @Override

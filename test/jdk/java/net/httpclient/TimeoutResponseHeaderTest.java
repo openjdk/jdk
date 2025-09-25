@@ -76,8 +76,8 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSend(ServerRequestPair pair) {
-        try (HttpClient client = pair.createClient()) {
+    void testSend(ServerRequestPair pair) throws Exception {
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> assertThrows(
                     HttpTimeoutException.class,
                     () -> {
@@ -89,8 +89,8 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSendAsync(ServerRequestPair pair) {
-        try (HttpClient client = pair.createClient()) {
+    void testSendAsync(ServerRequestPair pair) throws Exception {
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
                 CompletableFuture<HttpResponse<Void>> responseFuture =

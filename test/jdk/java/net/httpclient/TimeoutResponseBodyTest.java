@@ -84,12 +84,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSendOnMissingBody(ServerRequestPair pair) {
+    void testSendOnMissingBody(ServerRequestPair pair) throws Exception {
 
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_BODY_DELIVERY;
 
-        try (HttpClient client = pair.createClient()) {
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
                 HttpResponse<InputStream> response = client.send(
@@ -103,12 +103,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSendAsyncOnMissingBody(ServerRequestPair pair) {
+    void testSendAsyncOnMissingBody(ServerRequestPair pair) throws Exception {
 
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_BODY_DELIVERY;
 
-        try (HttpClient client = pair.createClient()) {
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
                 CompletableFuture<HttpResponse<InputStream>> responseFuture = client.sendAsync(
@@ -137,12 +137,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSendOnSlowBody(ServerRequestPair pair) {
+    void testSendOnSlowBody(ServerRequestPair pair) throws Exception {
 
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_BODY_SLOWLY;
 
-        try (HttpClient client = pair.createClient()) {
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
                 HttpResponse<InputStream> response = client.send(
@@ -156,12 +156,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
-    void testSendAsyncOnSlowBody(ServerRequestPair pair) {
+    void testSendAsyncOnSlowBody(ServerRequestPair pair) throws Exception {
 
         ServerRequestPair.SERVER_HANDLER_BEHAVIOUR =
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_BODY_SLOWLY;
 
-        try (HttpClient client = pair.createClient()) {
+        try (HttpClient client = pair.createClientWithEstablishedConnection()) {
             assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
                 CompletableFuture<HttpResponse<InputStream>> responseFuture = client.sendAsync(
