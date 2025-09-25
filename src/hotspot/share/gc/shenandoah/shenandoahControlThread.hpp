@@ -47,6 +47,9 @@ private:
   GCCause::Cause       _requested_gc_cause;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
+  // This lock is used to coordinate waking up the control thread
+  Monitor _control_lock;
+
 public:
   ShenandoahControlThread();
 
@@ -54,6 +57,8 @@ public:
   void stop_service() override;
 
   void request_gc(GCCause::Cause cause) override;
+
+  void notify_control_thread(GCCause::Cause cause);
 
 private:
 
