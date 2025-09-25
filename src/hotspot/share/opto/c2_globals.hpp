@@ -359,6 +359,15 @@
   develop(bool, TraceLoopMultiversioning, false,                            \
           "Trace loop multiversioning")                                     \
                                                                             \
+  product(bool, UseAutoVectorizationPredicate, true, DIAGNOSTIC,            \
+          "Use AutoVectorization predicate (for speculative compilation)")  \
+                                                                            \
+  product(bool, UseAutoVectorizationSpeculativeAliasingChecks, true, DIAGNOSTIC, \
+          "Allow the use Multiversioning or Predicate to add aliasing"      \
+          "runtime checks. Runtime checks will only be inserted if either"  \
+          "LoopMultiversioning or UseAutoVectorizationPredicate are"        \
+          "enabled.")                                                       \
+                                                                            \
   product(bool, AllowVectorizeOnDemand, true,                               \
           "Globally suppress vectorization set in VectorizeMethod")         \
                                                                             \
