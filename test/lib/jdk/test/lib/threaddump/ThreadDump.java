@@ -297,7 +297,7 @@ public final class ThreadDump {
         }
 
         /**
-         * Returns the owner of the parkBlocker if the parkBlocker is an AQS.
+         * Returns the owner of the parkBlocker if the parkBlocker is an AbstractOwnableSynchronizer.
          */
         public OptionalLong parkBlockerOwner() {
             String owner = getStringProperty("parkBlocker", "owner");

@@ -44,7 +44,7 @@ class ThreadSnapshot {
     // an object the thread is blocked/waiting on, converted to ThreadBlocker by ThreadSnapshot.of()
     private int blockerTypeOrdinal;
     private Object blockerObject;
-    // the owner of the blockerObject when the object is park blocker and is AQS
+    // the owner of the blockerObject when the object is park blocker and is AbstractOwnableSynchronizer
     private Thread parkBlockerOwner;
 
     // set by ThreadSnapshot.of()
