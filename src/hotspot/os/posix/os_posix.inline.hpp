@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,6 @@
 #include <netdb.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-// Aix does not have NUMA support but need these for compilation.
-inline bool os::numa_has_group_homing()     { AIX_ONLY(ShouldNotReachHere();) return false;  }
 
 // Platform Mutex/Monitor implementation
 
