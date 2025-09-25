@@ -41,20 +41,6 @@
  */
 
 /*
- * @test id=dynamic
- * @requires vm.cds.supports.aot.class.linking
- * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
- * @build InitiatingLoaderTester BadOldClassA BadOldClassB
- * @build jdk.test.whitebox.WhiteBox BulkLoaderTest SimpleCusty
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar BulkLoaderTestApp.jar BulkLoaderTestApp MyUtil InitiatingLoaderTester
- *                 BadOldClassA BadOldClassB
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar
- *                 SimpleCusty
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar WhiteBox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:WhiteBox.jar BulkLoaderTest DYNAMIC
- */
-
-/*
  * @test id=aot
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/jdk/lib/testlibrary /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
@@ -279,10 +265,6 @@ class BulkLoaderTestApp {
         }
 
         try {
-            // In dynamic dump, the VM loads BadOldClassB and then attempts to
-            // link it. This will leave BadOldClassB in a "failed verification" state.
-            // All refernces to BadOldClassB from the CP should be purged from the CDS
-            // archive.
             c = BadOldClassB.class;
             c.newInstance();
             throw new RuntimeException("Must not succeed");

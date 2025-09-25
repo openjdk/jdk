@@ -129,10 +129,13 @@ public:
   int get_invalid_mask_size() const { return _mask_size; }
   const RegMask &mask() const { return _mask; }
   void set_mask( const RegMask &rm ) { _mask = rm; DEBUG_ONLY(_msize_valid=0;)}
+  void init_mask(Arena* arena) { new (&_mask) RegMask(arena); }
   void AND( const RegMask &rm ) { _mask.AND(rm); DEBUG_ONLY(_msize_valid=0;)}
   void SUBTRACT( const RegMask &rm ) { _mask.SUBTRACT(rm); DEBUG_ONLY(_msize_valid=0;)}
+  void SUBTRACT_inner(const RegMask& rm) { _mask.SUBTRACT_inner(rm); DEBUG_ONLY(_msize_valid = 0;) }
   void Clear()   { _mask.Clear()  ; DEBUG_ONLY(_msize_valid=1); _mask_size = 0; }
-  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid=1); _mask_size = RegMask::CHUNK_SIZE; }
+  void Set_All() { _mask.Set_All(); DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); }
+  bool rollover() { DEBUG_ONLY(_msize_valid = 1); _mask_size = _mask.rm_size_in_bits(); return _mask.rollover(); }
 
   void Insert( OptoReg::Name reg ) { _mask.Insert(reg);  DEBUG_ONLY(_msize_valid=0;) }
   void Remove( OptoReg::Name reg ) { _mask.Remove(reg);  DEBUG_ONLY(_msize_valid=0;) }
@@ -697,9 +700,9 @@ private:
   // Return TRUE if any spills occurred.
   uint Select( );
   // Helper function for select which allows biased coloring
-  OptoReg::Name choose_color( LRG &lrg, int chunk );
+  OptoReg::Name choose_color(LRG& lrg);
   // Helper function which implements biasing heuristic
-  OptoReg::Name bias_color( LRG &lrg, int chunk );
+  OptoReg::Name bias_color(LRG& lrg);
 
   // Split uncolorable live ranges
   // Return new number of live ranges

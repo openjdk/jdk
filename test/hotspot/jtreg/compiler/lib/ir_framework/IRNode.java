@@ -2755,6 +2755,36 @@ public class IRNode {
         vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
     }
 
+    public static final String EXPAND_VB = VECTOR_PREFIX + "EXPAND_VB" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VB, "ExpandV", TYPE_BYTE);
+    }
+
+    public static final String EXPAND_VS = VECTOR_PREFIX + "EXPAND_VS" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VS, "ExpandV", TYPE_SHORT);
+    }
+
+    public static final String EXPAND_VI = VECTOR_PREFIX + "EXPAND_VI" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VI, "ExpandV", TYPE_INT);
+    }
+
+    public static final String EXPAND_VL = VECTOR_PREFIX + "EXPAND_VL" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VL, "ExpandV", TYPE_LONG);
+    }
+
+    public static final String EXPAND_VF = VECTOR_PREFIX + "EXPAND_VF" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VF, "ExpandV", TYPE_FLOAT);
+    }
+
+    public static final String EXPAND_VD = VECTOR_PREFIX + "EXPAND_VD" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VD, "ExpandV", TYPE_DOUBLE);
+    }
+
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
     static {
         String regex = START + "zLoadP\\S*" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
