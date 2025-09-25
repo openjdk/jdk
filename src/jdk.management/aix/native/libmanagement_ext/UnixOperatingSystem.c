@@ -129,9 +129,9 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
             cpu_load = 0.0;
         }
         else {
+            cpu_load = (user_diff + sys_diff) / delta_time;
             cpu_load = MAX(cpu_load, 0.0);
             cpu_load = MIN(cpu_load, 1.0);
-            cpu_load = (user_diff + sys_diff) / delta_time;
         }
     }
     pthread_mutex_unlock(&lock);
