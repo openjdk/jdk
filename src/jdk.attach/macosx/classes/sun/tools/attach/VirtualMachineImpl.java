@@ -266,8 +266,6 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     static native void createAttachFile0(String path);
 
-    static native String getTempDir();
-
     static {
         System.loadLibrary("attach");
     }
