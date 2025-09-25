@@ -63,37 +63,36 @@ public class DragWindowTest {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait((Runnable) () -> createAndShowGUI());
+            SwingUtilities.invokeAndWait(DragWindowTest::createAndShowGUI);
 
             robot.delay(250);
             robot.waitForIdle();
 
-            SwingUtilities.invokeAndWait(() -> pointToClick = getCenterPoint(label));
+            SwingUtilities.invokeAndWait(() -> {
+                pointToClick = getCenterPoint(label);
+                pointToDrag = getCenterPoint(button);
+            });
 
             robot.mouseMove(pointToClick.x, pointToClick.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(250);
 
             if (dragWindowMouseEnteredCount != 1) {
                 throw new RuntimeException("No MouseEntered event on Drag Window!");
             }
 
-            SwingUtilities.invokeAndWait(() -> {
-                button.addMouseListener(new ButtonMouseListener());
-                pointToDrag = getCenterPoint(button);
-            });
-
-            robot.delay(250);
             robot.mouseMove(pointToDrag.x, pointToDrag.y);
             robot.waitForIdle();
+            robot.delay(250);
 
             if (buttonMouseEnteredCount != 0) {
                 throw new RuntimeException("Extra MouseEntered event on button!");
             }
 
-            robot.delay(250);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
+            robot.delay(250);
 
             if (labelMouseReleasedCount != 1) {
                 throw new RuntimeException("No MouseReleased event on label!");
@@ -126,6 +125,7 @@ public class DragWindowTest {
 
         button = new JButton("Button");
         Panel panel = new Panel(new BorderLayout());
+        button.addMouseListener(new ButtonMouseListener());
 
         panel.add(label, BorderLayout.NORTH);
         panel.add(button, BorderLayout.CENTER);
