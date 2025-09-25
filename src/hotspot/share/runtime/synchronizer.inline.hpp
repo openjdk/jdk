@@ -45,7 +45,7 @@ inline ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj,
 inline void ObjectSynchronizer::enter(Handle obj, BasicLock* lock, JavaThread* current) {
   assert(current == Thread::current(), "must be");
 
-    LightweightSynchronizer::enter(obj, lock, current);
+  LightweightSynchronizer::enter(obj, lock, current);
 }
 
 inline bool ObjectSynchronizer::quick_enter(oop obj, BasicLock* lock, JavaThread* current) {

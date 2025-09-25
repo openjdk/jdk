@@ -1128,7 +1128,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   const Register sync_handle = R5;
   const Register sync_obj    = R6;
-  const Register disp_hdr    = altFP_7_11;
+  const Register basic_lock  = altFP_7_11;
   const Register tmp         = R8;
 
   Label slow_lock, lock_done, fast_lock;
@@ -1139,7 +1139,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(sync_handle, R1);
 
     log_trace(fastlock)("SharedRuntime lock fast");
-    __ lightweight_lock(sync_obj /* object */, disp_hdr /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+    __ lightweight_lock(sync_obj /* object */, basic_lock /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
                         0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
     __ bind(lock_done);
@@ -1254,7 +1254,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // last_Java_frame is already set, so do call_VM manually; no exception can occur
     __ mov(R0, sync_obj);
-    __ mov(R1, disp_hdr);
+    __ mov(R1, basic_lock);
     __ mov(R2, Rthread);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_locking_C));
 
@@ -1269,12 +1269,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     // Clear pending exception before reentering VM.
     // Can store the oop in register since it is a leaf call.
-    assert_different_registers(Rtmp_save1, sync_obj, disp_hdr);
+    assert_different_registers(Rtmp_save1, sync_obj, basic_lock);
     __ ldr(Rtmp_save1, Address(Rthread, Thread::pending_exception_offset()));
     Register zero = __ zero_register(Rtemp);
     __ str(zero, Address(Rthread, Thread::pending_exception_offset()));
     __ mov(R0, sync_obj);
-    __ mov(R1, disp_hdr);
+    __ mov(R1, basic_lock);
     __ mov(R2, Rthread);
     __ call(CAST_FROM_FN_PTR(address, SharedRuntime::complete_monitor_unlocking_C));
     __ str(Rtmp_save1, Address(Rthread, Thread::pending_exception_offset()));
