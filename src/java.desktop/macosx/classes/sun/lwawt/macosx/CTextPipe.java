@@ -97,8 +97,14 @@ public class CTextPipe implements TextPipe {
         if (f2d instanceof CFont) {
             CompositeFont cf = ((CFont)f2d).getCompositeFont2D();
             PhysicalFont pf = cf.getSlotFont(slot);
-            Font f = new Font(pf.getFontName(null),
-                              font.getStyle(), font.getSize());
+            String name = pf.getFontName(null);
+            Font f = new Font(name, font.getStyle(), font.getSize());
+            if (font.isTransformed()) {
+                f = f.deriveFont(font.getTransform());
+            }
+            if (font.hasLayoutAttributes()) {
+                f = f.deriveFont(font.getAttributes());
+            }
             return f;
         }
         return null;
