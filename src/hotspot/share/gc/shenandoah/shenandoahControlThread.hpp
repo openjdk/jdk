@@ -58,9 +58,9 @@ public:
 
   void request_gc(GCCause::Cause cause) override;
 
-  void notify_control_thread(GCCause::Cause cause);
-
 private:
+  // Sets the requested cause and flag and notifies the control thread
+  void notify_control_thread(GCCause::Cause cause);
 
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
   void service_concurrent_normal_cycle(GCCause::Cause cause);
