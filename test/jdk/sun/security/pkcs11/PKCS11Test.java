@@ -779,7 +779,12 @@ public abstract class PKCS11Test {
     }
 
     private static Path fetchNssLib(Class<?> clazz, Path libraryName) throws IOException {
-        Path p = ArtifactResolver.fetchOne(clazz);
+        Path p;
+        try {
+            p = ArtifactResolver.fetchOne(clazz);
+        } catch (IOException exc) {
+            throw new SkippedException("Could not find NSS", exc);
+        }
         return findNSSLibrary(p, libraryName);
     }
 
