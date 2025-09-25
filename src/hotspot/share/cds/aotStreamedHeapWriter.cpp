@@ -388,7 +388,6 @@ template <typename T> void AOTStreamedHeapWriter::mark_oop_pointer(T* buffered_a
   // Mark the pointer in the oopmap
   size_t buffered_offset = buffered_address_to_offset((address)buffered_addr);
   BitMap::idx_t idx = bit_idx_for_buffer_offset(buffered_offset);
-  assert(idx < oopmap->size(), "overflow");
   oopmap->set_bit(idx);
 }
 
