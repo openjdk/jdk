@@ -418,8 +418,9 @@ const uintx max_uintx = (uintx)-1;
 
 typedef unsigned int uint;   NEEDS_CLEANUP
 
-//----------------------------------------------------------------------------------------------------
-// Type defenition for memory functions
+// This typedef is to address the issue of running a 32-bit VM on a 64-bit platform. In this case
+// the amount of physical memory may not fit in size_t, so we have to have a larger type. Once 32-bit
+// is depricated, one can use size_t.
 typedef uint64_t physical_memory_size_type;
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
