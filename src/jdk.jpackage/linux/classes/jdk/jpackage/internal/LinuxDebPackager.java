@@ -79,7 +79,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
                 return findProvidingPackages(realPath, sysEnv.dpkg());
             } catch (IOException ex) {
                 // Try the default path if differ
-                if (!realPath.toString().equals(file.toString())) {
+                if (!realPath.equals(file)) {
                     return findProvidingPackages(file, sysEnv.dpkg());
                 } else {
                     throw ex;
