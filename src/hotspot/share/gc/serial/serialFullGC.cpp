@@ -54,7 +54,6 @@
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
@@ -483,6 +482,8 @@ void SerialFullGC::phase1_mark(bool clear_all_softrefs) {
   ref_processor()->start_discovery(clear_all_softrefs);
 
   {
+    GCTraceTime(Debug, gc, phases) tm_m("Marking From Roots", gc_timer());
+
     // Start tracing from roots, there are 3 kinds of roots in full-gc.
     //
     // 1. CLD. This method internally takes care of whether class loading is
