@@ -55,8 +55,6 @@ void ShenandoahYoungHeuristics::choose_collection_set_from_regiondata(Shenandoah
   size_t cur_young_garbage = add_preselected_regions_to_collection_set(cset, data, size);
 
   choose_young_collection_set(cset, data, size, actual_free, cur_young_garbage);
-
-  log_cset_composition(cset);
 }
 
 void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollectionSet* cset,
