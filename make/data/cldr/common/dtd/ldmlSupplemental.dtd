@@ -771,7 +771,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!ATTLIST unitAlias type NMTOKEN #REQUIRED >
     <!--@MATCH:validity/short-unit/deprecated-->
 <!ATTLIST unitAlias replacement NMTOKEN #REQUIRED >
-    <!--@MATCH:regex/[A-Za-z][-A-Za-z0-9]*-->
+    <!--@MATCH:regex/[A-Za-z0-9][-A-Za-z0-9]*-->
     <!--@VALUE-->
 <!ATTLIST unitAlias reason (deprecated) #IMPLIED >
     <!--@VALUE-->

@@ -4419,30 +4419,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</metazone>
 			<metazone type="Australia_Central">
 				<long>
-					<generic>오스트레일리아 중부 시간</generic>
-					<standard>오스트레일리아 중부 표준시</standard>
-					<daylight>오스트레일리아 중부 하계 표준시</daylight>
+					<generic>호주 중부 시간</generic>
+					<standard>호주 중부 표준시</standard>
+					<daylight>호주 중부 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_CentralWestern">
 				<long>
-					<generic>오스트레일리아 중서부 시간</generic>
-					<standard>오스트레일리아 중서부 표준시</standard>
-					<daylight>오스트레일리아 중서부 하계 표준시</daylight>
+					<generic>호주 중서부 시간</generic>
+					<standard>호주 중서부 표준시</standard>
+					<daylight>호주 중서부 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Eastern">
 				<long>
-					<generic>오스트레일리아 동부 시간</generic>
-					<standard>오스트레일리아 동부 표준시</standard>
-					<daylight>오스트레일리아 동부 하계 표준시</daylight>
+					<generic>호주 동부 시간</generic>
+					<standard>호주 동부 표준시</standard>
+					<daylight>호주 동부 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Australia_Western">
 				<long>
-					<generic>오스트레일리아 서부 시간</generic>
-					<standard>오스트레일리아 서부 표준시</standard>
-					<daylight>오스트레일리아 서부 하계 표준시</daylight>
+					<generic>호주 서부 시간</generic>
+					<standard>호주 서부 표준시</standard>
+					<daylight>호주 서부 하계 표준시</daylight>
 				</long>
 			</metazone>
 			<metazone type="Azerbaijan">

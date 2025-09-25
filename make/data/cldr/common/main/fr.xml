@@ -1893,16 +1893,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">avant l’Incarnation</era>
-						<era type="1" draft="contributed">après l’Incarnation</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">av. Inc.</era>
-						<era type="1" draft="contributed">ap. Inc.</era>
-					</eraAbbr>
-				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">

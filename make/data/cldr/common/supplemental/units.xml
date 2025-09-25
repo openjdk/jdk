@@ -629,7 +629,8 @@ For terms of use, see http://www.unicode.org/copyright.html
             <unitAlias type="metric-ton" replacement="tonne" reason="deprecated"/>
             <unitAlias type="permillion" replacement="part-per-1e6" reason="deprecated"/>
             <unitAlias type="portion-per-1e9" replacement="part-per-1e9" reason="deprecated"/>
-            
+            <unitAlias type="portion" replacement="part" reason="deprecated"/>
+            <unitAlias type="million" replacement="1e6" reason="deprecated"/>
          
             <!-- Usage aliases -->
             

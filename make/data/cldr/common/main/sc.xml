@@ -1851,16 +1851,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0">in antis de s’Incarnatzione</era>
-						<era type="1">a pustis de s’Incarnatzione</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">a.Inc.</era>
-						<era type="1">p.Inc.</era>
-					</eraAbbr>
-				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="Bh">

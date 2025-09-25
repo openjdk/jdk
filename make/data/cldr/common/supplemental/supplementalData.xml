@@ -222,7 +222,8 @@ The printed version of ISO-4217:2001
             <currency iso4217="XOF" from="1984-08-04"/>
         </region>
         <region iso3166="BG">
-            <currency iso4217="BGN" from="1999-07-05"/>
+            <currency iso4217="EUR" from="2026-01-01" />
+            <currency iso4217="BGN" from="1999-07-05" to="2026-01-31"/>
             <currency iso4217="BGL" from="1962-01-01" to="1999-07-05"/>
             <currency iso4217="BGM" from="1952-05-12" to="1962-01-01"/>
             <currency iso4217="BGO" from="1879-07-08" to="1952-05-12"/>
