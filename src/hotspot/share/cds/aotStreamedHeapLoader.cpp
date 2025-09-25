@@ -284,7 +284,7 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
   while (unfinished_bit < end_bit) {
     assert(unfinished_bit >= start_bit && unfinished_bit < end_bit, "out of bounds copying");
 
-    // This is the adddress of the pointee inside the input stream
+    // This is the address of the pointee inside the input stream
     RawElementT* archive_payload_addr = ((RawElementT*)archive_object) + unfinished_bit - start_bit;
 
     if (next_reference_bit > unfinished_bit) {
@@ -639,8 +639,6 @@ void AOTStreamedHeapLoader::materialize_late() {
 }
 
 void AOTStreamedHeapLoader::cleanup() {
-  JavaThread* thread = JavaThread::current();
-
   // First ensure there is no concurrent tracing going on
   while (_waiting_for_iterator) {
     AOTHeapLoading_lock->wait();
@@ -749,8 +747,6 @@ void AOTStreamedHeapLoader::enable_gc() {
 
   // Record iterator progress
   int num_handles = (int)_num_archived_objects;
-  int current_end = (int)_current_batch_last_object_index;
-  int last_end = _previous_batch_last_object_index;
 
   // Lock further iteration from starting
   _swapping_root_format = true;
@@ -929,18 +925,15 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* 
     int _next;
 
     address _buffer_start;
-    address _buffer_end;
 
     int _num_archived_objects;
 
   public:
     StreamedLoaderOopIterator(address buffer_start,
-                              address buffer_end,
                               int num_archived_objects)
       : _current(0),
         _next(1),
         _buffer_start(buffer_start),
-        _buffer_end(buffer_end),
         _num_archived_objects(num_archived_objects) {
     }
 
@@ -1009,7 +1002,7 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* 
 
   assert(_is_loaded, "printing before initial loading?");
 
-  return new StreamedLoaderOopIterator(buffer_start, buffer_end, (int)info->streamed_heap()->num_archived_objects());
+  return new StreamedLoaderOopIterator(buffer_start, (int)info->streamed_heap()->num_archived_objects());
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP

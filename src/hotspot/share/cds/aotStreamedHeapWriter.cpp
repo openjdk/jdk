@@ -530,7 +530,6 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStream
     int _next;
 
     address _buffer_start;
-    address _buffer_end;
 
     int _num_archived_objects;
     int _num_archived_roots;
@@ -538,14 +537,12 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStream
 
   public:
     StreamedWriterOopIterator(address buffer_start,
-                              address buffer_end,
                               int num_archived_objects,
                               int num_archived_roots,
                               int* roots)
       : _current(0),
         _next(1),
         _buffer_start(buffer_start),
-        _buffer_end(buffer_end),
         _num_archived_objects(num_archived_objects),
         _num_archived_roots(num_archived_roots),
         _roots(roots) {
@@ -607,8 +604,6 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStream
     GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* roots() override {
       GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>* result = new GrowableArrayCHeap<AOTMapLogger::OopData, mtClass>();
 
-      int root_start = 0;
-
       for (int i = 0; i < _num_archived_roots; ++i) {
         int object_index = _roots[i];
         result->append(capture(object_index));
@@ -620,12 +615,11 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStream
 
   MemRegion r = heap_info->buffer_region();
   address buffer_start = address(r.start());
-  address buffer_end = address(r.end());
 
   size_t roots_offset = heap_info->roots_offset();
   int* roots = ((int*)(buffer_start + roots_offset)) + 1;
 
-  return new StreamedWriterOopIterator(buffer_start, buffer_end, (int)heap_info->num_archived_objects(), (int)heap_info->num_roots(), roots);
+  return new StreamedWriterOopIterator(buffer_start, (int)heap_info->num_archived_objects(), (int)heap_info->num_roots(), roots);
 }
 
 #endif // INCLUDE_CDS_JAVA_HEAP
