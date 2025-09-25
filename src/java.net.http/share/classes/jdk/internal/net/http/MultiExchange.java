@@ -253,13 +253,6 @@ class MultiExchange<T> implements Cancelable {
                 .map(ConnectTimeoutTracker::getRemaining);
     }
 
-    private void cancelTimer() {
-        if (responseTimerEvent != null) {
-            client.cancelTimer(responseTimerEvent);
-            responseTimerEvent = null;
-        }
-    }
-
     private void requestFilters(HttpRequestImpl r) throws IOException {
         if (Log.trace()) Log.logTrace("Applying request filters");
         for (HeaderFilter filter : filters) {
@@ -522,11 +515,17 @@ class MultiExchange<T> implements Cancelable {
                         assert response != null;
                         return completedFuture(response);
                     }
-                    // Cancel the timer only if the response has completed
-                    // exceptionally. That is, don't cancel the timer if there
-                    // are no exceptions, since the response body might still
-                    // get consumed, and it is subject to the response timer.
-                    cancelTimer();
+
+                    // Cancel the timer. Note that we only do so if the
+                    // response has completed exceptionally. That is, we don't
+                    // cancel the timer if there are no exceptions, since the
+                    // response body might still get consumed, and it is
+                    // still subject to the response timer.
+                    if (responseTimerEvent != null) {
+                        client.cancelTimer(responseTimerEvent);
+                        responseTimerEvent = null;
+                    }
+
                     // all exceptions thrown are handled here
                     final RetryContext retryCtx = checkRetryEligible(ex, exch);
                     assert retryCtx != null : "retry context is null";
