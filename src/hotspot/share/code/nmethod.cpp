@@ -791,15 +791,9 @@ class CheckClass : public MetadataClosure {
 };
 #endif // ASSERT
 
-
-static void clean_ic_if_metadata_is_dead(CompiledIC *ic) {
-  ic->clean_metadata();
-}
-
 // Clean references to unloaded nmethods at addr from this one, which is not unloaded.
 template <typename CallsiteT>
-static void clean_if_nmethod_is_unloaded(CallsiteT* callsite, nmethod* from,
-                                         bool clean_all) {
+static void clean_if_nmethod_is_unloaded(CallsiteT* callsite, bool clean_all) {
   CodeBlob* cb = CodeCache::find_blob(callsite->destination());
   if (!cb->is_nmethod()) {
     return;
@@ -874,15 +868,15 @@ void nmethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all
       if (unloading_occurred) {
         // If class unloading occurred we first clear ICs where the cached metadata
         // is referring to an unloaded klass or method.
-        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter));
+        CompiledIC_at(&iter)->clean_metadata();
       }
 
-      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all);
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), clean_all);
       break;
 
     case relocInfo::opt_virtual_call_type:
     case relocInfo::static_call_type:
-      clean_if_nmethod_is_unloaded(CompiledDirectCall::at(iter.reloc()), this, clean_all);
+      clean_if_nmethod_is_unloaded(CompiledDirectCall::at(iter.reloc()), clean_all);
       break;
 
     case relocInfo::static_stub_type: {
