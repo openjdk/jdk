@@ -82,6 +82,9 @@ public class DragWindowTest {
                 throw new RuntimeException("No MouseEntered event on Drag Window!");
             }
 
+            SwingUtilities.invokeAndWait(() ->
+                    button.addMouseListener(new ButtonMouseListener()));
+
             robot.mouseMove(pointToDrag.x, pointToDrag.y);
             robot.waitForIdle();
             robot.delay(250);
@@ -125,7 +128,6 @@ public class DragWindowTest {
 
         button = new JButton("Button");
         Panel panel = new Panel(new BorderLayout());
-        button.addMouseListener(new ButtonMouseListener());
 
         panel.add(label, BorderLayout.NORTH);
         panel.add(button, BorderLayout.CENTER);
