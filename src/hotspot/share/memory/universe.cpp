@@ -183,6 +183,7 @@ int             Universe::_base_vtable_size = 0;
 bool            Universe::_bootstrapping = false;
 bool            Universe::_module_initialized = false;
 bool            Universe::_fully_initialized = false;
+volatile bool   Universe::_is_shutting_down = false;
 
 OopStorage*     Universe::_vm_weak = nullptr;
 OopStorage*     Universe::_vm_global = nullptr;
@@ -583,6 +584,11 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
 }
 
 void Universe::fixup_mirrors(TRAPS) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // All mirrors of preloaded classes are already restored. No need to fix up.
+    return;
+  }
+
   // Bootstrap problem: all classes gets a mirror (java.lang.Class instance) assigned eagerly,
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
@@ -1344,7 +1350,14 @@ static void log_cpu_time() {
 }
 
 void Universe::before_exit() {
-  log_cpu_time();
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    log_cpu_time();
+    AtomicAccess::release_store(&_is_shutting_down, true);
+  }
+
   heap()->before_exit();
 
   // Print GC/heap related information.

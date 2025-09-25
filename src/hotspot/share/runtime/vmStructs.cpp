@@ -666,6 +666,14 @@
      static_field(VMRegImpl,                   regName[0],                                    const char*)                           \
      static_field(VMRegImpl,                   stack0,                                        VMReg)                                 \
                                                                                                                                      \
+  /******************************************************************************************/                                       \
+  /* CI (NOTE: these CI fields are retained in VMStructs for the benefit of external tools, */                                       \
+  /* to ease their migration to a future alternative.)                                      */                                       \
+  /******************************************************************************************/                                       \
+                                                                                                                                     \
+  nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
+  nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
+                                                                                                                                     \
   /************/                                                                                                                     \
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
@@ -674,7 +682,6 @@
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
-  volatile_nonstatic_field(BasicLock,          _metadata,                                     uintptr_t)                             \
   nonstatic_field(ObjectMonitor,               _contentions,                                  int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _waiters,                                      int)                                   \
   volatile_nonstatic_field(ObjectMonitor,      _recursions,                                   intx)                                  \
@@ -1147,6 +1154,12 @@
   declare_toplevel_type(ObjectSynchronizer)                               \
   declare_toplevel_type(BasicLock)                                        \
   declare_toplevel_type(BasicObjectLock)                                  \
+                                                                          \
+  /*********************/                                                 \
+  /* CI */                                                                \
+  /*********************/                                                 \
+                                                                          \
+  declare_toplevel_type(ciEnv)                                            \
                                                                           \
   /********************/                                                  \
   /* -XX flags        */                                                  \
