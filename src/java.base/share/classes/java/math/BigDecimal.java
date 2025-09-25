@@ -1796,68 +1796,67 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         if (this.signum() == 0) // 0/y
             return zeroValueOf(preferredScale);
-        else {
-            /* The technique used is the following:
-             * take a/b, compute b' = b/(2^p2 5^p5), where
-             * p2 = max{n | b ≡ 0 mod 2^n} and p5 = max{n | b ≡ 0 mod 5^n}.
-             * If a ≢ 0 mod b', then a/b is not a finite decimal number. Otherwise:
-             *   - if p2 ≤ p5, then a/b = (a/b') ⋅ 2^(p5-p2) / 10^p5;
-             *   - if p2 > p5, then a/b = (a/b') ⋅ 5^(p2-p5) / 10^p2.
-             */
-            BigInteger b = divisor.unscaledValue();
-            int p2 = b.getLowestSetBit();
-            b = b.shiftRight(p2); // Remove powers of 2
 
-            int p5 = 0;
-            // Remove and count powers of 5
-            BigInteger[] qr;
-            int i;
-            // Factor out 5^(2^i) from b, until b ≢ 0 mod 5^(2^i).
-            for (i = 0; ; i++) {
-                qr = b.divideAndRemainder(fiveToTwoToThe(i));
-                if (qr[1].signum != 0) { // non-0 remainder
-                    break;
-                } else {
-                    b = qr[0];
-                    p5 += 1 << i;
-                }
+        /* The technique used is the following:
+         * take a/b, compute b' = b/(2^p2 5^p5), where
+         * p2 = max{n | b ≡ 0 mod 2^n} and p5 = max{n | b ≡ 0 mod 5^n}.
+         * If a ≢ 0 mod b', then a/b is not a finite decimal number. Otherwise:
+         *   - if p2 ≤ p5, then a/b = (a/b') ⋅ 2^(p5-p2) / 10^p5;
+         *   - if p2 > p5, then a/b = (a/b') ⋅ 5^(p2-p5) / 10^p2.
+         */
+        BigInteger b = divisor.unscaledValue();
+        int p2 = b.getLowestSetBit();
+        b = b.shiftRight(p2); // Remove powers of 2
+
+        int p5 = 0;
+        // Remove and count powers of 5
+        BigInteger[] qr;
+        int i;
+        // Factor out 5^(2^i) from b, until b ≢ 0 mod 5^(2^i).
+        for (i = 0; ; i++) {
+            qr = b.divideAndRemainder(fiveToTwoToThe(i));
+            if (qr[1].signum != 0) { // non-0 remainder
+                break;
+            } else {
+                b = qr[0];
+                p5 += 1 << i;
             }
-            i--;
-
-            // Factor out all remaining powers of 5 from b
-            int log5b = log5Upper(b);
-            if (log5b < 1 << i)
-                i = BigInteger.bitLengthForInt(log5b) - 1;
-
-            for (; i >= 0; i--) {
-                qr = b.divideAndRemainder(fiveToTwoToThe(i));
-                if (qr[1].signum == 0) { // zero remainder
-                    b = qr[0];
-                    p5 += 1 << i;
-                }
-            }
-
-            qr = this.unscaledValue().divideAndRemainder(b);
-            if (qr[1].signum != 0)
-                throw new ArithmeticException("Non-terminating decimal expansion; " +
-                        "no exact representable decimal result.");
-
-            BigInteger quot = qr[0];
-            int p10 = Math.max(p2, p5);
-            if (p10 == 0)
-                return new BigDecimal(quot, preferredScale);
-
-            // Equalize multiplicities of 2 and 5
-            quot = p10 == p5
-                    ? quot.shiftLeft(p10 - p2)
-                    : quot.multiply(fiveTo(p10 - p5));
-
-            // Avoid overflow of preferredScale + p10, the result's scale
-            BigDecimal res = createAndStripZerosToMatchScale(quot, p10, 0);
-            return preferredScale != Integer.MIN_VALUE
-                    ? res.scaleByPowerOfTen(-preferredScale)
-                    : res.scaleByPowerOfTen(Integer.MAX_VALUE).scaleByPowerOfTen(1);
         }
+        i--;
+
+        // Factor out all remaining powers of 5 from b
+        int log5b = log5Upper(b);
+        if (log5b < 1 << i)
+            i = BigInteger.bitLengthForInt(log5b) - 1;
+
+        for (; i >= 0; i--) {
+            qr = b.divideAndRemainder(fiveToTwoToThe(i));
+            if (qr[1].signum == 0) { // zero remainder
+                b = qr[0];
+                p5 += 1 << i;
+            }
+        }
+
+        qr = this.unscaledValue().divideAndRemainder(b);
+        if (qr[1].signum != 0)
+            throw new ArithmeticException("Non-terminating decimal expansion; " +
+                    "no exact representable decimal result.");
+
+        BigInteger quot = qr[0];
+        int p10 = Math.max(p2, p5);
+        if (p10 == 0)
+            return new BigDecimal(quot, preferredScale);
+
+        // Equalize multiplicities of 2 and 5
+        quot = p10 == p5
+                ? quot.shiftLeft(p10 - p2)
+                : quot.multiply(fiveTo(p10 - p5));
+
+        // Avoid overflow of preferredScale + p10, the result's scale
+        BigDecimal res = createAndStripZerosToMatchScale(quot, p10, 0);
+        return preferredScale != Integer.MIN_VALUE
+                ? res.scaleByPowerOfTen(-preferredScale)
+                : res.scaleByPowerOfTen(Integer.MAX_VALUE).scaleByPowerOfTen(1);
     }
 
     /**
