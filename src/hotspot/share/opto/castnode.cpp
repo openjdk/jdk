@@ -101,6 +101,10 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   }
 #endif //ASSERT
 
+  if (ft->singleton() && ft != Type::TOP && !_dependency.narrows_type()) {
+    tty->print_cr("XXX");
+  }
+
   return ft;
 }
 
@@ -112,8 +116,82 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return this;
   }
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
-    return TypeNode::Ideal(phase, can_reshape);
+    Node* res = TypeNode::Ideal(phase, can_reshape);
+    if (res != nullptr) {
+      return res;
+    }
   }
+  if (can_reshape) {
+    const Type* t = Value(phase);
+    if (t->singleton() && t != Type::TOP && !_dependency.narrows_type()) {
+      ResourceMark rm;
+      Node_Stack stack(0);
+      VectorSet visited;
+      Node_List clones;
+      stack.push(this, 0);
+      visited.set(_idx);
+      do {
+        Node* node = stack.node();
+        uint index = stack.index();
+        if (index < node->outcnt()) {
+          stack.set_index(index+1);
+          Node* use = node->raw_out(index);
+          if (!use->is_CFG() && !visited.test_set(use->_idx)) {
+            if (use->is_Mem()) {
+              if (use->in(MemNode::Address) != node) {
+                assert(use->in(MemNode::ValueIn) == node, "");
+                continue;
+              }
+              if (!use->depends_only_on_test()) {
+                continue;
+              }
+              Node* addr = use->in(MemNode::Address);
+              const Type* addr_t = phase->type(addr);
+              assert(addr_t->make_oopptr()->isa_aryptr(), "");
+              for (uint i = 0; i < stack.size(); ++i) {
+                assert(!stack.node_at(i)->is_Phi(), "");
+              }
+              assert(addr->is_AddP(), "");
+              assert(clones.size() == 0, "");
+              Node* base = addr->in(AddPNode::Base);
+              while (addr->is_AddP()) {
+                clones.push(addr);
+                assert(base == addr->in(AddPNode::Base), "");
+                addr = addr->in(AddPNode::Address);
+              }
+              Node* new_cast = phase->transform(new CastPPNode(in(0), base, phase->type(base), UnconditionalDependency));
+              for (uint i = 0; i < clones.size(); ++i) {
+                int j = clones.size() - i - 1;
+                Node* clone = clones.at(j)->clone();
+                if (i == 0) {
+                  clone->set_req(AddPNode::Base, new_cast);
+                } else {
+                  clone->set_req(AddPNode::Address, clones.at(j+1));
+                }
+                clone = phase->transform(clone);
+                clones.map(j, clone);
+              }
+              phase->is_IterGVN()->replace_input_of(use, MemNode::Address, clones.at(0));
+              continue;
+            }
+            int op = use->Opcode();
+            if (op == Op_DivI || op == Op_DivL || op == Op_ModI || op == Op_ModL) {
+              if (use->in(2) != node) {
+                assert(use->in(1) == node, "");
+                continue;
+              }
+              ShouldNotReachHere();
+            }
+            stack.push(use, 0);
+          }
+        } else {
+          stack.pop();
+        }
+      } while (stack.is_nonempty());
+
+    }
+  }
+
   return nullptr;
 }
 

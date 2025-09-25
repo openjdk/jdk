@@ -3085,6 +3085,15 @@ Node* Node_Stack::find(uint idx) const {
   return nullptr;
 }
 
+#ifdef ASSERT
+void Node_Stack::dump() {
+  for (uint i = 0; i < size(); i++) {
+    tty->print("%d -> index %d for", i, index_at(i)); node_at(i)->dump();
+  }
+}
+#endif
+
+
 //=============================================================================
 uint TypeNode::size_of() const { return sizeof(*this); }
 #ifndef PRODUCT
