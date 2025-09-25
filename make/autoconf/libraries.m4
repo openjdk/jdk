@@ -136,11 +136,8 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBPTHREAD"
   fi
 
-  # librt
+  # librt - for timers (timer_* functions)
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    # Needed for the timer_* functions from librt used in JFR
-    # (legacy usage: Hotspot needed to link librt also to get the clock_* functions
-    # on ancient distros before glibc 2.17)
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lrt"
   fi
 
