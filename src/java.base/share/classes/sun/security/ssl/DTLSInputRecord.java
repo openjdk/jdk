@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -801,8 +801,11 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             // buffer this fragment
             if (hsf.handshakeType == SSLHandshake.FINISHED.id) {
-                // Need no status update.
-                bufferedFragments.add(hsf);
+                // Make sure it's not a retransmitted message
+                if (hsf.recordEpoch > handshakeEpoch) {
+                    bufferedFragments.add(hsf);
+                    flightIsReady = holes.isEmpty();
+                }
             } else {
                 bufferFragment(hsf);
             }
