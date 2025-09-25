@@ -54,17 +54,28 @@ public class Password {
 
         try {
             // Only use Console if `in` is the initial System.in
-            if (!isEchoOn &&
-                    in == SharedSecrets.getJavaLangAccess().initialSystemIn() &&
-                    ConsoleHolder.consoleIsAvailable()) {
-                consoleEntered = ConsoleHolder.readPassword();
-                // readPassword returns "" if you just press ENTER with the built-in Console,
-                // to be compatible with old Password class, change to null
-                if (consoleEntered == null || consoleEntered.length == 0) {
-                    return null;
+            if (!isEchoOn) {
+                if (in == SharedSecrets.getJavaLangAccess().initialSystemIn()
+                        && ConsoleHolder.consoleIsAvailable()) {
+                    consoleEntered = ConsoleHolder.readPassword();
+                    // readPassword returns "" if you just press ENTER with the built-in Console,
+                    // to be compatible with old Password class, change to null
+                    if (consoleEntered == null || consoleEntered.length == 0) {
+                        return null;
+                    }
+                    consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
+                    in = new ByteArrayInputStream(consoleBytes);
+                } else if (System.in.available() == 0) {
+                    // This may be running in an IDE Run Window or in JShell,
+                    // which acts like an interactive console and echoes the
+                    // entered password. In this case, print a warning that
+                    // the password might be echoed. If available() is not zero,
+                    // it's more likely the input comes from a pipe, such as
+                    // "echo password |" or "cat password_file |" where input
+                    // will be silently consumed without echoing to the screen.
+                    System.err.print("[Warning: Console not available." +
+                            " The entered password might be echoed.] ");
                 }
-                consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
-                in = new ByteArrayInputStream(consoleBytes);
             }
 
             // Rest of the lines still necessary for KeyStoreLoginModule
