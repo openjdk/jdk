@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,27 @@
  *
  */
 
-#include "gc/shared/bufferNodeList.hpp"
-#include "utilities/debug.hpp"
+#ifndef SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
+#define SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 
-BufferNodeList::BufferNodeList() :
-  _head(nullptr), _tail(nullptr), _entry_count(0) {}
+#include "gc/g1/g1ConcurrentRefineStats.hpp"
+#include "gc/shared/workerThread.hpp"
 
-BufferNodeList::BufferNodeList(BufferNode* head,
-                               BufferNode* tail,
-                               size_t entry_count) :
-  _head(head), _tail(tail), _entry_count(entry_count)
-{
-  assert((_head == nullptr) == (_tail == nullptr), "invariant");
-  assert((_head == nullptr) == (_entry_count == 0), "invariant");
-}
+class G1CardTableClaimTable;
+
+class G1ConcurrentRefineSweepTask : public WorkerTask {
+  G1CardTableClaimTable* _scan_state;
+  G1ConcurrentRefineStats* _stats;
+  uint _max_workers;
+  bool _sweep_completed;
+
+public:
+
+  G1ConcurrentRefineSweepTask(G1CardTableClaimTable* scan_state, G1ConcurrentRefineStats* stats, uint max_workers);
+
+  void work(uint worker_id) override;
+
+  bool sweep_completed() const;
+};
+
+#endif /* SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP */

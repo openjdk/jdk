@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.io.FileNotFoundException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,17 +29,15 @@ import java.nio.file.OpenOption;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Flow;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest.BodyPublishers;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.ResponseInfo;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
 import java.util.function.Function;
-import org.testng.annotations.DataProvider;
+
 import org.testng.annotations.Test;
-import static java.nio.charset.StandardCharsets.UTF_8;
+
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;
 import static java.nio.file.StandardOpenOption.WRITE;
@@ -49,52 +46,16 @@ import static org.testng.Assert.assertThrows;
 
 /*
  * @test
- * @summary Basic tests for API specified exceptions from Publisher, Handler,
+ * @summary Basic tests for API specified exceptions from Handler,
  *          and Subscriber convenience static factory methods.
- * @run testng SubscriberPublisherAPIExceptions
+ * @run testng SubscriberAPIExceptions
  */
 
-public class SubscriberPublisherAPIExceptions {
+public class SubscriberAPIExceptions {
 
     static final Class<NullPointerException> NPE = NullPointerException.class;
     static final Class<IllegalArgumentException> IAE = IllegalArgumentException.class;
     static final Class<IndexOutOfBoundsException> IOB = IndexOutOfBoundsException.class;
-
-    @Test
-    public void publisherAPIExceptions() {
-        assertThrows(NPE, () -> BodyPublishers.ofByteArray(null));
-        assertThrows(NPE, () -> BodyPublishers.ofByteArray(null, 0, 1));
-        assertThrows(IOB, () -> BodyPublishers.ofByteArray(new byte[100],    0, 101));
-        assertThrows(IOB, () -> BodyPublishers.ofByteArray(new byte[100],    1, 100));
-        assertThrows(IOB, () -> BodyPublishers.ofByteArray(new byte[100],   -1,  10));
-        assertThrows(IOB, () -> BodyPublishers.ofByteArray(new byte[100],   99,   2));
-        assertThrows(IOB, () -> BodyPublishers.ofByteArray(new byte[1],   -100,   1));
-        assertThrows(NPE, () -> BodyPublishers.ofByteArray(null));
-        assertThrows(NPE, () -> BodyPublishers.ofFile(null));
-        assertThrows(NPE, () -> BodyPublishers.ofInputStream(null));
-        assertThrows(NPE, () -> BodyPublishers.ofString(null));
-        assertThrows(NPE, () -> BodyPublishers.ofString("A", null));
-        assertThrows(NPE, () -> BodyPublishers.ofString(null, UTF_8));
-        assertThrows(NPE, () -> BodyPublishers.ofString(null, null));
-    }
-
-    @DataProvider(name = "nonExistentFiles")
-    public Object[][] nonExistentFiles() {
-        List<Path> paths = List.of(Paths.get("doesNotExist"),
-                                   Paths.get("tsixEtoNseod"),
-                                   Paths.get("doesNotExist2"));
-        paths.forEach(p -> {
-            if (Files.exists(p))
-                throw new AssertionError("Unexpected " + p);
-        });
-
-        return paths.stream().map(p -> new Object[] { p }).toArray(Object[][]::new);
-    }
-
-    @Test(dataProvider = "nonExistentFiles", expectedExceptions = FileNotFoundException.class)
-    public void fromFileCheck(Path path) throws Exception {
-        BodyPublishers.ofFile(path);
-    }
 
     @Test
     public void handlerAPIExceptions() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_BUFFERNODELIST_HPP
-#define SHARE_GC_SHARED_BUFFERNODELIST_HPP
+#ifndef SHARE_CDS_AOTOOPCHECKER_HPP
+#define SHARE_CDS_AOTOOPCHECKER_HPP
 
-#include "utilities/globalDefinitions.hpp"
+#include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
 
-class BufferNode;
+class AOTOopChecker : AllStatic {
+  static oop get_oop_field(oop obj, const char* name, const char* sig);
 
-struct BufferNodeList {
-  BufferNode* _head;            // First node in list or null if empty.
-  BufferNode* _tail;            // Last node in list or null if empty.
-  size_t _entry_count;          // Sum of entries in nodes in list.
-
-  BufferNodeList();
-  BufferNodeList(BufferNode* head, BufferNode* tail, size_t entry_count);
+public:
+  // obj is an object that's about to be stored into the AOT cache. Check if it
+  // can be safely cached.
+  static void check(oop obj);
 };
 
-#endif // SHARE_GC_SHARED_BUFFERNODELIST_HPP
+#endif // SHARE_CDS_AOTOOPCHECKER_HPP
