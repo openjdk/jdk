@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Element;
@@ -119,7 +120,7 @@ public final class PListReader {
      * Values of "array" properties are stored as {@code List<Object>} objects.
      * <p>
      * Values of other properties are stored as {@code Raw} objects.
-     * 
+     *
      * @param fetchDictionaries controls the type of objects of nested "dict"
      *                          elements. If the value is {@code true},
      *                          {@code Map<String, Object>} type is used, and
@@ -129,36 +130,19 @@ public final class PListReader {
     public Map<String, Object> toMap(boolean fetchDictionaries) {
         Map<String, Object> reply = new HashMap<>();
         var nodes = root.getChildNodes();
-        String key = null;
         for (int i = 0; i != nodes.getLength(); i++) {
             if (nodes.item(i) instanceof Element e) {
-                var name = e.getNodeName();
-                if ("key".equals(name) && key == null) {
-                    key = e.getTextContent();
-                } else if (key != null) {
-                    switch (name) {
-                        case "dict" -> {
-                            var plistReader = new PListReader(e);
-                            if (fetchDictionaries) {
-                                reply.put(key, plistReader.toMap(fetchDictionaries));
-                            } else {
-                                reply.put(key, plistReader);
-                            }
-                            key = null;
+                tryCreateValue(e, fetchDictionaries).ifPresent(value -> {
+                    final var query = "preceding-sibling::*[1]";
+                    Optional.ofNullable(toSupplier(() -> {
+                        return (Node) XPathSingleton.INSTANCE.evaluate(query, e, XPathConstants.NODE);
+                    }).get()).ifPresent(n -> {
+                        if ("key".equals(n.getNodeName())) {
+                            var keyName = n.getTextContent();
+                            reply.putIfAbsent(keyName, value);
                         }
-                        case "array" -> {
-                            reply.put(key, readArray(e, fetchDictionaries).toList());
-                            key = null;
-                        }
-                        default -> {
-                            var raw = Raw.tryCreate(e).orElse(null);
-                            if (raw != null) {
-                                reply.put(key, raw);
-                                key = null;
-                            }
-                        }
-                    }
-                }
+                    });
+                });
             }
         }
 
@@ -286,9 +270,8 @@ public final class PListReader {
         if (node.getNodeName().equals("dict")) {
             this.root = node;
         } else {
-            final var xPath = XPathFactory.newInstance().newXPath();
             this.root = Optional.ofNullable(toSupplier(() -> {
-                return (Node) xPath.evaluate("/plist[1]/dict[1]", node, XPathConstants.NODE);
+                return (Node) XPathSingleton.INSTANCE.evaluate("/plist[1]/dict[1]", node, XPathConstants.NODE);
             }).get()).orElseThrow(NoSuchElementException::new);
         }
     }
@@ -297,25 +280,29 @@ public final class PListReader {
         this(XmlUtils.initDocumentBuilder().parse(new ByteArrayInputStream(xmlData)));
     }
 
+    private Optional<?> tryCreateValue(Element e, boolean fetchDictionaries) {
+        switch (e.getNodeName()) {
+            case "dict" -> {
+                var plistReader = new PListReader(e);
+                if (fetchDictionaries) {
+                    return Optional.of(plistReader.toMap(fetchDictionaries));
+                } else {
+                    return Optional.of(plistReader);
+                }
+            }
+            case "array" -> {
+                return Optional.of(readArray(e, fetchDictionaries).toList());
+            }
+            default -> {
+                return Raw.tryCreate(e);
+            }
+        }
+    }
+
     private Stream<Object> readArray(Node node, boolean fetchDictionaries) {
         return XmlUtils.toStream(node.getChildNodes()).map(n -> {
             if (n instanceof Element e) {
-                switch (e.getNodeName()) {
-                    case "dict" -> {
-                        var plistReader = new PListReader(e);
-                        if (fetchDictionaries) {
-                            return Optional.of(plistReader.toMap(fetchDictionaries));
-                        } else {
-                            return Optional.of(plistReader);
-                        }
-                    }
-                    case "array" -> {
-                        return Optional.of(readArray(e, fetchDictionaries).toList());
-                    }
-                    default -> {
-                        return Raw.tryCreate(e);
-                    }
-                }
+                return tryCreateValue(e, fetchDictionaries);
             } else {
                 return Optional.<Raw>empty();
             }
@@ -323,12 +310,18 @@ public final class PListReader {
     }
 
     private Node getNode(String keyName) {
-        final var xPath = XPathFactory.newInstance().newXPath();
+        Objects.requireNonNull(keyName);
         final var query = String.format("*[preceding-sibling::key = \"%s\"][1]", keyName);
         return Optional.ofNullable(toSupplier(() -> {
-            return (Node) xPath.evaluate(query, root, XPathConstants.NODE);
+            return (Node) XPathSingleton.INSTANCE.evaluate(query, root, XPathConstants.NODE);
         }).get()).orElseThrow(NoSuchElementException::new);
     }
+
+
+    private final static class XPathSingleton {
+        private final static XPath INSTANCE = XPathFactory.newInstance().newXPath();
+    }
+
 
     private final Node root;
 }
