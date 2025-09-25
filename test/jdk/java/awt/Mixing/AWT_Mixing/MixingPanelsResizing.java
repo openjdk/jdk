@@ -22,10 +22,24 @@
  */
 
 
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Button;
+import java.awt.Color;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Robot;
+import java.awt.Toolkit;
 import java.awt.event.InputEvent;
-import javax.swing.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -63,9 +77,11 @@ public class MixingPanelsResizing {
     private static int borderShift;
 
     private static int frameBorderCounter() {
+
         String JAVA_HOME = System.getProperty("java.home");
         try {
-            Process p = Runtime.getRuntime().exec(JAVA_HOME + "/bin/java FrameBorderCounter");
+            Process p = Runtime.getRuntime()
+                    .exec(JAVA_HOME + "/bin/java FrameBorderCounter");
             try {
                 p.waitFor();
             } catch (InterruptedException e) {
@@ -73,7 +89,9 @@ public class MixingPanelsResizing {
                 throw new RuntimeException(e);
             }
             if (p.exitValue() != 0) {
-                throw new RuntimeException("FrameBorderCounter exited with not null code!\n" + readInputStream(p.getErrorStream()));
+                throw new RuntimeException(
+                        "FrameBorderCounter exited with not null code!\n" +
+                                readInputStream(p.getErrorStream()));
             }
             return Integer.parseInt(readInputStream(p.getInputStream()).trim());
         } catch (IOException e) {
@@ -83,6 +101,7 @@ public class MixingPanelsResizing {
     }
 
     private static String readInputStream(InputStream is) throws IOException {
+
         byte[] buffer = new byte[4096];
         int len = 0;
         StringBuilder sb = new StringBuilder();
@@ -98,7 +117,8 @@ public class MixingPanelsResizing {
         //*** Create instructions for the user here ***
 
         borderShift = frameBorderCounter();
-        borderShift = Math.abs(borderShift) == 1 ? borderShift : (borderShift / 2);
+        borderShift =
+                Math.abs(borderShift) == 1 ? borderShift : (borderShift / 2);
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
                 // prepare controls
@@ -146,8 +166,10 @@ public class MixingPanelsResizing {
 
         SwingUtilities.invokeAndWait(new Runnable() {
             public void run() {
+
                 lLoc = frame.getLocationOnScreen();
-                lLoc.translate(frame.getWidth() + borderShift, frame.getHeight() + borderShift);
+                lLoc.translate(frame.getWidth() + borderShift,
+                        frame.getHeight() + borderShift);
             }
         });
 
@@ -158,6 +180,7 @@ public class MixingPanelsResizing {
         Runnable test = new Runnable() {
 
             public void run() {
+
                 Point btnLoc = jbutton.getLocationOnScreen();
                 Color c = robot.getPixelColor(btnLoc.x + 5, btnLoc.y + 5);
                 System.out.println("Color picked for jbutton: " + c);
@@ -205,6 +228,7 @@ public class MixingPanelsResizing {
 
         pass();
     }//End  init()
+
     /*****************************************************
      * Standard Test Machinery Section
      * DO NOT modify anything in this section -- it's a
@@ -228,12 +252,12 @@ public class MixingPanelsResizing {
     //  static vars), it aint gonna work.  Not worrying about
     //  it for now.
     public static void main(String args[]) throws Exception {
+
         try {
             UIManager.setLookAndFeel(
                     UIManager.getCrossPlatformLookAndFeelClassName());
-        }
-        catch (Exception e) {
-            throw  new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         if (!Toolkit.getDefaultToolkit().isDynamicLayoutActive()) {
@@ -257,7 +281,8 @@ public class MixingPanelsResizing {
         try {
             Thread.sleep(sleepTime);
             //Timed out, so fail the test
-            throw new RuntimeException("Timed out after " + sleepTime / 1000 + " seconds");
+            throw new RuntimeException(
+                    "Timed out after " + sleepTime / 1000 + " seconds");
         } catch (InterruptedException e) {
             //The test harness may have interrupted the test.  If so, rethrow the exception
             // so that the harness gets it and deals with it.
@@ -276,10 +301,12 @@ public class MixingPanelsResizing {
     }//main
 
     public static synchronized void setTimeoutTo(int seconds) {
+
         sleepTime = seconds * 1000;
     }
 
     public static synchronized void pass() {
+
         System.out.println("The test passed.");
         System.out.println("The test is over, hit  Ctl-C to stop Java VM");
         //first check if this is executing in main thread
@@ -301,6 +328,7 @@ public class MixingPanelsResizing {
     }
 
     public static synchronized void fail(String whyFailed) {
+
         System.out.println("The test failed: " + whyFailed);
         System.out.println("The test is over, hit  Ctl-C to stop Java VM");
         //check if this called from main thread
@@ -313,17 +341,22 @@ public class MixingPanelsResizing {
         failureMessage = whyFailed;
         mainThread.interrupt();
     }//fail()
+
     private static boolean isAlmostEqualColor(Color color, Color refColor) {
+
         System.out.println("Comparing color: " + color + " with reference " +
                 "color: " + refColor);
         return color.equals(refColor) ||
-               Math.abs(color.getRed() - refColor.getRed()) <
-                       TOLERANCE_MACOSX &&
-               Math.abs(color.getGreen() - refColor.getGreen()) <
-                       TOLERANCE_MACOSX &&
-               Math.abs(color.getBlue() - refColor.getBlue()) <
-                       TOLERANCE_MACOSX;
+                Math.abs(color.getRed() - refColor.getRed()) <
+                        TOLERANCE_MACOSX &&
+                        Math.abs(color.getGreen() - refColor.getGreen()) <
+                                TOLERANCE_MACOSX &&
+                        Math.abs(color.getBlue() - refColor.getBlue()) <
+                                TOLERANCE_MACOSX;
     }
+
+    static class TestPassedException extends RuntimeException {
+
+    }
+
 }// class JButtonInGlassPane
-class TestPassedException extends RuntimeException {
-}
