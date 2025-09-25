@@ -446,12 +446,12 @@ public:
   const char* vm_version() {
     return header()->jvm_ident();
   }
+  bool  can_use_heap_region();
 
  private:
   bool  open_for_read();
   void  seek_to_position(size_t pos);
 
-  bool  can_use_heap_region();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
   char* map_auxiliary_region(int region_index, bool read_only);

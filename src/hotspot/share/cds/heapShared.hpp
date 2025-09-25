@@ -277,8 +277,8 @@ public:
   static bool is_writing_mapping_mode() NOT_CDS_JAVA_HEAP_RETURN_(false);
 
   static void initialize_writing_mode() NOT_CDS_JAVA_HEAP_RETURN;
-  static void initialize_loading_mode(bool streaming) NOT_CDS_JAVA_HEAP_RETURN;
-  static void initialize_heap_loading_mode() NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_loading_mode(HeapArchiveMode mode) NOT_CDS_JAVA_HEAP_RETURN;
+  static void initialize_loading_mode_if_not_set() NOT_CDS_JAVA_HEAP_RETURN;
 
   static bool is_subgraph_root_class(InstanceKlass* ik);
 

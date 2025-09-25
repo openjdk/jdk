@@ -1658,10 +1658,17 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
         CompressedKlassPointers::establish_protection_zone(klass_range_start, prot_zone_size);
       }
 
-      if (!static_mapinfo->object_streaming_mode()) {
-        // map_or_load_heap_region() compares the current narrow oop and klass encodings
-        // with the archived ones, so it must be done after all encodings are determined.
-        static_mapinfo->map_or_load_heap_region();
+      if (static_mapinfo->can_use_heap_region()) {
+        if (static_mapinfo->object_streaming_mode()) {
+          HeapShared::initialize_loading_mode(HeapArchiveMode::_streaming);
+        } else {
+          // map_or_load_heap_region() compares the current narrow oop and klass encodings
+          // with the archived ones, so it must be done after all encodings are determined.
+          static_mapinfo->map_or_load_heap_region();
+          HeapShared::initialize_loading_mode(HeapArchiveMode::_mapping);
+        }
+      } else {
+        HeapShared::initialize_loading_mode(HeapArchiveMode::_none);
       }
     }
 #endif // _LP64
@@ -1996,8 +2003,6 @@ void AOTMetaspace::initialize_shared_spaces() {
   intptr_t* array = (intptr_t*)buffer;
   ReadClosure rc(&array, (intptr_t)SharedBaseAddress);
   serialize(&rc);
-
-  HeapShared::initialize_loading_mode(static_mapinfo->object_streaming_mode());
 
   // Initialize the heap dump mode used in the archive
   if (HeapShared::is_loading_streaming_mode()) {

@@ -926,8 +926,6 @@ jint universe_init() {
   }
 #endif
 
-  HeapShared::initialize_heap_loading_mode();
-
   ClassLoaderData::init_null_class_loader_data();
 
 #if INCLUDE_CDS

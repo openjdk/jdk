@@ -31,6 +31,7 @@
 #include "gc/z/zLock.inline.hpp"
 #include "gc/z/zStat.hpp"
 #include "logging/log.hpp"
+#include "runtime/init.hpp"
 
 #include <limits>
 

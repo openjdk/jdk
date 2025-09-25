@@ -361,12 +361,12 @@ bool HeapShared::is_writing_mapping_mode() {
   return _heap_write_mode == HeapArchiveMode::_mapping;
 }
 
-void HeapShared::initialize_loading_mode(bool value) {
+void HeapShared::initialize_loading_mode(HeapArchiveMode mode) {
   assert(_heap_load_mode == HeapArchiveMode::_uninitialized, "already set?");
-  _heap_load_mode = value ? HeapArchiveMode::_streaming : HeapArchiveMode::_mapping;
+  _heap_load_mode = mode;
 };
 
-void HeapShared::initialize_heap_loading_mode() {
+void HeapShared::initialize_loading_mode_if_not_set() {
   if (_heap_load_mode == HeapArchiveMode::_uninitialized) {
     _heap_load_mode = HeapArchiveMode::_none;
   }
@@ -379,7 +379,7 @@ void HeapShared::initialize_writing_mode() {
     return;
   }
 
-  if (FLAG_IS_CMDLINE(AOTStreamableObjects)) {
+  if (!FLAG_IS_DEFAULT(AOTStreamableObjects)) {
     // Mode explicitly selected
     if (AOTStreamableObjects) {
       _heap_write_mode = HeapArchiveMode::_streaming;
