@@ -670,10 +670,10 @@ void AOTStreamedHeapLoader::cleanup() {
 
   _cleanup_materialization_time_ns = os::javaTimeNanos() - start;
 
-  log_telemetry();
+  log_statistics();
 }
 
-void AOTStreamedHeapLoader::log_telemetry() {
+void AOTStreamedHeapLoader::log_statistics() {
   const char* async_or_sync = AOTEagerlyLoadObjects ? "sync" : "async";
   log_info(aot, heap)("early object materialization time (%s): %zuus",
                       async_or_sync, _early_materialization_time_ns / 1000);

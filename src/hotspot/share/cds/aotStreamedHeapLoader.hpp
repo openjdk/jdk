@@ -169,7 +169,7 @@ private:
   static bool materialize_early();
   static void materialize_late();
   static void cleanup();
-  static void log_telemetry();
+  static void log_statistics();
 
   class TracingObjectLoader {
     static oop materialize_object(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
