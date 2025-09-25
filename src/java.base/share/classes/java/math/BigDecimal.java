@@ -1797,6 +1797,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (this.signum() == 0) // 0/y
             return zeroValueOf(preferredScale);
         else {
+            /* The technique used is the following:
+             * take a/b, compute b' = b/(2^i 5^j), where
+             * i = max{n | b ≡ 0 mod 2^n} and j = max{n | b ≡ 0 mod 5^n}.
+             * If a ≢ 0 mod b', then a/b is not a finite decimal number. Otherwise:
+             *   - if i ≤ j, then a/b = (a/b') ⋅ 2^(j-i) / 10^j;
+             *   - if i > j, then a/b = (a/b') ⋅ 5^(i-j) / 10^i.
+             */
             BigInteger den = divisor.unscaledValue();
             int powsOf2 = den.getLowestSetBit();
             den = den.shiftRight(powsOf2); // Remove powers of 2
@@ -5158,12 +5165,19 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     private static final double LOG_5_OF_2 = 0.43067655807339306; // double closest to log5(2)
 
+    /**
+     * @return {@code ⌊log5(|x|)⌋} or {@code ⌊log5(|x|)⌋ + 1}.
+     */
     private static int log5Upper(BigInteger x) {
-        // Let b = x.magBitLength(), m = max{n : 5^n <= |x|}. It can be shown that
-        // | (b-1) * LOG_5_OF_2 - (b-1) log5(2) | < 2^(-21) (fp viz. real arithmetic).
-        // Since b log5(2) > m, log5(2)+2^(-21) < 1/2
-        // and (b-1) * LOG_5_OF_2 > [b log5(2) - log5(2)] - 2^(-21),
-        // then m <= Math.round((b - 1) * LOG_5_OF_2) <= m + 1 follows.
+        /* Let b = x.magBitLength(), m = ⌊log5(|x|)⌋. It can be shown that
+         * | (b-1) * LOG_5_OF_2 - (b-1) log5(2) | < 2^(-21) (fp viz. real arithmetic).
+         * Since (b - 1) * log5(2) < m + 1,
+         * then Math.round((b - 1) * LOG_5_OF_2) <= m + 1.
+         *
+         * Since b log5(2) > m, log5(2)+2^(-21) < 1/2
+         * and (b-1) * LOG_5_OF_2 > [b log5(2) - log5(2)] - 2^(-21),
+         * then Math.round((b - 1) * LOG_5_OF_2) >= m follows.
+         */
         return (int) Math.round((x.magBitLength() - 1) * LOG_5_OF_2);
     }
 
