@@ -106,6 +106,9 @@ public class DocPaths {
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
+    /** The name of the downwards pointing angle icon. */
+    public static final DocPath DOWN_SVG = DocPath.create("down.svg");
+
     /** The name of the left pointing angle icon. */
     public static final DocPath LEFT_SVG = DocPath.create("left.svg");
 

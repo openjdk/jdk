@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 7030150 7039931
  * @summary Type inference for generic instance creation failed for formal type parameter
  * @modules jdk.compiler
+ * @run main/timeout=480 GenericConstructorAndDiamondTest
  */
 
 import com.sun.source.util.JavacTask;

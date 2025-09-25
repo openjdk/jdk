@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,18 +26,18 @@
  * @bug 8131023 8167461
  * @summary Verify that the user's code can read System.in
  * @build KullaTesting TestingInputStream
- * @run testng UserInputTest
+ * @run junit UserInputTest
  * @key intermittent
  */
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class UserInputTest extends KullaTesting {
 
+    @Test
     public void testReadInput() {
         setInput("AB\n");
         assertEval("System.in.read()", "65");
@@ -45,6 +45,7 @@ public class UserInputTest extends KullaTesting {
         assertEval("System.in.read()", "67");
     }
 
+    @Test
     public void testScanner() {
         assertEval("import java.util.Scanner;");
         assertEval("Scanner s = new Scanner(System.in);");
@@ -52,6 +53,7 @@ public class UserInputTest extends KullaTesting {
         assertEval("s.nextInt();", "12");
     }
 
+    @Test
     public void testClose() {
         setInput(new InputStream() {
             private final byte[] data = new byte[] {0, 1, 2};
@@ -73,6 +75,7 @@ public class UserInputTest extends KullaTesting {
         assertEval("System.in.read();", "-1");
     }
 
+    @Test
     public void testException() {
         setInput(new InputStream() {
             private final int[] data = new int[] {0, 1, -2, 2};
@@ -99,6 +102,7 @@ public class UserInputTest extends KullaTesting {
         assertEval("System.in.read();", "-1");
     }
 
+    @Test
     public void testNoConsole() {
         assertEval("System.console()", "null");
     }

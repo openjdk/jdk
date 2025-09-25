@@ -25,7 +25,7 @@
 #define SHARE_GC_Z_ZARRAY_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/growableArray.hpp"
@@ -91,6 +91,10 @@ public:
   ZArrayIteratorImpl(const ZArray<T>* array);
 
   bool next(T* elem);
+
+  template <typename Function, typename... Args>
+  bool next_if(T* elem, Function predicate, Args&&... args);
+
   bool next_index(size_t* index);
 
   T index_to_elem(size_t index);

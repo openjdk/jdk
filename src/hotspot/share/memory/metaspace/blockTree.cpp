@@ -23,8 +23,8 @@
  *
  */
 
-#include "memory/metaspace/chunklevel.hpp"
 #include "memory/metaspace/blockTree.hpp"
+#include "memory/metaspace/chunklevel.hpp"
 #include "memory/resourceArea.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

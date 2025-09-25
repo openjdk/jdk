@@ -26,7 +26,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -56,11 +56,9 @@ ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(Shena
   _heap(heap),
   _regions(iterator),
   _concurrent(concurrent),
-  _only_promote_regions(only_promote_regions),
-  _tenuring_threshold(0)
+  _only_promote_regions(only_promote_regions)
 {
   shenandoah_assert_generational();
-  _tenuring_threshold = _heap->age_census()->tenuring_threshold();
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
@@ -138,7 +136,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
 
 void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRegion* r) {
-  if (r->is_young() && r->is_active() && (r->age() >= _tenuring_threshold)) {
+  if (r->is_young() && r->is_active() && _heap->is_tenurable(r)) {
     if (r->is_humongous_start()) {
       // We promote humongous_start regions along with their affiliated continuations during evacuation rather than
       // doing this work during a safepoint.  We cannot put humongous regions into the collection set because that
@@ -148,7 +146,13 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
       // more garbage than ShenandoahOldGarbageThreshold, we'll promote by evacuation.  If there is room for evacuation
       // in this cycle, the region will be in the collection set.  If there is not room, the region will be promoted
       // by evacuation in some future GC cycle.
-      promote_humongous(r);
+
+      // We do not promote primitive arrays because there's no performance penalty keeping them in young.  When/if they
+      // become garbage, reclaiming the memory from young is much quicker and more efficient than reclaiming them from old.
+      oop obj = cast_to_oop(r->bottom());
+      if (!obj->is_typeArray()) {
+        promote_humongous(r);
+      }
     } else if (r->is_regular() && (r->get_top_before_promote() != nullptr)) {
       // Likewise, we cannot put promote-in-place regions into the collection set because that would also trigger
       // the LRB to copy on reference fetch.
@@ -176,7 +180,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold, "Region %zu has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
     assert(region->is_regular(), "Use different service to promote humongous regions");
-    assert(region->age() >= _tenuring_threshold, "Only promote regions that are sufficiently aged");
+    assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
     assert(region->get_top_before_promote() == tams, "Region %zu has been used for allocations before promotion", region->index());
   }
 
@@ -259,7 +263,7 @@ void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegio
   shenandoah_assert_generations_reconciled();
   assert(region->is_young(), "Only young regions can be promoted");
   assert(region->is_humongous_start(), "Should not promote humongous continuation in isolation");
-  assert(region->age() >= _tenuring_threshold, "Only promote regions that are sufficiently aged");
+  assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
   assert(marking_context->is_marked(obj), "promoted humongous object should be alive");
 
   const size_t used_bytes = obj->size() * HeapWordSize;

@@ -45,6 +45,9 @@ ifeq ($(INCLUDE), true)
 # e.g. a simple sed replacement on the input file. If the operations are
 # unrelated to the main COMMAND, this is not a suitable solution.
 #
+# Before execution, the current working directory is changed to SUPPORT_DIR.
+# This can be overridden with WORKING_DIR.
+#
 # If your command outputs a variety of files, or if it's really a single file
 # but you don't really care about the output from the perspective, you can just
 # supply an OUTPUT_DIR. You are supposed to make sure the command creates files
@@ -75,9 +78,12 @@ ifeq ($(INCLUDE), true)
 #   OUTPUT_DIR  : The directory that will contain the result from the command
 #   OUTPUT_FILE : Use this if the command results in a single output file
 #   SUPPORT_DIR : Where to store generated support files
+#   WORKING_DIR : Directory to cd to before executing the command
 #   INFO        : Message to display at LOG=info level when running command (optional)
 #   WARN        : Message to display at LOG=warn level when running command (optional)
 #   DEPS        : Dependencies for the execution to take place
+#   DRYRUN      : Set to true to perform everything but executing the command \
+#                 (defaults to false, primarily intended for debugging)
 #
 
 # Setup make rules for copying files, with an option to do more complex
@@ -133,44 +139,61 @@ define SetupExecuteBody
 
   endif
 
+  ifeq ($$($1_WORKING_DIR), )
+    $1_WORKING_DIR := $$($1_SUPPORT_DIR)
+  endif
+
   ifeq ($$($1_INFO)$$($1_WARN), )
     # If neither info nor warn is provided, add basic info text.
     $1_INFO := Running commands for $1
   endif
 
+  $1_VARDEPS := $$($1_COMMAND) $$($1_PRE_COMMAND) $$($1_POST_COMMAND)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS)
+
   ifneq ($$($1_PRE_COMMAND), )
 
-    $$($1_PRE_MARKER): $$($1_DEPS)
+    $$($1_PRE_MARKER): $$($1_DEPS) $$($1_VARDEPS_FILE)
         ifneq ($$($1_WARN), )
 	  $$(call LogWarn, $$($1_WARN))
         endif
         ifneq ($$($1_INFO), )
 	  $$(call LogInfo, $$($1_INFO))
         endif
-	$$(call MakeDir, $$($1_SUPPORT_DIR) $$($1_OUTPUT_DIR))
+	$$(call MakeDir, $$(call EncodeSpace, $$($1_WORKING_DIR)) $$(call EncodeSpace, $$($1_SUPPORT_DIR)) $$(call EncodeSpace, $$($1_OUTPUT_DIR)))
 	$$(call ExecuteWithLog, $$($1_BASE)_pre, \
-	    $$($1_PRE_COMMAND))
+	    cd $$($1_WORKING_DIR) && $$($1_PRE_COMMAND))
 	$$(TOUCH) $$@
 
     $$($1_EXEC_RESULT): $$($1_PRE_MARKER)
-	$$(call ExecuteWithLog, $$($1_BASE)_exec, \
-	    $$($1_COMMAND))
+        ifneq ($$($1_DRYRUN), true)
+	  $$(call ExecuteWithLog, $$($1_BASE)_exec, \
+	      cd $$($1_WORKING_DIR) && $$($1_COMMAND))
+        else
+	  $$(call LogWarn, DRYRUN enabled for $1, not actually running command)
+	  $$(TOUCH) $$@
+        endif
         ifeq ($$($1_EXEC_RESULT), $$($1_EXEC_MARKER))
 	  $$(TOUCH) $$@
         endif
 
     $1 := $$($1_PRE_MARKER) $$($1_EXEC_RESULT)
   else
-    $$($1_EXEC_RESULT): $$($1_DEPS)
+    $$($1_EXEC_RESULT): $$($1_DEPS) $$($1_VARDEPS_FILE)
         ifneq ($$($1_WARN), )
 	  $$(call LogWarn, $$($1_WARN))
         endif
         ifneq ($$($1_INFO), )
 	  $$(call LogInfo, $$($1_INFO))
         endif
-	$$(call MakeDir, $$(call EncodeSpace, $$($1_SUPPORT_DIR)) $$(call EncodeSpace, $$($1_OUTPUT_DIR)))
-	$$(call ExecuteWithLog, $$($1_BASE)_exec, \
-	    $$($1_COMMAND))
+	$$(call MakeDir, $$(call EncodeSpace, $$($1_WORKING_DIR)) $$(call EncodeSpace, $$($1_SUPPORT_DIR)) $$(call EncodeSpace, $$($1_OUTPUT_DIR)))
+        ifneq ($$($1_DRYRUN), true)
+	  $$(call ExecuteWithLog, $$($1_BASE)_exec, \
+	      cd $$($1_WORKING_DIR) && $$($1_COMMAND))
+        else
+	  $$(call LogWarn, DRYRUN enabled for $1, not actually running command)
+	  $$(TOUCH) $$@
+        endif
         ifeq ($$($1_EXEC_RESULT), $$($1_EXEC_MARKER))
 	  $$(TOUCH) $$@
         endif
@@ -182,7 +205,7 @@ define SetupExecuteBody
 
     $$($1_FINAL_RESULT): $$($1_EXEC_RESULT)
 	$$(call ExecuteWithLog, $$($1_BASE)_post, \
-	    $$($1_POST_COMMAND))
+	    cd $$($1_WORKING_DIR) && $$($1_POST_COMMAND))
 	$$(TOUCH) $$@
 
     $1 += $$($1_FINAL_RESULT)
