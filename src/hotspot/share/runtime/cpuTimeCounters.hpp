@@ -40,6 +40,7 @@ public:
     gc_parallel_workers,
     gc_conc_mark,
     gc_conc_refine,
+    gc_conc_refine_control,
     gc_service,
     vm,
     conc_dedup,
