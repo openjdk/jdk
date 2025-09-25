@@ -1798,59 +1798,61 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return zeroValueOf(preferredScale);
         else {
             /* The technique used is the following:
-             * take a/b, compute b' = b/(2^i 5^j), where
-             * i = max{n | b ≡ 0 mod 2^n} and j = max{n | b ≡ 0 mod 5^n}.
+             * take a/b, compute b' = b/(2^p2 5^p5), where
+             * p2 = max{n | b ≡ 0 mod 2^n} and p5 = max{n | b ≡ 0 mod 5^n}.
              * If a ≢ 0 mod b', then a/b is not a finite decimal number. Otherwise:
-             *   - if i ≤ j, then a/b = (a/b') ⋅ 2^(j-i) / 10^j;
-             *   - if i > j, then a/b = (a/b') ⋅ 5^(i-j) / 10^i.
+             *   - if p2 ≤ p5, then a/b = (a/b') ⋅ 2^(p5-p2) / 10^p5;
+             *   - if p2 > p5, then a/b = (a/b') ⋅ 5^(p2-p5) / 10^p2.
              */
-            BigInteger den = divisor.unscaledValue();
-            int powsOf2 = den.getLowestSetBit();
-            den = den.shiftRight(powsOf2); // Remove powers of 2
+            BigInteger b = divisor.unscaledValue();
+            int p2 = b.getLowestSetBit();
+            b = b.shiftRight(p2); // Remove powers of 2
 
-            int powsOf5 = 0;
+            int p5 = 0;
             // Remove and count powers of 5
             BigInteger[] qr;
             int i;
+            // Factor out 5^(2^i) from b, until b ≢ 0 mod 5^(2^i).
             for (i = 0; ; i++) {
-                qr = den.divideAndRemainder(fiveToTwoToThe(i));
+                qr = b.divideAndRemainder(fiveToTwoToThe(i));
                 if (qr[1].signum != 0) { // non-0 remainder
                     break;
                 } else {
-                    den = qr[0];
-                    powsOf5 += 1 << i;
+                    b = qr[0];
+                    p5 += 1 << i;
                 }
             }
             i--;
 
-            int log5Den = log5Upper(den);
-            if (log5Den < 1 << i)
-                i = BigInteger.bitLengthForInt(log5Den) - 1;
+            // Factor out all remaining powers of 5 from b
+            int log5b = log5Upper(b);
+            if (log5b < 1 << i)
+                i = BigInteger.bitLengthForInt(log5b) - 1;
 
             for (; i >= 0; i--) {
-                qr = den.divideAndRemainder(fiveToTwoToThe(i));
+                qr = b.divideAndRemainder(fiveToTwoToThe(i));
                 if (qr[1].signum == 0) { // zero remainder
-                    den = qr[0];
-                    powsOf5 += 1 << i;
+                    b = qr[0];
+                    p5 += 1 << i;
                 }
             }
 
-            qr = this.unscaledValue().divideAndRemainder(den);
+            qr = this.unscaledValue().divideAndRemainder(b);
             if (qr[1].signum != 0)
                 throw new ArithmeticException("Non-terminating decimal expansion; " +
                         "no exact representable decimal result.");
 
             BigInteger quot = qr[0];
-            int powsOf10 = Math.max(powsOf2, powsOf5);
-            if (powsOf10 == 0)
+            int p10 = Math.max(p2, p5);
+            if (p10 == 0)
                 return new BigDecimal(quot, preferredScale);
 
             // Equalize multiplicities of 2 and 5
-            quot = powsOf10 == powsOf5
-                    ? quot.shiftLeft(powsOf10 - powsOf2)
-                    : quot.multiply(fiveTo(powsOf10 - powsOf5));
+            quot = p10 == p5
+                    ? quot.shiftLeft(p10 - p2)
+                    : quot.multiply(fiveTo(p10 - p5));
 
-            return createAndStripZerosToMatchScale(quot, preferredScale + powsOf10, preferredScale);
+            return createAndStripZerosToMatchScale(quot, preferredScale + p10, preferredScale);
         }
     }
 
