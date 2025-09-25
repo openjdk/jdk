@@ -693,7 +693,7 @@ class DumpThreads {
     }
 
     /**
-     * Finds the line of plain text thread dump containing the given text.
+     * Finds the line of a plain text thread dump containing the given text.
      */
     private String find(List<String> lines, String text) {
         return lines.stream().map(String::trim)
