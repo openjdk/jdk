@@ -246,7 +246,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
-#ifdef MACOS_W_XOR_X
+#ifdef MACOS_AARCH64
     // If we got a SIGBUS because we tried to write into the code
     // cache, try enabling WXWrite mode.
     if (sig == SIGBUS
@@ -557,7 +557,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-#ifdef MACOS_W_XOR_X
+#ifdef MACOS_AARCH64
 static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
 // This is a wrapper around the standard library function
 // pthread_jit_write_protect_np(3). We keep track of the state of
@@ -591,7 +591,7 @@ void os::thread_wx_enable_write() {
   }
 }
 
-#endif // MACOS_W_XOR_X
+#endif // MACOS_AARCH64
 
 static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
   *(jlong *) dst = *(const jlong *) src;

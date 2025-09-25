@@ -32,7 +32,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 
-#ifdef MACOS_W_XOR_X
+#ifdef MACOS_AARCH64
 #include "runtime/os.hpp"
 #endif
 

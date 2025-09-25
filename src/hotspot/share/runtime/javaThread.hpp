@@ -1265,7 +1265,7 @@ public:
 
 private:
 
-#ifdef MACOS_W_XOR_X
+#ifdef MACOS_AARCH64
   friend class ThreadWXEnable;
   friend class PosixSignals;
 

@@ -510,7 +510,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _last_freeze_fail_result(freeze_ok),
 #endif
 
-#ifdef MACOS_W_XOR_X
+#ifdef MACOS_AARCH64
   _cur_wx_enable(nullptr),
   _cur_wx_mode(0),
 #endif

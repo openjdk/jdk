@@ -557,7 +557,7 @@
 
 #define MACOS_AARCH64_ONLY(x) MACOS_ONLY(AARCH64_ONLY(x))
 #if defined(__APPLE__) && defined(AARCH64)
-#define MACOS_W_XOR_X 1
+#define MACOS_AARCH64 1
 #endif
 
 #if defined(RISCV32) || defined(RISCV64)
