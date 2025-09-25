@@ -379,6 +379,14 @@ public class PListReaderTest {
                 testSpec(QueryType.BOOLEAN).xml("<key>foo</key><False/><key>foo</key><true/>"),
 
                 //
+                // Test that it doesn't look up keys in nested "dict" or "array" elements.
+                //
+                testSpec().xml("<key>foo</key><dict><key>foo</key><string>A</string></dict>"),
+                testSpec().expect("B").xml("<key>bar</key><dict><key>foo</key><string>A</string></dict><key>foo</key><string>B</string>"),
+                testSpec().xml("<key>foo</key><array><dict><key>foo</key><string>A</string></dict></array>"),
+                testSpec().expect("B").xml("<key>bar</key><array><dict><key>foo</key><string>A</string></dict></array><key>foo</key><string>B</string>"),
+
+                //
                 // Test empty arrays.
                 //
                 testSpec().expect(List.of()).queryType(QueryType.RAW_ARRAY_RECURSIVE).xml("<key>foo</key><array/>"),
