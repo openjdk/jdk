@@ -165,11 +165,11 @@ public class Bug6317929 {
                                        "\"オーストラリア東部標準時\"");
         tzLocale = locales2Test[6];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("오스트레일리아 동부 표준시"))
+           ("호주 동부 표준시"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"오스트레일리아 동부 표준시\"");
+                                       "\"호주 동부 표준시\"");
         tzLocale = locales2Test[7];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
            ("östaustralisk normaltid"))
