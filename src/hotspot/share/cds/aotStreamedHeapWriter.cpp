@@ -285,7 +285,7 @@ void AOTStreamedHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, m
     _buffer_offset_to_source_obj_table->put_when_absent(buffer_offset, handle);
     _buffer_offset_to_source_obj_table->maybe_grow();
 
-    size_t dfs_order = i + 1;
+    int dfs_order = i + 1;
     _dfs_to_archive_object_table[dfs_order] = buffer_offset;
   }
 
