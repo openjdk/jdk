@@ -348,8 +348,7 @@ class VMNativeEntryWrapper {
 
 #define JRT_BLOCK_END }
 
-#define JRT_END                                 \
-}
+#define JRT_END }
 
 // Definitions for JNI
 //

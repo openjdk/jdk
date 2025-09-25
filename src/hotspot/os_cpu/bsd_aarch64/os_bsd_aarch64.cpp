@@ -282,10 +282,10 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
     }
 
-    // Enable WXWrite for the duration of this handler: this function
-    // is called by the signal handler at arbitrary point of
-    // execution.
-    ThreadWXEnable wx(WXWrite, thread);
+    // There may be cases where code after this point that we call
+    // from the signal handler changes WX state, so we protect against
+    // that by saving and restoring the state.
+    ThreadWXEnable wx(thread->get_wx_state(), thread);
 #endif
 
     // Handle ALL stack overflow variations here
