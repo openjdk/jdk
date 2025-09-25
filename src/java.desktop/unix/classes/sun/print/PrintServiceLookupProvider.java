@@ -882,7 +882,10 @@ public final class PrintServiceLookupProvider extends PrintServiceLookup
                         results.add(line);
                     }
                 }
-            } finally {
+            } catch (Exception e) {
+                //Print any exception that occurs while executing the printer command
+                System.err.println(e);
+           } finally {
                 f.delete();
                 // promptly close all streams.
                 if (bufferedReader != null) {
