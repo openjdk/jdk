@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2019, Red Hat, Inc.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,16 @@
 
 /*
  * @test
- * @bug 8029661 8325164
- * @summary Test TLS 1.2
+ * @bug 8029661 8325164 8368073
+ * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
- * @run main/othervm/timeout=120 -Djdk.tls.useExtendedMasterSecret=false FipsModeTLS12
+ * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.2
+ *      -Djdk.tls.useExtendedMasterSecret=false FipsModeTLS12
+ * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet
+ * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS12
  */
 
 import java.io.File;
@@ -51,6 +54,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.crypto.KDF;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -82,9 +86,6 @@ public final class FipsModeTLS12 extends SecmodTest {
     private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
-        // Re-enable TLS_RSA_* since test depends on it.
-        SecurityUtils.removeFromDisabledTlsAlgs("TLS_RSA_*");
-
         try {
             initialize();
         } catch (Exception e) {
@@ -115,11 +116,16 @@ public final class FipsModeTLS12 extends SecmodTest {
             return false;
         }
         try {
-            KeyGenerator.getInstance("SunTls12MasterSecret",
-                    sunPKCS11NSSProvider);
-            KeyGenerator.getInstance(
-                    "SunTls12RsaPremasterSecret", sunPKCS11NSSProvider);
-            KeyGenerator.getInstance("SunTls12Prf", sunPKCS11NSSProvider);
+            String proto = System.getProperty("jdk.tls.client.protocols");
+            if ("TLSv1.3".equals(proto)) {
+                KDF.getInstance("HKDF-SHA256", sunPKCS11NSSProvider);
+            } else {
+                KeyGenerator.getInstance("SunTls12MasterSecret",
+                        sunPKCS11NSSProvider);
+                KeyGenerator.getInstance(
+                        "SunTls12RsaPremasterSecret", sunPKCS11NSSProvider);
+                KeyGenerator.getInstance("SunTls12Prf", sunPKCS11NSSProvider);
+            }
         } catch (NoSuchAlgorithmException e) {
             return false;
         }
@@ -384,21 +390,9 @@ public final class FipsModeTLS12 extends SecmodTest {
 
         private static SSLEngine[][] getSSLEnginesToTest() throws Exception {
             SSLEngine[][] enginesToTest = new SSLEngine[2][2];
-            // TLS_RSA_WITH_AES_128_GCM_SHA256 ciphersuite is available but
-            // must not be chosen for the TLS connection if not supported.
-            // See JDK-8222937.
-            String[][] preferredSuites = new String[][]{ new String[] {
-                    "TLS_RSA_WITH_AES_128_GCM_SHA256",
-                    "TLS_RSA_WITH_AES_128_CBC_SHA256"
-            },  new String[] {
-                    "TLS_RSA_WITH_AES_128_GCM_SHA256",
-                    "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256"
-            }};
             for (int i = 0; i < enginesToTest.length; i++) {
                 enginesToTest[i][0] = createSSLEngine(true);
                 enginesToTest[i][1] = createSSLEngine(false);
-                // All CipherSuites enabled for the client.
-                enginesToTest[i][1].setEnabledCipherSuites(preferredSuites[i]);
             }
             return enginesToTest;
         }
@@ -412,23 +406,27 @@ public final class FipsModeTLS12 extends SecmodTest {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
             tmf.init(ts);
 
-            SSLContext sslCtx = SSLContext.getInstance("TLSv1.2", "SunJSSE");
+            SSLContext sslCtx = SSLContext.getInstance("TLS", "SunJSSE");
             sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             ssle = sslCtx.createSSLEngine("localhost", 443);
             ssle.setUseClientMode(client);
             SSLParameters sslParameters = ssle.getSSLParameters();
             // verify that FFDHE named groups are available
-            boolean ffdheAvailable = Arrays.stream(sslParameters.getNamedGroups())
+            String[] namedGroups = sslParameters.getNamedGroups();
+            boolean ffdheAvailable = Arrays.stream(namedGroups)
                     .anyMatch(ng -> ng.startsWith("ffdhe"));
             if (!ffdheAvailable) {
                 throw new RuntimeException("No FFDHE named groups available");
             }
             // verify that ECDHE named groups are available
-            boolean ecdheAvailable = Arrays.stream(sslParameters.getNamedGroups())
+            boolean ecdheAvailable = Arrays.stream(namedGroups)
                     .anyMatch(ng -> ng.startsWith("secp"));
             if (!ecdheAvailable) {
                 throw new RuntimeException("No ECDHE named groups available");
             }
+            // remove XDH named groups - not available in PKCS11
+            namedGroups = Arrays.stream(namedGroups).filter(s-> !s.startsWith("x")).toArray(String[]::new);
+            sslParameters.setNamedGroups(namedGroups);
             ssle.setSSLParameters(sslParameters);
 
             return ssle;
