@@ -26,7 +26,6 @@
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahEvacInfo.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
@@ -187,22 +186,14 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
 
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
 
-  ShenandoahEvacuationInformation evacInfo;
-  evacInfo.set_collection_set_regions(collection_set->count());
-  evacInfo.set_collection_set_used_before(collection_set->used());
-  evacInfo.set_collection_set_used_after(collection_set->live());
-  evacInfo.set_collected_old(collection_set->get_old_bytes_reserved_for_evacuation());
-  evacInfo.set_collected_promoted(collection_set->get_young_bytes_to_be_promoted());
-  evacInfo.set_collected_young(collection_set->get_young_bytes_reserved_for_evacuation());
-  evacInfo.set_regions_promoted_humongous(humongous_regions_promoted);
-  evacInfo.set_regions_promoted_regular(regular_regions_promoted_in_place);
-  evacInfo.set_regular_promoted_garbage(regular_regions_promoted_garbage);
-  evacInfo.set_regular_promoted_free(regular_regions_promoted_free);
-  evacInfo.set_regions_immediate(immediate_regions);
-  evacInfo.set_immediate_size(immediate_garbage);
-  evacInfo.set_free_regions(free_regions);
-
-  ShenandoahTracer().report_evacuation_info(&evacInfo);
+  ShenandoahTracer::report_evacuation_info(collection_set,
+                                           free_regions,
+                                           humongous_regions_promoted,
+                                           regular_regions_promoted_in_place,
+                                           regular_regions_promoted_garbage,
+                                           regular_regions_promoted_free,
+                                           immediate_regions,
+                                           immediate_garbage);
 }
 
 
@@ -233,15 +224,3 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
   return cur_young_garbage;
 }
 
-void ShenandoahGenerationalHeuristics::log_cset_composition(ShenandoahCollectionSet* cset) const {
-  size_t collected_old = cset->get_old_bytes_reserved_for_evacuation();
-  size_t collected_promoted = cset->get_young_bytes_to_be_promoted();
-  size_t collected_young = cset->get_young_bytes_reserved_for_evacuation();
-
-  log_info(gc, ergo)(
-          "Chosen CSet evacuates young: %zu%s (of which at least: %zu%s are to be promoted), "
-          "old: %zu%s",
-          byte_size_in_proper_unit(collected_young), proper_unit_for_byte_size(collected_young),
-          byte_size_in_proper_unit(collected_promoted), proper_unit_for_byte_size(collected_promoted),
-          byte_size_in_proper_unit(collected_old), proper_unit_for_byte_size(collected_old));
-}

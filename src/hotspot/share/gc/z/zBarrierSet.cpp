@@ -117,7 +117,7 @@ static void deoptimize_allocation(JavaThread* thread) {
   const nmethod* const nm = caller_frame.cb()->as_nmethod();
   if ((nm->is_compiled_by_c2() || nm->is_compiled_by_jvmci()) && !caller_frame.is_deoptimized_frame()) {
     // The JIT might have elided barriers on this object so deoptimize the frame and let the
-    // intepreter deal with it.
+    // interpreter deal with it.
     Deoptimization::deoptimize_frame(thread, caller_frame.id());
   }
 }
@@ -163,7 +163,7 @@ void ZBarrierSet::clone_obj_array(objArrayOop src_obj, objArrayOop dst_obj) {
     // We avoid healing here because the store below colors the pointer store good,
     // hence avoiding the cost of a CAS.
     ZBarrier::store_barrier_on_heap_oop_field(dst, false /* heal */);
-    Atomic::store(dst, ZAddress::store_good(elem));
+    AtomicAccess::store(dst, ZAddress::store_good(elem));
   }
 }
 

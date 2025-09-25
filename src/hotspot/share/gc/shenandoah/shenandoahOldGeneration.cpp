@@ -120,7 +120,7 @@ public:
     ShenandoahProcessOldSATB processor(mark_queue);
     while (satb_queues.apply_closure_to_completed_buffer(&processor)) {}
 
-    Atomic::add(&_trashed_oops, processor.trashed_oops());
+    AtomicAccess::add(&_trashed_oops, processor.trashed_oops());
   }
 };
 
@@ -149,7 +149,7 @@ public:
     ShenandoahProcessOldSATB processor(mark_queue);
     while (_satb_queues.apply_closure_to_completed_buffer(&processor)) {}
 
-    Atomic::add(&_trashed_oops, processor.trashed_oops());
+    AtomicAccess::add(&_trashed_oops, processor.trashed_oops());
   }
 };
 
@@ -183,7 +183,7 @@ public:
 
       if (!r->oop_coalesce_and_fill(true)) {
         // Coalesce and fill has been preempted
-        Atomic::store(&_is_preempted, true);
+        AtomicAccess::store(&_is_preempted, true);
         return;
       }
     }
@@ -191,7 +191,7 @@ public:
 
   // Value returned from is_completed() is only valid after all worker thread have terminated.
   bool is_completed() {
-    return !Atomic::load(&_is_preempted);
+    return !AtomicAccess::load(&_is_preempted);
   }
 };
 
@@ -242,23 +242,23 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  Atomic::store(&_promoted_expended, 0UL);
-  Atomic::store(&_promotion_failure_count, 0UL);
-  Atomic::store(&_promotion_failure_words, 0UL);
+  AtomicAccess::store(&_promoted_expended, 0UL);
+  AtomicAccess::store(&_promotion_failure_count, 0UL);
+  AtomicAccess::store(&_promotion_failure_words, 0UL);
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
   shenandoah_assert_heaplocked_or_safepoint();
   assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
-  return Atomic::add(&_promoted_expended, increment);
+  return AtomicAccess::add(&_promoted_expended, increment);
 }
 
 size_t ShenandoahOldGeneration::unexpend_promoted(size_t decrement) {
-  return Atomic::sub(&_promoted_expended, decrement);
+  return AtomicAccess::sub(&_promoted_expended, decrement);
 }
 
 size_t ShenandoahOldGeneration::get_promoted_expended() const {
-  return Atomic::load(&_promoted_expended);
+  return AtomicAccess::load(&_promoted_expended);
 }
 
 bool ShenandoahOldGeneration::can_allocate(const ShenandoahAllocRequest &req) const {
@@ -686,8 +686,8 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
 
   const size_t gc_id = heap->control_thread()->get_gc_id();
 
-  Atomic::inc(&_promotion_failure_count);
-  Atomic::add(&_promotion_failure_words, size);
+  AtomicAccess::inc(&_promotion_failure_count);
+  AtomicAccess::add(&_promotion_failure_words, size);
 
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
     size_t promotion_expended;

@@ -3017,7 +3017,9 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
       // Set abstract bit for old class files for backward compatibility
       flags |= JVM_ACC_ABSTRACT;
     }
-    verify_legal_class_modifiers(flags, CHECK_0);
+
+    Symbol* inner_name_symbol = inner_name_index == 0 ? nullptr : cp->symbol_at(inner_name_index);
+    verify_legal_class_modifiers(flags, inner_name_symbol, inner_name_index == 0, CHECK_0);
     AccessFlags inner_access_flags(flags);
 
     inner_classes->at_put(index++, inner_class_info_index);
@@ -4272,7 +4274,8 @@ static void check_illegal_static_method(const InstanceKlass* this_klass, TRAPS) 
 
 // utility methods for format checking
 
-void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
+// Verify the class modifiers for the current class, or an inner class if inner_name is non-null.
+void ClassFileParser::verify_legal_class_modifiers(jint flags, Symbol* inner_name, bool is_anonymous_inner_class, TRAPS) const {
   const bool is_module = (flags & JVM_ACC_MODULE) != 0;
   assert(_major_version >= JAVA_9_VERSION || !is_module, "JVM_ACC_MODULE should not be set");
   if (is_module) {
@@ -4302,12 +4305,30 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, TRAPS) const {
       (!is_interface && major_gte_1_5 && is_annotation)) {
     ResourceMark rm(THREAD);
     // Names are all known to be < 64k so we know this formatted message is not excessively large.
-    Exceptions::fthrow(
-      THREAD_AND_LOCATION,
-      vmSymbols::java_lang_ClassFormatError(),
-      "Illegal class modifiers in class %s: 0x%X",
-      _class_name->as_C_string(), flags
-    );
+    if (inner_name == nullptr && !is_anonymous_inner_class) {
+      Exceptions::fthrow(
+        THREAD_AND_LOCATION,
+        vmSymbols::java_lang_ClassFormatError(),
+        "Illegal class modifiers in class %s: 0x%X",
+        _class_name->as_C_string(), flags
+      );
+    } else {
+      if (is_anonymous_inner_class) {
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_ClassFormatError(),
+          "Illegal class modifiers in anonymous inner class of class %s: 0x%X",
+          _class_name->as_C_string(), flags
+        );
+      } else {
+        Exceptions::fthrow(
+          THREAD_AND_LOCATION,
+          vmSymbols::java_lang_ClassFormatError(),
+          "Illegal class modifiers in inner class %s of class %s: 0x%X",
+          inner_name->as_C_string(), _class_name->as_C_string(), flags
+        );
+      }
+    }
     return;
   }
 }
@@ -5568,7 +5589,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
     flags |= JVM_ACC_ABSTRACT;
   }
 
-  verify_legal_class_modifiers(flags, CHECK);
+  verify_legal_class_modifiers(flags, nullptr, false, CHECK);
 
   short bad_constant = class_bad_constant_seen();
   if (bad_constant != 0) {
@@ -5728,8 +5749,8 @@ void ClassFileParser::mangle_hidden_class_name(InstanceKlass* const ik) {
     // occupied by the archive at run time, so we know that no dynamically
     // loaded InstanceKlass will be placed under there.
     static volatile size_t counter = 0;
-    Atomic::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
-    size_t new_id = Atomic::add(&counter, (size_t)1);
+    AtomicAccess::cmpxchg(&counter, (size_t)0, Arguments::default_SharedBaseAddress()); // initialize it
+    size_t new_id = AtomicAccess::add(&counter, (size_t)1);
     jio_snprintf(addr_buf, 20, "0x%zx", new_id);
   } else {
     jio_snprintf(addr_buf, 20, INTPTR_FORMAT, p2i(ik));
@@ -5906,15 +5927,6 @@ bool ClassFileParser::is_java_lang_ref_Reference_subclass() const {
   }
 
   return _super_klass->reference_type() != REF_NONE;
-}
-
-// Returns true if the future Klass will need to be addressable with a narrow Klass ID.
-bool ClassFileParser::klass_needs_narrow_id() const {
-  // Classes that are never instantiated need no narrow Klass Id, since the
-  // only point of having a narrow id is to put it into an object header. Keeping
-  // never instantiated classes out of class space lessens the class space pressure.
-  // For more details, see JDK-8338526.
-  return !is_interface() && !is_abstract();
 }
 
 // ----------------------------------------------------------------------------

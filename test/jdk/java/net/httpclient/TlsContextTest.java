@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import static java.lang.System.out;
 import static java.net.http.HttpClient.Version;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpResponse.BodyHandlers.ofString;
 import static org.testng.Assert.assertEquals;
 import jdk.test.lib.security.SecurityUtils;
@@ -75,7 +76,8 @@ public class TlsContextTest implements HttpServerAdapters {
         server = SimpleSSLContext.getContext("TLS");
         final ExecutorService executor = Executors.newCachedThreadPool();
         https2Server = HttpTestServer.of(
-                new Http2TestServer("localhost", true, 0, executor, 50, null, server, true));
+                new Http2TestServer("localhost", true, 0, executor, 50, null, server, true)
+                        .enableH3AltServiceOnSamePort());
         https2Server.addHandler(new TlsVersionTestHandler("https", https2Server),
                 "/server/");
         https2Server.start();
@@ -89,6 +91,9 @@ public class TlsContextTest implements HttpServerAdapters {
                 { SimpleSSLContext.getContext("TLSv1.2"), HTTP_2,   "TLSv1.2" },
                 { SimpleSSLContext.getContext("TLSv1.1"), HTTP_1_1, "TLSv1.1" },
                 { SimpleSSLContext.getContext("TLSv1.1"), HTTP_2,   "TLSv1.1" },
+                { SimpleSSLContext.getContext("TLSv1.3"), HTTP_3,   "TLSv1.3" },
+                { SimpleSSLContext.getContext("TLSv1.2"), HTTP_3,   "TLSv1.2" },
+                { SimpleSSLContext.getContext("TLSv1.1"), HTTP_3,   "TLSv1.1" },
         };
     }
 
@@ -99,21 +104,32 @@ public class TlsContextTest implements HttpServerAdapters {
     public void testVersionProtocols(SSLContext context,
                                      Version version,
                                      String expectedProtocol) throws Exception {
-        HttpClient client = HttpClient.newBuilder()
-                                      .sslContext(context)
-                                      .version(version)
+        // for HTTP/3 we won't accept to set the version to HTTP/3 on the
+        //    client if we don't have TLSv1.3; We will set the version
+        //    on the request instead in that case.
+        var builder = version == HTTP_3 ? newClientBuilderForH3()
+                : HttpClient.newBuilder().version(version);
+        var reqBuilder = HttpRequest.newBuilder(new URI(https2URI));
+
+        HttpClient client = builder.sslContext(context)
                                       .build();
-        HttpRequest request = HttpRequest.newBuilder(new URI(https2URI))
-                                         .GET()
-                                         .build();
+        if (version == HTTP_3) {
+            // warmup to obtain AltService
+            client.send(reqBuilder.version(HTTP_2).GET().build(), ofString());
+            reqBuilder = reqBuilder.version(HTTP_3);
+        }
+
+        HttpRequest request = reqBuilder.GET().build();
         for (int i = 0; i < ITERATIONS; i++) {
             HttpResponse<String> response = client.send(request, ofString());
-            testAllProtocols(response, expectedProtocol);
+            testAllProtocols(response, expectedProtocol, version);
         }
+        client.close();
     }
 
     private void testAllProtocols(HttpResponse<String> response,
-                                  String expectedProtocol) throws Exception {
+                                  String expectedProtocol,
+                                  Version clientVersion) throws Exception {
         String protocol = response.sslSession().get().getProtocol();
         int statusCode = response.statusCode();
         Version version = response.version();
@@ -121,7 +137,12 @@ public class TlsContextTest implements HttpServerAdapters {
         out.println("The protocol negotiated is :" + protocol);
         assertEquals(statusCode, 200);
         assertEquals(protocol, expectedProtocol);
-        assertEquals(version, expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 : HTTP_2);
+        if (clientVersion == HTTP_3) {
+            assertEquals(version, expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 :
+                    expectedProtocol.equals("TLSv1.2") ? HTTP_2 : HTTP_3);
+        } else {
+            assertEquals(version, expectedProtocol.equals("TLSv1.1") ? HTTP_1_1 : HTTP_2);
+        }
     }
 
     @AfterTest
@@ -143,8 +164,10 @@ public class TlsContextTest implements HttpServerAdapters {
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 byte[] bytes = is.readAllBytes();
-                t.sendResponseHeaders(200, 10);
-                os.write(bytes);
+                t.sendResponseHeaders(200, bytes.length);
+                if (bytes.length > 0) {
+                    os.write(bytes);
+                }
             }
         }
     }

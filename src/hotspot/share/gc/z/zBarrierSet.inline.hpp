@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -332,7 +332,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_copy_one(zpointer* dst, zpointer* src) {
   const zaddress obj = oop_copy_one_barriers(dst, src);
 
-  Atomic::store(dst, ZAddress::store_good(obj));
+  AtomicAccess::store(dst, ZAddress::store_good(obj));
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -344,11 +344,10 @@ inline bool ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_copy_one_ch
     return false;
   }
 
-  Atomic::store(dst, ZAddress::store_good(obj));
+  AtomicAccess::store(dst, ZAddress::store_good(obj));
 
   return true;
 }
-
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline bool ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_in_heap_check_cast(zpointer* dst, zpointer* src, size_t length, Klass* dst_klass) {
@@ -409,7 +408,7 @@ public:
     volatile zpointer* const p = (volatile zpointer*)p_;
     const zpointer ptr = ZBarrier::load_atomic(p);
     const zaddress addr = ZPointer::uncolor(ptr);
-    Atomic::store(p, ZAddress::store_good(addr));
+    AtomicAccess::store(p, ZAddress::store_good(addr));
   }
 
   virtual void do_oop(narrowOop* p) {

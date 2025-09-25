@@ -128,7 +128,7 @@ private:
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return Atomic::load(&_used); }
+  size_t used() const override { return AtomicAccess::load(&_used); }
   size_t available() const override;
   size_t available_with_reserve() const;
   size_t used_including_humongous_waste() const {

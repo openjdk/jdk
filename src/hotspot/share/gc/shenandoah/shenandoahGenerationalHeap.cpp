@@ -356,6 +356,7 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
 
     if (ShenandoahEvacTracking) {
+      // Record that the evacuation succeeded
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
     }
 
