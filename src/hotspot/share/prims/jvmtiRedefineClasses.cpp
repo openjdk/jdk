@@ -1358,7 +1358,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // constant pools
     HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
-    uint64_t avail_mem = 0;
+    physical_memory_size_type avail_mem = 0;
     // Return value ignored - defaulting to 0 on failure.
     (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
@@ -4438,7 +4438,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     ResourceMark rm(current);
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
-    uint64_t avail_mem = 0;
+    physical_memory_size_type avail_mem = 0;
     // Return value ignored - defaulting to 0 on failure.
     (void)os::available_memory(avail_mem);
     log_info(redefine, class, load)

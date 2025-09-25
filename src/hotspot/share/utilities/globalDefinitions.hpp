@@ -418,6 +418,9 @@ const uintx max_uintx = (uintx)-1;
 typedef unsigned int uint;   NEEDS_CLEANUP
 
 //----------------------------------------------------------------------------------------------------
+// Type defenition for memory functions
+typedef uint64_t physical_memory_size_type;
+//----------------------------------------------------------------------------------------------------
 // Java type definitions
 
 // All kinds of 'plain' byte addresses

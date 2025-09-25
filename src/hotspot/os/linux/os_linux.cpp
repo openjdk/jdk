@@ -154,7 +154,7 @@ enum CoredumpFilterBit {
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-uint64_t os::Linux::_physical_memory = 0;
+physical_memory_size_type os::Linux::_physical_memory = 0;
 
 address   os::Linux::_initial_thread_stack_bottom = nullptr;
 uintptr_t os::Linux::_initial_thread_stack_size   = 0;
@@ -229,15 +229,15 @@ julong os::Linux::available_memory_in_container() {
   return avail_mem;
 }
 
-bool os::available_memory(uint64_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return Linux::available_memory(value);
 }
 
-bool os::Linux::available_memory(uint64_t& value) {
+bool os::Linux::available_memory(physical_memory_size_type& value) {
   julong avail_mem = available_memory_in_container();
   if (avail_mem != static_cast<julong>(-1L)) {
     log_trace(os)("available container memory: " JULONG_FORMAT, avail_mem);
-    value = static_cast<uint64_t>(avail_mem);
+    value = static_cast<physical_memory_size_type>(avail_mem);
     return true;
   }
 
@@ -253,28 +253,28 @@ bool os::Linux::available_memory(uint64_t& value) {
     fclose(fp);
   }
   if (avail_mem == static_cast<julong>(-1L)) {
-    uint64_t free_mem = 0;
+    physical_memory_size_type free_mem = 0;
     if (!free_memory(free_mem)) {
       return false;
     }
     avail_mem = static_cast<julong>(free_mem);
   }
   log_trace(os)("available memory: " JULONG_FORMAT, avail_mem);
-  value = static_cast<uint64_t>(avail_mem);
+  value = static_cast<physical_memory_size_type>(avail_mem);
   return true;
 }
 
-bool os::free_memory(uint64_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
   return Linux::free_memory(value);
 }
 
-bool os::Linux::free_memory(uint64_t& value) {
+bool os::Linux::free_memory(physical_memory_size_type& value) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   julong free_mem = available_memory_in_container();
   if (free_mem != static_cast<julong>(-1L)) {
     log_trace(os)("free container memory: " JULONG_FORMAT, free_mem);
-    value = static_cast<uint64_t>(free_mem);
+    value = static_cast<physical_memory_size_type>(free_mem);
     return true;
   }
 
@@ -284,16 +284,16 @@ bool os::Linux::free_memory(uint64_t& value) {
   }
   free_mem = (julong)si.freeram * si.mem_unit;
   log_trace(os)("free memory: " JULONG_FORMAT, free_mem);
-  value = static_cast<uint64_t>(free_mem);
+  value = static_cast<physical_memory_size_type>(free_mem);
   return true;
 }
 
-bool os::total_swap_space(uint64_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
   if (OSContainer::is_containerized()) {
     jlong memory_and_swap_limit_in_bytes = OSContainer::memory_and_swap_limit_in_bytes();
     jlong memory_limit_in_bytes = OSContainer::memory_limit_in_bytes();
     if (memory_limit_in_bytes > 0 && memory_and_swap_limit_in_bytes > 0) {
-      value = static_cast<uint64_t>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
+      value = static_cast<physical_memory_size_type>(memory_and_swap_limit_in_bytes - memory_limit_in_bytes);
       return true;
     }
   } // fallback to the host swap space if the container did return the unbound value of -1
@@ -303,30 +303,30 @@ bool os::total_swap_space(uint64_t& value) {
     assert(false, "sysinfo failed in total_swap_space(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<uint64_t>(si.totalswap) * si.mem_unit;
+  value = static_cast<physical_memory_size_type>(si.totalswap) * si.mem_unit;
   return true;
 }
 
-static bool host_free_swap_f(uint64_t& value) {
+static bool host_free_swap_f(physical_memory_size_type& value) {
   struct sysinfo si;
   int ret = sysinfo(&si);
   if (ret != 0) {
     assert(false, "sysinfo failed in host_free_swap_f(): %s", os::strerror(errno));
     return false;
   }
-  value = static_cast<uint64_t>(si.freeswap) * si.mem_unit;
+  value = static_cast<physical_memory_size_type>(si.freeswap) * si.mem_unit;
   return true;
 }
 
-bool os::free_swap_space(uint64_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
   // os::total_swap_space() might return the containerized limit which might be
   // less than host_free_swap(). The upper bound of free swap needs to be the lower of the two.
-  uint64_t total_swap_space = 0;
-  uint64_t host_free_swap = 0;
+  physical_memory_size_type total_swap_space = 0;
+  physical_memory_size_type host_free_swap = 0;
   if (!os::total_swap_space(total_swap_space) || !host_free_swap_f(host_free_swap)) {
     return false;
   }
-  uint64_t host_free_swap_val = MIN2(total_swap_space, host_free_swap);
+  physical_memory_size_type host_free_swap_val = MIN2(total_swap_space, host_free_swap);
   if (OSContainer::is_containerized()) {
     jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
     jlong mem_limit = OSContainer::memory_limit_in_bytes();
@@ -342,7 +342,7 @@ bool os::free_swap_space(uint64_t& value) {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          value = free_swap >= 0 ? static_cast<uint64_t>(free_swap) : 0;
+          value = free_swap >= 0 ? static_cast<physical_memory_size_type>(free_swap) : 0;
           return true;
         }
       }
@@ -356,16 +356,16 @@ bool os::free_swap_space(uint64_t& value) {
   return true;
 }
 
-uint64_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   if (OSContainer::is_containerized()) {
     jlong mem_limit;
     if ((mem_limit = OSContainer::memory_limit_in_bytes()) > 0) {
       log_trace(os)("total container memory: " JLONG_FORMAT, mem_limit);
-      return static_cast<uint64_t>(mem_limit);
+      return static_cast<physical_memory_size_type>(mem_limit);
     }
   }
 
-  uint64_t phys_mem = Linux::physical_memory();
+  physical_memory_size_type phys_mem = Linux::physical_memory();
   log_trace(os)("total system memory: " UINT64_FORMAT, phys_mem);
   return phys_mem;
 }
@@ -550,7 +550,7 @@ void os::Linux::initialize_system_info() {
       fclose(fp);
     }
   }
-  _physical_memory = static_cast<uint64_t>(sysconf(_SC_PHYS_PAGES)) * static_cast<uint64_t>(sysconf(_SC_PAGESIZE));
+  _physical_memory = static_cast<physical_memory_size_type>(sysconf(_SC_PHYS_PAGES)) * static_cast<physical_memory_size_type>(sysconf(_SC_PAGESIZE));
   assert(processor_count() > 0, "linux error");
 }
 
@@ -2609,10 +2609,10 @@ void os::print_memory_info(outputStream* st) {
   // values in struct sysinfo are "unsigned long"
   struct sysinfo si;
   sysinfo(&si);
-  uint64_t phys_mem = physical_memory();
+  physical_memory_size_type phys_mem = physical_memory();
   st->print(", physical " UINT64_FORMAT "k",
             phys_mem >> 10);
-  uint64_t avail_mem = 0;
+  physical_memory_size_type avail_mem = 0;
   (void)os::available_memory(avail_mem);
   st->print("(" UINT64_FORMAT "k free)",
             avail_mem >> 10);

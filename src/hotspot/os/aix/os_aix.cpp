@@ -169,7 +169,7 @@ static void vmembk_print_on(outputStream* os);
 ////////////////////////////////////////////////////////////////////////////////
 // global variables (for a description see os_aix.hpp)
 
-uint64_t    os::Aix::_physical_memory = 0;
+physical_memory_size_type    os::Aix::_physical_memory = 0;
 
 pthread_t os::Aix::_main_thread = ((pthread_t)0);
 
@@ -254,43 +254,43 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
-bool os::free_memory(uint64_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
-bool os::available_memory(uint64_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return Aix::available_memory(value);
 }
 
-bool os::Aix::available_memory(uint64_t& value) {
+bool os::Aix::available_memory(physical_memory_size_type& value) {
   os::Aix::meminfo_t mi;
   if (os::Aix::get_meminfo(&mi)) {
-    value = static_cast<uint64_t>(mi.real_free);
+    value = static_cast<physical_memory_size_type>(mi.real_free);
     return true;
   } else {
     return false;
   }
 }
 
-bool os::total_swap_space(uint64_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
   }
-  value = static_cast<uint64_t>(memory_info.pgsp_total * 4 * K);
+  value = static_cast<physical_memory_size_type>(memory_info.pgsp_total * 4 * K);
   return true;
 }
 
-bool os::free_swap_space(uint64_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
   perfstat_memory_total_t memory_info;
   if (libperfstat::perfstat_memory_total(nullptr, &memory_info, sizeof(perfstat_memory_total_t), 1) == -1) {
     return false;
   }
-  value = static_cast<uint64_t>(memory_info.pgsp_free * 4 * K);
+  value = static_cast<physical_memory_size_type>(memory_info.pgsp_free * 4 * K);
   return true;
 }
 
-uint64_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   return Aix::physical_memory();
 }
 

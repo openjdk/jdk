@@ -54,9 +54,9 @@ class os::Aix {
   //  1 - EXTSHM=ON
   static int _extshm;
 
-  static bool available_memory(uint64_t& value);
-  static bool free_memory(uint64_t& value);
-  static uint64_t physical_memory() { return _physical_memory; }
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
   static void initialize_system_info();
 
   // OS recognitions (AIX OS level) call this before calling Aix::os_version().
