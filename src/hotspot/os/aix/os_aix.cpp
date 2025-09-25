@@ -329,7 +329,7 @@ void os::Aix::initialize_system_info() {
   if (!os::Aix::get_meminfo(&mi)) {
     assert(false, "os::Aix::get_meminfo failed.");
   }
-  _physical_memory = static_cast<uint64_t>(mi.real_total);
+  _physical_memory = static_cast<physical_memory_size_type>(mi.real_total);
 }
 
 // Helper function for tracing page sizes.

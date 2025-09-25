@@ -35,7 +35,7 @@ class os::Aix {
 
  private:
 
-  static uint64_t _physical_memory;
+  static physical_memory_size_type _physical_memory;
   static pthread_t _main_thread;
 
   // 0 = uninitialized, otherwise 16 bit number:
