@@ -41,13 +41,22 @@ public final class SerializationSpecTest {
         // name and the data are invalid, or if one of them is missing or is of
         // the wrong type.
 
+        // Naming conventions used in test file names:
+        // null     : null reference
+        // valid    : valid standard profile name or valid profile data (byte[])
+        // invalid  : unrecognized name or data with incorrect ICC header
+        // wrongType: incorrect type, e.g., int[] instead of String or byte[]
+
+        // No name or data
         test("empty", OptionalDataException.class);
 
+        // Cases where only the profile name is present (no profile data)
         test("null", OptionalDataException.class);
         test("valid", OptionalDataException.class);
         test("invalid", OptionalDataException.class);
         test("wrongType", InvalidObjectException.class);
 
+        // The test files are named as <name>_<data>.ser
         test("null_null", InvalidObjectException.class);
         test("null_valid", null); // valid data is enough if name is null
         test("null_invalid", InvalidObjectException.class);
