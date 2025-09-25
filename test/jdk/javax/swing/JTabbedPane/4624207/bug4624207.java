@@ -27,9 +27,6 @@
  * @bug 4624207
  * @requires (os.family != "mac")
  * @summary JTabbedPane mnemonics don't work from outside the tabbed pane
- * @library /test/lib
- * @library ../../regtesthelpers
- * @build Util jdk.test.lib.Platform
  * @run main bug4624207
  */
 
