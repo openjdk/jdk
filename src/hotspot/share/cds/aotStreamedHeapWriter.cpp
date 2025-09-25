@@ -482,12 +482,7 @@ void AOTStreamedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtCla
 
 size_t AOTStreamedHeapWriter::source_obj_to_buffered_offset(oop src_obj) {
   HeapShared::CachedOopInfo* p = HeapShared::get_cached_oop_info(src_obj);
-  if (p != nullptr) {
-    return p->buffer_offset();
-  } else {
-    ShouldNotReachHere();
-    return 0;
-  }
+  return p->buffer_offset();
 }
 
 address AOTStreamedHeapWriter::source_obj_to_buffered_addr(oop src_obj) {
