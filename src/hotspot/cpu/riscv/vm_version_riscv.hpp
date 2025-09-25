@@ -289,19 +289,14 @@ private:
       return sizeof(_features_bitmap) / sizeof(uint64_t);
     }
 
-    constexpr static int element_shift_count() {
-      return LogBitsPerLong;
-    }
-
     static int element_index(RVFeatureIndex feature) {
-      int idx = feature >> element_shift_count();
+      int idx = feature / BitsPerLong;
       assert(idx < element_count(), "Features array index out of bounds");
       return idx;
     }
 
     static uint64_t feature_bit(RVFeatureIndex feature) {
-      constexpr static uint64_t m = (1ULL << element_shift_count()) - 1;
-      return (1ULL << (feature & m));
+      return (1ULL << (feature % BitsPerLong));
     }
 
     static RVFeatureIndex convert(uint32_t index) {
