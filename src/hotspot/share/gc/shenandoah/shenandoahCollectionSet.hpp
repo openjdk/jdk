@@ -105,6 +105,8 @@ public:
 
   // Prints a detailed accounting of all regions in the collection set when gc+cset=debug
   void print_on(outputStream* out) const;
+
+  // Prints a summary of the collection set when gc+ergo=info
   void summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const;
 
   // Returns the amount of live bytes in young regions in the collection set. It is not known how many of these bytes will be promoted.

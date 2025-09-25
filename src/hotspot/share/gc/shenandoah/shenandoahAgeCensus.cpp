@@ -184,9 +184,9 @@ void ShenandoahAgeCensus::update_census(size_t age0_pop) {
 size_t ShenandoahAgeCensus::get_tenurable_bytes(const uint tenuring_threshold) const {
   assert(_epoch < MAX_SNAPSHOTS, "Out of bounds");
   size_t total = 0;
-  const AgeTable* pv = _global_age_table[_epoch];
+  const AgeTable* pv = _global_age_tables[_epoch];
   for (uint i = 0; i < MAX_COHORTS; i++) {
-    if (i > tenuring_threshold) {
+    if (i >= tenuring_threshold) {
       total += pv->sizes[i];
     }
   }
