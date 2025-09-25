@@ -89,10 +89,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
     Type type   = db.lookupType("ConstantPool");
     tags        = type.getAddressField("_tags");
     cache       = type.getAddressField("_cache");
-    bsmaentries = type.getField("_bsmaentries").getOffset();
-    Type bsmaetype = db.lookupType("BSMAttributeEntries");
-    bsmaentries_offsets = bsmaetype.getAddressField("_offsets");
-    bsmaentries_bootstrap_methods = bsmaetype.getAddressField("_bootstrap_methods");
+    bsm_entries = type.getField("_bsmaentries").getOffset();
+    Type bsmae_type = db.lookupType("BSMAttributeEntries");
+    bsm_entries_offsets = bsmae_type.getAddressField("_offsets");
+    bsm_entries_bootstrap_methods = bsmae_type.getAddressField("_bootstrap_methods");
     poolHolder  = new MetadataField(type.getAddressField("_pool_holder"), 0);
     length      = new CIntField(type.getCIntegerField("_length"), 0);
     resolved_klasses = type.getAddressField("_resolved_klasses");
@@ -117,9 +117,9 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static AddressField tags;
   private static AddressField cache;
   private static AddressField resolved_klasses;
-  private static long bsmaentries; // Offset in the constantpool where the BSMAEntries are found
-  private static AddressField bsmaentries_offsets;
-  private static AddressField bsmaentries_bootstrap_methods;
+  private static long bsm_entries; // Offset in the constantpool where the Bsm_Entries are found
+  private static AddressField bsm_entries_offsets;
+  private static AddressField bsm_entries_bootstrap_methods;
   private static MetadataField poolHolder;
   private static CIntField length; // number of elements in oop
   private static CIntField majorVersion;
@@ -437,15 +437,15 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   private U4Array getOffsets() {
-     Address a =  getAddress().addOffsetTo(bsmaentries);
+     Address a =  getAddress().addOffsetTo(bsm_entries);
      if (a == null) return null;
-     a = bsmaentries_offsets.getValue(a);
+     a = bsm_entries_offsets.getValue(a);
      return VMObjectFactory.newObject(U4Array.class, a);
   }
   private U2Array getBootstrapMethods() {
-    Address a =  getAddress().addOffsetTo(bsmaentries);
+    Address a =  getAddress().addOffsetTo(bsm_entries);
     if (a == null) return null;
-    return VMObjectFactory.newObject(U2Array.class, bsmaentries_bootstrap_methods.getValue(a));
+    return VMObjectFactory.newObject(U2Array.class, bsm_entries_bootstrap_methods.getValue(a));
   }
 
   public int getBootstrapMethodsCount() {

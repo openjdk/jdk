@@ -2354,7 +2354,7 @@ void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) co
 
 BSMAttributeEntries::InsertionIterator
 BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
-  InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(), 
+  InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(),
                                             loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
   return iter;
 }
