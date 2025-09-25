@@ -112,15 +112,21 @@ public final class PListReader {
      * <p>
      * The keys in the returned map are names of the keys.
      * <p>
-     * Values of "dict" properties are stored as {@code Map<String, Object>} objects.
+     * Values of nested "dict" properties are stored as {@code Map<String, Object>}
+     * or {@code PListReader} objects depending on the value of the
+     * {@code fetchDictionaries} parameter.
      * <p>
      * Values of "array" properties are stored as {@code List<Object>} objects.
      * <p>
      * Values of other properties are stored as {@code Raw} objects.
-     *
+     * 
+     * @param fetchDictionaries controls the type of objects of nested "dict"
+     *                          elements. If the value is {@code true},
+     *                          {@code Map<String, Object>} type is used, and
+     *                          {@code PListReader} type otherwise.
      * @return the contents of the the underlying "dict" element as a Map
      */
-    public Map<String, Object> toMap() {
+    public Map<String, Object> toMap(boolean fetchDictionaries) {
         Map<String, Object> reply = new HashMap<>();
         var nodes = root.getChildNodes();
         String key = null;
@@ -132,11 +138,16 @@ public final class PListReader {
                 } else if (key != null) {
                     switch (name) {
                         case "dict" -> {
-                            reply.put(key, new PListReader(e).toMap());
+                            var plistReader = new PListReader(e);
+                            if (fetchDictionaries) {
+                                reply.put(key, plistReader.toMap(fetchDictionaries));
+                            } else {
+                                reply.put(key, plistReader);
+                            }
                             key = null;
                         }
                         case "array" -> {
-                            reply.put(key, readArray(e).toList());
+                            reply.put(key, readArray(e, fetchDictionaries).toList());
                             key = null;
                         }
                         default -> {
@@ -214,7 +225,7 @@ public final class PListReader {
      *                                in the underlying "dict" element
      */
     public List<String> queryStringArrayValue(String keyName) {
-        return queryArrayValue(keyName).map(v -> {
+        return queryArrayValue(keyName, false).map(v -> {
             if (v instanceof Raw r) {
                 if (r.type() == Raw.Type.STRING) {
                     return r.value();
@@ -228,23 +239,29 @@ public final class PListReader {
      * Returns the value of the given array key in the underlying "dict" element as
      * a stream of {@link Object}-s.
      * <p>
-     * Values of "dict" array items are stored as {@code Map<String, Object>} objects.
+     * Values of "dict" array items are stored as {@code Map<String, Object>} or
+     * {@code PListReader} objects depending on the value of the
+     * {@code fetchDictionaries} parameter.
      * <p>
      * Values of "array" array items are stored as {@code List<Object>} objects.
      * <p>
      * Values of other types are stored as {@code Raw} objects.
      *
-     * @param keyName the name of an array key whose value to query
+     * @param keyName           the name of an array key whose value to query
+     * @param fetchDictionaries controls the type of objects of "dict" elements. If
+     *                          the value is {@code true},
+     *                          {@code Map<String, Object>} type is used, and
+     *                          {@code PListReader} type otherwise.
      * @return the value of the array key with the specified name in the underlying
      *         "dict" element
      * @throws NoSuchElementException if there is no array key with the given name
      *                                in the underlying "dict" element
      */
-    public Stream<Object> queryArrayValue(String keyName) {
+    public Stream<Object> queryArrayValue(String keyName, boolean fetchDictionaries) {
         final var node = getNode(keyName);
         switch (node.getNodeName()) {
             case "array" -> {
-                return readArray(node);
+                return readArray(node, fetchDictionaries);
             }
             default -> {
                 throw new NoSuchElementException();
@@ -280,15 +297,20 @@ public final class PListReader {
         this(XmlUtils.initDocumentBuilder().parse(new ByteArrayInputStream(xmlData)));
     }
 
-    public Stream<Object> readArray(Node node) {
+    private Stream<Object> readArray(Node node, boolean fetchDictionaries) {
         return XmlUtils.toStream(node.getChildNodes()).map(n -> {
             if (n instanceof Element e) {
                 switch (e.getNodeName()) {
                     case "dict" -> {
-                        return Optional.of(new PListReader(e).toMap());
+                        var plistReader = new PListReader(e);
+                        if (fetchDictionaries) {
+                            return Optional.of(plistReader.toMap(fetchDictionaries));
+                        } else {
+                            return Optional.of(plistReader);
+                        }
                     }
                     case "array" -> {
-                        return Optional.of(readArray(e).toList());
+                        return Optional.of(readArray(e, fetchDictionaries).toList());
                     }
                     default -> {
                         return Raw.tryCreate(e);

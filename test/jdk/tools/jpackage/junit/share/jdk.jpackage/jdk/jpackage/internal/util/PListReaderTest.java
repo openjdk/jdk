@@ -272,7 +272,7 @@ public class PListReaderTest {
                 "</array>"
         );
 
-        var actual = new PListReader(xml.getBytes(StandardCharsets.UTF_8)).toMap();
+        var actual = new PListReader(xml.getBytes(StandardCharsets.UTF_8)).toMap(true);
 
         var expected = Map.of(
                 "AppName", new Raw("Hello", Raw.Type.STRING),
