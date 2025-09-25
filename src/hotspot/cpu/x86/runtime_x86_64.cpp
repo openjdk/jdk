@@ -57,8 +57,8 @@ class SimpleRuntimeFrame {
 
 //------------------------------generate_uncommon_trap_blob--------------------
 UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)OptoStubId::uncommon_trap_id, name);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
   if (blob != nullptr) {
     return blob->as_uncommon_trap_blob();
   }
@@ -236,7 +236,7 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
 
   UncommonTrapBlob *ut_blob = UncommonTrapBlob::create(&buffer, oop_maps,
                                                        SimpleRuntimeFrame::framesize >> 1);
-  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, (uint)OptoStubId::uncommon_trap_id, name);
+  AOTCodeCache::store_code_blob(*ut_blob, AOTCodeEntry::C2Blob, BlobId::c2_uncommon_trap_id);
   return ut_blob;
 }
 
@@ -273,8 +273,8 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   assert(SimpleRuntimeFrame::framesize % 4 == 0, "sp not 16-byte aligned");
 
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, (uint)OptoStubId::exception_id, name);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
   if (blob != nullptr) {
     return blob->as_exception_blob();
   }
@@ -292,7 +292,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   address start = __ pc();
 
   // Exception pc is 'return address' for stack walker
-  __ push(rdx);
+  __ push_ppx(rdx);
   __ subptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Prolog
 
   // Save callee-saved registers.  See x86_64.ad.
@@ -347,7 +347,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ movptr(rbp, Address(rsp, SimpleRuntimeFrame::rbp_off << LogBytesPerInt));
 
   __ addptr(rsp, SimpleRuntimeFrame::return_off << LogBytesPerInt); // Epilog
-  __ pop(rdx);                  // No need for exception pc anymore
+  __ pop_ppx(rdx);                  // No need for exception pc anymore
 
   // rax: exception handler
 
@@ -377,7 +377,7 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // Set exception blob
   ExceptionBlob* ex_blob = ExceptionBlob::create(&buffer, oop_maps, SimpleRuntimeFrame::framesize >> 1);
-  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, (uint)OptoStubId::exception_id, name);
+  AOTCodeCache::store_code_blob(*ex_blob, AOTCodeEntry::C2Blob, BlobId::c2_exception_id);
   return ex_blob;
 }
 #endif // COMPILER2

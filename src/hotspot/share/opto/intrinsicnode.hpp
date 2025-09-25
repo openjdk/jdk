@@ -25,9 +25,9 @@
 #ifndef SHARE_OPTO_INTRINSICNODE_HPP
 #define SHARE_OPTO_INTRINSICNODE_HPP
 
+#include "opto/connode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
-#include "opto/connode.hpp"
 
 
 //----------------------PartialSubtypeCheckNode--------------------------------

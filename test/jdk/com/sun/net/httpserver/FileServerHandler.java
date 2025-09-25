@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ public class FileServerHandler implements HttpHandler {
         this.docroot = docroot;
     }
 
-    int invocation = 1;
     public void handle (HttpExchange t)
         throws IOException
     {
@@ -87,16 +86,16 @@ public class FileServerHandler implements HttpHandler {
             rmap.set ("Content-Type", "text/html");
             t.sendResponseHeaders (200, 0);
             String[] list = f.list();
-            OutputStream os = t.getResponseBody();
-            PrintStream p = new PrintStream (os);
-            p.println ("<h2>Directory listing for: " + path+ "</h2>");
-            p.println ("<ul>");
-            for (int i=0; i<list.length; i++) {
-                p.println ("<li><a href=\""+list[i]+"\">"+list[i]+"</a></li>");
+            try (final OutputStream os = t.getResponseBody();
+                 final PrintStream p = new PrintStream (os)) {
+                p.println("<h2>Directory listing for: " + path + "</h2>");
+                p.println("<ul>");
+                for (int i = 0; i < list.length; i++) {
+                    p.println("<li><a href=\"" + list[i] + "\">" + list[i] + "</a></li>");
+                }
+                p.println("</ul><p><hr>");
+                p.flush();
             }
-            p.println ("</ul><p><hr>");
-            p.flush();
-            p.close();
         } else {
             int clen;
             if (fixedrequest != null) {
@@ -105,10 +104,9 @@ public class FileServerHandler implements HttpHandler {
                 clen = 0;
             }
             t.sendResponseHeaders (200, clen);
-            OutputStream os = t.getResponseBody();
-            FileInputStream fis = new FileInputStream (f);
             int count = 0;
-            try {
+            try (final OutputStream os = t.getResponseBody();
+                 final FileInputStream fis = new FileInputStream (f)) {
                 byte[] buf = new byte [16 * 1024];
                 int len;
                 while ((len=fis.read (buf)) != -1) {
@@ -118,8 +116,6 @@ public class FileServerHandler implements HttpHandler {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            fis.close();
-            os.close();
         }
     }
 

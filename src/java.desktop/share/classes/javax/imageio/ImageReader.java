@@ -2501,8 +2501,7 @@ public abstract class ImageReader {
 
     /**
      * Allows any resources held by this object to be released.  The
-     * result of calling any other method (other than
-     * {@code finalize}) subsequent to a call to this method
+     * result of calling any other method subsequent to a call to this method
      * is undefined.
      *
      * <p>It is important for applications to call this method when they

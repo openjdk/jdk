@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,11 +49,6 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
-  // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  void fast_lock(Register object, Register box,
-                 Register tmp1, Register tmp2, Register tmp3, Register tmp4);
-  void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
-
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
   void fast_lock_lightweight(Register object, Register box,
                              Register tmp1, Register tmp2, Register tmp3, Register tmp4);

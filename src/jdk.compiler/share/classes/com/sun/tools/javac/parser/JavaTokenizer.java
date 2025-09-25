@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.parser;
 
-import com.sun.tools.javac.code.Lint;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Source.Feature;
@@ -83,7 +81,7 @@ public class JavaTokenizer extends UnicodeReader {
     /**
      * The log to be used for error reporting. Copied from scanner factory.
      */
-    private final Log log;
+    protected final Log log;
 
     /**
      * The token factory. Copied from scanner factory.
@@ -136,13 +134,6 @@ public class JavaTokenizer extends UnicodeReader {
     protected boolean hasEscapeSequences;
 
     /**
-     * The set of lint options currently in effect. It is initialized
-     * from the context, and then is set/reset as needed by Attr as it
-     * visits all the various parts of the trees during attribution.
-     */
-    protected final Lint lint;
-
-    /**
      * Construct a Java token scanner from the input character buffer.
      *
      * @param fac  the factory which created this Scanner.
@@ -168,7 +159,6 @@ public class JavaTokenizer extends UnicodeReader {
         this.source = fac.source;
         this.preview = fac.preview;
         this.enableLineDocComments = fac.enableLineDocComments;
-        this.lint = fac.lint;
         this.sb = new StringBuilder(256);
     }
 
@@ -181,10 +171,10 @@ public class JavaTokenizer extends UnicodeReader {
     protected void checkSourceLevel(int pos, Feature feature) {
         if (preview.isPreview(feature) && !preview.isEnabled()) {
             //preview feature without --preview flag, error
-            lexError(DiagnosticFlag.SOURCE_LEVEL, pos, preview.disabledError(feature));
+            lexError(pos, preview.disabledError(feature));
         } else if (!feature.allowedInSource(source)) {
             //incompatible source level, error
-            lexError(DiagnosticFlag.SOURCE_LEVEL, pos, feature.error(source.name));
+            lexError(pos, feature.error(source.name));
         } else if (preview.isPreview(feature)) {
             //use of preview feature, warn
             preview.warnPreview(pos, feature);
@@ -199,34 +189,10 @@ public class JavaTokenizer extends UnicodeReader {
      */
     protected void lexError(int pos, JCDiagnostic.Error key) {
         log.error(pos, key);
-        tk = TokenKind.ERROR;
-        errPos = pos;
-    }
-
-    /**
-     * Report an error at the given position using the provided arguments.
-     *
-     * @param flags  diagnostic flags.
-     * @param pos    position in input buffer.
-     * @param key    error key to report.
-     */
-    protected void lexError(DiagnosticFlag flags, int pos, JCDiagnostic.Error key) {
-        log.error(flags, pos, key);
-        if (flags != DiagnosticFlag.SOURCE_LEVEL) {
+        if (!key.hasFlag(DiagnosticFlag.SOURCE_LEVEL)) {
             tk = TokenKind.ERROR;
         }
         errPos = pos;
-    }
-
-    /**
-     * Report a warning at the given position using the provided arguments.
-     *
-     * @param pos    position in input buffer.
-     * @param key    error key to report.
-     */
-    protected void lexWarning(int pos, JCDiagnostic.LintWarning key) {
-        DiagnosticPosition dp = new SimpleDiagnosticPosition(pos) ;
-        log.warning(dp, key);
     }
 
     /**
@@ -1073,17 +1039,12 @@ public class JavaTokenizer extends UnicodeReader {
                 // If a text block.
                 if (isTextBlock) {
                     // Verify that the incidental indentation is consistent.
-                    if (lint.isEnabled(LintCategory.TEXT_BLOCKS)) {
-                        Set<TextBlockSupport.WhitespaceChecks> checks =
-                                TextBlockSupport.checkWhitespace(string);
-                        if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
-                            lexWarning(pos,
-                                    LintWarnings.InconsistentWhiteSpaceIndentation);
-                        }
-                        if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
-                            lexWarning(pos,
-                                    LintWarnings.TrailingWhiteSpaceWillBeRemoved);
-                        }
+                    Set<TextBlockSupport.WhitespaceChecks> checks = TextBlockSupport.checkWhitespace(string);
+                    if (checks.contains(TextBlockSupport.WhitespaceChecks.INCONSISTENT)) {
+                        log.warning(pos, LintWarnings.InconsistentWhiteSpaceIndentation);
+                    }
+                    if (checks.contains(TextBlockSupport.WhitespaceChecks.TRAILING)) {
+                        log.warning(pos, LintWarnings.TrailingWhiteSpaceWillBeRemoved);
                     }
                     // Remove incidental indentation.
                     try {

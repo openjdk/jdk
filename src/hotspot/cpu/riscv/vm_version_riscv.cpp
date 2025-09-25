@@ -181,12 +181,13 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz) {
+  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 2 * CacheLineSize);
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
     }
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
@@ -325,20 +326,40 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseMulAddIntrinsic, true);
   }
 
-  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, true);
+    }
+  } else if (UseMultiplyToLenIntrinsic) {
+    warning("Intrinsics for BigInteger.multiplyToLen() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
-    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, true);
+    }
+  } else if (UseSquareToLenIntrinsic) {
+    warning("Intrinsics for BigInteger.squareToLen() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSquareToLenIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMontgomeryMultiplyIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, true);
+    }
+  } else if (UseMontgomeryMultiplyIntrinsic) {
+    warning("Intrinsics for BigInteger.montgomeryMultiply() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMontgomeryMultiplyIntrinsic, false);
   }
 
-  if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
-    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
+  if (!AvoidUnalignedAccesses) {
+    if (FLAG_IS_DEFAULT(UseMontgomerySquareIntrinsic)) {
+      FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, true);
+    }
+  } else if (UseMontgomerySquareIntrinsic) {
+    warning("Intrinsics for BigInteger.montgomerySquare() not available on this CPU.");
+    FLAG_SET_DEFAULT(UseMontgomerySquareIntrinsic, false);
   }
 
   // Adler32
@@ -456,10 +477,6 @@ void VM_Version::c2_initialize() {
     warning("AES/CTR intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
   }
-
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
-  }
 }
 
 #endif // COMPILER2
@@ -473,8 +490,8 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_cores  = os::processor_count();
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
-  snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
+  os::snprintf_checked(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
+  os::snprintf_checked(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", cpu_info_string());
   _initialized = true;
 }
 

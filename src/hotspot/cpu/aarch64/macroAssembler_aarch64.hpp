@@ -120,7 +120,7 @@ class MacroAssembler: public Assembler {
  virtual void check_and_handle_popframe(Register java_thread);
  virtual void check_and_handle_earlyret(Register java_thread);
 
-  void safepoint_poll(Label& slow_path, bool at_return, bool acquire, bool in_nmethod, Register tmp = rscratch1);
+  void safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp = rscratch1);
   void rt_call(address dest, Register tmp = rscratch1);
 
   // Load Effective Address
@@ -1623,7 +1623,7 @@ public:
                     FloatRegister p, FloatRegister z, FloatRegister t1);
   void ghash_reduce_wide(int index, FloatRegister result, FloatRegister lo, FloatRegister hi,
                     FloatRegister p, FloatRegister z, FloatRegister t1);
-  void ghash_processBlocks_wide(address p, Register state, Register subkeyH,
+  void ghash_processBlocks_wide(Label& p, Register state, Register subkeyH,
                                 Register data, Register blocks, int unrolls);
 
 

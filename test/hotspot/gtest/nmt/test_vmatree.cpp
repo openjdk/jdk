@@ -24,13 +24,14 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
 using Tree = VMATree;
-using TNode = Tree::TreapNode;
+using TNode = Tree::TNode;
 using NCS = NativeCallStackStorage;
 
 class NMTVMATreeTest : public testing::Test {
@@ -53,16 +54,16 @@ public:
 
   // Utilities
 
-  VMATree::TreapNode* treap_root(VMATree& tree) {
-    return tree._tree._root;
+  VMATree::TNode* rbtree_root(VMATree& tree) {
+    return static_cast<VMATree::TNode*>(tree._tree._root);
   }
 
-  VMATree::VMATreap& treap(VMATree& tree) {
+  VMATree::VMARBTree& rbtree(VMATree& tree) {
     return tree._tree;
   }
 
-  VMATree::TreapNode* find(VMATree::VMATreap& treap, const VMATree::position key) {
-    return treap.find(treap._root, key);
+  VMATree::TNode* find(VMATree::VMARBTree& rbtree, const VMATree::position key) {
+    return rbtree.find_node(key);
   }
 
   NativeCallStack make_stack(size_t a) {
@@ -70,18 +71,19 @@ public:
     return stack;
   }
 
-  VMATree::StateType in_type_of(VMATree::TreapNode* x) {
+  VMATree::StateType in_type_of(VMATree::TNode* x) {
     return x->val().in.type();
   }
 
-  VMATree::StateType out_type_of(VMATree::TreapNode* x) {
+  VMATree::StateType out_type_of(VMATree::TNode* x) {
     return x->val().out.type();
   }
 
   int count_nodes(Tree& tree) {
     int count = 0;
-    treap(tree).visit_in_order([&](TNode* x) {
+    rbtree(tree).visit_in_order([&](TNode* x) {
       ++count;
+      return true;
     });
     return count;
   }
@@ -121,14 +123,14 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.release_mapping(i * 100, 100);
     }
-    EXPECT_EQ(nullptr, treap_root(tree));
+    EXPECT_EQ(nullptr, rbtree_root(tree));
 
     // Other way around
     tree.reserve_mapping(0, 100 * 10, rd);
     for (int i = 9; i >= 0; i--) {
       tree.release_mapping(i * 100, 100);
     }
-    EXPECT_EQ(nullptr, treap_root(tree));
+    EXPECT_EQ(nullptr, rbtree_root(tree));
   }
 
   // Committing in a whole reserved range results in 2 nodes
@@ -138,11 +140,12 @@ public:
     for (int i = 0; i < 10; i++) {
       tree.commit_mapping(i * 100, 100, rd);
     }
-    treap(tree).visit_in_order([&](TNode* x) {
+    rbtree(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
       VMATree::StateType out = out_type_of(x);
       EXPECT_TRUE((in == VMATree::StateType::Released && out == VMATree::StateType::Committed) ||
                   (in == VMATree::StateType::Committed && out == VMATree::StateType::Released));
+      return true;
     });
     EXPECT_EQ(2, count_nodes(tree));
   }
@@ -163,11 +166,12 @@ public:
     };
 
     int i = 0;
-    treap(tree).visit_in_order([&](TNode* x) {
+    rbtree(tree).visit_in_order([&](TNode* x) {
       if (i < 16) {
         found[i] = x->key();
       }
       i++;
+      return true;
     });
 
     ASSERT_EQ(4, i) << "0 - 50 - 75 - 100 nodes expected";
@@ -195,7 +199,7 @@ public:
   };
 
   void call_update_region(const UpdateCallInfo upd) {
-    VMATree::TreapNode n1{upd.req.A, {}, 0}, n2{upd.req.B, {}, 0};
+    VMATree::TNode n1{upd.req.A, {}}, n2{upd.req.B, {}};
     n1.val().out= upd.ex_st;
     n2.val().in = n1.val().out;
     Tree tree;
@@ -256,12 +260,11 @@ public:
       }
       tree.tree().upsert((VMATree::position)et.nodes[i], st);
     }
-    print_tree(et, line_no);
 }
 
   template <int N>
   void check_tree(Tree& tree, const ExpectedTree<N>& et, int line_no) {
-    using Node = VMATree::TreapNode;
+    using Node = VMATree::TNode;
     auto left_released = [&](Node n) -> bool {
       return n.val().in.type() == VMATree::StateType::Released and
             n.val().in.mem_tag() == mtNone;
@@ -271,7 +274,7 @@ public:
             n.val().out.mem_tag() == mtNone;
     };
     for (int i = 0; i < N; i++) {
-      VMATree::VMATreap::Range r = tree.tree().find_enclosing_range(et.nodes[i]);
+      VMATree::VMARBTree::Range r = tree.tree().find_enclosing_range(et.nodes[i]);
       ASSERT_TRUE(r.start != nullptr);
       Node node = *r.start;
       ASSERT_EQ(node.key(), (VMATree::position)et.nodes[i]) << "at line " << line_no;
@@ -302,7 +305,6 @@ public:
         EXPECT_FALSE(r.end->val().in.has_committed_stack()) << for_this_node;
       }
     }
-    print_tree(et, line_no);
   }
 
   template<int N>
@@ -346,6 +348,16 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   EXPECT_EQ(2, count_nodes(tree));
 }
 
+TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
+  VMATree::RegionData rd{si[0], mtTest};
+  Tree tree;
+  tree.reserve_mapping(100, 100, rd);
+  tree.reserve_mapping(100, 100, rd);
+  EXPECT_EQ(2, count_nodes(tree));
+  VMATree::VMARBTree::Range r = tree.tree().find_enclosing_range(110);
+  EXPECT_EQ(100, (int)(r.end->key() - r.start->key()));
+}
+
 TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
   Tree tree;
   VMATree::RegionData rd_Test_cs0(si[0], mtTest);
@@ -357,13 +369,14 @@ TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
   // post-cond: 0---20**30--40**70----100
   tree.commit_mapping(20, 50, rd_None_cs1, true);
   tree.uncommit_mapping(30, 10, rd_None_cs1);
-  tree.visit_in_order([&](TNode* node) {
+  tree.visit_in_order([&](const TNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
       if (node->key() != 20 && node->key() != 40) {
         EXPECT_EQ(VMATree::StateType::Reserved, node->val().out.type());
       }
     }
+    return true;
   });
 }
 
@@ -397,11 +410,12 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
     tree.commit_mapping(50, 50, rd_NMT_cs1);
     tree.reserve_mapping(0, 100, rd_Test_cs0);
-    treap(tree).visit_in_order([&](TNode* x) {
+    rbtree(tree).visit_in_order([&](const TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
-      if (x->key() == 0) {
+      if (x->key() == 0UL) {
         EXPECT_EQ(x->val().out.reserved_regiondata().mem_tag, mtTest);
       }
+      return true;
     });
 
     EXPECT_EQ(2, count_nodes(tree));
@@ -424,7 +438,7 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     tree.reserve_mapping(0, 500000, rd_NMT_cs0);
     tree.release_mapping(0, 500000);
 
-    EXPECT_EQ(nullptr, treap_root(tree));
+    EXPECT_EQ(nullptr, rbtree_root(tree));
   }
 
   { // A committed region inside of/replacing a reserved region
@@ -434,13 +448,14 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     tree.reserve_mapping(0, 100, rd_NMT_cs0);
     tree.commit_mapping(0, 100, rd_Test_cs1);
-    treap(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
+    rbtree(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.reserved_regiondata().mem_tag);
       }
       if (x->key() == 100) {
         EXPECT_EQ(mtTest, x->val().in.reserved_regiondata().mem_tag);
       }
+      return true;
     });
   }
 
@@ -448,9 +463,9 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     Tree tree;
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
     tree.reserve_mapping(0, 0, rd_NMT_cs0);
-    EXPECT_EQ(nullptr, treap_root(tree));
+    EXPECT_EQ(nullptr, rbtree_root(tree));
     tree.commit_mapping(0, 0, rd_NMT_cs0);
-    EXPECT_EQ(nullptr, treap_root(tree));
+    EXPECT_EQ(nullptr, rbtree_root(tree));
   }
 }
 
@@ -468,14 +483,14 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
   auto expect_equivalent_form = [&](auto& expected, VMATree& tree, int line_no) {
     // With auto& our arrays do not deteriorate to pointers but are kept as testrange[N]
     // so this actually works!
-    int len = sizeof(expected) / sizeof(testrange);
+    size_t len = sizeof(expected) / sizeof(testrange);
     VMATree::position previous_to = 0;
-    for (int i = 0; i < len; i++) {
+    for (size_t i = 0; i < len; i++) {
       testrange expect = expected[i];
       assert(previous_to == 0 || previous_to <= expect.from, "the expected list must be sorted");
       previous_to = expect.to;
 
-      VMATree::VMATreap::Range found = tree.tree().find_enclosing_range(expect.from);
+      VMATree::VMARBTree::Range found = tree.tree().find_enclosing_range(expect.from);
       ASSERT_NE(nullptr, found.start);
       ASSERT_NE(nullptr, found.end);
       // Same region
@@ -796,6 +811,18 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   }
 }
 
+TEST_VM_F(NMTVMATreeTest, SummaryAccountingReserveAsUncommit) {
+  Tree tree;
+  Tree::RegionData rd(NCS::StackIndex(), mtTest);
+  VMATree::SummaryDiff diff1 = tree.reserve_mapping(1200, 100, rd);
+  VMATree::SummaryDiff diff2 = tree.commit_mapping(1210, 50, rd);
+  EXPECT_EQ(100, diff1.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+  EXPECT_EQ(50, diff2.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  VMATree::SummaryDiff diff3 = tree.reserve_mapping(1220, 20, rd);
+  EXPECT_EQ(-20, diff3.tag[NMTUtil::tag_to_index(mtTest)].commit);
+  EXPECT_EQ(0, diff3.tag[NMTUtil::tag_to_index(mtTest)].reserve);
+}
+
 // Exceedingly simple tracker for page-granular allocations
 // Use it for testing consistency with VMATree.
   struct SimpleVMATracker : public CHeapObj<mtTest> {
@@ -966,10 +993,10 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
         ASSERT_LE(end, SimpleVMATracker::num_pages);
         SimpleVMATracker::Info endi = tr->pages[end];
 
-        VMATree::VMATreap& treap = this->treap(tree);
-        VMATree::TreapNode* startn = find(treap, start * page_size);
+        VMATree::VMARBTree& rbtree = this->rbtree(tree);
+        VMATree::TNode* startn = find(rbtree, start * page_size);
         ASSERT_NE(nullptr, startn);
-        VMATree::TreapNode* endn = find(treap, (end * page_size) + page_size);
+        VMATree::TNode* endn = find(rbtree, (end * page_size) + page_size);
         ASSERT_NE(nullptr, endn);
 
         const NativeCallStack& start_stack = ncss.get(startn->val().out.reserved_stack());

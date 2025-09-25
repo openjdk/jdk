@@ -45,6 +45,17 @@ STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 
+address StubRoutines::crc_table_addr() {
+  return (address)StubRoutines::x86::_crc_table;
+}
+address StubRoutines::crc32c_table_addr() {
+  if (StubRoutines::x86::_crc32c_table == nullptr) {
+    bool supports_clmul = VM_Version::supports_clmul();
+    StubRoutines::x86::generate_CRC32C_table(supports_clmul);
+  }
+  return (address)StubRoutines::x86::_crc32c_table;
+}
+
 address StubRoutines::x86::_k256_adr = nullptr;
 address StubRoutines::x86::_k256_W_adr = nullptr;
 address StubRoutines::x86::_k512_W_addr = nullptr;
@@ -291,7 +302,7 @@ static uint32_t crc32c_f_pow_n(uint32_t n) {
   return result;
 }
 
-juint *StubRoutines::x86::_crc32c_table;
+juint* StubRoutines::x86::_crc32c_table = nullptr;
 
 void StubRoutines::x86::generate_CRC32C_table(bool is_pclmulqdq_table_supported) {
 

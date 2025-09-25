@@ -45,6 +45,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doLine(SurfaceData sData, float x1, float y1, float x2, float y2);
 
+    @Override
     public void drawLine(SunGraphics2D sg2d, int x1, int y1, int x2, int y2) {
         drawLine(sg2d, (float) x1, (float) y1, (float) x2, (float) y2);
     }
@@ -72,6 +73,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doRect(SurfaceData sData, float x, float y, float width, float height, boolean isfill);
 
+    @Override
     public void drawRect(SunGraphics2D sg2d, int x, int y, int width, int height) {
         drawRect(sg2d, (float) x, (float) y, (float) width, (float) height);
     }
@@ -99,6 +101,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void fillRect(SunGraphics2D sg2d, int x, int y, int width, int height) {
         fillRect(sg2d, (float) x, (float) y, (float) width, (float) height);
     }
@@ -112,6 +115,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doRoundRect(SurfaceData sData, float x, float y, float width, float height, float arcW, float arcH, boolean isfill);
 
+    @Override
     public void drawRoundRect(SunGraphics2D sg2d, int x, int y, int width, int height, int arcWidth, int arcHeight) {
         drawRoundRect(sg2d, (float) x, (float) y, (float) width, (float) height, (float) arcWidth, (float) arcHeight);
     }
@@ -139,6 +143,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void fillRoundRect(SunGraphics2D sg2d, int x, int y, int width, int height, int arcWidth, int arcHeight) {
         fillRoundRect(sg2d, (float) x, (float) y, (float) width, (float) height, (float) arcWidth, (float) arcHeight);
     }
@@ -151,6 +156,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doOval(SurfaceData sData, float x, float y, float width, float height, boolean isfill);
 
+    @Override
     public void drawOval(SunGraphics2D sg2d, int x, int y, int width, int height) {
         drawOval(sg2d, (float) x, (float) y, (float) width, (float) height);
     }
@@ -178,6 +184,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void fillOval(SunGraphics2D sg2d, int x, int y, int width, int height) {
         fillOval(sg2d, (float) x, (float) y, (float) width, (float) height);
     }
@@ -190,6 +197,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doArc(SurfaceData sData, float x, float y, float width, float height, float angleStart, float angleExtent, int type, boolean isfill);
 
+    @Override
     public void drawArc(SunGraphics2D sg2d, int x, int y, int width, int height, int startAngle, int arcAngle) {
         drawArc(sg2d, x, y, width, height, startAngle, arcAngle, Arc2D.OPEN);
     }
@@ -217,6 +225,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void fillArc(SunGraphics2D sg2d, int x, int y, int width, int height, int startAngle, int arcAngle) {
         fillArc(sg2d, x, y, width, height, startAngle, arcAngle, Arc2D.PIE);
     }
@@ -230,6 +239,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
 
     native void doPoly(SurfaceData sData, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill);
 
+    @Override
     public void drawPolyline(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
@@ -244,6 +254,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void drawPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
@@ -259,6 +270,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void fillPolygon(SunGraphics2D sg2d, int[] xpoints, int[] ypoints, int npoints) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         surfaceData.doPolygon(this, sg2d, xpoints, ypoints, npoints, true, true);
@@ -374,6 +386,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void draw(SunGraphics2D sg2d, Shape s) {
         OSXSurfaceData surfaceData = (OSXSurfaceData) sg2d.getSurfaceData();
         if ((sg2d.strokeState != SunGraphics2D.STROKE_CUSTOM) && (OSXSurfaceData.IsSimpleColor(sg2d.paint))) {
@@ -383,6 +396,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         }
     }
 
+    @Override
     public void fill(SunGraphics2D sg2d, Shape s) {
         drawfillShape(sg2d, s, true, false);
     }
@@ -527,6 +541,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     }
 
     // copied from DrawImage.java
+    @Override
     public boolean copyImage(SunGraphics2D sg2d, Image img, int x, int y, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
@@ -539,6 +554,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     }
 
     // copied from DrawImage.java
+    @Override
     public boolean copyImage(SunGraphics2D sg2d, Image img, int dx, int dy, int sx, int sy, int width, int height, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
@@ -551,6 +567,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     }
 
     // copied from DrawImage.java
+    @Override
     public boolean scaleImage(SunGraphics2D sg2d, Image img, int x, int y, int width, int height, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
@@ -563,6 +580,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     }
 
     // copied from DrawImage.java
+    @Override
     public boolean scaleImage(SunGraphics2D sg2d, Image img, int dx1, int dy1, int dx2, int dy2, int sx1, int sy1, int sx2, int sy2, Color bgColor, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
@@ -575,6 +593,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     }
 
     // copied from DrawImage.java
+    @Override
     public boolean transformImage(SunGraphics2D sg2d, Image img, AffineTransform atfm, ImageObserver observer) {
         if (img == null) { throw new NullPointerException(); }
 
@@ -590,6 +609,7 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
     }
 
     // copied from DrawImage.java
+    @Override
     public void transformImage(SunGraphics2D sg2d, BufferedImage img, BufferedImageOp op, int x, int y) {
         if (img != null) {
             transformImage(sg2d, img, x, y, op, null, null);
@@ -602,42 +622,50 @@ public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, D
         return new Tracer();
     }
 
-    public static class Tracer extends CRenderer {
+    public static final class Tracer extends CRenderer {
+        @Override
         void doLine(SurfaceData sData, float x1, float y1, float x2, float y2) {
             GraphicsPrimitive.tracePrimitive("QuartzLine");
             super.doLine(sData, x1, y1, x2, y2);
         }
 
+        @Override
         void doRect(SurfaceData sData, float x, float y, float width, float height, boolean isfill) {
             GraphicsPrimitive.tracePrimitive("QuartzRect");
             super.doRect(sData, x, y, width, height, isfill);
         }
 
+        @Override
         void doRoundRect(SurfaceData sData, float x, float y, float width, float height, float arcW, float arcH, boolean isfill) {
             GraphicsPrimitive.tracePrimitive("QuartzRoundRect");
             super.doRoundRect(sData, x, y, width, height, arcW, arcH, isfill);
         }
 
+        @Override
         void doOval(SurfaceData sData, float x, float y, float width, float height, boolean isfill) {
             GraphicsPrimitive.tracePrimitive("QuartzOval");
             super.doOval(sData, x, y, width, height, isfill);
         }
 
+        @Override
         void doArc(SurfaceData sData, float x, float y, float width, float height, float angleStart, float angleExtent, int type, boolean isfill) {
             GraphicsPrimitive.tracePrimitive("QuartzArc");
             super.doArc(sData, x, y, width, height, angleStart, angleExtent, type, isfill);
         }
 
+        @Override
         void doPoly(SurfaceData sData, int[] xpoints, int[] ypoints, int npoints, boolean ispolygon, boolean isfill) {
             GraphicsPrimitive.tracePrimitive("QuartzDoPoly");
             super.doPoly(sData, xpoints, ypoints, npoints, ispolygon, isfill);
         }
 
+        @Override
         void doShape(SurfaceData sData, int length, FloatBuffer coordinates, IntBuffer types, int windingRule, boolean isfill, boolean shouldApplyOffset) {
             GraphicsPrimitive.tracePrimitive("QuartzFillOrDrawShape");
             super.doShape(sData, length, coordinates, types, windingRule, isfill, shouldApplyOffset);
         }
 
+        @Override
         void doImage(SurfaceData sData, SurfaceData img, boolean fliph, boolean flipv, int w, int h, int sx, int sy, int sw, int sh, int dx, int dy, int dw, int dh) {
             GraphicsPrimitive.tracePrimitive("QuartzDrawImage");
             super.doImage(sData, img, fliph, flipv, w, h, sx, sy, sw, sh, dx, dy, dw, dh);

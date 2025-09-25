@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,8 +96,15 @@ public class BytecodeDescriptor {
             }
         } else if (c == '[') {
             Class<?> t = parseSig(str, i, end, loader);
-            if (t != null)
-                t = t.arrayType();
+            if (t != null) {
+                try {
+                    t = t.arrayType();
+                } catch (UnsupportedOperationException ex) {
+                    // Bad arrays, such as [V or more than 255 dims
+                    // We have a more informative IAE
+                    return null;
+                }
+            }
             return t;
         } else {
             return Wrapper.forBasicType(c).primitiveType();

@@ -54,11 +54,13 @@ public interface MacApplication extends Application, MacApplicationMixin {
 
     @Override
     default Path appImageDirName() {
+        final String suffix;
         if (isRuntime()) {
-            return Application.super.appImageDirName();
+            suffix = ".jdk";
         } else {
-            return Path.of(Application.super.appImageDirName().toString() + ".app");
+            suffix = ".app";
         }
+        return Path.of(Application.super.appImageDirName().toString() + suffix);
     }
 
     /**

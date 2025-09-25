@@ -61,8 +61,8 @@ import jdk.jfr.internal.util.ImplicitFields;
  *
  */
 public final class EventInstrumentation {
-    public static final long MASK_THROTTLE               = 1 << 62;
-    public static final long MASK_THROTTLE_CHECK         = 1 << 63;
+    public static final long MASK_THROTTLE               = 1L << 62;
+    public static final long MASK_THROTTLE_CHECK         = 1L << 63;
     public static final long MASK_THROTTLE_BITS          = MASK_THROTTLE | MASK_THROTTLE_CHECK;
     public static final long MASK_THROTTLE_CHECK_SUCCESS = MASK_THROTTLE_CHECK | MASK_THROTTLE;
     public static final long MASK_THROTTLE_CHECK_FAIL    = MASK_THROTTLE_CHECK | 0;
@@ -124,11 +124,7 @@ public final class EventInstrumentation {
         this.eventClassDesc = inspector.getClassDesc();
         this.staticCommitMethod = inspector.findStaticCommitMethod();
         this.untypedEventConfiguration = hasUntypedConfiguration();
-        if (inspector.isJDK()) {
-            this.throttled = inspector.hasStaticMethod(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
-        } else {
-            this.throttled = inspector.isThrottled();
-        }
+        this.throttled = inspector.isThrottled(METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG);
     }
 
     byte[] buildInstrumented() {
@@ -482,6 +478,11 @@ public final class EventInstrumentation {
         blockCodeBuilder.ifne(durationEvent);
         invokestatic(blockCodeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
         blockCodeBuilder.lstore(1);
+        if (throttled) {
+            blockCodeBuilder.aload(0);
+            blockCodeBuilder.lload(1);
+            putfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
+        }
         Label commit = blockCodeBuilder.newLabel();
         blockCodeBuilder.goto_(commit);
         //   if (duration == 0) {
@@ -491,7 +492,7 @@ public final class EventInstrumentation {
         blockCodeBuilder.labelBinding(durationEvent);
         blockCodeBuilder.aload(0);
         getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
-        blockCodeBuilder.lconst_0();
+        blockCodeBuilder.lconst_0(); // also blocks throttled event
         blockCodeBuilder.lcmp();
         blockCodeBuilder.ifne(commit);
         blockCodeBuilder.aload(0);
@@ -527,9 +528,7 @@ public final class EventInstrumentation {
             // write duration
             blockCodeBuilder.dup();
             // stack: [EW] [EW]
-            blockCodeBuilder.aload(0);
-            // stack: [EW] [EW] [this]
-            getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
+            getDuration(blockCodeBuilder);
             // stack: [EW] [EW] [long]
             invokevirtual(blockCodeBuilder, TYPE_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
             fieldIndex++;

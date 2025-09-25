@@ -90,6 +90,7 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name jdk/incubator/vector/VectorShape
 -method name forBitSize descriptor (I)Ljdk/incubator/vector/VectorShape;
 method name forBitSize descriptor (I)Ljdk/incubator/vector/VectorShape; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name largestShapeFor descriptor (Ljava/lang/Class;)Ljdk/incubator/vector/VectorShape; flags 9 signature (Ljava/lang/Class<*>;)Ljdk/incubator/vector/VectorShape;
 
 class name jdk/incubator/vector/VectorShuffle
 header extends jdk/internal/vm/vector/VectorSupport$VectorShuffle flags 421 signature <E:Ljava/lang/Object;>Ljdk/internal/vm/vector/VectorSupport$VectorShuffle<TE;>;
