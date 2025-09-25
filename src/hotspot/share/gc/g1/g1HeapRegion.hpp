@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class G1CollectedHeap;
 class G1CMBitMap;
 class G1CSetCandidateGroup;
 class G1Predictions;
-class G1HeapRegion;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
 class nmethod;
@@ -394,7 +393,7 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  size_t pinned_count() const { return AtomicAccess::load(&_pinned_object_count); }
   bool has_pinned_objects() const { return pinned_count() > 0; }
 
   void set_free();
@@ -478,7 +477,10 @@ public:
   // Callers must ensure this is not called by multiple threads at the same time.
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
-  void clear_cardtable();
+  void clear_card_table();
+  void clear_refinement_table();
+
+  void clear_both_card_tables();
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
@@ -496,10 +498,10 @@ public:
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  uint  young_index_in_cset() const { return _young_index_in_cset; }
+  uint young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
   void set_young_index_in_cset(uint index) {
-    assert(index != UINT_MAX, "just checking");
+    assert(index != InvalidCSetIndex, "just checking");
     assert(index != 0, "just checking");
     assert(is_young(), "pre-condition");
     _young_index_in_cset = index;

@@ -481,6 +481,31 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_ADDRESS_SANITIZER],
 
 ################################################################################
 #
+# Static analyzer
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_STATIC_ANALYZER],
+[
+  UTIL_ARG_ENABLE(NAME: static-analyzer, DEFAULT: false, RESULT: STATIC_ANALYZER_ENABLED,
+      DESC: [enable the GCC static analyzer],
+      CHECK_AVAILABLE: [
+        AC_MSG_CHECKING([if static analyzer is available])
+        if test "x$TOOLCHAIN_TYPE" = "xgcc"; then
+          AC_MSG_RESULT([yes])
+        else
+          AC_MSG_RESULT([no])
+          AVAILABLE=false
+        fi
+      ],
+      IF_ENABLED: [
+        STATIC_ANALYZER_CFLAGS="-fanalyzer -Wno-analyzer-fd-leak"
+        CFLAGS_JDKLIB="$CFLAGS_JDKLIB $STATIC_ANALYZER_CFLAGS"
+        CFLAGS_JDKEXE="$CFLAGS_JDKEXE $STATIC_ANALYZER_CFLAGS"
+      ])
+  AC_SUBST(STATIC_ANALYZER_ENABLED)
+])
+
+################################################################################
+#
 # LeakSanitizer
 #
 AC_DEFUN_ONCE([JDKOPT_SETUP_LEAK_SANITIZER],
@@ -872,15 +897,15 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     # for the rest of configure.
     SOURCE_DATE_EPOCH="$SOURCE_DATE"
     if test "x$IS_GNU_DATE" = xyes; then
-      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+      SOURCE_DATE_ISO_8601_FIXED=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
     else
-      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+      SOURCE_DATE_ISO_8601_FIXED=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
     fi
   fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
-  AC_SUBST(SOURCE_DATE_ISO_8601)
+  AC_SUBST(SOURCE_DATE_ISO_8601_FIXED)
 ])
 
 ################################################################################

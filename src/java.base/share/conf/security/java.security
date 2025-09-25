@@ -772,6 +772,54 @@ jdk.tls.disabledAlgorithms=SSLv3, TLSv1, TLSv1.1, DTLSv1.0, RC4, DES, \
     ecdsa_sha1 usage HandshakeSignature, dsa_sha1 usage HandshakeSignature
 
 #
+# Algorithm restrictions for Java Crypto API services
+#
+# In some environments, certain algorithms may be undesirable for certain
+# cryptographic services. For example, "MD2" is generally no longer considered
+# to be a secure hash algorithm.  This section describes the mechanism for
+# disabling algorithms at the JCA/JCE level based on service name and algorithm
+# name.
+#
+# If a system property of the same name is also specified, it supersedes the
+# security property value defined here.
+#
+# The syntax of the disabled services string is described as follows:
+#       "DisabledService {, DisabledService}"
+#
+#   DisabledService:
+#       Service.AlgorithmName
+#
+# Service:  (one of the following, more services may be added later)
+#     Cipher | KeyStore | MessageDigest | Signature
+#
+#   AlgorithmName:
+#       (see below)
+#
+# The "AlgorithmName" is the standard algorithm name of the disabled
+# service. See the Java Security Standard Algorithm Names Specification
+# for information about Standard Algorithm Names.  Matching is
+# performed using a case-insensitive exact matching rule. For Cipher service,
+# its algorithm is the transformation string.
+#
+# Note: If the property value contains entries with invalid syntax or
+# unsupported services at the time of checking, an ExceptionInInitializerError
+# with a cause of IllegalArgumentException will be thrown.
+#
+# Note: The restriction is applied in the various getInstance(...) methods
+# of the supported Service classes, i.e. Cipher, KeyStore, MessageDigest,
+# and Signature. If the algorithm is disabled, a NoSuchAlgorithmException will
+# be thrown by the getInstance methods of Cipher, MessageDigest, and Signature
+# and a KeyStoreException by the getInstance methods of KeyStore.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+# Example:
+#   jdk.crypto.disabledAlgorithms=Cipher.RSA/ECB/PKCS1Padding, MessageDigest.MD2
+#
+#jdk.crypto.disabledAlgorithms=
+
+#
 # Legacy algorithms for Secure Socket Layer/Transport Layer Security (SSL/TLS)
 # processing in JSSE implementation.
 #
@@ -922,6 +970,33 @@ jdk.tls.legacyAlgorithms=NULL, anon, RC4, DES, 3DES_EDE_CBC
 #
 jdk.tls.keyLimits=AES/GCM/NoPadding KeyUpdate 2^37, \
                   ChaCha20-Poly1305 KeyUpdate 2^37
+
+#
+# QUIC TLS key limits on symmetric cryptographic algorithms
+#
+# This security property sets limits on algorithms key usage in QUIC.
+# When the number of encrypted datagrams reaches the algorithm value
+# listed below, key update operation will be initiated.
+#
+# The syntax for the property is described below:
+#   KeyLimits:
+#       " KeyLimit { , KeyLimit } "
+#
+#   KeyLimit:
+#       AlgorithmName Length
+#
+#   AlgorithmName:
+#       A full algorithm transformation.
+#
+#   Length:
+#       The amount of encrypted data in a session before the Action occurs
+#       This value may be an integer value in bytes, or as a power of two, 2^23.
+#
+# Note: This property is currently used by OpenJDK's JSSE implementation. It
+# is not guaranteed to be examined and used by other implementations.
+#
+jdk.quic.tls.keyLimits=AES/GCM/NoPadding 2^23, \
+                       ChaCha20-Poly1305 2^23
 
 #
 # Cryptographic Jurisdiction Policy defaults

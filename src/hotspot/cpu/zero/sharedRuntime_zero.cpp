@@ -38,12 +38,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-
-static address zero_null_code_stub() {
-  address start = ShouldNotCallThisStub();
-  return start;
-}
-
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
                                            int total_args_passed) {
@@ -55,12 +49,9 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  // VM expects i2c entry to be always filled. The rest can be unset.
-  handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            nullptr,
-                            nullptr,
-                            nullptr);
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+  ShouldNotCallThis();
+  return;
 }
 
 nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,

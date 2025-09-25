@@ -71,7 +71,7 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
             Path outputParentDir) throws PackagerException {
 
         final var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
-        var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+        var env = MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
         final var packager = MacDmgPackager.build().outputDir(outputParentDir).pkg(pkg).env(env);
 

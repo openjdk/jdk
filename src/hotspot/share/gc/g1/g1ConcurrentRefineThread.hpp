@@ -33,8 +33,8 @@
 // Forward Decl.
 class G1ConcurrentRefine;
 
-// One or more G1 Concurrent Refinement Threads may be active if concurrent
-// refinement is in progress.
+// Concurrent refinement control thread watching card mark accrual on the card table
+// and starting refinement work.
 class G1ConcurrentRefineThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class G1CollectedHeap;
@@ -42,43 +42,34 @@ class G1ConcurrentRefineThread: public ConcurrentGCThread {
   Monitor _notifier;
   bool _requested_active;
 
-  G1ConcurrentRefineStats _refinement_stats;
-
   uint _worker_id;
 
   G1ConcurrentRefine* _cr;
 
   NONCOPYABLE(G1ConcurrentRefineThread);
 
-protected:
-  G1ConcurrentRefineThread(G1ConcurrentRefine* cr, uint worker_id);
+  G1ConcurrentRefineThread(G1ConcurrentRefine* cr);
 
   Monitor* notifier() { return &_notifier; }
   bool requested_active() const { return _requested_active; }
 
   // Returns !should_terminate().
   // precondition: this is the current thread.
-  virtual bool wait_for_completed_buffers() = 0;
+  bool wait_for_work();
 
   // Deactivate if appropriate.  Returns true if deactivated.
   // precondition: this is the current thread.
-  virtual bool maybe_deactivate();
+  bool deactivate();
 
-  // Attempt to do some refinement work.
-  // precondition: this is the current thread.
-  virtual void do_refinement_step() = 0;
+  // Swap card table and do a complete re-examination/refinement pass over the
+  // refinement table.
+  void do_refinement();
 
   // Update concurrent refine threads cpu time stats.
-  virtual void update_perf_counter_cpu_time() = 0;
-
-  // Helper for do_refinement_step implementations.  Try to perform some
-  // refinement work, limited by stop_at.  Returns true if any refinement work
-  // was performed, false if no work available per stop_at.
-  // precondition: this is the current thread.
-  bool try_refinement_step(size_t stop_at);
+  void update_perf_counter_cpu_time();
 
   void report_active(const char* reason) const;
-  void report_inactive(const char* reason, const G1ConcurrentRefineStats& stats) const;
+  void report_inactive(const char* reason) const;
 
   G1ConcurrentRefine* cr() const { return _cr; }
 
@@ -86,22 +77,11 @@ protected:
   void stop_service() override;
 
 public:
-  static G1ConcurrentRefineThread* create(G1ConcurrentRefine* cr, uint worker_id);
-  virtual ~G1ConcurrentRefineThread() = default;
-
-  uint worker_id() const { return _worker_id; }
+  static G1ConcurrentRefineThread* create(G1ConcurrentRefine* cr);
 
   // Activate this thread.
   // precondition: this is not the current thread.
   void activate();
-
-  G1ConcurrentRefineStats* refinement_stats() {
-    return &_refinement_stats;
-  }
-
-  const G1ConcurrentRefineStats* refinement_stats() const {
-    return &_refinement_stats;
-  }
 
   // Total cpu time spent in this thread so far.
   jlong cpu_time();

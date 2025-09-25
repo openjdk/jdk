@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,9 @@ final class LCMSImageLayout {
     static LCMSImageLayout createImageLayout(BufferedImage image) {
         LCMSImageLayout l = new LCMSImageLayout();
 
-        switch (image.getType()) {
+        Raster raster = image.getRaster();
+        int type = image.getType();
+        switch (type) {
             case BufferedImage.TYPE_INT_RGB, BufferedImage.TYPE_INT_ARGB:
                 l.pixelType = PT_ARGB_8 ^ SWAP_ENDIAN;
                 break;
@@ -164,7 +166,7 @@ final class LCMSImageLayout {
                             return null;
                         }
                     }
-                    return createImageLayout(image.getRaster(), cm);
+                    return createImageLayout(raster, cm);
                 }
                 return null;
         }
@@ -172,11 +174,13 @@ final class LCMSImageLayout {
         l.width = image.getWidth();
         l.height = image.getHeight();
 
-        switch (image.getType()) {
+        switch (type) {
             case BufferedImage.TYPE_INT_RGB, BufferedImage.TYPE_INT_ARGB,
                  BufferedImage.TYPE_INT_ARGB_PRE, BufferedImage.TYPE_INT_BGR ->
             {
-                var intRaster = (IntegerComponentRaster) image.getRaster();
+                if (!(raster instanceof IntegerComponentRaster intRaster)) {
+                    return null;
+                }
                 l.nextRowOffset = safeMult(4, intRaster.getScanlineStride());
                 l.nextPixelOffset = safeMult(4, intRaster.getPixelStride());
                 l.offset = safeMult(4, intRaster.getDataOffset(0));
@@ -188,7 +192,9 @@ final class LCMSImageLayout {
                  BufferedImage.TYPE_4BYTE_ABGR,
                  BufferedImage.TYPE_4BYTE_ABGR_PRE ->
             {
-                var byteRaster = (ByteComponentRaster) image.getRaster();
+                if (!(raster instanceof ByteComponentRaster byteRaster)) {
+                    return null;
+                }
                 l.nextRowOffset = byteRaster.getScanlineStride();
                 l.nextPixelOffset = byteRaster.getPixelStride();
                 int firstBand = byteRaster.getSampleModel().getNumBands() - 1;
@@ -198,7 +204,9 @@ final class LCMSImageLayout {
                 l.dataType = DT_BYTE;
             }
             case BufferedImage.TYPE_USHORT_GRAY -> {
-                var shortRaster = (ShortComponentRaster) image.getRaster();
+                if (!(raster instanceof ShortComponentRaster shortRaster)) {
+                    return null;
+                }
                 l.nextRowOffset = safeMult(2, shortRaster.getScanlineStride());
                 l.nextPixelOffset = safeMult(2, shortRaster.getPixelStride());
                 l.offset = safeMult(2, shortRaster.getDataOffset(0));

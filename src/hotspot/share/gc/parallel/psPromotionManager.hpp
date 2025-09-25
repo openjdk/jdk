@@ -113,6 +113,13 @@ class PSPromotionManager {
   template<bool promote_immediately>
   oop copy_unmarked_to_survivor_space(oop o, markWord m);
 
+  inline HeapWord* allocate_in_young_gen(Klass* klass,
+                                         size_t obj_size,
+                                         uint age);
+  inline HeapWord* allocate_in_old_gen(Klass* klass,
+                                       size_t obj_size,
+                                       uint age);
+
  public:
   // Static
   static void initialize();
@@ -143,25 +150,18 @@ class PSPromotionManager {
   void flush_labs();
   void flush_string_dedup_requests() { _string_dedup_requests.flush(); }
 
-  void drain_stacks(bool totally_drain) {
-    drain_stacks_depth(totally_drain);
-  }
- public:
   void drain_stacks_cond_depth() {
     if (claimed_stack_depth()->size() > _target_stack_size) {
-      drain_stacks_depth(false);
+      drain_stacks(false);
     }
   }
-  void drain_stacks_depth(bool totally_drain);
+  void drain_stacks(bool totally_drain);
 
   bool stacks_empty() {
     return claimed_stack_depth()->is_empty();
   }
 
   inline void process_popped_location_depth(ScannerTask task, bool stolen);
-
-  static bool should_scavenge(oop* p, bool check_to_space = false);
-  static bool should_scavenge(narrowOop* p, bool check_to_space = false);
 
   template <bool promote_immediately, class T>
   void copy_and_push_safe_barrier(T* p);

@@ -43,7 +43,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/signature.hpp"
@@ -51,8 +50,8 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "runtime/vframeArray.hpp"
 
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : _reg_map(reg_map), _thread(thread),
