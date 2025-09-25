@@ -318,8 +318,8 @@ public final class PListReader {
     }
 
 
-    private final static class XPathSingleton {
-        private final static XPath INSTANCE = XPathFactory.newInstance().newXPath();
+    private static final class XPathSingleton {
+        private static final XPath INSTANCE = XPathFactory.newInstance().newXPath();
     }
 
 

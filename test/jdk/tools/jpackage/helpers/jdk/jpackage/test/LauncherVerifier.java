@@ -399,8 +399,8 @@ public final class LauncherVerifier {
             }).get();
         }
 
-        final static Map<String, Object> STANDARD = loadFromResources("entitlements.plist");
-        final static Map<String, Object> APP_STORE = loadFromResources("sandbox.plist");
+        static final Map<String, Object> STANDARD = loadFromResources("entitlements.plist");
+        static final Map<String, Object> APP_STORE = loadFromResources("sandbox.plist");
     }
 
 
