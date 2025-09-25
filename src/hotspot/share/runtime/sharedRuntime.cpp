@@ -2526,21 +2526,21 @@ BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   return _buffer;
 }
 
-static void post_adapter_creation(const AdapterBlob* new_adapter,
-                                  const AdapterHandlerEntry* entry) {
+static void post_adapter_creation(const AdapterHandlerEntry* entry) {
   if (Forte::is_enabled() || JvmtiExport::should_post_dynamic_code_generated()) {
+    AdapterBlob* adapter_blob = entry->adapter_blob();
     char blob_id[256];
     jio_snprintf(blob_id,
                  sizeof(blob_id),
                  "%s(%s)",
-                 new_adapter->name(),
+                 adapter_blob->name(),
                  entry->fingerprint()->as_string());
     if (Forte::is_enabled()) {
-      Forte::register_stub(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+      Forte::register_stub(blob_id, adapter_blob->content_begin(), adapter_blob->content_end());
     }
 
     if (JvmtiExport::should_post_dynamic_code_generated()) {
-      JvmtiExport::post_dynamic_code_generated(blob_id, new_adapter->content_begin(), new_adapter->content_end());
+      JvmtiExport::post_dynamic_code_generated(blob_id, adapter_blob->content_begin(), adapter_blob->content_end());
     }
   }
 }
@@ -2562,27 +2562,22 @@ void AdapterHandlerLibrary::initialize() {
 #endif // INCLUDE_CDS
 
   ResourceMark rm;
-  AdapterBlob* no_arg_blob = nullptr;
-  AdapterBlob* int_arg_blob = nullptr;
-  AdapterBlob* obj_arg_blob = nullptr;
-  AdapterBlob* obj_int_arg_blob = nullptr;
-  AdapterBlob* obj_obj_arg_blob = nullptr;
   {
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
-    _no_arg_handler = create_adapter(no_arg_blob, 0, nullptr);
+    _no_arg_handler = create_adapter(0, nullptr);
 
     BasicType obj_args[] = { T_OBJECT };
-    _obj_arg_handler = create_adapter(obj_arg_blob, 1, obj_args);
+    _obj_arg_handler = create_adapter(1, obj_args);
 
     BasicType int_args[] = { T_INT };
-    _int_arg_handler = create_adapter(int_arg_blob, 1, int_args);
+    _int_arg_handler = create_adapter(1, int_args);
 
     BasicType obj_int_args[] = { T_OBJECT, T_INT };
-    _obj_int_arg_handler = create_adapter(obj_int_arg_blob, 2, obj_int_args);
+    _obj_int_arg_handler = create_adapter(2, obj_int_args);
 
     BasicType obj_obj_args[] = { T_OBJECT, T_OBJECT };
-    _obj_obj_arg_handler = create_adapter(obj_obj_arg_blob, 2, obj_obj_args);
+    _obj_obj_arg_handler = create_adapter(2, obj_obj_args);
 
     // we should always get an entry back but we don't have any
     // associated blob on Zero
@@ -2596,11 +2591,11 @@ void AdapterHandlerLibrary::initialize() {
   // Outside of the lock
 #ifndef ZERO
   // no blobs to register when we are on Zero
-  post_adapter_creation(no_arg_blob, _no_arg_handler);
-  post_adapter_creation(obj_arg_blob, _obj_arg_handler);
-  post_adapter_creation(int_arg_blob, _int_arg_handler);
-  post_adapter_creation(obj_int_arg_blob, _obj_int_arg_handler);
-  post_adapter_creation(obj_obj_arg_blob, _obj_obj_arg_handler);
+  post_adapter_creation(_no_arg_handler);
+  post_adapter_creation(_obj_arg_handler);
+  post_adapter_creation(_int_arg_handler);
+  post_adapter_creation(_obj_int_arg_handler);
+  post_adapter_creation(_obj_obj_arg_handler);
 #endif // ZERO
 }
 
@@ -2695,9 +2690,8 @@ const char* AdapterHandlerEntry::_entry_names[] = {
 void AdapterHandlerLibrary::verify_adapter_sharing(int total_args_passed, BasicType* sig_bt, AdapterHandlerEntry* cached_entry) {
   // we can only check for the same code if there is any
 #ifndef ZERO
-  AdapterBlob* comparison_blob = nullptr;
-  AdapterHandlerEntry* comparison_entry = create_adapter(comparison_blob, total_args_passed, sig_bt, true);
-  assert(comparison_blob == nullptr, "no blob should be created when creating an adapter for comparison");
+  AdapterHandlerEntry* comparison_entry = create_adapter(total_args_passed, sig_bt, true);
+  assert(comparison_entry->adapter_blob() == nullptr, "no blob should be created when creating an adapter for comparison");
   assert(comparison_entry->compare_code(cached_entry), "code must match");
   // Release the one just created
   AdapterHandlerEntry::deallocate(comparison_entry);
@@ -2719,7 +2713,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
   }
 
   ResourceMark rm;
-  AdapterBlob* adapter_blob = nullptr;
+  bool new_entry = false;
 
   // Fill in the signature array, for the calling-convention call.
   int total_args_passed = method->size_of_parameters(); // All args on stack
@@ -2735,54 +2729,48 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     entry = lookup(total_args_passed, sig_bt);
 
     if (entry != nullptr) {
+#ifndef ZERO
       assert(entry->is_linked(), "AdapterHandlerEntry must have been linked");
+#endif
 #ifdef ASSERT
       if (!entry->in_aot_cache() && VerifyAdapterSharing) {
         verify_adapter_sharing(total_args_passed, sig_bt, entry);
       }
 #endif
     } else {
-      entry = create_adapter(adapter_blob, total_args_passed, sig_bt);
+      entry = create_adapter(total_args_passed, sig_bt);
+      if (entry != nullptr) {
+        new_entry = true;
+      }
     }
   }
 
   // Outside of the lock
-  if (adapter_blob != nullptr) {
-    post_adapter_creation(adapter_blob, entry);
+  if (new_entry) {
+    post_adapter_creation(entry);
   }
   return entry;
 }
 
-AdapterBlob* AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
+void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   ResourceMark rm;
   const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
   const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
-  int offsets[AdapterBlob::ENTRY_COUNT];
 
-  AdapterBlob* adapter_blob = nullptr;
   CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
   if (blob != nullptr) {
-    adapter_blob = blob->as_adapter_blob();
-    adapter_blob->get_offsets(offsets);
-    address i2c_entry = adapter_blob->content_begin();
-    assert(offsets[0] == 0, "sanity check");
-    handler->set_entry_points(
-      i2c_entry,
-      (offsets[1] != -1) ? (i2c_entry + offsets[1]) : nullptr,
-      (offsets[2] != -1) ? (i2c_entry + offsets[2]) : nullptr,
-      (offsets[3] != -1) ? (i2c_entry + offsets[3]) : nullptr
-    );
+    handler->set_adapter_blob(blob->as_adapter_blob());
   }
-  return adapter_blob;
 }
 
 #ifndef PRODUCT
-void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler, AdapterBlob* adapter_blob) {
+void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, AdapterHandlerEntry* handler) {
   ttyLocker ttyl;
   ResourceMark rm;
   int insts_size;
   // on Zero the blob may be null
   handler->print_adapter_on(tty);
+  AdapterBlob* adapter_blob = handler->adapter_blob();
   if (adapter_blob == nullptr) {
     return;
   }
@@ -2792,7 +2780,7 @@ void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, Adapter
                 handler->fingerprint()->as_string(), insts_size);
   st->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(handler->get_c2i_entry()));
   if (Verbose || PrintStubCode) {
-    address first_pc = handler->base_address();
+    address first_pc = adapter_blob->content_begin();
     if (first_pc != nullptr) {
       Disassembler::decode(first_pc, first_pc + insts_size, st, &adapter_blob->asm_remarks());
       st->cr();
@@ -2801,8 +2789,19 @@ void AdapterHandlerLibrary::print_adapter_handler_info(outputStream* st, Adapter
 }
 #endif // PRODUCT
 
-bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
-                                                  AdapterHandlerEntry* handler,
+void AdapterHandlerLibrary::address_to_offset(address entry_address[AdapterBlob::ENTRY_COUNT],
+                                              int entry_offset[AdapterBlob::ENTRY_COUNT]) {
+  entry_offset[AdapterBlob::I2C] = 0;
+  entry_offset[AdapterBlob::C2I] = entry_address[AdapterBlob::C2I] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Unverified] = entry_address[AdapterBlob::C2I_Unverified] - entry_address[AdapterBlob::I2C];
+  if (entry_address[AdapterBlob::C2I_No_Clinit_Check] == nullptr) {
+    entry_offset[AdapterBlob::C2I_No_Clinit_Check] = -1;
+  } else {
+    entry_offset[AdapterBlob::C2I_No_Clinit_Check] = entry_address[AdapterBlob::C2I_No_Clinit_Check] - entry_address[AdapterBlob::I2C];
+  }
+}
+
+bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
                                                   int total_args_passed,
                                                   BasicType* sig_bt,
                                                   bool is_transient) {
@@ -2810,6 +2809,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     ClassLoader::perf_method_adapters_count()->inc();
   }
 
+#ifndef ZERO
   BufferBlob* buf = buffer_blob(); // the temporary code buffer in CodeCache
   CodeBuffer buffer(buf);
   short buffer_locs[20];
@@ -2821,17 +2821,17 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
 
   // Get a description of the compiled java calling convention and the largest used (VMReg) stack slot usage
   int comp_args_on_stack = SharedRuntime::java_calling_convention(sig_bt, regs, total_args_passed);
+  address entry_address[AdapterBlob::ENTRY_COUNT];
   SharedRuntime::generate_i2c2i_adapters(&masm,
                                          total_args_passed,
                                          comp_args_on_stack,
                                          sig_bt,
                                          regs,
-                                         handler);
-#ifdef ZERO
+                                         entry_address);
   // On zero there is no code to save and no need to create a blob and
   // or relocate the handler.
-  adapter_blob = nullptr;
-#else
+  int entry_offset[AdapterBlob::ENTRY_COUNT];
+  address_to_offset(entry_address, entry_offset);
 #ifdef ASSERT
   if (VerifyAdapterSharing) {
     handler->save_code(buf->code_begin(), buffer.insts_size());
@@ -2840,25 +2840,14 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     }
   }
 #endif
-
-  int entry_offset[AdapterBlob::ENTRY_COUNT];
-  assert(AdapterBlob::ENTRY_COUNT == 4, "sanity");
-  address i2c_entry = handler->get_i2c_entry();
-  entry_offset[0] = 0; // i2c_entry offset
-  entry_offset[1] = (handler->get_c2i_entry() != nullptr) ?
-                    (handler->get_c2i_entry() - i2c_entry) : -1;
-  entry_offset[2] = (handler->get_c2i_unverified_entry() != nullptr) ?
-                    (handler->get_c2i_unverified_entry() - i2c_entry) : -1;
-  entry_offset[3] = (handler->get_c2i_no_clinit_check_entry() != nullptr) ?
-                    (handler->get_c2i_no_clinit_check_entry() - i2c_entry) : -1;
-
-  adapter_blob = AdapterBlob::create(&buffer, entry_offset);
+  AdapterBlob* adapter_blob = AdapterBlob::create(&buffer, entry_offset);
   if (adapter_blob == nullptr) {
     // CodeCache is full, disable compilation
     // Ought to log this but compile log is only per compile thread
     // and we're some non descript Java thread.
     return false;
   }
+  handler->set_adapter_blob(adapter_blob);
   if (!is_transient && AOTCodeCache::is_dumping_adapter()) {
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
@@ -2866,26 +2855,24 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterBlob*& adapter_blob,
     bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
-  handler->relocate(adapter_blob->content_begin());
 #endif // ZERO
 
 #ifndef PRODUCT
   // debugging support
   if (PrintAdapterHandlers || PrintStubCode) {
-    print_adapter_handler_info(tty, handler, adapter_blob);
+    print_adapter_handler_info(tty, handler);
   }
 #endif
 
   return true;
 }
 
-AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& adapter_blob,
-                                                           int total_args_passed,
+AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(int total_args_passed,
                                                            BasicType* sig_bt,
                                                            bool is_transient) {
   AdapterFingerPrint* fp = AdapterFingerPrint::allocate(total_args_passed, sig_bt);
   AdapterHandlerEntry* handler = AdapterHandlerLibrary::new_entry(fp);
-  if (!generate_adapter_code(adapter_blob, handler, total_args_passed, sig_bt, is_transient)) {
+  if (!generate_adapter_code(handler, total_args_passed, sig_bt, is_transient)) {
     AdapterHandlerEntry::deallocate(handler);
     return nullptr;
   }
@@ -2902,7 +2889,8 @@ void AdapterHandlerEntry::remove_unshareable_info() {
    _saved_code = nullptr;
    _saved_code_length = 0;
 #endif // ASSERT
-  set_entry_points(nullptr, nullptr, nullptr, nullptr, false);
+   _adapter_blob = nullptr;
+   _linked = false;
 }
 
 class CopyAdapterTableToArchive : StackObj {
@@ -2952,26 +2940,24 @@ void AdapterHandlerLibrary::serialize_shared_table_header(SerializeClosure* soc)
   _aot_adapter_handler_table.serialize_header(soc);
 }
 
-AdapterBlob* AdapterHandlerLibrary::link_aot_adapter_handler(AdapterHandlerEntry* handler) {
+void AdapterHandlerLibrary::link_aot_adapter_handler(AdapterHandlerEntry* handler) {
 #ifdef ASSERT
   if (TestAOTAdapterLinkFailure) {
-    return nullptr;
+    return;
   }
 #endif
-  AdapterBlob* blob = lookup_aot_cache(handler);
+  lookup_aot_cache(handler);
 #ifndef PRODUCT
   // debugging support
-  if ((blob != nullptr) && (PrintAdapterHandlers || PrintStubCode)) {
-    print_adapter_handler_info(tty, handler, blob);
+  if (PrintAdapterHandlers || PrintStubCode) {
+    print_adapter_handler_info(tty, handler);
   }
 #endif
-  return blob;
 }
 
 // This method is used during production run to link archived adapters (stored in AOT Cache)
 // to their code in AOT Code Cache
 void AdapterHandlerEntry::link() {
-  AdapterBlob* adapter_blob = nullptr;
   ResourceMark rm;
   assert(_fingerprint != nullptr, "_fingerprint must not be null");
   bool generate_code = false;
@@ -2979,8 +2965,9 @@ void AdapterHandlerEntry::link() {
   // caching adapters is disabled, or we fail to link
   // the AdapterHandlerEntry to its code in the AOTCodeCache
   if (AOTCodeCache::is_using_adapter()) {
-    adapter_blob = AdapterHandlerLibrary::link_aot_adapter_handler(this);
-    if (adapter_blob == nullptr) {
+    AdapterHandlerLibrary::link_aot_adapter_handler(this);
+    // If link_aot_adapter_handler() succeeds, _adapter_blob will be non-null
+    if (_adapter_blob == nullptr) {
       log_warning(aot)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
     }
@@ -2990,16 +2977,15 @@ void AdapterHandlerEntry::link() {
   if (generate_code) {
     int nargs;
     BasicType* bt = _fingerprint->as_basic_type(nargs);
-    if (!AdapterHandlerLibrary::generate_adapter_code(adapter_blob, this, nargs, bt, /* is_transient */ false)) {
+    if (!AdapterHandlerLibrary::generate_adapter_code(this, nargs, bt, /* is_transient */ false)) {
       // Don't throw exceptions during VM initialization because java.lang.* classes
       // might not have been initialized, causing problems when constructing the
       // Java exception object.
       vm_exit_during_initialization("Out of space in CodeCache for adapters");
     }
   }
-  // Outside of the lock
-  if (adapter_blob != nullptr) {
-    post_adapter_creation(adapter_blob, this);
+  if (_adapter_blob != nullptr) {
+    post_adapter_creation(this);
   }
   assert(_linked, "AdapterHandlerEntry must now be linked");
 }
@@ -3044,30 +3030,6 @@ void AdapterHandlerLibrary::lookup_simple_adapters() {
          _obj_obj_arg_handler->is_linked(), "Initial adapters not in linked state");
 }
 #endif // INCLUDE_CDS
-
-address AdapterHandlerEntry::base_address() {
-  address base = _i2c_entry;
-  if (base == nullptr)  base = _c2i_entry;
-  assert(base <= _c2i_entry || _c2i_entry == nullptr, "");
-  assert(base <= _c2i_unverified_entry || _c2i_unverified_entry == nullptr, "");
-  assert(base <= _c2i_no_clinit_check_entry || _c2i_no_clinit_check_entry == nullptr, "");
-  return base;
-}
-
-void AdapterHandlerEntry::relocate(address new_base) {
-  address old_base = base_address();
-  assert(old_base != nullptr, "");
-  ptrdiff_t delta = new_base - old_base;
-  if (_i2c_entry != nullptr)
-    _i2c_entry += delta;
-  if (_c2i_entry != nullptr)
-    _c2i_entry += delta;
-  if (_c2i_unverified_entry != nullptr)
-    _c2i_unverified_entry += delta;
-  if (_c2i_no_clinit_check_entry != nullptr)
-    _c2i_no_clinit_check_entry += delta;
-  assert(base_address() == new_base, "");
-}
 
 void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
   LogStreamHandle(Trace, aot) lsh;
@@ -3443,17 +3405,13 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
 
 void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   st->print("AHE@" INTPTR_FORMAT ": %s", p2i(this), fingerprint()->as_string());
-  if (get_i2c_entry() != nullptr) {
+  if (adapter_blob() != nullptr) {
     st->print(" i2c: " INTPTR_FORMAT, p2i(get_i2c_entry()));
-  }
-  if (get_c2i_entry() != nullptr) {
     st->print(" c2i: " INTPTR_FORMAT, p2i(get_c2i_entry()));
-  }
-  if (get_c2i_unverified_entry() != nullptr) {
     st->print(" c2iUV: " INTPTR_FORMAT, p2i(get_c2i_unverified_entry()));
-  }
-  if (get_c2i_no_clinit_check_entry() != nullptr) {
-    st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
+    if (get_c2i_no_clinit_check_entry() != nullptr) {
+      st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
+    }
   }
   st->cr();
 }
