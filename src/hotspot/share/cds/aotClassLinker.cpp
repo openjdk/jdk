@@ -192,7 +192,7 @@ void AOTClassLinker::write_to_archive() {
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     AOTLinkedClassTable* table = AOTLinkedClassTable::get();
-    table->set_boot(write_classes(nullptr, true));
+    table->set_boot1(write_classes(nullptr, true));
     table->set_boot2(write_classes(nullptr, false));
     table->set_platform(write_classes(SystemDictionary::java_platform_loader(), false));
     table->set_app(write_classes(SystemDictionary::java_system_loader(), false));
