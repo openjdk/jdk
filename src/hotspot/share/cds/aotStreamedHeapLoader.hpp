@@ -162,6 +162,14 @@ private:
   static BitMap::idx_t obj_bit_idx_for_buffer_offset(size_t buffer_offset);
 
   template <bool use_coops, typename LinkerT>
+  static void copy_payload_carefully(oopDesc* archive_object,
+                                     oop heap_object,
+                                     BitMap::idx_t header_bit,
+                                     BitMap::idx_t start_bit,
+                                     BitMap::idx_t end_bit,
+                                     LinkerT linker);
+
+  template <bool use_coops, typename LinkerT>
   static void copy_object_impl(oopDesc* archive_object,
                                oop heap_object,
                                size_t size,

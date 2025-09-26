@@ -66,15 +66,12 @@ size_t* AOTStreamedHeapWriter::_dfs_to_archive_object_table;
 
 static const int max_table_capacity = 0x3fffffff;
 
-typedef ResizeableHashTable<address, size_t,
-                            AnyObj::C_HEAP,
-                            mtClassShared> FillersTable;
-
 void AOTStreamedHeapWriter::init() {
   if (CDSConfig::is_dumping_heap()) {
     _buffer_offset_to_source_obj_table = new (mtClassShared) BufferOffsetToSourceObjectTable(8, max_table_capacity);
 
-    _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
+    int initial_source_objs_capacity = 10000;
+    _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(initial_source_objs_capacity);
   }
 }
 

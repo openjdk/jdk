@@ -271,35 +271,16 @@ public:
 };
 
 template <bool use_coops, typename LinkerT>
-void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
-                                             oop heap_object,
-                                             size_t size,
-                                             LinkerT linker) {
-  CopyConjointLinkingOopClosure cl(heap_object, linker);
-
-  if (!_allow_gc) {
-    size_t payload_size = size - 1;
-    HeapWord* archive_start = ((HeapWord*)archive_object) + 1;
-    HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object) + 1;
-
-    Copy::disjoint_words(archive_start, heap_start, payload_size);
-    heap_object->oop_iterate(&cl);
-    HeapShared::remap_loaded_metadata(heap_object);
-    return;
-  }
-
-  size_t word_scale = use_coops ? 2 : 1;
+void AOTStreamedHeapLoader::copy_payload_carefully(oopDesc* archive_object,
+                                                   oop heap_object,
+                                                   BitMap::idx_t header_bit,
+                                                   BitMap::idx_t start_bit,
+                                                   BitMap::idx_t end_bit,
+                                                   LinkerT linker) {
   using RawElementT = std::conditional_t<use_coops, int32_t, int64_t>;
   using OopElementT = std::conditional_t<use_coops, narrowOop, oop>;
 
-  // Skip the markWord; it is set at allocation time
-  size_t header_size = word_scale;
-
-  size_t buffer_offset = buffer_offset_for_archive_object(archive_object);
-  const BitMap::idx_t start_bit = obj_bit_idx_for_buffer_offset(buffer_offset);
-  const BitMap::idx_t end_bit = start_bit + size * word_scale;
-
-  BitMap::idx_t unfinished_bit = start_bit + header_size;
+  BitMap::idx_t unfinished_bit = start_bit;
   BitMap::idx_t next_reference_bit = _oopmap.find_first_set_bit(unfinished_bit, end_bit);
 
   // Fill in heap object bytes
@@ -307,8 +288,12 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
     assert(unfinished_bit >= start_bit && unfinished_bit < end_bit, "out of bounds copying");
 
     // This is the address of the pointee inside the input stream
-    RawElementT* archive_payload_addr = ((RawElementT*)archive_object) + unfinished_bit - start_bit;
-    RawElementT* heap_payload_addr = cast_from_oop<RawElementT*>(heap_object) + unfinished_bit - start_bit;
+    RawElementT* archive_payload_addr = ((RawElementT*)archive_object) + unfinished_bit - header_bit;
+    RawElementT* heap_payload_addr = cast_from_oop<RawElementT*>(heap_object) + unfinished_bit - header_bit;
+
+    assert(heap_payload_addr >= cast_from_oop<RawElementT*>(heap_object) &&
+           (HeapWord*)heap_payload_addr < cast_from_oop<HeapWord*>(heap_object) + heap_object->size(),
+           "Out of bounds copying");
 
     if (next_reference_bit > unfinished_bit) {
       // Primitive bytes available
@@ -334,8 +319,72 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
       next_reference_bit = _oopmap.find_first_set_bit(unfinished_bit, end_bit);
     }
   }
+}
 
-  HeapShared::remap_loaded_metadata(heap_object);
+template <bool use_coops, typename LinkerT>
+void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
+                                             oop heap_object,
+                                             size_t size,
+                                             LinkerT linker) {
+  CopyConjointLinkingOopClosure cl(heap_object, linker);
+
+  if (!_allow_gc) {
+    size_t payload_size = size - 1;
+    HeapWord* archive_start = ((HeapWord*)archive_object) + 1;
+    HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object) + 1;
+
+    Copy::disjoint_words(archive_start, heap_start, payload_size);
+    heap_object->oop_iterate(&cl);
+    HeapShared::remap_loaded_metadata(heap_object, false /* skip_mirror_klass */);
+    return;
+  }
+
+  size_t word_scale = use_coops ? 2 : 1;
+  using RawElementT = std::conditional_t<use_coops, int32_t, int64_t>;
+
+  // Skip the markWord; it is set at allocation time
+  size_t header_size = word_scale;
+
+  size_t buffer_offset = buffer_offset_for_archive_object(archive_object);
+  const BitMap::idx_t header_bit = obj_bit_idx_for_buffer_offset(buffer_offset);
+  const BitMap::idx_t start_bit = header_bit + header_size;
+  const BitMap::idx_t end_bit = header_bit + size * word_scale;
+
+  if (java_lang_Class::is_instance(heap_object)) {
+    // Class mirrors have already initialized the klass field since the allocation.
+    // It is preferrable to not clobber the klass field and then try to fix it up again
+    // when a concurrent GC thread can lurk around and find the incorrect value.
+    BitMap::idx_t klass_field_idx = header_bit + java_lang_Class::klass_offset() / sizeof(RawElementT);
+    BitMap::idx_t skip = word_scale;
+    assert(klass_field_idx >= start_bit && klass_field_idx + skip <= end_bit,
+           "Strange klass field offset?");
+
+    // Copy payload before klass field
+    copy_payload_carefully<use_coops>(archive_object,
+                                      heap_object,
+                                      header_bit,
+                                      start_bit,
+                                      klass_field_idx,
+                                      linker);
+
+    // Copy payload after klass field
+    copy_payload_carefully<use_coops>(archive_object,
+                                      heap_object,
+                                      header_bit,
+                                      klass_field_idx + skip,
+                                      end_bit,
+                                      linker);
+  } else {
+    // All other objects are copied normally, skipping only the header word.
+    copy_payload_carefully<use_coops>(archive_object,
+                                      heap_object,
+                                      header_bit,
+                                      start_bit,
+                                      end_bit,
+                                      linker);
+  }
+
+  HeapShared::remap_loaded_metadata(heap_object, true /* skip_mirror_klass */);
 }
 
 void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,

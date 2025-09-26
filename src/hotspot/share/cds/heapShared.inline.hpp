@@ -45,8 +45,19 @@ void HeapShared::do_metadata_offsets(oop src_obj, T callback) {
   }
 }
 
-inline void HeapShared::remap_loaded_metadata(oop src_obj) {
+// When loading class mirrors, the klass field is already set up correctly since
+// the allocation. Therefore, it should not be fixed up
+inline void HeapShared::remap_loaded_metadata(oop src_obj, bool skip_mirror_klass) {
   do_metadata_offsets(src_obj, [&](int offset) {
+    if (skip_mirror_klass &&
+        java_lang_Class::is_instance(src_obj) &&
+        offset == java_lang_Class::klass_offset()) {
+      // The klass field of the class mirror is already set up since the allocation,
+      // hence "fixing" it here will only mess it up. Doing so is okay before GC can
+      // run as long as it is fixed up after, but when GC can run, it is not a good
+      // idea to patch this field and then fix it back again.
+      return;
+    }
     Metadata* metadata = src_obj->metadata_field(offset);
     if (metadata != nullptr) {
       metadata = (Metadata*)(address(metadata) + AOTMetaspace::relocation_delta());
