@@ -277,8 +277,8 @@ HeapWord* TenuredGeneration::block_start(const void* addr) const {
   }
 }
 
-void TenuredGeneration::scan_old_to_young_refs(HeapWord* saved_top_in_old_gen) {
-  _rs->scan_old_to_young_refs(this, saved_top_in_old_gen);
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(this, space()->top());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,

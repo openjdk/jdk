@@ -29,8 +29,8 @@
 #include "cds/dumpTimeClassInfo.hpp"
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/safepoint.hpp"
@@ -53,7 +53,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
       assert(k->is_loader_alive(), "must not change");
     } else {
       if (!SystemDictionaryShared::is_excluded_class(k)) {
-        SystemDictionaryShared::warn_excluded(k, "Class loader not alive");
+        SystemDictionaryShared::log_exclusion(k, "Class loader not alive");
         SystemDictionaryShared::set_excluded_locked(k);
       }
     }

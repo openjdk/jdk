@@ -138,7 +138,7 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
   }
 }
 
-void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS) {
+void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaThread* current) {
   if (!klass->has_init_deps_processed()) {
     ResourceMark rm;
     log_debug(training)("Replay training: %s", klass->external_name());
@@ -150,11 +150,11 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
       assert(klass->has_init_deps_processed(), "");
       if (AOTCompileEagerly) {
         ktd->iterate_comp_deps([&](CompileTrainingData* ctd) {
-          if (ctd->init_deps_left() == 0) {
+          if (ctd->init_deps_left_acquire() == 0) {
             MethodTrainingData* mtd = ctd->method();
             if (mtd->has_holder()) {
-              const methodHandle mh(THREAD, const_cast<Method*>(mtd->holder()));
-              CompilationPolicy::maybe_compile_early(mh, THREAD);
+              const methodHandle mh(current, const_cast<Method*>(mtd->holder()));
+              CompilationPolicy::maybe_compile_early(mh, current);
             }
           }
         });
@@ -163,10 +163,10 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, TRAPS
   }
 }
 
-void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, TRAPS) {
+void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* current) {
   assert(klass->is_initialized(), "");
-  if (TrainingData::have_data() && klass->is_shared()) {
-    _training_replay_queue.push(klass, TrainingReplayQueue_lock, THREAD);
+  if (TrainingData::have_data() && klass->in_aot_cache()) {
+    _training_replay_queue.push(klass, TrainingReplayQueue_lock, current);
   }
 }
 
@@ -181,11 +181,11 @@ void CompilationPolicyUtils::Queue<InstanceKlass>::print_on(outputStream* st) {
   }
 }
 
-void CompilationPolicy::replay_training_at_init_loop(TRAPS) {
+void CompilationPolicy::replay_training_at_init_loop(JavaThread* current) {
   while (!CompileBroker::is_compilation_disabled_forever()) {
-    InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, THREAD);
+    InstanceKlass* ik = _training_replay_queue.pop(TrainingReplayQueue_lock, current);
     if (ik != nullptr) {
-      replay_training_at_init_impl(ik, THREAD);
+      replay_training_at_init_impl(ik, current);
     }
   }
 }
@@ -404,7 +404,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   return 1;
 }
 
-void CompilationPolicy::print_counters(const char* prefix, Method* m) {
+void CompilationPolicy::print_counters_on(outputStream* st, const char* prefix, Method* m) {
   int invocation_count = m->invocation_count();
   int backedge_count = m->backedge_count();
   MethodData* mdh = m->method_data();
@@ -416,133 +416,140 @@ void CompilationPolicy::print_counters(const char* prefix, Method* m) {
     mdo_invocations_start = mdh->invocation_count_start();
     mdo_backedges_start = mdh->backedge_count_start();
   }
-  tty->print(" %stotal=%d,%d %smdo=%d(%d),%d(%d)", prefix,
-      invocation_count, backedge_count, prefix,
-      mdo_invocations, mdo_invocations_start,
-      mdo_backedges, mdo_backedges_start);
-  tty->print(" %smax levels=%d,%d", prefix,
-      m->highest_comp_level(), m->highest_osr_comp_level());
+  st->print(" %stotal=%d,%d %smdo=%d(%d),%d(%d)", prefix,
+    invocation_count, backedge_count, prefix,
+    mdo_invocations, mdo_invocations_start,
+    mdo_backedges, mdo_backedges_start);
+  st->print(" %smax levels=%d,%d", prefix, m->highest_comp_level(), m->highest_osr_comp_level());
 }
 
-void CompilationPolicy::print_training_data(const char* prefix, Method* method) {
+void CompilationPolicy::print_training_data_on(outputStream* st,  const char* prefix, Method* method) {
   methodHandle m(Thread::current(), method);
-  tty->print(" %smtd: ", prefix);
+  st->print(" %smtd: ", prefix);
   MethodTrainingData* mtd = MethodTrainingData::find(m);
   if (mtd == nullptr) {
-    tty->print("null");
+    st->print("null");
   } else {
     MethodData* md = mtd->final_profile();
-    tty->print("mdo=");
+    st->print("mdo=");
     if (md == nullptr) {
-      tty->print("null");
+      st->print("null");
     } else {
       int mdo_invocations = md->invocation_count();
       int mdo_backedges = md->backedge_count();
       int mdo_invocations_start = md->invocation_count_start();
       int mdo_backedges_start = md->backedge_count_start();
-      tty->print("%d(%d), %d(%d)", mdo_invocations, mdo_invocations_start, mdo_backedges, mdo_backedges_start);
+      st->print("%d(%d), %d(%d)", mdo_invocations, mdo_invocations_start, mdo_backedges, mdo_backedges_start);
     }
     CompileTrainingData* ctd = mtd->last_toplevel_compile(CompLevel_full_optimization);
-    tty->print(", deps=");
+    st->print(", deps=");
     if (ctd == nullptr) {
-      tty->print("null");
+      st->print("null");
     } else {
-      tty->print("%d", ctd->init_deps_left());
+      st->print("%d", ctd->init_deps_left_acquire());
     }
   }
 }
 
 // Print an event.
-void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int bci, CompLevel level) {
+void CompilationPolicy::print_event_on(outputStream *st, EventType type, Method* m, Method* im, int bci, CompLevel level) {
   bool inlinee_event = m != im;
 
-  ttyLocker tty_lock;
-  tty->print("%lf: [", os::elapsedTime());
+  st->print("%lf: [", os::elapsedTime());
 
   switch(type) {
   case CALL:
-    tty->print("call");
+    st->print("call");
     break;
   case LOOP:
-    tty->print("loop");
+    st->print("loop");
     break;
   case COMPILE:
-    tty->print("compile");
+    st->print("compile");
     break;
   case FORCE_COMPILE:
-    tty->print("force-compile");
+    st->print("force-compile");
     break;
   case REMOVE_FROM_QUEUE:
-    tty->print("remove-from-queue");
+    st->print("remove-from-queue");
     break;
   case UPDATE_IN_QUEUE:
-    tty->print("update-in-queue");
+    st->print("update-in-queue");
     break;
   case REPROFILE:
-    tty->print("reprofile");
+    st->print("reprofile");
     break;
   case MAKE_NOT_ENTRANT:
-    tty->print("make-not-entrant");
+    st->print("make-not-entrant");
     break;
   default:
-    tty->print("unknown");
+    st->print("unknown");
   }
 
-  tty->print(" level=%d ", level);
+  st->print(" level=%d ", level);
 
   ResourceMark rm;
   char *method_name = m->name_and_sig_as_C_string();
-  tty->print("[%s", method_name);
+  st->print("[%s", method_name);
   if (inlinee_event) {
     char *inlinee_name = im->name_and_sig_as_C_string();
-    tty->print(" [%s]] ", inlinee_name);
+    st->print(" [%s]] ", inlinee_name);
   }
-  else tty->print("] ");
-  tty->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
-                                      CompileBroker::queue_size(CompLevel_full_optimization));
+  else st->print("] ");
+  st->print("@%d queues=%d,%d", bci, CompileBroker::queue_size(CompLevel_full_profile),
+                                     CompileBroker::queue_size(CompLevel_full_optimization));
 
-  tty->print(" rate=");
-  if (m->prev_time() == 0) tty->print("n/a");
-  else tty->print("%f", m->rate());
+  st->print(" rate=");
+  if (m->prev_time() == 0) st->print("n/a");
+  else st->print("%f", m->rate());
 
-  tty->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
-                               threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
+  st->print(" k=%.2lf,%.2lf", threshold_scale(CompLevel_full_profile, Tier3LoadFeedback),
+                              threshold_scale(CompLevel_full_optimization, Tier4LoadFeedback));
 
   if (type != COMPILE) {
-    print_counters("", m);
+    print_counters_on(st, "", m);
     if (inlinee_event) {
-      print_counters("inlinee ", im);
+      print_counters_on(st, "inlinee ", im);
     }
-    tty->print(" compilable=");
+    st->print(" compilable=");
     bool need_comma = false;
     if (!m->is_not_compilable(CompLevel_full_profile)) {
-      tty->print("c1");
+      st->print("c1");
       need_comma = true;
     }
     if (!m->is_not_osr_compilable(CompLevel_full_profile)) {
-      if (need_comma) tty->print(",");
-      tty->print("c1-osr");
+      if (need_comma) st->print(",");
+      st->print("c1-osr");
       need_comma = true;
     }
     if (!m->is_not_compilable(CompLevel_full_optimization)) {
-      if (need_comma) tty->print(",");
-      tty->print("c2");
+      if (need_comma) st->print(",");
+      st->print("c2");
       need_comma = true;
     }
     if (!m->is_not_osr_compilable(CompLevel_full_optimization)) {
-      if (need_comma) tty->print(",");
-      tty->print("c2-osr");
+      if (need_comma) st->print(",");
+      st->print("c2-osr");
     }
-    tty->print(" status=");
+    st->print(" status=");
     if (m->queued_for_compilation()) {
-      tty->print("in-queue");
-    } else tty->print("idle");
-    print_training_data("", m);
+      st->print("in-queue");
+    } else st->print("idle");
+
+    print_training_data_on(st, "", m);
     if (inlinee_event) {
-      print_training_data("inlinee ", im);
+      print_training_data_on(st, "inlinee ", im);
     }
   }
-  tty->print_cr("]");
+  st->print_cr("]");
+
+}
+
+void CompilationPolicy::print_event(EventType type, Method* m, Method* im, int bci, CompLevel level) {
+  stringStream s;
+  print_event_on(&s, type, m, im, bci, level);
+  ResourceMark rm;
+  tty->print("%s", s.as_string());
 }
 
 void CompilationPolicy::initialize() {
@@ -845,13 +852,6 @@ nmethod* CompilationPolicy::event(const methodHandle& method, const methodHandle
     print_event(bci == InvocationEntryBci ? CALL : LOOP, method(), inlinee(), bci, comp_level);
   }
 
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && UseJVMCICompiler &&
-      comp_level == CompLevel_full_optimization CDS_ONLY(&& !AOTLinkedClassBulkLoader::class_preloading_finished())) {
-    return nullptr;
-  }
-#endif
-
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
       THREAD->is_interp_only_mode()) {
@@ -915,28 +915,29 @@ void CompilationPolicy::compile(const methodHandle& mh, int bci, CompLevel level
     return;
   }
 
-  if (!CompilationModeFlag::disable_intermediate()) {
-    // Check if the method can be compiled. If it cannot be compiled with C1, continue profiling
-    // in the interpreter and then compile with C2 (the transition function will request that,
-    // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
-    // pure C1.
-    if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
-      if (level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
-        compile(mh, bci, CompLevel_simple, THREAD);
-      }
-      return;
+  // Check if the method can be compiled. Additional logic for TieredCompilation:
+  // If it cannot be compiled with C1, continue profiling in the interpreter
+  // and then compile with C2 (the transition function will request that,
+  // see common() ). If the method cannot be compiled with C2 but still can with C1, compile it with
+  // pure C1.
+  if ((bci == InvocationEntryBci && !can_be_compiled(mh, level))) {
+    if (!CompilationModeFlag::disable_intermediate() &&
+        level == CompLevel_full_optimization && can_be_compiled(mh, CompLevel_simple)) {
+      compile(mh, bci, CompLevel_simple, THREAD);
     }
-    if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
-      if (level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
-        nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
-        if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
-          // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
-          osr_nm->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1);
-        }
-        compile(mh, bci, CompLevel_simple, THREAD);
+    return;
+  }
+  if ((bci != InvocationEntryBci && !can_be_osr_compiled(mh, level))) {
+    if (!CompilationModeFlag::disable_intermediate() &&
+        level == CompLevel_full_optimization && can_be_osr_compiled(mh, CompLevel_simple)) {
+      nmethod* osr_nm = mh->lookup_osr_nmethod_for(bci, CompLevel_simple, false);
+      if (osr_nm != nullptr && osr_nm->comp_level() > CompLevel_simple) {
+        // Invalidate the existing OSR nmethod so that a compile at CompLevel_simple is permitted.
+        osr_nm->make_not_entrant(nmethod::InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1);
       }
-      return;
+      compile(mh, bci, CompLevel_simple, THREAD);
     }
+    return;
   }
   if (bci != InvocationEntryBci && mh->is_not_osr_compilable(level)) {
     return;
@@ -1165,7 +1166,7 @@ CompLevel CompilationPolicy::trained_transition_from_none(const methodHandle& me
   CompileTrainingData* ctd = mtd->last_toplevel_compile(CompLevel_full_optimization);
   assert(ctd != nullptr, "Should have CTD for CompLevel_full_optimization");
   // With SkipTier2IfPossible and all deps satisfied, go to level 4 immediately
-  if (SkipTier2IfPossible && ctd->init_deps_left() == 0) {
+  if (SkipTier2IfPossible && ctd->init_deps_left_acquire() == 0) {
     if (method->method_data() == nullptr) {
       create_mdo(method, THREAD);
     }
@@ -1193,7 +1194,7 @@ CompLevel CompilationPolicy::trained_transition_from_limited_profile(const metho
   assert(training_has_profile, "Have to have a profile to be here");
   // Check if the method is ready
   CompileTrainingData* ctd = mtd->last_toplevel_compile(CompLevel_full_optimization);
-  if (ctd != nullptr && ctd->init_deps_left() == 0) {
+  if (ctd != nullptr && ctd->init_deps_left_acquire() == 0) {
     if (method->method_data() == nullptr) {
       create_mdo(method, THREAD);
     }
@@ -1342,17 +1343,24 @@ CompLevel CompilationPolicy::standard_transition(const methodHandle& method, Com
   return next_level;
 }
 
+template<typename Predicate> static inline bool apply_predicate(const methodHandle& method, CompLevel cur_level, int i, int b, bool delay_profiling, double delay_profiling_scale) {
+  if (delay_profiling) {
+    return Predicate::apply_scaled(method, cur_level, i, b, delay_profiling_scale);
+  } else {
+    return Predicate::apply(method, cur_level, i, b);
+  }
+}
+
 template<typename Predicate>
 CompLevel CompilationPolicy::transition_from_none(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback) {
   precond(cur_level == CompLevel_none);
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
-  double scale = delay_profiling ? Tier0ProfileDelayFactor : 1.0;
   // If we were at full profile level, would we switch to full opt?
   if (transition_from_full_profile<Predicate>(method, CompLevel_full_profile) == CompLevel_full_optimization) {
     next_level = CompLevel_full_optimization;
-  } else if (!CompilationModeFlag::disable_intermediate() && Predicate::apply_scaled(method, cur_level, i, b, scale)) {
+  } else if (!CompilationModeFlag::disable_intermediate() && apply_predicate<Predicate>(method, cur_level, i, b, delay_profiling, Tier0ProfileDelayFactor)) {
     // C1-generated fully profiled code is about 30% slower than the limited profile
     // code that has only invocation and backedge counters. The observation is that
     // if C2 queue is large enough we can spend too much time in the fully profiled code
@@ -1394,13 +1402,12 @@ CompLevel CompilationPolicy::transition_from_limited_profile(const methodHandle&
   CompLevel next_level = cur_level;
   int i = method->invocation_count();
   int b = method->backedge_count();
-  double scale = delay_profiling ? Tier2ProfileDelayFactor : 1.0;
   MethodData* mdo = method->method_data();
   if (mdo != nullptr) {
     if (mdo->would_profile()) {
       if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                               Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                              Predicate::apply_scaled(method, cur_level, i, b, scale))) {
+                              apply_predicate<Predicate>(method, cur_level, i, b, delay_profiling, Tier2ProfileDelayFactor))) {
         next_level = CompLevel_full_profile;
       }
     } else {
@@ -1410,7 +1417,7 @@ CompLevel CompilationPolicy::transition_from_limited_profile(const methodHandle&
     // If there is no MDO we need to profile
     if (disable_feedback || (CompileBroker::queue_size(CompLevel_full_optimization) <=
                             Tier3DelayOff * compiler_count(CompLevel_full_optimization) &&
-                            Predicate::apply_scaled(method, cur_level, i, b, scale))) {
+                            apply_predicate<Predicate>(method, cur_level, i, b, delay_profiling, Tier2ProfileDelayFactor))) {
       next_level = CompLevel_full_profile;
     }
   }
@@ -1438,12 +1445,7 @@ CompLevel CompilationPolicy::call_event(const methodHandle& method, CompLevel cu
   } else {
     next_level = MAX2(osr_level, next_level);
   }
-#if INCLUDE_JVMCI
-  if (EnableJVMCI && UseJVMCICompiler &&
-      next_level == CompLevel_full_optimization CDS_ONLY(&& !AOTLinkedClassBulkLoader::class_preloading_finished())) {
-    next_level = cur_level;
-  }
-#endif
+
   return next_level;
 }
 

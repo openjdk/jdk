@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,7 @@ import sun.font.TrueTypeFont;
 
 import sun.print.PathGraphics;
 import sun.print.ProxyGraphics2D;
+import sun.print.RasterPrinterJob;
 
 final class WPathGraphics extends PathGraphics {
 
@@ -847,7 +848,7 @@ final class WPathGraphics extends PathGraphics {
               * removed now so the string and positions are the same length.
               * For other cases we need to pass glyph codes to GDI.
               */
-             str = wPrinterJob.removeControlChars(str);
+             str = RasterPrinterJob.removeControlChars(str);
              char[] chars = str.toCharArray();
              int len = chars.length;
              GlyphVector gv = null;

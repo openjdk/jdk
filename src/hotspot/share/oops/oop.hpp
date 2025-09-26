@@ -32,7 +32,7 @@
 #include "oops/markWord.hpp"
 #include "oops/metadata.hpp"
 #include "oops/objLayout.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -65,9 +65,11 @@ class oopDesc {
   // Must be trivial; see verifying static assert after the class.
   oopDesc() = default;
 
+  inline void* base_addr();
+  inline const void* base_addr() const;
+
   inline markWord  mark()          const;
   inline markWord  mark_acquire()  const;
-  inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
   static inline void set_mark(HeapWord* mem, markWord m);
@@ -91,6 +93,7 @@ class oopDesc {
   inline Klass* klass_without_asserts() const;
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
+  inline narrowKlass narrow_klass() const;
   inline void set_klass(Klass* k);
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
@@ -258,8 +261,8 @@ class oopDesc {
   inline bool is_unlocked() const;
 
   // asserts and guarantees
-  static bool is_oop(oop obj, bool ignore_mark_word = false);
-  static bool is_oop_or_null(oop obj, bool ignore_mark_word = false);
+  static bool is_oop(oop obj);
+  static bool is_oop_or_null(oop obj);
 
   // garbage collection
   inline bool is_gc_marked() const;
