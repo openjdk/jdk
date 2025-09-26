@@ -179,16 +179,9 @@
     int _offset_unextended_sp; // for use in stack-chunk frames
   };
 
-  void adjust_unextended_sp() NOT_DEBUG_RETURN;
-
   intptr_t* ptr_at_addr(int offset) const {
     return (intptr_t*) addr_at(offset);
   }
-
-#ifdef ASSERT
-  // Used in frame::sender_for_{interpreter,compiled}_frame
-  static void verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp);
-#endif
 
  public:
   // Constructors

@@ -330,42 +330,6 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 }
 
 //------------------------------------------------------------------------------
-// frame::verify_deopt_original_pc
-//
-// Verifies the calculated original PC of a deoptimization PC for the
-// given unextended SP.
-#ifdef ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp) {
-  frame fr;
-
-  // This is ugly but it's better than to change {get,set}_original_pc
-  // to take an SP value as argument.  And it's only a debugging
-  // method anyway.
-  fr._unextended_sp = unextended_sp;
-
-  address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
-}
-#endif
-
-//------------------------------------------------------------------------------
-// frame::adjust_unextended_sp
-void frame::adjust_unextended_sp() {
-  // On arm, sites calling method handle intrinsics and lambda forms are treated
-  // as any other call site. Therefore, no special action is needed when we are
-  // returning to any of these call sites.
-
-  nmethod* sender_nm = (_cb == nullptr) ? nullptr : _cb->as_nmethod_or_null();
-  if (sender_nm != nullptr) {
-    // If the sender PC is a deoptimization point, get the original PC.
-    if (sender_nm->is_deopt_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, _unextended_sp));
-    }
-  }
-}
-
-//------------------------------------------------------------------------------
 // frame::update_map_with_saved_link
 void frame::update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr) {
   // see x86 for comments

@@ -76,7 +76,10 @@ inline address frame::get_deopt_original_pc() const {
 
   nmethod* nm = _cb->as_nmethod_or_null();
   if (nm != nullptr && nm->is_deopt_pc(_pc)) {
-    return nm->get_original_pc(this);
+    address original_pc = nm->get_original_pc(this);
+    assert(nm->insts_contains_inclusive(original_pc),
+           "original PC must be in the main code section of the compiled method (or must be immediately following it)");
+    return original_pc;
   }
   return nullptr;
 }

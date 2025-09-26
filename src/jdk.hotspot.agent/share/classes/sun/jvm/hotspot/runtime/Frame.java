@@ -81,6 +81,24 @@ public abstract class Frame implements Cloneable {
     return pcReturnOffset;
   }
 
+  protected void adjustForDeopt() {
+    if ( pc != null) {
+      // Look for a deopt pc and if it is deopted convert to original pc
+      CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
+      if (cb != null && cb.isJavaMethod()) {
+        NMethod nm = (NMethod) cb;
+        if (pc.equals(nm.deoptHandlerBegin())) {
+          if (Assert.ASSERTS_ENABLED) {
+            Assert.that(this.getUnextendedSP() != null, "null SP in Java frame");
+          }
+          // adjust pc if frame is deoptimized.
+          pc = this.getUnextendedSP().getAddressAt(nm.origPCOffset());
+          deoptimized = true;
+        }
+      }
+    }
+  }
+
   private static synchronized void initialize(TypeDataBase db) {
     Type ConstMethodType = db.lookupType("ConstMethod");
     // FIXME: not sure whether alignment here is correct or how to
