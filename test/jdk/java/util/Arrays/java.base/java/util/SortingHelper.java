@@ -82,22 +82,6 @@ public enum SortingHelper {
         }
     },
 
-    RADIX_SORT("Radix sort") {
-        @Override
-        public void sort(Object a, int low, int high) {
-            switch(a) {
-                case int[] ai -> check("Radix", DualPivotQuicksort.tryRadixSort(null, ai, low, high));
-                case long[] al -> check("Radix", DualPivotQuicksort.tryRadixSort(null, al, low, high));
-                case byte[] ab -> DualPivotQuicksort.sort(ab, low, high);
-                case char[] ac -> DualPivotQuicksort.radixSort(ac, low, high);
-                case short[] as -> DualPivotQuicksort.radixSort(as, low, high);
-                case float[] af -> check("Radix", DualPivotQuicksort.tryRadixSort(null, af, low, high));
-                case double[] ad -> check("Radix", DualPivotQuicksort.tryRadixSort(null, ad, low, high));
-                default -> fail(a);
-            }
-        }
-    },
-
     COUNTING_SORT("Counting sort") {
         @Override
         public void sort(Object a, int low, int high) {

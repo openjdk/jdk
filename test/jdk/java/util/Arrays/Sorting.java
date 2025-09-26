@@ -89,7 +89,6 @@ public class Sorting {
         new Sorting(SortingHelper.MIXED_INSERTION_SORT, randoms, true).testBase();
         new Sorting(SortingHelper.MERGING_SORT, randoms, lengths).testStructured();
 
-        new Sorting(SortingHelper.RADIX_SORT, randoms, lengths).testBase();
         new Sorting(SortingHelper.HEAP_SORT, randoms, lengths).testBase();
         new Sorting(SortingHelper.COUNTING_SORT, randoms, lengths).testBase();
 
