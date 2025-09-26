@@ -138,7 +138,7 @@ class VM_Version : public Abstract_VM_Version {
           FLAG_SET_DEFAULT(flag, false);                                                                    \
           stringStream ss;                                                                                  \
           deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag " on cpu without any of the supports: %s", ss.as_string(true));    \
+          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
         }                                                                                                   \
@@ -150,7 +150,7 @@ class VM_Version : public Abstract_VM_Version {
           FLAG_SET_DEFAULT(flag, false);                                                                    \
           stringStream ss;                                                                                  \
           deps_string(ss, dep0, ##__VA_ARGS__);                                                             \
-          warning("Cannot enable " #flag " on cpu without any of the supports: %s", ss.as_string(true));    \
+          warning("Cannot enable " #flag ", it's missing dependent extension(s) %s", ss.as_string(true));   \
           /* Sync CPU features with flags */                                                                \
           disable_feature();                                                                                \
         }                                                                                                   \
