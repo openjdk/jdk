@@ -1,6 +1,5 @@
 //
 // Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
-// Copyright 2025 Arm Limited and/or its affiliates.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1243,12 +1242,9 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   }
   int offset = __ offset();
 
-  address the_pc = (address) __ pc();
   Label start;
   __ bind(start);
 
-  // push a "the_pc" on the stack without destroying any registers
-  // as they all may be live.
   __ call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
   int entry_point = __ offset();

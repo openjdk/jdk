@@ -267,6 +267,7 @@ int LIR_Assembler::emit_deopt_handler() {
     return -1;
   }
 
+  int offset = code_offset();
   Label start;
 
   __ bind(start);
@@ -274,7 +275,7 @@ int LIR_Assembler::emit_deopt_handler() {
   int entry_point = __ offset();
   __ b(start);
 
-  guarantee(code_offset() - entry_point <= deopt_handler_size(), "overflow");
+  guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
   return entry_point;
