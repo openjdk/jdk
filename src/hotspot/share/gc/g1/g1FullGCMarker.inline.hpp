@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,13 +107,13 @@ void G1FullGCMarker::follow_array_chunk(objArrayOop array, int index) {
   if (end_index < len) {
     push_objarray(array, end_index);
   }
-
-  array->oop_iterate_range(mark_closure(), beg_index, end_index);
+  assert(array->is_refArray(), "Must be");
+  refArrayOop(array)->oop_iterate_range(mark_closure(), beg_index, end_index);
 }
 
 inline void G1FullGCMarker::follow_object(oop obj) {
   assert(_bitmap->is_marked(obj), "should be marked");
-  if (obj->is_objArray()) {
+  if (obj->is_refArray()) {
     // Handle object arrays explicitly to allow them to
     // be split into chunks if needed.
     follow_array((objArrayOop)obj);

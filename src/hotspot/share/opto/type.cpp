@@ -6142,7 +6142,7 @@ ciKlass* TypeAryPtr::exact_klass_helper() const {
     if (k == nullptr) {
       return nullptr;
     }
-    k = ciObjArrayKlass::make(k);
+    k = ciObjArrayKlass::make(k, false);
     return k;
   }
 
@@ -6482,7 +6482,7 @@ ciKlass* TypeAryKlassPtr::exact_klass_helper() const {
     if (k == nullptr) {
       return nullptr;
     }
-    k = ciObjArrayKlass::make(k);
+    k = ciObjArrayKlass::make(k, /*_vm_type*/ false);
     return k;
   }
 
