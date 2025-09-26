@@ -25,6 +25,7 @@
  */
 
 #include "classfile/vmIntrinsics.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -71,6 +72,8 @@ void VM_Version::useRVA23U64Profile() {
 }
 
 void VM_Version::initialize() {
+  ResourceMark rm;
+
   common_initialize();
 #ifdef COMPILER2
   c2_initialize();
@@ -233,36 +236,6 @@ void VM_Version::common_initialize() {
   if (UseCRC32CIntrinsics) {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbb, false);
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    warning("Cannot enable UseZvbc on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbc, false);
-  }
-
-  // UseZvkn (depends on RVV).
-  if (UseZvkn && !UseRVV) {
-    warning("Cannot enable UseZvkn on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvkn, false);
-  }
-
-  // UseZvfh (depends on RVV)
-  if (UseZvfh) {
-    if (!UseRVV) {
-      warning("Cannot enable UseZvfh on cpu without RVV support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
-    if (!UseZfh) {
-      warning("Cannot enable UseZvfh on cpu without Zfh support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
   }
 }
 
