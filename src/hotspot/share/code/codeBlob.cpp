@@ -910,6 +910,24 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
       nm->print_nmethod(true);
     } else {
       nm->print_on(st);
+      if (nm->entry_point() <= addr && addr < nm->code_end()) {
+        // Pointing into an nmethod. Try to disassemble some instructions around addr.
+        address start = (addr < nm->verified_entry_point()) ? nm->entry_point() : nm->verified_entry_point();
+        address end = nm->code_end();
+        // Try using relocations to find known instruction start and end points.
+        // (Some platforms have variable length instructions and can only
+        // disassemble correctly at instruction start addresses.)
+        RelocIterator iter(nm, start);
+        while (iter.next() && iter.addr() < addr) { // find relocation before addr
+          start = iter.addr();
+        }
+        if (iter.has_current()) {
+          if (iter.addr() == addr) iter.next(); // find relocation after addr
+          if (iter.has_current()) end = iter.addr();
+        }
+
+        Disassembler::decode(start, end, st);
+      }
     }
     return;
   }
