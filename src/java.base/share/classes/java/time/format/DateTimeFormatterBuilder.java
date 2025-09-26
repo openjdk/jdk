@@ -110,6 +110,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jdk.internal.misc.VM;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
@@ -153,6 +154,12 @@ import static java.time.temporal.ChronoField.*;
  * @since 1.8
  */
 public final class DateTimeFormatterBuilder {
+    private static final boolean MANUAL_UNROLLING_PRINTERS;
+    static {
+        String property = VM.getSavedProperty("java.time.format.DateTimeFormatter.ManualUnrollingPrinters");
+        MANUAL_UNROLLING_PRINTERS = property == null || Boolean.parseBoolean(property);
+    }
+
     /**
      * Query for a time-zone that is region-only.
      */
@@ -2512,6 +2519,9 @@ public final class DateTimeFormatterBuilder {
         }
 
         static DateTimePrinter createFormatter(DateTimePrinterParser[] printerParsers) {
+            if (!MANUAL_UNROLLING_PRINTERS) {
+                return createDefaultDateTimePrinter(printerParsers);
+            }
             int length = printerParsers.length;
             return switch (length) {
                 case 1 -> printerParsers[0]::format;
@@ -2683,14 +2693,18 @@ public final class DateTimeFormatterBuilder {
                         && printerParsers[14].format(context, buf, optional)
                         && printerParsers[15].format(context, buf, optional)
                         && printerParsers[16].format(context, buf, optional);
-                default -> (context, buf, optional) -> {
-                    for (DateTimePrinterParser pp : printerParsers) {
-                        if (!pp.format(context, buf, optional)) {
-                            return false;
-                        }
+                default -> createDefaultDateTimePrinter(printerParsers);
+            };
+        }
+
+        static DateTimePrinter createDefaultDateTimePrinter(DateTimePrinterParser[] printerParsers) {
+            return (context, buf, optional) -> {
+                for (DateTimePrinterParser pp : printerParsers) {
+                    if (!pp.format(context, buf, optional)) {
+                        return false;
                     }
-                    return true;
-                };
+                }
+                return true;
             };
         }
 
