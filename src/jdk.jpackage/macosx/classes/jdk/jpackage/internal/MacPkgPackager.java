@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
@@ -298,8 +299,15 @@ record MacPkgPackager(MacPkgPackage pkg, BuildEnv env, Optional<Services> servic
         args.add(normalizedAbsolutePathString(componentPlistFile()));
 
         scriptsRoot().ifPresent(scriptsRoot -> {
-            args.add("--scripts");
-            args.add(normalizedAbsolutePathString(scriptsRoot));
+            // Script root might be empty
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(scriptsRoot)) {
+                if (ds.iterator().hasNext()) {
+                    args.add("--scripts");
+                    args.add(normalizedAbsolutePathString(scriptsRoot));
+                }
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
         });
 
         return InternalPackageType.MAIN.createInternalPackage(env.appImageDir(), pkg, env, args);

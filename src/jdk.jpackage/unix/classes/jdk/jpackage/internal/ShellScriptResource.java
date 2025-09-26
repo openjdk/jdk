@@ -42,6 +42,11 @@ final class ShellScriptResource {
     }
 
     void saveInFolder(Path folder) throws IOException {
+        // Shell scripts might not have default
+        if (resource.saveToFile((Path)null) == null) {
+            return;
+        }
+
         Path dstFile = folder.resolve(publicFileName);
         resource.saveToFile(dstFile);
 

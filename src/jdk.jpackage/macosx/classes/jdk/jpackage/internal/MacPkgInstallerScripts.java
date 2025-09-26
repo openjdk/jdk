@@ -34,9 +34,9 @@ final class MacPkgInstallerScripts {
 
     enum AppScripts implements Supplier<OverridableResource> {
         preinstall(new ResourceConfig("preinstall.template",
-                "resource.pkg-preinstall-script")),
+                "resource.pkg-preinstall-script", true)),
         postinstall(new ResourceConfig("postinstall.template",
-                "resource.pkg-postinstall-script"));
+                "resource.pkg-postinstall-script", true));
 
         AppScripts(ResourceConfig cfg) {
             this.cfg = cfg;
@@ -52,9 +52,9 @@ final class MacPkgInstallerScripts {
 
     enum ServicesScripts implements Supplier<OverridableResource> {
         preinstall(new ResourceConfig("services-preinstall.template",
-                "resource.pkg-services-preinstall-script")),
+                "resource.pkg-services-preinstall-script", false)),
         postinstall(new ResourceConfig("services-postinstall.template",
-                "resource.pkg-services-postinstall-script"));
+                "resource.pkg-services-postinstall-script", false));
 
         ServicesScripts(ResourceConfig cfg) {
             this.cfg = cfg;

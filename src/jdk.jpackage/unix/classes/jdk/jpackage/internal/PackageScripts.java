@@ -78,14 +78,20 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
 
     static class ResourceConfig {
 
-        ResourceConfig(String defaultName, String categoryId) {
+        ResourceConfig(String defaultName, String categoryId, boolean noDefault) {
             this.defaultName = defaultName;
             this.category = I18N.getString(categoryId);
+            this.noDefault = noDefault;
         }
 
         OverridableResource createResource() {
-            var resource = new OverridableResource(defaultName,
-                    ResourceLocator.class).setCategory(category);
+            final OverridableResource resource;
+            if (noDefault) {
+                resource = new OverridableResource().setCategory(category);
+            } else {
+                resource = new OverridableResource(defaultName,
+                        ResourceLocator.class).setCategory(category);
+            }
             return getDefaultPublicName().map(resource::setPublicName).orElse(
                     resource);
         }
@@ -101,6 +107,7 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
 
         private final String defaultName;
         private final String category;
+        private final boolean noDefault;
     }
 
     private final Map<T, ShellScriptResource> scripts;
