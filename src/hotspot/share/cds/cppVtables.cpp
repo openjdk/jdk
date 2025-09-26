@@ -35,6 +35,7 @@
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/arguments.hpp"
@@ -65,6 +66,7 @@
   f(MethodData) \
   f(MethodCounters) \
   f(ObjArrayKlass) \
+  f(RefArrayKlass) \
   f(TypeArrayKlass) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \

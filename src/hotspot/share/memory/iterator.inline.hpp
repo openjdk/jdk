@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "oops/klass.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/typeArrayKlass.inline.hpp"
+#include "oops/refArrayKlass.inline.hpp"
 #include "utilities/debug.hpp"
 
 // Defaults to strong claiming.
@@ -153,6 +154,7 @@ private:
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
+      set_init_function<RefArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
   };
@@ -216,6 +218,7 @@ private:
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
+      set_init_function<RefArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
   };
@@ -279,6 +282,7 @@ private:
       set_init_function<InstanceClassLoaderKlass>();
       set_init_function<InstanceStackChunkKlass>();
       set_init_function<ObjArrayKlass>();
+      set_init_function<RefArrayKlass>();
       set_init_function<TypeArrayKlass>();
     }
   };

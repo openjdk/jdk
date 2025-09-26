@@ -39,6 +39,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "runtime/handles.inline.hpp"
 
 void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
@@ -121,7 +122,18 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, 
   assert((module_entry != nullptr) || ((module_entry == nullptr) && !ModuleEntryTable::javabase_defined()),
          "module entry not available post " JAVA_BASE_NAME " definition");
   oop module_oop = (module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr;
-  java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module_oop), Handle(), Handle(), CHECK);
+
+  // A RefArrayKlass's reflective Java type is the same as its generalized ObjArrayKlass type.
+  // ObjArrayKlass->mirror->ObjArrayKlass, RefArrayKlass->super === ObjArrayKlass.
+  if (k->is_refArray_klass()) {
+    assert(super_klass != nullptr, "Must be");
+    assert(k->super() != nullptr, "Must be");
+    assert(k->super() == super_klass, "Must be");
+    Handle mirror(THREAD, super_klass->java_mirror());
+    k->set_java_mirror(mirror);
+  } else {
+    java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module_oop), Handle(), Handle(), CHECK);
+  }
 }
 
 ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
@@ -138,8 +150,7 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
 
     if (higher_dimension() == nullptr) {
       // Create multi-dim klass object and link them together
-      ObjArrayKlass* ak =
-          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
+      ObjArrayKlass* ak = RefArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
       // use 'release' to pair with lock-free load
       release_set_higher_dimension(ak);
       assert(ak->lower_dimension() == this, "lower dimension mismatch");
@@ -189,9 +200,10 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
 
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
+  size_t size = refArrayOopDesc::object_size(length);
   ArrayKlass* ak = array_klass(n + dimension(), CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
+  ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->default_ref_array_klass(CHECK_NULL);
+  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(oak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   // initialization to null not necessary, area already cleared
   return o;
@@ -236,7 +248,7 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
   // Klass recreates the component mirror also
 
   if (_higher_dimension != nullptr) {
-    ArrayKlass *ak = higher_dimension();
+    ObjArrayKlass *ak = higher_dimension();
     log_array_class_load(ak);
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }

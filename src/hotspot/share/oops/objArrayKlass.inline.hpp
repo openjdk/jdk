@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,89 +33,57 @@
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 #include "utilities/macros.hpp"
 
+
+inline ObjArrayKlass* ObjArrayKlass::default_ref_array_klass_acquire() const {
+  return AtomicAccess::load_acquire(&_default_ref_array_klass);
+}
+
+inline void ObjArrayKlass::release_set_default_ref_array_klass(ObjArrayKlass* k) {
+  AtomicAccess::release_store(&_default_ref_array_klass, k);
+}
+
 template <typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_elements(objArrayOop a, OopClosureType* closure) {
-  T* p         = (T*)a->base();
-  T* const end = p + a->length();
-
-  for (;p < end; p++) {
-    Devirtualizer::do_oop(closure, p);
-  }
+  ShouldNotReachHere();
 }
 
 template <typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_elements_bounded(
     objArrayOop a, OopClosureType* closure, void* low, void* high) {
+  ShouldNotReachHere();
 
-  T* const l = (T*)low;
-  T* const h = (T*)high;
-
-  T* p   = (T*)a->base();
-  T* end = p + a->length();
-
-  if (p < l) {
-    p = l;
-  }
-  if (end > h) {
-    end = h;
-  }
-
-  for (;p < end; ++p) {
-    Devirtualizer::do_oop(closure, p);
-  }
 }
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  assert(obj->is_array(), "obj must be array");
-  objArrayOop a = objArrayOop(obj);
-
-  if (Devirtualizer::do_metadata(closure)) {
-    Devirtualizer::do_klass(closure, obj->klass());
-  }
-
-  oop_oop_iterate_elements<T>(a, closure);
+  ShouldNotReachHere();
 }
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_reverse(oop obj, OopClosureType* closure) {
-  // No reverse implementation ATM.
-  oop_oop_iterate<T>(obj, closure);
+  ShouldNotReachHere();
 }
 
 template <typename T, typename OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  assert(obj->is_array(), "obj must be array");
-  objArrayOop a  = objArrayOop(obj);
-
-  if (Devirtualizer::do_metadata(closure)) {
-    Devirtualizer::do_klass(closure, a->klass());
-  }
-
-  oop_oop_iterate_elements_bounded<T>(a, closure, mr.start(), mr.end());
+  ShouldNotReachHere();
 }
 
 // Like oop_oop_iterate but only iterates over a specified range and only used
 // for objArrayOops.
 template <typename T, class OopClosureType>
 void ObjArrayKlass::oop_oop_iterate_range(objArrayOop a, OopClosureType* closure, int start, int end) {
-  T* low = (T*)a->base() + start;
-  T* high = (T*)a->base() + end;
-
-  oop_oop_iterate_elements_bounded<T>(a, closure, low, high);
+  ShouldNotReachHere();
 }
 
 // Placed here to resolve include cycle between objArrayKlass.inline.hpp and objArrayOop.inline.hpp
 template <typename OopClosureType>
 void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end) {
-  if (UseCompressedOops) {
-    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<narrowOop>(this, blk, start, end);
-  } else {
-    ((ObjArrayKlass*)klass())->oop_oop_iterate_range<oop>(this, blk, start, end);
-  }
+  ShouldNotReachHere();
 }
 
 #endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP

@@ -1561,15 +1561,6 @@ bool InstanceKlass::is_same_or_direct_interface(Klass *k) const {
   return false;
 }
 
-objArrayOop InstanceKlass::allocate_objArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_OBJECT), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n, CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  return o;
-}
-
 instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   if (TraceFinalizerRegistration) {
     tty->print("Registered ");
@@ -2828,6 +2819,12 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
     assert(this == array_klasses()->bottom_klass(), "sanity");
     // Array classes have null protection domain.
     // --> see ArrayKlass::complete_create_array_klass()
+    if (class_loader_data() == nullptr) {
+      ResourceMark rm(THREAD);
+      log_debug(cds)("  loader_data %s ", loader_data == nullptr ? "nullptr" : "non null");
+      log_debug(cds)("  this %s array_klasses %s ", this->name()->as_C_string(), array_klasses()->name()->as_C_string());
+    }
+    assert(!array_klasses()->is_refined_objArray_klass(), "must be non-refined objarrayklass");
     array_klasses()->restore_unshareable_info(class_loader_data(), Handle(), CHECK);
   }
 

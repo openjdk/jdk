@@ -109,7 +109,8 @@ objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
   if (klass->is_array_klass()) {
     return ArrayKlass::cast(klass)->allocate_arrayArray(1, length, THREAD);
   } else {
-    return InstanceKlass::cast(klass)->allocate_objArray(1, length, THREAD);
+    ArrayKlass* ak = klass->array_klass(CHECK_NULL);
+    return ObjArrayKlass::cast(ak)->allocate_instance(length, CHECK_NULL);
   }
 }
 

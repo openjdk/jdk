@@ -442,7 +442,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 #ifdef ASSERT
         // Assert object type is really an array of the proper kind.
         {
-          int tag = (id == StubId::c1_new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_obj_value;
+          int tag = (id == StubId::c1_new_type_array_id) ? Klass::_lh_array_tag_type_value : Klass::_lh_array_tag_ref_value;
           Label ok;
           __ lwz(R0, in_bytes(Klass::layout_helper_offset()), R4_ARG2);
           __ srawi(R0, R0, Klass::_lh_array_tag_shift);

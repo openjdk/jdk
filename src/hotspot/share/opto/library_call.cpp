@@ -3800,7 +3800,7 @@ bool LibraryCallKit::inline_native_setCurrentThread() {
 }
 
 const Type* LibraryCallKit::scopedValueCache_type() {
-  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass());
+  ciKlass* objects_klass = ciObjArrayKlass::make(env()->Object_klass(), false);
   const TypeOopPtr* etype = TypeOopPtr::make_from_klass(env()->Object_klass());
   const TypeAry* arr0 = TypeAry::make(etype, TypeInt::POS);
 
@@ -4522,7 +4522,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     Node* not_objArray = generate_non_objArray_guard(klass_node, bailout);
     if (not_objArray != nullptr) {
       // Improve the klass node's type from the new optimistic assumption:
-      ciKlass* ak = ciArrayKlass::make(env()->Object_klass());
+      ciKlass* ak = ciArrayKlass::make(env()->Object_klass(), false);
       const Type* akls = TypeKlassPtr::make(TypePtr::NotNull, ak, 0/*offset*/);
       Node* cast = new CastPPNode(control(), klass_node, akls);
       klass_node = _gvn.transform(cast);

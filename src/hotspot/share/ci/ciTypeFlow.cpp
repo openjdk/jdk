@@ -315,13 +315,13 @@ ciType* ciTypeFlow::StateVector::type_meet_internal(ciType* t1, ciType* t2, ciTy
         ciKlass* elem  = type_meet_internal(elem1, elem2, analyzer)->as_klass();
         // Do an easy shortcut if one type is a super of the other.
         if (elem == elem1) {
-          assert(k1 == ciObjArrayKlass::make(elem), "shortcut is OK");
+          assert(k1 == ciObjArrayKlass::make(elem, false), "shortcut is OK");
           return k1;
         } else if (elem == elem2) {
-          assert(k2 == ciObjArrayKlass::make(elem), "shortcut is OK");
+          assert(k2 == ciObjArrayKlass::make(elem, false), "shortcut is OK");
           return k2;
         } else {
-          return ciObjArrayKlass::make(elem);
+          return ciObjArrayKlass::make(elem, false);
         }
       } else {
         return object_klass;
@@ -912,7 +912,7 @@ bool ciTypeFlow::StateVector::apply_one_bytecode(ciBytecodeStream* str) {
       if (!will_link) {
         trap(str, element_klass, str->get_klass_index());
       } else {
-        push_object(ciObjArrayKlass::make(element_klass));
+        push_object(ciObjArrayKlass::make(element_klass, false));
       }
       break;
     }

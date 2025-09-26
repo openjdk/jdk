@@ -1513,7 +1513,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     }
 
     if (tk->isa_aryklassptr() && tk->is_aryklassptr()->elem()->isa_klassptr()) {
-      ciKlass* k = ciObjArrayKlass::make(env()->Object_klass());
+      ciKlass* k = ciObjArrayKlass::make(env()->Object_klass(), false);
       if (!k || !k->is_loaded()) {                  // Only fails for some -Xcomp runs
         tj = tk = TypeInstKlassPtr::make(TypePtr::NotNull, env()->Object_klass(), offset);
       } else {

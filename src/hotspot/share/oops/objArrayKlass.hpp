@@ -47,13 +47,16 @@ class ObjArrayKlass : public ArrayKlass {
   Klass* _element_klass;            // The klass of the elements of this array type
   Klass* _bottom_klass;             // The one-dimensional type (InstanceKlass or TypeArrayKlass)
 
-  // Constructor
-  ObjArrayKlass(int n, Klass* element_klass, Symbol* name);
+  ObjArrayKlass* _default_ref_array_klass;
+
   static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
 
-  objArrayOop allocate_instance(int length, TRAPS);
+  virtual objArrayOop allocate_instance(int length, TRAPS);
 
  protected:
+  // Constructor
+  ObjArrayKlass(int n, Klass* element_klass, Symbol* name, KlassKind kind);
+
   // Create array_name for element klass
   static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
 
@@ -69,6 +72,12 @@ class ObjArrayKlass : public ArrayKlass {
   Klass* bottom_klass() const       { return _bottom_klass; }
   void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
   Klass** bottom_klass_addr()       { return &_bottom_klass; }
+
+  ObjArrayKlass* default_ref_array_klass(TRAPS);
+  inline ObjArrayKlass* default_ref_array_klass_acquire() const;
+  inline void release_set_default_ref_array_klass(ObjArrayKlass* ak);
+
+  static ByteSize default_ref_array_klass_offset() { return byte_offset_of(ObjArrayKlass, _default_ref_array_klass); }
 
   ModuleEntry* module() const;
   PackageEntry* package() const;
@@ -96,13 +105,10 @@ class ObjArrayKlass : public ArrayKlass {
   oop protection_domain() const { return bottom_klass()->protection_domain(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
+  virtual void remove_unshareable_info();
+  virtual void remove_java_mirror();
+  void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
- private:
-  // Either oop or narrowOop depending on UseCompressedOops.
-  // must be called from within ObjArrayKlass.cpp
-  void do_copy(arrayOop s, size_t src_offset,
-               arrayOop d, size_t dst_offset,
-               int length, TRAPS);
  public:
   static ObjArrayKlass* cast(Klass* k) {
     return const_cast<ObjArrayKlass*>(cast(const_cast<const Klass*>(k)));
@@ -158,9 +164,9 @@ class ObjArrayKlass : public ArrayKlass {
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;
 
-  void oop_print_value_on(oop obj, outputStream* st);
+  virtual void oop_print_value_on(oop obj, outputStream* st);
 #ifndef PRODUCT
-  void oop_print_on      (oop obj, outputStream* st);
+  virtual void oop_print_on      (oop obj, outputStream* st);
 #endif //PRODUCT
 
   const char* internal_name() const;

@@ -372,6 +372,9 @@ void DynamicArchiveBuilder::gather_array_klasses() {
   for (int i = 0; i < klasses()->length(); i++) {
     if (klasses()->at(i)->is_objArray_klass()) {
       ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
+      if (oak->is_refined_objArray_klass()) {
+        oak = ObjArrayKlass::cast(oak->super());
+      }
       Klass* elem = oak->element_klass();
       if (AOTMetaspace::in_aot_cache_static_region(elem)) {
         // Only capture the array klass whose element_klass is in the static archive.
@@ -443,13 +446,16 @@ void DynamicArchive::setup_array_klasses() {
       Klass* elm = oak->element_klass();
       assert(AOTMetaspace::in_aot_cache_static_region((void*)elm), "must be");
 
-      if (elm->is_instance_klass()) {
-        assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
-        InstanceKlass::cast(elm)->set_array_klasses(oak);
-      } else {
-        assert(elm->is_array_klass(), "sanity");
-        assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
-        ArrayKlass::cast(elm)->set_higher_dimension(oak);
+      // Higher dimension may have been set when doing setup on ObjArrayKlass
+      if (!oak->is_refined_objArray_klass()) {
+        if (elm->is_instance_klass()) {
+          assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
+          InstanceKlass::cast(elm)->set_array_klasses(oak);
+        } else {
+          assert(elm->is_array_klass(), "sanity");
+          assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
+          ArrayKlass::cast(elm)->set_higher_dimension(oak);
+        }
       }
     }
     log_debug(aot)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
