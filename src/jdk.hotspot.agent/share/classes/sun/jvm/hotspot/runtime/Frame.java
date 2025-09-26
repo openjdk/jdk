@@ -82,7 +82,7 @@ public abstract class Frame implements Cloneable {
   }
 
   protected void adjustForDeopt() {
-    if ( pc != null) {
+    if (pc != null) {
       // Look for a deopt pc and if it is deopted convert to original pc
       CodeBlob cb = VM.getVM().getCodeCache().findBlob(pc);
       if (cb != null && cb.isJavaMethod()) {
