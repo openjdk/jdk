@@ -1150,7 +1150,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
-  if (vmClasses::Class_klass_loaded()) {
+  if (vmClasses::Class_klass_is_loaded()) {
     Handle mirror;
     Handle comp_mirror;
 
@@ -1223,7 +1223,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
   // see more details in vmClasses::resolve_all().
-  if (!vmClasses::Class_klass_loaded() && !CDSConfig::is_using_aot_linked_classes()) {
+  if (!vmClasses::Class_klass_is_loaded() && !CDSConfig::is_using_aot_linked_classes()) {
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
     return true;
