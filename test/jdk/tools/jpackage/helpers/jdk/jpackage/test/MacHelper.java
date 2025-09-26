@@ -128,6 +128,10 @@ public final class MacHelper {
         return readPList(appImage.resolve("Contents/Info.plist"));
     }
 
+    public static PListReader readPListFromEmbeddedRuntime(Path appImage) {
+        return readPList(appImage.resolve("Contents/runtime/Contents/Info.plist"));
+    }
+
     public static PListReader readPList(Path path) {
         TKit.assertReadableFileExists(path);
         return ThrowingSupplier.toSupplier(() -> readPList(Files.readAllLines(
