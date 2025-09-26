@@ -89,12 +89,24 @@ public class DesktopPropertyResetPendingFlagTest extends JFrame {
         };
         Toolkit.getDefaultToolkit().getSystemEventQueue().push(newEventQueue);
 
+        for (UIManager.LookAndFeelInfo info :
+                UIManager.getInstalledLookAndFeels()) {
+            System.out.println("Setting L&F: " + info.getClassName());
+            UIManager.setLookAndFeel(info.getClassName());
+            runTest();
+        }
+    }
+
+    private static void runTest() throws Exception {
         SwingUtilities.invokeLater(() -> {
             DesktopPropertyResetPendingFlagTest t =
                     new DesktopPropertyResetPendingFlagTest();
             t.pack();
             t.setVisible(true);
         });
+
+        panelUpdateUICounter = 0;
+        observedExpectedExceptionCounter = 0;
 
         TestDesktopProperty property =
                 new TestDesktopProperty("test", new Object());
