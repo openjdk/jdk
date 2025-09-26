@@ -55,6 +55,7 @@ protected:
 
   // The target maximum occupancy of the heap. The target occupancy is the number
   // of bytes when marking should be finished and reclaim started.
+  // It is only considered for starting the marking.
   // This is a function of current heap size and external SoftMaxHeapSize goal.
   size_t target_occupancy() const;
 
