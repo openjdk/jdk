@@ -30,7 +30,7 @@
  * Graphics2D.drawImage(BufferedImage, BufferedImageOp, x, y) to an
  * OpenGL-accelerated destination produces the same results when performed
  * in software via BufferedImageOp.filter().
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 DrawBufImgOp -ignore
+ * @run main/othervm -Dsun.java2d.opengl=True DrawBufImgOp -ignore
  */
 
 /*

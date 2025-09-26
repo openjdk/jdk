@@ -28,8 +28,8 @@
  * @requires (os.family != "mac")
  * @summary Verifies that scaling an image works properly when the
  * source parameters are outside the source bounds.
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 ScaleParamsOOB
- * @run main/othervm -Dsun.java2d.uiScale=1 ScaleParamsOOB
+ * @run main/othervm -Dsun.java2d.opengl=True ScaleParamsOOB
+ * @run main/othervm ScaleParamsOOB
  */
 
 /*

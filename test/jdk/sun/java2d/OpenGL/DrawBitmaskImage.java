@@ -28,8 +28,8 @@
  * @requires (os.family != "mac")
  * @summary Verifies that bitmask image copies work properly with the
  * OGL pipeline when a SrcOver composite with extra alpha is involved.
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 DrawBitmaskImage
- * @run main/othervm -Dsun.java2d.uiScale=1 DrawBitmaskImage
+ * @run main/othervm -Dsun.java2d.opengl=True DrawBitmaskImage
+ * @run main/othervm DrawBitmaskImage
  */
 
 /*

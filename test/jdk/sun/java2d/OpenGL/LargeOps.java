@@ -31,7 +31,7 @@
  * single-threaded OpenGL pipeline, there are some operations that require
  * a separate buffer to be spawned if the parameters cannot fit entirely on
  * the standard buffer.  This test exercises this special case.
- * @run main/othervm  -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl.lcdshader=true LargeOps
+ * @run main/othervm  -Dsun.java2d.opengl=True -Dsun.java2d.opengl.lcdshader=true LargeOps
  */
 
 import java.awt.Canvas;

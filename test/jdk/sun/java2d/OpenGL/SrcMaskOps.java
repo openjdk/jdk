@@ -28,8 +28,8 @@
  * @requires (os.family != "mac")
  * @summary Verifies that OGLMaskFill, OGLMaskBlit, and OGLTextRenderer
  * operations work properly for non-SrcOver composites.
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 SrcMaskOps
- * @run main/othervm -Dsun.java2d.uiScale=1 SrcMaskOps
+ * @run main/othervm -Dsun.java2d.opengl=True SrcMaskOps
+ * @run main/othervm SrcMaskOps
  */
 
 /*

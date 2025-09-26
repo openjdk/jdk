@@ -28,8 +28,8 @@
  * @requires (os.family != "mac")
  * @summary Verifies that managed image copies and transforms work properly
  * with the OGL pipeline when a background color is specified.
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 DrawImageBg
- * @run main/othervm -Dsun.java2d.uiScale=1 DrawImageBg
+ * @run main/othervm -Dsun.java2d.opengl=True DrawImageBg
+ * @run main/othervm DrawImageBg
  */
 
 /*

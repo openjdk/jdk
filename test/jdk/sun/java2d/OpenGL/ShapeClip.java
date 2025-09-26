@@ -30,8 +30,8 @@
  * buffer when setting up a complex (shape) clip region.  The test fails if
  * the circular clip region is filled with a green color (the green region
  * should not be visible at all).
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 ShapeClip
- * @run main/othervm -Dsun.java2d.uiScale=1 ShapeClip
+ * @run main/othervm -Dsun.java2d.opengl=True ShapeClip
+ * @run main/othervm ShapeClip
  */
 
 /*

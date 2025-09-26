@@ -28,9 +28,9 @@
  * @requires (os.family != "mac")
  * @summary Verifies that copying a subregion from a VolatileImage works
  * properly with the OGL pipeline.
- * @run main/othervm -Dsun.java2d.uiScale=1  VolatileSubRegion
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl.fbobject=true VolatileSubRegion
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl.fbobject=false VolatileSubRegion
+ * @run main/othervm  VolatileSubRegion
+ * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=true VolatileSubRegion
+ * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=false VolatileSubRegion
  */
 
 /*

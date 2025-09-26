@@ -28,9 +28,9 @@
  * @requires (os.family != "mac")
  * @summary Verifies that transformed VolatileImage copies work properly with
  * the OGL pipeline.
- * @run main/othervm -Dsun.java2d.uiScale=1 XformVolatile
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl.fbobject=true XformVolatile
- * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl.fbobject=false XformVolatile
+ * @run main/othervm XformVolatile
+ * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=true XformVolatile
+ * @run main/othervm -Dsun.java2d.opengl=True -Dsun.java2d.opengl.fbobject=false XformVolatile
  */
 
 /*

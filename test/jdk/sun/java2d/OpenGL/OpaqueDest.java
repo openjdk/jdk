@@ -31,8 +31,8 @@
  * intended to run on GraphicsConfigs that support a stored alpha channel
  * (to verify the bug at hand), but it is also a useful for testing the
  * compositing results on any configuration.
- * @run main/othervm  -Dsun.java2d.opengl=True -Dsun.java2d.uiScale=1 OpaqueDest
- * @run main/othervm  -Dsun.java2d.uiScale=1 OpaqueDest
+ * @run main/othervm  -Dsun.java2d.opengl=True OpaqueDest
+ * @run main/othervm  OpaqueDest
  */
 
 /*
