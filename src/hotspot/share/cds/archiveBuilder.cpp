@@ -655,12 +655,11 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes(); // word-aligned.
-  char* dest;
-  char* oldtop;
-  char* newtop;
+  int aligned_byte_size = src_info->size_in_bytes();
+  precond(is_aligned(aligned_byte_size, SharedSpaceObjectAlignment));
 
-  oldtop = dump_region->top();
+  char* dest;
+  char* oldtop = dump_region->top();
   if (src_info->msotype() == MetaspaceObj::ClassType) {
     // Allocate space for a pointer directly in front of the future InstanceKlass, so
     // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
@@ -672,7 +671,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
       dump_region->allocate(sizeof(address));
     }
     // Allocate space for the future InstanceKlass with proper alignment
-    const size_t alignment =
+    const size_t klass_alignment =
 #ifdef _LP64
       UseCompressedClassPointers ?
         nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift()) :
@@ -680,18 +679,21 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 #else
       SharedSpaceObjectAlignment;
 #endif
-    dest = dump_region->allocate(bytes, alignment);
+    dest = dump_region->allocate(aligned_byte_size, klass_alignment);
   } else {
-    dest = dump_region->allocate(bytes);
+    dest = dump_region->allocate(aligned_byte_size);
   }
-  newtop = dump_region->top();
+  char* newtop = dump_region->top();
 
+  // dest contains all zeros, so it's OK to copy fewer bytes than allocated from dump_region
   if (src_info->msotype() == MetaspaceObj::SymbolType) {
-    // Symbol may be allocated using AllocateHeap with the exact number of bytes and
-    // may not be word-aligned.
-    memcpy(dest, src, ((Symbol*)src)->byte_size());
+    // Symbols may be allocated using AllocateHeap, so their sizes may be less than aligned_byte_size
+    int exact_byte_size = ((Symbol*)src)->byte_size();
+    precond(exact_byte_size <= aligned_byte_size);
+    memcpy(dest, src, exact_byte_size);
   } else {
-    memcpy(dest, src, bytes);
+    // For all other types, the memory for src was allocated with aligned_byte_size.
+    memcpy(dest, src, aligned_byte_size);
   }
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
@@ -716,7 +718,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
     ArchivePtrMarker::mark_pointer((address*)dest);
   }
 
-  log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
+  log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), aligned_byte_size);
   src_info->set_buffered_addr((address)dest);
 
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
