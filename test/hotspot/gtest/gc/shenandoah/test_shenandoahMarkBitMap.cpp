@@ -146,8 +146,7 @@ protected:
 
     HeapWord* prev_marked = end_of_heap_memory + 1;
     for (int i = (int) all_marked_objects - 1; i >= 0; i--) {
-      // to be renamed get_prev_marked_addr()
-      prev_marked = mbm->get_last_marked_addr(&heap_memory[0], prev_marked - 1);
+      prev_marked = mbm->get_prev_marked_addr(&heap_memory[0], prev_marked - 1);
       MarkBitMapAssertEqual(prev_marked, all_marked_addresses[i]);
       MarkBitMapAssertTrue(mbm->is_marked(prev_marked));
       if (is_strongly_marked_object[i]) {
@@ -158,7 +157,7 @@ protected:
       }
     }
     // We expect no more marked addresses to be found.  should return prev_marked.
-    sentinel = mbm->get_last_marked_addr(&heap_memory[0], prev_marked - 1);
+    sentinel = mbm->get_prev_marked_addr(&heap_memory[0], prev_marked - 1);
     MarkBitMapAssertEqual(sentinel, prev_marked);
   }
 
@@ -228,14 +227,14 @@ public:
     HeapWord* prev_marked = end_of_my_heap + 1;;
     for (int i = (int) weakly_marked_objects - 1; i >= 0; i--) {
       // to be renamed get_prev_marked_addr()
-      prev_marked = mbm.get_last_marked_addr(&my_heap_memory[0], prev_marked - 1);
+      prev_marked = mbm.get_prev_marked_addr(&my_heap_memory[0], prev_marked - 1);
       MarkBitMapAssertEqual(prev_marked, weakly_marked_addresses[i]);
       MarkBitMapAssertTrue(mbm.is_marked(prev_marked));
       MarkBitMapAssertTrue(mbm.is_marked_weak(prev_marked));
       MarkBitMapAssertTrue(!mbm.is_marked_strong(prev_marked));
     }
     // We expect no more marked addresses to be found.  should return prev_marked.
-    sentinel = mbm.get_last_marked_addr(&my_heap_memory[0], prev_marked - 1);
+    sentinel = mbm.get_prev_marked_addr(&my_heap_memory[0], prev_marked - 1);
     // MarkBitMapAssertEqual(sentinel, prev_marked);
     MarkBitMapAssertEqual(sentinel, prev_marked);
     verify_bitmap_is_weakly_marked(&mbm, weakly_marked_addresses, weakly_marked_objects);

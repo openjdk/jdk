@@ -136,9 +136,6 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
     // Get the word containing l_index, and shift out low bits.
     idx_t index = to_words_align_down(l_index);
     bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
-#ifdef KELVIN_THINKING_OUT_LOUD
-    // the following test should look at (cword & 0x3)
-#endif
     if ((cword & 1) != 0) {
       // The first bit is similarly often interesting. When it matters
       // (density or features of the calling algorithm make it likely
@@ -175,15 +172,8 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
   return r_index;
 }
 
-#ifdef KELVIN_THINKING_OUT_LOUND
-// Make cleaer that we find that last_bit in the range [l_index, r_index), returning r_index if none found
-
-// kelvin thinks the implementation is currently wrong, returning l_index for failure to find one.
-
-// kelvin also prefers to use all caps for template parameters.
-#endif
 template<ShenandoahMarkBitMap::bm_word_t flip, bool aligned_left>
-inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_bit_impl(idx_t l_index, idx_t r_index) const {
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_prev_bit_impl(idx_t l_index, idx_t r_index) const {
   STATIC_ASSERT(flip == find_ones_flip || flip == find_zeros_flip);
   verify_range(l_index, r_index);
   assert(!aligned_left || is_aligned(l_index, BitsPerWord), "l_index not aligned");
@@ -271,8 +261,8 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_one_offset(idx
   return get_next_bit_impl<find_ones_flip, false>(l_offset, r_offset);
 }
 
-inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_last_one_offset(idx_t l_offset, idx_t r_offset) const {
-  return get_last_bit_impl<find_ones_flip, false>(l_offset, r_offset);
+inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_prev_one_offset(idx_t l_offset, idx_t r_offset) const {
+  return get_prev_bit_impl<find_ones_flip, false>(l_offset, r_offset);
 }
 
 // Returns a bit mask for a range of bits [beg, end) within a single word.  Each
