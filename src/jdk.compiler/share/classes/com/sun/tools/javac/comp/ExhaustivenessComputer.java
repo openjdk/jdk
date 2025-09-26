@@ -213,7 +213,6 @@ public class ExhaustivenessComputer {
                     if (clazz.isSealed() && clazz.isAbstract() &&
                         //if a binding pattern for clazz already exists, no need to analyze it again:
                         !existingBindings.contains(clazz)) {
-                        ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         //do not reduce to types unrelated to the selector type:
                         Type clazzErasure = types.erasure(clazz.type);
                         if (components(selectorType).stream()
@@ -232,16 +231,26 @@ public class ExhaustivenessComputer {
 
                             return instantiated != null && types.isCastable(selectorType, instantiated);
                         });
+                        Set<Symbol> filteredPermitted = new HashSet<>(permitted);
 
                         for (PatternDescription pdOther : patterns) {
                             if (pdOther instanceof BindingPattern bpOther) {
-                                Set<Symbol> currentPermittedSubTypes =
-                                        allPermittedSubTypes(bpOther.type.tsym, s -> true);
+                                Set<Symbol> currentSubTypes;
 
-                                PERMITTED: for (Iterator<Symbol> it = permitted.iterator(); it.hasNext();) {
+                                if (bpOther.type.tsym.isAbstract()) {
+                                    currentSubTypes =
+                                            permitted.stream()
+                                                     .filter(perm -> types.isSubtype(types.erasure(perm.type),
+                                                                                     types.erasure(bpOther.type)))
+                                                     .collect(Collectors.toSet());
+                                } else {
+                                    currentSubTypes = Set.of(bpOther.type.tsym);
+                                }
+
+                                PERMITTED: for (Iterator<Symbol> it = filteredPermitted.iterator(); it.hasNext();) {
                                     Symbol perm = it.next();
 
-                                    for (Symbol currentPermitted : currentPermittedSubTypes) {
+                                    for (Symbol currentPermitted : currentSubTypes) {
                                         if (types.isSubtype(types.erasure(currentPermitted.type),
                                                             types.erasure(perm.type))) {
                                             it.remove();
@@ -256,7 +265,7 @@ public class ExhaustivenessComputer {
                             }
                         }
 
-                        if (permitted.isEmpty()) {
+                        if (filteredPermitted.isEmpty()) {
                             toAdd.add(new BindingPattern(clazz.type));
                         }
                     }
