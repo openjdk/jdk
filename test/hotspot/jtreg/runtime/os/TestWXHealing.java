@@ -29,7 +29,7 @@
  * the triggers for WX mode.
  * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+TraceWXHealing -XX:+StressWXHealing TestWXHealing
- * @run main/othervm -Xcomp -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+TraceWXHealing -XX:+StressWXHealing TestWXHealing
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions -XX:+TraceWXHealing -XX:+StressWXHealing TestWXHealing
  */
 
 import jdk.jshell.tool.*;
