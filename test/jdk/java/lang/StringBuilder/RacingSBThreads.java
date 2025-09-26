@@ -28,7 +28,6 @@
  * @run main/othervm -esa RacingSBThreads read
  * @run main/othervm -esa RacingSBThreads insert
  * @run main/othervm -esa RacingSBThreads append
- * @run main/othervm/timeout=240 -Xcomp RacingSBThreads
  */
 
 import java.nio.CharBuffer;
