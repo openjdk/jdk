@@ -685,7 +685,7 @@ class DumpThreads {
     }
 
     /**
-     * Returns true if lines of a plain text thread dump containing the given text.
+     * Returns true if lines of a plain text thread dump contain the given text.
      */
     private boolean contains(List<String> lines, String text) {
         return lines.stream().map(String::trim)
