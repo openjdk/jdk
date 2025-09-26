@@ -618,7 +618,7 @@ public class FloatMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         }
 
-        int index = fi.apply((int) a.byteSize());
+        int index = fi.apply((int) a.byteSize()) & (~(SPECIES.elementSize() - 1));
         boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, (int) a.byteSize(), SPECIES.elementSize() / 8);
         try {
             fromMemorySegment(a, index, ByteOrder.nativeOrder(), vmask);
@@ -649,7 +649,7 @@ public class FloatMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
             }
         }
 
-        int index = fi.apply((int) a.byteSize());
+        int index = fi.apply((int) a.byteSize()) & (~(SPECIES.elementSize() - 1));
         boolean shouldFail = isIndexOutOfBoundsForMask(mask, index, (int) a.byteSize(), SPECIES.elementSize() / 8);
         try {
             FloatVector av = FloatVector.fromMemorySegment(SPECIES, a, 0, ByteOrder.nativeOrder());
