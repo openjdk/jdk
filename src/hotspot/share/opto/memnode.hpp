@@ -167,7 +167,7 @@ public:
   bool is_unsafe_access() const { return _unsafe_access; }
 
 #ifndef PRODUCT
-  static void dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st);
+  static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
 };
@@ -1371,7 +1371,20 @@ public:
                         intptr_t header_size, Node* size_in_bytes,
                         PhaseIterGVN* phase);
 
- private:
+  // An Initialize node has multiple memory projections. Helper methods used when the node is removed.
+  // For use at parse time
+  void replace_mem_projs_by(Node* mem, Compile* C);
+  // For use with IGVN
+  void replace_mem_projs_by(Node* mem, PhaseIterGVN* igvn);
+
+  // Does a NarrowMemProj with this adr_type and this node as input already exist?
+  bool already_has_narrow_mem_proj_with_adr_type(const TypePtr* adr_type) const;
+
+  // Used during matching: find the MachProj memory projection if there's one. Expectation is that there should be at
+  // most one.
+  MachProjNode* mem_mach_proj() const;
+
+private:
   void remove_extra_zeroes();
 
   // Find out where a captured store should be placed (or already is placed).
@@ -1388,6 +1401,31 @@ public:
                                PhaseGVN* phase);
 
   intptr_t find_next_fullword_store(uint i, PhaseGVN* phase);
+
+  // Iterate with i over all NarrowMemProj uses calling callback
+  template <class Callback, class Iterator> ProjNode* apply_to_narrow_mem_projs_any_iterator(Iterator i, Callback callback) const {
+    auto filter = [&](ProjNode* proj) {
+      if (proj->is_NarrowMemProj() && callback(proj->as_NarrowMemProj())) {
+        return BREAK_AND_RETURN_CURRENT_PROJ;
+      }
+      return CONTINUE;
+    };
+    return apply_to_projs_any_iterator(i, filter);
+  }
+
+  // Same but with default iterator
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback) const;
+  // Same but only for NarrowMem proj whose adr_type matches
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(Callback callback, const TypePtr* adr_type) const;
+public:
+  // Run callback on all NarrowMem proj uses using passed iterator
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator& i, Callback callback) const {
+    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIterator>(UsesIterator(i, this), callback);
+  }
+
+  template <class Callback> ProjNode* apply_to_narrow_mem_projs(DUIterator_Fast& imax, DUIterator_Fast& i, Callback callback) const {
+    return apply_to_narrow_mem_projs_any_iterator<Callback, UsesIteratorFast>(UsesIteratorFast(imax, i, this), callback);
+  }
 };
 
 //------------------------------MergeMem---------------------------------------

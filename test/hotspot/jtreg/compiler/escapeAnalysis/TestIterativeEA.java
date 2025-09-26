@@ -49,8 +49,8 @@ public class TestIterativeEA {
 
     analyzer.shouldHaveExitValue(0);
     analyzer.shouldContain("++++ Eliminated: 26 Allocate");
-    analyzer.shouldContain("++++ Eliminated: 48 Allocate");
-    analyzer.shouldContain("++++ Eliminated: 78 Allocate");
+    analyzer.shouldContain("++++ Eliminated: 51 Allocate");
+    analyzer.shouldContain("++++ Eliminated: 84 Allocate");
   }
 
   static class A {
