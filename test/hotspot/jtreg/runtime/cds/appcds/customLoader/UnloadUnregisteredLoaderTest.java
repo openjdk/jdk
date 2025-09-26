@@ -31,7 +31,7 @@
  * @requires vm.opt.final.ClassUnloading
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build jdk.test.whitebox.WhiteBox jdk.test.lib.classloader.ClassUnloadCommon
- * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java 
+ * @compile test-classes/UnloadUnregisteredLoader.java test-classes/CustomLoadee.java
  *          test-classes/CustomLoadee5.java test-classes/CustomLoadee5Child.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  *                 jdk.test.lib.classloader.ClassUnloadCommon
