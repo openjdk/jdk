@@ -38,6 +38,8 @@
 template <typename T>
 void HeapShared::do_metadata_offsets(oop src_obj, T callback) {
   if (java_lang_Class::is_instance(src_obj)) {
+    assert(java_lang_Class::klass_offset() < java_lang_Class::array_klass_offset(),
+           "metadata offsets must be sorted");
     callback(java_lang_Class::klass_offset());
     callback(java_lang_Class::array_klass_offset());
   } else if (java_lang_invoke_ResolvedMethodName::is_instance(src_obj)) {
@@ -45,19 +47,8 @@ void HeapShared::do_metadata_offsets(oop src_obj, T callback) {
   }
 }
 
-inline void HeapShared::remap_loaded_metadata(oop src_obj, bool skip_mirror_klass) {
+inline void HeapShared::remap_loaded_metadata(oop src_obj) {
   do_metadata_offsets(src_obj, [&](int offset) {
-    if (skip_mirror_klass &&
-        java_lang_Class::is_instance(src_obj) &&
-        offset == java_lang_Class::klass_offset()) {
-      // Class mirrors may get traced by the GC. Therefore, it is important that the
-      // klass field only transitions from null to the real intended class, and not
-      // intermittedly having a strange bogus value from the archive. To deal with
-      // this, we carefully copy around the klass field and set the klass field
-      // explicitly to the intended class. Therefore, remapping should skip that
-      // klass, as it has the intended value already; patching it will mess with it.
-      return;
-    }
     Metadata* metadata = src_obj->metadata_field(offset);
     if (metadata != nullptr) {
       metadata = (Metadata*)(address(metadata) + AOTMetaspace::relocation_delta());

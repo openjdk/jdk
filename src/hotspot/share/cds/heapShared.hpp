@@ -534,7 +534,7 @@ private:
   static bool is_metadata_field(oop src_obj, int offset);
   template <typename T> static void do_metadata_offsets(oop src_obj, T callback);
   static void remap_dumped_metadata(oop src_obj, address archived_object);
-  inline static void remap_loaded_metadata(oop obj, bool skip_mirror_klass);
+  inline static void remap_loaded_metadata(oop obj);
   static oop maybe_remap_referent(bool is_java_lang_ref, size_t field_offset, oop referent);
   static void get_pointer_info(oop src_obj, bool& has_oop_pointers, bool& has_native_pointers);
   static void set_has_native_pointers(oop src_obj);

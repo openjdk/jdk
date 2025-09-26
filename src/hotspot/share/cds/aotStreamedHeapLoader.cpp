@@ -329,16 +329,21 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   CopyConjointLinkingOopClosure cl(heap_object, linker);
 
   if (!_allow_gc) {
+    // Without concurrent GC running, we can copy incorrect object references
+    // and metadata references into the heap object and then fix them up in-place.
     size_t payload_size = size - 1;
     HeapWord* archive_start = ((HeapWord*)archive_object) + 1;
     HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object) + 1;
 
     Copy::disjoint_words(archive_start, heap_start, payload_size);
     heap_object->oop_iterate(&cl);
-    HeapShared::remap_loaded_metadata(heap_object, false /* skip_mirror_klass */);
+    HeapShared::remap_loaded_metadata(heap_object);
     return;
   }
 
+  // When a concurrent GC may be running, we take care not to copy incorrect oops,
+  // narrowOops or Metadata* into the heap objects. Transitions go from 0 to the
+  // intended runtime linked values only.
   size_t word_scale = use_coops ? 2 : 1;
   using RawElementT = std::conditional_t<use_coops, int32_t, int64_t>;
 
@@ -350,48 +355,41 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   const BitMap::idx_t start_bit = header_bit + header_size;
   const BitMap::idx_t end_bit = header_bit + size * word_scale;
 
-  if (java_lang_Class::is_instance(heap_object)) {
-    // Class mirrors may get traced by the GC. Therefore, it is important that the
-    // klass field only transitions from null to the real intended class, and not
-    // intermittedly having a strange bogus value from the archive. To deal with
-    // this, we carefully copy around the klass field and set the klass field
-    // explicitly to the intended class.
-    BitMap::idx_t klass_field_idx = header_bit + java_lang_Class::klass_offset() / sizeof(RawElementT);
+  BitMap::idx_t curr_bit = start_bit;
+
+  // We are a bit paranoid about GC or other safepointing operations observing
+  // shady metadata fields from the archive that do not point at real metadata.
+  // We deal with this by explicitly reading the requested address from the
+  // archive and fixing it to real Metadata before writing it into the heap object.
+  HeapShared::do_metadata_offsets(heap_object, [&](int metadata_offset){
+    BitMap::idx_t metadata_field_idx = header_bit + metadata_offset / sizeof(RawElementT);
     BitMap::idx_t skip = word_scale;
-    assert(klass_field_idx >= start_bit && klass_field_idx + skip <= end_bit,
-           "Strange klass field offset?");
+    assert(metadata_field_idx >= start_bit && metadata_field_idx + skip <= end_bit,
+           "Metadata field out of bounds");
 
-    // Copy payload before klass field
+    // Copy payload before metadata field
     copy_payload_carefully<use_coops>(archive_object,
                                       heap_object,
                                       header_bit,
-                                      start_bit,
-                                      klass_field_idx,
+                                      curr_bit,
+                                      metadata_field_idx,
                                       linker);
 
-    // Copy klass field
-    Metadata* archive_klass = archive_object->metadata_field(java_lang_Class::klass_offset());
-    Metadata* runtime_klass = (Metadata*)(address(archive_klass) + AOTMetaspace::relocation_delta());
-    heap_object->metadata_field_put(java_lang_Class::klass_offset(), runtime_klass);
+    // Copy metadata field
+    Metadata* archive_metadata = archive_object->metadata_field(metadata_offset);
+    Metadata* runtime_metadata = (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta());
+    heap_object->metadata_field_put(metadata_offset, runtime_metadata);
+    curr_bit = metadata_field_idx + skip;
+  });
 
-    // Copy payload after klass field
-    copy_payload_carefully<use_coops>(archive_object,
-                                      heap_object,
-                                      header_bit,
-                                      klass_field_idx + skip,
-                                      end_bit,
-                                      linker);
-  } else {
-    // All other objects are copied normally, skipping only the header word.
-    copy_payload_carefully<use_coops>(archive_object,
-                                      heap_object,
-                                      header_bit,
-                                      start_bit,
-                                      end_bit,
-                                      linker);
-  }
-
-  HeapShared::remap_loaded_metadata(heap_object, true /* skip_mirror_klass */);
+  // Copy trailing metadata after the last metadata word. This is usually doing
+  // all the copying.
+  copy_payload_carefully<use_coops>(archive_object,
+                                    heap_object,
+                                    header_bit,
+                                    curr_bit,
+                                    end_bit,
+                                    linker);
 }
 
 void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
