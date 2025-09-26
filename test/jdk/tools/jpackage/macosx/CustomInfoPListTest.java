@@ -41,12 +41,14 @@
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.PackageType;
 
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.Executor;
 
 import javax.xml.stream.XMLOutputFactory;
 
@@ -61,6 +63,7 @@ import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 public class CustomInfoPListTest {
 
     private static final String BUNDLE_NAME_APP = "CustomAppName";
+    private static final String BUNDLE_NAME_EMBEDDED_RUNTIME = "CustomEmbeddedRuntimeName";
     private static final String BUNDLE_NAME_RUNTIME = "CustomRuntimeName";
 
     // We do not need full Info.plist for testing
@@ -81,13 +84,16 @@ public class CustomInfoPListTest {
         }).get();
     }
 
-    private static String getResourceDirWithCustomInfoPList() {
+    private static String getResourceDirWithCustomInfoPList(
+                String bundleName, boolean includeRuntimePList) {
         final Path resources = TKit.createTempDirectory("resources");
         try {
             Files.writeString(resources.resolve("Info.plist"),
-                    getInfoPListXML(BUNDLE_NAME_APP));
-            Files.writeString(resources.resolve("Runtime-Info.plist"),
-                    getInfoPListXML(BUNDLE_NAME_RUNTIME));
+                    getInfoPListXML(bundleName));
+            if (includeRuntimePList) {
+                Files.writeString(resources.resolve("Runtime-Info.plist"),
+                        getInfoPListXML(BUNDLE_NAME_EMBEDDED_RUNTIME));
+            }
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
@@ -96,10 +102,10 @@ public class CustomInfoPListTest {
     }
 
     @Test
-    public void test() {
+    public void testApp() {
         JPackageCommand cmd = JPackageCommand.helloAppImage()
                 .addArguments("--resource-dir",
-                        getResourceDirWithCustomInfoPList());
+                        getResourceDirWithCustomInfoPList(BUNDLE_NAME_APP, true));
 
         cmd.executeAndAssertHelloAppImageCreated();
 
@@ -108,7 +114,37 @@ public class CustomInfoPListTest {
                 "Check value of %s plist key", "CFBundleName"));
 
         var runtimePList = MacHelper.readPListFromEmbeddedRuntime(cmd.outputBundle());
-        TKit.assertEquals(BUNDLE_NAME_RUNTIME, runtimePList.queryValue("CFBundleName"), String.format(
+        TKit.assertEquals(BUNDLE_NAME_EMBEDDED_RUNTIME, runtimePList.queryValue("CFBundleName"), String.format(
                 "Check value of %s plist key", "CFBundleName"));
+    }
+
+    @Test
+    public void testRuntime() throws IOException {
+        final var runtimeImage = MacHelper.createInputRuntimeImage();
+
+        final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
+
+        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
+
+        var cmd = new JPackageCommand()
+                .useToolProvider(true)
+                .ignoreDefaultRuntime(true)
+                .dumpOutput(true)
+                .setPackageType(PackageType.MAC_DMG)
+                .setArgumentValue("--name", "foo")
+                .addArguments("--runtime-image", runtimeImage)
+                .addArguments("--resource-dir",
+                    getResourceDirWithCustomInfoPList(BUNDLE_NAME_RUNTIME, false))
+                .addArguments("--dest", runtimeBundleWorkDir);
+
+        cmd.execute();
+
+        MacHelper.withExplodedDmg(cmd, dmgImage -> {
+            if (dmgImage.endsWith(cmd.name() + ".jdk")) {
+                var runtimePList = MacHelper.readPListFromAppImage(dmgImage);
+                TKit.assertEquals(BUNDLE_NAME_RUNTIME, runtimePList.queryValue("CFBundleName"),
+                        String.format("Check value of %s plist key", "CFBundleName"));
+            }
+        });
     }
 }
