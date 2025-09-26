@@ -36,9 +36,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -XX:-UseGCOverheadLimit
- *      -Xmx2G
  *      vm.gc.compact.Compact
  *      -gp randomString
  *      -gp1 interned(randomString)

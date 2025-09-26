@@ -37,9 +37,8 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm
+ * @run main/othervm/timeout=480
  *      -XX:-UseGCOverheadLimit
- *      -Xmx2G
  *      gc.gctests.AllocateWithoutOomTest.AllocateWithoutOomTest
  */
 
