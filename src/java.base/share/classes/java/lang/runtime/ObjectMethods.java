@@ -25,18 +25,26 @@
 
 package java.lang.runtime;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassHierarchyResolver;
+import java.lang.classfile.Opcode;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.StringConcatFactory;
 import java.lang.invoke.TypeDescriptor;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -162,6 +170,23 @@ public final class ObjectMethods {
                                            lookup.findVirtual(clazz, "hashCode", MT_INT).asType(mt));
     }
 
+    // If this type must be a monomorphic receiver, that is, one that has no
+    // subtypes in the JVM.  For example, Object-typed fields may have a more
+    // specific one type at runtime and optimized so.
+    private static boolean isMonomorphic(Class<?> type) {
+        // Includes primitives and final classes
+        return Modifier.isFinal(type.getModifiers()) && !type.isArray();
+    }
+
+    private static String specializerClassName(Class<?> targetClass, String kind) {
+        String name = targetClass.getName();
+        if (targetClass.isHidden()) {
+            // use the original class name
+            name = name.replace('/', '_');
+        }
+        return name + "$$" + kind + "Specializer";
+    }
+
     /**
      * Generates a method handle for the {@code equals} method for a given data class
      * @param receiverClass   the data class
@@ -178,8 +203,66 @@ public final class ObjectMethods {
         MethodHandle isInstance = MethodHandles.dropArguments(CLASS_IS_INSTANCE.bindTo(receiverClass), 0, receiverClass); // (RO)Z
         MethodHandle accumulator = MethodHandles.dropArguments(TRUE, 0, receiverClass, receiverClass); // (RR)Z
 
-        for (MethodHandle getter : getters) {
-            MethodHandle equalator = equalator(lookup, getter.type().returnType()); // (TT)Z
+        int size = getters.size();
+        MethodHandle[] equalators = new MethodHandle[size];
+        boolean hasPolymorphism = false;
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            var type = getter.type().returnType();
+            if (isMonomorphic(type)) {
+                equalators[i] = equalator(lookup, type);
+            } else {
+                hasPolymorphism = true;
+            }
+        }
+
+        if (hasPolymorphism) {
+            String[] names = new String[size];
+
+            var classFileContext = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(lookup)));
+            var bytes = classFileContext.build(ClassDesc.of(specializerClassName(lookup.lookupClass(), "Equalator")), clb -> {
+                for (int i = 0; i < size; i++) {
+                    if (equalators[i] == null) {
+                        var name = "equalator".concat(Integer.toString(i));
+                        names[i] = name;
+                        var type = getters.get(i).type().returnType();
+                        boolean isInterface = type.isInterface();
+                        var typeDesc = type.describeConstable().orElseThrow();
+                        clb.withMethodBody(name, MethodTypeDesc.of(CD_boolean, typeDesc, typeDesc), ACC_STATIC, cob -> {
+                            var nonNullPath = cob.newLabel();
+                            var fail = cob.newLabel();
+                            cob.aload(0)
+                               .ifnonnull(nonNullPath)
+                               .aload(1)
+                               .ifnonnull(fail)
+                               .iconst_1() // arg0 null, arg1 null
+                               .ireturn()
+                               .labelBinding(fail)
+                               .iconst_0() // arg0 null, arg1 non-null
+                               .ireturn()
+                               .labelBinding(nonNullPath)
+                               .aload(0) // arg0.equals(arg1) - bytecode subject to customized profiling
+                               .aload(1)
+                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface)
+                               .ireturn();
+                        });
+                    }
+                }
+            });
+
+            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+
+            for (int i = 0; i < size; i++) {
+                if (equalators[i] == null) {
+                    var type = getters.get(i).type().returnType();
+                    equalators[i] = specializerLookup.findStatic(specializerLookup.lookupClass(), names[i], MethodType.methodType(boolean.class, type, type));
+                }
+            }
+        }
+
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            MethodHandle equalator = equalators[i]; // (TT)Z
             MethodHandle thisFieldEqual = MethodHandles.filterArguments(equalator, 0, getter, getter); // (RR)Z
             accumulator = MethodHandles.guardWithTest(thisFieldEqual, accumulator, instanceFalse.asType(rr));
         }
@@ -199,9 +282,60 @@ public final class ObjectMethods {
                                              List<MethodHandle> getters) throws Throwable {
         MethodHandle accumulator = MethodHandles.dropArguments(ZERO, 0, receiverClass); // (R)I
 
+        int size = getters.size();
+        MethodHandle[] hashers = new MethodHandle[size];
+        boolean hasPolymorphism = false;
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            var type = getter.type().returnType();
+            if (isMonomorphic(type)) {
+                hashers[i] = hasher(lookup, type);
+            } else {
+                hasPolymorphism = true;
+            }
+        }
+
+        if (hasPolymorphism) {
+            String[] names = new String[size];
+
+            var classFileContext = ClassFile.of(ClassFile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(lookup)));
+            var bytes = classFileContext.build(ClassDesc.of(specializerClassName(lookup.lookupClass(), "Hasher")), clb -> {
+                for (int i = 0; i < size; i++) {
+                    if (hashers[i] == null) {
+                        var name = "hasher".concat(Integer.toString(i));
+                        names[i] = name;
+                        var type = getters.get(i).type().returnType();
+                        boolean isInterface = type.isInterface();
+                        var typeDesc = type.describeConstable().orElseThrow();
+                        clb.withMethodBody(name, MethodTypeDesc.of(CD_int, typeDesc), ACC_STATIC, cob -> {
+                            var nonNullPath = cob.newLabel();
+                            cob.aload(0)
+                                    .ifnonnull(nonNullPath)
+                                    .iconst_0() // null hash is 0
+                                    .ireturn()
+                                    .labelBinding(nonNullPath)
+                                    .aload(0) // arg0.hashCode() - bytecode subject to customized profiling
+                                    .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "hashCode", MethodTypeDesc.of(CD_int), isInterface)
+                                    .ireturn();
+                        });
+                    }
+                }
+            });
+
+            var specializerLookup = lookup.defineHiddenClass(bytes, true, MethodHandles.Lookup.ClassOption.STRONG);
+
+            for (int i = 0; i < size; i++) {
+                if (hashers[i] == null) {
+                    var type = getters.get(i).type().returnType();
+                    hashers[i] = specializerLookup.findStatic(specializerLookup.lookupClass(), names[i], MethodType.methodType(int.class, type));
+                }
+            }
+        }
+
         // @@@ Use loop combinator instead?
-        for (MethodHandle getter : getters) {
-            MethodHandle hasher = hasher(lookup, getter.type().returnType()); // (T)I
+        for (int i = 0; i < size; i++) {
+            var getter = getters.get(i);
+            MethodHandle hasher = hashers[i]; // (T)I
             MethodHandle hashThisField = MethodHandles.filterArguments(hasher, 0, getter);    // (R)I
             MethodHandle combineHashes = MethodHandles.filterArguments(HASH_COMBINER, 0, accumulator, hashThisField); // (RR)I
             accumulator = MethodHandles.permuteArguments(combineHashes, accumulator.type(), 0, 0); // adapt (R)I to (RR)I
