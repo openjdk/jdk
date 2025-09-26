@@ -139,6 +139,18 @@ public final class Duration
      */
     public static final Duration ZERO = new Duration(0, 0);
     /**
+     * Constant for the most negative supported duration.
+     *
+     * @since 26
+     */
+    public static final Duration MIN = new Duration(Long.MIN_VALUE, 0);
+    /**
+     * Constant for the most positive supported duration.
+     *
+     * @since 26
+     */
+    public static final Duration MAX = new Duration(Long.MAX_VALUE, 999_999_999);
+    /**
      * Serialization version.
      */
     @java.io.Serial
