@@ -450,7 +450,7 @@ void before_exit(JavaThread* thread, bool halt) {
   ClassListWriter::write_resolved_constants();
 
   if (CDSConfig::is_dumping_preimage_static_archive()) {
-    AOTMetaspace::preload_and_dump(thread);
+    AOTMetaspace::dump_static_archive(thread);
   }
 #endif
 
