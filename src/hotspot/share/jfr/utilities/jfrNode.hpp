@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 
 const uint64_t JFR_NODE_LOGICAL_EXCISION_BIT = 1;
 const uint64_t JFR_NODE_LOGICAL_INSERTION_BIT = 2;
@@ -35,7 +35,7 @@ const uint64_t JFR_NODE_MASK = ~(JFR_NODE_LOGICAL_INSERTION_BIT | JFR_NODE_LOGIC
 
 template <typename Node>
 inline bool cas(Node** address, Node* current, Node* exchange) {
-  return Atomic::cmpxchg(address, current, exchange) == current;
+  return AtomicAccess::cmpxchg(address, current, exchange) == current;
 }
 
 template <typename Node>

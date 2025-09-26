@@ -51,11 +51,11 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 
 import sun.awt.AWTAccessor;
+import sun.java2d.cmm.BuiltinProfileInfo;
 import sun.java2d.cmm.CMSManager;
 import sun.java2d.cmm.PCMM;
 import sun.java2d.cmm.Profile;
 import sun.java2d.cmm.ProfileDataVerifier;
-import sun.java2d.cmm.ProfileDeferralInfo;
 
 import static sun.java2d.cmm.ProfileDataVerifier.HEADER_SIZE;
 
@@ -102,20 +102,11 @@ public sealed class ICC_Profile implements Serializable
     private transient volatile Profile cmmProfile;
 
     /**
-     * Stores some information about {@code ICC_Profile} without causing a
-     * deferred profile to be loaded. Note that we can defer the loading of
-     * standard profiles only. If this field is null, then {@link #cmmProfile}
-     * should be used to access profile information.
+     * Stores information about a built-in profile without triggering profile
+     * loading. If this field is null, {@link #cmmProfile} should be used to
+     * access profile data. If not null, the profile is considered immutable.
      */
-    private transient volatile ProfileDeferralInfo deferralInfo;
-
-
-    /**
-     * Set to {@code true} for {@code BuiltInProfile}, {@code false} otherwise.
-     * This flag is used in {@link #setData(int, byte[])} to prevent modifying
-     * built-in profiles.
-     */
-    private final transient boolean builtIn;
+    private transient final BuiltinProfileInfo builtInInfo;
 
     /**
      * The lazy registry of singleton profile objects for specific built-in
@@ -124,22 +115,22 @@ public sealed class ICC_Profile implements Serializable
      */
     private interface BuiltInProfile {
         /*
-         * ProfileDeferralInfo is used for built-in profile creation only,
+         * BuiltinProfileInfo is used for built-in profile creation only,
          * and all built-in profiles should be constructed using it.
          */
-        ICC_Profile SRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+        ICC_Profile SRGB = new ICC_ProfileRGB(new BuiltinProfileInfo(
                "sRGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
-        ICC_Profile LRGB = new ICC_ProfileRGB(new ProfileDeferralInfo(
+        ICC_Profile LRGB = new ICC_ProfileRGB(new BuiltinProfileInfo(
                "LINEAR_RGB.pf", ColorSpace.TYPE_RGB, 3, CLASS_DISPLAY));
 
-        ICC_Profile XYZ = new ICC_Profile(new ProfileDeferralInfo(
+        ICC_Profile XYZ = new ICC_Profile(new BuiltinProfileInfo(
                "CIEXYZ.pf", ColorSpace.TYPE_XYZ, 3, CLASS_ABSTRACT));
 
-        ICC_Profile PYCC = new ICC_Profile(new ProfileDeferralInfo(
+        ICC_Profile PYCC = new ICC_Profile(new BuiltinProfileInfo(
                "PYCC.pf", ColorSpace.TYPE_3CLR, 3, CLASS_COLORSPACECONVERSION));
 
-        ICC_Profile GRAY = new ICC_ProfileGray(new ProfileDeferralInfo(
+        ICC_Profile GRAY = new ICC_ProfileGray(new BuiltinProfileInfo(
                "GRAY.pf", ColorSpace.TYPE_GRAY, 1, CLASS_DISPLAY));
     }
 
@@ -771,7 +762,7 @@ public sealed class ICC_Profile implements Serializable
      */
     ICC_Profile(Profile p) {
         cmmProfile = p;
-        builtIn = false;
+        builtInInfo = null;
     }
 
     /**
@@ -779,12 +770,11 @@ public sealed class ICC_Profile implements Serializable
      * The ID will be 0 until the profile is loaded.
      *
      * <p>
-     * Note: {@code ProfileDeferralInfo} is used for built-in profile
+     * Note: {@code BuiltinProfileInfo} is used for built-in profile
      * creation only, and all built-in profiles should be constructed using it.
      */
-    ICC_Profile(ProfileDeferralInfo pdi) {
-        deferralInfo = pdi;
-        builtIn = true;
+    ICC_Profile(BuiltinProfileInfo bpi) {
+        builtInInfo = bpi;
     }
 
     /**
@@ -934,7 +924,7 @@ public sealed class ICC_Profile implements Serializable
             if (cmmProfile != null) {
                 return cmmProfile;
             }
-            var is = getStandardProfileInputStream(deferralInfo.filename);
+            var is = getStandardProfileInputStream(builtInInfo.filename);
             if (is == null) {
                 return null;
             }
@@ -942,8 +932,6 @@ public sealed class ICC_Profile implements Serializable
                 byte[] data = getProfileDataFromStream(is);
                 if (data != null) {
                     p = cmmProfile = CMSManager.getModule().loadProfile(data);
-                    // from now we cannot use the deferred value, drop it
-                    deferralInfo = null;
                 }
             } catch (CMMException | IOException ignore) {
             }
@@ -975,9 +963,8 @@ public sealed class ICC_Profile implements Serializable
      * @return one of the predefined profile class constants
      */
     public int getProfileClass() {
-        ProfileDeferralInfo info = deferralInfo;
-        if (info != null) {
-            return info.profileClass;
+        if (builtInInfo != null) {
+            return builtInInfo.profileClass;
         }
         byte[] theHeader = getData(cmmProfile(), icSigHead);
         return getProfileClass(theHeader);
@@ -1012,9 +999,8 @@ public sealed class ICC_Profile implements Serializable
      *         {@code ColorSpace} class
      */
     public int getColorSpaceType() {
-        ProfileDeferralInfo info = deferralInfo;
-        if (info != null) {
-            return info.colorSpaceType;
+        if (builtInInfo != null) {
+            return builtInInfo.colorSpaceType;
         }
         byte[] theHeader = getData(cmmProfile(), icSigHead);
         return getColorSpaceType(theHeader);
@@ -1160,8 +1146,8 @@ public sealed class ICC_Profile implements Serializable
      * @see ColorSpace
      */
     public void setData(int tagSignature, byte[] tagData) {
-        if (builtIn) {
-            throw new IllegalArgumentException("Built-in profile cannot be modified");
+        if (builtInInfo != null) {
+            throw new IllegalArgumentException("Can't modify built-in profile");
         }
 
         if (tagSignature == ICC_Profile.icSigHead) {
@@ -1205,9 +1191,8 @@ public sealed class ICC_Profile implements Serializable
      * @throws ProfileDataException if color space is in the profile is invalid
      */
     public int getNumComponents() {
-        ProfileDeferralInfo info = deferralInfo;
-        if (info != null) {
-            return info.numComponents;
+        if (builtInInfo != null) {
+            return builtInInfo.numComponents;
         }
         byte[] theHeader = getData(cmmProfile(), icSigHead);
         int theColorSpaceSig = intFromBigEndian(theHeader, icHdrColorSpace);

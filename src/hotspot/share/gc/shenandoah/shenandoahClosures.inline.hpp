@@ -40,7 +40,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 
 //

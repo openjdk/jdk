@@ -1,0 +1,101 @@
+#
+# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+#############################################################################
+#
+# List of quarantined tests failing with jvmti stress agent in any mode.
+#
+#############################################################################
+
+
+compiler/macronodes/TestTopInMacroElimination.java      8362832 generic-all
+
+gc/stringdedup/TestStringDeduplicationAgeThreshold.java 8362562 generic-all
+gc/stringdedup/TestStringDeduplicationInterned.java     8362562 generic-all
+gc/stringdedup/TestStringDeduplicationPrintOptions.java 8362562 generic-all
+
+
+serviceability/jvmti/events/SingleStep/singlestep02/singlestep02.java       8362350 generic-all
+vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t007/TestDescription.java	8362350 generic-all
+
+# Incompatbile tests
+
+# IR
+compiler/loopopts/superword/TestDependencyOffsets.java#avx1-v016-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx1-v016-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx1-v032-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx1-v032-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx2-v016-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx2-v016-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx2-v032-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#avx2-v032-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#sse4-v004-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#sse4-v004-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#sse4-v008-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#sse4-v008-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#sse4-v016-A          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#sse4-v016-U          0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-A            0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-U            0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v004-A           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v004-U           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v008-A           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v008-U           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v016-A           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v016-U           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v032-A           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v032-U           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v064-A           0000000 generic-all
+compiler/loopopts/superword/TestDependencyOffsets.java#vec-v064-U           0000000 generic-all
+
+# Requires solo jvmti capabilities
+
+compiler/jvmci/events/JvmciShutdownEventTest.java                           0000000 generic-all
+
+# jdwp
+runtime/6294277/SourceDebugExtension.java                                   0000000 generic-all
+
+# heap stats
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorArrayAllSampledTest.java                  0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorEventOnOffTest.java                       0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCParallelTest.java                       0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCSerialTest.java                         0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorGCTest.java                               0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorIllegalArgumentTest.java                  0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInitialAllocationTest.java                0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterArrayTest.java                 0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorInterpreterObjectTest.java                0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorMultiArrayTest.java                       0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorNoCapabilityTest.java                     0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorRecursiveTest.java                        0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatArrayCorrectnessTest.java             0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatIntervalTest.java                     0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatObjectCorrectnessTest.java            0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorStatSimpleTest.java                       0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorTest.java                                 0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadDisabledTest.java                   0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadOnOffTest.java                      0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorThreadTest.java                           0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorTwoAgentsTest.java                        0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id0                     0000000 generic-all
+serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1                     0000000 generic-all

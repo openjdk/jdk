@@ -1402,6 +1402,26 @@ public class IRNode {
         vectorNode(UMAX_VL, "UMaxV", TYPE_LONG);
     }
 
+    public static final String MASK_ALL = PREFIX + "MASK_ALL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MASK_ALL, "MaskAll");
+    }
+
+    public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_LONG_TO_MASK, "VectorLongToMask");
+    }
+
+    public static final String VECTOR_MASK_TO_LONG = PREFIX + "VECTOR_MASK_TO_LONG" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_TO_LONG, "VectorMaskToLong");
+    }
+
+    public static final String VECTOR_MASK_LANE_IS_SET = PREFIX + "VECTOR_MASK_LANE_IS_SET" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_LANE_IS_SET, "ExtractUB");
+    }
+
     // Can only be used if avx512_vnni is available.
     public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
     static {
@@ -1496,16 +1516,6 @@ public class IRNode {
     public static final String MAX_REDUCTION_V = PREFIX + "MAX_REDUCTION_V" + POSTFIX;
     static {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
-    }
-
-    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(NEG_F, "NegF");
-    }
-
-    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(NEG_D, "NegD");
     }
 
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
@@ -2285,6 +2295,11 @@ public class IRNode {
         vectorNode(VECTOR_MASK_CMP_D, "VectorMaskCmp", TYPE_DOUBLE);
     }
 
+    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
+    }
+
     public static final String VECTOR_CAST_B2S = VECTOR_PREFIX + "VECTOR_CAST_B2S" + POSTFIX;
     static {
         vectorNode(VECTOR_CAST_B2S, "VectorCastB2X", TYPE_SHORT);
@@ -2695,6 +2710,11 @@ public class IRNode {
         vectorNode(XOR_VL, "XorV", TYPE_LONG);
     }
 
+    public static final String XOR_V = PREFIX + "XOR_V" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(XOR_V, "XorV");
+    }
+
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
     static {
         beforeMatchingNameRegex(XOR_V_MASK, "XorVMask");
@@ -2733,6 +2753,36 @@ public class IRNode {
     public static final String EXPAND_BITS_VL = VECTOR_PREFIX + "EXPAND_BITS_VL" + POSTFIX;
     static {
         vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
+    }
+
+    public static final String EXPAND_VB = VECTOR_PREFIX + "EXPAND_VB" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VB, "ExpandV", TYPE_BYTE);
+    }
+
+    public static final String EXPAND_VS = VECTOR_PREFIX + "EXPAND_VS" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VS, "ExpandV", TYPE_SHORT);
+    }
+
+    public static final String EXPAND_VI = VECTOR_PREFIX + "EXPAND_VI" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VI, "ExpandV", TYPE_INT);
+    }
+
+    public static final String EXPAND_VL = VECTOR_PREFIX + "EXPAND_VL" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VL, "ExpandV", TYPE_LONG);
+    }
+
+    public static final String EXPAND_VF = VECTOR_PREFIX + "EXPAND_VF" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VF, "ExpandV", TYPE_FLOAT);
+    }
+
+    public static final String EXPAND_VD = VECTOR_PREFIX + "EXPAND_VD" + POSTFIX;
+    static {
+        vectorNode(EXPAND_VD, "ExpandV", TYPE_DOUBLE);
     }
 
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
@@ -2859,6 +2909,46 @@ public class IRNode {
     public static final String BLACKHOLE = PREFIX + "BLACKHOLE" + POSTFIX;
     static {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VB = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VB" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VB, "SelectFromTwoVector", TYPE_BYTE);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VS = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VS" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VS, "SelectFromTwoVector", TYPE_SHORT);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VI = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VI" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VI, "SelectFromTwoVector", TYPE_INT);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VF = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VF" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VF, "SelectFromTwoVector", TYPE_FLOAT);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VD = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VD" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VD, "SelectFromTwoVector", TYPE_DOUBLE);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VL = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VL" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VL, "SelectFromTwoVector", TYPE_LONG);
+    }
+
+    public static final String REPLICATE_HF = PREFIX + "REPLICATE_HF" + POSTFIX;
+    static {
+        machOnlyNameRegex(REPLICATE_HF, "replicateHF");
+    }
+
+    public static final String REPLICATE_HF_IMM8 = PREFIX + "REPLICATE_HF_IMM8" + POSTFIX;
+    static {
+        machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
     }
 
     /*

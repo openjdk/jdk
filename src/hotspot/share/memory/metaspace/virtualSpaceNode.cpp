@@ -260,6 +260,16 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
+
+#ifndef _LP64
+  // On 32-bit, with +UseCompressedClassPointers, the whole address space is the encoding range. We therefore
+  // don't need a class space. However, as a pragmatic workaround for pesty overflow problems on 32-bit, we leave
+  // a small area at the end of the address space out of the encoding range. We just assume no Klass will ever live
+  // there (it won't, for no OS we support on 32-bit has user-addressable memory up there).
+  assert(!UseCompressedClassPointers ||
+         rs.end() <= (char*)CompressedKlassPointers::max_klass_range_size(), "Weirdly high address");
+#endif // _LP64
+
   MemTracker::record_virtual_memory_tag(rs, mtMetaspace);
   assert_is_aligned(rs.base(), chunklevel::MAX_CHUNK_BYTE_SIZE);
   InternalStats::inc_num_vsnodes_births();

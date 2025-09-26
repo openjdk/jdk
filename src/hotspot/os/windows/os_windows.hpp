@@ -40,7 +40,7 @@ class os::win32 {
  protected:
   static int    _processor_type;
   static int    _processor_level;
-  static julong _physical_memory;
+  static size_t _physical_memory;
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
   static bool   _processor_group_warning_displayed;
@@ -102,9 +102,9 @@ class os::win32 {
   static int processor_level() {
     return _processor_level;
   }
-  static julong available_memory();
-  static julong free_memory();
-  static julong physical_memory() { return _physical_memory; }
+  static bool available_memory(size_t& value);
+  static bool free_memory(size_t& value);
+  static size_t physical_memory() { return _physical_memory; }
 
   // load dll from Windows system directory or Windows directory
   static HINSTANCE load_Windows_dll(const char* name, char *ebuf, int ebuflen);

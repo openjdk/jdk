@@ -29,7 +29,6 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -209,8 +208,11 @@ public:
   void initialize_serviceability() override;
 
   void print_heap_on(outputStream* st)         const override;
-  void print_gc_on(outputStream *st)           const override;
+  void print_gc_on(outputStream* st)           const override;
   void print_heap_regions_on(outputStream* st) const;
+
+  // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
+  void process_gc_stats() const;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
@@ -687,7 +689,7 @@ public:
 
 // ---------- CDS archive support
 
-  bool can_load_archived_objects() const override { return !ShenandoahCardBarrier; }
+  bool can_load_archived_objects() const override { return true; }
   HeapWord* allocate_loaded_archive_space(size_t size) override;
   void complete_loaded_archive_space(MemRegion archive_space) override;
 
@@ -706,7 +708,7 @@ private:
 
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
-  HeapWord* mem_allocate(size_t size, bool* what) override;
+  HeapWord* mem_allocate(size_t size) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
@@ -763,8 +765,9 @@ public:
   inline bool requires_marking(const void* entry) const;
 
   // Support for bitmap uncommits
-  bool commit_bitmap_slice(ShenandoahHeapRegion *r);
-  bool uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  void commit_bitmap_slice(ShenandoahHeapRegion *r);
+  void uncommit_bitmap_slice(ShenandoahHeapRegion *r);
+  bool is_bitmap_region_special() { return _bitmap_region_special; }
   bool is_bitmap_slice_committed(ShenandoahHeapRegion* r, bool skip_self = false);
 
   // During concurrent reset, the control thread will zero out the mark bitmaps for committed regions.
