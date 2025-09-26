@@ -83,10 +83,14 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             test16(0, 9, 1, false, false);
             inlined16_2(9, 1, 0, arrayField16, true, 0);
             inlined16_3(0, 0);
-            test17(0, 9, 1, true, false);
-            test17(0, 9, 1, false, false);
-            inlined17_2(9, 1, 1, true, 0);
-            inlined17_3(0, 0);
+//            test17(0, 9, 1, true, false);
+//            test17(0, 9, 1, false, false);
+//            inlined17_2(9, 1, 1, true, 0);
+//            inlined17_3(0, 0);
+            test18(0, 9, 1, true, false);
+            test18(0, 9, 1, false, false);
+            inlined18_2(9, 1, 0, arrayField18, true, 0);
+            inlined18_3(0, 0);
         }
 //        try {
 //            test1(-1, 10, 1, true);
@@ -671,6 +675,63 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             }
         }
         return arrayField17[0] + array2[k] * (j - 10);
+    }
+
+    static final int[] test18Array = new int[10];
+
+    private static void test18(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined18_3(j, l);
+
+        int i = inlined18(k);
+        j = Integer.min(j, 9);
+        int[] array = test18Array;
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined18_2(j, flag, i, array, flag3, m);
+        } else {
+            inlined18_2(j, flag, i, array, flag3, m);
+        }
+    }
+
+    private static int inlined18_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    private static void inlined18_2(int j, int flag, int i, int[] array, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [min+1..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            intField = array[otherArray.length];
+        }
+    }
+
+    static int[] arrayField18 = new int[10];
+
+    // produces Integer.MIN_VALUE after macro expansion
+    private static int inlined18(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField18[0] = Integer.MIN_VALUE;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField18[0] + array2[k] * (j - 10);
     }
 
     private static void notInlined(int[] array) {

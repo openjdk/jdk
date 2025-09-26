@@ -169,6 +169,8 @@ public:
   void set_unsafe_access() { _unsafe_access = true; }
   bool is_unsafe_access() const { return _unsafe_access; }
 
+  const Type* Value_common(PhaseGVN* phase) const;
+
 #ifndef PRODUCT
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;

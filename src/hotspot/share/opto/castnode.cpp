@@ -101,10 +101,6 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
   }
 #endif //ASSERT
 
-  if (ft->singleton() && ft != Type::TOP && !_dependency.narrows_type()) {
-    tty->print_cr("XXX");
-  }
-
   return ft;
 }
 
@@ -121,7 +117,8 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return res;
     }
   }
-  if (can_reshape) {
+  if (can_reshape && Opcode() != Op_CastPP) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
     const Type* t = Value(phase);
     if (t->singleton() && t != Type::TOP && !_dependency.narrows_type()) {
       ResourceMark rm;
@@ -132,6 +129,8 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       visited.set(_idx);
       do {
         Node* node = stack.node();
+        const Type* node_t = node->bottom_type();
+        assert(node_t != Type::MEMORY && node_t != Type::CONTROL && node_t != Type::ABIO, "");
         uint index = stack.index();
         if (index < node->outcnt()) {
           stack.set_index(index+1);
@@ -148,30 +147,49 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               Node* addr = use->in(MemNode::Address);
               const Type* addr_t = phase->type(addr);
               assert(addr_t->make_oopptr()->isa_aryptr(), "");
-              for (uint i = 0; i < stack.size(); ++i) {
-                assert(!stack.node_at(i)->is_Phi(), "");
-              }
-              assert(addr->is_AddP(), "");
-              assert(clones.size() == 0, "");
-              Node* base = addr->in(AddPNode::Base);
-              while (addr->is_AddP()) {
-                clones.push(addr);
-                assert(base == addr->in(AddPNode::Base), "");
-                addr = addr->in(AddPNode::Address);
-              }
-              Node* new_cast = phase->transform(new CastPPNode(in(0), base, phase->type(base), UnconditionalDependency));
-              for (uint i = 0; i < clones.size(); ++i) {
-                int j = clones.size() - i - 1;
-                Node* clone = clones.at(j)->clone();
-                if (i == 0) {
-                  clone->set_req(AddPNode::Base, new_cast);
-                } else {
-                  clone->set_req(AddPNode::Address, clones.at(j+1));
+              uint phi_idx = 0;
+              for (phi_idx = 0; phi_idx < stack.size() && !stack.node_at(phi_idx)->is_Phi(); ++phi_idx);
+              if (phi_idx < stack.size()) {
+                PhiNode* phi = stack.node_at(phi_idx)->as_Phi();
+                const Type* phi_t = phase->type(phi);
+                Node* new_cast = igvn->register_new_node_with_optimizer(make_cast_for_type(phi->in(0), phi, phi_t, UnconditionalDependency, nullptr));
+                Node* prev = phi;
+                Node* prev_new = new_cast;
+                for (uint i = phi_idx+1; i < stack.size(); ++i) {
+                  Node* n = stack.node_at(i);
+                  Node* clone = n->clone();
+                  clone->replace_edge(prev, prev_new);
+                  clone = igvn->register_new_node_with_optimizer(clone);
+                  prev = n;
+                  prev_new = clone;
                 }
-                clone = phase->transform(clone);
-                clones.map(j, clone);
+                phase->is_IterGVN()->replace_input_of(use, MemNode::Address, prev_new);
+              } else {
+                assert(addr->is_AddP(), "");
+                assert(clones.size() == 0, "");
+                Node* base = addr->in(AddPNode::Base);
+                while (addr->is_AddP()) {
+                  clones.push(addr);
+                  assert(base == addr->in(AddPNode::Base), "");
+                  addr = addr->in(AddPNode::Address);
+                }
+                Node* new_cast = igvn->register_new_node_with_optimizer(new CastPPNode(in(0), base, phase->type(base), UnconditionalDependency));
+                Node* prev = nullptr;
+                while (clones.size() > 0) {
+                  Node* addp = clones.pop();
+                  Node* clone = addp->clone();
+                  clone->set_req(AddPNode::Base, new_cast);
+                  if (prev == nullptr) {
+                    assert(clone->in(AddPNode::Address) == base, "");
+                    clone->set_req(AddPNode::Address, new_cast);
+                  } else {
+                    clone->set_req(AddPNode::Address, prev);
+                  }
+                  clone = igvn->register_new_node_with_optimizer(clone);
+                  prev = clone;
+                }
+                phase->is_IterGVN()->replace_input_of(use, MemNode::Address, prev);
               }
-              phase->is_IterGVN()->replace_input_of(use, MemNode::Address, clones.at(0));
               continue;
             }
             int op = use->Opcode();
@@ -180,7 +198,10 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
                 assert(use->in(1) == node, "");
                 continue;
               }
-              ShouldNotReachHere();
+              // ShouldNotReachHere();
+            }
+            if (op == Op_StrInflatedCopy || op == Op_CacheWB) {
+              continue;
             }
             stack.push(use, 0);
           }
@@ -706,7 +727,7 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
   if (res != nullptr) {
     return res;
   }
-  const Type* t = Value(phase);
+  const Type* t = bottom_type();
   if (t != Type::TOP && phase->C->post_loop_opts_phase()) {
     const Type* bottom_t = bottom_type();
     const TypeInteger* wide_t = widen_type(phase, bottom_t, bt);

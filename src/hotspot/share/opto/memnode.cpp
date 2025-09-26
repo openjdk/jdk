@@ -1321,6 +1321,32 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
   return nullptr;
 }
 
+const Type* MemNode::Value_common(PhaseGVN* phase) const {
+  // Either input is TOP ==> the result is TOP
+  Node* mem = in(MemNode::Memory);
+  const Type *t1 = phase->type(mem);
+  if (t1 == Type::TOP)  return Type::TOP;
+  Node* adr = in(MemNode::Address);
+  const TypePtr* tp = phase->type(adr)->isa_ptr();
+  if (tp == nullptr || tp->empty())  return Type::TOP;
+
+  const TypeAryPtr* ary_t = tp->isa_aryptr();
+  if (ary_t == nullptr) {
+    return nullptr;
+  }
+  const Type* elem_t = ary_t->elem();
+  if (elem_t == Type::BOTTOM) {
+    return nullptr;
+  }
+
+  AddPNode* addp = adr->as_AddP();
+  
+  BasicType bt = elem_t->array_element_basic_type();
+  uint shift  = exact_log2(type2aelembytes(bt));
+  uint header = arrayOopDesc::base_offset_in_bytes(bt);
+  return nullptr;
+}
+
 //----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
@@ -2087,13 +2113,14 @@ LoadNode::load_array_final_field(const TypeKlassPtr *tkls,
 
 //------------------------------Value-----------------------------------------
 const Type* LoadNode::Value(PhaseGVN* phase) const {
+  const Type* res = Value_common(phase);
+  if (res != nullptr) {
+    return res;
+  }
   // Either input is TOP ==> the result is TOP
   Node* mem = in(MemNode::Memory);
-  const Type *t1 = phase->type(mem);
-  if (t1 == Type::TOP)  return Type::TOP;
   Node* adr = in(MemNode::Address);
   const TypePtr* tp = phase->type(adr)->isa_ptr();
-  if (tp == nullptr || tp->empty())  return Type::TOP;
   int off = tp->offset();
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
@@ -3585,11 +3612,10 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 //------------------------------Value-----------------------------------------
 const Type* StoreNode::Value(PhaseGVN* phase) const {
-  // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(MemNode::Memory) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  const Type *t2 = phase->type( in(MemNode::Address) );
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* res = Value_common(phase);
+  if (res != nullptr) {
+    return res;
+  }
   const Type *t3 = phase->type( in(MemNode::ValueIn) );
   if( t3 == Type::TOP ) return Type::TOP;
   return Type::MEMORY;
