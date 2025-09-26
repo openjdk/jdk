@@ -504,7 +504,7 @@ void Universe::genesis(TRAPS) {
   // Since some of the old system object arrays have been converted to
   // ordinary object arrays, _objectArrayKlass will be loaded when
   // SystemDictionary::initialize(CHECK); is run. See the extra check
-  // for Object_klass_is_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
+  // for Object_klass_is_loaded in ObjArrayKlass::allocate_objArray_klass.
   {
     Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
     _objectArrayKlass = ObjArrayKlass::cast(oak);
