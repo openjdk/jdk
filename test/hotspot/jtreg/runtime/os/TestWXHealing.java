@@ -32,11 +32,7 @@
  * @run main TestWXHealing
  */
 
-import jdk.test.lib.JDKToolFinder;
-
-import java.io.*;
 import java.util.regex.*;
-import jdk.jshell.tool.*;
 import jdk.test.lib.process.*;
 
 public class TestWXHealing {
