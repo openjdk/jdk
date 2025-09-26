@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8190198
  * @summary Test clhsdb longConstant command
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbLongConstant
  */
@@ -91,7 +92,7 @@ public class ClhsdbLongConstant {
 
         // Expected output snippet is of the form (on x64-64):
         // ...
-        // longConstant VM_Version::CPU_SHA 17179869184
+        // longConstant VM_Version::CPU_SHA 34
         // longConstant markWord::age_shift 3
         // longConstant markWord::hash_mask_in_place 4398046509056
         // ...
@@ -105,7 +106,7 @@ public class ClhsdbLongConstant {
             // Expected value obtained from the CPU_SHA definition in vm_version_x86.hpp
             checkLongValue("VM_Version::CPU_SHA ",
                            longConstantOutput,
-                           17179869184L);
+                           34L);
         }
     }
 

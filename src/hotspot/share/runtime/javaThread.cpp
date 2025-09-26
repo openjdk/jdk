@@ -32,8 +32,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -56,7 +56,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
@@ -81,7 +81,6 @@
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/synchronizer.hpp"
-#include "runtime/threadCritical.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/threadStatisticalInfo.hpp"
@@ -89,10 +88,10 @@
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
-#include "runtime/vmThread.hpp"
+#include "runtime/vframeArray.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
@@ -499,6 +498,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _pending_interrupted_exception(false),
 
   _handshake(this),
+  _suspend_resume_manager(this, &_handshake._lock),
 
   _popframe_preserved_args(nullptr),
   _popframe_preserved_args_size(0),
@@ -553,7 +553,7 @@ void JavaThread::interrupt() {
   // All callers should have 'this' thread protected by a
   // ThreadsListHandle so that it cannot terminate and deallocate
   // itself.
-  debug_only(check_for_dangling_thread_pointer(this);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(this);)
 
   // For Windows _interrupt_event
   WINDOWS_ONLY(osthread()->set_interrupted(true);)
@@ -569,7 +569,7 @@ void JavaThread::interrupt() {
 }
 
 bool JavaThread::is_interrupted(bool clear_interrupted) {
-  debug_only(check_for_dangling_thread_pointer(this);)
+  DEBUG_ONLY(check_for_dangling_thread_pointer(this);)
 
   if (_threadObj.peek() == nullptr) {
     // If there is no j.l.Thread then it is impossible to have
@@ -737,6 +737,8 @@ void JavaThread::run() {
 
   assert(JavaThread::current() == this, "sanity check");
   assert(!Thread::current()->owns_locks(), "sanity check");
+
+  JFR_ONLY(Jfr::on_thread_start(this);)
 
   DTRACE_THREAD_PROBE(start, this);
 
@@ -969,7 +971,7 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   _stack_overflow_state.remove_stack_guard_pages();
 
   if (UseTLAB) {
-    tlab().retire();
+    retire_tlab();
   }
 
   if (JvmtiEnv::environments_might_exist()) {
@@ -1043,7 +1045,7 @@ void JavaThread::cleanup_failed_attach_current_thread(bool is_daemon) {
   _stack_overflow_state.remove_stack_guard_pages();
 
   if (UseTLAB) {
-    tlab().retire();
+    retire_tlab();
   }
 
   Threads::remove(this, is_daemon);
@@ -1061,17 +1063,12 @@ JavaThread* JavaThread::active() {
   }
 }
 
-bool JavaThread::is_lock_owned(address adr) const {
-  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  return is_in_full_stack(adr);
-}
-
 oop JavaThread::exception_oop() const {
-  return Atomic::load(&_exception_oop);
+  return AtomicAccess::load(&_exception_oop);
 }
 
 void JavaThread::set_exception_oop(oop o) {
-  Atomic::store(&_exception_oop, o);
+  AtomicAccess::store(&_exception_oop, o);
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
@@ -1079,7 +1076,6 @@ void JavaThread::handle_special_runtime_exit_condition() {
     frame_anchor()->make_walkable();
     wait_for_object_deoptimization();
   }
-  JFR_ONLY(SUSPEND_THREAD_CONDITIONAL(this);)
 }
 
 
@@ -1125,21 +1121,21 @@ void JavaThread::handle_async_exception(oop java_throwable) {
   }
 }
 
-void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
+void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
-    delete aeh;
+    delete aehc;
     return;
   }
 
-  oop exception = aeh->exception();
-  Handshake::execute(aeh, this);  // Install asynchronous handshake
+  oop exception = aehc->exception();
+  Handshake::execute(aehc, this);  // Install asynchronous handshake
 
   ResourceMark rm;
   if (log_is_enabled(Info, exceptions)) {
     log_info(exceptions)("Pending Async. exception installed of type: %s",
-                         InstanceKlass::cast(exception->klass())->external_name());
+                         exception->klass()->external_name());
   }
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception->klass()->external_name());
@@ -1147,30 +1143,29 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   oop vt_oop = vthread();
   if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
     // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
-    java_lang_Thread::set_interrupted(threadObj(), true);
     this->interrupt();
   }
 }
 
-class InstallAsyncExceptionHandshake : public HandshakeClosure {
-  AsyncExceptionHandshake* _aeh;
+class InstallAsyncExceptionHandshakeClosure : public HandshakeClosure {
+  AsyncExceptionHandshakeClosure* _aehc;
 public:
-  InstallAsyncExceptionHandshake(AsyncExceptionHandshake* aeh) :
-    HandshakeClosure("InstallAsyncException"), _aeh(aeh) {}
-  ~InstallAsyncExceptionHandshake() {
-    // If InstallAsyncExceptionHandshake was never executed we need to clean up _aeh.
-    delete _aeh;
+  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aehc) :
+    HandshakeClosure("InstallAsyncException"), _aehc(aehc) {}
+  ~InstallAsyncExceptionHandshakeClosure() {
+    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aehc.
+    delete _aehc;
   }
   void do_thread(Thread* thr) {
     JavaThread* target = JavaThread::cast(thr);
-    target->install_async_exception(_aeh);
-    _aeh = nullptr;
+    target->install_async_exception(_aehc);
+    _aehc = nullptr;
   }
 };
 
 void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
   OopHandle e(Universe::vm_global(), java_throwable);
-  InstallAsyncExceptionHandshake iaeh(new AsyncExceptionHandshake(e));
+  InstallAsyncExceptionHandshakeClosure iaeh(new AsyncExceptionHandshakeClosure(e));
   Handshake::execute(&iaeh, target);
 }
 
@@ -1193,7 +1188,7 @@ void JavaThread::set_is_VTMS_transition_disabler(bool val) {
 //   - Target thread will not execute any new bytecode.
 //   - Target thread will not enter any new monitors.
 //
-bool JavaThread::java_suspend() {
+bool JavaThread::java_suspend(bool register_vthread_SR) {
 #if INCLUDE_JVMTI
   // Suspending a JavaThread in VTMS transition or disabling VTMS transitions can cause deadlocks.
   assert(!is_in_VTMS_transition(), "no suspend allowed in VTMS transition");
@@ -1202,13 +1197,13 @@ bool JavaThread::java_suspend() {
 
   guarantee(Thread::is_JavaThread_protected(/* target */ this),
             "target JavaThread is not protected in calling context.");
-  return this->handshake_state()->suspend();
+  return this->suspend_resume_manager()->suspend(register_vthread_SR);
 }
 
-bool JavaThread::java_resume() {
+bool JavaThread::java_resume(bool register_vthread_SR) {
   guarantee(Thread::is_JavaThread_protected_by_TLH(/* target */ this),
             "missing ThreadsListHandle in calling context.");
-  return this->handshake_state()->resume();
+  return this->suspend_resume_manager()->resume(register_vthread_SR);
 }
 
 // Wait for another thread to perform object reallocation and relocking on behalf of
@@ -1339,7 +1334,7 @@ void JavaThread::make_zombies() {
       // it is a Java nmethod
       nmethod* nm = CodeCache::find_nmethod(fst.current()->pc());
       assert(nm != nullptr, "did not find nmethod");
-      nm->make_not_entrant("zombie");
+      nm->make_not_entrant(nmethod::InvalidationReason::ZOMBIE);
     }
   }
 }
@@ -1437,9 +1432,8 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
     entry = entry->parent();
   }
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lock_stack().oops_do(f);
-  }
+  // Due to lightweight locking
+  lock_stack().oops_do(f);
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, NMethodClosure* cf) {
@@ -1797,7 +1791,7 @@ void JavaThread::print_stack_on(outputStream* st) {
 
       // Print out lock information
       if (JavaMonitorsInStackTrace) {
-        jvf->print_lock_info_on(st, count);
+        jvf->print_lock_info_on(st, false/*is_virtual*/, count);
       }
     } else {
       // Ignore non-Java frames
@@ -1839,7 +1833,7 @@ void JavaThread::print_vthread_stack_on(outputStream* st) {
 
       // Print out lock information
       if (JavaMonitorsInStackTrace) {
-        jvf->print_lock_info_on(st, count);
+        jvf->print_lock_info_on(st, true/*is_virtual*/, count);
       }
     } else {
       // Ignore non-Java frames
@@ -1999,22 +1993,9 @@ void JavaThread::trace_stack() {
 // this slow-path.
 void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-
-  if (LockingMode != LM_LEGACY) {
-    // Nothing to do. Just do some sanity check.
-    assert(_held_monitor_count == 0, "counter should not be used");
-    assert(_jni_monitor_count == 0, "counter should not be used");
-    return;
-  }
-
-  assert(_held_monitor_count >= 0, "Must always be non-negative: %zd", _held_monitor_count);
-  _held_monitor_count += i;
-  if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be non-negative: %zd", _jni_monitor_count);
-    _jni_monitor_count += i;
-  }
-  assert(_held_monitor_count >= _jni_monitor_count, "Monitor count discrepancy detected - held count "
-         "%zd is less than JNI count %zd", _held_monitor_count, _jni_monitor_count);
+  // Nothing to do. Just do some sanity check.
+  assert(_held_monitor_count == 0, "counter should not be used");
+  assert(_jni_monitor_count == 0, "counter should not be used");
 #endif // SUPPORT_MONITOR_COUNT
 }
 
@@ -2022,26 +2003,9 @@ void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 // this slow-path.
 void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-
-  if (LockingMode != LM_LEGACY) {
-    // Nothing to do. Just do some sanity check.
-    assert(_held_monitor_count == 0, "counter should not be used");
-    assert(_jni_monitor_count == 0, "counter should not be used");
-    return;
-  }
-
-  _held_monitor_count -= i;
-  assert(_held_monitor_count >= 0, "Must always be non-negative: %zd", _held_monitor_count);
-  if (jni) {
-    _jni_monitor_count -= i;
-    assert(_jni_monitor_count >= 0, "Must always be non-negative: %zd", _jni_monitor_count);
-  }
-  // When a thread is detaching with still owned JNI monitors, the logic that releases
-  // the monitors doesn't know to set the "jni" flag and so the counts can get out of sync.
-  // So we skip this assert if the thread is exiting. Once all monitors are unlocked the
-  // JNI count is directly set to zero.
-  assert(_held_monitor_count >= _jni_monitor_count || is_exiting(), "Monitor count discrepancy detected - held count "
-         "%zd is less than JNI count %zd", _held_monitor_count, _jni_monitor_count);
+  // Nothing to do. Just do some sanity check.
+  assert(_held_monitor_count == 0, "counter should not be used");
+  assert(_jni_monitor_count == 0, "counter should not be used");
 #endif // SUPPORT_MONITOR_COUNT
 }
 
@@ -2099,7 +2063,7 @@ bool JavaThread::sleep(jlong millis) {
 
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
-// if the thread was interrupted.
+// if the thread was interrupted or async exception was installed.
 bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
   assert(nanos >= 0, "nanos are in range");
@@ -2119,6 +2083,9 @@ bool JavaThread::sleep_nanos(jlong nanos) {
   jlong nanos_remaining = nanos;
 
   for (;;) {
+    if (has_async_exception_condition()) {
+      return false;
+    }
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;

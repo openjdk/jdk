@@ -26,7 +26,7 @@
  * @bug     6415780
  * @summary JSR 199: javax.tools.JavaFileManager.getClassLoader always fails
  * @author  igor.tseytin@...
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library ../lib
  * @modules java.compiler
  *          jdk.compiler

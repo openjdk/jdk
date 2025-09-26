@@ -63,7 +63,9 @@ public class T6395974 {
             MyTaskListener tl = new MyTaskListener();
             task.setTaskListener(tl);
 
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
         }
     }
 

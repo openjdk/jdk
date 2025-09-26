@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,41 +21,64 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8284161 8287008 8309406
+ * @bug 8284161 8287008 8309406 8356870
  * @summary Basic test for com.sun.management.HotSpotDiagnosticMXBean.dumpThreads
  * @requires vm.continuations
- * @modules jdk.management
+ * @modules java.base/jdk.internal.vm jdk.management
  * @library /test/lib
- * @run junit/othervm DumpThreads
- * @run junit/othervm -Djdk.trackAllThreads DumpThreads
- * @run junit/othervm -Djdk.trackAllThreads=true DumpThreads
- * @run junit/othervm -Djdk.trackAllThreads=false DumpThreads
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *         --enable-native-access=ALL-UNNAMED DumpThreads
+ * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *         --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads DumpThreads
+ * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *        --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads=true DumpThreads
+ * @run junit/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *        --enable-native-access=ALL-UNNAMED -Djdk.trackAllThreads=false DumpThreads
  */
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.time.ZonedDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat;
 import jdk.test.lib.threaddump.ThreadDump;
+import jdk.test.lib.thread.VThreadPinner;
+import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.whitebox.WhiteBox;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 class DumpThreads {
     private static boolean trackAllThreads;
@@ -64,6 +87,56 @@ class DumpThreads {
     static void setup() throws Exception {
         String s = System.getProperty("jdk.trackAllThreads");
         trackAllThreads = (s == null) || s.isEmpty() || Boolean.parseBoolean(s);
+
+        // need >=2 carriers for testing pinning
+        VThreadRunner.ensureParallelism(2);
+    }
+
+    /**
+     * Test thread dump in plain text format.
+     */
+    @Test
+    void testPlainText() throws Exception {
+        List<String> lines = dumpThreadsToPlainText();
+
+        // pid should be on the first line
+        String pid = Long.toString(ProcessHandle.current().pid());
+        assertEquals(pid, lines.get(0));
+
+        // timestamp should be on the second line
+        String secondLine = lines.get(1);
+        ZonedDateTime.parse(secondLine);
+
+        // runtime version should be on third line
+        String vs = Runtime.version().toString();
+        assertEquals(vs, lines.get(2));
+
+        // dump should include current thread
+        Thread currentThread = Thread.currentThread();
+        if (trackAllThreads || !currentThread.isVirtual()) {
+            ThreadFields fields = findThread(currentThread.threadId(), lines);
+            assertNotNull(fields, "current thread not found");
+            assertEquals(currentThread.getName(), fields.name());
+            assertEquals(currentThread.isVirtual(), fields.isVirtual());
+        }
+    }
+
+    /**
+     * Test thread dump in JSON format.
+     */
+    @Test
+    void testJsonFormat() throws Exception {
+        ThreadDump threadDump = dumpThreadsToJson();
+
+        // dump should include current thread in the root container
+        Thread currentThread = Thread.currentThread();
+        if (trackAllThreads || !currentThread.isVirtual()) {
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(currentThread.threadId())
+                    .orElse(null);
+            assertNotNull(ti, "current thread not found");
+            assertEquals(currentThread.isVirtual(), ti.isVirtual());
+        }
     }
 
     /**
@@ -78,180 +151,438 @@ class DumpThreads {
     }
 
     /**
-     * Test thread dump in plain text format contains information about the current
-     * thread and a virtual thread created directly with the Thread API.
-     */
-    @Test
-    void testRootContainerPlainTextFormat() throws Exception {
-        Thread vthread = Thread.ofVirtual().start(LockSupport::park);
-        try {
-            testDumpThreadsPlainText(vthread, trackAllThreads);
-        } finally {
-            LockSupport.unpark(vthread);
-        }
-    }
-
-    /**
-     * Test thread dump in JSON format contains information about the current
-     * thread and a virtual thread created directly with the Thread API.
-     */
-    @Test
-    void testRootContainerJsonFormat() throws Exception {
-        Thread vthread = Thread.ofVirtual().start(LockSupport::park);
-        try {
-            testDumpThreadsJson(null, vthread, trackAllThreads);
-        } finally {
-            LockSupport.unpark(vthread);
-        }
-    }
-
-    /**
-     * Test thread dump in plain text format includes a thread executing a task in the
-     * given ExecutorService.
+     * Test that a thread container for an executor service is in the JSON format thread dump.
      */
     @ParameterizedTest
     @MethodSource("executors")
-    void testExecutorServicePlainTextFormat(ExecutorService executor) throws Exception {
+    void testThreadContainer(ExecutorService executor) throws Exception {
         try (executor) {
-            Thread thread = forkParker(executor);
-            try {
-                testDumpThreadsPlainText(thread, true);
-            } finally {
-                LockSupport.unpark(thread);
-            }
+            testThreadContainer(executor, Objects.toIdentityString(executor));
         }
     }
 
     /**
-     * Test thread dump in JSON format includes a thread executing a task in the
-     * given ExecutorService.
-     */
-    @ParameterizedTest
-    @MethodSource("executors")
-    void testExecutorServiceJsonFormat(ExecutorService executor) throws Exception {
-        try (executor) {
-            Thread thread = forkParker(executor);
-            try {
-                testDumpThreadsJson(Objects.toIdentityString(executor), thread, true);
-            } finally {
-                LockSupport.unpark(thread);
-            }
-        }
-    }
-
-    /**
-     * Test thread dump in JSON format includes a thread executing a task in the
-     * fork-join common pool.
+     * Test that a thread container for the common pool is in the JSON format thread dump.
      */
     @Test
-    void testForkJoinPool() throws Exception {
-        ForkJoinPool pool = ForkJoinPool.commonPool();
-        Thread thread = forkParker(pool);
+    void testCommonPool() throws Exception {
+        testThreadContainer(ForkJoinPool.commonPool(), "ForkJoinPool.commonPool");
+    }
+
+    /**
+     * Test that the JSON thread dump has a thread container for the given executor.
+     */
+    private void testThreadContainer(ExecutorService executor, String name) throws Exception {
+        var threadRef = new AtomicReference<Thread>();
+
+        executor.submit(() -> {
+            threadRef.set(Thread.currentThread());
+            LockSupport.park();
+        });
+
+        // capture Thread
+        Thread thread;
+        while ((thread = threadRef.get()) == null) {
+            Thread.sleep(20);
+        }
+
         try {
-            testDumpThreadsJson("ForkJoinPool.commonPool", thread, true);
+            // dump threads to file and parse as JSON object
+            ThreadDump threadDump = dumpThreadsToJson();
+
+            // find the thread container corresponding to the executor
+            var container = threadDump.findThreadContainer(name).orElse(null);
+            assertNotNull(container, name + " not found");
+            assertFalse(container.owner().isPresent());
+            var parent = container.parent().orElse(null);
+            assertEquals(threadDump.rootThreadContainer(), parent);
+
+            // find the thread in the thread container
+            ThreadDump.ThreadInfo ti = container.findThread(thread.threadId()).orElse(null);
+            assertNotNull(ti, "thread not found");
+
         } finally {
             LockSupport.unpark(thread);
         }
     }
 
     /**
-     * Invoke HotSpotDiagnosticMXBean.dumpThreads to create a thread dump in plain text
-     * format, then sanity check that the thread dump includes expected strings, the
-     * current thread, and maybe the given thread.
-     * @param thread the thread to test if included
-     * @param expectInDump true if the thread is expected to be included
+     * ThreadFactory implementations for tests.
      */
-    private void testDumpThreadsPlainText(Thread thread, boolean expectInDump) throws Exception {
-        Path file = genOutputPath(".txt");
-        var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-        mbean.dumpThreads(file.toString(), ThreadDumpFormat.TEXT_PLAIN);
-        System.err.format("Dumped to %s%n", file);
-
-        // pid should be on the first line
-        String line1 = line(file, 0);
-        String pid = Long.toString(ProcessHandle.current().pid());
-        assertTrue(line1.contains(pid));
-
-        // timestamp should be on the second line
-        String line2 = line(file, 1);
-        ZonedDateTime.parse(line2);
-
-        // runtime version should be on third line
-        String line3 = line(file, 2);
-        String vs = Runtime.version().toString();
-        assertTrue(line3.contains(vs));
-
-        // test if thread is included in thread dump
-        assertEquals(expectInDump, isPresent(file, thread));
-
-        // current thread should be included if platform thread or tracking all threads
-        Thread currentThread = Thread.currentThread();
-        boolean currentThreadExpected = trackAllThreads || !currentThread.isVirtual();
-        assertEquals(currentThreadExpected, isPresent(file, currentThread));
+    static Stream<ThreadFactory> threadFactories() {
+        Stream<ThreadFactory> s = Stream.of(Thread.ofPlatform().factory());
+        if (trackAllThreads) {
+            return Stream.concat(s, Stream.of(Thread.ofVirtual().factory()));
+        } else {
+            return s;
+        }
     }
 
     /**
-     * Invoke HotSpotDiagnosticMXBean.dumpThreads to create a thread dump in JSON format.
-     * The thread dump is parsed as a JSON object and checked to ensure that it contains
-     * expected data, the current thread, and maybe the given thread.
-     * @param containerName the name of the container or null for the root container
-     * @param thread the thread to test if included
-     * @param expect true if the thread is expected to be included
+     * Test thread dump with a thread blocked on monitor enter.
      */
-    private void testDumpThreadsJson(String containerName,
-                                     Thread thread,
-                                     boolean expectInDump) throws Exception {
-        Path file = genOutputPath(".json");
-        var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
-        mbean.dumpThreads(file.toString(), ThreadDumpFormat.JSON);
-        System.err.format("Dumped to %s%n", file);
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testBlockedThread(ThreadFactory factory) throws Exception {
+        testBlockedThread(factory, false);
+    }
 
-        // parse the JSON text
-        String jsonText = Files.readString(file);
-        ThreadDump threadDump = ThreadDump.parse(jsonText);
+    /**
+     * Test thread dump with a thread blocked on monitor enter when pinned.
+     */
+    @Test
+    void testBlockedThreadWhenPinned() throws Exception {
+        assumeTrue(trackAllThreads, "This test requires all threads to be tracked");
+        testBlockedThread(Thread.ofVirtual().factory(), true);
+    }
 
-        // test threadDump/processId
-        assertTrue(threadDump.processId() == ProcessHandle.current().pid());
+    void testBlockedThread(ThreadFactory factory, boolean pinned) throws Exception {
+        var lock = new Object();
+        var started = new CountDownLatch(1);
 
-        // test threadDump/time can be parsed
-        ZonedDateTime.parse(threadDump.time());
+        Thread thread = factory.newThread(() -> {
+            if (pinned) {
+                VThreadPinner.runPinned(() -> {
+                    started.countDown();
+                    synchronized (lock) { }  // blocks
+                });
+            } else {
+                started.countDown();
+                synchronized (lock) { }  // blocks
+            }
+        });
 
-        // test threadDump/runtimeVersion
-        assertEquals(Runtime.version().toString(), threadDump.runtimeVersion());
+        try {
+            synchronized (lock) {
+                // start thread and wait for it to block
+                thread.start();
+                started.await();
+                await(thread, Thread.State.BLOCKED);
 
-        // test root container, has no parent and no owner
-        var rootContainer = threadDump.rootThreadContainer();
-        assertFalse(rootContainer.owner().isPresent());
-        assertFalse(rootContainer.parent().isPresent());
+                long tid = thread.threadId();
+                String lockAsString = Objects.toIdentityString(lock);
 
-        // test that the container contains the given thread
-        ThreadDump.ThreadContainer container;
-        if (containerName == null) {
-            // root container, the thread should be found if trackAllThreads is true
-            container = rootContainer;
-        } else {
-            // find the container
-            container = threadDump.findThreadContainer(containerName).orElse(null);
-            assertNotNull(container, containerName + " not found");
-            assertFalse(container.owner().isPresent());
-            assertTrue(container.parent().get() == rootContainer);
+                // thread dump in plain text should include thread
+                List<String> lines = dumpThreadsToPlainText();
+                ThreadFields fields = findThread(tid, lines);
+                assertNotNull(fields, "thread not found");
+                assertEquals("BLOCKED", fields.state());
+                assertTrue(contains(lines, "- waiting to lock <" + lockAsString));
 
+                // thread dump in JSON format should include thread in root container
+                ThreadDump threadDump = dumpThreadsToJson();
+                ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                        .findThread(tid)
+                        .orElse(null);
+                assertNotNull(ti, "thread not found");
+                assertEquals("BLOCKED", ti.state());
+                assertEquals(lockAsString, ti.blockedOn());
+                if (pinned) {
+                    long carrierTid = ti.carrier().orElse(-1L);
+                    assertNotEquals(-1L, carrierTid, "carrier not found");
+                    assertForkJoinWorkerThread(carrierTid);
+                }
+            }
+        } finally {
+            thread.join();
         }
-        boolean found = container.findThread(thread.threadId()).isPresent();
-        assertEquals(expectInDump, found);
+    }
 
-        // current thread should be in root container if platform thread or tracking all threads
-        Thread currentThread = Thread.currentThread();
-        boolean currentThreadExpected = trackAllThreads || !currentThread.isVirtual();
-        found = rootContainer.findThread(currentThread.threadId()).isPresent();
-        assertEquals(currentThreadExpected, found);
+    /**
+     * Test thread dump with a thread waiting in Object.wait.
+     */
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testWaitingThread(ThreadFactory factory) throws Exception {
+        testWaitingThread(factory, false);
+    }
+
+    /**
+     * Test thread dump with a thread waiting in Object.wait when pinned.
+     */
+    @Test
+    void testWaitingThreadWhenPinned() throws Exception {
+        assumeTrue(trackAllThreads, "This test requires all threads to be tracked");
+        testWaitingThread(Thread.ofVirtual().factory(), true);
+    }
+
+    void testWaitingThread(ThreadFactory factory, boolean pinned) throws Exception {
+        var lock = new Object();
+        var started = new CountDownLatch(1);
+
+        Thread thread = factory.newThread(() -> {
+            try {
+                synchronized (lock) {
+                    if (pinned) {
+                        VThreadPinner.runPinned(() -> {
+                            started.countDown();
+                            lock.wait();
+                        });
+                    } else {
+                        started.countDown();
+                        lock.wait();
+                    }
+                }
+            } catch (InterruptedException e) { }
+        });
+
+        try {
+            // start thread and wait for it to wait in Object.wait
+            thread.start();
+            started.await();
+            await(thread, Thread.State.WAITING);
+
+            long tid = thread.threadId();
+            String lockAsString = Objects.toIdentityString(lock);
+
+            // thread dump in plain text should include thread
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            assertEquals("WAITING", fields.state());
+
+            // thread dump in JSON format should include thread in root container
+            ThreadDump threadDump = dumpThreadsToJson();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(thread.threadId())
+                    .orElse(null);
+            assertNotNull(ti, "thread not found");
+            assertEquals(ti.isVirtual(), thread.isVirtual());
+            assertEquals("WAITING", ti.state());
+            if (pinned) {
+                long carrierTid = ti.carrier().orElse(-1L);
+                assertNotEquals(-1L, carrierTid, "carrier not found");
+                assertForkJoinWorkerThread(carrierTid);
+            }
+
+            // Compiled native frames have no locals. If Object.wait0 has been compiled
+            // then we don't have the object that the thread is waiting on
+            Method wait0 = Object.class.getDeclaredMethod("wait0", long.class);
+            boolean expectWaitingOn = !WhiteBox.getWhiteBox().isMethodCompiled(wait0);
+            if (expectWaitingOn) {
+                // plain text dump should have "waiting on" line
+                assertTrue(contains(lines, "- waiting on <" + lockAsString));
+
+                // JSON thread dump should have waitingOn property
+                assertEquals(lockAsString, ti.waitingOn());
+            }
+
+        } finally {
+            synchronized (lock) {
+                lock.notifyAll();
+            }
+            thread.join();
+        }
+    }
+
+    /**
+     * Test thread dump with a thread parked on a j.u.c. lock.
+     */
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testParkedThread(ThreadFactory factory) throws Exception {
+        testParkedThread(factory, false);
+    }
+
+    /**
+     * Test thread dump with a thread parked on a j.u.c. lock and pinned.
+     */
+    @Test
+    void testParkedThreadWhenPinned() throws Exception {
+        assumeTrue(trackAllThreads, "This test requires all threads to be tracked");
+        testParkedThread(Thread.ofVirtual().factory(), true);
+    }
+
+    void testParkedThread(ThreadFactory factory, boolean pinned) throws Exception {
+        var lock = new ReentrantLock();
+        var started = new CountDownLatch(1);
+
+        Thread thread = factory.newThread(() -> {
+            if (pinned) {
+                VThreadPinner.runPinned(() -> {
+                    started.countDown();
+                    lock.lock();
+                    lock.unlock();
+                });
+            } else {
+                started.countDown();
+                lock.lock();
+                lock.unlock();
+            }
+        });
+
+        lock.lock();
+        try {
+            // start thread and wait for it to park
+            thread.start();
+            started.await();
+            await(thread, Thread.State.WAITING);
+
+            long tid = thread.threadId();
+
+            // thread dump in plain text should include thread
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            assertEquals("WAITING", fields.state());
+            assertTrue(contains(lines, "- parking to wait for <java.util.concurrent.locks.ReentrantLock"));
+
+            // thread dump in JSON format should include thread in root container
+            ThreadDump threadDump = dumpThreadsToJson();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(thread.threadId())
+                    .orElse(null);
+            assertNotNull(ti, "thread not found");
+            assertEquals(ti.isVirtual(), thread.isVirtual());
+
+            // thread should be waiting on the ReentrantLock
+            assertEquals("WAITING", ti.state());
+            String parkBlocker = ti.parkBlocker();
+            assertNotNull(parkBlocker);
+            assertTrue(parkBlocker.contains("java.util.concurrent.locks.ReentrantLock"));
+            if (pinned) {
+                long carrierTid = ti.carrier().orElse(-1L);
+                assertNotEquals(-1L, carrierTid, "carrier not found");
+                assertForkJoinWorkerThread(carrierTid);
+            }
+        } finally {
+            lock.unlock();
+            thread.join();
+        }
+    }
+
+    /**
+     * Test thread dump with a thread owning a monitor.
+     */
+    @ParameterizedTest
+    @MethodSource("threadFactories")
+    void testThreadOwnsMonitor(ThreadFactory factory) throws Exception {
+        testThreadOwnsMonitor(factory, false);
+    }
+
+    @Test
+    void testThreadOwnsMonitorWhenPinned() throws Exception {
+        assumeTrue(trackAllThreads, "This test requires all threads to be tracked");
+        testThreadOwnsMonitor(Thread.ofVirtual().factory(), true);
+    }
+
+    void testThreadOwnsMonitor(ThreadFactory factory, boolean pinned) throws Exception {
+        var lock = new Object();
+        var started = new CountDownLatch(1);
+
+        Thread thread = factory.newThread(() -> {
+            synchronized (lock) {
+                if (pinned) {
+                    VThreadPinner.runPinned(() -> {
+                        started.countDown();
+                        LockSupport.park();
+                    });
+                } else {
+                    started.countDown();
+                    LockSupport.park();
+                }
+            }
+        });
+
+        try {
+            // start thread and wait for it to park
+            thread.start();
+            started.await();
+            await(thread, Thread.State.WAITING);
+
+            long tid = thread.threadId();
+            String lockAsString = Objects.toIdentityString(lock);
+
+            // thread dump in plain text should include thread
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            assertEquals("WAITING", fields.state());
+            assertTrue(contains(lines, "- locked <" + lockAsString));
+
+            // thread dump in JSON format should include thread in root container
+            ThreadDump threadDump = dumpThreadsToJson();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(tid)
+                    .orElse(null);
+            assertNotNull(ti, "thread not found");
+            assertEquals(ti.isVirtual(), thread.isVirtual());
+
+            // the lock should be in the ownedMonitors array
+            Set<String> ownedMonitors = ti.ownedMonitors().values()
+                    .stream()
+                    .flatMap(List::stream)
+                    .collect(Collectors.toSet());
+            assertTrue(ownedMonitors.contains(lockAsString), lockAsString + " not found");
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test mounted virtual thread.
+     */
+    @Test
+    void testMountedVirtualThread() throws Exception {
+        assumeTrue(trackAllThreads, "This test requires all threads to be tracked");
+
+        // start virtual thread that spins until done
+        var started = new AtomicBoolean();
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            started.set(true);
+            while (!done.get()) {
+                Thread.onSpinWait();
+            }
+        });
+
+        try {
+            // wait for thread to start
+            awaitTrue(started);
+            long tid = thread.threadId();
+
+            // thread dump in plain text should include thread
+            List<String> lines = dumpThreadsToPlainText();
+            ThreadFields fields = findThread(tid, lines);
+            assertNotNull(fields, "thread not found");
+            assertTrue(fields.isVirtual());
+
+            // thread dump in JSON format should include thread in root container
+            ThreadDump threadDump = dumpThreadsToJson();
+            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
+                    .findThread(tid)
+                    .orElse(null);
+            assertNotNull(ti, "thread not found");
+            assertTrue(ti.isVirtual());
+            long carrierTid = ti.carrier().orElse(-1L);
+            assertNotEquals(-1L, carrierTid, "carrier not found");
+            assertForkJoinWorkerThread(carrierTid);
+        } finally {
+            done.set(true);
+            thread.join();
+        }
+    }
+
+    /**
+     * Asserts that the given thread identifier is a ForkJoinWorkerThread.
+     */
+    private void assertForkJoinWorkerThread(long tid) {
+        Thread thread = Thread.getAllStackTraces()
+                .keySet()
+                .stream()
+                .filter(t -> t.threadId() == tid)
+                .findAny()
+                .orElse(null);
+        assertNotNull(thread, "thread " + tid + " not found");
+        assertTrue(thread instanceof ForkJoinWorkerThread, "not a ForkJoinWorkerThread");
     }
 
     /**
      * Test that dumpThreads throws if the output file already exists.
      */
     @Test
-    void testFileAlreadyExsists() throws Exception {
+    void testFileAlreadyExists() throws Exception {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         String file = Files.createFile(genOutputPath("txt")).toString();
         assertThrows(FileAlreadyExistsException.class,
@@ -261,10 +592,43 @@ class DumpThreads {
     }
 
     /**
+     * Test that dumpThreads throws IOException when the output file cannot be created.
+     */
+    @Test
+    void testFileCreateFails() {
+        var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        String badFile = Path.of(".").toAbsolutePath()
+                .resolve("does-not-exist")
+                .resolve("does-not-exist")
+                .resolve("threads.bad")
+                .toString();
+        assertThrows(IOException.class,
+                () -> mbean.dumpThreads(badFile, ThreadDumpFormat.TEXT_PLAIN));
+        assertThrows(IOException.class,
+                () -> mbean.dumpThreads(badFile, ThreadDumpFormat.JSON));
+    }
+
+    /**
+     * Test that dumpThreads throws IOException if writing to output file fails.
+     */
+    @Test
+    void testFileWriteFails() {
+        var out = new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                throw new IOException("There is not enough space on the disk");
+            }
+        };
+        // need to invoke internal API directly to test this
+        assertThrows(IOException.class, () -> jdk.internal.vm.ThreadDumper.dumpThreads(out));
+        assertThrows(IOException.class, () -> jdk.internal.vm.ThreadDumper.dumpThreadsToJson(out));
+    }
+
+    /**
      * Test that dumpThreads throws if the file path is relative.
      */
     @Test
-    void testRelativePath() throws Exception {
+    void testRelativePath() {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         assertThrows(IllegalArgumentException.class,
                 () -> mbean.dumpThreads("threads.txt", ThreadDumpFormat.TEXT_PLAIN));
@@ -276,7 +640,7 @@ class DumpThreads {
      * Test that dumpThreads throws with null parameters.
      */
     @Test
-    void testNull() throws Exception {
+    void testNull() {
         var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
         assertThrows(NullPointerException.class,
                 () -> mbean.dumpThreads(null, ThreadDumpFormat.TEXT_PLAIN));
@@ -285,31 +649,63 @@ class DumpThreads {
     }
 
     /**
-     * Submits a parking task to the given executor, returns the Thread object of
-     * the parked thread.
+     * Represents the data for a thread found in a plain text thread dump.
      */
-    private static Thread forkParker(ExecutorService executor) {
-        class Box { static volatile Thread thread;}
-        var latch = new CountDownLatch(1);
-        executor.submit(() -> {
-            Box.thread = Thread.currentThread();
-            latch.countDown();
-            LockSupport.park();
-        });
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+    private record ThreadFields(long tid, String name, boolean isVirtual, String state) { }
+
+    /**
+     * Find a thread in the lines of a plain text thread dump.
+     */
+    private ThreadFields findThread(long tid, List<String> lines) {
+        String line = lines.stream()
+                .filter(l -> l.startsWith("#" + tid + " "))
+                .findFirst()
+                .orElse(null);
+        if (line == null) {
+            return null;
         }
-        return Box.thread;
+
+        // #3 "main" RUNNABLE 2025-04-18T15:22:12.012450Z
+        // #36 "" virtual WAITING 2025-04-18T15:22:12.012450Z
+        Pattern pattern = Pattern.compile("#(\\d+)\\s+\"([^\"]*)\"\\s+(virtual\\s+)?(\\w+)\\s+(.*)");
+        Matcher matcher = pattern.matcher(line);
+        assertTrue(matcher.matches());
+        String name = matcher.group(2);
+        boolean isVirtual = "virtual ".equals(matcher.group(3));
+        String state = matcher.group(4);
+        return new ThreadFields(tid, name, isVirtual, state);
     }
 
     /**
-     * Returns true if a Thread is present in a plain text thread dump.
+     * Returns true if lines of a plain text thread dump contain the given text.
      */
-    private static boolean isPresent(Path file, Thread thread) throws Exception {
-        String expect = "#" + thread.threadId();
-        return count(file, expect) > 0;
+    private boolean contains(List<String> lines, String text) {
+        return lines.stream().map(String::trim)
+                .anyMatch(l -> l.contains(text));
+    }
+
+    /**
+     * Dump threads to a file in plain text format, return the lines in the file.
+     */
+    private List<String> dumpThreadsToPlainText() throws Exception {
+        Path file = genOutputPath(".txt");
+        var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        mbean.dumpThreads(file.toString(), HotSpotDiagnosticMXBean.ThreadDumpFormat.TEXT_PLAIN);
+        System.err.format("Dumped to %s%n", file.getFileName());
+        List<String> lines = Files.readAllLines(file);
+        return lines;
+    }
+
+    /**
+     * Dump threads to a file in JSON format, parse and return as JSON object.
+     */
+    private static ThreadDump dumpThreadsToJson() throws Exception {
+        Path file = genOutputPath(".json");
+        var mbean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean.class);
+        mbean.dumpThreads(file.toString(), HotSpotDiagnosticMXBean.ThreadDumpFormat.JSON);
+        System.err.format("Dumped to %s%n", file.getFileName());
+        String jsonText = Files.readString(file);
+        return ThreadDump.parse(jsonText);
     }
 
     /**
@@ -323,21 +719,23 @@ class DumpThreads {
     }
 
     /**
-     * Return the count of the number of files in the given file that contain
-     * the given character sequence.
+     * Waits for the given thread to get to a given state.
      */
-    static long count(Path file, CharSequence cs) throws Exception {
-        try (Stream<String> stream = Files.lines(file)) {
-            return stream.filter(line -> line.contains(cs)).count();
+    private void await(Thread thread, Thread.State expectedState) throws InterruptedException {
+        Thread.State state = thread.getState();
+        while (state != expectedState) {
+            assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
+            Thread.sleep(10);
+            state = thread.getState();
         }
     }
 
     /**
-     * Return line $n of the given file.
+     * Waits for the boolean value to become true.
      */
-    private String line(Path file, long n) throws Exception {
-        try (Stream<String> stream = Files.lines(file)) {
-            return stream.skip(n).findFirst().orElseThrow();
+    private static void awaitTrue(AtomicBoolean ref) throws Exception {
+        while (!ref.get()) {
+            Thread.sleep(20);
         }
     }
 }

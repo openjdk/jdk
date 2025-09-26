@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +40,16 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import static java.lang.String.UTF16;
-import static java.lang.String.LATIN1;
 
+/// UTF16 String operations.
+///
+/// UTF16 byte arrays have the identical layout as char arrays. They share the
+/// same base offset and scale, and for each two-byte unit interpreted as a char,
+/// it has the same endianness as a char, which is the platform endianness.
+/// This is ensured in the static initializer of StringUTF16.
+///
+/// All indices and sizes for byte arrays carrying UTF16 data are in number of
+/// chars instead of  number of bytes.
 final class StringUTF16 {
 
     // Return a new byte array for a UTF16-coded string for len chars
@@ -1313,12 +1322,6 @@ final class StringUTF16 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    private static void putChars(byte[] val, int index, char[] str, int off, int end) {
-        while (off < end) {
-            putChar(val, index++, str[off++]);
-        }
-    }
-
     public static String newString(byte[] val, int index, int len) {
         if (len == 0) {
             return "";
@@ -1330,10 +1333,6 @@ final class StringUTF16 {
         }
         int last = index + len;
         return new String(Arrays.copyOfRange(val, index << 1, last << 1), UTF16);
-    }
-
-    public static void fillNull(byte[] val, int index, int end) {
-        Arrays.fill(val, index << 1, end << 1, (byte)0);
     }
 
     static class CharsSpliterator implements Spliterator.OfInt {
@@ -1491,7 +1490,13 @@ final class StringUTF16 {
 
     public static void putCharsSB(byte[] val, int index, char[] ca, int off, int end) {
         checkBoundsBeginEnd(index, index + end - off, val);
-        putChars(val, index, ca, off, end);
+        String.checkBoundsBeginEnd(off, end, ca.length);
+        Unsafe.getUnsafe().copyMemory(
+                ca,
+                Unsafe.ARRAY_CHAR_BASE_OFFSET + ((long) off << 1),
+                val,
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + ((long) index << 1),
+                (long) (end - off) << 1);
     }
 
     public static void putCharsSB(byte[] val, int index, CharSequence s, int off, int end) {
@@ -1533,27 +1538,23 @@ final class StringUTF16 {
         return true;
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4) {
         int end = i + 4;
         checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        assert(i == end);
-        return end;
+        putChar(value, i, c1);
+        putChar(value, i + 1, c2);
+        putChar(value, i + 2, c3);
+        putChar(value, i + 3, c4);
     }
 
-    public static int putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
+    public static void putCharsAt(byte[] value, int i, char c1, char c2, char c3, char c4, char c5) {
         int end = i + 5;
         checkBoundsBeginEnd(i, end, value);
-        putChar(value, i++, c1);
-        putChar(value, i++, c2);
-        putChar(value, i++, c3);
-        putChar(value, i++, c4);
-        putChar(value, i++, c5);
-        assert(i == end);
-        return end;
+        putChar(value, i, c1);
+        putChar(value, i + 1, c2);
+        putChar(value, i + 2, c3);
+        putChar(value, i + 3, c4);
+        putChar(value, i + 4, c5);
     }
 
     public static char charAt(byte[] value, int index) {
@@ -1644,6 +1645,9 @@ final class StringUTF16 {
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
     static {
+        // Assumptions for StringUTF16 operations. Present in `LibraryCallKit::inline_string_char_access` too.
+        assert Unsafe.ARRAY_CHAR_BASE_OFFSET == Unsafe.ARRAY_BYTE_BASE_OFFSET : "sanity: byte[] and char[] bases agree";
+        assert Unsafe.ARRAY_CHAR_INDEX_SCALE == Unsafe.ARRAY_BYTE_INDEX_SCALE * 2 : "sanity: byte[] and char[] scales agree";
         if (Unsafe.getUnsafe().isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;

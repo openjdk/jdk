@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2017, 2025, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,11 +27,11 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
@@ -42,7 +42,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/align.hpp"
@@ -149,15 +149,21 @@ private:
               "oop must be in heap bounds");
     check(ShenandoahAsserts::_safe_unknown, obj, is_object_aligned(obj),
               "oop must be aligned");
+    check(ShenandoahAsserts::_safe_unknown, obj, os::is_readable_pointer(obj),
+              "oop must be accessible");
 
     ShenandoahHeapRegion *obj_reg = _heap->heap_region_containing(obj);
-    Klass* obj_klass = ShenandoahForwarding::klass(obj);
+
+    narrowKlass nk = 0;
+    const Klass* obj_klass = nullptr;
+    const bool klass_valid = ShenandoahAsserts::extract_klass_safely(obj, nk, obj_klass);
+
+    check(ShenandoahAsserts::_safe_unknown, obj, klass_valid,
+           "Object klass pointer unreadable or invalid");
 
     // Verify that obj is not in dead space:
     {
       // Do this before touching obj->size()
-      check(ShenandoahAsserts::_safe_unknown, obj, obj_klass != nullptr,
-             "Object klass pointer should not be null");
       check(ShenandoahAsserts::_safe_unknown, obj, Metaspace::contains(obj_klass),
              "Object klass pointer must go to metaspace");
 
@@ -187,7 +193,7 @@ private:
           // skip
           break;
         case ShenandoahVerifier::_verify_liveness_complete:
-          Atomic::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
+          AtomicAccess::add(&_ld[obj_reg->index()], (uint) ShenandoahForwarding::size(obj), memory_order_relaxed);
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live() ||
@@ -244,18 +250,20 @@ private:
     }
 
     // Do additional checks for special objects: their fields can hold metadata as well.
-    // We want to check class loading/unloading did not corrupt them.
+    // We want to check class loading/unloading did not corrupt them. We can only reasonably
+    // trust the forwarded objects, as the from-space object can have the klasses effectively
+    // dead.
 
     if (obj_klass == vmClasses::Class_klass()) {
-      Metadata* klass = obj->metadata_field(java_lang_Class::klass_offset());
+      const Metadata* klass = fwd->metadata_field(java_lang_Class::klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             klass == nullptr || Metaspace::contains(klass),
-            "Instance class mirror should point to Metaspace");
+            "Mirrored instance class should point to Metaspace");
 
-      Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
+      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
       check(ShenandoahAsserts::_safe_oop, obj,
             array_klass == nullptr || Metaspace::contains(array_klass),
-            "Array class mirror should point to Metaspace");
+            "Mirrored array class should point to Metaspace");
     }
 
     // ------------ obj and fwd are safe at this point --------------
@@ -614,7 +622,7 @@ public:
       }
     }
 
-    Atomic::add(&_processed, processed, memory_order_relaxed);
+    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
   }
 };
 
@@ -661,7 +669,7 @@ public:
   };
 
   size_t processed() {
-    return Atomic::load(&_processed);
+    return AtomicAccess::load(&_processed);
   }
 
   void work(uint worker_id) override {
@@ -676,7 +684,7 @@ public:
                                   _options);
 
     while (true) {
-      size_t v = Atomic::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
+      size_t v = AtomicAccess::fetch_then_add(&_claimed, 1u, memory_order_relaxed);
       if (v < _heap->num_regions()) {
         ShenandoahHeapRegion* r = _heap->get_region(v);
         if (!in_generation(r)) {
@@ -704,7 +712,7 @@ public:
     if (_heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(obj))) {
       verify_and_follow(obj, stack, cl, &processed);
     }
-    Atomic::add(&_processed, processed, memory_order_relaxed);
+    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
   }
 
   virtual void work_regular(ShenandoahHeapRegion *r, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl) {
@@ -737,7 +745,7 @@ public:
       }
     }
 
-    Atomic::add(&_processed, processed, memory_order_relaxed);
+    AtomicAccess::add(&_processed, processed, memory_order_relaxed);
   }
 
   void verify_and_follow(HeapWord *addr, ShenandoahVerifierStack &stack, ShenandoahVerifyOopClosure &cl, size_t *processed) {
@@ -1015,12 +1023,12 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
       if (r->is_humongous()) {
         // For humongous objects, test if start region is marked live, and if so,
         // all humongous regions in that chain have live data equal to their "used".
-        juint start_live = Atomic::load(&ld[r->humongous_start_region()->index()]);
+        juint start_live = AtomicAccess::load(&ld[r->humongous_start_region()->index()]);
         if (start_live > 0) {
           verf_live = (juint)(r->used() / HeapWordSize);
         }
       } else {
-        verf_live = Atomic::load(&ld[r->index()]);
+        verf_live = AtomicAccess::load(&ld[r->index()]);
       }
 
       size_t reg_live = r->get_live_data_words();

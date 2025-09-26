@@ -26,6 +26,7 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 #include "unittest.hpp"
 
 #include <stdio.h>
@@ -192,7 +193,7 @@ static int num_args_to_skip(char* arg) {
 
 static char** remove_test_runner_arguments(int* argcp, char **argv) {
   int argc = *argcp;
-  ALLOW_C_FUNCTION(::malloc, char** new_argv = (char**) malloc(sizeof(char*) * argc);)
+  char** new_argv = (char**)permit_forbidden_function::malloc(sizeof(char*) * argc);
   int new_argc = 0;
 
   int i = 0;
@@ -255,7 +256,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 #ifdef __APPLE__
   size_t len = strlen(java_home) + strlen("/lib/jli/libjli.dylib") + 1;
   char* path = new char[len];
-  snprintf(path, len, "%s/lib/jli/libjli.dylib", java_home);
+  os::snprintf_checked(path, len, "%s/lib/jli/libjli.dylib", java_home);
   dlopen(path, RTLD_NOW | RTLD_GLOBAL);
 #endif // __APPLE__
 
@@ -288,7 +289,7 @@ static void runUnitTestsInner(int argc, char** argv) {
 
   int result = RUN_ALL_TESTS();
 
-  ALLOW_C_FUNCTION(::free, ::free(argv);)
+  permit_forbidden_function::free(argv);
 
   // vm_assert and other_vm tests never reach this point as they either abort, or call
   // exit() - see TEST_OTHER_VM macro. We will reach here when all same_vm tests have

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ import jdk.test.lib.Platform;
 
 /*
  * @test
- * @bug 6191897
+ * @bug 6191897 8354646
  * @summary Verifies that ctrl+left/right does not move word-by-word in a TextField
  *          with echo character set
  * @library /java/awt/regtesthelpers  /test/lib

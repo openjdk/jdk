@@ -26,7 +26,7 @@
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/memoryReserver.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -59,7 +59,7 @@ public:
       _claim_id(0) { }
 
   void work(uint worker_id) {
-    uint index = Atomic::fetch_then_add(&_claim_id, 1u);
+    uint index = AtomicAccess::fetch_then_add(&_claim_id, 1u);
 
     for (int i = 0; i < 100000; i++) {
       // Stress commit and uncommit of a single region. The same
@@ -82,7 +82,8 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
 
   ReservedSpace rs = MemoryReserver::reserve(size,
                                              os::vm_allocation_granularity(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtTest);
 
   G1RegionToSpaceMapper* small_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
@@ -90,7 +91,7 @@ TEST_VM(G1RegionToSpaceMapper, smallStressAdjacent) {
                                          page_size,
                                          region_size,
                                          G1BlockOffsetTable::heap_map_factor(),
-                                         mtGC);
+                                         mtTest);
 
 
 
@@ -108,14 +109,15 @@ TEST_VM(G1RegionToSpaceMapper, largeStressAdjacent) {
 
   ReservedSpace rs = MemoryReserver::reserve(size,
                                              os::vm_allocation_granularity(),
-                                             os::vm_page_size());
+                                             os::vm_page_size(),
+                                             mtTest);
   G1RegionToSpaceMapper* large_mapper  =
     G1RegionToSpaceMapper::create_mapper(rs,
                                          size,
                                          page_size,
                                          region_size,
                                          G1BlockOffsetTable::heap_map_factor(),
-                                         mtGC);
+                                         mtTest);
 
   G1TestCommitUncommit task(large_mapper);
   G1MapperWorkers::run_task(&task);

@@ -1511,7 +1511,7 @@ void MacroAssembler::sha512_update_ni_x1(Register arg_hash, Register arg_msg, Re
     //ymm13 = A B E F, ymm14 = C D G H
 
     lea(rax, ExternalAddress(K512_W));
-    align(32);
+    align(CodeEntryAlignment);
     bind(block_loop);
     vmovdqu(xmm11, xmm13);//ABEF
     vmovdqu(xmm12, xmm14);//CDGH

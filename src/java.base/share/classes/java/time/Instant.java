@@ -1363,7 +1363,7 @@ public final class Instant
      */
     @Override
     public int hashCode() {
-        return ((int) (seconds ^ (seconds >>> 32))) + 51 * nanos;
+        return Long.hashCode(seconds) + 51 * nanos;
     }
 
     //-----------------------------------------------------------------------

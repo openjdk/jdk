@@ -25,7 +25,7 @@
  * @test
  * @bug     6407011 6407066
  * @summary javac crashes in b78 with NPE in JavacFileManager:293
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules java.compiler
  *          jdk.compiler
  */

@@ -32,7 +32,7 @@
 
 // We call this from _thread_in_native, right after a downcall
 JVM_LEAF(void, DowncallLinker::capture_state(int32_t* value_ptr, int captured_state_mask))
-  // keep in synch with jdk.internal.foreign.abi.PreservableValues
+  // keep in synch with jdk.internal.foreign.abi.CapturableState
   enum PreservableValues {
     NONE = 0,
     GET_LAST_ERROR = 1,

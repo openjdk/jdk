@@ -26,7 +26,7 @@
  * @bug     6397652
  * @summary javac compilation failure when imported class with $ sign in the name
  * @author  Yuri Gaevsky
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile com/test/Test.java com/test/Test$Test.java com/test/Test$Test$Test.java
  * @compile T6397652.java
  */

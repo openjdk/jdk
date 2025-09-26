@@ -29,6 +29,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.validation.Schema;
+
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -39,7 +41,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -54,8 +56,15 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     private boolean fSecureProcess = true;
 
     // used to verify attributes
-    XMLSecurityManager fSecurityManager = new XMLSecurityManager(true);
-    XMLSecurityPropertyManager fSecurityPropertyMgr = new XMLSecurityPropertyManager();
+    XMLSecurityManager fSecurityManager;
+    XMLSecurityPropertyManager fSecurityPropertyMgr;
+
+    public DocumentBuilderFactoryImpl() {
+        JdkXmlConfig config = JdkXmlConfig.getInstance(false);
+        // security (property) managers updated with current system properties
+        fSecurityManager = config.getXMLSecurityManager(true);
+        fSecurityPropertyMgr = config.getXMLSecurityPropertyManager(true);
+    }
 
     /**
      * Creates a new instance of a {@link javax.xml.parsers.DocumentBuilder}

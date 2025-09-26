@@ -23,8 +23,6 @@
  * questions.
  */
 
-#include "kludge_c++11.h"
-
 #include <memory>
 #include "JvmLauncher.h"
 #include "AppLauncher.h"

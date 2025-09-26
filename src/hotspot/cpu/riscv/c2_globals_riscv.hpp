@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -43,7 +43,7 @@ define_pd_global(bool, TieredCompilation,            COMPILER1_PRESENT(true) NOT
 define_pd_global(intx, CompileThreshold,             10000);
 
 define_pd_global(intx, OnStackReplacePercentage,     140);
-define_pd_global(intx, ConditionalMoveLimit,         0);
+define_pd_global(intx, ConditionalMoveLimit,         3);
 define_pd_global(intx, FreqInlineSize,               325);
 define_pd_global(intx, MinJumpTableSize,             10);
 define_pd_global(intx, InteriorEntryAlignment,       16);
@@ -51,8 +51,8 @@ define_pd_global(intx, NewSizeThreadIncrease, ScaleForWordSize(4*K));
 define_pd_global(intx, LoopUnrollLimit,              60);
 define_pd_global(intx, LoopPercentProfileLimit,      10);
 // InitialCodeCacheSize derived from specjbb2000 run.
-define_pd_global(intx, InitialCodeCacheSize,         2496*K); // Integral multiple of CodeCacheExpansionSize
-define_pd_global(intx, CodeCacheExpansionSize,       64*K);
+define_pd_global(size_t, InitialCodeCacheSize,       2496*K); // Integral multiple of CodeCacheExpansionSize
+define_pd_global(size_t, CodeCacheExpansionSize,     64*K);
 
 // Ergonomics related flags
 define_pd_global(uint64_t,MaxRAM,                    128ULL*G);
@@ -69,12 +69,12 @@ define_pd_global(bool, SuperWordLoopUnrollAnalysis,  true);
 define_pd_global(uint, SuperWordStoreToLoadForwardingFailureDetection, 16);
 define_pd_global(bool, IdealizeClearArrayNode,       true);
 
-define_pd_global(intx, ReservedCodeCacheSize,        48*M);
-define_pd_global(intx, NonProfiledCodeHeapSize,      21*M);
-define_pd_global(intx, ProfiledCodeHeapSize,         22*M);
-define_pd_global(intx, NonNMethodCodeHeapSize,       5*M );
-define_pd_global(uintx, CodeCacheMinBlockLength,     6);
-define_pd_global(uintx, CodeCacheMinimumUseSpace,    400*K);
+define_pd_global(size_t, ReservedCodeCacheSize,      48*M);
+define_pd_global(size_t, NonProfiledCodeHeapSize,    21*M);
+define_pd_global(size_t, ProfiledCodeHeapSize,       22*M);
+define_pd_global(size_t, NonNMethodCodeHeapSize,     5*M );
+define_pd_global(size_t, CodeCacheMinBlockLength,    6);
+define_pd_global(size_t, CodeCacheMinimumUseSpace,   400*K);
 
 // Ergonomics related flags
 define_pd_global(bool, NeverActAsServerClassMachine, false);

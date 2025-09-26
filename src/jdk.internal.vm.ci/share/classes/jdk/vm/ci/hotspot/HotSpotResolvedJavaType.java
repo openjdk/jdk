@@ -22,14 +22,17 @@
  */
 package jdk.vm.ci.hotspot;
 
+import java.util.List;
+
+import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.ResolvedJavaType;
 
 public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements ResolvedJavaType {
 
-    HotSpotResolvedObjectTypeImpl arrayOfType;
+    HotSpotResolvedObjectType arrayOfType;
 
-    HotSpotResolvedJavaType(String name) {
+    protected HotSpotResolvedJavaType(String name) {
         super(name);
     }
 
@@ -37,16 +40,22 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
     public abstract boolean equals(Object obj);
 
     @Override
-    public final int hashCode() {
+    public int hashCode() {
         return getName().hashCode();
     }
 
-    abstract JavaConstant getJavaMirror();
+    /**
+     * Gets the runtime representation of the {@link Class} object of this type.
+     */
+    public abstract JavaConstant getJavaMirror();
 
-    abstract HotSpotResolvedObjectTypeImpl getArrayType();
+    /**
+     * Gets the array type of this type without caching the result.
+     */
+    protected abstract HotSpotResolvedObjectType getArrayType();
 
     @Override
-    public final HotSpotResolvedObjectType getArrayClass() {
+    public HotSpotResolvedObjectType getArrayClass() {
         if (arrayOfType == null) {
             arrayOfType = getArrayType();
         }
@@ -60,5 +69,21 @@ public abstract class HotSpotResolvedJavaType extends HotSpotJavaType implements
      *
      * @return {@code true} if this type is being initialized
      */
-    abstract boolean isBeingInitialized();
+    protected abstract boolean isBeingInitialized();
+
+    static void checkIsAnnotation(ResolvedJavaType type) {
+        if (!type.isAnnotation()) {
+            throw new IllegalArgumentException(type.toJavaName() + " is not an annotation interface");
+        }
+    }
+
+    static void checkAreAnnotations(ResolvedJavaType... types) {
+        for (ResolvedJavaType type : types) {
+            checkIsAnnotation(type);
+        }
+    }
+
+    static AnnotationData getFirstAnnotationOrNull(List<AnnotationData> list) {
+        return list.isEmpty() ? null : list.get(0);
+    }
 }

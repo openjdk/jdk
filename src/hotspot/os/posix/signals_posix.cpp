@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -147,7 +147,7 @@ public:
 };
 
 
-debug_only(static bool signal_sets_initialized = false);
+DEBUG_ONLY(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 
 // Our own signal handlers should never ever get replaced by a third party one.
@@ -356,7 +356,7 @@ static void jdk_misc_signal_init() {
 
 void os::signal_notify(int sig) {
   if (sig_semaphore != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_semaphore->signal();
   } else {
     // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
@@ -369,7 +369,7 @@ static int check_pending_signals() {
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -1505,6 +1505,14 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
+void* PosixSignals::get_signal_handler_for_signal(int sig) {
+  struct sigaction oact;
+  if (sigaction(sig, (struct sigaction*)nullptr, &oact) == -1) {
+    return nullptr;
+  }
+  return get_signal_handler(&oact);
+}
+
 static void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 
@@ -1547,7 +1555,7 @@ static void signal_sets_init() {
   if (!ReduceSignalUsage) {
     sigaddset(&vm_sigs, BREAK_SIGNAL);
   }
-  debug_only(signal_sets_initialized = true);
+  DEBUG_ONLY(signal_sets_initialized = true);
 }
 
 // These are signals that are unblocked while a thread is running Java.

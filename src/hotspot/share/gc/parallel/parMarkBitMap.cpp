@@ -28,7 +28,7 @@
 #include "memory/memoryReserver.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -48,7 +48,8 @@ ParMarkBitMap::initialize(MemRegion covered_region)
 
   ReservedSpace rs = MemoryReserver::reserve(_reserved_byte_size,
                                              rs_align,
-                                             page_sz);
+                                             page_sz,
+                                             mtGC);
 
   if (!rs.is_reserved()) {
     // Failed to reserve memory for the bitmap,

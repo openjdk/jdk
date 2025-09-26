@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ class ThreadsList;
 // operation. It is no longer necessary to hold the Threads_lock to safely
 // perform an operation on a target thread.
 //
-// There are several different ways to refer to java.lang.Thread objects
-// so we have a few ways to get a protected JavaThread *:
+// There are two ways to refer to java.lang.Thread objects so we have two ways
+// to get a protected JavaThread*:
 //
 // JNI jobject example:
 //   jobject jthread = ...;
@@ -69,21 +69,10 @@ class ThreadsList;
 //   }
 //   :  // do stuff with 'jt'...
 //
-// JVM/TI oop example (this one should be very rare):
-//   oop thread_obj = ...;
-//   :
-//   JavaThread *jt = nullptr;
-//   ThreadsListHandle tlh;
-//   jvmtiError err = JvmtiExport::cv_oop_to_JavaThread(tlh.list(), thread_obj, &jt);
-//   if (err != JVMTI_ERROR_NONE) {
-//     return err;
-//   }
-//   :  // do stuff with 'jt'...
-//
 // A JavaThread * that is included in the ThreadsList that is held by
 // a ThreadsListHandle is protected as long as the ThreadsListHandle
-// remains in scope. The target JavaThread * may have logically exited,
-// but that target JavaThread * will not be deleted until it is no
+// remains in scope. The target JavaThread* may have logically exited,
+// but that target JavaThread* will not be deleted until it is no
 // longer protected by a ThreadsListHandle.
 //
 // SMR Support for the Threads class.
@@ -318,7 +307,7 @@ public:
   inline Iterator begin();
   inline Iterator end();
 
-  bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread ** jt_pp, oop * thread_oop_p);
+  bool cv_internal_thread_to_JavaThread(jobject jthread, JavaThread** jt_pp, oop* thread_oop_p);
 
   bool includes(JavaThread* p) {
     return list()->includes(p);

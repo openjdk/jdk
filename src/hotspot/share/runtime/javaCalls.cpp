@@ -91,7 +91,7 @@ JavaCallWrapper::JavaCallWrapper(const methodHandle& callee_method, Handle recei
   _anchor.copy(_thread->frame_anchor());
   _thread->frame_anchor()->clear();
 
-  debug_only(_thread->inc_java_call_counter());
+  DEBUG_ONLY(_thread->inc_java_call_counter());
   _thread->set_active_handles(new_handles);     // install new handle block and reset Java frame linkage
 
   MACOS_AARCH64_ONLY(_thread->enable_wx(WXExec));
@@ -109,7 +109,7 @@ JavaCallWrapper::~JavaCallWrapper() {
 
   _thread->frame_anchor()->zap();
 
-  debug_only(_thread->dec_java_call_counter());
+  DEBUG_ONLY(_thread->dec_java_call_counter());
 
   // Old thread-local info. has been restored. We are not back in the VM.
   ThreadStateTransition::transition_from_java(_thread, _thread_in_vm);
@@ -406,7 +406,7 @@ void JavaCalls::call_helper(JavaValue* result, const methodHandle& method, JavaC
             address verified_entry_point = (address) HotSpotJVMCI::InstalledCode::entryPoint(nullptr, alternative_target());
             if (verified_entry_point != nullptr) {
               thread->set_jvmci_alternate_call_target(verified_entry_point);
-              entry_point = method->adapter()->get_i2c_entry();
+              entry_point = method->get_i2c_entry();
             }
           }
 #endif
@@ -553,7 +553,7 @@ class SignatureChekker : public SignatureIterator {
                 "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
       // Verify the pointee.
       oop vv = resolve_indirect_oop(v, _value_state[_pos]);
-      guarantee(oopDesc::is_oop_or_null(vv, true),
+      guarantee(oopDesc::is_oop_or_null(vv),
                 "Bad JNI oop argument %d: " PTR_FORMAT " -> " PTR_FORMAT,
                 _pos, v, p2i(vv));
     }

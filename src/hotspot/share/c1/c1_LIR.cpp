@@ -350,8 +350,9 @@ LIR_OpArrayCopy::LIR_OpArrayCopy(LIR_Opr src, LIR_Opr src_pos, LIR_Opr dst, LIR_
   , _tmp(tmp)
   , _expected_type(expected_type)
   , _flags(flags) {
-#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV) || defined(PPC64)
-  if (expected_type != nullptr && flags == 0) {
+#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
+  if (expected_type != nullptr &&
+      ((flags & ~LIR_OpArrayCopy::get_initial_copy_flags()) == 0)) {
     _stub = nullptr;
   } else {
     _stub = new ArrayCopyStub(this);
@@ -799,15 +800,6 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     }
 
 
-// LIR_OpDelay
-    case lir_delay_slot: {
-      assert(op->as_OpDelay() != nullptr, "must be");
-      LIR_OpDelay* opDelay = (LIR_OpDelay*)op;
-
-      visit(opDelay->delay_op());
-      break;
-    }
-
 // LIR_OpTypeCheck
     case lir_instanceof:
     case lir_checkcast:
@@ -1071,10 +1063,6 @@ void LIR_OpAssert::emit_code(LIR_Assembler* masm) {
   masm->emit_assert(this);
 }
 #endif
-
-void LIR_OpDelay::emit_code(LIR_Assembler* masm) {
-  masm->emit_delay(this);
-}
 
 void LIR_OpProfileCall::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_call(this);
@@ -1444,7 +1432,7 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
                           ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_checkcast, result, object, klass,
                                            tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1454,7 +1442,7 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
 
 void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, nullptr, info_for_patch, nullptr);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1466,7 +1454,7 @@ void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Op
 void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
                            CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, info_for_exception);
-  if (profiled_method != nullptr) {
+  if (profiled_method != nullptr && TypeProfileCasts) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
     c->set_should_profile(true);
@@ -1760,8 +1748,6 @@ const char * LIR_Op::name() const {
      // LIR_OpLock
      case lir_lock:                  s = "lock";          break;
      case lir_unlock:                s = "unlock";        break;
-     // LIR_OpDelay
-     case lir_delay_slot:            s = "delay";         break;
      // LIR_OpTypeCheck
      case lir_instanceof:            s = "instanceof";    break;
      case lir_checkcast:             s = "checkcast";     break;
@@ -2041,11 +2027,6 @@ void LIR_OpAssert::print_instr(outputStream* out) const {
   out->print("%s", msg());          out->print("\"");
 }
 #endif
-
-
-void LIR_OpDelay::print_instr(outputStream* out) const {
-  _op->print_on(out);
-}
 
 
 // LIR_OpProfileCall

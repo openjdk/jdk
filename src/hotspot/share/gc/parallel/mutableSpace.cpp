@@ -28,7 +28,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
@@ -130,7 +130,7 @@ void MutableSpace::initialize(MemRegion mr,
   // makes the new space available for allocation by other threads.  So this
   // assignment must follow all other configuration and initialization that
   // might be done for expansion.
-  Atomic::release_store(end_addr(), mr.end());
+  AtomicAccess::release_store(end_addr(), mr.end());
 
   if (clear_space) {
     clear(mangle_space);
@@ -162,10 +162,10 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
     // If end is read first, other threads may advance end and top such that
     // current top > old end and current top + size > current end.  Then
     // pointer_delta underflows, allowing installation of top > current end.
-    HeapWord* obj = Atomic::load_acquire(top_addr());
+    HeapWord* obj = AtomicAccess::load_acquire(top_addr());
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
+      HeapWord* result = AtomicAccess::cmpxchg(top_addr(), obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
@@ -184,7 +184,7 @@ HeapWord* MutableSpace::cas_allocate(size_t size) {
 // Try to deallocate previous allocation. Returns true upon success.
 bool MutableSpace::cas_deallocate(HeapWord *obj, size_t size) {
   HeapWord* expected_top = obj + size;
-  return Atomic::cmpxchg(top_addr(), expected_top, obj) == expected_top;
+  return AtomicAccess::cmpxchg(top_addr(), expected_top, obj) == expected_top;
 }
 
 // Only used by oldgen allocation.
@@ -232,12 +232,13 @@ void MutableSpace::object_iterate(ObjectClosure* cl) {
 
 void MutableSpace::print_short() const { print_short_on(tty); }
 void MutableSpace::print_short_on( outputStream* st) const {
-  st->print(" space %zuK, %d%% used", capacity_in_bytes() / K,
+  st->print("space %zuK, %d%% used", capacity_in_bytes() / K,
             (int) ((double) used_in_bytes() * 100 / capacity_in_bytes()));
 }
 
-void MutableSpace::print() const { print_on(tty); }
-void MutableSpace::print_on(outputStream* st) const {
+void MutableSpace::print() const { print_on(tty, ""); }
+void MutableSpace::print_on(outputStream* st, const char* prefix) const {
+  st->print("%s", prefix);
   MutableSpace::print_short_on(st);
   st->print_cr(" [" PTR_FORMAT "," PTR_FORMAT "," PTR_FORMAT ")",
                  p2i(bottom()), p2i(top()), p2i(end()));

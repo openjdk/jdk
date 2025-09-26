@@ -25,7 +25,7 @@
 
 package sun.java2d.xr;
 
-public class XRSolidSrcPict {
+public final class XRSolidSrcPict {
     XRBackend con;
 
     XRSurfaceData srcPict;

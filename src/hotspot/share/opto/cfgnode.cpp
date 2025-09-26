@@ -35,8 +35,8 @@
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/movenode.hpp"
-#include "opto/narrowptrnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/narrowptrnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -2233,7 +2233,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     // One unique input.
-    debug_only(Node* ident = Identity(phase));
+    DEBUG_ONLY(Node* ident = Identity(phase));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
     if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {

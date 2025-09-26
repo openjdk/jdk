@@ -22,18 +22,36 @@
  */
 
 /*
- * @test
+ * @test id=metal
  * @bug 4211052
  * @requires (os.family == "windows")
- * @summary
- *     This test checks if menu items lay out correctly when their
+ * @summary Verifies if menu items lay out correctly when their
  *     ComponentOrientation property is set to RIGHT_TO_LEFT.
- *     The tester is asked to compare left-to-right and
- *     right-to-left menus and judge whether they are mirror images of each
- *     other.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual RightLeftOrientation
+ * @run main/manual RightLeftOrientation metal
+ */
+
+/*
+ * @test id=motif
+ * @bug 4211052
+ * @requires (os.family == "windows")
+ * @summary Verifies if menu items lay out correctly when their
+ *     ComponentOrientation property is set to RIGHT_TO_LEFT.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual RightLeftOrientation motif
+ */
+
+/*
+ * @test id=windows
+ * @bug 4211052
+ * @requires (os.family == "windows")
+ * @summary Verifies if menu items lay out correctly when their
+ *     ComponentOrientation property is set to RIGHT_TO_LEFT.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual RightLeftOrientation windows
  */
 
 import java.awt.Color;
@@ -52,29 +70,47 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.KeyStroke;
-import javax.swing.LookAndFeel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class RightLeftOrientation {
 
     private static final String INSTRUCTIONS = """
-        A menu bar is shown containing a menu for each look and feel.
-        A disabled menu means that the look and feel is not available for
-        testing in this environment.
-        Every effort should be made to run this test
-        in an environment that covers all look and feels.
+        A menu bar is shown with a menu.
 
-        Each menu is divided into two halves. The upper half is oriented
+        The menu is divided into two halves. The upper half is oriented
         left-to-right and the lower half is oriented right-to-left.
-        For each menu, ensure that the lower half mirrors the upper half.
+        Ensure that the lower half mirrors the upper half.
 
         Note that when checking the positioning of the sub-menus, it
         helps to position the frame away from the screen edges.""";
 
     public static void main(String[] args) throws Exception {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("Look-and-Feel keyword is required");
+        }
+
+        final String lafClassName;
+        switch (args[0]) {
+            case "metal" -> lafClassName = UIManager.getCrossPlatformLookAndFeelClassName();
+            case "motif" -> lafClassName = "com.sun.java.swing.plaf.motif.MotifLookAndFeel";
+            case "windows" -> lafClassName = "com.sun.java.swing.plaf.windows.WindowsLookAndFeel";
+            default -> throw new IllegalArgumentException(
+                           "Unsupported Look-and-Feel keyword for this test: " + args[0]);
+        }
+
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                UIManager.setLookAndFeel(lafClassName);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        System.out.println("Test for LookAndFeel " + lafClassName);
+
         PassFailJFrame.builder()
-                .title("RightLeftOrientation Instructions")
                 .instructions(INSTRUCTIONS)
                 .columns(35)
                 .testUI(RightLeftOrientation::createTestUI)
@@ -86,32 +122,19 @@ public class RightLeftOrientation {
         JFrame frame = new JFrame("RightLeftOrientation");
         JMenuBar menuBar = new JMenuBar();
 
-        menuBar.add(createMenu("javax.swing.plaf.metal.MetalLookAndFeel",
-                                "Metal"));
-        menuBar.add(createMenu("com.sun.java.swing.plaf.motif.MotifLookAndFeel",
-                                "Motif"));
-        menuBar.add(createMenu("com.sun.java.swing.plaf.windows.WindowsLookAndFeel",
-                                "Windows"));
+        menuBar.add(createMenu());
 
         frame.setJMenuBar(menuBar);
-        frame.pack();
+        frame.setSize(250, 70);
         return frame;
     }
 
 
-    static JMenu createMenu(String laf, String name) {
-        JMenu menu = new JMenu(name);
-        try {
-            LookAndFeel save = UIManager.getLookAndFeel();
-            UIManager.setLookAndFeel(laf);
-            addMenuItems(menu, ComponentOrientation.LEFT_TO_RIGHT);
-            menu.addSeparator();
-            addMenuItems(menu, ComponentOrientation.RIGHT_TO_LEFT);
-            UIManager.setLookAndFeel(save);
-        } catch (Exception e) {
-            menu = new JMenu(name);
-            menu.setEnabled(false);
-        }
+    static JMenu createMenu() {
+        JMenu menu = new JMenu(UIManager.getLookAndFeel().getID());
+        addMenuItems(menu, ComponentOrientation.LEFT_TO_RIGHT);
+        menu.addSeparator();
+        addMenuItems(menu, ComponentOrientation.RIGHT_TO_LEFT);
         return menu;
     }
 

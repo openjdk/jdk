@@ -42,7 +42,12 @@ import jdk.jfr.events.ContainerIOUsageEvent;
 import jdk.jfr.events.ContainerMemoryUsageEvent;
 import jdk.jfr.events.DirectBufferStatisticsEvent;
 import jdk.jfr.events.InitialSecurityPropertyEvent;
+import jdk.jfr.events.MethodTimingEvent;
+import jdk.jfr.events.MethodTraceEvent;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.settings.MethodSetting;
+import jdk.jfr.internal.tracing.PlatformTracer;
+import jdk.jfr.tracing.MethodTracer;
 
 public final class JDKEvents {
 
@@ -73,6 +78,8 @@ public final class JDKEvents {
         jdk.internal.event.X509ValidationEvent.class,
         DirectBufferStatisticsEvent.class,
         InitialSecurityPropertyEvent.class,
+        MethodTraceEvent.class,
+        MethodTimingEvent.class,
     };
 
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
@@ -83,6 +90,7 @@ public final class JDKEvents {
     private static final Runnable emitContainerMemoryUsage = JDKEvents::emitContainerMemoryUsage;
     private static final Runnable emitContainerIOUsage = JDKEvents::emitContainerIOUsage;
     private static final Runnable emitInitialSecurityProperties = JDKEvents::emitInitialSecurityProperties;
+    private static final Runnable emitMethodTiming = JDKEvents::emitMethodTiming;
     private static Metrics containerMetrics = null;
     private static boolean initializationTriggered;
 
@@ -96,6 +104,7 @@ public final class JDKEvents {
                 PeriodicEvents.addJavaEvent(jdk.internal.event.ExceptionStatisticsEvent.class, emitExceptionStatistics);
                 PeriodicEvents.addJavaEvent(DirectBufferStatisticsEvent.class, emitDirectBufferStatistics);
                 PeriodicEvents.addJavaEvent(InitialSecurityPropertyEvent.class, emitInitialSecurityProperties);
+                PeriodicEvents.addJavaEvent(MethodTimingEvent.class, emitMethodTiming);
 
                 initializeContainerEvents();
                 JFRTracing.enable();
@@ -200,6 +209,7 @@ public final class JDKEvents {
         PeriodicEvents.removeEvent(emitExceptionStatistics);
         PeriodicEvents.removeEvent(emitDirectBufferStatistics);
         PeriodicEvents.removeEvent(emitInitialSecurityProperties);
+        PeriodicEvents.removeEvent(emitMethodTiming);
 
         PeriodicEvents.removeEvent(emitContainerConfiguration);
         PeriodicEvents.removeEvent(emitContainerCPUUsage);
@@ -222,6 +232,12 @@ public final class JDKEvents {
                 e.value = p.getProperty(key);
                 e.commit();
             }
+        }
+    }
+
+    private static void emitMethodTiming() {
+        if (MethodSetting.isInitialized() && MethodTimingEvent.enabled()) {
+            PlatformTracer.emitTiming();
         }
     }
 }

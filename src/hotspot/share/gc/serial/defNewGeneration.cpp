@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/classLoaderDataGraph.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/serialGcRefProcProxyTask.hpp"
 #include "gc/serial/serialHeap.inline.hpp"
@@ -38,8 +39,10 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
+#include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
+#include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/strongRootsScope.hpp"
@@ -91,50 +94,44 @@ public:
 class CLDScanClosure: public CLDClosure {
 
   class CLDOopClosure : public OffHeapScanClosure {
-    ClassLoaderData* _scanned_cld;
+  public:
+    // Records whether this CLD contains oops pointing into young-gen after scavenging.
+    bool _has_oops_into_young_gen;
 
-    template <typename T>
-    void do_oop_work(T* p) {
+    CLDOopClosure(DefNewGeneration* g) : OffHeapScanClosure(g),
+      _has_oops_into_young_gen(false) {}
+
+    void do_oop(oop* p) {
       assert(!SerialHeap::heap()->is_in_reserved(p), "outside the heap");
 
       try_scavenge(p, [&] (oop new_obj) {
-        assert(_scanned_cld != nullptr, "inv");
-        if (is_in_young_gen(new_obj) && !_scanned_cld->has_modified_oops()) {
-          _scanned_cld->record_modified_oops();
+        if (!_has_oops_into_young_gen && is_in_young_gen(new_obj)) {
+          _has_oops_into_young_gen = true;
         }
       });
     }
 
-  public:
-    CLDOopClosure(DefNewGeneration* g) : OffHeapScanClosure(g),
-      _scanned_cld(nullptr) {}
-
-    void set_scanned_cld(ClassLoaderData* cld) {
-      assert(cld == nullptr || _scanned_cld == nullptr, "Must be");
-      _scanned_cld = cld;
-    }
-
-    void do_oop(oop* p)       { do_oop_work(p); }
     void do_oop(narrowOop* p) { ShouldNotReachHere(); }
   };
 
-  CLDOopClosure _oop_closure;
+  DefNewGeneration* _g;
  public:
-  CLDScanClosure(DefNewGeneration* g) : _oop_closure(g) {}
+  CLDScanClosure(DefNewGeneration* g) : _g(g) {}
 
   void do_cld(ClassLoaderData* cld) {
     // If the cld has not been dirtied we know that there's
     // no references into  the young gen and we can skip it.
-    if (cld->has_modified_oops()) {
+    if (!cld->has_modified_oops()) {
+      return;
+    }
 
-      // Tell the closure which CLD is being scanned so that it can be dirtied
-      // if oops are left pointing into the young gen.
-      _oop_closure.set_scanned_cld(cld);
+    CLDOopClosure oop_closure{_g};
 
-      // Clean the cld since we're going to scavenge all the metadata.
-      cld->oops_do(&_oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
+    // Clean the cld since we're going to scavenge all the metadata.
+    cld->oops_do(&oop_closure, ClassLoaderData::_claim_none, /*clear_modified_oops*/true);
 
-      _oop_closure.set_scanned_cld(nullptr);
+    if (oop_closure._has_oops_into_young_gen) {
+      cld->record_modified_oops();
     }
   }
 };
@@ -264,7 +261,6 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   update_counters();
   _old_gen = nullptr;
   _tenuring_threshold = MaxTenuringThreshold;
-  _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
   _ref_processor = nullptr;
 
@@ -604,22 +600,30 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
                                                   &old_gen_cl);
 
   {
-    StrongRootsScope srs(0);
-    RootScanClosure root_cl{this};
-    CLDScanClosure cld_cl{this};
+    RootScanClosure oop_closure{this};
+    CLDScanClosure cld_closure{this};
 
-    MarkingNMethodClosure code_cl(&root_cl,
-                                  NMethodToOopClosure::FixRelocations,
-                                  false /* keepalive_nmethods */);
+    NMethodToOopClosure nmethod_closure(&oop_closure,
+                                        NMethodToOopClosure::FixRelocations);
 
-    HeapWord* saved_top_in_old_gen = _old_gen->space()->top();
-    heap->process_roots(SerialHeap::SO_ScavengeCodeCache,
-                        &root_cl,
-                        &cld_cl,
-                        &cld_cl,
-                        &code_cl);
+    // Starting tracing from roots, there are 4 kinds of roots in young-gc.
+    //
+    // 1. old-to-young pointers; processing them before relocating other kinds
+    // of roots.
+    _old_gen->scan_old_to_young_refs();
 
-    _old_gen->scan_old_to_young_refs(saved_top_in_old_gen);
+    // 2. CLD; visit all (strong+weak) clds with the same closure, because we
+    // don't perform class unloading during young-gc.
+    ClassLoaderDataGraph::cld_do(&cld_closure);
+
+    // 3. Threads stack frames and nmethods.
+    // Only nmethods that contain pointers into-young need to be processed
+    // during young-gc, and they are tracked in ScavengableNMethods
+    Threads::oops_do(&oop_closure, nullptr);
+    ScavengableNMethods::nmethods_do(&nmethod_closure);
+
+    // 4. VM internal roots.
+    OopStorageSet::strong_oops_do(&oop_closure);
   }
 
   // "evacuate followers".
@@ -631,7 +635,7 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
     ReferenceProcessor* rp = ref_processor();
     ReferenceProcessorPhaseTimes pt(_gc_timer, rp->max_num_queues());
     SerialGCRefProcProxyTask task(is_alive, keep_alive, evacuate_followers);
-    const ReferenceProcessorStats& stats = rp->process_discovered_references(task, pt);
+    const ReferenceProcessorStats& stats = rp->process_discovered_references(task, nullptr, pt);
     _gc_tracer->report_gc_reference_stats(stats);
     _gc_tracer->report_tenuring_threshold(tenuring_threshold());
     pt.print_all_references();
@@ -814,7 +818,7 @@ void DefNewGeneration::update_counters() {
     _eden_counters->update_all();
     _from_counters->update_all();
     _to_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 
@@ -825,21 +829,15 @@ void DefNewGeneration::verify() {
 }
 
 void DefNewGeneration::print_on(outputStream* st) const {
-  st->print(" %-10s", name());
+  st->print("%-10s", name());
 
-  st->print(" total %zuK, used %zuK",
-            capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+  st->print(" total %zuK, used %zuK ", capacity() / K, used() / K);
+  _virtual_space.print_space_boundaries_on(st);
 
-  st->print("  eden");
-  eden()->print_on(st);
-  st->print("  from");
-  from()->print_on(st);
-  st->print("  to  ");
-  to()->print_on(st);
+  StreamIndentor si(st, 1);
+  eden()->print_on(st, "eden ");
+  from()->print_on(st, "from ");
+  to()->print_on(st, "to   ");
 }
 
 HeapWord* DefNewGeneration::allocate(size_t word_size) {

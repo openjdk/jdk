@@ -62,8 +62,8 @@ final class TestMethodSupplier {
 
     record MethodQuery(String className, String methodName) {
 
-        List<Method> lookup() throws ClassNotFoundException {
-            final Class<?> methodClass = Class.forName(className);
+        List<Method> lookup(ClassLoader classLoader) throws ClassNotFoundException {
+            final Class<?> methodClass = Class.forName(className, true, classLoader);
 
             // Get the list of all public methods as need to deal with overloads.
             return Stream.of(methodClass.getMethods()).filter(method -> {
@@ -84,11 +84,11 @@ final class TestMethodSupplier {
         }
     }
 
-    List<Method> findNullaryLikeMethods(MethodQuery query) throws NoSuchMethodException {
+    List<Method> findNullaryLikeMethods(MethodQuery query, ClassLoader classLoader) throws NoSuchMethodException {
         List<Method> methods;
 
         try {
-            methods = query.lookup();
+            methods = query.lookup(classLoader);
         } catch (ClassNotFoundException ex) {
             throw new NoSuchMethodException(
                     String.format("Class [%s] not found", query.className()));
@@ -273,8 +273,10 @@ final class TestMethodSupplier {
 
         final Method supplierMethod;
         try {
-            final var parameterSupplierCandidates = findNullaryLikeMethods(methodQuery);
-            final Function<String, Class<?>> classForName = toFunction(Class::forName);
+            final var parameterSupplierCandidates = findNullaryLikeMethods(methodQuery, execClass.getClassLoader());
+            final Function<String, Class<?>> classForName = toFunction(name -> {
+                return Class.forName(name, true, execClass.getClassLoader());
+            });
             final var supplierMethodClass = classForName.apply(methodQuery.className());
             if (parameterSupplierCandidates.isEmpty()) {
                 throw new RuntimeException(String.format(
@@ -284,7 +286,7 @@ final class TestMethodSupplier {
 
             var allParameterSuppliers = filterParameterSuppliers(supplierMethodClass).toList();
 
-            supplierMethod = findNullaryLikeMethods(methodQuery)
+            supplierMethod = findNullaryLikeMethods(methodQuery, execClass.getClassLoader())
                     .stream()
                     .filter(allParameterSuppliers::contains)
                     .findFirst().orElseThrow(() -> {

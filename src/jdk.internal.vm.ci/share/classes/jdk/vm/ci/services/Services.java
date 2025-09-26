@@ -64,17 +64,6 @@ public final class Services {
      */
     private static volatile Map<String, String> savedProperties;
 
-    static final boolean JVMCI_ENABLED = Boolean.parseBoolean(VM.getSavedProperties().get("jdk.internal.vm.ci.enabled"));
-
-    /**
-     * Checks that JVMCI is enabled in the VM and throws an error if it isn't.
-     */
-    static void checkJVMCIEnabled() {
-        if (!JVMCI_ENABLED) {
-            throw new Error("The EnableJVMCI VM option must be true (i.e., -XX:+EnableJVMCI) to use JVMCI");
-        }
-    }
-
     /**
      * Gets an unmodifiable copy of the system properties as of VM startup.
      *
@@ -84,7 +73,6 @@ public final class Services {
      * on the command line are ignored.
      */
     public static Map<String, String> getSavedProperties() {
-        checkJVMCIEnabled();
         if (savedProperties == null) {
             synchronized (Services.class) {
                 if (savedProperties == null) {
@@ -113,7 +101,6 @@ public final class Services {
      * Causes the JVMCI subsystem to be initialized if it isn't already initialized.
      */
     public static void initializeJVMCI() {
-        checkJVMCIEnabled();
         try {
             Class.forName("jdk.vm.ci.runtime.JVMCI");
         } catch (ClassNotFoundException e) {

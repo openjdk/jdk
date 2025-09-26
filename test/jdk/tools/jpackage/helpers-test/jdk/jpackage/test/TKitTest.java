@@ -54,7 +54,7 @@ public class TKitTest extends JUnitAdapter {
         data.addAll(List.of(assertFunc.args(false).pass().expectLog("assertFalse()").createForMessage("Stork")));
         data.addAll(List.of(assertFunc.args(true).fail().expectLog("Failed").createForMessage("Stork")));
 
-        assertFunc = MethodCallConfig.build("assertEquals", String.class, String.class, String.class);
+        assertFunc = MethodCallConfig.build("assertEquals", Object.class, Object.class, String.class);
         data.addAll(List.of(assertFunc.args("a", "a").pass().expectLog("assertEquals(a)").createForMessage("Crow")));
         data.addAll(List.of(assertFunc.args("a", "b").fail().expectLog("Expected [a]. Actual [b]").createForMessage("Crow")));
 
@@ -68,7 +68,7 @@ public class TKitTest extends JUnitAdapter {
         data.addAll(List.of(assertFunc.args(true, false).fail().expectLog("Expected [true]. Actual [false]").createForMessage("Emu")));
         data.addAll(List.of(assertFunc.args(false, true).fail().expectLog("Expected [false]. Actual [true]").createForMessage("Emu")));
 
-        assertFunc = MethodCallConfig.build("assertNotEquals", String.class, String.class, String.class);
+        assertFunc = MethodCallConfig.build("assertNotEquals", Object.class, Object.class, String.class);
         data.addAll(List.of(assertFunc.args("a", "b").pass().expectLog("assertNotEquals(a, b)").createForMessage("Tit")));
         data.addAll(List.of(assertFunc.args("a", "a").fail().expectLog("Unexpected [a] value").createForMessage("Tit")));
 
@@ -280,7 +280,7 @@ public class TKitTest extends JUnitAdapter {
             return new Builder(role);
         }
 
-        final static class Builder {
+        static final class Builder {
 
             private Builder(String role) {
                 this.role = role;

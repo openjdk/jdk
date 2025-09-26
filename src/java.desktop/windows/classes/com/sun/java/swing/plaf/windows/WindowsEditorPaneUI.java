@@ -33,7 +33,7 @@ import javax.swing.text.Caret;
 /**
  * Windows rendition of the component.
  */
-public class WindowsEditorPaneUI extends BasicEditorPaneUI
+public final class WindowsEditorPaneUI extends BasicEditorPaneUI
 {
 
     /**
@@ -54,6 +54,7 @@ public class WindowsEditorPaneUI extends BasicEditorPaneUI
      *
      * @return the caret object
      */
+    @Override
     protected Caret createCaret() {
         return new WindowsTextUI.WindowsCaret();
     }

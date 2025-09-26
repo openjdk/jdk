@@ -292,12 +292,12 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   $ECHO "* Debug level:    $DEBUG_LEVEL"
   $ECHO "* HS debug level: $HOTSPOT_DEBUG_LEVEL"
   $ECHO "* JVM variants:   $JVM_VARIANTS"
-  $ECHO -n "* JVM features:   "
+  $PRINTF "* JVM features:   "
 
   for variant in $JVM_VARIANTS; do
     features_var_name=JVM_FEATURES_$variant
     JVM_FEATURES_FOR_VARIANT=${!features_var_name}
-    $ECHO -n "$variant: '$JVM_FEATURES_FOR_VARIANT' "
+    $PRINTF "%s: \'%s\' " "$variant" "$JVM_FEATURES_FOR_VARIANT"
   done
   $ECHO ""
 

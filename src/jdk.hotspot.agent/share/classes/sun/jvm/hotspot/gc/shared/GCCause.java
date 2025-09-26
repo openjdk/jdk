@@ -39,7 +39,6 @@ public enum GCCause {
   _wb_breakpoint ("WhiteBox Initiated Run to Breakpoint"),
 
   _no_gc ("No GC"),
-  _no_cause_specified ("Unknown GCCause"),
   _allocation_failure ("Allocation Failure"),
 
   _codecache_GC_threshold ("CodeCache GC Threshold"),
@@ -54,8 +53,9 @@ public enum GCCause {
 
   _dcmd_gc_run ("Diagnostic Command"),
 
-  _shenandoah_allocation_failure_evac ("Allocation Failure During Evacuation"),
   _shenandoah_stop_vm ("Stopping VM"),
+  _shenandoah_allocation_failure_evac ("Allocation Failure During Evacuation"),
+  _shenandoah_humongous_allocation_failure("Humongous Allocation Failure"),
   _shenandoah_concurrent_gc ("Concurrent GC"),
   _shenandoah_upgrade_to_full_gc ("Upgrade To Full GC"),
 

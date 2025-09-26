@@ -52,6 +52,8 @@ public:
 
   static bool is_sig_ignored(int sig);
 
+  static void* get_signal_handler_for_signal(int sig);
+
   static void hotspot_sigmask(Thread* thread);
 
   static void print_signal_handler(outputStream* st, int sig, char* buf, size_t buflen);

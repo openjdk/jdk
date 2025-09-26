@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.nio.file.attribute.GroupPrincipal;
 import java.nio.file.attribute.PosixFileAttributes;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.UserPrincipal;
-import java.util.HashSet;
+import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -81,17 +81,27 @@ class UnixFileAttributes
         return attrs;
     }
 
-    // get the UnixFileAttributes for a given file. Returns null if the file does not exist.
+    // get the UnixFileAttributes for a given file.
+    // Returns null if the file does not exist.
     static UnixFileAttributes getIfExists(UnixPath path) throws UnixException {
+        return getIfExists(path, true);
+    }
+
+    // get the UnixFileAttributes for a given file, optionally following links.
+    // Returns null if the file does not exist.
+    static UnixFileAttributes getIfExists(UnixPath path, boolean followLinks)
+        throws UnixException
+    {
         UnixFileAttributes attrs = new UnixFileAttributes();
-        int errno = UnixNativeDispatcher.stat2(path, attrs);
-        if (errno == 0) {
+        int flag = (followLinks) ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
+        int errno = UnixNativeDispatcher.fstatat2(UnixConstants.AT_FDCWD,
+                                                  path, flag, attrs);
+        if (errno == 0)
             return attrs;
-        } else if (errno == UnixConstants.ENOENT) {
+        else if (errno == UnixConstants.ENOENT)
             return null;
-        } else {
+        else
             throw new UnixException(errno);
-        }
     }
 
     // get the UnixFileAttributes for an open file
@@ -107,7 +117,7 @@ class UnixFileAttributes
     {
         UnixFileAttributes attrs = new UnixFileAttributes();
         int flag = (followLinks) ? 0 : UnixConstants.AT_SYMLINK_NOFOLLOW;
-        UnixNativeDispatcher.fstatat(dfd, path.asByteArray(), flag, attrs);
+        UnixNativeDispatcher.fstatat(dfd, path, flag, attrs);
         return attrs;
     }
 
@@ -239,7 +249,7 @@ class UnixFileAttributes
     @Override
     public Set<PosixFilePermission> permissions() {
         int bits = (st_mode & UnixConstants.S_IAMB);
-        HashSet<PosixFilePermission> perms = new HashSet<>();
+        EnumSet<PosixFilePermission> perms = EnumSet.noneOf(PosixFilePermission.class);
 
         if ((bits & UnixConstants.S_IRUSR) > 0)
             perms.add(PosixFilePermission.OWNER_READ);

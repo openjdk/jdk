@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 
 This is a simple parser for parsing the output of
 
-   java -Xshare:dump -Xlog:cds+map=debug,cds+map+oops=trace:file=cds.map:none:filesize=0
+   java -Xshare:dump -Xlog:aot+map=debug,aot+map+oops=trace:file=cds.map:none:filesize=0
 
 The map file contains patterns like this for the heap objects:
 

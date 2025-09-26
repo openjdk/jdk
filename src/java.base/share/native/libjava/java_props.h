@@ -65,6 +65,7 @@ typedef struct {
     char *display_variant;
     char *encoding;             /* always set non-NULL by platform code */
     char *sun_jnu_encoding;     /* always set non-NULL by platform code */
+    char *stdin_encoding;
     char *stdout_encoding;
     char *stderr_encoding;
 

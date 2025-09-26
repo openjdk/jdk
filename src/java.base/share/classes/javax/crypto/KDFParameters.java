@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package javax.crypto;
 
-import jdk.internal.javac.PreviewFeature;
-
 /**
  * A specification of Key Derivation Function ({@link KDF}) parameters.
  * <p>
@@ -44,7 +42,6 @@ import jdk.internal.javac.PreviewFeature;
  * @see KDF#getInstance(String, KDFParameters)
  * @see KDF#getParameters()
  * @see KDF
- * @since 24
+ * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public interface KDFParameters {}

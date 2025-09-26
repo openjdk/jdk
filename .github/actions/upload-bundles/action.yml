@@ -35,6 +35,9 @@ inputs:
   bundle-suffix:
     description: 'Bundle name suffix, possibly empty'
     required: false
+  static-suffix:
+    description: 'Static JDK bundle name suffix, possibly empty'
+    required: false
 
 runs:
   using: composite
@@ -46,6 +49,8 @@ runs:
         # Rename bundles to consistent names
         jdk_bundle_zip="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
         jdk_bundle_tar_gz="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
+        static_jdk_bundle_zip="$(ls build/*/bundles/static-jdk-*_bin${{ inputs.debug-suffix }}.zip 2> /dev/null || true)"
+        static_jdk_bundle_tar_gz="$(ls build/*/bundles/static-jdk-*_bin${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
         symbols_bundle="$(ls build/*/bundles/jdk-*_bin${{ inputs.debug-suffix }}-symbols.tar.gz 2> /dev/null || true)"
         tests_bundle="$(ls build/*/bundles/jdk-*_bin-tests${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
         static_libs_bundle="$(ls build/*/bundles/jdk-*_bin-static-libs${{ inputs.debug-suffix }}.tar.gz 2> /dev/null || true)"
@@ -58,6 +63,12 @@ runs:
         if [[ "$jdk_bundle_tar_gz" != "" ]]; then
           mv "$jdk_bundle_tar_gz" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
+        if [[ "$static_jdk_bundle_zip" != "" ]]; then
+          mv "$static_jdk_bundle_zip" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.zip"
+        fi
+        if [[ "$static_jdk_bundle_tar_gz" != "" ]]; then
+          mv "$static_jdk_bundle_tar_gz" "bundles/jdk-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}.tar.gz"
+        fi
         if [[ "$symbols_bundle" != "" ]]; then
           mv "$symbols_bundle" "bundles/symbols-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
@@ -68,7 +79,7 @@ runs:
           mv "$static_libs_bundle" "bundles/static-libs-${{ inputs.platform }}${{ inputs.debug-suffix }}.tar.gz"
         fi
 
-        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$symbols_bundle$tests_bundle$static_libs_bundle" != "" ]]; then
+        if [[ "$jdk_bundle_zip$jdk_bundle_tar_gz$static_jdk_bundle_zip$static_jdk_bundle_tar_gz$symbols_bundle$tests_bundle$static_libs_bundle" != "" ]]; then
           echo 'bundles-found=true' >> $GITHUB_OUTPUT
         else
           echo 'bundles-found=false' >> $GITHUB_OUTPUT
@@ -78,7 +89,7 @@ runs:
     - name: 'Upload bundles artifact'
       uses: actions/upload-artifact@v4
       with:
-        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.bundle-suffix }}
+        name: bundles-${{ inputs.platform }}${{ inputs.debug-suffix }}${{ inputs.static-suffix }}${{ inputs.bundle-suffix }}
         path: bundles
-        retention-days: 1
+        retention-days: 5
       if: steps.bundles.outputs.bundles-found == 'true'

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class AddmodsOption {
         final String multiModules = ",,jdk.jconsole,jdk.compiler,,";
         final String allSystem = "ALL-SYSTEM";
         final String allModulePath = "ALL-MODULE-PATH";
-        final String loggingOption = "-Xlog:cds=debug,cds+module=debug,cds+heap=info,module=trace";
+        final String loggingOption = "-Xlog:aot=debug,aot+module=debug,aot+heap=info,cds=debug,module=trace";
         final String versionPattern = "java.[0-9][0-9].*";
         final String subgraphCannotBeUsed = "subgraph jdk.internal.module.ArchivedBootLayer cannot be used because full module graph is disabled";
         final String warningIncubator = "WARNING: Using incubator modules: jdk.incubator.vector";
@@ -70,8 +70,8 @@ public class AddmodsOption {
         oa.shouldHaveExitValue(0)
           // version of the jdk.httpserver module, e.g. java 22-ea
           .shouldMatch(versionPattern)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.jconsole")
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.jconsole")
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
 
         // different --add-modules specified during runtime
         oa = TestCommon.execCommon(
@@ -161,7 +161,7 @@ public class AddmodsOption {
                 "-version");
             try {
                 oa.shouldHaveExitValue(0)
-                  .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
+                  .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.internal.vm.ci");
             } catch (RuntimeException re) {
                 // JVMCI compile may not be available
                 oa.shouldHaveExitValue(1)
@@ -188,8 +188,8 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.compiler")
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.jconsole");
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.compiler")
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.jconsole");
 
         // dump an archive with ALL-SYSTEM in -add-modules
         archiveName = TestCommon.getNewArchiveName("muti-modules");
@@ -232,6 +232,6 @@ public class AddmodsOption {
             "-m", moduleOption,
             "-version");
         oa.shouldHaveExitValue(0)
-          .shouldMatch("cds,module.*Restored from archive: entry.0x.*name jdk.httpserver");
+          .shouldMatch("aot,module.*Restored from archive: entry.0x.*name jdk.httpserver");
     }
 }

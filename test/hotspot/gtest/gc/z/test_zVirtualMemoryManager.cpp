@@ -128,7 +128,7 @@ public:
 
     // Reserve the memory that is acting as a blocking reservation.
     {
-      char* const result = os::attempt_reserve_memory_at((char*)untype(blocked), ZGranuleSize, !ExecMem, mtTest);
+      char* const result = os::attempt_reserve_memory_at((char*)untype(blocked), ZGranuleSize, mtTest);
       if (uintptr_t(result) != untype(blocked)) {
         GTEST_SKIP() << "Failed to reserve requested memory at " << untype(blocked);
       }

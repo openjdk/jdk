@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP
 
-#include "memory/allocation.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "memory/allocation.hpp"
 
 /*
  * Base class of three Shenandoah GC modes

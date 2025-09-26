@@ -178,7 +178,7 @@ public final class MacHelper {
     private static int installDmg(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("sudo", "cp", "-r")
+            Executor.of("sudo", "cp", "-R")
                     .addArgument(dmgImage)
                     .addArgument(getInstallationDirectory(cmd).getParent())
                     .execute(0);
@@ -205,7 +205,7 @@ public final class MacHelper {
         }
 
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("cp", "-r")
+            Executor.of("cp", "-R")
             .addArgument(dmgImage)
             .addArgument(unpackDir)
             .execute();
@@ -334,7 +334,7 @@ public final class MacHelper {
             installLocation = cmd.getArgumentValue("--install-dir", () -> defaultInstallLocation, Path::of);
         }
 
-        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? "" : ".app"));
+        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? ".jdk" : ".app"));
     }
 
     static Path getUninstallCommand(JPackageCommand cmd) {
@@ -400,22 +400,27 @@ public final class MacHelper {
                 Executor.of("/usr/bin/xcrun", "--help").executeWithoutExitCodeCheck().getExitCode() == 0;
     }
 
+    private static Set<Path> createBundleContents(String... customItems) {
+        return Stream.concat(Stream.of(customItems), Stream.of(
+                "MacOS",
+                "Info.plist",
+                "_CodeSignature"
+        )).map(Path::of).collect(toSet());
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
 
     private static final Method getServicePListFileName = initGetServicePListFileName();
 
-    private static final Set<Path> APP_BUNDLE_CONTENTS = Stream.of(
-            "Info.plist",
-            "MacOS",
+    private static final Set<Path> APP_BUNDLE_CONTENTS = createBundleContents(
             "app",
             "runtime",
             "Resources",
-            "PkgInfo",
-            "_CodeSignature"
-    ).map(Path::of).collect(toSet());
+            "PkgInfo"
+    );
 
-    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = Stream.of(
+    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = createBundleContents(
             "Home"
-    ).map(Path::of).collect(toSet());
+    );
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_UTILITIES_COUNT_LEADING_ZEROS_HPP
 #define SHARE_UTILITIES_COUNT_LEADING_ZEROS_HPP
 
+#include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,7 +37,8 @@
 // We implement and support variants for 8, 16, 32 and 64 bit integral types.
 template <typename T, size_t n> struct CountLeadingZerosImpl;
 
-template <typename T> unsigned count_leading_zeros(T v) {
+template <typename T, ENABLE_IF(std::is_arithmetic<T>::value)>
+unsigned count_leading_zeros(T v) {
   assert(v != 0, "precondition");
   return CountLeadingZerosImpl<T, sizeof(T)>::doit(v);
 }

@@ -25,7 +25,7 @@
  * @test
  * @bug     6192945
  * @summary Declaration order of interdependent generic types should not matter
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Method.java
  */
 

@@ -27,6 +27,7 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLParserConfiguration;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.Utils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -50,7 +51,7 @@ import org.xml.sax.SAXNotRecognizedException;
  *
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 public abstract class XMLParser {
 
@@ -80,6 +81,8 @@ public abstract class XMLParser {
 
     /** The parser configuration. */
     protected XMLParserConfiguration fConfiguration;
+
+    JdkXmlConfig config = JdkXmlConfig.getInstance(false);
 
     /** The XML Security Manager. */
     XMLSecurityManager securityManager;
@@ -142,12 +145,12 @@ public abstract class XMLParser {
      */
     void initSecurityManager(XMLSecurityPropertyManager spm, XMLSecurityManager sm) {
         if (securityManager == null) {
-            securityManager = sm != null ? sm : new XMLSecurityManager(true);
+            securityManager = sm != null ? sm : config.getXMLSecurityManager(true);
         }
         fConfiguration.setProperty(Constants.SECURITY_MANAGER, securityManager);
 
         if (securityPropertyManager == null) {
-            securityPropertyManager = spm != null ? spm : new XMLSecurityPropertyManager();
+            securityPropertyManager = spm != null ? spm : config.getXMLSecurityPropertyManager(true);
         }
         fConfiguration.setProperty(JdkConstants.XML_SECURITY_PROPERTY_MANAGER, securityPropertyManager);
     }

@@ -156,6 +156,68 @@ public class AllBitsSetVectorMatchRuleTest {
 
     @Test
     @Warmup(10000)
+    @IR(counts = { IRNode.RISCV_VAND_NOTI_VX, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testAllBitsSetVectorRegI() {
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        int bs = ib[0];
+        av.not().lanewise(VectorOperators.AND_NOT, bs).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            Asserts.assertEquals((~ia[i]) & (~bs), ir[i]);
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.RISCV_VAND_NOTL_VX, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testAllBitsSetVectorRegL() {
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        long bs = lb[0];
+        av.not().lanewise(VectorOperators.AND_NOT, bs).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            Asserts.assertEquals((~la[i]) & (~bs), lr[i]);
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.RISCV_VAND_NOTI_VX_MASKED, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testAllBitsSetVectorRegIMask() {
+        VectorMask<Integer> avm = VectorMask.fromArray(I_SPECIES, ma, 0);
+        IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
+        int bs = ib[0];
+        av.not().lanewise(VectorOperators.AND_NOT, bs, avm).intoArray(ir, 0);
+
+        // Verify results
+        for (int i = 0; i < I_SPECIES.length(); i++) {
+            if (ma[i] == true) {
+                Asserts.assertEquals((~ia[i]) & (~bs), ir[i]);
+            }
+        }
+    }
+
+    @Test
+    @Warmup(10000)
+    @IR(counts = { IRNode.RISCV_VAND_NOTL_VX_MASKED, " >= 1" }, applyIfPlatform = {"riscv64", "true"})
+    public static void testAllBitsSetVectorRegLMask() {
+        VectorMask<Long> avm = VectorMask.fromArray(L_SPECIES, ma, 0);
+        LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
+        long bs = lb[0];
+        av.not().lanewise(VectorOperators.AND_NOT, bs, avm).intoArray(lr, 0);
+
+        // Verify results
+        for (int i = 0; i < L_SPECIES.length(); i++) {
+            if (ma[i] == true) {
+                Asserts.assertEquals((~la[i]) & (~bs), lr[i]);
+            }
+        }
+    }
+
+    @Test
+    @Warmup(10000)
     @IR(counts = { IRNode.VAND_NOT_L, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "0"})
     @IR(counts = { IRNode.VMASK_AND_NOT_L, " >= 1" }, applyIfPlatform = {"aarch64", "true"}, applyIf = {"UseSVE", "> 0"})
     public static void testAllBitsSetMask() {

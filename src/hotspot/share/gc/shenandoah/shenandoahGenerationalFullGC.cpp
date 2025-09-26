@@ -25,14 +25,14 @@
 
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 #ifdef ASSERT
 void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation) {
@@ -128,13 +128,8 @@ void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* 
                PROPERFMTARGS(old_gen->used()));
 }
 
-void ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
-  auto result = ShenandoahGenerationalHeap::heap()->balance_generations();
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Full GC", &ls);
-  }
+ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
+  return ShenandoahGenerationalHeap::heap()->balance_generations();
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
@@ -198,7 +193,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
                                                           ShenandoahHeapRegion* from_region, uint worker_id) :
         _preserved_marks(preserved_marks),
         _heap(ShenandoahGenerationalHeap::heap()),
-        _tenuring_threshold(0),
         _empty_regions(empty_regions),
         _empty_regions_pos(0),
         _old_to_region(nullptr),
@@ -217,8 +211,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
     _young_to_region = from_region;
     _young_compact_point = from_region->bottom();
   }
-
-  _tenuring_threshold = _heap->age_census()->tenuring_threshold();
 }
 
 void ShenandoahPrepareForGenerationalCompactionObjectClosure::set_from_region(ShenandoahHeapRegion* from_region) {
@@ -284,7 +276,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
-      (from_region_age + object_age >= _tenuring_threshold)) {
+      _heap->age_census()->is_tenurable(from_region_age + object_age)) {
     if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
       finish_old_region();
       _old_to_region = nullptr;

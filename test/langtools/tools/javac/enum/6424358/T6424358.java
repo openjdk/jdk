@@ -25,7 +25,7 @@
  * @test
  * @bug     6424358 7025809
  * @summary Synthesized static enum method values() is final
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

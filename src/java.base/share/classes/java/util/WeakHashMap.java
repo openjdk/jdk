@@ -132,7 +132,7 @@ import java.util.function.Consumer;
  * @see         java.util.HashMap
  * @see         java.lang.ref.WeakReference
  */
-public class WeakHashMap<K,V>
+public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
     extends AbstractMap<K,V>
     implements Map<K,V> {
 
@@ -457,7 +457,7 @@ public class WeakHashMap<K,V>
      *         (A {@code null} return can also indicate that the map
      *         previously associated {@code null} with {@code key}.)
      */
-    public V put(K key, V value) {
+    public V put(@jdk.internal.RequiresIdentity K key, V value) {
         Object k = maskNull(key);
         int h = hash(k);
         Entry<K,V>[] tab = getTable();
