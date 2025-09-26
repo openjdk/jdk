@@ -1798,18 +1798,18 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             return zeroValueOf(preferredScale);
 
         /* The technique used is the following:
-         * take a/b, compute b' = b/(2^p2 5^p5), where
-         * p2 = max{n | b ≡ 0 mod 2^n} and p5 = max{n | b ≡ 0 mod 5^n}.
+         * take a/b, compute b' = b/(2^e2 5^e5), where
+         * e2 = max{n | b ≡ 0 mod 2^n} and e5 = max{n | b ≡ 0 mod 5^n}.
          * If a ≢ 0 mod b', then a/b is not a finite decimal number. Otherwise:
-         *   - if p2 ≤ p5, then a/b = (a/b') ⋅ 2^(p5-p2) / 10^p5;
-         *   - if p2 > p5, then a/b = (a/b') ⋅ 5^(p2-p5) / 10^p2.
+         *   - if e2 ≤ e5, then a/b = (a/b') ⋅ 2^(e5-e2) / 10^e5;
+         *   - if e2 > e5, then a/b = (a/b') ⋅ 5^(e2-e5) / 10^e2.
          */
         BigInteger b = divisor.unscaledValue();
-        int p2 = b.getLowestSetBit();
-        b = b.shiftRight(p2); // Remove powers of 2
+        int e2 = b.getLowestSetBit();
+        b = b.shiftRight(e2); // Remove powers of 2
 
-        int p5 = 0;
         // Remove and count powers of 5
+        int e5 = 0;
         BigInteger[] qr;
         int i;
         // Factor out 5^(2^i) from b, until b ≢ 0 mod 5^(2^i).
@@ -1819,7 +1819,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 break;
             } else {
                 b = qr[0];
-                p5 += 1 << i;
+                e5 += 1 << i;
             }
         }
         i--;
@@ -1833,7 +1833,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             qr = b.divideAndRemainder(fiveToTwoToThe(i));
             if (qr[1].signum == 0) { // zero remainder
                 b = qr[0];
-                p5 += 1 << i;
+                e5 += 1 << i;
             }
         }
 
@@ -1843,17 +1843,17 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     "no exact representable decimal result.");
 
         BigInteger quot = qr[0];
-        int p10 = Math.max(p2, p5);
-        if (p10 == 0)
+        int e10 = Math.max(e2, e5);
+        if (e10 == 0)
             return new BigDecimal(quot, preferredScale);
 
         // Equalize multiplicities of 2 and 5
-        quot = p10 == p5
-                ? quot.shiftLeft(p10 - p2)
-                : quot.multiply(fiveTo(p10 - p5));
+        quot = e10 == e5
+                ? quot.shiftLeft(e10 - e2)
+                : quot.multiply(fiveTo(e10 - e5));
 
-        // Avoid overflow of preferredScale + p10, the result's scale
-        BigDecimal res = createAndStripZerosToMatchScale(quot, p10, 0L);
+        // Avoid overflow of preferredScale + e10, the result's scale
+        BigDecimal res = createAndStripZerosToMatchScale(quot, e10, 0L);
         return preferredScale != Integer.MIN_VALUE
                 ? res.scaleByPowerOfTen(-preferredScale)
                 : res.scaleByPowerOfTen(Integer.MAX_VALUE).scaleByPowerOfTen(1);

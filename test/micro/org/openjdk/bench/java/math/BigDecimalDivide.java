@@ -57,23 +57,23 @@ public class BigDecimalDivide {
         Random r = new Random(1123);
 
         xsArray = new BigDecimal[TESTSIZE][2]; /*
-         * Each array entry is atmost 64 bits
+         * Each array entry is at most 64 bits
          * in size
          */
         sArray = new BigDecimal[TESTSIZE][2]; /*
-         * Each array entry is atmost 256 bits
+         * Each array entry is at most 256 bits
          * in size
          */
         mArray = new BigDecimal[TESTSIZE][2]; /*
-         * Each array entry is atmost 1024 bits
+         * Each array entry is at most 1024 bits
          * in size
          */
         lArray = new BigDecimal[TESTSIZE][2]; /*
-         * Each array entry is atmost 4096 bits
+         * Each array entry is at most 4096 bits
          * in size
          */
         xlArray = new BigDecimal[TESTSIZE][2]; /*
-         * Each array entry is atmost 16384 bits
+         * Each array entry is at most 16384 bits
          * in size
          */
 
