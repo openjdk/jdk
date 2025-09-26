@@ -1853,7 +1853,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 : quot.multiply(fiveTo(p10 - p5));
 
         // Avoid overflow of preferredScale + p10, the result's scale
-        BigDecimal res = createAndStripZerosToMatchScale(quot, p10, 0);
+        BigDecimal res = createAndStripZerosToMatchScale(quot, p10, 0L);
         return preferredScale != Integer.MIN_VALUE
                 ? res.scaleByPowerOfTen(-preferredScale)
                 : res.scaleByPowerOfTen(Integer.MAX_VALUE).scaleByPowerOfTen(1);
