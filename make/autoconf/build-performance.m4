@@ -130,18 +130,18 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
     memory_gb=`expr $MEMORY_SIZE / 1024`
     # Pick the lowest of memory in gb and number of cores.
     if test "$memory_gb" -lt "$NUM_CORES"; then
-      JOBS="$memory_gb"
+      CONF_JOBS="$memory_gb"
     else
-      JOBS="$NUM_CORES"
+      CONF_JOBS="$NUM_CORES"
     fi
-    if test "$JOBS" -eq "0"; then
-      JOBS=1
+    if test "$CONF_JOBS" -eq "0"; then
+      CONF_JOBS=1
     fi
-    AC_MSG_RESULT([$JOBS])
+    AC_MSG_RESULT([$CONF_JOBS])
   else
-    JOBS=$with_jobs
+    CONF_JOBS=$with_jobs
   fi
-  AC_SUBST(JOBS)
+  AC_SUBST(CONF_JOBS)
 ])
 
 AC_DEFUN_ONCE([BPERF_SETUP_TEST_JOBS],
@@ -150,11 +150,11 @@ AC_DEFUN_ONCE([BPERF_SETUP_TEST_JOBS],
   AC_ARG_WITH(test-jobs, [AS_HELP_STRING([--with-test-jobs],
       [number of parallel tests jobs to run @<:@based on build jobs@:>@])])
   if test "x$with_test_jobs" = x; then
-      TEST_JOBS=0
+      CONF_TEST_JOBS=0
   else
-      TEST_JOBS=$with_test_jobs
+      CONF_TEST_JOBS=$with_test_jobs
   fi
-  AC_SUBST(TEST_JOBS)
+  AC_SUBST(CONF_TEST_JOBS)
 ])
 
 AC_DEFUN([BPERF_SETUP_CCACHE],
@@ -162,12 +162,7 @@ AC_DEFUN([BPERF_SETUP_CCACHE],
   # Check if ccache is available
   CCACHE_AVAILABLE=true
 
-  OLD_PATH="$PATH"
-  if test "x$TOOLCHAIN_PATH" != x; then
-    PATH=$TOOLCHAIN_PATH:$PATH
-  fi
-  UTIL_LOOKUP_PROGS(CCACHE, ccache)
-  PATH="$OLD_PATH"
+  UTIL_LOOKUP_TOOLCHAIN_PROGS(CCACHE, ccache)
 
   AC_MSG_CHECKING([if ccache is available])
   if test "x$TOOLCHAIN_TYPE" != "xgcc" && test "x$TOOLCHAIN_TYPE" != "xclang"; then

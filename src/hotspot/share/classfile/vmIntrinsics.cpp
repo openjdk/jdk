@@ -27,12 +27,12 @@
 #include "compiler/compilerDirectives.hpp"
 #include "jvm_constants.h"
 #include "jvm_io.h"
-#ifdef COMPILER2
-#include "opto/c2_globals.hpp"
-#endif
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/tribool.hpp"
+#ifdef COMPILER2
+#include "opto/c2_globals.hpp"
+#endif
 
 // These are flag-matching functions:
 inline bool match_F_R(u2 flags) {
@@ -91,6 +91,7 @@ bool vmIntrinsics::preserves_state(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
@@ -144,6 +145,7 @@ bool vmIntrinsics::can_trap(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsin:
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   case vmIntrinsics::_dlog:
@@ -314,6 +316,7 @@ bool vmIntrinsics::disabled_by_jvm_flags(vmIntrinsics::ID id) {
   case vmIntrinsics::_fmaF:
     if (!InlineMathNatives || !UseFMA) return true;
     break;
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
     if (!InlineMathNatives || !InlineIntrinsics) return true;

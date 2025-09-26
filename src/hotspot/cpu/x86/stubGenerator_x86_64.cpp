@@ -3689,6 +3689,9 @@ void StubGenerator::generate_libm_stubs() {
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtan)) {
       StubRoutines::_dtan = generate_libmTan(); // from stubGenerator_x86_64_tan.cpp
     }
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsinh)) {
+      StubRoutines::_dsinh = generate_libmSinh(); // from stubGenerator_x86_64_sinh.cpp
+    }
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dtanh)) {
       StubRoutines::_dtanh = generate_libmTanh(); // from stubGenerator_x86_64_tanh.cpp
     }
@@ -4328,10 +4331,10 @@ void StubGenerator::generate_compiler_stubs() {
     if (libsimdsort != nullptr) {
       log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "simdsort" JNI_LIB_SUFFIX, p2i(libsimdsort));
 
-      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_sort" : "avx2_sort");
+      os::snprintf_checked(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_sort" : "avx2_sort");
       StubRoutines::_array_sort = (address)os::dll_lookup(libsimdsort, ebuf_);
 
-      snprintf(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
+      os::snprintf_checked(ebuf_, sizeof(ebuf_), VM_Version::supports_avx512_simd_sort() ? "avx512_partition" : "avx2_partition");
       StubRoutines::_array_partition = (address)os::dll_lookup(libsimdsort, ebuf_);
     }
   }

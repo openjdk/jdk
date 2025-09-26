@@ -25,6 +25,7 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import org.testng.SkipException;
 
 import java.io.IOException;
 import java.net.URI;
@@ -35,6 +36,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map;
+import jdk.test.lib.Platform;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
@@ -48,6 +50,7 @@ import static org.testng.Assert.assertTrue;
  * @bug 8218875
  * @summary ZIP File System tests that leverage Files.newFileSystem
  * @modules jdk.zipfs
+ * @library /test/lib
  * @compile NewFileSystemTests.java
  * @run testng NewFileSystemTests
  */
@@ -219,6 +222,9 @@ public class NewFileSystemTests {
      */
     @Test
     public void readOnlyZipFileFailure() throws IOException {
+        if (Platform.isRoot()) {
+            throw new SkipException("Test skipped when executed by root user.");
+        }
         // Underlying file is read-only.
         Path readOnlyZip = Utils.createJarFile("read_only.zip", Map.of("file.txt", "Hello World"));
         // In theory this can fail, and we should avoid unwanted false-negatives.

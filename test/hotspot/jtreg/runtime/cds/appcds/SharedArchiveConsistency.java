@@ -45,7 +45,7 @@ public class SharedArchiveConsistency {
 
     private static int genericHeaderMinVersion;  // minimum supported CDS version
     private static int currentCDSArchiveVersion; // current CDS version in java process
-    // The following should be consistent with the enum in the C++ MetaspaceShared class
+    // The following should be consistent with the enum in the C++ AOTMetaspace class
     public static String[] shared_region_name = {
         "rw",          // ReadWrite
         "ro",          // ReadOnly

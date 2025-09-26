@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  * @modules jdk.internal.le/jdk.internal.org.jline.reader
  *          jdk.jshell/jdk.internal.jshell.tool:+open
  * @build HistoryTest
- * @run testng HistoryTest
+ * @run junit HistoryTest
  */
 
 import java.lang.reflect.Field;
@@ -37,12 +37,12 @@ import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.testng.annotations.Test;
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.internal.jshell.tool.JShellToolBuilder;
 import jdk.internal.org.jline.reader.History;
-import static org.testng.Assert.*;
-import org.testng.annotations.BeforeMethod;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class HistoryTest extends ReplToolTesting {
 
@@ -180,16 +180,16 @@ public class HistoryTest extends ReplToolTesting {
                  }
                   assertCommand(a, "/exit", "");
              });
-        assertEquals(prefsMap.get("HISTORY_LINE_00"), "/debug 0");
-        assertEquals(prefsMap.get("HISTORY_LINE_01"), "void test() {\\");
-        assertEquals(prefsMap.get("HISTORY_LINE_02"), "    System.err.println(1);\\");
-        assertEquals(prefsMap.get("HISTORY_LINE_03"), "    System.err.println(`\\\\\\\\\\");
-        assertEquals(prefsMap.get("HISTORY_LINE_04"), "    \\\\\\");
-        assertEquals(prefsMap.get("HISTORY_LINE_05"), "`);\\");
-        assertEquals(prefsMap.get("HISTORY_LINE_06"), "} //test");
-        assertEquals(prefsMap.get("HISTORY_LINE_07"), "/debug 0");
-        assertEquals(prefsMap.get("HISTORY_LINE_08"), "int i");
-        assertEquals(prefsMap.get("HISTORY_LINE_09"), "/exit");
+        assertEquals("/debug 0", prefsMap.get("HISTORY_LINE_00"));
+        assertEquals("void test() {\\", prefsMap.get("HISTORY_LINE_01"));
+        assertEquals("    System.err.println(1);\\", prefsMap.get("HISTORY_LINE_02"));
+        assertEquals("    System.err.println(`\\\\\\\\\\", prefsMap.get("HISTORY_LINE_03"));
+        assertEquals("    \\\\\\", prefsMap.get("HISTORY_LINE_04"));
+        assertEquals("`);\\", prefsMap.get("HISTORY_LINE_05"));
+        assertEquals("} //test", prefsMap.get("HISTORY_LINE_06"));
+        assertEquals("/debug 0", prefsMap.get("HISTORY_LINE_07"));
+        assertEquals("int i", prefsMap.get("HISTORY_LINE_08"));
+        assertEquals("/exit", prefsMap.get("HISTORY_LINE_09"));
         System.err.println("prefsMap: " + prefsMap);
     }
 
@@ -204,10 +204,10 @@ public class HistoryTest extends ReplToolTesting {
 
     private void previousAndAssert(History history, String expected) {
         assertTrue(history.previous());
-        assertEquals(history.current().toString(), expected);
+        assertEquals(expected, history.current().toString());
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         super.setUp();
         System.setProperty("jshell.test.allow.incomplete.inputs", "false");

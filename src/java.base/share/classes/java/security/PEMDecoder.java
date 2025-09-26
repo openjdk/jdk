@@ -437,12 +437,12 @@ public final class PEMDecoder {
                     so = getKeyFactory(key.getAlgorithm())
                         .getKeySpec(key, X509EncodedKeySpec.class);
                 } else {
-                    throw new IllegalArgumentException("Invalid KeySpec.");
+                    throw new ClassCastException("Invalid KeySpec");
                 }
             } catch (InvalidKeySpecException e) {
-                throw new IllegalArgumentException("Invalid KeySpec " +
-                    "specified (" + tClass.getName() +") for key (" +
-                    key.getClass().getName() +")", e);
+                throw new ClassCastException("Invalid KeySpec " +
+                    "specified: " + tClass.getName() + " for key " +
+                    key.getClass().getName());
             }
         }
 

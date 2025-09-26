@@ -21,18 +21,38 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class PrintEnv {
 
     public static void main(String[] args) {
         List<String> lines = printArgs(args);
-        lines.forEach(System.out::println);
+        Optional.ofNullable(System.getProperty("jpackage.test.appOutput")).map(Path::of).ifPresentOrElse(outputFilePath -> {
+            Optional.ofNullable(outputFilePath.getParent()).ifPresent(dir -> {
+                try {
+                    Files.createDirectories(dir);
+                } catch (IOException ex) {
+                    throw new UncheckedIOException(ex);
+                }
+            });
+            try {
+                Files.write(outputFilePath, lines);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }, () -> {
+            lines.forEach(System.out::println);
+        });
     }
 
     private static List<String> printArgs(String[] args) {
@@ -45,11 +65,13 @@ public class PrintEnv {
             } else if (arg.startsWith(PRINT_SYS_PROP)) {
                 String name = arg.substring(PRINT_SYS_PROP.length());
                 lines.add(name + "=" + System.getProperty(name));
-            } else if (arg.startsWith(PRINT_MODULES)) {
+            } else if (arg.equals(PRINT_MODULES)) {
                 lines.add(ModuleFinder.ofSystem().findAll().stream()
                         .map(ModuleReference::descriptor)
                         .map(ModuleDescriptor::name)
                         .collect(Collectors.joining(",")));
+            } else if (arg.equals(PRINT_WORK_DIR)) {
+                lines.add("$CD=" + Path.of("").toAbsolutePath());
             } else {
                 throw new IllegalArgumentException();
             }
@@ -58,7 +80,8 @@ public class PrintEnv {
         return lines;
     }
 
-    private final static String PRINT_ENV_VAR = "--print-env-var=";
-    private final static String PRINT_SYS_PROP = "--print-sys-prop=";
-    private final static String PRINT_MODULES = "--print-modules";
+    private static final String PRINT_ENV_VAR = "--print-env-var=";
+    private static final String PRINT_SYS_PROP = "--print-sys-prop=";
+    private static final String PRINT_MODULES = "--print-modules";
+    private static final String PRINT_WORK_DIR = "--print-workdir";
 }

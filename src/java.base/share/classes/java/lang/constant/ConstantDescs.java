@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static java.lang.constant.DirectMethodHandleDesc.*;
 import static java.lang.constant.DirectMethodHandleDesc.Kind.STATIC;
 
 /**
@@ -338,9 +337,6 @@ public final class ConstantDescs {
      */
     public static final MethodTypeDesc MTD_void = MethodTypeDesc.of(CD_void);
 
-    static final DirectMethodHandleDesc MHD_METHODHANDLE_ASTYPE
-            = MethodHandleDesc.ofMethod(Kind.VIRTUAL, CD_MethodHandle, "asType",
-                                        MethodTypeDesc.of(CD_MethodHandle, CD_MethodType));
     /**
      * Returns a {@link MethodHandleDesc} corresponding to a bootstrap method for
      * an {@code invokedynamic} callsite, which is a static method whose leading
