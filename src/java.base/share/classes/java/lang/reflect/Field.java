@@ -884,16 +884,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().set(obj, value);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.set(obj, value);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.set(obj, value));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().set(obj, value);
-        postSetFinal(caller);
     }
 
     /**
@@ -933,16 +929,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setBoolean(obj, z);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setBoolean(obj, z);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setBoolean(obj, z));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setBoolean(obj, z);
-        postSetFinal(caller);
     }
 
     /**
@@ -982,17 +974,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setByte(obj, b);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setByte(obj, b);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setByte(obj, b));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setByte(obj, b);
-        postSetFinal(caller);
     }
 
     /**
@@ -1032,16 +1019,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setChar(obj, c);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setChar(obj, c);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setChar(obj, c));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setChar(obj, c);
-        postSetFinal(caller);
     }
 
     /**
@@ -1081,16 +1064,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setShort(obj, s);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setShort(obj, s);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setShort(obj, s));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setShort(obj, s);
-        postSetFinal(caller);
     }
 
     /**
@@ -1130,16 +1109,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setInt(obj, i);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setInt(obj, i);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setInt(obj, i));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setInt(obj, i);
-        postSetFinal(caller);
     }
 
     /**
@@ -1179,16 +1154,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setLong(obj, l);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setLong(obj, l);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setLong(obj, l));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setLong(obj, l);
-        postSetFinal(caller);
     }
 
     /**
@@ -1228,16 +1199,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setFloat(obj, f);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setFloat(obj, f);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setFloat(obj, f));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setFloat(obj, f);
-        postSetFinal(caller);
     }
 
     /**
@@ -1277,16 +1244,12 @@ class Field extends AccessibleObject implements Member {
             return;
         }
 
-        if (!isFinalInstanceInNormalClass()) {
-            getOverrideFieldAccessor().setDouble(obj, d);
-            return;
+        FieldAccessor fa = getOverrideFieldAccessor();
+        if (!Modifier.isFinal(modifiers)) {
+            fa.setDouble(obj, d);
+        } else {
+            setFinal(Reflection.getCallerClass(), obj, () -> fa.setDouble(obj, d));
         }
-
-        // final field in normal class (not a record or hidden class)
-        Class<?> caller = Reflection.getCallerClass();
-        preSetFinal(caller, obj);
-        getOverrideFieldAccessor().setDouble(obj, d);
-        postSetFinal(caller);
     }
 
     // check access to field
@@ -1451,34 +1414,36 @@ class Field extends AccessibleObject implements Member {
     }
 
     /**
+     * A function that sets a field to a value.
+     */
+    @FunctionalInterface
+    private interface FieldSetter {
+        void setFieldValue() throws IllegalAccessException;
+    }
+
+    /**
+     * Attempts to set a final field.
+     */
+    private void setFinal(Class<?> caller, Object obj, FieldSetter setter) throws IllegalAccessException {
+        if (obj != null && isFinalInstanceInNormalClass()) {
+            preSetFinal(caller, false);
+            setter.setFieldValue();
+            postSetFinal(caller, false);
+        } else {
+            // throws IllegalAccessException if static, or field in record or hidden class
+            setter.setFieldValue();
+        }
+    }
+
+    /**
      * Return true if this field is a final instance field in a normal class (not a
      * record class or hidden class),
      */
-    @ForceInline
     private boolean isFinalInstanceInNormalClass() {
         return Modifier.isFinal(modifiers)
                 && !Modifier.isStatic(modifiers)
                 && !clazz.isRecord()
                 && !clazz.isHidden();
-    }
-
-    /**
-     * Invoke before attempting to mutate a final instance field in a normal class (not
-     * a record or hidden class) to check that the caller is allowed to mutate the field.
-     * @throws NullPointerException if obj is null
-     * @throws IllegalAccessException if not allowed
-     */
-    private void preSetFinal(Class<?> caller, Object obj) throws IllegalAccessException {
-        Objects.requireNonNull(obj);
-        preSetFinal(caller, false);
-    }
-
-    /**
-     * Invoke after mutating a final instance field to print a warning and record a
-     * JFR event.
-     */
-    private void postSetFinal(Class<?> caller) {
-        postSetFinal(caller, false);
     }
 
     /**

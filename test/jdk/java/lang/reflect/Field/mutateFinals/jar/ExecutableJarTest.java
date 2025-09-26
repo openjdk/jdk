@@ -48,6 +48,20 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ExecutableJarTest {
 
+    // helper class name
+    private static final String HELPER = "ExecutableJarTestHelper";
+
+    // warning output
+    private static final String WARNING_LINE1 =
+            "WARNING: Final field value in class " + HELPER;
+
+    // warning line 2 depends on the method
+    private static final String WARNING_MUTATED =
+            " has been mutated reflectively by class " + HELPER + " in unnamed module";
+    private static final String WARNING_UNREFLECTED =
+            " has been unreflected for mutation by class " + HELPER + " in unnamed module";
+
+
     /**
      * Test executable JAR with code that uses Field.set to mutate a final field.
      * A warning should be printed.
@@ -56,8 +70,8 @@ class ExecutableJarTest {
     void testFieldSetExpectingWarning() throws Exception {
         String jarFile = createExecutableJar(Map.of());
         testExecutableJar(jarFile, "testFieldSetInt")
-                .shouldContain("WARNING: Final field value in class ExecutableJarTestHelper")
-                .shouldContain(" has been mutated reflectively by class ExecutableJarTestHelper in unnamed module")
+                .shouldContain(WARNING_LINE1)
+                .shouldContain(WARNING_MUTATED)
                 .shouldHaveExitValue(0);
     }
 
@@ -69,8 +83,8 @@ class ExecutableJarTest {
     void testFieldSetExpectingAllow() throws Exception {
         String jarFile = createExecutableJar(Map.of("Enable-Final-Field-Mutation", "ALL-UNNAMED"));
         testExecutableJar(jarFile, "testFieldSetInt")
-                .shouldNotContain("WARNING: Final field value in class ExecutableJarTestHelper")
-                .shouldNotContain(" has been mutated reflectively by class ExecutableJarTestHelper in unnamed module")
+                .shouldNotContain(WARNING_LINE1)
+                .shouldNotContain(WARNING_MUTATED)
                 .shouldHaveExitValue(0);
     }
 
@@ -82,8 +96,8 @@ class ExecutableJarTest {
     void testUnreflectExpectingAllow() throws Exception {
         String jarFile = createExecutableJar(Map.of("Enable-Final-Field-Mutation", "ALL-UNNAMED"));
         testExecutableJar(jarFile, "testUnreflectSetter")
-                .shouldNotContain("WARNING: Final field value in class ExecutableJarTestHelper")
-                .shouldNotContain(" has been unreflected for mutation by class ExecutableJarTestHelper in unnamed module")
+                .shouldNotContain(WARNING_LINE1)
+                .shouldNotContain(WARNING_UNREFLECTED)
                 .shouldHaveExitValue(0);
     }
 

@@ -41,7 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 
 class TestMain {
-    // the names of modules that are can mutate finals in m1/p1
+    // the names of modules that can mutate finals in m1/p1
     static Set<String> allowedToMutate;
     static Module mainModule;
     static String mainPackageName;

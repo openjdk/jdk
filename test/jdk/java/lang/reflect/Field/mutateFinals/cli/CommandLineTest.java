@@ -41,23 +41,40 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 class CommandLineTest {
 
+    // helper class name
+    private static final String HELPER = "CommandLineTestHelper";
+
+    // warning output
+    private static final String WARNING_LINE1 =
+            "WARNING: Final field value in class " + HELPER;
+    private static final String WARNING_LINE3 =
+            "WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning";
+    private static final String WARNING_LINE4 =
+            "WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled";
+
+    // warning line 2 depends on the method
+    private static final String WARNING_MUTATED =
+            " has been mutated reflectively by class " + HELPER + " in unnamed module";
+    private static final String WARNING_UNREFLECTED =
+            " has been unreflected for mutation by class " + HELPER + " in unnamed module";
+
     /**
      * Test that a warning is printed by default.
      */
     @Test
     void testDefault() throws Exception {
         test("testFieldSetInt")
-            .shouldContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
-            .shouldContain("WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning")
-            .shouldContain("WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_MUTATED)
+            .shouldContain(WARNING_LINE3)
+            .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
 
         test("testUnreflectSetter")
-            .shouldContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
-            .shouldContain("WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning")
-            .shouldContain("WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_UNREFLECTED)
+            .shouldContain(WARNING_LINE3)
+            .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
     }
 
@@ -67,35 +84,35 @@ class CommandLineTest {
     @Test
     void testAllow() throws Exception {
         test("testFieldSetInt", "--illegal-final-field-mutation=allow")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
             .shouldHaveExitValue(0);
 
         test("testFieldSetInt", "--enable-final-field-mutation=ALL-UNNAMED")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
             .shouldHaveExitValue(0);
 
         // allow ALL-UNNAMED, deny by default
         test("testFieldSetInt", "--enable-final-field-mutation=ALL-UNNAMED", "--illegal-final-field-mutation=deny")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
             .shouldHaveExitValue(0);
 
         test("testUnreflectSetter", "--illegal-final-field-mutation=allow")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_UNREFLECTED)
             .shouldHaveExitValue(0);
 
         test("testUnreflectSetter", "--enable-final-field-mutation=ALL-UNNAMED")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_UNREFLECTED)
             .shouldHaveExitValue(0);
 
         // allow ALL-UNNAMED, deny by default
         test("testUnreflectSetter", "--enable-final-field-mutation=ALL-UNNAMED", "--illegal-final-field-mutation=deny")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_UNREFLECTED)
             .shouldHaveExitValue(0);
     }
 
@@ -105,24 +122,31 @@ class CommandLineTest {
     @Test
     void testWarn() throws Exception {
         test("testFieldSetInt", "--illegal-final-field-mutation=warn")
-            .shouldContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
-            .shouldContain("WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning")
-            .shouldContain("WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_MUTATED)
+            .shouldContain(WARNING_LINE3)
+            .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
 
         test("testUnreflectSetter", "--illegal-final-field-mutation=warn")
-            .shouldContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
-            .shouldContain("WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning")
-            .shouldContain("WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_UNREFLECTED)
+            .shouldContain(WARNING_LINE3)
+            .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
 
         // should be only one warning
         test("testFieldSetInt+testUnreflectSetter", "--illegal-final-field-mutation=warn")
-            .shouldContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
-            .shouldNotContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_MUTATED)
+            .shouldNotContain(WARNING_UNREFLECTED)
+            .shouldHaveExitValue(0);
+
+        // should be only one warning
+        test("testUnreflectSetter+testFieldSetInt", "--illegal-final-field-mutation=warn")
+            .shouldContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
+            .shouldContain(WARNING_UNREFLECTED)
             .shouldHaveExitValue(0);
     }
 
@@ -132,12 +156,12 @@ class CommandLineTest {
     @Test
     void testDebug() throws Exception {
         test("testFieldSetInt+testUnreflectSetter", "--illegal-final-field-mutation=debug")
-                .shouldContain("Final field value in class CommandLineTestHelper")
-                .shouldContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
-                .shouldContain("java.lang.reflect.Field.setInt")
-                .shouldContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
-                .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
-                .shouldHaveExitValue(0);
+            .shouldContain("Final field value in class " + HELPER)
+            .shouldContain(WARNING_MUTATED)
+            .shouldContain("java.lang.reflect.Field.setInt")
+            .shouldContain(WARNING_UNREFLECTED)
+            .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
+            .shouldHaveExitValue(0);
     }
 
     /**
@@ -146,14 +170,14 @@ class CommandLineTest {
     @Test
     void testDeny() throws Exception {
         test("testFieldSetInt", "--illegal-final-field-mutation=deny")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
             .shouldContain("java.lang.IllegalAccessException")
             .shouldNotHaveExitValue(0);
 
         test("testUnreflectSetter", "--illegal-final-field-mutation=deny")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been unreflected for mutation by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_UNREFLECTED)
             .shouldContain("java.lang.IllegalAccessException")
             .shouldNotHaveExitValue(0);
     }
@@ -164,8 +188,8 @@ class CommandLineTest {
     @Test
     void testLastOneWins() throws Exception {
         test("testFieldSetInt", "--illegal-final-field-mutation=allow", "--illegal-final-field-mutation=deny")
-            .shouldNotContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldNotContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
             .shouldContain("java.lang.IllegalAccessException")
             .shouldNotHaveExitValue(0);
     }
@@ -188,19 +212,19 @@ class CommandLineTest {
     @Test
     void testSetPropertyToAllow() throws Exception {
         test("setSystemPropertyToAllow+testFieldSetInt")
-            .shouldContain("WARNING: Final field value in class CommandLineTestHelper")
-            .shouldContain(" has been mutated reflectively by class CommandLineTestHelper in unnamed module")
-            .shouldContain("WARNING: Use --enable-final-field-mutation=ALL-UNNAMED to avoid a warning")
-            .shouldContain("WARNING: Mutating final fields will be blocked in a future release unless final field mutation is enabled")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_MUTATED)
+            .shouldContain(WARNING_LINE3)
+            .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
     }
 
     /**
-     * Launch CommandLineTestHelper with the given arguments and VM options.
+     * Launch helper with the given arguments and VM options.
      */
     private OutputAnalyzer test(String action, String... vmopts) throws Exception {
         Stream<String> s1 = Stream.of(vmopts);
-        Stream<String> s2 = Stream.of("CommandLineTestHelper", action);
+        Stream<String> s2 = Stream.of(HELPER, action);
         String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
         var outputAnalyzer = ProcessTools
                 .executeTestJava(opts)
