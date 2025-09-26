@@ -115,8 +115,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 #endif
 
-  ShenandoahMetricsSnapshot metrics(_generation);
-  metrics.snap_before();
+  ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   switch (_degen_point) {
     // The cases below form the Duff's-like device: it describes the actual GC cycle,
@@ -307,8 +306,6 @@ void ShenandoahDegenGC::op_degenerated() {
   if (VerifyAfterGC) {
     Universe::verify();
   }
-
-  metrics.snap_after();
 
   // Decide if this cycle made good progress, and, if not, should it upgrade to a full GC.
   const bool progress = metrics.is_good_progress();
