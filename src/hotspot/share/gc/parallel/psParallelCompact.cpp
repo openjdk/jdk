@@ -81,7 +81,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
@@ -295,29 +295,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
 
   const size_t region_cnt = end_region - beg_region;
   memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
-}
-
-void
-ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
-{
-  assert(is_region_aligned(beg), "not RegionSize aligned");
-  assert(is_region_aligned(end), "not RegionSize aligned");
-
-  size_t cur_region = addr_to_region_idx(beg);
-  const size_t end_region = addr_to_region_idx(end);
-  HeapWord* addr = beg;
-  while (cur_region < end_region) {
-    _region_data[cur_region].set_destination(addr);
-    _region_data[cur_region].set_destination_count(0);
-    _region_data[cur_region].set_source_region(cur_region);
-
-    // Update live_obj_size so the region appears completely full.
-    size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
-    _region_data[cur_region].set_live_obj_size(live_size);
-
-    ++cur_region;
-    addr += RegionSize;
-  }
 }
 
 // The total live words on src_region would overflow the target space, so find
@@ -894,7 +871,6 @@ void PSParallelCompact::summary_phase(bool should_do_max_compaction)
 
     if (dense_prefix_end != old_space->bottom()) {
       fill_dense_prefix_end(id);
-      _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
     }
 
     // Compacting objs in [dense_prefix_end, old_space->top())
@@ -1089,9 +1065,7 @@ public:
 
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
-    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure,
-                                                 !NMethodToOopClosure::FixRelocations,
-                                                 true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure);
 
     thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1298,7 +1272,7 @@ void PSParallelCompact::adjust_in_space_helper(SpaceId id, volatile uint* claim_
   const size_t stripe_size = num_regions_per_stripe * region_size;
 
   while (true) {
-    uint counter = Atomic::fetch_then_add(claim_counter, num_regions_per_stripe);
+    uint counter = AtomicAccess::fetch_then_add(claim_counter, num_regions_per_stripe);
     HeapWord* cur_stripe = bottom + counter * region_size;
     if (cur_stripe >= top) {
       break;
@@ -1383,9 +1357,7 @@ public:
     _nworkers(nworkers) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-    if (nworkers > 1) {
-      Threads::change_thread_claim_token();
-    }
+    Threads::change_thread_claim_token();
   }
 
   ~PSAdjustTask() {
@@ -1539,17 +1511,16 @@ void PSParallelCompact::forward_to_new_addr() {
 #ifdef ASSERT
 void PSParallelCompact::verify_forward() {
   HeapWord* const old_dense_prefix_addr = dense_prefix(SpaceId(old_space_id));
-  RegionData* old_region = _summary_data.region(_summary_data.addr_to_region_idx(old_dense_prefix_addr));
-  HeapWord* bump_ptr = old_region->partial_obj_size() != 0
-                       ? old_dense_prefix_addr + old_region->partial_obj_size()
-                       : old_dense_prefix_addr;
+  // The destination addr for the first live obj after dense-prefix.
+  HeapWord* bump_ptr = old_dense_prefix_addr
+                     + _summary_data.addr_to_region_ptr(old_dense_prefix_addr)->partial_obj_size();
   SpaceId bump_ptr_space = old_space_id;
 
   for (uint id = old_space_id; id < last_space_id; ++id) {
     MutableSpace* sp = PSParallelCompact::space(SpaceId(id));
-    HeapWord* dense_prefix_addr = dense_prefix(SpaceId(id));
+    // Only verify objs after dense-prefix, because those before dense-prefix are not moved (forwarded).
+    HeapWord* cur_addr = dense_prefix(SpaceId(id));
     HeapWord* top = sp->top();
-    HeapWord* cur_addr = dense_prefix_addr;
 
     while (cur_addr < top) {
       cur_addr = mark_bitmap()->find_obj_beg(cur_addr, top);

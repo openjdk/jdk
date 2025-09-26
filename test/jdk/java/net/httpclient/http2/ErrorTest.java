@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,26 @@
  * @test
  * @bug 8157105
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
+ * @build jdk.httpclient.test.lib.http2.Http2TestServer
+ *        jdk.test.lib.Asserts
+ *        jdk.test.lib.net.SimpleSSLContext
  * @modules java.base/sun.net.www.http
  *          java.net.http/jdk.internal.net.http.common
  *          java.net.http/jdk.internal.net.http.frame
  *          java.net.http/jdk.internal.net.http.hpack
+ *          java.base/jdk.internal.net.quic
+ *          java.net.http/jdk.internal.net.http.quic
+ *          java.net.http/jdk.internal.net.http.quic.packets
+ *          java.net.http/jdk.internal.net.http.quic.frames
+ *          java.net.http/jdk.internal.net.http.quic.streams
+ *          java.net.http/jdk.internal.net.http.http3.streams
+ *          java.net.http/jdk.internal.net.http.http3.frames
+ *          java.net.http/jdk.internal.net.http.http3
+ *          java.net.http/jdk.internal.net.http.qpack
+ *          java.net.http/jdk.internal.net.http.qpack.readers
+ *          java.net.http/jdk.internal.net.http.qpack.writers
  *          java.security.jgss
+ * @modules java.base/jdk.internal.util
  * @run testng/othervm/timeout=60 -Djavax.net.debug=ssl -Djdk.httpclient.HttpClient.log=all ErrorTest
  * @summary check exception thrown when bad TLS parameters selected
  */
@@ -47,7 +61,6 @@ import javax.net.ssl.SSLParameters;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
-import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2EchoHandler;
 
 import jdk.test.lib.net.SimpleSSLContext;

@@ -24,7 +24,6 @@
 
 #include "cds/aotArtifactFinder.hpp"
 #include "cds/aotClassLinker.hpp"
-#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
 #include "cds/aotMetaspace.hpp"
@@ -937,7 +936,7 @@ void ArchiveBuilder::make_klasses_shareable() {
         ADD_COUNT(num_enum_klasses);
       }
 
-      if (!ik->can_be_verified_at_dumptime()) {
+      if (CDSConfig::is_old_class_for_verifier(ik)) {
         ADD_COUNT(num_old_klasses);
         old = " old";
       }
@@ -1013,13 +1012,6 @@ void ArchiveBuilder::make_training_data_shareable() {
     }
   };
   _src_obj_table.iterate_all(clean_td);
-}
-
-void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
-  SymbolTable::serialize_shared_table_header(soc, false);
-  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
-  DynamicArchive::serialize_array_klasses(soc);
-  AOTLinkedClassBulkLoader::serialize(soc, false);
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {
