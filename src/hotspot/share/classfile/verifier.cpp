@@ -237,7 +237,7 @@ bool Verifier::verify(InstanceKlass* klass, bool should_verify_class, TRAPS) {
       // Exclude any classes that are verified with the old verifier, as the old verifier
       // doesn't call SystemDictionaryShared::add_verification_constraint()
       if (CDSConfig::is_dumping_archive()) {
-        SystemDictionaryShared::warn_excluded(klass, "Verified with old verifier");
+        SystemDictionaryShared::log_exclusion(klass, "Verified with old verifier");
         SystemDictionaryShared::set_excluded(klass);
       }
 #endif
