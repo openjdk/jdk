@@ -45,17 +45,17 @@ void HeapShared::do_metadata_offsets(oop src_obj, T callback) {
   }
 }
 
-// When loading class mirrors, the klass field is already set up correctly since
-// the allocation. Therefore, it should not be fixed up
 inline void HeapShared::remap_loaded_metadata(oop src_obj, bool skip_mirror_klass) {
   do_metadata_offsets(src_obj, [&](int offset) {
     if (skip_mirror_klass &&
         java_lang_Class::is_instance(src_obj) &&
         offset == java_lang_Class::klass_offset()) {
-      // The klass field of the class mirror is already set up since the allocation,
-      // hence "fixing" it here will only mess it up. Doing so is okay before GC can
-      // run as long as it is fixed up after, but when GC can run, it is not a good
-      // idea to patch this field and then fix it back again.
+      // Class mirrors may get traced by the GC. Therefore, it is important that the
+      // klass field only transitions from null to the real intended class, and not
+      // intermittedly having a strange bogus value from the archive. To deal with
+      // this, we carefully copy around the klass field and set the klass field
+      // explicitly to the intended class. Therefore, remapping should skip that
+      // klass, as it has the intended value already; patching it will mess with it.
       return;
     }
     Metadata* metadata = src_obj->metadata_field(offset);

@@ -351,9 +351,11 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   const BitMap::idx_t end_bit = header_bit + size * word_scale;
 
   if (java_lang_Class::is_instance(heap_object)) {
-    // Class mirrors have already initialized the klass field since the allocation.
-    // It is preferrable to not clobber the klass field and then try to fix it up again
-    // when a concurrent GC thread can lurk around and find the incorrect value.
+    // Class mirrors may get traced by the GC. Therefore, it is important that the
+    // klass field only transitions from null to the real intended class, and not
+    // intermittedly having a strange bogus value from the archive. To deal with
+    // this, we carefully copy around the klass field and set the klass field
+    // explicitly to the intended class.
     BitMap::idx_t klass_field_idx = header_bit + java_lang_Class::klass_offset() / sizeof(RawElementT);
     BitMap::idx_t skip = word_scale;
     assert(klass_field_idx >= start_bit && klass_field_idx + skip <= end_bit,
@@ -366,6 +368,11 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
                                       start_bit,
                                       klass_field_idx,
                                       linker);
+
+    // Copy klass field
+    Metadata* archive_klass = archive_object->metadata_field(java_lang_Class::klass_offset());
+    Metadata* runtime_klass = (Metadata*)(address(archive_klass) + AOTMetaspace::relocation_delta());
+    heap_object->metadata_field_put(java_lang_Class::klass_offset(), runtime_klass);
 
     // Copy payload after klass field
     copy_payload_carefully<use_coops>(archive_object,
