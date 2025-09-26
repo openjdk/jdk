@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073 8368514
+ * @bug 8029661 8325164 8368073 8368514 8368520
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
@@ -88,6 +88,9 @@ public final class FipsModeTLS extends SecmodTest {
     private static PublicKey publicKey;
 
     public static void main(String[] args) throws Exception {
+        // reduce the limit to trigger a key update later
+        Security.setProperty("jdk.tls.keyLimits",
+                "AES/GCM/NoPadding KeyUpdate 10000");
         try {
             initialize();
         } catch (Exception e) {
@@ -305,10 +308,11 @@ public final class FipsModeTLS extends SecmodTest {
                 cTOs = ByteBuffer.allocateDirect(netBufferMax);
                 sTOc = ByteBuffer.allocateDirect(netBufferMax);
 
+                // big enough to trigger a key update
                 clientOut = ByteBuffer.wrap(
-                        "Hi Server, I'm Client".getBytes());
+                        "a".repeat(16000).getBytes());
                 serverOut = ByteBuffer.wrap(
-                        "Hello Client, I'm Server".getBytes());
+                        "b".repeat(16000).getBytes());
 
                 SSLEngineResult clientResult;
                 SSLEngineResult serverResult;
