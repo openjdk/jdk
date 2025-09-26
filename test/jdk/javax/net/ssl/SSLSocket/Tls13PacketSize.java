@@ -36,6 +36,7 @@
  */
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.CountDownLatch;
 import javax.net.ssl.SSLSocket;
 
 public class Tls13PacketSize extends SSLSocketTemplate {
@@ -106,6 +107,11 @@ public class Tls13PacketSize extends SSLSocketTemplate {
         if (extra >= 16383) {    // 16383: 2^14 - 1 byte read above
             throw new Exception(
                     "Server record plaintext exceeds 2^14 octets: " + extra);
+        }
+
+        int drained = 1;
+        while (drained < appData.length) {
+            drained += sslIS.read(appData, drained, appData.length - drained);
         }
     }
 }
