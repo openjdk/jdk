@@ -73,8 +73,7 @@ public class Password {
                     // it's more likely the input comes from a pipe, such as
                     // "echo password |" or "cat password_file |" where input
                     // will be silently consumed without echoing to the screen.
-                    System.err.print("[Warning: Console not available." +
-                            " The entered password might be echoed.] ");
+                    System.err.print("[WARNING: Input may be visible on screen] ");
                 }
             }
 
