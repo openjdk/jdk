@@ -332,11 +332,25 @@ public:
 
   virtual void do_klass(Klass* klass) {
     ClassLoaderData* cld = klass->class_loader_data();
+    // TODO: remove when Ioi fixes FMG code
+    if (cld == nullptr) {
+      // During early bootstrapping, there are classes that have not been
+      // assigned a CLD yet. They are visible to the streaming heap loader.
+      return;
+    }
+
     ZMarkBarrierFollowOopClosure<finalizable, ZGenerationIdOptional::none> cl;
     cld->oops_do(&cl, claim_value());
   }
 
   virtual void do_cld(ClassLoaderData* cld) {
+    // TODO: remove when Ioi fixes FMG code
+    if (cld == nullptr) {
+      // During early bootstrapping, there are classes that have not been
+      // assigned a CLD yet. They are visible to the streaming heap loader.
+      return;
+    }
+
     ZMarkBarrierFollowOopClosure<finalizable, ZGenerationIdOptional::none> cl;
     cld->oops_do(&cl, claim_value());
   }
