@@ -1560,7 +1560,6 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
   switch(id) {
     case vmIntrinsics::_ghash_processBlocks:
       if (!has_Crypto_GHASH()) {
-        os::breakpoint();
         return false;
       }
       break;
@@ -1572,37 +1571,31 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     case vmIntrinsics::_electronicCodeBook_decryptAESCrypt:
     case vmIntrinsics::_galoisCounterMode_AESCrypt:
       if(!has_Crypto_AES()) {
-        os::breakpoint();
         return false;
       }
       break;
     case vmIntrinsics::_counterMode_AESCrypt:
       if(!has_Crypto_AES_CTR()) {
-        os::breakpoint();
         return false;
       }
       break;
     case vmIntrinsics::_sha_implCompress:
       if(!has_Crypto_SHA1() || !has_Crypto_SHA()) {
-        os::breakpoint();
         return false;
       }
       break;
     case vmIntrinsics::_sha2_implCompress:
       if(!has_Crypto_SHA256() || !has_Crypto_SHA()) {
-        os::breakpoint();
         return false;
       }
       break;
     case vmIntrinsics::_sha5_implCompress:
       if(!has_Crypto_SHA512() || !has_Crypto_SHA()) {
-        os::breakpoint();
         return false;
       }
       break;
     case vmIntrinsics::_digestBase_implCompressMB:
       if(!(has_Crypto_SHA1() || has_Crypto_SHA256() || has_Crypto_SHA512()) || !has_Crypto_SHA()) {
-        os::breakpoint();
         return false;
       }
       break;
@@ -1627,7 +1620,6 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     case vmIntrinsics::_poly1305_processBlocks:
     case vmIntrinsics::_intpoly_montgomeryMult_P256:
     case vmIntrinsics::_intpoly_assign:
-    case vmIntrinsics::_vectorizedMismatch:
     case vmIntrinsics::_updateBytesAdler32:
     case vmIntrinsics::_updateByteBufferAdler32:
 #ifdef COMPILER2
@@ -1643,7 +1635,6 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     case vmIntrinsics::_dsignum:
     case vmIntrinsics::_fsignum:
 #endif //COMPILER2
-      os::breakpoint();
       return false;
     default:
       return true;
