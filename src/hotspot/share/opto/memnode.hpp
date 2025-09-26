@@ -162,6 +162,8 @@ public:
   // the given memory state?  (The state may or may not be in(Memory).)
   Node* can_see_stored_value(Node* st, PhaseValues* phase) const;
 
+  bool is_out_of_bound_access(PhaseGVN* phase) const;
+
   void set_unaligned_access() { _unaligned_access = true; }
   bool is_unaligned_access() const { return _unaligned_access; }
   void set_mismatched_access() { _mismatched_access = true; }

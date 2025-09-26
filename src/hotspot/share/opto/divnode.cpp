@@ -632,7 +632,14 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( !ti->is_con() ) return nullptr;
   jint i = ti->get_con();       // Get divisor
 
-  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
+  if (i == 0) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
 
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return nullptr;

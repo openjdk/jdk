@@ -357,6 +357,12 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
   const Type *t_adr = phase->type(address);
   if (t_adr == Type::TOP)              return NodeSentinel; // caller will return null
 
+  if (can_reshape && igvn != nullptr && is_out_of_bound_access(phase)) {
+    ResourceMark rm;
+    make_paths_from_here_dead(igvn, nullptr, "igvn");
+    return NodeSentinel; // caller will return null
+  }
+
   if (can_reshape && is_unsafe_access() && (t_adr == TypePtr::NULL_PTR)) {
     // Unsafe off-heap access with zero address. Remove access and other control users
     // to not confuse optimizations and add a HaltNode to fail if this is ever executed.
@@ -1321,6 +1327,56 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
   return nullptr;
 }
 
+bool MemNode::is_out_of_bound_access(PhaseGVN* phase) const {
+  Node* adr = in(MemNode::Address);
+  const TypePtr* tp = phase->type(adr)->isa_ptr();
+
+  const TypeAryPtr* ary_t = tp->isa_aryptr();
+  if (ary_t == nullptr) {
+    return false;
+  }
+  const Type* elem_t = ary_t->elem();
+  if (elem_t == Type::BOTTOM) {
+    return false;
+  }
+
+  AddPNode* addp = adr->isa_AddP();
+  if (addp == nullptr) {
+    return false;
+  }
+  Node* base = addp->in(AddPNode::Base);
+  Node* adr2 = addp->in(AddPNode::Address);
+
+  if (adr2->is_AddP() || adr2 != base) {
+    return false;
+  }
+
+  Node* offset = addp->in(AddPNode::Offset);
+  const TypeX* offset_t = phase->type(offset)->isa_intptr_t();
+
+  if (offset_t == nullptr || !offset_t->is_con()) {
+    return false;
+  }
+
+  const TypeInt* array_size = ary_t->size();
+
+  if (!array_size->is_con()) {
+    return false;
+  }
+
+  int size = array_size->get_con();
+  uintptr_t off = offset_t->get_con();
+
+  BasicType bt = elem_t->array_element_basic_type();
+  uint shift  = exact_log2(type2aelembytes(bt));
+  uint header = arrayOopDesc::base_offset_in_bytes(bt);
+
+  if (off + memory_size() > header + (size << shift)) {
+    return true;
+  }
+  return false;
+}
+
 const Type* MemNode::Value_common(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
   Node* mem = in(MemNode::Memory);
@@ -1330,20 +1386,9 @@ const Type* MemNode::Value_common(PhaseGVN* phase) const {
   const TypePtr* tp = phase->type(adr)->isa_ptr();
   if (tp == nullptr || tp->empty())  return Type::TOP;
 
-  const TypeAryPtr* ary_t = tp->isa_aryptr();
-  if (ary_t == nullptr) {
-    return nullptr;
+  if (is_out_of_bound_access(phase)) {
+    return Type::TOP;
   }
-  const Type* elem_t = ary_t->elem();
-  if (elem_t == Type::BOTTOM) {
-    return nullptr;
-  }
-
-  AddPNode* addp = adr->as_AddP();
-  
-  BasicType bt = elem_t->array_element_basic_type();
-  uint shift  = exact_log2(type2aelembytes(bt));
-  uint header = arrayOopDesc::base_offset_in_bytes(bt);
   return nullptr;
 }
 
