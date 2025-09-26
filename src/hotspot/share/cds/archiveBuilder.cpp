@@ -655,7 +655,7 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes();
+  int bytes = src_info->size_in_bytes(); // word-aligned.
   char* dest;
   char* oldtop;
   char* newtop;
@@ -686,7 +686,13 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   }
   newtop = dump_region->top();
 
-  memcpy(dest, src, bytes);
+  if (src_info->msotype() == MetaspaceObj::SymbolType) {
+    // Symbol may be allocated using AllocateHeap with the exact number of bytes and
+    // may not be word-aligned.
+    memcpy(dest, src, ((Symbol*)src)->byte_size());
+  } else {
+    memcpy(dest, src, bytes);
+  }
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
   if (CDSConfig::is_dumping_static_archive() && (src_info->msotype() == MetaspaceObj::SymbolType)) {
