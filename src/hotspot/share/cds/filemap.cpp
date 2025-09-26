@@ -1489,11 +1489,9 @@ bool FileMapInfo::has_heap_region() {
 void FileMapInfo::stream_heap_region() {
   bool success = false;
 
-  if (can_use_heap_region()) {
-    if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
-      HeapShared::initialize_streaming();
-      success = true;
-    }
+  if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
+    HeapShared::initialize_streaming();
+    success = true;
   }
 
   if (!success) {
@@ -1505,18 +1503,10 @@ void FileMapInfo::map_or_load_heap_region() {
   assert(!object_streaming_mode(), "This should only be done for the mapping approach");
   bool success = false;
 
-  if (can_use_heap_region()) {
-    if (AOTMappedHeapLoader::can_map()) {
-      success = AOTMappedHeapLoader::map_heap_region(this);
-    } else if (AOTMappedHeapLoader::can_load()) {
-      success = AOTMappedHeapLoader::load_heap_region(this);
-    }
-  } else {
-    if (!UseCompressedOops && !AOTMappedHeapLoader::can_map()) {
-      AOTMetaspace::report_loading_error("Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops");
-    } else {
-      AOTMetaspace::report_loading_error("Cannot use CDS heap data. UseEpsilonGC, UseG1GC, UseSerialGC, UseParallelGC, or UseShenandoahGC are required.");
-    }
+  if (AOTMappedHeapLoader::can_map()) {
+    success = AOTMappedHeapLoader::map_heap_region(this);
+  } else if (AOTMappedHeapLoader::can_load()) {
+    success = AOTMappedHeapLoader::load_heap_region(this);
   }
 
   if (!success) {

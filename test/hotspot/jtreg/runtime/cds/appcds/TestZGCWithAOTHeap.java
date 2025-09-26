@@ -64,7 +64,8 @@ public class TestZGCWithAOTHeap {
     static void test(boolean dumpWithZ, boolean execWithZ, boolean shouldStream, boolean shouldUseCOH) throws Exception {
         String dumpGC = dumpWithZ ? Z : G1;
         String execGC = execWithZ ? Z : G1;
-        String errMsg = "Cannot use CDS heap data. Selected GC not compatible -XX:-UseCompressedOops";
+        String generalErrMsg = "Cannot use CDS heap data.";
+        String coopsErrMsg = generalErrMsg + " Selected GC not compatible -XX:-UseCompressedOops";
         String coops = "-XX:-UseCompressedOops";
         String coh = shouldUseCOH ? "-XX:+UseCompactObjectHeaders" : "-XX:-UseCompactObjectHeaders";
         String stream = shouldStream ? "-XX:+AOTStreamableObjects" : "-XX:-AOTStreamableObjects";
@@ -93,11 +94,11 @@ public class TestZGCWithAOTHeap {
             // Only when dumping without streaming and executing with ZGC
             // do we expect there to be a problem.
             out.shouldContain(HELLO);
-            out.shouldContain(errMsg);
+            out.shouldContain(generalErrMsg);
             out.shouldHaveExitValue(0);
         } else {
             out.shouldContain(HELLO);
-            out.shouldNotContain(errMsg);
+            out.shouldNotContain(generalErrMsg);
             out.shouldHaveExitValue(0);
         }
 
@@ -115,9 +116,9 @@ public class TestZGCWithAOTHeap {
         if (out.getExitValue() == 0) {
             out.shouldContain(HELLO);
             if (!shouldStream && execWithZ) {
-                out.shouldContain(errMsg);
+                out.shouldContain(coopsErrMsg);
             } else {
-                out.shouldNotContain(errMsg);
+                out.shouldNotContain(generalErrMsg);
             }
         }
         out.shouldNotHaveFatalError();
@@ -135,11 +136,11 @@ public class TestZGCWithAOTHeap {
                 // Only when dumping without streaming and executing with ZGC
                 // do we expect there to be a problem.
                 out.shouldContain(HELLO);
-                out.shouldContain(errMsg);
+                out.shouldContain(generalErrMsg);
                 out.shouldHaveExitValue(0);
             } else {
                 out.shouldContain(HELLO);
-                out.shouldNotContain(errMsg);
+                out.shouldNotContain(generalErrMsg);
                 out.shouldHaveExitValue(0);
             }
         }
