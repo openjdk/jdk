@@ -376,7 +376,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
                                       linker);
 
     // Copy metadata field
-    Metadata* archive_metadata = archive_object->metadata_field(metadata_offset);
+    Metadata* archive_metadata = (Metadata*)(uintptr_t(archive_object) + metadata_offset);
     Metadata* runtime_metadata = (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta());
     heap_object->metadata_field_put(metadata_offset, runtime_metadata);
     curr_bit = metadata_field_idx + skip;
