@@ -276,9 +276,8 @@ void DefNewGeneration::init_spaces() {
   // Compute sizes
   size_t size = _virtual_space.committed_size();
   size_t survivor_size = compute_survivor_size(size, SpaceAlignment);
-  if (survivor_size < from()->used()) {
-    survivor_size = align_up(from()->used(), SpaceAlignment);
-  }
+  assert(survivor_size >= from()->used(), "inv");
+  assert(size > 2 * survivor_size, "inv");
   size_t eden_size = size - (2 * survivor_size);
   assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
 
@@ -401,7 +400,18 @@ size_t DefNewGeneration::calculate_desired_young_gen_bytes() const {
 
   // Adjust new generation size
   desired_new_size = clamp(desired_new_size, min_new_size, max_new_size);
-  assert(desired_new_size <= max_new_size, "just checking");
+  if (!from()->is_empty()) {
+    // Mininum constraint to hold all live objs inside from-space.
+    size_t min_survivor_size = align_up(from()->used(), alignment);
+
+    // SurvivorRatio := eden_size / survivor_size
+    // young-gen-size = eden_size                     + 2 * survivor_size
+    //                = SurvivorRatio * survivor_size + 2 * survivor_size
+    //                = (SurvivorRatio + 2) * survivor_size
+    size_t min_young_gen_size = min_survivor_size * (SurvivorRatio + 2);
+
+    desired_new_size = MAX2(min_young_gen_size, desired_new_size);
+  }
   assert(is_aligned(desired_new_size, alignment), "postcondition");
 
   return desired_new_size;
