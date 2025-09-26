@@ -59,7 +59,11 @@ inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
   //shenandoah_assert_correct(nullptr, obj);
   assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
 
-  assert(!ShenandoahHeap::heap()->collection_set()->use_forward_table(obj), "Must not call with forwarding table");
+  // We cannot assert the below here, because that region forwarding state might
+  // be switched to FWD_TABLE concurrently. However, that is fine, we don't overwrite
+  // the header-based forwarding until we've seen a handshake, at which point the
+  // region forwarding state is stable (and we should not get here).
+  // assert(!ShenandoahHeap::heap()->collection_set()->use_forward_table(obj), "Must not call with forwarding table");
   markWord mark = obj->mark();
   if (mark.is_marked()) {
     HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
@@ -111,7 +115,6 @@ static _metadata safe_load_metadata(oop obj) {
 }
 
 inline Klass* ShenandoahForwarding::klass(oop obj) {
-  assert(!ShenandoahHeap::heap()->collection_set()->use_forward_table(obj), "Must not call with forwarding table");
   switch (ObjLayout::klass_mode()) {
     case ObjLayout::Compact: {
       markWord mark = obj->mark();
@@ -133,7 +136,6 @@ inline Klass* ShenandoahForwarding::klass(oop obj) {
 }
 
 inline size_t ShenandoahForwarding::size(oop obj) {
-  assert(!ShenandoahHeap::heap()->collection_set()->use_forward_table(obj), "Must not call with forwarding table");
   obj = get_forwardee_raw(obj);
   return obj->size_given_klass(klass(obj));
 }

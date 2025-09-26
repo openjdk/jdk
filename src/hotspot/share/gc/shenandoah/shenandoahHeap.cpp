@@ -1258,8 +1258,8 @@ private:
           class SetupFillerWords {
           public:
             static void do_object(oop obj) {
-              auto* loc = cast_from_oop<HeapWord*>(obj);
-              CollectedHeap::fill_with_object(loc, CollectedHeap::min_fill_size());
+              assert(UseCompactObjectHeaders, "This only works with compact object headers");
+              obj->set_mark(vmClasses::Object_klass()->prototype_header());
             }
           } cl;
           HeapWord* limit = MIN2(r->forwarding_table_start(), r->top());
