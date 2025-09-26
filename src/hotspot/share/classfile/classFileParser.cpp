@@ -4680,9 +4680,11 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
       if (_major_version < JAVA_1_5_VERSION) {
         // Skip over the class name if one is there
         const char* const p = skip_over_field_name(signature + 1, true, --length);
-
         // The next character better be a semicolon
-        if (p && (p - signature) > 1 && p[0] == JVM_SIGNATURE_ENDCLASS) {
+        if (p != nullptr               && // Parse succeeded
+            signature < p              && // p is in range [ signature,
+            signature + length > p     && //                 signature + length )
+            p[0] == JVM_SIGNATURE_ENDCLASS) {
           return p + 1;
         }
       }
