@@ -320,15 +320,6 @@ void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   }
 }
 
-void ObjectMonitor::ClearSuccOnSuspend::operator()(JavaThread* current) {
-  if (current->is_suspended()) {
-    if (_om->has_successor(current)) {
-      _om->clear_successor();
-      OrderAccess::fence(); // always do a full fence when successor is cleared
-    }
-  }
-}
-
 #define assert_mark_word_consistency()                                         \
   assert(UseObjectMonitorTable || object()->mark() == markWord::encode(this),  \
          "object mark must match encoded this: mark=" INTPTR_FORMAT            \
@@ -481,7 +472,7 @@ bool ObjectMonitor::spin_enter(JavaThread* current) {
   return false;
 }
 
-bool ObjectMonitor::enter(JavaThread* current) {
+bool ObjectMonitor::enter(JavaThread* current, bool post_jvmti_events) {
   assert(current == JavaThread::current(), "must be");
 
   if (spin_enter(current)) {
@@ -502,7 +493,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
   }
 
   // At this point this ObjectMonitor cannot be deflated, finish contended enter
-  enter_with_contention_mark(current, contention_mark);
+  enter_with_contention_mark(current, contention_mark, post_jvmti_events);
   return true;
 }
 
@@ -521,7 +512,7 @@ void ObjectMonitor::notify_contended_enter(JavaThread* current) {
   }
 }
 
-void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark &cm) {
+void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonitorContentionMark &cm, bool post_jvmti_events) {
   assert(current == JavaThread::current(), "must be");
   assert(!has_owner(current), "must be");
   assert(cm._monitor == this, "must be");
@@ -625,7 +616,7 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
   // spinning we could increment JVMStat counters, etc.
 
   DTRACE_MONITOR_PROBE(contended__entered, this, object(), current);
-  if (JvmtiExport::should_post_monitor_contended_entered()) {
+  if (post_jvmti_events && JvmtiExport::should_post_monitor_contended_entered()) {
     JvmtiExport::post_monitor_contended_entered(current, this);
 
     // The current thread already owns the monitor and is not going to
@@ -1084,11 +1075,10 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
 
 void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentNode) {
   assert(current != nullptr, "invariant");
-  assert(current->thread_state() != _thread_blocked, "invariant");
+  assert(current->thread_state() == _thread_blocked, "invariant");
   assert(currentNode != nullptr, "invariant");
   assert(currentNode->_thread == current, "invariant");
   assert(_waiters > 0, "invariant");
-  assert_mark_word_consistency();
 
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
@@ -1108,14 +1098,7 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
 
     {
       OSThreadContendState osts(current->osthread());
-
-      assert(current->thread_state() == _thread_in_vm, "invariant");
-
-      {
-        ClearSuccOnSuspend csos(this);
-        ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
-        current->_ParkEvent->park();
-      }
+      current->_ParkEvent->park();
     }
 
     // Try again, but just so we distinguish between futile wakeups and
@@ -1138,7 +1121,6 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
 
   // Current has acquired the lock -- Unlink current from the _entry_list.
   assert(has_owner(current), "invariant");
-  assert_mark_word_consistency();
   unlink_after_acquire(current, currentNode);
   if (has_successor(current)) clear_successor();
   assert(!has_successor(current), "invariant");
@@ -1835,12 +1817,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
-
     assert(current->thread_state() == _thread_in_vm, "invariant");
-
     {
-      ClearSuccOnSuspend csos(this);
-      ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
+      ThreadBlockInVM tbivm(current, false /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
         // Intentionally empty
       } else if (!node._notified) {
@@ -1893,6 +1872,43 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // although the raw address of the object may have changed.
     // (Don't cache naked oops over safepoints, of course).
 
+    
+
+    OrderAccess::fence();
+
+    assert(!has_owner(current), "invariant");
+    ObjectWaiter::TStates v = node.TState;
+    if (v == ObjectWaiter::TS_RUN) {
+      // We use the NoPreemptMark for the very rare case where the previous
+      // preempt attempt failed due to OOM. The preempt on monitor contention
+      // could succeed but we can't unmount now.
+      NoPreemptMark npm(current);
+      enter(current);
+    } else {
+      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
+      ExitOnSuspend eos(this);
+      {
+        ThreadBlockInVMPreprocess<ExitOnSuspend> tbivs(current, eos, true /* allow_suspend */);
+        reenter_internal(current, &node);
+        // We can go to a safepoint at the end of this block. If we
+        // do a thread dump during that safepoint, then this thread will show
+        // as having "-locked" the monitor, but the OS and java.lang.Thread
+        // states will still report that the thread is blocked trying to
+        // acquire it.
+        // If there is a suspend request, ExitOnSuspend will exit the OM
+        // and set the OM as pending.
+      }
+      if (eos.exited()) {
+        // ExitOnSuspend exit the OM
+        assert(!has_owner(current), "invariant");
+        guarantee(node.TState == ObjectWaiter::TS_RUN, "invariant");
+        current->set_current_pending_monitor(nullptr);
+        enter(current, false);
+      }      
+      assert(has_owner(current), "invariant");
+      node.wait_reenter_end(this);
+    }
+
     // post monitor waited event. Note that this is past-tense, we are done waiting.
     if (JvmtiExport::should_post_monitor_waited()) {
       JvmtiExport::post_monitor_waited(current, this, ret == OS_TIMEOUT);
@@ -1916,25 +1932,8 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         current->_ParkEvent->unpark();
       }
     }
-
     if (wait_event.should_commit()) {
       post_monitor_wait_event(&wait_event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
-    }
-
-    OrderAccess::fence();
-
-    assert(!has_owner(current), "invariant");
-    ObjectWaiter::TStates v = node.TState;
-    if (v == ObjectWaiter::TS_RUN) {
-      // We use the NoPreemptMark for the very rare case where the previous
-      // preempt attempt failed due to OOM. The preempt on monitor contention
-      // could succeed but we can't unmount now.
-      NoPreemptMark npm(current);
-      enter(current);
-    } else {
-      guarantee(v == ObjectWaiter::TS_ENTER, "invariant");
-      reenter_internal(current, &node);
-      node.wait_reenter_end(this);
     }
 
     // current has reacquired the lock.
