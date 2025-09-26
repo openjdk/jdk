@@ -170,7 +170,7 @@ public final class PListReader {
             }
         }
     }
-    
+
     /**
      * Returns the value of the given "dict" property in the underlying "dict"
      * element.
