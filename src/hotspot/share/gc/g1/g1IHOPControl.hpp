@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,12 +36,13 @@ class G1NewTracer;
 // concurrent marking should start. This heap usage threshold should be relative
 // to old gen size.
 class G1IHOPControl : public CHeapObj<mtGC> {
- protected:
+  // Current values of heap/SoftMaxHeapSize variables used for calculations.
+  size_t _current_heap_size;
+  size_t _current_soft_max_heap_size;
+
+protected:
   // The initial IHOP value relative to the target occupancy.
   double _initial_ihop_percent;
-  // The target maximum occupancy of the heap. The target occupancy is the number
-  // of bytes when marking should be finished and reclaim started.
-  size_t _target_occupancy;
 
   // Most recent complete mutator allocation period in seconds.
   double _last_allocation_time_s;
@@ -52,6 +53,19 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   // at the first heap expansion.
   G1IHOPControl(double ihop_percent, G1OldGenAllocationTracker const* old_gen_alloc_tracker);
 
+  // The target maximum occupancy of the heap. The target occupancy is the number
+  // of bytes when marking should be finished and reclaim started.
+  // This is a function of current heap size and external SoftMaxHeapSize goal.
+  size_t target_occupancy() const;
+
+  size_t current_heap_size() const;
+  size_t current_soft_max_heap_size() const;
+
+  // Same as get_conc_mark_start_threshold(), but using the internally stored variables
+  // to calculate to achieve some consistency when called multiple times for various
+  // reasons.
+  virtual size_t get_conc_mark_start_threshold_internal() = 0;
+
   // Most recent time from the end of the concurrent start to the start of the first
   // mixed gc.
   virtual double last_marking_length_s() const = 0;
@@ -59,10 +73,10 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   virtual ~G1IHOPControl() { }
 
   // Get the current non-young occupancy at which concurrent marking should start.
-  virtual size_t get_conc_mark_start_threshold() = 0;
+  virtual size_t get_conc_mark_start_threshold();
 
-  // Adjust target occupancy.
-  virtual void update_target_occupancy(size_t new_target_occupancy);
+  // Adjust current heap size.
+  virtual void update_heap_size(size_t new_heap_size);
   // Update information about time during which allocations in the Java heap occurred,
   // how large these allocations were in bytes, and an additional buffer.
   // The allocations should contain any amount of space made unusable for further
@@ -91,9 +105,9 @@ class G1StaticIHOPControl : public G1IHOPControl {
  public:
   G1StaticIHOPControl(double ihop_percent, G1OldGenAllocationTracker const* old_gen_alloc_tracker);
 
-  size_t get_conc_mark_start_threshold() {
-    guarantee(_target_occupancy > 0, "Target occupancy must have been initialized.");
-    return (size_t) (_initial_ihop_percent * _target_occupancy / 100.0);
+  size_t get_conc_mark_start_threshold_internal() {
+    guarantee(current_heap_size() > 0, "Target occupancy must have been initialized.");
+    return (size_t) (_initial_ihop_percent * target_occupancy() / 100.0);
   }
 
   virtual void update_marking_length(double marking_length_s) {
@@ -146,7 +160,7 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
                         size_t heap_reserve_percent, // The percentage of total heap capacity that should not be tapped into.
                         size_t heap_waste_percent);  // The percentage of the free space in the heap that we think is not usable for allocation.
 
-  virtual size_t get_conc_mark_start_threshold();
+  virtual size_t get_conc_mark_start_threshold_internal();
 
   virtual void update_allocation_info(double allocation_time_s, size_t additional_buffer_size);
   virtual void update_marking_length(double marking_length_s);
