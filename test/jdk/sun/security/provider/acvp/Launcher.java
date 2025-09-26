@@ -25,8 +25,8 @@ import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.json.JSONValue;
 
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.security.Provider;
 import java.security.Security;
