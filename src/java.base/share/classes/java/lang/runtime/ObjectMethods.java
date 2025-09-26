@@ -216,6 +216,10 @@ public final class ObjectMethods {
             }
         }
 
+        // Currently, hotspot does not support polymorphic inlining.
+        // As a result, if we have a MethodHandle to Object.equals,
+        // it does not enjoy separate profiles like individual invokevirtuals,
+        // and we must spin bytecode to accomplish separate profiling.
         if (hasPolymorphism) {
             String[] names = new String[size];
 
@@ -295,6 +299,10 @@ public final class ObjectMethods {
             }
         }
 
+        // Currently, hotspot does not support polymorphic inlining.
+        // As a result, if we have a MethodHandle to Object.hashCode,
+        // it does not enjoy separate profiles like individual invokevirtuals,
+        // and we must spin bytecode to accomplish separate profiling.
         if (hasPolymorphism) {
             String[] names = new String[size];
 
