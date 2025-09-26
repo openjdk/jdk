@@ -1792,7 +1792,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
 
         // Calculate preferred scale
-        int preferredScale = saturateLong((long) this.scale - divisor.scale);
+        long scaleDiff = (long) this.scale - divisor.scale;
+        int preferredScale = saturateLong(scaleDiff);
 
         if (this.signum() == 0) // 0/y
             return zeroValueOf(preferredScale);
@@ -1844,16 +1845,27 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         BigInteger quot = qr[0];
         int e10 = Math.max(e2, e5);
-        if (e10 == 0)
-            return new BigDecimal(quot, preferredScale);
 
         // Equalize multiplicities of 2 and 5
         quot = e10 == e5
                 ? quot.shiftLeft(e10 - e2)
                 : quot.multiply(fiveTo(e10 - e5));
 
-        // Avoid overflow of preferredScale + e10, the result's scale
-        BigDecimal res = createAndStripZerosToMatchScale(quot, e10, 0L);
+        BigDecimal res;
+        // Adjust to preferredScale, avoiding overflow
+        // by centering the preferred scale to zero
+        if (preferredScale == scaleDiff) {
+            // Avoid overflow of preferredScale + e10, the result's scale
+            res = createAndStripZerosToMatchScale(quot, e10, 0L);
+        } else { // scaleDiff exceeds int range
+            long offsetL = (scaleDiff + e10) - preferredScale;
+            int offset = (int) offsetL;
+            if (offset != offsetL)
+                throw new ArithmeticException("Overflow");
+
+            res = new BigDecimal(quot, offset).adjustToPreferredScale(0, 0);
+        }
+        // now res == (this/divisor) * 10^preferredScale
         return preferredScale != Integer.MIN_VALUE
                 ? res.scaleByPowerOfTen(-preferredScale)
                 : res.scaleByPowerOfTen(Integer.MAX_VALUE).scaleByPowerOfTen(1);
