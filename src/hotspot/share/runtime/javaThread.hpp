@@ -170,7 +170,7 @@ class JavaThread: public Thread {
   // attached thread cases where this field can have a temporary value.
   int64_t _monitor_owner_id;
 
-public:
+ public:
   void set_monitor_owner_id(int64_t id) {
     ThreadIdentifier::verify_id(id);
     _monitor_owner_id = id;
