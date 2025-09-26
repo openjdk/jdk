@@ -21,36 +21,29 @@
  * questions.
  */
 
-/*
- * @test
- * @requires os.family == "mac"
- * @requires os.arch == "aarch64"
- * @summary Run shell with -XX:+StressWXHealing. This tests most of
- * the triggers for WX mode.
- * @library /test/lib
- * @compile WXHealing.java
- * @run main TestWXHealing
- */
-
-import jdk.test.lib.JDKToolFinder;
-
 import java.io.*;
 import java.util.regex.*;
 import jdk.jshell.tool.*;
-import jdk.test.lib.process.*;
 
-public class TestWXHealing {
+public class WXHealing {
 
+    // There's nothing special about jshell here: we just need an
+    // application that does a lot of compilation and class loading.
     public static void main(String[] args) throws Throwable {
-        String[] opts = {"-XX:+UnlockDiagnosticVMOptions",
-                         "-XX:+TraceWXHealing", "-XX:+StressWXHealing", "WXHealing"};
-        var process = ProcessTools.createTestJavaProcessBuilder(opts).start();
-        String output = new String(process.getInputStream().readAllBytes());
-        System.out.println(output);
-        var pattern = Pattern.compile("Healing WXMode WXArmedForWrite at 0x[0-9a-f]* to WXWrite  ");
-        var matches = pattern.matcher(output).results().count();
-        if (matches < 10) {
-            throw new RuntimeException("Only " + matches + " healings in\n" + output);
-        }
+        JavaShellToolBuilder
+            .builder()
+            .in(new ByteArrayInputStream
+                ("""
+                 void main() {
+                     System.out.println("Hello, World!");
+                 }
+                 main()
+                 2+2
+                 Math.sqrt(2)
+                 4 * Math.atan(1)
+                 Math.exp(1)
+                 """
+                 .getBytes()), null)
+            .start();
     }
 }
