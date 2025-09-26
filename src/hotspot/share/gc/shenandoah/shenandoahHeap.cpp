@@ -742,6 +742,7 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
     assert(req.is_mutator_alloc(), "Expected mutator alloc here");
     // padding and actual size both count towards allocation counter
     generation->increase_allocated(actual_bytes + wasted_bytes);
+    _alloc_rate.allocated(actual_bytes + wasted_bytes);
 
     // only actual size counts toward usage for mutator allocations
     increase_used(generation, actual_bytes);

@@ -285,10 +285,21 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
 
   double avg_cycle_time = _gc_cycle_time_history->davg() + (_margin_of_error_sd * _gc_cycle_time_history->dsd());
   double avg_alloc_rate = _allocation_rate.upper_bound(_margin_of_error_sd);
+  const ShenandoahAllocRate<>& shenandoah_alloc_rate = ShenandoahHeap::heap()->alloc_rate();
+  double avg_alloc_rate2 = shenandoah_alloc_rate.upper_bound(_margin_of_error_sd);
+  double predicted_rate = shenandoah_alloc_rate.predict_next();
 
-  log_debug(gc)("average GC time: %.2f ms, allocation rate: %.0f %s/s",
-          avg_cycle_time * 1000, byte_size_in_proper_unit(avg_alloc_rate), proper_unit_for_byte_size(avg_alloc_rate));
-  if (avg_cycle_time * avg_alloc_rate > allocation_headroom) {
+  log_debug(gc, alloc, sampling)(
+    "allocation rate: " PROPERFMT "/s, new allocation rate: " PROPERFMT "/s, predicted: " PROPERFMT "/s",
+        PROPERFMTARGS(avg_alloc_rate), PROPERFMTARGS(avg_alloc_rate2), PROPERFMTARGS(predicted_rate));
+  if (avg_cycle_time * predicted_rate > allocation_headroom) {
+    log_trigger("Predicted allocation rate (" PROPERFMT "/s) would exhaust headroom (" PROPERFMT ") before expected GC time (%.2f ms)",
+      PROPERFMTARGS(predicted_rate), PROPERFMTARGS(allocation_headroom), avg_cycle_time * 1000);
+    accept_trigger_with_type(RATE);
+    return true;
+  }
+
+  if (avg_cycle_time * avg_alloc_rate2 > allocation_headroom) {
     log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                  " to deplete free headroom (%zu%s) (margin of error = %.2f)",
                  avg_cycle_time * 1000,
