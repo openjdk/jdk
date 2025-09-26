@@ -73,7 +73,8 @@ public class Password {
                     // it's more likely the input comes from a pipe, such as
                     // "echo password |" or "cat password_file |" where input
                     // will be silently consumed without echoing to the screen.
-                    System.err.print("[WARNING: Input may be visible on screen] ");
+                    System.err.print(ResourcesMgr.getString
+                            ("warning.input.may.be.visible.on.screen"));
                 }
             }
 
