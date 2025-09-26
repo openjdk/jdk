@@ -244,15 +244,38 @@ public:
   }
 };
 
-template <bool use_coops>
-void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
-                                                             oopDesc* archive_object,
-                                                             oop heap_object,
-                                                             size_t size,
-                                                             Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack,
-                                                             JavaThread* thread) {
-  assert(object_index >= 0 && object_index <= (int)_num_archived_objects,
-         "Heap object reference out of index: %d", object_index);
+// Link object after copying in-place
+template <typename LinkerT>
+class CopyConjointLinkingOopClosure : public BasicOopIterateClosure {
+private:
+  oop _obj;
+  LinkerT _linker;
+
+public:
+  CopyConjointLinkingOopClosure(oop obj, LinkerT linker)
+    : _obj(obj),
+      _linker(linker) {
+  }
+
+  virtual void do_oop(oop* p) { do_oop_work(p, (int)*(intptr_t*)p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p, *(int*)p); }
+
+  template <typename T>
+  void do_oop_work(T* p, int object_index) {
+    uintptr_t p_offset = uintptr_t(p) - cast_from_oop<uintptr_t>(_obj);
+    oop pointee = _linker(p_offset, object_index);
+    if (pointee != nullptr) {
+      _obj->obj_field_put_access<IS_DEST_UNINITIALIZED>((int)p_offset, pointee);
+    }
+  }
+};
+
+template <bool use_coops, typename LinkerT>
+void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
+                                             oop heap_object,
+                                             size_t size,
+                                             LinkerT linker) {
+  CopyConjointLinkingOopClosure cl(heap_object, linker);
 
   if (!_allow_gc) {
     size_t payload_size = size - 1;
@@ -260,7 +283,6 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
     HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object) + 1;
 
     Copy::disjoint_words(archive_start, heap_start, payload_size);
-    PushReferenceOopClosure cl(dfs_stack, heap_object, object_index);
     heap_object->oop_iterate(&cl);
     HeapShared::remap_loaded_metadata(heap_object);
     return;
@@ -286,11 +308,10 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
 
     // This is the address of the pointee inside the input stream
     RawElementT* archive_payload_addr = ((RawElementT*)archive_object) + unfinished_bit - start_bit;
+    RawElementT* heap_payload_addr = cast_from_oop<RawElementT*>(heap_object) + unfinished_bit - start_bit;
 
     if (next_reference_bit > unfinished_bit) {
       // Primitive bytes available
-      RawElementT* heap_payload_addr = cast_from_oop<RawElementT*>(heap_object) + unfinished_bit - start_bit;
-
       size_t primitive_elements = next_reference_bit - unfinished_bit;
       size_t primitive_bytes = primitive_elements * sizeof(RawElementT);
       ::memcpy(heap_payload_addr, archive_payload_addr, primitive_bytes);
@@ -299,11 +320,15 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
     } else {
       // Encountered reference
       RawElementT* archive_p = (RawElementT*)archive_payload_addr;
-      RawElementT pointee_object_index = *archive_p;
+      OopElementT* heap_p = (OopElementT*)heap_payload_addr;
+      int pointee_object_index = (int)*archive_p;
+      uintptr_t heap_p_offset = uintptr_t(heap_p) - cast_from_oop<uintptr_t>(heap_object);
 
-      assert(pointee_object_index >= 0 && pointee_object_index <= (int)_num_archived_objects,
-             "Heap object reference out of index: %d", (int)pointee_object_index);
-      dfs_stack.push({(int)pointee_object_index, object_index, (unfinished_bit - start_bit) * sizeof(OopElementT)});
+      // Disjoint linking in the heap object.
+      oop obj = linker(heap_p_offset, pointee_object_index);
+      if (obj != nullptr) {
+        heap_object->obj_field_put(heap_p_offset, obj);
+      }
 
       unfinished_bit++;
       next_reference_bit = _oopmap.find_first_set_bit(unfinished_bit, end_bit);
@@ -311,6 +336,25 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
   }
 
   HeapShared::remap_loaded_metadata(heap_object);
+}
+
+void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
+                                                             oopDesc* archive_object,
+                                                             oop heap_object,
+                                                             size_t size,
+                                                             Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack) {
+  auto linker = [&](uintptr_t p_offset, int pointee_object_index) {
+    dfs_stack.push({pointee_object_index, object_index, p_offset});
+
+    // The tracing linker is a bit lazy and mutates the reference fields in its traversal.
+    // Returning null means don't link now.
+    return oop(nullptr);
+  };
+  if (UseCompressedOops) {
+    copy_object_impl<true>(archive_object, heap_object, size, linker);
+  } else {
+    copy_object_impl<false>(archive_object, heap_object, size, linker);
+  }
 }
 
 oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
@@ -326,11 +370,7 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
   set_heap_object_for_object_index(object_index, heap_object);
 
   // Fill in object contents, and recursively materialize
-  if (UseCompressedOops) {
-    copy_object<true>(object_index, archive_object, heap_object, size, dfs_stack, thread);
-  } else {
-    copy_object<false>(object_index, archive_object, heap_object, size, dfs_stack, thread);
-  }
+  copy_object(object_index, archive_object, heap_object, size, dfs_stack);
 
   if (string_intern) {
     // Interned string... finish materializing and link it to the string table
@@ -453,15 +493,14 @@ public:
 };
 
 void AOTStreamedHeapLoader::IterativeObjectLoader::copy_object(oopDesc* archive_object, oop heap_object, size_t size) {
-  // Don't copy the markWord; it is set on allocation time
-  size_t payload_size = size - 1;
-  HeapWord* archive_start = ((HeapWord*)archive_object) + 1;
-  HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object) + 1;
-
-  Copy::disjoint_words(archive_start, heap_start, payload_size);
-  InflateReferenceOopClosure cl;
-  heap_object->oop_iterate(&cl);
-  HeapShared::remap_loaded_metadata(heap_object);
+  auto linker = [&](uintptr_t p_offset, int pointee_object_index) {
+    return AOTStreamedHeapLoader::heap_object_for_object_index(pointee_object_index);
+  };
+  if (UseCompressedOops) {
+    copy_object_impl<true>(archive_object, heap_object, size, linker);
+  } else {
+    copy_object_impl<false>(archive_object, heap_object, size, linker);
+  }
 }
 
 // The range is inclusive

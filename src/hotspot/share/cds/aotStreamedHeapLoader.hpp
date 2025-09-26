@@ -161,6 +161,12 @@ private:
   static size_t buffer_offset_for_archive_object(oopDesc* archive_object);
   static BitMap::idx_t obj_bit_idx_for_buffer_offset(size_t buffer_offset);
 
+  template <bool use_coops, typename LinkerT>
+  static void copy_object_impl(oopDesc* archive_object,
+                               oop heap_object,
+                               size_t size,
+                               LinkerT linker);
+
   static void switch_object_index_to_handle(int object_index);
   static oop heap_object_for_object_index(int object_index);
   static void set_heap_object_for_object_index(int object_index, oop heap_object);
@@ -174,13 +180,11 @@ private:
   class TracingObjectLoader {
     static oop materialize_object(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
     static oop materialize_object_inner(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
-    template <bool use_coops>
     static void copy_object(int object_index,
                             oopDesc* archive_object,
                             oop heap_object,
                             size_t size,
-                            Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack,
-                            JavaThread* thread);
+                            Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack);
     static void drain_stack(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
     static oop materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
 
