@@ -1858,11 +1858,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             // Avoid overflow of preferredScale + e10, the result's scale
             res = createAndStripZerosToMatchScale(quot, e10, 0L);
         } else { // scaleDiff exceeds int range
-            long offsetL = (scaleDiff + e10) - preferredScale;
-            int offset = (int) offsetL;
-            if (offset != offsetL)
-                throw new ArithmeticException("Overflow");
-
+            int offset = checkScale(quot, (scaleDiff + e10) - preferredScale);
             res = new BigDecimal(quot, offset).adjustToPreferredScale(0, 0);
         }
         // now res == (this/divisor) * 10^preferredScale
