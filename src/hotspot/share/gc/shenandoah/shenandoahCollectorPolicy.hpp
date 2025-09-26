@@ -42,6 +42,7 @@ private:
   // Written by control thread, read by mutators
   volatile size_t _success_full_gcs;
   uint _consecutive_degenerated_gcs;
+  uint _consecutive_degenerated_gcs_without_progress;
   volatile size_t _consecutive_young_gcs;
   size_t _mixed_gcs;
   size_t _success_old_gcs;
@@ -55,8 +56,25 @@ private:
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;
 
+  void reset_consecutive_degenerated_gcs() {
+    _consecutive_degenerated_gcs = 0;
+    _consecutive_degenerated_gcs_without_progress = 0;
+  }
 
 public:
+  // The most common scenario for lack of good progress following a degenerated GC is an accumulation of floating
+  // garbage during the most recently aborted concurrent GC effort.  With generational GC, it is far more effective to
+  // reclaim this floating garbage with another degenerated cycle (which focuses on young generation and might require
+  // a pause of 200 ms) rather than a full GC cycle (which may require over 2 seconds with a 10 GB old generation).
+  //
+  // In generational mode, we'll only upgrade to full GC if we've done two degen cycles in a row and both indicated
+  // bad progress.  In non-generational mode, we'll preserve the original behavior, which is to upgrade to full
+  // immediately following a degenerated cycle with bad progress.  This preserves original behavior of non-generational
+  // Shenandoah to avoid introducing "surprising new behavior."  It also makes less sense with non-generational
+  // Shenandoah to replace a full GC with a degenerated GC, because both have similar pause times in non-generational
+  // mode.
+  static constexpr size_t GENERATIONAL_CONSECUTIVE_BAD_DEGEN_PROGRESS_THRESHOLD = 2;
+
   ShenandoahCollectorPolicy();
 
   void record_mixed_cycle();
@@ -69,7 +87,12 @@ public:
   // cycles are very efficient and are worth tracking. Note that both degenerated and
   // concurrent cycles can be abbreviated.
   void record_success_concurrent(bool is_young, bool is_abbreviated);
-  void record_success_degenerated(bool is_young, bool is_abbreviated);
+
+  // Record that a degenerated cycle has been completed. Note that such a cycle may or
+  // may not make "progress". We separately track the total number of degenerated cycles,
+  // the number of consecutive degenerated cycles and the number of consecutive cycles that
+  // fail to make good progress.
+  void record_degenerated(bool is_young, bool is_abbreviated, bool progress);
   void record_success_full();
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
@@ -92,6 +115,11 @@ public:
   // failure.
   size_t consecutive_degenerated_gc_count() const {
     return _consecutive_degenerated_gcs;
+  }
+
+  // Genshen will only upgrade to a full gc after the configured number of futile degenerated cycles.
+  bool generational_should_upgrade_degenerated_gc() const {
+    return _consecutive_degenerated_gcs_without_progress >= GENERATIONAL_CONSECUTIVE_BAD_DEGEN_PROGRESS_THRESHOLD;
   }
 
   static bool is_allocation_failure(GCCause::Cause cause);

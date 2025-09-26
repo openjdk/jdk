@@ -26,16 +26,16 @@
  * @bug 8354276
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
- * @run testng/othervm
+ * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
  *      BadPushPromiseTest
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -59,7 +59,7 @@ import java.util.concurrent.ConcurrentMap;
 import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.List.of;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class BadPushPromiseTest {
 
@@ -73,11 +73,11 @@ public class BadPushPromiseTest {
 
     static final String MAIN_RESPONSE_BODY = "the main response body";
 
-    HttpServerAdapters.HttpTestServer server;
-    URI uri;
+    static HttpServerAdapters.HttpTestServer server;
+    static URI uri;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    static void setup() throws Exception {
         server = HttpServerAdapters.HttpTestServer.create(HTTP_2);
         HttpServerAdapters.HttpTestHandler handler = new ServerPushHandler(MAIN_RESPONSE_BODY);
         server.addHandler(handler, "/");
@@ -87,8 +87,8 @@ public class BadPushPromiseTest {
         uri = new URI("http://" + authority + "/foo/a/b/c");
     }
 
-    @AfterTest
-    public void teardown() {
+    @AfterAll
+    static void teardown() {
         server.stop();
     }
 
@@ -96,7 +96,7 @@ public class BadPushPromiseTest {
      * Malformed push promise headers should kill the connection
      */
     @Test
-    public void test() throws Exception {
+    void test() {
         HttpClient client = HttpClient.newHttpClient();
 
         for (int i=0; i< BAD_HEADERS.size(); i++) {
@@ -123,8 +123,7 @@ public class BadPushPromiseTest {
     // sync with implementation.
     static void assertDetailMessage(Throwable throwable, int iterationIndex) {
         try {
-            assertTrue(throwable instanceof ProtocolException,
-                    "Expected ProtocolException, got " + throwable);
+            assertInstanceOf(ProtocolException.class, throwable, "Expected ProtocolException, got " + throwable);
 
             if (iterationIndex == 0) { // unknown
                 assertTrue(throwable.getMessage().contains("Unknown pseudo-header"),
