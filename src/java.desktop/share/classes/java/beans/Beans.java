@@ -68,14 +68,14 @@ public class Beans {
      * This name should be a {@linkplain ClassLoader##binary-name binary name} of a class such as "a.b.c".
      * <p>
      * The given name can indicate either a serialized object or a class.
-     * We first try to treat the beanName as a serialized object
+     * We first try to treat the {@code beanName} as a serialized object
      * name then as a class name.
      * <p>
-     * When using the beanName as a serialized object name we convert the
-     * given beanName to a resource pathname and add a trailing ".ser" suffix.
+     * When using the {@code beanName} as a serialized object name we convert the
+     * given {@code beanName} to a resource pathname and add a trailing ".ser" suffix.
      * We then try to load a serialized object from that resource.
      * <p>
-     * For example, given a beanName of "x.y", Beans.instantiate would first
+     * For example, given a {@code beanName} of "x.y", {@code Beans.instantiate} would first
      * try to read a serialized object from the resource "x/y.ser" and if
      * that failed it would try to load the class "x.y" and create an
      * instance of that class.
@@ -104,14 +104,14 @@ public class Beans {
      * This name should be a {@linkplain ClassLoader##binary-name binary name} of a class such as "a.b.c".
      * <p>
      * The given name can indicate either a serialized object or a class.
-     * We first try to treat the beanName as a serialized object
+     * We first try to treat the {@code beanName} as a serialized object
      * name then as a class name.
      * <p>
-     * When using the beanName as a serialized object name we convert the
-     * given beanName to a resource pathname and add a trailing ".ser" suffix.
+     * When using the {@code beanName} as a serialized object name we convert the
+     * given {@code beanName} to a resource pathname and add a trailing ".ser" suffix.
      * We then try to load a serialized object from that resource.
      * <p>
-     * For example, given a beanName of "x.y", Beans.instantiate would first
+     * For example, given a {@code beanName} of "x.y", {@code Beans.instantiate} would first
      * try to read a serialized object from the resource "x/y.ser" and if
      * that failed it would try to load the class "x.y" and create an
      * instance of that class.
