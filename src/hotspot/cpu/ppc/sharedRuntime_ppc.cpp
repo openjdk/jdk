@@ -2974,7 +2974,6 @@ void SharedRuntime::generate_deopt_blob() {
   // The return_pc has been stored in the frame of the deoptee and
   // will replace the address of the deopt_handler in the call
   // to Deoptimization::fetch_unroll_info below.
-  const int return_pc_adjustment_no_exception = -MacroAssembler::bl64_patchable_size;
 
   // Push the "unpack frame"
   // Save everything in sight.
