@@ -135,6 +135,7 @@ class oopDesc;
 #define UINT64_FORMAT_X_0        "0x%016"     PRIx64
 #define UINT64_FORMAT_W(width)   "%"   #width PRIu64
 #define UINT64_FORMAT_0          "%016"       PRIx64
+#define PHYS_MEM_TYPE_FORMAT     "%"          PRIu64
 
 // Format jlong, if necessary
 #ifndef JLONG_FORMAT
@@ -416,6 +417,11 @@ const uintx max_uintx = (uintx)-1;
 // max_uintx            0xFFFFFFFF      0xFFFFFFFFFFFFFFFF
 
 typedef unsigned int uint;   NEEDS_CLEANUP
+
+// This typedef is to address the issue of running a 32-bit VM. In this case the amount
+// of physical memory may not fit in size_t, so we have to have a larger type. Once 32-bit
+// is deprecated, one can use size_t.
+typedef uint64_t physical_memory_size_type;
 
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
