@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,12 +159,10 @@ void *run_java_overflow (void *p) {
 
 void do_overflow(){
   volatile int *p = NULL;
-  if (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
-    for(;;) {
-      _rec_count++;
-      p = (int*)alloca(128);
-      _peek_value = p[0]; // Peek
-    }
+  while (_kp_rec_count == 0 || _rec_count < _kp_rec_count) {
+    _rec_count++;
+    p = (int*)alloca(128);
+    _peek_value = p[0]; // Peek
   }
 }
 
