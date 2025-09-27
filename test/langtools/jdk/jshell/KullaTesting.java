@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,6 @@ import jdk.jshell.SourceCodeAnalysis.Completeness;
 import jdk.jshell.SourceCodeAnalysis.QualifiedNames;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 import jdk.jshell.UnresolvedReferenceException;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 
 import jdk.jshell.Diag;
 
@@ -80,9 +78,11 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 import static jdk.jshell.Snippet.Status.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static jdk.jshell.Snippet.SubKind.METHOD_SUBKIND;
 import jdk.jshell.SourceCodeAnalysis.Documentation;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 public class KullaTesting {
 
@@ -166,7 +166,7 @@ public class KullaTesting {
         addToClasspath(path.toString());
     }
 
-    @BeforeMethod
+    @BeforeEach
     public void setUp() {
         setUp(b -> {});
     }
@@ -202,7 +202,7 @@ public class KullaTesting {
         idToSnippet = new LinkedHashMap<>();
     }
 
-    @AfterMethod
+    @AfterEach
     public void tearDown() {
         if (state != null) state.close();
         state = null;
@@ -226,16 +226,16 @@ public class KullaTesting {
 
     public List<String> assertUnresolvedDependencies(DeclarationSnippet key, int unresolvedSize) {
         List<String> unresolved = getState().unresolvedDependencies(key).collect(toList());
-        assertEquals(unresolved.size(), unresolvedSize, "Input: " + key.source() + ", checking unresolved: ");
+        assertEquals(unresolvedSize, unresolved.size(), "Input: " + key.source() + ", checking unresolved: ");
         return unresolved;
     }
 
     public DeclarationSnippet assertUnresolvedDependencies1(DeclarationSnippet key, Status status, String name) {
         List<String> unresolved = assertUnresolvedDependencies(key, 1);
         String input = key.source();
-        assertEquals(unresolved.size(), 1, "Given input: " + input + ", checking unresolved");
-        assertEquals(unresolved.get(0), name, "Given input: " + input + ", checking unresolved: ");
-        assertEquals(getState().status(key), status, "Given input: " + input + ", checking status: ");
+        assertEquals(1, unresolved.size(), "Given input: " + input + ", checking unresolved");
+        assertEquals(name, unresolved.get(0), "Given input: " + input + ", checking unresolved: ");
+        assertEquals(status, getState().status(key), "Given input: " + input + ", checking status: ");
         return key;
     }
 
@@ -243,24 +243,24 @@ public class KullaTesting {
         List<SnippetEvent> events = assertEval(input, null, UnresolvedReferenceException.class, DiagCheck.DIAG_OK, DiagCheck.DIAG_OK, null);
         SnippetEvent ste = events.get(0);
         DeclarationSnippet sn = ((UnresolvedReferenceException) ste.exception()).getSnippet();
-        assertEquals(sn.name(), name, "Given input: " + input + ", checking name");
-        assertEquals(getState().unresolvedDependencies(sn).count(), unresolvedSize, "Given input: " + input + ", checking unresolved");
-        assertEquals(getState().diagnostics(sn).count(), (long) diagnosticsSize, "Given input: " + input + ", checking diagnostics");
+        assertEquals(name, sn.name(), "Given input: " + input + ", checking name");
+        assertEquals(unresolvedSize, getState().unresolvedDependencies(sn).count(), "Given input: " + input + ", checking unresolved");
+        assertEquals((long) diagnosticsSize, getState().diagnostics(sn).count(), "Given input: " + input + ", checking diagnostics");
         return sn;
     }
 
     public Snippet assertKeyMatch(String input, boolean isExecutable, SubKind expectedSubKind, STEInfo mainInfo, STEInfo... updates) {
         Snippet key = key(assertEval(input, IGNORE_VALUE, mainInfo, updates));
         String source = key.source();
-        assertEquals(source, input, "Key \"" + input + "\" source mismatch, got: " + source + ", expected: " + input);
+        assertEquals(input, source, "Key \"" + input + "\" source mismatch, got: " + source + ", expected: " + input);
         SubKind subkind = key.subKind();
-        assertEquals(subkind, expectedSubKind, "Key \"" + input + "\" subkind mismatch, got: "
+        assertEquals(expectedSubKind, subkind, "Key \"" + input + "\" subkind mismatch, got: "
                 + subkind + ", expected: " + expectedSubKind);
-        assertEquals(subkind.isExecutable(), isExecutable, "Key \"" + input + "\", expected isExecutable: "
+        assertEquals(isExecutable, subkind.isExecutable(), "Key \"" + input + "\", expected isExecutable: "
                 + isExecutable + ", got: " + subkind.isExecutable());
         Snippet.Kind expectedKind = getKind(key);
-        assertEquals(key.kind(), expectedKind, "Checking kind: ");
-        assertEquals(expectedSubKind.kind(), expectedKind, "Checking kind: ");
+        assertEquals(expectedKind, key.kind(), "Checking kind: ");
+        assertEquals(expectedKind, expectedSubKind.kind(), "Checking kind: ");
         return key;
     }
 
@@ -310,9 +310,9 @@ public class KullaTesting {
 
         assertTrue(key instanceof ImportSnippet, "Expected an ImportKey, got: " + key.getClass().getName());
         ImportSnippet importKey = (ImportSnippet) key;
-        assertEquals(importKey.name(), name, "Input \"" + input +
+        assertEquals(name, importKey.name(), "Input \"" + input +
                 "\" name mismatch, got: " + importKey.name() + ", expected: " + name);
-        assertEquals(importKey.kind(), Kind.IMPORT, "Checking kind: ");
+        assertEquals(Kind.IMPORT, importKey.kind(), "Checking kind: ");
         return importKey;
     }
 
@@ -321,7 +321,7 @@ public class KullaTesting {
 
         assertTrue(key instanceof DeclarationSnippet, "Expected a DeclarationKey, got: " + key.getClass().getName());
         DeclarationSnippet declKey = (DeclarationSnippet) key;
-        assertEquals(declKey.name(), name, "Input \"" + input +
+        assertEquals(name, declKey.name(), "Input \"" + input +
                 "\" name mismatch, got: " + declKey.name() + ", expected: " + name);
         return declKey;
     }
@@ -331,9 +331,9 @@ public class KullaTesting {
         assertTrue(sn instanceof VarSnippet, "Expected a VarKey, got: " + sn.getClass().getName());
         VarSnippet variableKey = (VarSnippet) sn;
         String signature = variableKey.typeName();
-        assertEquals(signature, typeName, "Key \"" + input +
+        assertEquals(typeName, signature, "Key \"" + input +
                 "\" typeName mismatch, got: " + signature + ", expected: " + typeName);
-        assertEquals(variableKey.kind(), Kind.VAR, "Checking kind: ");
+        assertEquals(Kind.VAR, variableKey.kind(), "Checking kind: ");
         return variableKey;
     }
 
@@ -341,11 +341,11 @@ public class KullaTesting {
         Snippet key = assertKeyMatch(input, true, kind, added(VALID));
         assertTrue(key instanceof ExpressionSnippet, "Expected a ExpressionKey, got: " + key.getClass().getName());
         ExpressionSnippet exprKey = (ExpressionSnippet) key;
-        assertEquals(exprKey.name(), name, "Input \"" + input +
+        assertEquals(name, exprKey.name(), "Input \"" + input +
                 "\" name mismatch, got: " + exprKey.name() + ", expected: " + name);
-        assertEquals(exprKey.typeName(), typeName, "Key \"" + input +
+        assertEquals(typeName, exprKey.typeName(), "Key \"" + input +
                 "\" typeName mismatch, got: " + exprKey.typeName() + ", expected: " + typeName);
-        assertEquals(exprKey.kind(), Kind.EXPRESSION, "Checking kind: ");
+        assertEquals(Kind.EXPRESSION, exprKey.kind(), "Checking kind: ");
     }
 
     // For expressions throwing an EvalException
@@ -403,7 +403,7 @@ public class KullaTesting {
     <T> void assertStreamMatch(Stream<T> result, T... expected) {
         Set<T> sns = result.collect(toSet());
         Set<T> exp = Stream.of(expected).collect(toSet());
-        assertEquals(sns, exp);
+        assertEquals(exp, sns);
     }
 
     private Map<Snippet, Snippet> closure(List<SnippetEvent> events) {
@@ -484,9 +484,9 @@ public class KullaTesting {
         });
         List<SnippetEvent> events = toTest.get();
         getState().unsubscribe(token);
-        assertEquals(dispatched.size(), events.size(), "dispatched event size not the same as event size");
+        assertEquals(events.size(), dispatched.size(), "dispatched event size not the same as event size");
         for (int i = events.size() - 1; i >= 0; --i) {
-            assertEquals(dispatched.get(i), events.get(i), "Event element " + i + " does not match");
+            assertEquals(events.get(i), dispatched.get(i), "Event element " + i + " does not match");
         }
         dispatched.add(null); // mark end of dispatchs
 
@@ -500,11 +500,11 @@ public class KullaTesting {
                 if (old != null) {
                     switch (evt.status()) {
                         case DROPPED:
-                            assertEquals(old, evt.snippet(),
+                            assertEquals(evt.snippet(), old,
                                     "Drop: Old snippet must be what is dropped -- input: " + descriptor);
                             break;
                         case OVERWRITTEN:
-                            assertEquals(old, evt.snippet(),
+                            assertEquals(evt.snippet(), old,
                                     "Overwrite: Old snippet (" + old
                                     + ") must be what is overwritten -- input: "
                                     + descriptor + " -- " + evt);
@@ -512,12 +512,12 @@ public class KullaTesting {
                         default:
                             if (evt.causeSnippet() == null) {
                                 // New source
-                                assertNotEquals(old, evt.snippet(),
+                                assertNotEquals(evt.snippet(), old,
                                         "New source: Old snippet must be different from the replacing -- input: "
                                         + descriptor);
                             } else {
                                 // An update (key Overwrite??)
-                                assertEquals(old, evt.snippet(),
+                                assertEquals(evt.snippet(), old,
                                         "Update: Old snippet must be equal to the replacing -- input: "
                                         + descriptor);
                             }
@@ -557,7 +557,7 @@ public class KullaTesting {
 
         int impactId = 0;
         Map<Snippet, List<SnippetEvent>> groupedEvents = groupByCauseSnippet(events);
-        assertEquals(groupedEvents.size(), eventChains.length, "Number of main events");
+        assertEquals(eventChains.length, groupedEvents.size(), "Number of main events");
         for (Map.Entry<Snippet, List<SnippetEvent>> entry : groupedEvents.entrySet()) {
             EventChain eventChain = eventChains[impactId++];
             SnippetEvent main = entry.getValue().get(0);
@@ -580,12 +580,12 @@ public class KullaTesting {
                 }
             }
             if (((Object) eventChain.value) != IGNORE_VALUE) {
-                assertEquals(main.value(), eventChain.value, "Expected execution value of: " + eventChain.value +
+                assertEquals(eventChain.value, main.value(), "Expected execution value of: " + eventChain.value +
                         ", but got: " + main.value());
             }
             if (eventChain.exceptionClass != IGNORE_EXCEPTION) {
                 if (main.exception() == null) {
-                    assertEquals(eventChain.exceptionClass, null, "Expected an exception of class "
+                    assertEquals(null, eventChain.exceptionClass, "Expected an exception of class "
                             + eventChain.exceptionClass + " got no exception");
                 } else if (eventChain.exceptionClass == null) {
                     fail("Expected no exception but got " + main.exception().toString());
@@ -598,7 +598,7 @@ public class KullaTesting {
             List<Diag> diagnostics = getState().diagnostics(mainKey).collect(toList());
             switch (diagMain) {
                 case DIAG_OK:
-                    assertEquals(diagnostics.size(), 0, "Expected no diagnostics, got: " + diagnosticsToString(diagnostics));
+                    assertEquals(0, diagnostics.size(), "Expected no diagnostics, got: " + diagnosticsToString(diagnostics));
                     break;
                 case DIAG_WARNING:
                     assertFalse(hasFatalError(diagnostics), "Expected no errors, got: " + diagnosticsToString(diagnostics));
@@ -612,7 +612,7 @@ public class KullaTesting {
                     diagnostics = getState().diagnostics(ste.snippet()).collect(toList());
                     switch (diagUpdates) {
                         case DIAG_OK:
-                            assertEquals(diagnostics.size(), 0, "Expected no diagnostics, got: " + diagnosticsToString(diagnostics));
+                            assertEquals(0, diagnostics.size(), "Expected no diagnostics, got: " + diagnosticsToString(diagnostics));
                             break;
                         case DIAG_WARNING:
                             assertFalse(hasFatalError(diagnostics), "Expected no errors, got: " + diagnosticsToString(diagnostics));
@@ -627,7 +627,7 @@ public class KullaTesting {
     // Use this for all EMPTY calls to eval()
     public void assertEvalEmpty(String input) {
         List<SnippetEvent> events = getState().eval(input);
-        assertEquals(events.size(), 0, "Expected no events, got: " + events.size());
+        assertEquals(0, events.size(), "Expected no events, got: " + events.size());
     }
 
     public VarSnippet varKey(List<SnippetEvent> events) {
@@ -661,7 +661,7 @@ public class KullaTesting {
 
     public void assertVarValue(Snippet key, String expected) {
         String value = state.varValue((VarSnippet) key);
-        assertEquals(value, expected, "Expected var value of: " + expected + ", but got: " + value);
+        assertEquals(expected, value, "Expected var value of: " + expected + ", but got: " + value);
     }
 
     public Snippet assertDeclareFail(String input, String expectedErrorCode) {
@@ -685,7 +685,7 @@ public class KullaTesting {
                 DiagCheck.DIAG_ERROR, DiagCheck.DIAG_IGNORE, mainInfo, updates);
         SnippetEvent e = events.get(0);
         Snippet key = e.snippet();
-        assertEquals(getState().status(key), REJECTED);
+        assertEquals(REJECTED, getState().status(key));
         List<Diag> diagnostics = getState().diagnostics(e.snippet()).collect(toList());
         assertTrue(diagnostics.size() > 0, "Expected diagnostics, got none");
         assertDiagnostic(input, diagnostics.get(0), expectedDiagnostic);
@@ -728,7 +728,7 @@ public class KullaTesting {
         assertDeclarationSnippet(method, expectedName, expectedStatus,
                 METHOD_SUBKIND, unressz, othersz);
         String signature = method.signature();
-        assertEquals(signature, expectedSignature,
+        assertEquals(expectedSignature, signature,
                 "Expected " + method.source() + " to have the name: " +
                         expectedSignature + ", got: " + signature);
     }
@@ -740,7 +740,7 @@ public class KullaTesting {
         assertDeclarationSnippet(var, expectedName, expectedStatus,
                 expectedSubKind, unressz, othersz);
         String signature = var.typeName();
-        assertEquals(signature, expectedTypeName,
+        assertEquals(expectedTypeName, signature,
                 "Expected " + var.source() + " to have the type name: " +
                         expectedTypeName + ", got: " + signature);
     }
@@ -751,27 +751,27 @@ public class KullaTesting {
             int unressz, int othersz) {
         assertKey(declarationKey, expectedStatus, expectedSubKind);
         String source = declarationKey.source();
-        assertEquals(declarationKey.name(), expectedName,
+        assertEquals(expectedName, declarationKey.name(),
                 "Expected " + source + " to have the name: " + expectedName + ", got: " + declarationKey.name());
         long unresolved = getState().unresolvedDependencies(declarationKey).count();
-        assertEquals(unresolved, unressz, "Expected " + source + " to have " + unressz
+        assertEquals(unressz, unresolved, "Expected " + source + " to have " + unressz
                 + " unresolved symbols, got: " + unresolved);
         long otherCorralledErrorsCount = getState().diagnostics(declarationKey).count();
-        assertEquals(otherCorralledErrorsCount, othersz, "Expected " + source + " to have " + othersz
+        assertEquals(othersz, otherCorralledErrorsCount, "Expected " + source + " to have " + othersz
                 + " other errors, got: " + otherCorralledErrorsCount);
     }
 
     public void assertKey(Snippet key, Status expectedStatus, SubKind expectedSubKind) {
         String source = key.source();
         SubKind actualSubKind = key.subKind();
-        assertEquals(actualSubKind, expectedSubKind,
+        assertEquals(expectedSubKind, actualSubKind,
                 "Expected " + source + " to have the subkind: " + expectedSubKind + ", got: " + actualSubKind);
         Status status = getState().status(key);
-        assertEquals(status, expectedStatus, "Expected " + source + " to be "
+        assertEquals(expectedStatus, status, "Expected " + source + " to be "
                 + expectedStatus + ", but it is " + status);
         Snippet.Kind expectedKind = getKind(key);
-        assertEquals(key.kind(), expectedKind, "Checking kind: ");
-        assertEquals(expectedSubKind.kind(), expectedKind, "Checking kind: ");
+        assertEquals(expectedKind, key.kind(), "Checking kind: ");
+        assertEquals(expectedKind, expectedSubKind.kind(), "Checking kind: ");
     }
 
     public void assertDrop(Snippet key, STEInfo mainInfo, STEInfo... updates) {
@@ -796,36 +796,36 @@ public class KullaTesting {
 
     public void assertAnalyze(String input, Completeness status, String source, String remaining, Boolean isComplete) {
         CompletionInfo ci = getAnalysis().analyzeCompletion(input);
-        if (status != null) assertEquals(ci.completeness(), status, "Input : " + input + ", status: ");
-        assertEquals(ci.source(), source, "Input : " + input + ", source: ");
-        if (remaining != null) assertEquals(ci.remaining(), remaining, "Input : " + input + ", remaining: ");
+        if (status != null) assertEquals(status, ci.completeness(), "Input : " + input + ", status: ");
+        assertEquals(source, ci.source(), "Input : " + input + ", source: ");
+        if (remaining != null) assertEquals(remaining, ci.remaining(), "Input : " + input + ", remaining: ");
         if (isComplete != null) {
             boolean isExpectedComplete = isComplete;
-            assertEquals(ci.completeness().isComplete(), isExpectedComplete, "Input : " + input + ", isComplete: ");
+            assertEquals(isExpectedComplete, ci.completeness().isComplete(), "Input : " + input + ", isComplete: ");
         }
     }
 
     public void assertNumberOfActiveVariables(int cnt) {
-        assertEquals(getState().variables().count(), cnt, "Variables : " + getState().variables().collect(toList()));
+        assertEquals(cnt, getState().variables().count(), "Variables : " + getState().variables().collect(toList()));
     }
 
     public void assertNumberOfActiveMethods(int cnt) {
-        assertEquals(getState().methods().count(), cnt, "Methods : " + getState().methods().collect(toList()));
+        assertEquals(cnt, getState().methods().count(), "Methods : " + getState().methods().collect(toList()));
     }
 
     public void assertNumberOfActiveClasses(int cnt) {
-        assertEquals(getState().types().count(), cnt, "Types : " + getState().types().collect(toList()));
+        assertEquals(cnt, getState().types().count(), "Types : " + getState().types().collect(toList()));
     }
 
     public void assertKeys(MemberInfo... expected) {
         int index = 0;
         List<Snippet> snippets = getState().snippets().collect(toList());
-        assertEquals(allSnippets.size(), snippets.size());
+        assertEquals(snippets.size(), allSnippets.size());
         for (Snippet sn : snippets) {
             if (sn.kind().isPersistent() && getState().status(sn).isActive()) {
                 MemberInfo actual = getMemberInfo(sn);
                 MemberInfo exp = expected[index];
-                assertEquals(actual, exp, String.format("Difference in #%d. Expected: %s, actual: %s",
+                assertEquals(exp, actual, String.format("Difference in #%d. Expected: %s, actual: %s",
                         index, exp, actual));
                 ++index;
             }
@@ -841,7 +841,7 @@ public class KullaTesting {
         int index = 0;
         for (Snippet key : getState().snippets().collect(toList())) {
             if (state.status(key).isActive()) {
-                assertEquals(expected[index], key, String.format("Difference in #%d. Expected: %s, actual: %s", index, key, expected[index]));
+                assertEquals(key, expected[index], String.format("Difference in #%d. Expected: %s, actual: %s", index, key, expected[index]));
                 ++index;
             }
         }
@@ -853,7 +853,7 @@ public class KullaTesting {
                 .collect(Collectors.toSet());
         Set<Snippet> got = snippets
                 .collect(Collectors.toSet());
-        assertEquals(active, got, label);
+        assertEquals(got, active, label);
     }
 
     public void assertVariables() {
@@ -873,8 +873,8 @@ public class KullaTesting {
         Set<MemberInfo> got = members
                         .map(this::getMemberInfo)
                         .collect(Collectors.toSet());
-        assertEquals(got.size(), expected.size(), "Expected : " + expected + ", actual : " + members);
-        assertEquals(got, expected);
+        assertEquals(expected.size(), got.size(), "Expected : " + expected + ", actual : " + members);
+        assertEquals(expected, got);
     }
 
     public void assertVariables(MemberInfo...expected) {
@@ -892,7 +892,7 @@ public class KullaTesting {
             }
             assertNotNull(expectedInfo, "Not found method: " + methodKey.name());
             int lastIndexOf = expectedInfo.type.lastIndexOf(')');
-            assertEquals(methodKey.parameterTypes(), expectedInfo.type.substring(1, lastIndexOf), "Parameter types");
+            assertEquals(expectedInfo.type.substring(1, lastIndexOf), methodKey.parameterTypes(), "Parameter types");
         });
     }
 
@@ -906,7 +906,7 @@ public class KullaTesting {
 
     public void assertCompletion(String code, Boolean isSmart, String... expected) {
         List<String> completions = computeCompletions(code, isSmart);
-        assertEquals(completions, Arrays.asList(expected), "Input: " + code + ", " + completions.toString());
+        assertEquals(Arrays.asList(expected), completions, "Input: " + code + ", " + completions.toString());
     }
 
     public void assertCompletionIncludesExcludes(String code, Set<String> expected, Set<String> notExpected) {
@@ -940,7 +940,7 @@ public class KullaTesting {
     public void assertInferredType(String code, String expectedType) {
         String inferredType = getAnalysis().analyzeType(code, code.length());
 
-        assertEquals(inferredType, expectedType, "Input: " + code + ", " + inferredType);
+        assertEquals(expectedType, inferredType, "Input: " + code + ", " + inferredType);
     }
 
     public void assertInferredFQNs(String code, String... fqns) {
@@ -952,9 +952,9 @@ public class KullaTesting {
 
         QualifiedNames candidates = getAnalysis().listQualifiedNames(code, code.length());
 
-        assertEquals(candidates.getNames(), Arrays.asList(fqns), "Input: " + code + ", candidates=" + candidates.getNames());
-        assertEquals(candidates.getSimpleNameLength(), simpleNameLen, "Input: " + code + ", simpleNameLen=" + candidates.getSimpleNameLength());
-        assertEquals(candidates.isResolvable(), resolvable, "Input: " + code + ", resolvable=" + candidates.isResolvable());
+        assertEquals(Arrays.asList(fqns), candidates.getNames(), "Input: " + code + ", candidates=" + candidates.getNames());
+        assertEquals(simpleNameLen, candidates.getSimpleNameLength(), "Input: " + code + ", simpleNameLen=" + candidates.getSimpleNameLength());
+        assertEquals(resolvable, candidates.isResolvable(), "Input: " + code + ", resolvable=" + candidates.isResolvable());
     }
 
     protected void waitIndexingFinished() {
@@ -975,7 +975,7 @@ public class KullaTesting {
         List<Documentation> documentation = getAnalysis().documentation(code, cursor, false);
         Set<String> docSet = documentation.stream().map(doc -> doc.signature()).collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
-        assertEquals(docSet, expectedSet, "Input: " + code);
+        assertEquals(expectedSet, docSet, "Input: " + code);
     }
 
     public void assertJavadoc(String code, String... expected) {
@@ -987,7 +987,7 @@ public class KullaTesting {
                                           .map(doc -> doc.signature() + "\n" + doc.javadoc())
                                           .collect(Collectors.toSet());
         Set<String> expectedSet = Stream.of(expected).collect(Collectors.toSet());
-        assertEquals(docSet, expectedSet, "Input: " + code);
+        assertEquals(expectedSet, docSet, "Input: " + code);
     }
 
     public enum ClassType {
@@ -1183,7 +1183,7 @@ public class KullaTesting {
             assertStatusMatch(ste, ste.previousStatus(), previousStatus());
             assertStatusMatch(ste, ste.status(), status());
             if (checkIsSignatureChange) {
-                assertEquals(ste.isSignatureChange(), isSignatureChange(),
+                assertEquals(isSignatureChange(), ste.isSignatureChange(),
                         "Expected " +
                                 (isSignatureChange()? "" : "no ") +
                                 "signature-change, got: " +
@@ -1206,10 +1206,10 @@ public class KullaTesting {
                     assertTrue(sn != testKey,
                             "Main-event: Expected new snippet to be != : " + testKey
                             + "\n   got-event: " + toString(ste));
-                    assertEquals(sn.id(), testKey.id(), "Expected IDs to match: " + testKey + ", got: " + sn
+                    assertEquals(testKey.id(), sn.id(), "Expected IDs to match: " + testKey + ", got: " + sn
                             + "\n   expected-event: " + this + "\n   got-event: " + toString(ste));
                 } else {
-                    assertEquals(sn, testKey, "Expected key to be: " + testKey + ", got: " + sn
+                    assertEquals(testKey, sn, "Expected key to be: " + testKey + ", got: " + sn
                             + "\n   expected-event: " + this + "\n   got-event: " + toString(ste));
                 }
             }
@@ -1217,7 +1217,7 @@ public class KullaTesting {
 
         private void assertStatusMatch(SnippetEvent ste, Status status, Status expected) {
             if (expected != null) {
-                assertEquals(status, expected, "Expected status to be: " + expected + ", got: " + status +
+                assertEquals(expected, status, "Expected status to be: " + expected + ", got: " + status +
                         "\n   expected-event: " + this + "\n   got-event: " + toString(ste));
             }
         }

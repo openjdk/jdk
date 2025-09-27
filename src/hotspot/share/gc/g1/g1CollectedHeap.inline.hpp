@@ -41,7 +41,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/stackChunkOop.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -53,10 +53,10 @@ inline bool G1STWIsAliveClosure::do_object_b(oop p) {
 
 inline JavaThread* const* G1JavaThreadsListClaimer::claim(uint& count) {
   count = 0;
-  if (Atomic::load(&_cur_claim) >= _list.length()) {
+  if (AtomicAccess::load(&_cur_claim) >= _list.length()) {
     return nullptr;
   }
-  uint claim = Atomic::fetch_then_add(&_cur_claim, _claim_step);
+  uint claim = AtomicAccess::fetch_then_add(&_cur_claim, _claim_step);
   if (claim >= _list.length()) {
     return nullptr;
   }
@@ -147,30 +147,6 @@ inline void G1CollectedHeap::old_set_add(G1HeapRegion* hr) {
 
 inline void G1CollectedHeap::old_set_remove(G1HeapRegion* hr) {
   _old_set.remove(hr);
-}
-
-// It dirties the cards that cover the block so that the post
-// write barrier never queues anything when updating objects on this
-// block. It is assumed (and in fact we assert) that the block
-// belongs to a young region.
-inline void
-G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
-  assert_heap_not_locked();
-
-  // Assign the containing region to containing_hr so that we don't
-  // have to keep calling heap_region_containing() in the
-  // asserts below.
-  DEBUG_ONLY(G1HeapRegion* containing_hr = heap_region_containing(start);)
-  assert(word_size > 0, "pre-condition");
-  assert(containing_hr->is_in(start), "it should contain start");
-  assert(containing_hr->is_young(), "it should be young");
-  assert(!containing_hr->is_humongous(), "it should not be humongous");
-
-  HeapWord* end = start + word_size;
-  assert(containing_hr->is_in(end - 1), "it should also contain end - 1");
-
-  MemRegion mr(start, end);
-  card_table()->g1_mark_as_young(mr);
 }
 
 inline G1ScannerTasksQueueSet* G1CollectedHeap::task_queues() const {

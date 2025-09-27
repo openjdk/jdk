@@ -35,15 +35,28 @@
 
 uint32_t VM_Version::_initial_vector_length = 0;
 
-#define DEF_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)       \
-VM_Version::NAME##RVFeatureValue VM_Version::NAME(PRETTY, BIT, FSTRING);
-RV_FEATURE_FLAGS(DEF_RV_FEATURE)
+#define DEF_RV_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::NAME##RVExtFeatureValue VM_Version::NAME;
+RV_EXT_FEATURE_FLAGS(DEF_RV_EXT_FEATURE)
+#undef DEF_RV_EXT_FEATURE
 
-#define ADD_RV_FEATURE_IN_LIST(NAME, PRETTY, BIT, FSTRING, FLAGF) \
-    &VM_Version::NAME,
-VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
-RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
+#define DEF_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::NAME##RVNonExtFeatureValue VM_Version::NAME;
+RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
+#undef DEF_RV_NON_EXT_FEATURE
+
+#define ADD_RV_EXT_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::NAME,
+#define ADD_RV_NON_EXT_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::NAME,
+ VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
+ RV_EXT_FEATURE_FLAGS(ADD_RV_EXT_FEATURE_IN_LIST)
+ RV_NON_EXT_FEATURE_FLAGS(ADD_RV_NON_EXT_FEATURE_IN_LIST)
   nullptr};
+#undef ADD_RV_NON_EXT_FEATURE_IN_LIST
+#undef ADD_RV_EXT_FEATURE_IN_LIST
+
+VM_Version::RVExtFeatures* VM_Version::_rv_ext_features = new VM_Version::RVExtFeatures();
 
 void VM_Version::useRVA20U64Profile() {
   RV_USE_RVA20U64;
@@ -181,12 +194,13 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz) {
+  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 2 * CacheLineSize);
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
     }
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");
@@ -475,10 +489,6 @@ void VM_Version::c2_initialize() {
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 }
 
