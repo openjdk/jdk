@@ -2149,6 +2149,10 @@ public final class System {
                 return String.getBytesOrThrow(s, cs);
             }
 
+            public void appendPair(StringBuilder buf, int v) {
+                buf.appendPair(v);
+            }
+
             public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
                 return String.getBytesUTF8OrThrow(s);
             }
