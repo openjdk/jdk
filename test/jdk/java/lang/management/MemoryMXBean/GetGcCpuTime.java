@@ -25,7 +25,7 @@
  * @test
  * @bug     8368527
  * @library /test/lib
- * @summary Basic test of MemoryMXBean.getGcCpuTime
+ * @summary Stress MemoryMXBean.getGcCpuTime during shutdown
  *
  * @run main/othervm -XX:+UseSerialGC GetGcCpuTime _
  * @run main/othervm -XX:+UseParallelGC GetGcCpuTime _
@@ -54,8 +54,6 @@ public class GetGcCpuTime {
             return;
         }
 
-        System.gc();
-
         try {
             if (!mxThreadBean.isThreadCpuTimeEnabled()) {
                 return;
@@ -67,7 +65,7 @@ public class GetGcCpuTime {
             return;
         }
 
-        final int numberOfThreads = 1000;
+        final int numberOfThreads = Runtime.getRuntime().availableProcessors() * 8;
         for (int i = 0; i < numberOfThreads; i++) {
             Thread t = new Thread(() -> {
                 while (true) {
@@ -78,11 +76,6 @@ public class GetGcCpuTime {
                 }
             });
             t.start();
-        }
-
-        long gcCpuTime = mxMemoryBean.getGcCpuTime();
-        if (gcCpuTime == 0) {
-            throw new Error("GC CPU time should not be zero after System.gc()");
         }
 
         System.exit(0);

@@ -890,7 +890,7 @@ static jint get_num_flags() {
   return count;
 }
 
-static jlong getGcCpuTime() {
+static jlong get_gc_cpu_time() {
   if (!os::is_thread_cpu_time_supported()) {
     return -1;
   }
@@ -932,7 +932,7 @@ static jlong get_long_attribute(jmmLongAttribute att) {
     return Management::ticks_to_ms(os::elapsed_counter());
 
   case JMM_GC_CPU_TIME:
-    return getGcCpuTime();
+    return get_gc_cpu_time();
 
   case JMM_COMPILE_TOTAL_TIME_MS:
     return Management::ticks_to_ms(CompileBroker::total_compilation_ticks());
