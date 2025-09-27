@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
@@ -502,7 +501,6 @@ class MultiExchange<T> implements Cancelable {
                         }
                         return completedFuture(response);
                     } else {
-                        cancelTimer();
                         setNewResponse(currentreq, response, null, exch);
                         if (currentreq.isWebSocket()) {
                             // need to close the connection and open a new one.
@@ -520,11 +518,15 @@ class MultiExchange<T> implements Cancelable {
                     } })
                 .handle((response, ex) -> {
                     // 5. handle errors and cancel any timer set
-                    cancelTimer();
                     if (ex == null) {
                         assert response != null;
                         return completedFuture(response);
                     }
+                    // Cancel the timer only if the response has completed
+                    // exceptionally. That is, don't cancel the timer if there
+                    // are no exceptions, since the response body might still
+                    // get consumed, and it is subject to the response timer.
+                    cancelTimer();
                     // all exceptions thrown are handled here
                     final RetryContext retryCtx = checkRetryEligible(ex, exch);
                     assert retryCtx != null : "retry context is null";
