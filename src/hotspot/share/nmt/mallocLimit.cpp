@@ -114,7 +114,7 @@ public:
       }
 
       const char* name = MemTagFactory::name_of(mt);
-      char* position = strstr(name, "mt");
+      const char* position = strstr(name, "mt");
       if (position == nullptr || position == name) {
         // Must be found and be a prefix
         return true;
