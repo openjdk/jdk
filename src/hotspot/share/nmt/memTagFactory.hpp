@@ -30,7 +30,6 @@
 #include "nmt/memTag.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtLocker.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/growableArray.hpp"
 
