@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import java.util.spi.CurrencyNameProvider;
 import java.util.spi.LocaleNameProvider;
 import java.util.spi.LocaleServiceProvider;
 import java.util.spi.TimeZoneNameProvider;
+import jdk.internal.vm.annotation.Stable;
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.resources.LocaleData;
 import sun.util.spi.CalendarProvider;
@@ -65,6 +66,7 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
         = new ConcurrentHashMap<>();
 
     // LocaleData specific to this LocaleProviderAdapter.
+    @Stable
     private volatile LocaleData localeData;
 
     /**
@@ -81,52 +83,49 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
     @Override
     @SuppressWarnings("unchecked")
     public <P extends LocaleServiceProvider> P getLocaleServiceProvider(Class<P> c) {
-        switch (c.getSimpleName()) {
-        case "BreakIteratorProvider":
-            return (P) getBreakIteratorProvider();
-        case "CollatorProvider":
-            return (P) getCollatorProvider();
-        case "DateFormatProvider":
-            return (P) getDateFormatProvider();
-        case "DateFormatSymbolsProvider":
-            return (P) getDateFormatSymbolsProvider();
-        case "DecimalFormatSymbolsProvider":
-            return (P) getDecimalFormatSymbolsProvider();
-        case "NumberFormatProvider":
-            return (P) getNumberFormatProvider();
-        case "CurrencyNameProvider":
-            return (P) getCurrencyNameProvider();
-        case "LocaleNameProvider":
-            return (P) getLocaleNameProvider();
-        case "TimeZoneNameProvider":
-            return (P) getTimeZoneNameProvider();
-        case "CalendarDataProvider":
-            return (P) getCalendarDataProvider();
-        case "CalendarNameProvider":
-            return (P) getCalendarNameProvider();
-        case "CalendarProvider":
-            return (P) getCalendarProvider();
-        case "JavaTimeDateTimePatternProvider":
-            return (P) getJavaTimeDateTimePatternProvider();
-        default:
-            throw new InternalError("should not come down here");
-        }
+        if (c == BreakIteratorProvider.class)           return (P) getBreakIteratorProvider();
+        if (c == CollatorProvider.class)                return (P) getCollatorProvider();
+        if (c == DateFormatProvider.class)              return (P) getDateFormatProvider();
+        if (c == DateFormatSymbolsProvider.class)       return (P) getDateFormatSymbolsProvider();
+        if (c == DecimalFormatSymbolsProvider.class)    return (P) getDecimalFormatSymbolsProvider();
+        if (c == NumberFormatProvider.class)            return (P) getNumberFormatProvider();
+        if (c == CurrencyNameProvider.class)            return (P) getCurrencyNameProvider();
+        if (c == LocaleNameProvider.class)              return (P) getLocaleNameProvider();
+        if (c == TimeZoneNameProvider.class)            return (P) getTimeZoneNameProvider();
+        if (c == CalendarDataProvider.class)            return (P) getCalendarDataProvider();
+        if (c == CalendarNameProvider.class)            return (P) getCalendarNameProvider();
+        if (c == CalendarProvider.class)                return (P) getCalendarProvider();
+        if (c == JavaTimeDateTimePatternProvider.class) return (P) getJavaTimeDateTimePatternProvider();
+        throw new InternalError("should not come down here");
     }
 
+    @Stable
     private volatile BreakIteratorProvider breakIteratorProvider;
+    @Stable
     private volatile CollatorProvider collatorProvider;
+    @Stable
     private volatile DateFormatProvider dateFormatProvider;
+    @Stable
     private volatile DateFormatSymbolsProvider dateFormatSymbolsProvider;
+    @Stable
     private volatile DecimalFormatSymbolsProvider decimalFormatSymbolsProvider;
+    @Stable
     private volatile NumberFormatProvider numberFormatProvider;
 
+    @Stable
     private volatile CurrencyNameProvider currencyNameProvider;
+    @Stable
     private volatile LocaleNameProvider localeNameProvider;
+    @Stable
     protected volatile TimeZoneNameProvider timeZoneNameProvider;
+    @Stable
     protected volatile CalendarDataProvider calendarDataProvider;
+    @Stable
     protected volatile CalendarNameProvider calendarNameProvider;
 
+    @Stable
     private volatile CalendarProvider calendarProvider;
+    @Stable
     private volatile JavaTimeDateTimePatternProvider javaTimeDateTimePatternProvider;
 
     /*
