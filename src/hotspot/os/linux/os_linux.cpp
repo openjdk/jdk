@@ -784,7 +784,7 @@ void os::Linux::libpthread_init() {
 // _expand_stack_to() assumes its frame size is less than page size, which
 // should always be true if the function is not inlined.
 
-static void NOINLINE _expand_stack_to(address bottom) {
+NOINLINE static void _expand_stack_to(address bottom) {
   address sp;
   size_t size;
   volatile char *p;
@@ -5314,8 +5314,10 @@ void os::current_stack_base_and_size(address* base, size_t* size) {
 
     pthread_attr_destroy(&attr);
   }
-  assert(os::current_stack_pointer() >= bottom &&
-         os::current_stack_pointer() < *base, "just checking");
+  if (StubRoutines::initial_stubs_code() != nullptr) {
+    assert(os::current_stack_pointer() >= bottom &&
+           os::current_stack_pointer() < *base, "just checking");
+  }
 }
 
 #endif

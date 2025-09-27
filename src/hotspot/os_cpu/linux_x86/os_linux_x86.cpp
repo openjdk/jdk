@@ -92,7 +92,11 @@
 #endif // AMD64
 
 address os::current_stack_pointer() {
-  return (address)__builtin_frame_address(0);
+  using get_sp_func = address();
+  get_sp_func* func = CAST_TO_FN_PTR(get_sp_func*,
+                                     StubRoutines::x86::get_previous_sp_entry());
+  assert(func != nullptr, "get_previous_sp_entry() returned null pointer");
+  return (*func)();
 }
 
 char* os::non_memory_address_word() {
@@ -631,18 +635,15 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 }
 
 void os::setup_fpu() {
-#ifndef AMD64
-  address fpu_cntrl = StubRoutines::x86::addr_fpu_cntrl_wrd_std();
-  __asm__ volatile (  "fldcw (%0)" :
-                      : "r" (fpu_cntrl) : "memory");
-#endif // !AMD64
 }
 
 #ifndef PRODUCT
 void os::verify_stack_alignment() {
-#ifdef AMD64
-  assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
-#endif
+  // The current_stack_pointer() calls generated get_previous_sp stub routine.
+  // Only enable the assert after the routine becomes available.
+  if (StubRoutines::initial_stubs_code() != nullptr) {
+    assert(((intptr_t)os::current_stack_pointer() & (StackAlignmentInBytes-1)) == 0, "incorrect stack alignment");
+  }
 }
 #endif
 
