@@ -85,7 +85,24 @@ import java.util.stream.Stream;
  * <p>As of 1.5, {@link ProcessBuilder#start()} is the preferred way
  * to create a {@code Process}.
  *
- * <p>Subclasses of Process should override the {@link #onExit()} and
+ * <p>Subclasses of Process should ensure that each overridden method
+ * invokes the superclass method.
+ * For example, if {@linkplain #close() close} is overridden, the subclass should
+ * ensure that {@code Process.close()} is called.
+ * {@snippet lang = "java" :
+ * public class LoggingProcess extends java.lang.Process {
+ *     ...
+ *     @Override
+ *     public void close() throws IOException  {
+ *         super.close();
+ *         LOGGER.log("process closed");
+ *     }
+ *     ...
+ * }
+ * }
+ *
+ * <p>Subclasses of Process that wrap another Process instance
+ * should override and delegate the {@link #onExit()} and
  * {@link #toHandle()} methods to provide a fully functional Process including the
  * {@linkplain #pid() process id},
  * {@linkplain #info() information about the process},
@@ -99,7 +116,10 @@ import java.util.stream.Stream;
  * process and for the communication streams between them.
  * The resources to control the process and for communication between the processes are retained
  * until there are no longer any references to the Process or the input, error, and output streams
- * or readers, or they have been closed.
+ * or readers, or they have been closed. The Process {@linkplain Process#close close} method closes
+ * all the streams and terminates the process to release the resources. Using try-with-resources to
+ * {@linkplain ProcessBuilder#start()} the process can ensure the process
+ * is terminated when the try-with-resources block exits.
  *
  * <p>The process is not killed when there are no more references to the {@code Process} object,
  * but rather the process continues executing asynchronously.
@@ -114,8 +134,8 @@ import java.util.stream.Stream;
  * {@snippet lang = "java" :
  * List<String> capture(List<String> args) throws Exception {
  *     ProcessBuilder pb = new ProcessBuilder(args);
- *     Process process = pb.start();
- *     try (BufferedReader in = process.inputReader()) {
+ *     try (Process process = pb.start();
+ *          BufferedReader in = process.inputReader()) {
  *         List<String> captured = in.readAllLines();
  *         int status = process.waitFor();
  *         if (status != 0) {
@@ -139,7 +159,7 @@ import java.util.stream.Stream;
  *
  * @since   1.0
  */
-public abstract class Process {
+public abstract class Process implements Closeable {
 
     // Readers and Writers created for this process; so repeated calls return the same object
     // All updates must be done while synchronized on this Process.
@@ -149,11 +169,84 @@ public abstract class Process {
     private Charset inputCharset;
     private BufferedReader errorReader;
     private Charset errorCharset;
+    private boolean closed;     // true if close() has been called
 
     /**
      * Default constructor for Process.
      */
     public Process() {}
+
+    /**
+     * Close all writer and reader streams and terminate the process.
+     * The streams are closed immediately and the process is terminated without waiting.
+     * This method is idempotent, if the process has already been closed
+     * invoking this method has no effect.
+     * <p>
+     * Before calling this method the caller should read the streams for any
+     * data or text and call {@linkplain #waitFor() waitFor} if the exit value is needed.
+     * The contents of streams that have not been read fully are lost,
+     * they are discarded or ignored.
+     * Streams should be {@code closed} when no longer needed.
+     * Closing an already closed stream usually has no effect but is specific to the stream.
+     * If an {@code IOException} occurs when closing a stream it is
+     * re-thrown after the process is terminated. Additional {@code IOExceptions}
+     * thrown by closing the remaining streams, if any, are added to the first
+     * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
+     * <p>
+     * The process may already have terminated or be in the process of terminating;
+     * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
+     * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
+     * is not available and the process is forcibly terminated.
+     * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
+     * the try-with-resources block allows the process time to clean up and exit.
+     * <p>
+     * Try-with-resources example to write text to a process, read back the
+     * response, and close the streams and process:
+     * {@snippet class=ProcessExamples region=example}
+     *
+     * @implSpec
+     * The {@code outputWriter} and {@code outputStream} to the process are closed.
+     * The {@code inputReader} and {@code inputStream} from the process are closed.
+     * The {@code errorReader} and {@code errorStream} from the process are closed.
+     * The process is terminated.
+     * @throws IOException if closing any of the streams throws an exception
+     * @since 26
+     */
+    @Override
+    public void close() throws IOException {
+        synchronized(this) {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            // Close each stream
+            IOException ioe = quietClose(outputWriter != null ? outputWriter : getOutputStream(), null);
+            ioe = quietClose(inputReader != null ? inputReader : getInputStream(), ioe);
+            ioe = quietClose(errorReader != null ? errorReader : getErrorStream(), ioe);
+
+            destroy();      // no-op if process is not alive
+            if (ioe != null) {
+                throw ioe;
+            }
+        }
+    }
+
+    // Quietly close.
+    // If an IOException occurs and it is the first, return it.
+    // Otherwise, add the exception as a suppressed exception to the first.
+    private IOException quietClose(Closeable c, IOException firstIOE) {
+        try {
+            c.close();
+            return firstIOE;
+        } catch (IOException ioe) {
+            if (firstIOE == null) {
+                return ioe;
+            } else {
+                firstIOE.addSuppressed(ioe);
+                return firstIOE;
+            }
+        }
+    }
 
     /**
      * Returns the output stream connected to the normal input of the
