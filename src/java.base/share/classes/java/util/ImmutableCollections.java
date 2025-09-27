@@ -613,6 +613,17 @@ class ImmutableCollections {
         }
 
         @Override
+        public E getFirst() {
+            return e0;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public E getLast() {
+            return e1 == EMPTY ? e0 : (E)e1;
+        }
+
+        @Override
         public int indexOf(Object o) {
             Objects.requireNonNull(o);
             if (o.equals(e0)) {
