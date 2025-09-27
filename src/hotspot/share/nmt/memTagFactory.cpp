@@ -22,6 +22,7 @@
  *
  */
 
+#include "jfr/recorder/checkpoint/types/jfrType.hpp"
 #include <nmt/memTagFactory.hpp>
 
 DeferredStatic<MemTagFactory::Instance> MemTagFactory::_instance;
@@ -44,7 +45,7 @@ void NameToTagTable::put_if_absent(MemTag tag, const char* name) {
   const char* name_copy = os::strdup(name, mtNMT);
   MemTagI idx = index(tag);
   _names.at_grow(idx, name_copy);
-  Entry nentry(tag, table[bucket]);
+  Entry nentry(tag, _table[bucket]);
   _entries.push(nentry);
   _table[bucket] = _entries.length() - 1;
   AtomicAccess::inc(&_number_of_tags);
