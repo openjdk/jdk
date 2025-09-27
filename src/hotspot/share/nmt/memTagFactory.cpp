@@ -27,7 +27,7 @@
 
 DeferredStatic<MemTagFactory::Instance> MemTagFactory::_instance;
 
-int NameToTagTable::string_hash(const char* t) {
+uint32_t NameToTagTable::string_hash(const char* t) {
   return AltHashing::halfsiphash_32(_seed, t, strlen(t));
 }
 

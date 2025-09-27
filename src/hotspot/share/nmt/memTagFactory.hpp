@@ -88,7 +88,7 @@ struct NameToTagTable {
   }
 
   // string hash taken from libadt and made worse!
-  int string_hash(const char* t);
+  uint32_t string_hash(const char* t);
 
   void put_if_absent(MemTag tag, const char* name);
 
