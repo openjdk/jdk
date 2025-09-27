@@ -321,10 +321,20 @@ final class P11KeyAgreement extends KeyAgreementSpi {
         long privKeyID = privateKey.getKeyID();
         try {
             session = token.getObjSession();
-            CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
-                new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
-                new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
-            };
+            CK_ATTRIBUTE[] attributes;
+            if ("TlsPremasterSecret".equalsIgnoreCase(algorithm)) {
+                attributes = new CK_ATTRIBUTE[]{
+                        new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
+                        new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
+                };
+            } else {
+                // keep the leading zeroes
+                attributes = new CK_ATTRIBUTE[]{
+                        new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
+                        new CK_ATTRIBUTE(CKA_KEY_TYPE, keyType),
+                        new CK_ATTRIBUTE(CKA_VALUE_LEN, secretLen),
+                };
+            }
             attributes = token.getAttributes
                 (O_GENERATE, CKO_SECRET_KEY, keyType, attributes);
             long keyID = token.p11.C_DeriveKey(session.id(),
@@ -337,19 +347,6 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             int keyLen = (int)lenAttributes[0].getLong();
             SecretKey key = P11Key.secretKey
                         (session, keyID, algorithm, keyLen << 3, attributes);
-            if ("RAW".equals(key.getFormat())
-                    && algorithm.equalsIgnoreCase("TlsPremasterSecret")) {
-                // Workaround for Solaris bug 6318543.
-                // Strip leading zeroes ourselves if possible (key not sensitive).
-                // This should be removed once the Solaris fix is available
-                // as here we always retrieve the CKA_VALUE even for tokens
-                // that do not have that bug.
-                byte[] keyBytes = key.getEncoded();
-                byte[] newBytes = KeyUtil.trimZeroes(keyBytes);
-                if (keyBytes != newBytes) {
-                    key = new SecretKeySpec(newBytes, algorithm);
-                }
-            }
             return key;
         } catch (PKCS11Exception e) {
             throw new InvalidKeyException("Could not derive key", e);
