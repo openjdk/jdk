@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -602,7 +602,7 @@ file system locations may be directories, JAR files or JMOD files.
     -   `incubating`: Warns about the use of incubating modules.
 
     -   `lossy-conversions`: Warns about possible lossy conversions
-        in compound assignment.
+        in compound assignment and bit shift operations.
 
     -   `missing-explicit-ctor`: Warns about missing explicit constructors in
          public and protected classes in exported packages.
