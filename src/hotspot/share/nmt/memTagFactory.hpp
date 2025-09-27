@@ -79,7 +79,7 @@ struct NameToTagTable {
       _table_size(nr_of_buckets),
       _table(nullptr),
       _names(), _human_readable_names(),
-      _seed(AltHashing::compute_seed()),
+      _seed(5000002429),  /* TODO: compute_seed can't get seed material from the class */
       _number_of_tags(0) {
     _table = NEW_C_HEAP_ARRAY(EntryRef, _table_size, mtNMT);
     for (int i = 0; i < _table_size; i++) {
