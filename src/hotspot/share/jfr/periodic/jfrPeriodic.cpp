@@ -83,6 +83,10 @@
  */
 #define TRACE_REQUEST_FUNC(id)    void JfrPeriodicEventSet::request##id(void)
 
+// Java Mission Control (JMC) uses (Java) Long.MIN_VALUE to describe that a
+// long value is undefined.
+static jlong jmc_undefined_long = min_jlong;
+
 // Timestamp to correlate events in the same batch/generation
 Ticks JfrPeriodicEventSet::_timestamp;
 PeriodicType JfrPeriodicEventSet::_type;
@@ -183,11 +187,12 @@ TRACE_REQUEST_FUNC(CPUInformation) {
      return;
   }
   if (ret_val == OS_OK) {
+    jlong cores = cpu_info.number_of_cores() == -1 ? jmc_undefined_long : cpu_info.number_of_cores();
     EventCPUInformation event;
     event.set_cpu(cpu_info.cpu_name());
     event.set_description(cpu_info.cpu_description());
     event.set_sockets(cpu_info.number_of_sockets());
-    event.set_cores(cpu_info.number_of_cores());
+    event.set_cores(cores);
     event.set_hwThreads(cpu_info.number_of_hardware_threads());
     event.commit();
   }
@@ -413,10 +418,6 @@ TRACE_REQUEST_FUNC(ObjectCount) {
 TRACE_REQUEST_FUNC(G1HeapRegionInformation) {
   G1GC_ONLY(G1HeapRegionEventSender::send_events());
 }
-
-// Java Mission Control (JMC) uses (Java) Long.MIN_VALUE to describe that a
-// long value is undefined.
-static jlong jmc_undefined_long = min_jlong;
 
 TRACE_REQUEST_FUNC(GCConfiguration) {
   GCConfiguration conf;
