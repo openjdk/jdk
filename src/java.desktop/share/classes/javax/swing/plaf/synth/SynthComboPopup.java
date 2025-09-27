@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,8 +75,7 @@ class SynthComboPopup extends BasicComboPopup {
     @Override
     protected Rectangle computePopupBounds(int px, int py, int pw, int ph) {
         ComboBoxUI ui = comboBox.getUI();
-        if (ui instanceof SynthComboBoxUI) {
-            SynthComboBoxUI sui = (SynthComboBoxUI) ui;
+        if (ui instanceof SynthComboBoxUI sui) {
             if (sui.popupInsets != null) {
                 Insets i = sui.popupInsets;
                 return super.computePopupBounds(

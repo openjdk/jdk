@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1198,9 +1198,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
                 DataBuffer db =  bufferedImage.getRaster().getDataBuffer();
                 SampleModel sm = bufferedImage.getRaster().getSampleModel();
                 if (db instanceof DataBufferInt &&
-                    sm instanceof SinglePixelPackedSampleModel) {
-                    SinglePixelPackedSampleModel psm =
-                        (SinglePixelPackedSampleModel)sm;
+                    sm instanceof SinglePixelPackedSampleModel psm) {
                     // Stealing the data array for reading only...
                     int[] int_data =
                         SunWritableRaster.stealData((DataBufferInt) db, 0);
@@ -1919,8 +1917,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
 
         boolean isCompositing = false;
 
-        if (composite instanceof AlphaComposite) {
-            AlphaComposite alphaComposite = (AlphaComposite) composite;
+        if (composite instanceof AlphaComposite alphaComposite) {
             float alpha = alphaComposite.getAlpha();
             int rule = alphaComposite.getRule();
 

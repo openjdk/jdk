@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1182,8 +1182,7 @@ public class Rectangle extends Rectangle2D
      *            {@code false} otherwise.
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Rectangle) {
-            Rectangle r = (Rectangle)obj;
+        if (obj instanceof Rectangle r) {
             return ((x == r.x) &&
                     (y == r.y) &&
                     (width == r.width) &&

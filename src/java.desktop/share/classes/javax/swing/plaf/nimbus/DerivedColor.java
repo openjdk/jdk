@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,7 @@ class DerivedColor extends Color {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof DerivedColor)) return false;
-        DerivedColor that = (DerivedColor) o;
+        if (!(o instanceof DerivedColor that)) return false;
         if (aOffset != that.aOffset) return false;
         if (Float.compare(that.bOffset, bOffset) != 0) return false;
         if (Float.compare(that.hOffset, hOffset) != 0) return false;

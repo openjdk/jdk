@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,8 +228,7 @@ final class PropertyElementHandler extends AccessorElementHandler {
             if (method != null) {
                 return method;
             }
-        } else if (pd instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor ipd = (IndexedPropertyDescriptor) pd;
+        } else if (pd instanceof IndexedPropertyDescriptor ipd) {
             Method method = ipd.getIndexedReadMethod();
             if (method != null) {
                 return method;
@@ -259,8 +258,7 @@ final class PropertyElementHandler extends AccessorElementHandler {
             if (method != null) {
                 return method;
             }
-        } else if (pd instanceof IndexedPropertyDescriptor) {
-            IndexedPropertyDescriptor ipd = (IndexedPropertyDescriptor) pd;
+        } else if (pd instanceof IndexedPropertyDescriptor ipd) {
             Method method = ipd.getIndexedWriteMethod();
             if (method != null) {
                 return method;

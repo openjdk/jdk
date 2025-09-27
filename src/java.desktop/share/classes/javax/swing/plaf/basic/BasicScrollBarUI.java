@@ -1434,8 +1434,7 @@ public class BasicScrollBarUI
         }
 
         private int adjustValueIfNecessary(int value) {
-            if (scrollbar.getParent() instanceof JScrollPane) {
-                JScrollPane scrollpane = (JScrollPane)scrollbar.getParent();
+            if (scrollbar.getParent() instanceof JScrollPane scrollpane) {
                 JViewport viewport = scrollpane.getViewport();
                 Component view = viewport.getView();
                 if (view instanceof JList) {

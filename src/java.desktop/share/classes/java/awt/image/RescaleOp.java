@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,15 +324,13 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
             }
         }
 
-      if (dstSM instanceof ComponentSampleModel) {
-           ComponentSampleModel dsm = (ComponentSampleModel)dstSM;
-           if (dsm.getPixelStride() != dst.getNumBands()) {
+      if (dstSM instanceof ComponentSampleModel dsm) {
+          if (dsm.getPixelStride() != dst.getNumBands()) {
                return false;
            }
         }
-        if (srcSM instanceof ComponentSampleModel) {
-           ComponentSampleModel csm = (ComponentSampleModel)srcSM;
-           if (csm.getPixelStride() != src.getNumBands()) {
+        if (srcSM instanceof ComponentSampleModel csm) {
+            if (csm.getPixelStride() != src.getNumBands()) {
                return false;
            }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,8 +180,7 @@ public class NumberFormatter extends InternationalFormatter {
      */
     private Object convertValueToValueClass(Object value,
                                             Class<?> valueClass) {
-        if (valueClass != null && (value instanceof Number)) {
-            Number numberValue = (Number)value;
+        if (valueClass != null && (value instanceof Number numberValue)) {
             if (valueClass == Integer.class) {
                 return Integer.valueOf(numberValue.intValue());
             }

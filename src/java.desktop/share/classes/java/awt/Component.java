@@ -3922,11 +3922,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      */
     Image getBackBuffer() {
         if (bufferStrategy != null) {
-            if (bufferStrategy instanceof BltBufferStrategy) {
-                BltBufferStrategy bltBS = (BltBufferStrategy)bufferStrategy;
+            if (bufferStrategy instanceof BltBufferStrategy bltBS) {
                 return bltBS.getBackBuffer();
-            } else if (bufferStrategy instanceof FlipBufferStrategy) {
-                FlipBufferStrategy flipBS = (FlipBufferStrategy)bufferStrategy;
+            } else if (bufferStrategy instanceof FlipBufferStrategy flipBS) {
                 return flipBS.getBackBuffer();
             }
         }
@@ -4055,9 +4053,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
                 // ... then recreate the backbuffers
             }
 
-            if (caps instanceof ExtendedBufferCapabilities) {
-                ExtendedBufferCapabilities ebc =
-                    (ExtendedBufferCapabilities)caps;
+            if (caps instanceof ExtendedBufferCapabilities ebc) {
                 if (ebc.getVSync() == VSYNC_ON) {
                     // if this buffer strategy is not allowed to be v-synced,
                     // change the caps that we pass to the peer but keep on

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -412,8 +412,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
             // if any other open line is running, return
 
             // this covers clips and source data lines
-            if (localSourceLines.elementAt(i) instanceof AbstractDataLine) {
-                AbstractDataLine sourceLine = (AbstractDataLine)localSourceLines.elementAt(i);
+            if (localSourceLines.elementAt(i) instanceof AbstractDataLine sourceLine) {
                 if ( sourceLine.isStartedRunning() && (!sourceLine.equals(line)) ) {
                     return;
                 }
@@ -426,8 +425,7 @@ abstract class AbstractMixer extends AbstractLine implements Mixer {
 
             // if any other open line is running, return
             // this covers target data lines
-            if (localTargetLines.elementAt(i) instanceof AbstractDataLine) {
-                AbstractDataLine targetLine = (AbstractDataLine)localTargetLines.elementAt(i);
+            if (localTargetLines.elementAt(i) instanceof AbstractDataLine targetLine) {
                 if ( targetLine.isStartedRunning() && (!targetLine.equals(line)) ) {
                     return;
                 }

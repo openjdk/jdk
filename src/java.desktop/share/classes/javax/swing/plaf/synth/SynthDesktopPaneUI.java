@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -319,9 +319,8 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         // ContainerListener interface
 
         public void componentAdded(ContainerEvent e) {
-            if (e.getChild() instanceof JInternalFrame) {
+            if (e.getChild() instanceof JInternalFrame f) {
                 JDesktopPane desktop = (JDesktopPane)e.getSource();
-                JInternalFrame f = (JInternalFrame)e.getChild();
                 JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
                 for (Component comp : getComponents()) {
                     if (comp == desktopIcon) {
@@ -338,8 +337,7 @@ public class SynthDesktopPaneUI extends BasicDesktopPaneUI implements
         }
 
         public void componentRemoved(ContainerEvent e) {
-            if (e.getChild() instanceof JInternalFrame) {
-                JInternalFrame f = (JInternalFrame)e.getChild();
+            if (e.getChild() instanceof JInternalFrame f) {
                 if (!f.isIcon()) {
                     // Frame was removed without using setClosed(true)
                     remove(f.getDesktopIcon());

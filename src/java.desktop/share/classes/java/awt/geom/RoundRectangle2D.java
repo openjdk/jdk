@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -670,8 +670,7 @@ public abstract class RoundRectangle2D extends RectangularShape {
         if (obj == this) {
             return true;
         }
-        if (obj instanceof RoundRectangle2D) {
-            RoundRectangle2D rr2d = (RoundRectangle2D) obj;
+        if (obj instanceof RoundRectangle2D rr2d) {
             return ((getX() == rr2d.getX()) &&
                     (getY() == rr2d.getY()) &&
                     (getWidth() == rr2d.getWidth()) &&

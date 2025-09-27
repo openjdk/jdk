@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1073,12 +1073,11 @@ public class JSpinner extends JComponent implements Accessible
          */
         private DateEditor(JSpinner spinner, DateFormat format) {
             super(spinner);
-            if (!(spinner.getModel() instanceof SpinnerDateModel)) {
+            if (!(spinner.getModel() instanceof SpinnerDateModel model)) {
                 throw new IllegalArgumentException(
                                  "model not a SpinnerDateModel");
             }
 
-            SpinnerDateModel model = (SpinnerDateModel)spinner.getModel();
             DateFormatter formatter = new DateEditorFormatter(model, format);
             DefaultFormatterFactory factory = new DefaultFormatterFactory(
                                                   formatter);
@@ -1259,12 +1258,11 @@ public class JSpinner extends JComponent implements Accessible
          */
         private NumberEditor(JSpinner spinner, DecimalFormat format) {
             super(spinner);
-            if (!(spinner.getModel() instanceof SpinnerNumberModel)) {
+            if (!(spinner.getModel() instanceof SpinnerNumberModel model)) {
                 throw new IllegalArgumentException(
                           "model not a SpinnerNumberModel");
             }
 
-            SpinnerNumberModel model = (SpinnerNumberModel)spinner.getModel();
             NumberFormatter formatter = new NumberEditorFormatter(model,
                                                                   format);
             DefaultFormatterFactory factory = new DefaultFormatterFactory(
@@ -1689,8 +1687,7 @@ public class JSpinner extends JComponent implements Accessible
          * @see #getMaximumAccessibleValue
          */
         public Number getMinimumAccessibleValue() {
-            if (model instanceof SpinnerNumberModel) {
-                SpinnerNumberModel numberModel = (SpinnerNumberModel)model;
+            if (model instanceof SpinnerNumberModel numberModel) {
                 Object o = numberModel.getMinimum();
                 if (o instanceof Number) {
                     return (Number)o;
@@ -1707,8 +1704,7 @@ public class JSpinner extends JComponent implements Accessible
          * @see #getMinimumAccessibleValue
          */
         public Number getMaximumAccessibleValue() {
-            if (model instanceof SpinnerNumberModel) {
-                SpinnerNumberModel numberModel = (SpinnerNumberModel)model;
+            if (model instanceof SpinnerNumberModel numberModel) {
                 Object o = numberModel.getMaximum();
                 if (o instanceof Number) {
                     return (Number)o;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,8 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
       frame = (JInternalFrame)c;
 
       Container cont = ((JInternalFrame)(c)).getContentPane();
-      if (cont instanceof JComponent) {
-        JComponent content = (JComponent)cont;
-        if ( content.getBorder() == handyEmptyBorder) {
+      if (cont instanceof JComponent content) {
+          if (content.getBorder() == handyEmptyBorder) {
           content.setBorder(null);
         }
       }
@@ -133,8 +132,7 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
     }
 
   private void stripContentBorder(Object c) {
-        if ( c instanceof JComponent ) {
-            JComponent contentComp = (JComponent)c;
+        if (c instanceof JComponent contentComp) {
             Border contentBorder = contentComp.getBorder();
             if (contentBorder == null || contentBorder instanceof UIResource) {
                 contentComp.setBorder( handyEmptyBorder );
@@ -191,11 +189,9 @@ public class MetalInternalFrameUI extends BasicInternalFrameUI {
           String name = e.getPropertyName();
           JInternalFrame jif = (JInternalFrame)e.getSource();
 
-          if (!(jif.getUI() instanceof MetalInternalFrameUI)) {
+          if (!(jif.getUI() instanceof MetalInternalFrameUI ui)) {
               return;
           }
-
-          MetalInternalFrameUI ui = (MetalInternalFrameUI)jif.getUI();
 
           if ( name.equals( FRAME_TYPE ) )
           {

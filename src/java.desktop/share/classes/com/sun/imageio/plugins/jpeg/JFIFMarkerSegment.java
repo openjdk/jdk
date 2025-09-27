@@ -1436,8 +1436,7 @@ class JFIFMarkerSegment extends MarkerSegment {
 
         ICCMarkerSegment(Node node) throws IIOInvalidTreeException {
             super(JPEG.APP2);
-            if (node instanceof IIOMetadataNode) {
-                IIOMetadataNode ourNode = (IIOMetadataNode) node;
+            if (node instanceof IIOMetadataNode ourNode) {
                 ICC_Profile prof = (ICC_Profile) ourNode.getUserObject();
                 if (prof != null) {  // May be null
                     profile = prof.getData();

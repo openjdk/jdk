@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,18 +116,14 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
     public static Image map(MultiResolutionImage mrImage,
                             Function<Image, Image> mapper) {
 
-        if (mrImage instanceof MultiResolutionToolkitImage) {
-            MultiResolutionToolkitImage mrtImage =
-                    (MultiResolutionToolkitImage) mrImage;
+        if (mrImage instanceof MultiResolutionToolkitImage mrtImage) {
             return MultiResolutionToolkitImage.map(mrtImage, mapper);
         }
 
         BiFunction<Integer, Integer, Image> sizeMapper
                 = (w, h) -> mapper.apply(mrImage.getResolutionVariant(w, h));
 
-        if (mrImage instanceof MultiResolutionCachedImage) {
-            MultiResolutionCachedImage mrcImage
-                    = (MultiResolutionCachedImage) mrImage;
+        if (mrImage instanceof MultiResolutionCachedImage mrcImage) {
 
             return new MultiResolutionCachedImage(mrcImage.baseImageWidth,
                                                   mrcImage.baseImageHeight,
@@ -235,8 +231,7 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
 
         @Override
         public boolean equals(Object obj) {
-            if (obj instanceof ImageCacheKey) {
-                ImageCacheKey key = (ImageCacheKey) obj;
+            if (obj instanceof ImageCacheKey key) {
                 return baseImage == key.baseImage && w == key.w && h == key.h;
             }
             return false;

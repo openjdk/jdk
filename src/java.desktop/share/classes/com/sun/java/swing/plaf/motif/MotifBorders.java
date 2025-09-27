@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,7 @@ public class MotifBorders {
             boolean canBeDefault = false;
             boolean isDefault = false;
 
-            if (c instanceof AbstractButton) {
-                AbstractButton b = (AbstractButton)c;
+            if (c instanceof AbstractButton b) {
                 ButtonModel model = b.getModel();
 
                 isPressed = (model.isArmed() && model.isPressed());
@@ -204,8 +203,7 @@ public class MotifBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                             int width, int height) {
-            if (c instanceof AbstractButton) {
-                AbstractButton b = (AbstractButton)c;
+            if (c instanceof AbstractButton b) {
                 ButtonModel model = b.getModel();
 
                 if (model.isArmed() && model.isPressed() || model.isSelected()) {
@@ -237,10 +235,9 @@ public class MotifBorders {
         }
 
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            if (!(c instanceof JMenuBar)) {
+            if (!(c instanceof JMenuBar menuBar)) {
                 return;
             }
-            JMenuBar menuBar = (JMenuBar)c;
             if (menuBar.isBorderPainted() == true) {
                 // this draws the MenuBar border
                 Dimension size = menuBar.getSize();
@@ -668,13 +665,12 @@ public class MotifBorders {
          * @param height the height of the painted border
          */
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
-            if (!(c instanceof JPopupMenu)) {
+            if (!(c instanceof JPopupMenu popup)) {
                 return;
             }
 
             Font origFont = g.getFont();
             Color origColor = g.getColor();
-            JPopupMenu popup = (JPopupMenu)c;
 
             String title = popup.getLabel();
             if (title == null) {

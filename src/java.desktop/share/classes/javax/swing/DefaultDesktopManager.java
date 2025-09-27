@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,8 +200,7 @@ public class DefaultDesktopManager implements DesktopManager, java.io.Serializab
             return;
         }
 
-        if (c instanceof JLayeredPane) {
-            JLayeredPane lp = (JLayeredPane)c;
+        if (c instanceof JLayeredPane lp) {
             int layer = JLayeredPane.getLayer(f);
             JLayeredPane.putLayer(desktopIcon, layer);
         }

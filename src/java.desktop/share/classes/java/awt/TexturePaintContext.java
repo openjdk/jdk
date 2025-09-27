@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,15 +78,13 @@ abstract class TexturePaintContext implements PaintContext {
             (val == null
              ? (hints.get(RenderingHints.KEY_RENDERING) == RenderingHints.VALUE_RENDER_QUALITY)
              : (val != RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
-        if (raster instanceof IntegerInterleavedRaster &&
+        if (raster instanceof IntegerInterleavedRaster iir &&
             (!filter || isFilterableDCM(cm)))
         {
-            IntegerInterleavedRaster iir = (IntegerInterleavedRaster) raster;
             if (iir.getNumDataElements() == 1 && iir.getPixelStride() == 1) {
                 return new Int(iir, cm, xform, maxw, filter);
             }
-        } else if (raster instanceof ByteInterleavedRaster) {
-            ByteInterleavedRaster bir = (ByteInterleavedRaster) raster;
+        } else if (raster instanceof ByteInterleavedRaster bir) {
             if (bir.getNumDataElements() == 1 && bir.getPixelStride() == 1) {
                 if (filter) {
                     if (isFilterableICM(cm)) {
@@ -101,8 +99,7 @@ abstract class TexturePaintContext implements PaintContext {
     }
 
     public static boolean isFilterableICM(ColorModel cm) {
-        if (cm instanceof IndexColorModel) {
-            IndexColorModel icm = (IndexColorModel) cm;
+        if (cm instanceof IndexColorModel icm) {
             if (icm.getMapSize() <= 256) {
                 return true;
             }
@@ -111,8 +108,7 @@ abstract class TexturePaintContext implements PaintContext {
     }
 
     public static boolean isFilterableDCM(ColorModel cm) {
-        if (cm instanceof DirectColorModel) {
-            DirectColorModel dcm = (DirectColorModel) cm;
+        if (cm instanceof DirectColorModel dcm) {
             return (isMaskOK(dcm.getAlphaMask(), true) &&
                     isMaskOK(dcm.getRedMask(), false) &&
                     isMaskOK(dcm.getGreenMask(), false) &&

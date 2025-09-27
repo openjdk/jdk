@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,11 +119,10 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
     public void draw(SunGraphics2D sg2d, Shape s) {
         if (sg2d.strokeState < SunGraphics2D.STROKE_CUSTOM) {
             BasicStroke bs = ((BasicStroke) sg2d.stroke);
-            if (s instanceof Rectangle2D) {
+            if (s instanceof Rectangle2D r2d) {
                 if (bs.getLineJoin() == BasicStroke.JOIN_MITER &&
                     bs.getDashArray() == null)
                 {
-                    Rectangle2D r2d = (Rectangle2D) s;
                     double w = r2d.getWidth();
                     double h = r2d.getHeight();
                     double x = r2d.getX();
@@ -134,8 +133,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
                     }
                     return;
                 }
-            } else if (s instanceof Line2D) {
-                Line2D l2d = (Line2D) s;
+            } else if (s instanceof Line2D l2d) {
                 if (drawGeneralLine(sg2d,
                                     l2d.getX1(), l2d.getY1(),
                                     l2d.getX2(), l2d.getY2()))
@@ -149,8 +147,7 @@ public class PixelToParallelogramConverter extends PixelToShapeConverter
     }
 
     public void fill(SunGraphics2D sg2d, Shape s) {
-        if (s instanceof Rectangle2D) {
-            Rectangle2D r2d = (Rectangle2D) s;
+        if (s instanceof Rectangle2D r2d) {
             double w = r2d.getWidth();
             double h = r2d.getHeight();
             if (w > 0 && h > 0) {

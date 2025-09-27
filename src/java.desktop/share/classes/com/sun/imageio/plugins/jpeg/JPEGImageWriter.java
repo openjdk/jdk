@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,7 @@ public class JPEGImageWriter extends ImageWriter {
         // return it.  Otherwise just return null.  We use it only
         // for tables, so we can't get a default and modify it,
         // as this will usually not be what is intended.
-        if (inData instanceof JPEGMetadata) {
-            JPEGMetadata jpegData = (JPEGMetadata) inData;
+        if (inData instanceof JPEGMetadata jpegData) {
             if (jpegData.isStream) {
                 return inData;
             }
@@ -268,8 +267,7 @@ public class JPEGImageWriter extends ImageWriter {
                                      ImageTypeSpecifier imageType,
                                      ImageWriteParam param) {
         // If it's one of ours, just return it
-        if (inData instanceof JPEGMetadata) {
-            JPEGMetadata jpegData = (JPEGMetadata) inData;
+        if (inData instanceof JPEGMetadata jpegData) {
             if (!jpegData.isStream) {
                 return inData;
             } else {
@@ -1098,10 +1096,9 @@ public class JPEGImageWriter extends ImageWriter {
          * image containing default visually lossless tables is written.
          */
         if (streamMetadata != null) {
-            if (streamMetadata instanceof JPEGMetadata) {
+            if (streamMetadata instanceof JPEGMetadata jmeta) {
                 // write a complete tables-only image at the beginning of
                 // the stream.
-                JPEGMetadata jmeta = (JPEGMetadata) streamMetadata;
                 if (jmeta.isStream == false) {
                     throw new IllegalArgumentException
                         ("Invalid stream metadata object.");
@@ -1433,9 +1430,7 @@ public class JPEGImageWriter extends ImageWriter {
         (JPEGMetadata metadata) {
         ArrayList<DQTMarkerSegment.Qtable> tables = new ArrayList<>();
         for (MarkerSegment seg : metadata.markerSequence) {
-            if (seg instanceof DQTMarkerSegment) {
-                DQTMarkerSegment dqt =
-                    (DQTMarkerSegment) seg;
+            if (seg instanceof DQTMarkerSegment dqt) {
                 tables.addAll(dqt.tables);
             }
         }
@@ -1461,8 +1456,7 @@ public class JPEGImageWriter extends ImageWriter {
         (JPEGMetadata metadata, boolean wantDC) throws IIOException {
         ArrayList<DHTMarkerSegment.Htable> tables = new ArrayList<>();
         for (MarkerSegment seg : metadata.markerSequence) {
-            if (seg instanceof DHTMarkerSegment) {
-                DHTMarkerSegment dht = (DHTMarkerSegment) seg;
+            if (seg instanceof DHTMarkerSegment dht) {
                 for (int i = 0; i < dht.tables.size(); i++) {
                     DHTMarkerSegment.Htable htable = dht.tables.get(i);
                     if (htable.tableClass == (wantDC ? 0 : 1)) {

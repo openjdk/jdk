@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,9 +164,7 @@ public class BytePackedRaster extends SunWritableRaster {
         }
         int dbOffset = dataBuffer.getOffset();
 
-        if (sampleModel instanceof MultiPixelPackedSampleModel) {
-            MultiPixelPackedSampleModel mppsm =
-                (MultiPixelPackedSampleModel)sampleModel;
+        if (sampleModel instanceof MultiPixelPackedSampleModel mppsm) {
             this.type = IntegerComponentRaster.TYPE_BYTE_BINARY_SAMPLES;
             pixelBitStride = mppsm.getPixelBitStride();
             if (pixelBitStride != 1 &&

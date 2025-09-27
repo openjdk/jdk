@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1458,10 +1458,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
          * to re-establish the previous entries.
          */
         public void updateMargins(Object source) {
-            if (!(source instanceof JFormattedTextField)) {
+            if (!(source instanceof JFormattedTextField tf)) {
                 return;
             } else {
-                JFormattedTextField tf = (JFormattedTextField)source;
                 Float val = (Float)tf.getValue();
                 if (val == null) {
                     return;
@@ -1931,8 +1930,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                        Media m = (Media)asCurrent.get(Media.class);
                        if (m == null || m instanceof MediaTray) {
                            asCurrent.add(newTray);
-                       } else if (m instanceof MediaSizeName) {
-                           MediaSizeName msn = (MediaSizeName)m;
+                       } else if (m instanceof MediaSizeName msn) {
                            Media def = (Media)psCurrent.getDefaultAttributeValue(Media.class);
                            if (def instanceof MediaSizeName && def.equals(msn)) {
                                asCurrent.add(newTray);
@@ -1985,8 +1983,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof Media[]) {
-                    Media[] media = (Media[])values;
+                if (values instanceof Media[] media) {
 
                     for (int i = 0; i < media.length; i++) {
                         Media medium = media[i];
@@ -2039,11 +2036,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
                     }
                 }
                 if (medium != null) {
-                    if (medium instanceof MediaSizeName) {
-                        MediaSizeName ms = (MediaSizeName)medium;
+                    if (medium instanceof MediaSizeName ms) {
                         cbSize.setSelectedIndex(sizes.indexOf(ms));
-                    } else if (medium instanceof MediaTray) {
-                        MediaTray mt = (MediaTray)medium;
+                    } else if (medium instanceof MediaTray mt) {
                         cbSource.setSelectedIndex(sources.indexOf(mt) + 1);
                     }
                 } else {
@@ -2054,8 +2049,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 SunAlternateMedia alt = (SunAlternateMedia)asCurrent.get(amCategory);
                 if (alt != null) {
                     Media md = alt.getMedia();
-                    if (md instanceof MediaTray) {
-                        MediaTray mt = (MediaTray)md;
+                    if (md instanceof MediaTray mt) {
                         cbSource.setSelectedIndex(sources.indexOf(mt) + 1);
                     }
                 }
@@ -2168,9 +2162,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof OrientationRequested[]) {
-                    OrientationRequested[] ovalues =
-                        (OrientationRequested[])values;
+                if (values instanceof OrientationRequested[] ovalues) {
 
                     for (int i = 0; i < ovalues.length; i++) {
                         OrientationRequested value = ovalues[i];
@@ -2207,9 +2199,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                         psCurrent.getSupportedAttributeValues(orCategory,
                                                               docFlavor,
                                                               asCurrent);
-                    if (values instanceof OrientationRequested[]) {
-                        OrientationRequested[] orValues =
-                                            (OrientationRequested[])values;
+                    if (values instanceof OrientationRequested[] orValues) {
                         if (orValues.length > 1) {
                             // get the first in the list
                             or = orValues[0];
@@ -2353,8 +2343,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof Chromaticity[]) {
-                    Chromaticity[] cvalues = (Chromaticity[])values;
+                if (values instanceof Chromaticity[] cvalues) {
 
                     for (int i = 0; i < cvalues.length; i++) {
                         Chromaticity value = cvalues[i];
@@ -2450,8 +2439,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof PrintQuality[]) {
-                    PrintQuality[] qvalues = (PrintQuality[])values;
+                if (values instanceof PrintQuality[] qvalues) {
 
                     for (int i = 0; i < qvalues.length; i++) {
                         PrintQuality value = qvalues[i];
@@ -2555,8 +2543,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                                           docFlavor,
                                                           asCurrent);
 
-                if (values instanceof Sides[]) {
-                    Sides[] svalues = (Sides[])values;
+                if (values instanceof Sides[] svalues) {
 
                     for (int i = 0; i < svalues.length; i++) {
                         Sides value = svalues[i];
@@ -2841,8 +2828,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                                 docFlavor,
                                 asCurrent);
 
-                if (values instanceof OutputBin[]) {
-                    OutputBin[] outputBins = (OutputBin[])values;
+                if (values instanceof OutputBin[] outputBins) {
 
                     for (OutputBin outputBin: outputBins) {
                         outputs.add(outputBin);

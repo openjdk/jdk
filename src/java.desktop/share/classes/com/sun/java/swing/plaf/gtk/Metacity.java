@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1016,8 +1016,7 @@ class Metacity implements SynthConstants {
         if (getInt("height") == -1) {
             y -= h;
         }
-        if (g instanceof Graphics2D) {
-            Graphics2D g2 = (Graphics2D)g;
+        if (g instanceof Graphics2D g2) {
             Composite oldComp = g2.getComposite();
             AlphaComposite ac = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha);
             g2.setComposite(ac);
@@ -1286,8 +1285,7 @@ class Metacity implements SynthConstants {
         boolean horizontal = ("diagonal".equals(type) || "horizontal".equals(type));
         boolean vertical   = ("diagonal".equals(type) || "vertical".equals(type));
 
-        if (g instanceof Graphics2D) {
-            Graphics2D g2 = (Graphics2D)g;
+        if (g instanceof Graphics2D g2) {
             Composite oldComp = g2.getComposite();
             if (alpha >= 0F) {
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
@@ -1340,8 +1338,7 @@ class Metacity implements SynthConstants {
                 tileImage(g, object, x, y, w, h, alphas);
             } else {
                 float a = Float.parseFloat(alpha);
-                if (g instanceof Graphics2D) {
-                    Graphics2D g2 = (Graphics2D)g;
+                if (g instanceof Graphics2D g2) {
                     Composite oldComp = g2.getComposite();
                     g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
                     g2.drawImage(object, x, y, w, h, null);
@@ -1374,8 +1371,7 @@ class Metacity implements SynthConstants {
 
         if (alpha != null) {
             float a = Float.parseFloat(alpha);
-            if (g instanceof Graphics2D) {
-                Graphics2D g2 = (Graphics2D)g;
+            if (g instanceof Graphics2D g2) {
                 Composite oldComp = g2.getComposite();
                 g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, a));
                 icon.paintIcon(jif, g, x, y);

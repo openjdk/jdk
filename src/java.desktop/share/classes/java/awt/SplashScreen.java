@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -343,10 +343,9 @@ public final class SplashScreen {
         if (numBanks!=1) {
             throw new AssertionError("Invalid number of banks =="+numBanks+" in overlay image DataBuffer");
         }
-        if (!(image.getSampleModel() instanceof SinglePixelPackedSampleModel)) {
+        if (!(image.getSampleModel() instanceof SinglePixelPackedSampleModel sm)) {
             throw new AssertionError("Overlay image has invalid sample model == "+image.getSampleModel().getClass().getName());
         }
-        SinglePixelPackedSampleModel sm = (SinglePixelPackedSampleModel)image.getSampleModel();
         int scanlineStride = sm.getScanlineStride();
         Rectangle rect = image.getRaster().getBounds();
         // Note that we steal the data array here, but just for reading

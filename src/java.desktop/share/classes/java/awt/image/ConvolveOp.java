@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,8 +168,7 @@ public class ConvolveOp implements BufferedImageOp, RasterOp {
         BufferedImage origDst = dst;
 
         // Can't convolve an IndexColorModel.  Need to expand it
-        if (srcCM instanceof IndexColorModel) {
-            IndexColorModel icm = (IndexColorModel) srcCM;
+        if (srcCM instanceof IndexColorModel icm) {
             src = icm.convertToIntDiscrete(src.getRaster(), false);
             srcCM = src.getColorModel();
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -770,11 +770,9 @@ public final class JLayer<V extends Component>
         @SuppressWarnings({"unchecked", "rawtypes"})
         public void eventDispatched(AWTEvent event) {
             Object source = event.getSource();
-            if (source instanceof Component) {
-                Component component = (Component) source;
+            if (source instanceof Component component) {
                 while (component != null) {
-                    if (component instanceof JLayer) {
-                        JLayer l = (JLayer) component;
+                    if (component instanceof JLayer l) {
                         LayerUI<?> ui = l.getUI();
                         if (ui != null &&
                                 isEventEnabled(l.getLayerEventMask(), event.getID()) &&

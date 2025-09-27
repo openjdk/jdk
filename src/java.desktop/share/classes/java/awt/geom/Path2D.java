@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,8 +275,7 @@ public abstract sealed class Path2D implements Shape, Cloneable
          * @since 1.6
          */
         public Float(Shape s, AffineTransform at) {
-            if (s instanceof Path2D) {
-                Path2D p2d = (Path2D) s;
+            if (s instanceof Path2D p2d) {
                 setWindingRule(p2d.windingRule);
                 this.numTypes = p2d.numTypes;
                 // trim arrays:
@@ -1164,8 +1163,7 @@ public abstract sealed class Path2D implements Shape, Cloneable
          * @since 1.6
          */
         public Double(Shape s, AffineTransform at) {
-            if (s instanceof Path2D) {
-                Path2D p2d = (Path2D) s;
+            if (s instanceof Path2D p2d) {
                 setWindingRule(p2d.windingRule);
                 this.numTypes = p2d.numTypes;
                 // trim arrays:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,8 +246,7 @@ class DQTMarkerSegment extends MarkerSegment {
                 }
                 elementPrecision = 0;
                 tableID = getAttributeValue(node, attrs, "qtableId", 0, 3, true);
-                if (node instanceof IIOMetadataNode) {
-                    IIOMetadataNode ourNode = (IIOMetadataNode) node;
+                if (node instanceof IIOMetadataNode ourNode) {
                     JPEGQTable table = (JPEGQTable) ourNode.getUserObject();
                     if (table == null) {
                         throw new IIOInvalidTreeException

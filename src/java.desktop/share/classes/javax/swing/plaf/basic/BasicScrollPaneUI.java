@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1042,7 +1042,7 @@ public class BasicScrollPaneUI
                     Object fastWheelScroll = toScroll.getClientProperty(
                                                "JScrollBar.fastWheelScrolling");
                     if (Boolean.TRUE == fastWheelScroll &&
-                        comp instanceof Scrollable) {
+                        comp instanceof Scrollable scrollComp) {
                         // 5078454: Under maximum acceleration, we may scroll
                         // by many 100s of units in ~1 second.
                         //
@@ -1053,7 +1053,6 @@ public class BasicScrollPaneUI
                         // calculate the total scroll amount, and then update
                         // the GUI once.  This technique provides much faster
                         // accelerated wheel scrolling.
-                        Scrollable scrollComp = (Scrollable) comp;
                         Rectangle viewRect = vp.getViewRect();
                         int startingX = viewRect.x;
                         boolean leftToRight =

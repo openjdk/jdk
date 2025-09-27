@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,9 +170,8 @@ final class DirectAudioDevice extends AbstractMixer {
         if (fullInfo == null) {
             throw new IllegalArgumentException("Line unsupported: " + info);
         }
-        if (fullInfo instanceof DataLine.Info) {
+        if (fullInfo instanceof DataLine.Info dataLineInfo) {
 
-            DataLine.Info dataLineInfo = (DataLine.Info)fullInfo;
             AudioFormat lineFormat;
             int lineBufferSize = AudioSystem.NOT_SPECIFIED;
 

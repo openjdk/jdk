@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,8 +327,7 @@ public class BasicBorders {
             boolean isPressed = false;
             boolean isDefault = false;
 
-            if (c instanceof AbstractButton) {
-                AbstractButton b = (AbstractButton)c;
+            if (c instanceof AbstractButton b) {
                 ButtonModel model = b.getModel();
 
                 isPressed = model.isPressed() && model.isArmed();
@@ -405,8 +404,7 @@ public class BasicBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
 
-            if (c instanceof AbstractButton) {
-                AbstractButton b = (AbstractButton)c;
+            if (c instanceof AbstractButton b) {
                 ButtonModel model = b.getModel();
 
                 if (model.isArmed() && model.isPressed() || model.isSelected()) {
@@ -490,14 +488,11 @@ public class BasicBorders {
             // support margins (to avoid this hackery), but we've
             // decided against it for simplicity
             //
-           if (c instanceof AbstractButton) {
-               AbstractButton b = (AbstractButton)c;
+           if (c instanceof AbstractButton b) {
                margin = b.getMargin();
-           } else if (c instanceof JToolBar) {
-               JToolBar t = (JToolBar)c;
+           } else if (c instanceof JToolBar t) {
                margin = t.getMargin();
-           } else if (c instanceof JTextComponent) {
-               JTextComponent t = (JTextComponent)c;
+           } else if (c instanceof JTextComponent t) {
                margin = t.getMargin();
            }
            insets.top = margin != null? margin.top : 0;
@@ -679,7 +674,7 @@ public class BasicBorders {
 
         public void paintBorder(Component c, Graphics g, int x, int y,
                                 int width, int height) {
-            if (!(c instanceof JSplitPane)) {
+            if (!(c instanceof JSplitPane splitPane)) {
                 return;
             }
             // The only tricky part with this border is that the divider is
@@ -700,8 +695,6 @@ public class BasicBorders {
 
             Component          child;
             Rectangle          cBounds;
-
-            JSplitPane splitPane = (JSplitPane)c;
 
             child = splitPane.getLeftComponent();
             // This is needed for the space between the divider and end of

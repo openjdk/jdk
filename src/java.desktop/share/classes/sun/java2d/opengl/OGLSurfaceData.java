@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -398,8 +398,7 @@ public abstract class OGLSurfaceData extends SurfaceData
     }
 
     private boolean canHandleComposite(Composite c) {
-        if (c instanceof AlphaComposite) {
-            AlphaComposite ac = (AlphaComposite)c;
+        if (c instanceof AlphaComposite ac) {
 
             return ac.getRule() == AlphaComposite.SRC_OVER && ac.getAlpha() >= 1f;
         }

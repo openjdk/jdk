@@ -93,8 +93,7 @@ class MarkerSegment implements Cloneable {
                                 true);
         length = 0;
         // get the user object and clone it to the data
-        if (node instanceof IIOMetadataNode) {
-            IIOMetadataNode iioNode = (IIOMetadataNode) node;
+        if (node instanceof IIOMetadataNode iioNode) {
             try {
                 data = (byte []) iioNode.getUserObject();
             } catch (Exception e) {

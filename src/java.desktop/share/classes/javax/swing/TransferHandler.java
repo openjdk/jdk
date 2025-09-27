@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1357,8 +1357,7 @@ public class TransferHandler implements Serializable {
          * scroll.
          */
         private void autoscroll(JComponent c, Point pos) {
-            if (c instanceof Scrollable) {
-                Scrollable s = (Scrollable) c;
+            if (c instanceof Scrollable s) {
                 if (pos.y < inner.y) {
                     // scroll upward
                     int dy = s.getScrollableUnitIncrement(outer, SwingConstants.VERTICAL, -1);
@@ -1693,8 +1692,7 @@ public class TransferHandler implements Serializable {
 
         public void actionPerformed(final ActionEvent e) {
             Object src = e.getSource();
-            if (src instanceof JComponent) {
-                JComponent c = (JComponent) src;
+            if (src instanceof JComponent c) {
                 TransferHandler th = c.getTransferHandler();
                 Clipboard clipboard = getClipboard(c);
                 String name = (String) getValue(Action.NAME);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,7 @@ public class PasswordView extends FieldView {
             throws BadLocationException
     {
         Container c = getContainer();
-        if (c instanceof JPasswordField) {
-            JPasswordField f = (JPasswordField) c;
+        if (c instanceof JPasswordField f) {
             if (!f.echoCharIsSet()) {
                 boolean useDrawUnselectedFPAPI = useFPAPI
                         && drawUnselectedTextOverridden
@@ -157,8 +156,7 @@ public class PasswordView extends FieldView {
             throws BadLocationException {
         g.setColor(selected);
         Container c = getContainer();
-        if (c instanceof JPasswordField) {
-            JPasswordField f = (JPasswordField) c;
+        if (c instanceof JPasswordField f) {
             if (!f.echoCharIsSet()) {
                 boolean useDrawUnselectedFPAPI = useFPAPI
                         && drawSelectedTextOverridden
@@ -246,8 +244,7 @@ public class PasswordView extends FieldView {
      */
     public Shape modelToView(int pos, Shape a, Position.Bias b) throws BadLocationException {
         Container c = getContainer();
-        if (c instanceof JPasswordField) {
-            JPasswordField f = (JPasswordField) c;
+        if (c instanceof JPasswordField f) {
             if (! f.echoCharIsSet()) {
                 return super.modelToView(pos, a, b);
             }
@@ -278,8 +275,7 @@ public class PasswordView extends FieldView {
         bias[0] = Position.Bias.Forward;
         int n = 0;
         Container c = getContainer();
-        if (c instanceof JPasswordField) {
-            JPasswordField f = (JPasswordField) c;
+        if (c instanceof JPasswordField f) {
             if (! f.echoCharIsSet()) {
                 return super.viewToModel(fx, fy, a, bias);
             }
@@ -314,8 +310,7 @@ public class PasswordView extends FieldView {
         switch (axis) {
         case View.X_AXIS:
             Container c = getContainer();
-            if (c instanceof JPasswordField) {
-                JPasswordField f = (JPasswordField) c;
+            if (c instanceof JPasswordField f) {
                 if (f.echoCharIsSet()) {
                     char echoChar = f.getEchoChar();
                     FontMetrics m = f.getFontMetrics(f.getFont());

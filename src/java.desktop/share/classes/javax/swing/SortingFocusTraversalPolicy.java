@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,8 +173,7 @@ public class SortingFocusTraversalPolicy
 
         Component[] components = container.getComponents();
         for (Component comp : components) {
-            if (comp instanceof Container) {
-                Container cont = (Container)comp;
+            if (comp instanceof Container cont) {
 
                 if (!cont.isFocusCycleRoot() &&
                     !cont.isFocusTraversalPolicyProvider() &&
@@ -213,8 +212,7 @@ public class SortingFocusTraversalPolicy
     private Component getComponentDownCycle(Component comp, int traversalDirection) {
         Component retComp = null;
 
-        if (comp instanceof Container) {
-            Container cont = (Container)comp;
+        if (comp instanceof Container cont) {
 
             if (cont.isFocusCycleRoot()) {
                 if (getImplicitDownCycleTraversal()) {
@@ -535,8 +533,7 @@ public class SortingFocusTraversalPolicy
             Component comp = cycle.get(i);
             if (accept(comp)) {
                 return comp;
-            } else if (comp instanceof Container && comp != aContainer) {
-                Container cont = (Container)comp;
+            } else if (comp instanceof Container cont && comp != aContainer) {
                 if (cont.isFocusTraversalPolicyProvider()) {
                     Component retComp = cont.getFocusTraversalPolicy().getLastComponent(cont);
                     if (retComp != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,8 +62,7 @@ public class InputStreamImageInputStreamSpi extends ImageInputStreamSpi {
                                                       boolean useCache,
                                                       File cacheDir)
         throws IOException {
-        if (input instanceof InputStream) {
-            InputStream is = (InputStream)input;
+        if (input instanceof InputStream is) {
 
             if (useCache) {
                 return new FileCacheImageInputStream(is, cacheDir);

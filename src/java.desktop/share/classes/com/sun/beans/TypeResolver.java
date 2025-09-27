@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,14 +164,12 @@ public final class TypeResolver {
                     ? Array.newInstance((Class<?>) comp, 0).getClass()
                     : GenericArrayTypeImpl.make(comp);
         }
-        if (formal instanceof ParameterizedType) {
-            ParameterizedType fpt = (ParameterizedType) formal;
+        if (formal instanceof ParameterizedType fpt) {
             Type[] actuals = resolve(actual, fpt.getActualTypeArguments());
             return ParameterizedTypeImpl.make(
                     (Class<?>) fpt.getRawType(), actuals, fpt.getOwnerType());
         }
-        if (formal instanceof WildcardType) {
-            WildcardType fwt = (WildcardType) formal;
+        if (formal instanceof WildcardType fwt) {
             Type[] upper = resolve(actual, fwt.getUpperBounds());
             Type[] lower = resolve(actual, fwt.getLowerBounds());
             return new WildcardTypeImpl(upper, lower);
@@ -233,26 +231,22 @@ public final class TypeResolver {
         if (type instanceof Class) {
             return (Class<?>) type;
         }
-        if (type instanceof ParameterizedType) {
-            ParameterizedType pt = (ParameterizedType) type;
+        if (type instanceof ParameterizedType pt) {
             return (Class<?>) pt.getRawType();
         }
-        if (type instanceof TypeVariable) {
-            TypeVariable<?> tv = (TypeVariable<?>)type;
+        if (type instanceof TypeVariable<?> tv) {
             Type[] bounds = tv.getBounds();
             return (0 < bounds.length)
                     ? erase(bounds[0])
                     : Object.class;
         }
-        if (type instanceof WildcardType) {
-            WildcardType wt = (WildcardType)type;
+        if (type instanceof WildcardType wt) {
             Type[] bounds = wt.getUpperBounds();
             return (0 < bounds.length)
                     ? erase(bounds[0])
                     : Object.class;
         }
-        if (type instanceof GenericArrayType) {
-            GenericArrayType gat = (GenericArrayType)type;
+        if (type instanceof GenericArrayType gat) {
             return Array.newInstance(erase(gat.getGenericComponentType()), 0).getClass();
         }
         throw new IllegalArgumentException("Unknown Type kind: " + type.getClass());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,7 @@ public class ByteBandedRaster extends SunWritableRaster {
         this.maxX = minX + width;
         this.maxY = minY + height;
 
-        if (sampleModel instanceof BandedSampleModel) {
-            BandedSampleModel bsm = (BandedSampleModel)sampleModel;
+        if (sampleModel instanceof BandedSampleModel bsm) {
             this.scanlineStride = bsm.getScanlineStride();
             int[] bankIndices = bsm.getBankIndices();
             int[] bandOffsets = bsm.getBandOffsets();

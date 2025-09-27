@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -325,8 +325,7 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      */
     protected final Color decodeColor(String key, float hOffset, float sOffset,
                                       float bOffset, int aOffset) {
-        if (UIManager.getLookAndFeel() instanceof NimbusLookAndFeel){
-            NimbusLookAndFeel laf = (NimbusLookAndFeel) UIManager.getLookAndFeel();
+        if (UIManager.getLookAndFeel() instanceof NimbusLookAndFeel laf){
             return laf.getDerivedColor(key, hOffset, sOffset, bOffset, aOffset, true);
         } else {
             // cannot give the right answer as painter should not be used outside

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,9 +111,8 @@ public class TIFFRenderedImage implements RenderedImage {
         newParam.setDestinationBands(param.getDestinationBands());
         newParam.setDestinationOffset(param.getDestinationOffset());
 
-        if (param instanceof TIFFImageReadParam && copyTagSets) {
+        if (param instanceof TIFFImageReadParam tparam && copyTagSets) {
             // Copy the settings from the input parameter.
-            TIFFImageReadParam tparam = (TIFFImageReadParam) param;
 
             List<TIFFTagSet> tagSets = tparam.getAllowedTagSets();
             if (tagSets != null) {

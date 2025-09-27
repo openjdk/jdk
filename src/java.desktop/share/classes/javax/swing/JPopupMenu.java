@@ -1176,8 +1176,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         Component[] component = this.getComponents();
         for (int i = 0 ; i < ncomponents ; i++) {
             Component comp = component[i];
-            if (comp instanceof JMenu) {
-                JMenu menu = (JMenu)comp;
+            if (comp instanceof JMenu menu) {
                 JPopupMenu subPopup = menu.getPopupMenu();
                 if (subPopup == popup)
                     return true;
@@ -1545,8 +1544,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         if (DEBUG) {
             System.out.println("In JPopupMenu.menuSelectionChanged " + isIncluded);
         }
-        if(invoker instanceof JMenu) {
-            JMenu m = (JMenu) invoker;
+        if(invoker instanceof JMenu m) {
             if(isIncluded)
                 m.setPopupMenuVisible(true);
             else

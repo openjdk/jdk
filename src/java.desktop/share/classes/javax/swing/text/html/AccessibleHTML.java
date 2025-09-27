@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1074,11 +1074,9 @@ class AccessibleHTML implements Accessible {
              * Returns the paragraph element for the specified index.
              */
             private Element getParagraphElement(int index) {
-                if (model instanceof PlainDocument ) {
-                    PlainDocument sdoc = (PlainDocument)model;
+                if (model instanceof PlainDocument sdoc) {
                     return sdoc.getParagraphElement(index);
-                } else if (model instanceof StyledDocument) {
-                    StyledDocument sdoc = (StyledDocument)model;
+                } else if (model instanceof StyledDocument sdoc) {
                     return sdoc.getParagraphElement(index);
                 } else {
                     Element para;
@@ -1171,8 +1169,7 @@ class AccessibleHTML implements Accessible {
              * @return the AttributeSet of the character
              */
             public AttributeSet getCharacterAttribute(int i) {
-                if (model instanceof StyledDocument) {
-                    StyledDocument doc = (StyledDocument)model;
+                if (model instanceof StyledDocument doc) {
                     Element elem = doc.getCharacterElement(i);
                     if (elem != null) {
                         return elem.getAttributes();

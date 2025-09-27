@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,8 +103,7 @@ final class WildcardTypeImpl implements WildcardType {
      */
     @Override
     public boolean equals(Object object) {
-        if (object instanceof WildcardType) {
-            WildcardType type = (WildcardType) object;
+        if (object instanceof WildcardType type) {
             return Arrays.equals(this.upperBounds, type.getUpperBounds())
                 && Arrays.equals(this.lowerBounds, type.getLowerBounds());
         }

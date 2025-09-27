@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1700,10 +1700,8 @@ search:
         InputStream str1 = null;
         InputStream str2 = null;
 
-        if (obj1 instanceof byte[]) {
-            byte[] arr1 = (byte[])obj1;
-            if (obj2 instanceof byte[]) {
-                byte[] arr2 = (byte[])obj2;
+        if (obj1 instanceof byte[] arr1) {
+            if (obj2 instanceof byte[] arr2) {
                 byte[] ret = new byte[arr1.length + arr2.length];
                 System.arraycopy(arr1, 0, ret, 0, arr1.length);
                 System.arraycopy(arr2, 0, ret, arr1.length, arr2.length);

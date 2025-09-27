@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,7 @@ public class Insets implements Cloneable, java.io.Serializable {
      * @since       1.1
      */
     public boolean equals(Object obj) {
-        if (obj instanceof Insets) {
-            Insets insets = (Insets)obj;
+        if (obj instanceof Insets insets) {
             return ((top == insets.top) && (left == insets.left) &&
                     (bottom == insets.bottom) && (right == insets.right));
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,8 +149,7 @@ public class BasicTextAreaUI extends BasicTextUI {
             return createI18N(elem);
         } else {
             JTextComponent c = getComponent();
-            if (c instanceof JTextArea) {
-                JTextArea area = (JTextArea) c;
+            if (c instanceof JTextArea area) {
                 View v;
                 if (area.getLineWrap()) {
                     v = new WrappedPlainView(elem, area.getWrapStyleWord());
@@ -256,8 +255,7 @@ public class BasicTextAreaUI extends BasicTextUI {
          */
         public int getFlowSpan(int index) {
             Component c = getContainer();
-            if (c instanceof JTextArea) {
-                JTextArea area = (JTextArea) c;
+            if (c instanceof JTextArea area) {
                 if (! area.getLineWrap()) {
                     // no limit if unwrapped
                     return Integer.MAX_VALUE;
@@ -270,8 +268,7 @@ public class BasicTextAreaUI extends BasicTextUI {
                                                                   SizeRequirements r) {
             SizeRequirements req = super.calculateMinorAxisRequirements(axis, r);
             Component c = getContainer();
-            if (c instanceof JTextArea) {
-                JTextArea area = (JTextArea) c;
+            if (c instanceof JTextArea area) {
                 if (! area.getLineWrap()) {
                     // min is pref if unwrapped
                     req.minimum = req.preferred;

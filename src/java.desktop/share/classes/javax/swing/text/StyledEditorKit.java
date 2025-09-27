@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,12 +229,11 @@ public class StyledEditorKit extends DefaultEditorKit {
         void updateInputAttributes(int dot, int mark, JTextComponent c) {
             // EditorKit might not have installed the StyledDocument yet.
             Document aDoc = c.getDocument();
-            if (!(aDoc instanceof StyledDocument)) {
+            if (!(aDoc instanceof StyledDocument doc)) {
                 return ;
             }
             int start = Math.min(dot, mark);
             // record current character attributes.
-            StyledDocument doc = (StyledDocument)aDoc;
             // If nothing is selected, get the attributes from the character
             // before the start of the selection, otherwise get the attributes
             // from the character element at the start of the selection.
