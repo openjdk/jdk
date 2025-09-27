@@ -24,7 +24,7 @@
 
 // Dual-mapping tag to name and name to tag
 // where strings are malloc-allocated
-#include "classfile/altHashing.hpp";
+#include "classfile/altHashing.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTag.hpp"
