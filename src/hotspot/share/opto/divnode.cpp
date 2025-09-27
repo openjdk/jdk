@@ -1206,6 +1206,11 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
   if (t1 == Type::TOP) { return Type::TOP; }
   if (t2 == Type::TOP) { return Type::TOP; }
 
+  // Mod by zero?  Throw exception at runtime!
+  if (t2 == TypeInteger::zero(bt)) {
+    return Type::TOP;
+  }
+
   // We always generate the dynamic check for 0.
   // 0 MOD X is 0
   if (t1 == TypeInteger::zero(bt)) { return t1; }
@@ -1213,11 +1218,6 @@ static const Type* mod_value(const PhaseGVN* phase, const Node* in1, const Node*
   // X MOD X is 0
   if (in1 == in2) {
     return TypeInteger::zero(bt);
-  }
-
-  // Mod by zero?  Throw exception at runtime!
-  if (t2 == TypeInteger::zero(bt)) {
-    return Type::TOP;
   }
 
   const TypeInteger* i1 = t1->is_integer(bt);
