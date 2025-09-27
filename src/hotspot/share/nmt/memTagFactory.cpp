@@ -37,6 +37,7 @@ int NameToTagTable::string_hash(const char* t) {
   }
   return abs((int)((sum + 261) >> 1));
 }
+
 void NameToTagTable::put_if_absent(MemTag tag, const char* name) {
   int bucket = string_hash(name) % table_size;
   EntryRef link = table[bucket];
@@ -86,6 +87,7 @@ void NameToTagTable::set_human_readable_name_of(MemTag tag, const char* hrn) {
   const char*& ref = human_readable_names.at_grow(i, nullptr);
   ref = copy;
 }
+
 MemTag MemTagFactory::Instance::tag(const char* name, const char* human_name) {
   MemTag found = table.tag_of(name);
   if (found != mtNone) {
