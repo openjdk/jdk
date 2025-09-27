@@ -288,6 +288,7 @@ VM_ChangeSingleStep::VM_ChangeSingleStep(bool on)
 
 class JvmtiEventControllerPrivate : public AllStatic {
   static bool _initialized;
+  static bool _execution_finished;
 public:
   static void set_should_post_single_step(bool on);
   static void enter_interp_only_mode(JvmtiThreadState *state);
@@ -334,6 +335,7 @@ public:
 };
 
 bool JvmtiEventControllerPrivate::_initialized = false;
+bool JvmtiEventControllerPrivate::_execution_finished = false;
 
 void JvmtiEventControllerPrivate::set_should_post_single_step(bool on) {
   // we have permission to do this, VM op doesn't
@@ -495,6 +497,10 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
+  if (_execution_finished) {
+    now_enabled &= VM_DEATH_BIT;
+  }
+
   // Set/reset the event enabled under the tagmap lock.
   set_enabled_events_with_lock(env, now_enabled);
 
@@ -535,6 +541,10 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
     break;
   default:
     break;
+  }
+
+  if (_execution_finished) {
+    now_enabled &= VM_DEATH_BIT;
   }
 
   // if anything changed do update
@@ -1047,7 +1057,7 @@ JvmtiEventControllerPrivate::vm_init() {
 
 void
 JvmtiEventControllerPrivate::vm_death() {
-  // events are disabled (phase has changed)
+  _execution_finished = true;
   JvmtiEventControllerPrivate::recompute_enabled();
 }
 
