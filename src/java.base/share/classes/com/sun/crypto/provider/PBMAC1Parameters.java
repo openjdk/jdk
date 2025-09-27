@@ -26,8 +26,6 @@
 package com.sun.crypto.provider;
 
 import java.io.IOException;
-import java.security.AlgorithmParametersSpi;
-import java.security.NoSuchAlgorithmException;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.PBEParameterSpec;
@@ -63,7 +61,7 @@ import sun.security.util.*;
  *
  * @since 26
  */
-abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
+final public class PBMAC1Parameters {
 
     // the PBMAC1 algorithm name
     private String pbmac1AlgorithmName = null;
@@ -90,7 +88,7 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
         iCount = ((PBEParameterSpec)paramSpec).getIterationCount();
     }
 
-    protected void engineInit(byte[] encoded) throws IOException {
+    public void engineInit(byte[] encoded) throws IOException {
         DerValue pBMAC1_params = new DerValue(encoded);
         if (pBMAC1_params.tag != DerValue.tag_Sequence) {
             throw new IOException("PBMAC1 parameter parsing error: "
@@ -191,13 +189,14 @@ abstract class PBMAC1Parameters extends AlgorithmParametersSpi {
     /*
      * Returns a formatted string describing the parameters.
      */
-    protected String engineToString() {
+    public String engineToString() {
         return pbmac1AlgorithmName;
     }
 
-    public static final class General extends PBMAC1Parameters {
-        public General() throws NoSuchAlgorithmException {
-            super();
-        }
+    public byte[] getSalt() {
+        return salt;
+    }
+    public int getIterations() {
+        return iCount;
     }
 }

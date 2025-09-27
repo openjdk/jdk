@@ -173,7 +173,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private String certProtectionAlgorithm = null;
     private int certPbeIterationCount = -1;
     private String macAlgorithm = null;
-    private String pbmac1Hmac = null;
     private int macIterationCount = -1;
     private boolean newKeystore;
 
@@ -1253,7 +1252,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             macIterationCount = defaultMacIterationCount();
         }
         if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
-            byte[] macData = calculateMac(password, authenticatedSafe);
+            byte[] macData = MacData.calculateMac(password, authenticatedSafe,
+                   newKeystore, macAlgorithm, macIterationCount, getSalt());
             pfx.write(macData);
         }
         // write PFX to output stream
@@ -1467,79 +1467,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             }
         }
     }
-
-    /*
-     * Calculate MAC using HMAC algorithm (required for password integrity)
-     *
-     * Hash-based MAC algorithm combines secret key with message digest to
-     * create a message authentication code (MAC)
-     */
-    private byte[] calculateMac(char[] passwd, byte[] data)
-        throws IOException, NoSuchAlgorithmException
-    {
-        final byte[] mData;
-        final PBEParameterSpec params;
-        final String algName;
-        final MacData macData;
-        String kdfHmac;
-        int writeIterationCount = macIterationCount;
-
-        if (newKeystore) {
-            if (macAlgorithm.startsWith("PBEWith") ||
-                    defaultMacAlgorithm().startsWith("PBEWith")) {
-                kdfHmac = defaultMacAlgorithm().replace("PBEWith", "");
-                if (!(kdfHmac.equals("HmacSHA512") ||
-                        kdfHmac.equals("HmacSHA256"))) {
-                    kdfHmac = pbmac1Hmac; // use value associated with keystore
-                }
-                algName = "PBMAC1";
-                // Override with value of security property.
-                writeIterationCount = defaultMacIterationCount();
-            } else {
-                algName = macAlgorithm.substring(7);
-                kdfHmac = macAlgorithm;
-            }
-        } else {
-            if (pbmac1Hmac != null) { // have PBMAC1 keystore
-                kdfHmac = pbmac1Hmac;
-                algName = "PBMAC1";
-            } else {
-                algName = macAlgorithm.substring(7);
-                kdfHmac = macAlgorithm;
-            }
-        }
-
-        params = new PBEParameterSpec(getSalt(), writeIterationCount);
-
-        var skf = SecretKeyFactory.getInstance(kdfHmac.equals("HmacSHA512") ?
-                "PBKDF2WithHmacSHA512" : "PBKDF2WithHmacSHA256");
-        try {
-            int keyLength = kdfHmac.equals("HmacSHA512") ? 64*8 : 32*8;
-
-            SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(passwd,
-                    params.getSalt(), writeIterationCount, keyLength));
-
-            Mac m = Mac.getInstance(kdfHmac);
-            try {
-                m.init(pbeKey);
-            } finally {
-                destroyPBEKey(pbeKey);
-            }
-            m.update(data);
-            byte[] macResult = m.doFinal();
-
-            // encode as MacData
-            macData = new MacData(algName, macResult, params,
-                    kdfHmac, keyLength);
-            DerOutputStream bytes = new DerOutputStream();
-            bytes.write(macData.getEncoded());
-            mData = bytes.toByteArray();
-        } catch (Exception e) {
-            throw new IOException("calculateMac failed: " + e, e);
-        }
-        return mData;
-    }
-
 
     /*
      * Validate Certificate Chain
@@ -1948,51 +1875,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
     }
 
-    private void processMacData(AlgorithmParameterSpec params,
-            MacData macData, char[] password, byte[] data, String macAlgorithm)
-            throws  Exception {
-        final String kdfHmac;
-        String tmp;
-
-        tmp = macAlgorithm.replace("PBEWith", "");
-        if (!(tmp.equals("HmacSHA512") || tmp.equals("HmacSHA256"))) {
-            kdfHmac = macAlgorithm;
-        } else {
-            kdfHmac = tmp;
-        }
-
-        var skf = SecretKeyFactory.getInstance(
-                macAlgorithm.contains("HmacSHA512") ?
-                "PBKDF2WithHmacSHA512" : "PBKDF2WithHmacSHA256");
-
-        RetryWithZero.run(pass -> {
-            SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(pass,
-                    ((PBEParameterSpec)params).getSalt(),
-                    ((PBEParameterSpec)params).getIterationCount(),
-                    kdfHmac.equals("HmacSHA512") ? 64*8 : 32*8));
-            Mac m = Mac.getInstance(kdfHmac);
-            try {
-                m.init(pbeKey);
-            } finally {
-                destroyPBEKey(pbeKey);
-            }
-            m.update(data);
-            byte[] macResult = m.doFinal();
-
-            if (debug != null) {
-                debug.println("Checking keystore integrity " +
-                        "(" + m.getAlgorithm() + " iterations: "
-                        + macData.getIterations() + ")");
-            }
-
-            if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
-                throw new UnrecoverableKeyException("Failed PKCS12" +
-                        " integrity checking");
-            }
-            return (Void) null;
-        }, password);
-    }
-
     /**
      * Loads the keystore from the given input stream.
      *
@@ -2203,27 +2085,17 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     String algName =
                             macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
                     if (algName.equals("PBMAC1")) {
-
-                        String pbmac1KdfHmac = macData.getKdfHmac();
-                        pbmac1Hmac = pbmac1KdfHmac;
-                        macIterationCount = ic;
-                        macAlgorithm = "PBEWith" + pbmac1KdfHmac;
-                        PBEParameterSpec params =
-                                new PBEParameterSpec(salt, ic);
-                        processMacData(params, macData, password, authSafeData,
-                                macAlgorithm);
+                        macAlgorithm = "PBEWith" + macData.getKdfHmac()
+                        + "And" + macData.getHmac();
                     } else {
-
                         // Change SHA-1 to SHA1
                         algName = algName.replace("-", "");
                         macAlgorithm = "HmacPBE" + algName;
-                        macIterationCount = ic;
-
-                        PBEParameterSpec params =
-                                new PBEParameterSpec(salt, ic);
-                        processMacData(params, macData, password, authSafeData,
-                                macAlgorithm);
                     }
+                    macIterationCount = ic;
+                    PBEParameterSpec params = new PBEParameterSpec(salt, ic);
+                    macData.processMacData(params, macData, password, authSafeData,
+                            macAlgorithm);
                 } catch (Exception e) {
                     throw new IOException("Integrity check failed: " + e, e);
                 }

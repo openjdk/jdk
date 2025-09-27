@@ -544,10 +544,6 @@ public final class SunJCE extends Provider {
         ps("AlgorithmParameters", "PBEWithHmacSHA512/256AndAES_256",
                 "com.sun.crypto.provider.PBES2Parameters$HmacSHA512_256AndAES_256");
 
-        psA("AlgorithmParameters", "PBMAC1",
-                "com.sun.crypto.provider.PBMAC1Parameters$General",
-                null);
-
         ps("AlgorithmParameters", "Blowfish",
                 "com.sun.crypto.provider.BlowfishParameters");
 
