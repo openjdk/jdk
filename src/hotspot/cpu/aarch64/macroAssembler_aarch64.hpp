@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1214,10 +1215,7 @@ public:
 
   void cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
                           Label &succeed, Label *fail);
-  void cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
-                  Label &succeed, Label *fail);
-
-  void cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
+  void cmpxchgptr_barrier(Register oldv, Register newv, Register addr, Register tmp,
                   Label &succeed, Label *fail);
 
   void atomic_add(Register prev, RegisterOrConstant incr, Register addr);

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3367,7 +3368,7 @@ void MacroAssembler::reinit_heapbase()
 // to identify the memory word to be compared/exchanged rather than a
 // register+offset Address.
 
-void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
+void MacroAssembler::cmpxchgptr_barrier(Register oldv, Register newv, Register addr, Register tmp,
                                 Label &succeed, Label *fail) {
   // oldv holds comparison value
   // newv holds value to write in exchange
@@ -3377,7 +3378,6 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
     casal(Assembler::xword, oldv, newv, addr);
     cmp(tmp, oldv);
     br(Assembler::EQ, succeed);
-    membar(AnyAny);
   } else {
     Label retry_load, nope;
     prfm(Address(addr), PSTL1STRM);
@@ -3405,43 +3405,7 @@ void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Reg
 void MacroAssembler::cmpxchg_obj_header(Register oldv, Register newv, Register obj, Register tmp,
                                         Label &succeed, Label *fail) {
   assert(oopDesc::mark_offset_in_bytes() == 0, "assumption");
-  cmpxchgptr(oldv, newv, obj, tmp, succeed, fail);
-}
-
-void MacroAssembler::cmpxchgw(Register oldv, Register newv, Register addr, Register tmp,
-                                Label &succeed, Label *fail) {
-  // oldv holds comparison value
-  // newv holds value to write in exchange
-  // addr identifies memory word to compare against/update
-  // tmp returns 0/1 for success/failure
-  if (UseLSE) {
-    mov(tmp, oldv);
-    casal(Assembler::word, oldv, newv, addr);
-    cmp(tmp, oldv);
-    br(Assembler::EQ, succeed);
-    membar(AnyAny);
-  } else {
-    Label retry_load, nope;
-    prfm(Address(addr), PSTL1STRM);
-    bind(retry_load);
-    // flush and load exclusive from the memory location
-    // and fail if it is not what we expect
-    ldaxrw(tmp, addr);
-    cmp(tmp, oldv);
-    br(Assembler::NE, nope);
-    // if we store+flush with no intervening write tmp will be zero
-    stlxrw(tmp, newv, addr);
-    cbzw(tmp, succeed);
-    // retry so we only ever return after a load fails to compare
-    // ensures we don't return a stale value after a failed write.
-    b(retry_load);
-    // if the memory word differs we return it in oldv and signal a fail
-    bind(nope);
-    membar(AnyAny);
-    mov(oldv, tmp);
-  }
-  if (fail)
-    b(*fail);
+  cmpxchgptr_barrier(oldv, newv, obj, tmp, succeed, fail);
 }
 
 // A generic CAS; success or failure is in the EQ flag.  A weak CAS
