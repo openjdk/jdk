@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
 /* We should also include jdk_util.h here, for the prototype of JDK_Canonicalize.
    This isn't possible though because canonicalize_md.c is as well used in
    different contexts within Oracle.
- */
+*/
 #include "io_util_md.h"
 
 /* Copy bytes to dst, not going past dend; return dst + number of bytes copied,
@@ -139,7 +139,8 @@ lastErrorReportable()
         || (errval == ERROR_ACCESS_DENIED)
         || (errval == ERROR_NETWORK_UNREACHABLE)
         || (errval == ERROR_NETWORK_ACCESS_DENIED)
-        || (errval == ERROR_NO_MORE_FILES)) {
+        || (errval == ERROR_NO_MORE_FILES)
+        || (errval == ERROR_NETNAME_DELETED)) {
         return 0;
     }
     return 1;
@@ -183,7 +184,7 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     /* Copy prefix, assuming path is absolute */
     c = src[0];
     if (((c <= L'z' && c >= L'a') || (c <= L'Z' && c >= L'A'))
-       && (src[1] == L':') && (src[2] == L'\\')) {
+        && (src[1] == L':') && (src[2] == L'\\')) {
         /* Drive specifier */
         *src = towupper(*src);    /* Canonicalize drive letter */
         if (!(dst = wcp(dst, dend, L'\0', src, src + 2))) {
@@ -244,9 +245,9 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
             continue;
         } else {
             if (!lastErrorReportable()) {
-               if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))){
-                   goto err;
-               }
+                if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))){
+                    goto err;
+                }
                 break;
             } else {
                 goto err;
@@ -255,7 +256,7 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     }
 
     if (dst >= dend) {
-    errno = ENAMETOOLONG;
+        errno = ENAMETOOLONG;
         goto err;
     }
     *dst = L'\0';
@@ -366,7 +367,7 @@ JDK_Canonicalize(const char *orig, char *out, int len) {
     // Change return value to success.
     ret = 0;
 
-finish:
+ finish:
     free(wresult);
     free(wpath);
 
