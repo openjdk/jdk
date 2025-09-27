@@ -128,6 +128,7 @@ class VMManagementImpl implements VMManagement {
     public native boolean getVerboseClass();
 
     // Memory Subsystem
+    public native long getGcCpuTime();
     public native boolean getVerboseGC();
 
     // Runtime Subsystem
