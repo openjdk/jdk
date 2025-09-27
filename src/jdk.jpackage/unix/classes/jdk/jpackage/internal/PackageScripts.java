@@ -78,18 +78,23 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
 
     static class ResourceConfig {
 
-        ResourceConfig(String defaultName, String categoryId, boolean noDefault) {
+        ResourceConfig(String defaultName, String categoryId) {
+            this(Optional.of(defaultName), Optional.empty(), categoryId);
+        }
+
+        ResourceConfig(Optional<String> defaultName, Optional<String> publicName,
+                String categoryId) {
             this.defaultName = defaultName;
+            this.publicName = publicName;
             this.category = I18N.getString(categoryId);
-            this.noDefault = noDefault;
         }
 
         OverridableResource createResource() {
             final OverridableResource resource;
-            if (noDefault) {
+            if (defaultName.isEmpty()) {
                 resource = new OverridableResource().setCategory(category);
             } else {
-                resource = new OverridableResource(defaultName,
+                resource = new OverridableResource(defaultName.get(),
                         ResourceLocator.class).setCategory(category);
             }
             return getDefaultPublicName().map(resource::setPublicName).orElse(
@@ -97,17 +102,21 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         }
 
         private Optional<String> getDefaultPublicName() {
-            final String wellKnownSuffix = ".template";
-            if (defaultName.endsWith(wellKnownSuffix)) {
-                return Optional.of(defaultName.substring(0, defaultName.length()
-                        - wellKnownSuffix.length()));
+            if (publicName.isPresent()) {
+                return publicName;
+            } else if (defaultName.isPresent()) {
+                final String wellKnownSuffix = ".template";
+                if (defaultName.get().endsWith(wellKnownSuffix)) {
+                    return Optional.of(defaultName.get().substring(0,
+                            defaultName.get().length() - wellKnownSuffix.length()));
+                }
             }
             return Optional.ofNullable(null);
         }
 
-        private final String defaultName;
+        private final Optional<String> defaultName;
+        private final Optional<String> publicName;
         private final String category;
-        private final boolean noDefault;
     }
 
     private final Map<T, ShellScriptResource> scripts;

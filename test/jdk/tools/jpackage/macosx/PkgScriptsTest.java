@@ -29,6 +29,7 @@
  * @build jdk.jpackage.test.*
  * @build PkgScriptsTest
  * @requires (os.family == "mac")
+ * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PkgScriptsTest
  */
@@ -37,6 +38,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -47,21 +51,24 @@ import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
 
 public class PkgScriptsTest {
 
     @Test
-    @Parameter("TRUE")
-    @Parameter("FALSE")
-    public void test(boolean provideScripts) {
+    @Parameter({"TRUE", "TRUE"})
+    @Parameter({"TRUE", "FALSE"})
+    @Parameter({"FALSE", "TRUE"})
+    @Parameter({"FALSE", "FALSE"})
+    public void test(boolean preinstall, boolean postinstall) {
         final Path resources;
-        if (provideScripts) {
+        if (preinstall || postinstall) {
             resources = TKit.createTempDirectory("resources");
-            try {
-                Files.createFile(resources.resolve("preinstall"));
-                Files.createFile(resources.resolve("postinstall"));
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
+            if (preinstall) {
+                createScript(resources, "preinstall");
+            }
+            if (postinstall) {
+                createScript(resources, "postinstall");
             }
         } else {
             resources = null;
@@ -80,9 +87,43 @@ public class PkgScriptsTest {
                 .run(PackageTest.Action.CREATE_AND_UNPACK);
     }
 
+    private static void createScript(Path resourcesDir, String name) {
+        List<String> script = Stream.of("#!/usr/bin/env sh",
+                                        String.format("echo \"%s\"", name),
+                                        "exit 0").toList();
+        try {
+            Files.write(resourcesDir.resolve(name), script);
+        } catch (IOException ex) {
+            throw new UncheckedIOException(ex);
+        }
+    }
+
+    private static boolean isScriptExistsInResourceDir(JPackageCommand cmd, String name) {
+        return Optional.ofNullable(cmd.getArgumentValue("--resource-dir"))
+                .map(resourceDir -> {
+                    return Files.exists(Path.of(resourceDir).resolve(name));
+                }).orElseGet(() -> {
+                    return false;
+                });
+    }
+
+    private static void validateScript(boolean exists, Path scriptPath) {
+        if (exists) {
+            TKit.assertFileExists(scriptPath);
+            String output = Executor.of(scriptPath.toString())
+                    .executeAndGetFirstLineOfOutput();
+            TKit.assertNotEquals(scriptPath.getFileName(), output,
+                    "Check script output");
+        } else {
+            TKit.assertPathExists(scriptPath, false);
+        }
+    }
+
     private static void verifyPKG(JPackageCommand cmd) {
         if (cmd.isPackageUnpacked()) {
-            final boolean provideScripts = cmd.hasArgument("--resource-dir");
+            final var preinstall = isScriptExistsInResourceDir(cmd, "preinstall");
+            final var postinstall = isScriptExistsInResourceDir(cmd, "postinstall");
+
             Path dataDir = cmd.pathToUnpackedPackageFile(Path.of("/"))
                     .toAbsolutePath()
                     .getParent()
@@ -91,15 +132,12 @@ public class PkgScriptsTest {
                 dataListing.filter(file -> {
                     return ".pkg".equals(PathUtils.getSuffix(file.getFileName()));
                 }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
-                    Path preinstall = pkgDir.resolve("Scripts").resolve("preinstall");
-                    Path postinstall = pkgDir.resolve("Scripts").resolve("postinstall");
-                    if (provideScripts) {
-                        TKit.assertFileExists(preinstall);
-                        TKit.assertFileExists(postinstall);
-                    } else {
-                        TKit.assertPathExists(preinstall, false);
-                        TKit.assertPathExists(postinstall, false);
-                    }
+                    Path preinstallPath =
+                            pkgDir.resolve("Scripts").resolve("preinstall");
+                    Path postinstallPath =
+                            pkgDir.resolve("Scripts").resolve("postinstall");
+                    validateScript(preinstall, preinstallPath);
+                    validateScript(postinstall, postinstallPath);
                 }));
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);

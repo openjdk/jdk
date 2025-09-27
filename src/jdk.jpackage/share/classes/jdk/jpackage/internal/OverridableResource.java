@@ -231,10 +231,10 @@ final class OverridableResource {
                 return source.getKey();
             }
         }
-        if (consumer == null) {
-            Log.verbose(I18N.format("message.no-default-resource",
-                    publicName, getPrintableCategory(), publicName));
-        }
+
+        Log.verbose(I18N.format("message.no-default-resource",
+                publicName, getPrintableCategory(), publicName));
+
         return null;
     }
 

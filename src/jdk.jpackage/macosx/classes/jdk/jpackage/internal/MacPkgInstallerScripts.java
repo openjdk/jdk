@@ -24,6 +24,7 @@
  */
 package jdk.jpackage.internal;
 
+import java.util.Optional;
 import java.util.function.Supplier;
 import jdk.jpackage.internal.PackageScripts.ResourceConfig;
 
@@ -33,10 +34,10 @@ import jdk.jpackage.internal.PackageScripts.ResourceConfig;
 final class MacPkgInstallerScripts {
 
     enum AppScripts implements Supplier<OverridableResource> {
-        preinstall(new ResourceConfig("preinstall.template",
-                "resource.pkg-preinstall-script", true)),
-        postinstall(new ResourceConfig("postinstall.template",
-                "resource.pkg-postinstall-script", true));
+        preinstall(new ResourceConfig(Optional.empty(), Optional.of("preinstall"),
+                "resource.pkg-preinstall-script")),
+        postinstall(new ResourceConfig(Optional.empty(), Optional.of("postinstall"),
+                "resource.pkg-postinstall-script"));
 
         AppScripts(ResourceConfig cfg) {
             this.cfg = cfg;
@@ -52,9 +53,9 @@ final class MacPkgInstallerScripts {
 
     enum ServicesScripts implements Supplier<OverridableResource> {
         preinstall(new ResourceConfig("services-preinstall.template",
-                "resource.pkg-services-preinstall-script", false)),
+                "resource.pkg-services-preinstall-script")),
         postinstall(new ResourceConfig("services-postinstall.template",
-                "resource.pkg-services-postinstall-script", false));
+                "resource.pkg-services-postinstall-script"));
 
         ServicesScripts(ResourceConfig cfg) {
             this.cfg = cfg;
