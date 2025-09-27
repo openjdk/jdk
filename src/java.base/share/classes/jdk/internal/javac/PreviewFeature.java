@@ -80,6 +80,10 @@ public @interface PreviewFeature {
         STABLE_VALUES,
         @JEP(number=470, title="PEM Encodings of Cryptographic Objects", status="Preview")
         PEM_API,
+        /**
+         * Reflective preview APIs to access preview language and VM
+         * features as a whole.
+         */
         LANGUAGE_MODEL,
         /**
          * A key for testing.
