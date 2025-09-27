@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,14 +63,13 @@ import com.sun.org.apache.bcel.internal.generic.InstructionList;
  *
  * @see com.sun.org.apache.bcel.internal.generic.Instruction
  * @see InstructionList
- * @LastModified: May 2021
+ * @LastModified: Sept 2025
  */
 public class InstructionFinder {
 
     /**
      * Code patterns found may be checked using an additional user-defined constraint object whether they really match the
      * needed criterion. I.e., check constraints that can not expressed with regular expressions.
-     *
      */
     public interface CodeConstraint {
 
@@ -374,7 +373,7 @@ public class InstructionFinder {
 //    }
 
 //    private static final String pattern2string( String pattern, boolean make_string ) {
-//        StringBuffer buf = new StringBuffer();
+//        StringBuilder buf = new StringBuilder();
 //        for (int i = 0; i < pattern.length(); i++) {
 //            char ch = pattern.charAt(i);
 //            if (ch >= OFFSET) {

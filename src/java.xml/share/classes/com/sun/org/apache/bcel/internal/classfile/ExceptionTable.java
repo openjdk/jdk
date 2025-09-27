@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.Args;
+import jdk.xml.internal.Utils;
 
 /**
  * This class represents the table of exceptions that are thrown by a method. This attribute may be used once per
@@ -43,7 +44,7 @@ import com.sun.org.apache.bcel.internal.util.Args;
  * }
  * </pre>
  * @see Code
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public final class ExceptionTable extends Attribute {
 
@@ -60,7 +61,7 @@ public final class ExceptionTable extends Attribute {
     }
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param nameIndex Index in constant pool
      * @param length Content length in bytes
@@ -85,7 +86,7 @@ public final class ExceptionTable extends Attribute {
      */
     public ExceptionTable(final int nameIndex, final int length, final int[] exceptionIndexTable, final ConstantPool constantPool) {
         super(Const.ATTR_EXCEPTIONS, nameIndex, length, constantPool);
-        this.exceptionIndexTable = exceptionIndexTable != null ? exceptionIndexTable : Const.EMPTY_INT_ARRAY;
+        this.exceptionIndexTable = Utils.createEmptyArrayIfNull(exceptionIndexTable);
         Args.requireU2(this.exceptionIndexTable.length, "exceptionIndexTable.length");
     }
 
@@ -156,7 +157,7 @@ public final class ExceptionTable extends Attribute {
      *        length.
      */
     public void setExceptionIndexTable(final int[] exceptionIndexTable) {
-        this.exceptionIndexTable = exceptionIndexTable != null ? exceptionIndexTable : Const.EMPTY_INT_ARRAY;
+        this.exceptionIndexTable = Utils.createEmptyArrayIfNull(exceptionIndexTable);
     }
 
     /**

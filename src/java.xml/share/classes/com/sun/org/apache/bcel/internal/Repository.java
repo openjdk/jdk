@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,7 +30,7 @@ import com.sun.org.apache.bcel.internal.util.SyntheticRepository;
  * @see com.sun.org.apache.bcel.internal.util.Repository
  * @see SyntheticRepository
  *
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public abstract class Repository {
 
@@ -174,7 +174,7 @@ public abstract class Repository {
     }
 
     /**
-     * Lookups class somewhere found on your CLASSPATH, or wherever the repository instance looks for it.
+     * Lookups class somewhere found on your CLASSPATH, or whereever the repository instance looks for it.
      *
      * @return class object for given fully qualified class name
      * @throws ClassNotFoundException if the class could not be found or parsed correctly
