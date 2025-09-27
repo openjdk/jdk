@@ -91,6 +91,9 @@ source %{
       case Op_LoadVectorGatherMasked:
       case Op_StoreVectorScatter:
       case Op_StoreVectorScatterMasked:
+      case Op_VectorMaskGen:
+      case Op_LoadVectorMasked:
+      case Op_StoreVectorMasked:
         if (is_subword_type(bt)) {
           return false;
         }
