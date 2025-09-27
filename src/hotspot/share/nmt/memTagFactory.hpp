@@ -75,15 +75,15 @@ struct NameToTagTable {
   volatile int _number_of_tags;
 
   NameToTagTable()
-    : entries(),
+    : _entries(),
       _table_size(nr_of_buckets),
-      table(nullptr),
-      names(), human_readable_names(),
+      _table(nullptr),
+      _names(), _human_readable_names(),
       _seed(AltHashing::compute_seed()),
       _number_of_tags(0) {
-    table = NEW_C_HEAP_ARRAY(EntryRef, table_size, mtNMT);
+    _table = NEW_C_HEAP_ARRAY(EntryRef, _table_size, mtNMT);
     for (int i = 0; i < _table_size; i++) {
-      table[i] = Nil;
+      _table[i] = Nil;
     }
   }
 
