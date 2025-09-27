@@ -164,6 +164,12 @@ source %{
   bool Matcher::vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen) {
     return false;
   }
+
+  // Return true if vector mask operation with "opcode" requires the mask to be
+  // saved with predicate type.
+  bool Matcher::vector_mask_requires_predicate(int opcode, const TypeVect* vt) {
+    return vt->isa_vectmask() != nullptr;
+  }
 %}
 
 // All VEC instructions

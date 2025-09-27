@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,6 +337,10 @@ public:
   static bool vector_needs_partial_operations(Node* node, const TypeVect* vt);
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
+
+  // Identify if a vector mask operation requires the mask to be saved with a
+  // predicate type.
+  static bool vector_mask_requires_predicate(int opcode, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
 
