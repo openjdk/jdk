@@ -24,16 +24,24 @@
 package compiler.lib.template_framework;
 
 /**
- * The {@link Template#body} and {@link Hook#anchor} are given a list of tokens, which are either
+ * The {@link Template#scope} and {@link Hook#anchor} are given a list of tokens, which are either
  * {@link Token}s or {@link String}s or some permitted boxed primitives.
  */
 public sealed interface Token permits StringToken,
-                               TemplateToken,
-                               TemplateToken.ZeroArgs,
-                               TemplateToken.OneArg,
-                               TemplateToken.TwoArgs,
-                               TemplateToken.ThreeArgs,
-                               HookAnchorToken,
-                               HookInsertToken,
-                               AddNameToken,
-                               NothingToken {}
+                                      TemplateToken,
+                                      TemplateToken.ZeroArgs,
+                                      TemplateToken.OneArg,
+                                      TemplateToken.TwoArgs,
+                                      TemplateToken.ThreeArgs,
+                                      HookAnchorToken,
+                                      HookInsertToken,
+                                      AddNameToken,
+                                      NameSampleToken,
+                                      NameForEachToken,
+                                      LetToken,
+                                      NestingToken,
+                                      NestingToken.Scope,
+                                      NestingToken.Flat,
+                                      NestingToken.NameScope,
+                                      NestingToken.HashtagScope,
+                                      NothingToken {}

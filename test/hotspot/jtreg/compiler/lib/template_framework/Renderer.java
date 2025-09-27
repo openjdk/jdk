@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,7 +77,7 @@ final class Renderer {
      * <p>
      * When using nested templates, the user of the Template Framework may be tempted to first render
      * the nested template to a {@link String}, and then use this {@link String} as a token in an outer
-     * {@link Template#body}. This would be a bad pattern: the outer and nested {@link Template} would
+     * {@link Template#scope}. This would be a bad pattern: the outer and nested {@link Template} would
      * be rendered separately, and could not interact. For example, the nested {@link Template} would
      * not have access to the scopes of the outer {@link Template}. The inner {@link Template} could
      * not access {@link Name}s and {@link Hook}s from the outer {@link Template}. The user might assume
@@ -85,7 +86,7 @@ final class Renderer {
      *
      * <p>
      * Instead, the user should create a {@link TemplateToken} from the inner {@link Template}, and
-     * use that {@link TemplateToken} in the {@link Template#body} of the outer {@link Template}.
+     * use that {@link TemplateToken} in the {@link Template#scope} of the outer {@link Template}.
      * This way, the inner and outer {@link Template}s get rendered together, and the inner {@link Template}
      * has access to the {@link Name}s and {@link Hook}s of the outer {@link Template}.
      *
@@ -113,7 +114,7 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$', 'let', 'sample', 'count' etc. was called outside a template rendering.");
+            throw new RendererException("A Template method such as '$', 'let', etc. was called outside a template rendering.");
         }
         return renderer;
     }
@@ -175,18 +176,17 @@ final class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
-    Name sampleName(NameSet.Predicate predicate) {
-        return currentCodeFrame.sampleName(predicate);
-    }
-
+    // TODO: remove?
     int countNames(NameSet.Predicate predicate) {
         return currentCodeFrame.countNames(predicate);
     }
 
+    // TODO: remove?
     boolean hasAnyNames(NameSet.Predicate predicate) {
         return currentCodeFrame.hasAnyNames(predicate);
     }
 
+    // TODO: remove?
     List<Name> listNames(NameSet.Predicate predicate) {
         return currentCodeFrame.listNames(predicate);
     }
@@ -247,13 +247,50 @@ final class Renderer {
         currentTemplateFrame = templateFrame;
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        TemplateBody body = templateToken.instantiate();
-        renderTokenList(body.tokens());
+        NestingToken.Scope scope = templateToken.instantiate();
+        renderTokenList(scope.tokens);
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
         }
         currentTemplateFrame = currentTemplateFrame.parent;
+    }
+
+    private void renderNestingToken(NestingToken nt, Runnable preamble) {
+        // We need the CodeFrame for local names.
+        CodeFrame outerCodeFrame = currentCodeFrame;
+        if (nt.nestedNamesAreLocal()) {
+            currentCodeFrame = CodeFrame.make(currentCodeFrame);
+        }
+
+        // We need to be able to define local hashtag replacements, but still
+        // see the outer ones. We also need to have the same id for dollar
+        // replacement as the outer frame.
+        TemplateFrame innerTemplateFrame = null;
+        if (nt.nestedHashtagsAreLocal()) {
+            innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame);
+            currentTemplateFrame = innerTemplateFrame;
+        }
+
+        // Allow definition of hashtags and variables to be placed in the nested frames.
+        preamble.run();
+
+        // Now render the nested code.
+        renderTokenList(nt.tokens);
+
+        if (nt.nestedHashtagsAreLocal()) {
+            if (currentTemplateFrame != innerTemplateFrame) {
+                throw new RuntimeException("Internal error: TemplateFrame mismatch!");
+            }
+            currentTemplateFrame = currentTemplateFrame.parent;
+        }
+
+        // Tear down CodeFrame nesting. If no nesting happened, the code is already
+        // in the currendCodeFrame.
+        if (nt.nestedNamesAreLocal()) {
+            outerCodeFrame.addCode(currentCodeFrame.getCode());
+            currentCodeFrame = outerCodeFrame;
+        }
     }
 
     private void renderToken(Token token) {
@@ -318,6 +355,45 @@ final class Renderer {
             }
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
+            }
+            case NestingToken nt -> {
+                // TODO: test all variants!
+                // TODO: "nest"
+                renderNestingToken(nt, () -> {});
+            }
+            case NameSampleToken nst -> {
+                Name n = currentCodeFrame.sampleName(nst.predicate());
+                if (n == null) {
+                    throw new RendererException("No Name found for " + nst.predicate().toString());
+                }
+                NestingToken nt = nst.getNestingToken(n);
+                renderNestingToken(nt, () -> {
+                    if (nst.name() != null) {
+                        addHashtagReplacement(nst.name(), n.name());
+                    }
+                    if (nst.type() != null) {
+                        addHashtagReplacement(nst.type(), n.type());
+                    }
+                });
+            }
+            case NameForEachToken nfet -> {
+                List<Name> list = listNames(nfet.predicate());
+                list.stream().forEach(n -> {
+                    NestingToken nt = nfet.getNestingToken(n);
+                    renderNestingToken(nt, () -> {
+                        if (nfet.name() != null) {
+                            // TODO: assert that nestedHashtagsAreLocal
+                            addHashtagReplacement(nfet.name(), n.name());
+                        }
+                        if (nfet.type() != null) {
+                            // TODO: assert that nestedHashtagsAreLocal
+                            addHashtagReplacement(nfet.type(), n.type());
+                        }
+                    });
+                });
+            }
+            case LetToken(String key, String value) -> {
+                addHashtagReplacement(key, value);
             }
         }
     }

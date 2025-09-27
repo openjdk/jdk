@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * {@link StructuralName}s represent things like method and class names, and can be added to the local
@@ -89,16 +90,34 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
             this(null, null);
         }
 
+        // Wrap the FilteredSet as a Predicate.
+        private static record StructuralNamePredicate(FilteredSet fs) implements NameSet.Predicate {
+            public boolean check(Name type) {
+                return fs.check(type);
+            }
+            public String toString() {
+                return fs.toString();
+            }
+        }
+
         NameSet.Predicate predicate() {
             if (subtype == null && supertype == null) {
                 throw new UnsupportedOperationException("Must first call 'subtypeOf', 'supertypeOf', or 'exactOf'.");
             }
-            return (Name name) -> {
-                if (!(name instanceof StructuralName structuralName)) { return false; }
-                if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
-                if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
-                return true;
-            };
+            return new StructuralNamePredicate(this);
+        }
+
+        boolean check(Name name) {
+            if (!(name instanceof StructuralName structuralName)) { return false; }
+            if (subtype != null && !structuralName.type().isSubtypeOf(subtype)) { return false; }
+            if (supertype != null && !supertype.isSubtypeOf(structuralName.type())) { return false; }
+            return true;
+        }
+
+        public String toString() {
+            String msg1 = (subtype == null) ? "" : " subtypeOf(" + subtype + ")";
+            String msg2 = (supertype == null) ? "" : " supertypeOf(" + supertype + ")";
+            return "StructuralName.FilteredSet(" + msg1 + msg2 + ")";
         }
 
         /**
@@ -146,21 +165,46 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
 
         /**
          * Samples a random {@link StructuralName} from the filtered set, according to the weights
-         * of the contained {@link StructuralName}s.
+         * of the contained {@link StructuralName}s, making the sampled {@link StructuralName}
+         * available to an inner scope.
          *
-         * @return The sampled {@link StructuralName}.
+         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         *                 the sampled {@link StructuralName}.
+         * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
-         * @throws RendererException If the set was empty.
          */
-        public StructuralName sample() {
-            StructuralName n = (StructuralName)Renderer.getCurrent().sampleName(predicate());
-            if (n == null) {
-                String msg1 = (subtype == null) ? "" : " subtypeOf(" + subtype + ")";
-                String msg2 = (supertype == null) ? "" : " supertypeOf(" + supertype + ")";
-                throw new RendererException("No variable:" + msg1 + msg2 + ".");
-            }
-            return n;
+        public Token sample(Function<StructuralName, NestingToken> function) {
+            return new NameSampleToken<StructuralName>(predicate(), null, null, function);
+        }
+
+        /**
+         * Samples a random {@link StructuralName} from the filtered set, according to the weights
+         * of the contained {@link StructuralName}s, and making a hashtag replacement for both
+         * the name and type of the {@link StructuralName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link StructuralName} name.
+         * @param type the key of the hashtag replacement for the {@link StructuralName} type.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token sampleAndLetAs(String name, String type) {
+            return new NameSampleToken<StructuralName>(predicate(), name, type, n -> Template.flat());
+        }
+
+        /**
+         * Samples a random {@link StructuralName} from the filtered set, according to the weights
+         * of the contained {@link StructuralName}s, and making a hashtag replacement for the
+         * name of the {@link StructuralName}, in the current scope.
+         *
+         * @param name the key of the hashtag replacement for the {@link StructuralName} name.
+         * @return a token that represents the sampling and hashtag replacement definition.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
+        public Token sampleAndLetAs(String name) {
+            return new NameSampleToken<StructuralName>(predicate(), name, null, n -> Template.flat());
         }
 
         /**
@@ -170,6 +214,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public int count() {
             return Renderer.getCurrent().countNames(predicate());
         }
@@ -181,6 +226,7 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public boolean hasAny() {
             return Renderer.getCurrent().hasAnyNames(predicate());
         }
@@ -192,9 +238,18 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
+        // TODO: remove or modify?
         public List<StructuralName> toList() {
             List<Name> list = Renderer.getCurrent().listNames(predicate());
             return list.stream().map(n -> (StructuralName)n).toList();
+        }
+
+        public Token forEach(Function<StructuralName, NestingToken> function) {
+            return new NameForEachToken<StructuralName>(predicate(), null, null, function);
+        }
+
+        public Token forEach(String name, String type, Function<StructuralName, NestingToken> function) {
+            return new NameForEachToken<StructuralName>(predicate(), name, type, function);
         }
     }
 }
