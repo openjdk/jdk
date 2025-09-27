@@ -4385,7 +4385,7 @@ pipe_class pipe_class_memory()
 pipe_class pipe_class_call()
 %{
   single_instruction;
-  fixed_latency(100);
+  fixed_latency(30);
 %}
 
 // Define the class for the Nop node.

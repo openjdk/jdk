@@ -3862,7 +3862,7 @@ pipe_class pipe_cmpxchg(rRegP dst, rRegP heap_ptr)
 pipe_class pipe_slow()
 %{
     instruction_count(10); multiple_bundles; force_serialization;
-    fixed_latency(100);
+    fixed_latency(30);
     D0  : S0(2);
     MEM : S3(2);
 %}
