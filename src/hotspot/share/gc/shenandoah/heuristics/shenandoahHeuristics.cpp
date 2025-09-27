@@ -27,6 +27,7 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "logging/log.hpp"
@@ -105,12 +106,15 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     if (region->is_empty()) {
       free_regions++;
       free += ShenandoahHeapRegion::region_size_bytes();
-    } else if (region->is_regular()) {
+    } else if (region->is_regular() && region->has_allocs()) {
       if (!region->has_live()) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;
         region->make_trash_immediate();
+        if (region->reserved_for_direct_allocation()) {
+          heap->free_set()->release_directly_allocatable_region(region);
+        }
       } else {
         // This is our candidate for later consideration.
         candidates[cand_idx].set_region_and_garbage(region, garbage);
