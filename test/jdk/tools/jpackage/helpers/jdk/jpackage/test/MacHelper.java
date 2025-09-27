@@ -129,6 +129,10 @@ public final class MacHelper {
         return readPList(appImage.resolve("Contents/Info.plist"));
     }
 
+    public static PListReader readPListFromEmbeddedRuntime(Path appImage) {
+        return readPList(appImage.resolve("Contents/runtime/Contents/Info.plist"));
+    }
+
     public static PListReader readPList(Path path) {
         TKit.assertReadableFileExists(path);
         return ThrowingSupplier.toSupplier(() -> readPList(Files.readAllLines(
@@ -170,6 +174,29 @@ public final class MacHelper {
         }
 
         return (cmd.hasArgument("--mac-signing-key-user-name") || cmd.hasArgument("--mac-app-image-sign-identity"));
+    }
+
+    public static Path createInputRuntimeImage() throws IOException {
+
+        final Path runtimeImageDir;
+
+        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
+            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+        } else {
+            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+
+            new Executor().setToolProvider(JavaTool.JLINK)
+                    .dumpOutput()
+                    .addArguments(
+                            "--output", runtimeImageDir.toString(),
+                            "--add-modules", "java.desktop",
+                            "--strip-debug",
+                            "--no-header-files",
+                            "--no-man-pages")
+                    .execute();
+        }
+
+        return runtimeImageDir;
     }
 
     static PackageHandlers createDmgPackageHandlers() {
