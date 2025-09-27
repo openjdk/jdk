@@ -22,25 +22,19 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
-import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkAreAnnotations;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.checkIsAnnotation;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaType.getFirstAnnotationOrNull;
-import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
-import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
-import java.lang.annotation.Annotation;
-import java.util.Collections;
-import java.util.List;
-
-import jdk.internal.vm.VMSupport;
-import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
+import jdk.vm.ci.meta.annotation.AnnotationsInfo;
+
+import java.lang.annotation.Annotation;
+
+import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 /**
  * Represents a field in a HotSpot type.
@@ -85,8 +79,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         if (this == obj) {
             return true;
         }
-        if (obj instanceof HotSpotResolvedJavaFieldImpl) {
-            HotSpotResolvedJavaFieldImpl that = (HotSpotResolvedJavaFieldImpl) obj;
+        if (obj instanceof HotSpotResolvedJavaFieldImpl that) {
             if (that.offset != this.offset || that.isStatic() != this.isStatic()) {
                 return false;
             } else if (this.holder.equals(that.holder)) {
@@ -141,9 +134,8 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
         // Pull field into local variable to prevent a race causing
         // a ClassCastException below
         JavaType currentType = type;
-        if (currentType instanceof UnresolvedJavaType) {
+        if (currentType instanceof UnresolvedJavaType unresolvedType) {
             // Don't allow unresolved types to hang around forever
-            UnresolvedJavaType unresolvedType = (UnresolvedJavaType) currentType;
             JavaType resolved = HotSpotJVMCIRuntime.runtime().lookupType(unresolvedType.getName(), holder, false);
             if (resolved instanceof ResolvedJavaType) {
                 type = resolved;
@@ -187,17 +179,23 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
      */
     @Override
     public boolean isStable() {
-        return (1 << (config().jvmFieldFlagStableShift ) & internalFlags) != 0;
+        return (1 << (config().jvmFieldFlagStableShift) & internalFlags) != 0;
     }
 
-    private boolean hasAnnotations() {
+    /**
+     * Returns whether this field has type annotations ({@code typeAnnotations == true}) or
+     * declared annotations ({@code typeAnnotations == false}).
+     */
+    private boolean hasAnnotations(boolean typeAnnotations) {
         if (!isInternal()) {
             HotSpotVMConfig config = config();
             final long metaspaceAnnotations = UNSAFE.getAddress(holder.getKlassPointer() + config.instanceKlassAnnotationsOffset);
             if (metaspaceAnnotations != 0) {
-                long fieldsAnnotations = UNSAFE.getAddress(metaspaceAnnotations + config.annotationsFieldAnnotationsOffset);
+                int annotationsOffset = typeAnnotations? config.annotationsFieldTypeAnnotationsOffset: config.annotationsFieldAnnotationsOffset;
+                long fieldsAnnotations = UNSAFE.getAddress(metaspaceAnnotations + annotationsOffset);
                 if (fieldsAnnotations != 0) {
-                    long fieldAnnotations = UNSAFE.getAddress(fieldsAnnotations + config.fieldsAnnotationsBaseOffset + (ADDRESS_SIZE * index));
+                    int indexOffset = ADDRESS_SIZE * index;
+                    long fieldAnnotations = UNSAFE.getAddress(fieldsAnnotations + config.annotationArrayArrayBaseOffset + indexOffset);
                     return fieldAnnotations != 0;
                 }
             }
@@ -207,7 +205,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public Annotation[] getAnnotations() {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(false)) {
             return new Annotation[0];
         }
         return runtime().reflection.getFieldAnnotations(this);
@@ -215,7 +213,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public Annotation[] getDeclaredAnnotations() {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(false)) {
             return new Annotation[0];
         }
         return runtime().reflection.getFieldDeclaredAnnotations(this);
@@ -223,7 +221,7 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
 
     @Override
     public <T extends Annotation> T getAnnotation(Class<T> annotationClass) {
-        if (!hasAnnotations()) {
+        if (!hasAnnotations(false)) {
             return null;
         }
         return runtime().reflection.getFieldAnnotation(this, annotationClass);
@@ -235,27 +233,20 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     }
 
     @Override
-    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
-        if (!hasAnnotations()) {
-            checkIsAnnotation(annotationType);
+    public AnnotationsInfo getDeclaredAnnotationInfo() {
+        if (!hasAnnotations(false)) {
             return null;
         }
-        return getFirstAnnotationOrNull(getAnnotationData0(annotationType));
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('f', holder, holder.getKlassPointer(), index, CompilerToVM.DECLARED_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getDeclaringClass().getConstantPool(), getDeclaringClass());
     }
 
     @Override
-    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
-        checkIsAnnotation(type1);
-        checkIsAnnotation(type2);
-        checkAreAnnotations(types);
-        if (!hasAnnotations()) {
-            return List.of();
+    public AnnotationsInfo getTypeAnnotationInfo() {
+        if (!hasAnnotations(true)) {
+            return null;
         }
-        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
-    }
-
-    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
-        byte[] encoded = compilerToVM().getEncodedFieldAnnotationData(holder, index, filter);
-        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
+        byte[] bytes = compilerToVM().getRawAnnotationBytes('f', holder, holder.getKlassPointer(), index, CompilerToVM.TYPE_ANNOTATIONS);
+        return AnnotationsInfo.make(bytes, getDeclaringClass().getConstantPool(), getDeclaringClass());
     }
 }
