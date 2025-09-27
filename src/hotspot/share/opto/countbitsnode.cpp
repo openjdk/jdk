@@ -26,6 +26,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/type.hpp"
+#include "utilities/population_count.hpp"
 
 //------------------------------Value------------------------------------------
 const Type* CountLeadingZerosINode::Value(PhaseGVN* phase) const {
@@ -115,4 +116,41 @@ const Type* CountTrailingZerosLNode::Value(PhaseGVN* phase) const {
     return TypeInt::make(n);
   }
   return TypeInt::INT;
+}
+// We use the KnownBits information from the integer types to derive how many one bits
+// we have at least and at most.
+// From the definition of KnownBits, we know:
+//   zeros: Indicates which bits must be 0: zeros[i]=1 -> t[i]=0
+//   ones:  Indicates which bits must be 1: ones[i]=1 -> t[i]=1
+//
+// From this, we derive:
+//   numer_of_zeros_in_t >= pop_count(zeros)
+//   -> number_of_ones_in_t <= bits_per_type - pop_count(zeros) = pop_count(~zeros)
+//   number_of_ones_in_t >= pop_count(ones)
+//
+// By definition:
+//   pop_count(t) = number_of_ones_in_t
+//
+// It follows:
+//   pop_count(ones) <= pop_count(t) <= pop_count(~zeros)
+//
+// Note: signed _lo and _hi, as well as unsigned _ulo and _uhi bounds of the integer types
+//       are already reflected in the KnownBits information, see TypeInt / TypeLong definitions.
+const Type* PopCountINode::Value(PhaseGVN* phase) const {
+  const Type* t = phase->type(in(1));
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  KnownBits<juint> bits = t->isa_int()->_bits;
+  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), Type::WidenMax);
+
+}
+
+const Type* PopCountLNode::Value(PhaseGVN* phase) const {
+  const Type* t = phase->type(in(1));
+  if (t == Type::TOP) {
+    return Type::TOP;
+  }
+  KnownBits<julong> bits = t->isa_long()->_bits;
+  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), Type::WidenMax);
 }
