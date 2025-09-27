@@ -101,6 +101,7 @@ struct core_data {
    // part of the class sharing workaround
    map_info*          class_share_maps;// class share maps in a linked list
    map_info**         map_array; // sorted (by vaddr) array of map_info pointers
+   char               exec_path[PATH_MAX];  // file name java
 };
 
 struct ps_prochandle {
@@ -118,6 +119,7 @@ struct ps_prochandle {
 extern "C" {
 #endif
 
+void pathmap_remap(const char* remap_from, const char* remap_to, int remap_from_length);
 int pathmap_open(const char* name);
 
 void print_debug(const char* format,...);
