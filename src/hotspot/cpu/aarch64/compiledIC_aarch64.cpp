@@ -78,7 +78,7 @@ int CompiledDirectCall::to_trampoline_stub_size() {
 
 // Relocation entries for call stub, compiled java to interpreter.
 int CompiledDirectCall::reloc_to_interp_stub() {
-  return 4; // 3 in emit_to_interp_stub + 1 in emit_call
+  return 3; // 2 in emit_to_interp_stub + 1 in emit_call
 }
 
 void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
@@ -86,20 +86,12 @@ void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address 
   guarantee(stub != nullptr, "stub not found");
 
   // Creation also verifies the object.
-  NativeMovConstReg* method_holder
-    = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
-
+  NativeStaticCallStub* stub_holder = NativeStaticCallStub_at(stub);
 #ifdef ASSERT
-  NativeJump* jump = MacroAssembler::codestub_branch_needs_far_jump()
-                         ? nativeGeneralJump_at(method_holder->next_instruction_address())
-                         : nativeJump_at(method_holder->next_instruction_address());
-  verify_mt_safe(callee, entry, method_holder, jump);
+  _call->verify();
+  stub_holder->verify_static_stub(callee, entry);
 #endif
-
-  // Update stub.
-  method_holder->set_data((intptr_t)callee());
-  MacroAssembler::pd_patch_instruction(method_holder->next_instruction_address(), entry);
-  ICache::invalidate_range(stub, to_interp_stub_size());
+  stub_holder->set_metadata_and_destination((intptr_t)callee(), entry);
   // Update jump to call.
   set_destination_mt_safe(stub);
 }
@@ -110,11 +102,8 @@ void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
   assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
-  NativeMovConstReg* method_holder
-    = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
-  method_holder->set_data(0);
-  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
-  jump->set_jump_destination((address)-1);
+  NativeStaticCallStub* stub_holder = NativeStaticCallStub_at(stub);
+  stub_holder->set_metadata_and_destination(0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -130,9 +119,7 @@ void CompiledDirectCall::verify() {
   address stub = find_stub();
   assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
-  NativeMovConstReg* method_holder
-    = nativeMovConstReg_at(stub + NativeInstruction::instruction_size);
-  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
+  NativeStaticCallStub* stub_holder = NativeStaticCallStub_at(stub);
 
   // Verify state.
   assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted(), "sanity check");
