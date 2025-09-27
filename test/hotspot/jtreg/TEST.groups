@@ -92,6 +92,7 @@ hotspot_vector_1 = \
   compiler/c2/cr6340864 \
   compiler/c2/irTests \
   compiler/codegen \
+  compiler/gallery \
   compiler/loopopts/superword \
   compiler/vectorapi \
   compiler/vectorization \
