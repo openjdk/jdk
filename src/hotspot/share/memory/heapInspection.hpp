@@ -30,6 +30,7 @@
 #include "oops/annotations.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+#include "runtime/mutex.hpp"
 #include "utilities/macros.hpp"
 
 class ParallelObjectIterator;
