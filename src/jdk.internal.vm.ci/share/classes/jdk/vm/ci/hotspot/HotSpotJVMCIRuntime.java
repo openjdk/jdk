@@ -690,7 +690,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         return fromClass0(javaClass);
     }
 
-    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(Long klassPointer) {
+    synchronized HotSpotResolvedObjectTypeImpl fromMetaspace(Long klassPointer, int modifiers) {
         if (resolvedJavaTypes == null) {
             resolvedJavaTypes = new HashMap<>();
             resolvedJavaTypesQueue = new ReferenceQueue<>();
@@ -703,7 +703,11 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         }
         if (javaType == null) {
             String name = compilerToVm.getSignatureName(klassPointer);
-            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name);
+            char charModifiers = (char) modifiers;
+            if (charModifiers != modifiers) {
+                throw new IllegalArgumentException(String.format("%x != %x", modifiers, charModifiers));
+            }
+            javaType = new HotSpotResolvedObjectTypeImpl(klassPointer, name, charModifiers);
             resolvedJavaTypes.put(klassPointer, new KlassWeakReference(klassPointer, javaType, resolvedJavaTypesQueue));
         }
         expungeStaleKlassEntries();
