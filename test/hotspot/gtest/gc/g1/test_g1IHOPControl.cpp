@@ -72,7 +72,7 @@ TEST_VM(G1StaticIHOPControl, simple) {
 
   G1OldGenAllocationTracker alloc_tracker;
   G1StaticIHOPControl ctrl(initial_ihop, &alloc_tracker);
-  ctrl.update_target_occupancy(100);
+  ctrl.update_heap_size(100);
 
   size_t threshold = ctrl.get_conc_mark_start_threshold();
   EXPECT_EQ(initial_ihop, threshold);
@@ -115,7 +115,7 @@ TEST_VM(G1AdaptiveIHOPControl, simple) {
   G1OldGenAllocationTracker alloc_tracker;
   G1Predictions pred(0.95);
   G1AdaptiveIHOPControl ctrl(initial_threshold, &alloc_tracker, &pred, 0, 0);
-  ctrl.update_target_occupancy(target_size);
+  ctrl.update_heap_size(target_size);
 
   // First "load".
   const size_t alloc_time1 = 2;
@@ -192,7 +192,7 @@ TEST_VM(G1AdaptiveIHOPControl, humongous) {
   G1OldGenAllocationTracker alloc_tracker;
   G1Predictions pred(0.95);
   G1AdaptiveIHOPControl ctrl(initial_threshold, &alloc_tracker, &pred, 0, 0);
-  ctrl.update_target_occupancy(target_size);
+  ctrl.update_heap_size(target_size);
 
   size_t old_bytes = 100;
   size_t humongous_bytes = 200;
@@ -214,7 +214,7 @@ TEST_VM(G1AdaptiveIHOPControl, humongous) {
 
   // Load 2
   G1AdaptiveIHOPControl ctrl2(initial_threshold, &alloc_tracker, &pred, 0, 0);
-  ctrl2.update_target_occupancy(target_size);
+  ctrl2.update_heap_size(target_size);
   test_update_humongous(&ctrl2, &alloc_tracker, duration, old_bytes, humongous_bytes,
                         humongous_bytes_after_gc, young_size, marking_time);
   threshold = ctrl2.get_conc_mark_start_threshold();
@@ -230,7 +230,7 @@ TEST_VM(G1AdaptiveIHOPControl, humongous) {
   humongous_bytes_after_last_gc = humongous_bytes_after_gc;
   humongous_bytes_after_gc = 50;
   G1AdaptiveIHOPControl ctrl3(initial_threshold, &alloc_tracker, &pred, 0, 0);
-  ctrl3.update_target_occupancy(target_size);
+  ctrl3.update_heap_size(target_size);
   test_update_humongous(&ctrl3, &alloc_tracker, duration, old_bytes, humongous_bytes,
                         humongous_bytes_after_gc, young_size, marking_time);
   threshold = ctrl3.get_conc_mark_start_threshold();
