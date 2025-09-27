@@ -78,7 +78,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *          /test/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  *        jdk.test.lib.net.SimpleSSLContext
- * @run junit H3ServerPushTest
+ * @run junit/othervm/timeout=240 H3ServerPushTest
  */
 
 /**
