@@ -356,7 +356,7 @@ public class Difference {
     private static void markAsChanged(InputNode n, InputNode firstNode, InputNode otherNode) {
 
         boolean difference = false;
-        for (Property p : otherNode.getProperties()) {
+        for (Property p : otherNode.getPrimaryProperties()) {
             String s = firstNode.getProperties().get(p.getName());
             if (!p.getValue().equals(s)) {
                 difference = true;
@@ -364,7 +364,7 @@ public class Difference {
             }
         }
 
-        for (Property p : firstNode.getProperties()) {
+        for (Property p : firstNode.getPrimaryProperties()) {
             String s = otherNode.getProperties().get(p.getName());
             if (s == null && p.getValue().length() > 0) {
                 difference = true;
