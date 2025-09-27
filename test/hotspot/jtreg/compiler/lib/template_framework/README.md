@@ -10,3 +10,6 @@ Detailed documentation can be found in [Template.java](./Template.java).
 The Template Framework only generates code in the form of a String. This code can then be compiled and executed, for example with the help of the [Compile Framework](../compile_framework/README.md).
 
 The basic functionalities of the Template Framework are described in the [Template Interface](./Template.java), together with some examples. More examples can be found in [TestSimple.java](../../../testlibrary_tests/template_framework/examples/TestSimple.java), [TestAdvanced.java](../../../testlibrary_tests/template_framework/examples/TestAdvanced.java) and [TestTutorial.java](../../../testlibrary_tests/template_framework/examples/TestTutorial.java).
+
+## Acknowledgement
+The framework is inspired by [JAttack](https://github.com/EngineeringSoftware/jattack) and the related publication [Compiler Testing using Template Java Programs](https://dl.acm.org/doi/10.1145/3551349.3556958).
