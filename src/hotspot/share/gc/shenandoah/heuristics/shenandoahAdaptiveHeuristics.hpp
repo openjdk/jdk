@@ -49,8 +49,8 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   // 1s/ShenandoahAdaptiveSampleFrequencyHz, except when current_time - _last_sample_time < MinSampleTime (2 ms).
   // The sampled allocation rate is computed from (allocated - _last_sample_value) / (current_time - _last_sample_time).
   // Return the newly computed rate if the sample is taken, zero if it is not an appropriate time to add a sample.
-  // In the case that a new sample is not take, overwrite unaccounted_bytes_allocated with bytes allocated since
-  // the previous sample was taken (allocated - __last_sample_value).  Otherwise, overwrite unaccounted_byets_allocated
+  // In the case that a new sample is not taken, overwrite unaccounted_bytes_allocated with bytes allocated since
+  // the previous sample was taken (allocated - _last_sample_value).  Otherwise, overwrite unaccounted_bytes_allocated
   // with 0.
   double force_sample(size_t allocated, size_t &unaccounted_bytes_allocated);
 
@@ -70,8 +70,8 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
  private:
 
-  // Return the instantaneous rate calculated from from (allocated - _last_sample_value) / (time - _last_sample_time).
-  // Return Sentinel vlue 0.0 if (time - _last_sample_time) == 0 or if (allocated <= _last_sample_value).
+  // Return the instantaneous rate calculated from (allocated - _last_sample_value) / (time - _last_sample_time).
+  // Return Sentinel value 0.0 if (time - _last_sample_time) == 0 or if (allocated <= _last_sample_value).
   double instantaneous_rate(double time, size_t allocated) const;
 
   // Time at which previous allocation rate sample was collected.
