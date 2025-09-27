@@ -169,7 +169,7 @@ struct MemTagFactory {
   }
 
   template<typename F>
-  static iterate_tags(F f) {
+  static void iterate_tags(F f) {
     int num_tags = number_of_tags();
     for (int i = 0; i < num_tags; i++) {
       if(!f(static_cast<MemTag>(i))) {
