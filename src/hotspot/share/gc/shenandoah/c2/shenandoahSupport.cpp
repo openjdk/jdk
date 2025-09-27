@@ -1465,8 +1465,6 @@ Node* ShenandoahBarrierC2Support::get_load_addr(PhaseIdealLoop* phase, VectorSet
     case Op_CompareAndExchangeP:
     case Op_GetAndSetN:
     case Op_GetAndSetP:
-    case Op_ShenandoahCompareAndExchangeP:
-    case Op_ShenandoahCompareAndExchangeN:
       // Those instructions would just have stored a different
       // value into the field. No use to attempt to fix it at this point.
       return phase->igvn().zerocon(T_OBJECT);
@@ -2463,8 +2461,6 @@ bool ShenandoahLoadReferenceBarrierNode::needs_barrier_impl(PhaseGVN* phase, Nod
     case Op_AddP:
       return true; // TODO: Can refine?
     case Op_LoadP:
-    case Op_ShenandoahCompareAndExchangeN:
-    case Op_ShenandoahCompareAndExchangeP:
     case Op_CompareAndExchangeN:
     case Op_CompareAndExchangeP:
     case Op_GetAndSetN:
