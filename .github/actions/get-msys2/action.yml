@@ -25,20 +25,46 @@
 
 name: 'Get MSYS2'
 description: 'Download MSYS2 and prepare a Windows host'
+inputs:
+  architecture:
+    description: 'Architecture'
+    required: true
 
 runs:
   using: composite
   steps:
-    - name: 'Install MSYS2'
+    - name: 'Install MSYS2 on x86.x64'
       id: msys2
       uses: msys2/setup-msys2@v2.28.0
       with:
         install: 'autoconf tar unzip zip make'
         path-type: minimal
         release: false
+      if: ${{ inputs.architecture == 'x86.x64' }}
+
+    - name: 'Install MSYS2 on ARM64'
+      id: msys2-arm64
+      uses: msys2/setup-msys2@v2.28.0
+      with:
+        install: 'autoconf tar unzip zip make'
+        path-type: minimal
+        release: true
+        location: ${{ runner.tool_cache }}/msys2
+      if: ${{ inputs.architecture == 'ARM64' }}
 
       # We can't run bash until this is completed, so stick with pwsh
     - name: 'Set MSYS2 path'
       run: |
-        echo "${{ steps.msys2.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
+        if ('${{ inputs.architecture }}' -eq 'ARM64') {
+          echo "${{ steps.msys2-arm64.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
+        } else {
+          echo "${{ steps.msys2.outputs.msys2-location }}/usr/bin" >> $env:GITHUB_PATH
+        }
       shell: pwsh
+
+    # Remove the default config.site file provided by MSYS2 to ensure config.guess accurately detects the host system.  
+    - name: 'Remove default config.site'
+      run: |
+        echo "Removing default config.site"
+        rm -f /etc/config.site
+      shell: env /usr/bin/bash --login -eo pipefail {0}
