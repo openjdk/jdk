@@ -142,6 +142,11 @@ private:
   size_t soft_available() const override;
 
   size_t bytes_allocated_since_gc_start() const override;
+
+  // Reset the bytes allocated within this generation since the start of GC.  The argument initial_bytes_allocated
+  // is normally zero.  In the case that some memory was allocated following the last allocation rate sample that
+  // precedes the start of GC, the number of bytes allocated is supplied as the initial value of bytes_allocated_since_gc_start.
+  // We will behave as if these bytes were allocated after the start of GC.
   void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
   void increase_allocated(size_t bytes);
 
