@@ -113,13 +113,14 @@ public sealed interface MethodSignature
      *
      * @param result signature for the return type
      * @param arguments signatures for the method parameters
+     * @throws IllegalArgumentException if any of {@code arguments} is void
      */
     public static MethodSignature of(Signature result,
                                      Signature... arguments) {
         return new SignaturesImpl.MethodSignatureImpl(List.of(),
                                                       List.of(),
                                                       requireNonNull(result),
-                                                      List.of(arguments));
+                                                      SignaturesImpl.validateArgumentList(arguments));
     }
 
     /**
@@ -131,6 +132,7 @@ public sealed interface MethodSignature
      * @param exceptions signatures for the exceptions
      * @param result signature for the return type
      * @param arguments signatures for the method parameters
+     * @throws IllegalArgumentException if any of {@code arguments} is void
      */
     public static MethodSignature of(List<Signature.TypeParam> typeParameters,
                                      List<Signature.ThrowableSig> exceptions,
@@ -140,7 +142,7 @@ public sealed interface MethodSignature
                 List.copyOf(requireNonNull(typeParameters)),
                 List.copyOf(requireNonNull(exceptions)),
                 requireNonNull(result),
-                List.of(arguments));
+                SignaturesImpl.validateArgumentList(arguments));
     }
 
     /**

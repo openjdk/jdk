@@ -269,6 +269,12 @@ final class KeyUpdate {
                 HandshakeMessage message) throws IOException {
             // The producing happens in server side only.
             PostHandshakeContext hc = (PostHandshakeContext)context;
+            if (hc.sslConfig.isQuic) {
+                // Quic doesn't allow KEY_UPDATE TLS message. It has its own Quic specific
+                // key update mechanism, RFC-9001, section 6:
+                // Endpoints MUST NOT send a TLS KeyUpdate message.
+                return null;
+            }
             KeyUpdateMessage km = (KeyUpdateMessage)message;
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
                 SSLLogger.fine(

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,9 +40,10 @@ import java.nio.ByteBuffer;
 //
 // The encoding is simple and well known: 1 byte <-> 1 char
 //
-final class ISO_8859_1 {
+public final class ISO_8859_1 {
 
-    private ISO_8859_1() { }
+    private ISO_8859_1() {
+    }
 
     public static final class Reader {
 

@@ -291,6 +291,12 @@ inline Klass* java_lang_Class::as_Klass(oop java_class) {
   return k;
 }
 
+inline InstanceKlass* java_lang_Class::as_InstanceKlass(oop java_class) {
+  Klass* k = as_Klass(java_class);
+  assert(k == nullptr || k->is_instance_klass(), "type check");
+  return static_cast<InstanceKlass*>(k);
+}
+
 inline bool java_lang_Class::is_primitive(oop java_class) {
   // should assert:
   // assert(java_lang_Class::is_instance(java_class), "must be a Class object");

@@ -59,12 +59,15 @@ import jdk.internal.loader.ClassLoaders;
 import jdk.internal.loader.NativeLibrary;
 import jdk.internal.loader.NativeLibraries;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.misc.CDS;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * A class loader is an object that is responsible for loading classes. The
@@ -221,10 +224,16 @@ import jdk.internal.util.StaticProperty;
  * @see      #resolveClass(Class)
  * @since 1.0
  */
+@AOTSafeClassInitializer
 public abstract class ClassLoader {
 
     private static native void registerNatives();
     static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
         registerNatives();
     }
 
@@ -1858,8 +1867,8 @@ public abstract class ClassLoader {
                 throw new IllegalStateException(msg);
             default:
                 // system fully initialized
-                assert VM.isBooted() && scl != null;
-                return scl;
+                assert VM.isBooted() && Holder.scl != null;
+                return Holder.scl;
         }
     }
 
@@ -1884,7 +1893,7 @@ public abstract class ClassLoader {
         }
 
         // detect recursive initialization
-        if (scl != null) {
+        if (Holder.scl != null) {
             throw new IllegalStateException("recursive invocation");
         }
 
@@ -1895,7 +1904,7 @@ public abstract class ClassLoader {
                 // custom class loader is only supported to be loaded from unnamed module
                 Constructor<?> ctor = Class.forName(cn, false, builtinLoader)
                                            .getDeclaredConstructor(ClassLoader.class);
-                scl = (ClassLoader) ctor.newInstance(builtinLoader);
+                Holder.scl = (ClassLoader) ctor.newInstance(builtinLoader);
             } catch (Exception e) {
                 Throwable cause = e;
                 if (e instanceof InvocationTargetException) {
@@ -1910,9 +1919,9 @@ public abstract class ClassLoader {
                 throw new Error(cause.getMessage(), cause);
             }
         } else {
-            scl = builtinLoader;
+            Holder.scl = builtinLoader;
         }
-        return scl;
+        return Holder.scl;
     }
 
     // Returns the class's class loader, or null if none.
@@ -1925,9 +1934,13 @@ public abstract class ClassLoader {
         return caller.getClassLoader0();
     }
 
-    // The system class loader
-    // @GuardedBy("ClassLoader.class")
-    private static volatile ClassLoader scl;
+    // Holder has the field(s) that need to be initialized during JVM bootstrap even if
+    // the outer is aot-initialized.
+    private static class Holder {
+        // The system class loader
+        // @GuardedBy("ClassLoader.class")
+        private static volatile ClassLoader scl;
+    }
 
     // -- Package --
 
@@ -2602,7 +2615,21 @@ public abstract class ClassLoader {
         if (parallelLockMap != null) {
             reinitObjectField("parallelLockMap", new ConcurrentHashMap<>());
         }
-        reinitObjectField("packages", new ConcurrentHashMap<>());
+
+        if (CDS.isDumpingAOTLinkedClasses()) {
+            if (System.getProperty("cds.debug.archived.packages") != null) {
+                for (Map.Entry<String, NamedPackage> entry : packages.entrySet()) {
+                    String key = entry.getKey();
+                    NamedPackage value = entry.getValue();
+                    System.out.println("Archiving " +
+                                       (value instanceof Package ? "Package" : "NamedPackage") +
+                                       " \"" + key + "\" for " + this);
+                }
+            }
+        } else {
+            reinitObjectField("packages", new ConcurrentHashMap<>());
+        }
+
         reinitObjectField("package2certs", new ConcurrentHashMap<>());
         classes.clear();
         classes.trimToSize();
