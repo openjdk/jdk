@@ -665,15 +665,13 @@ int CgroupSubsystem::active_processor_count() {
  *    -1 for unlimited
  *    OSCONTAINER_ERROR for not supported
  */
-jlong CgroupSubsystem::memory_limit_in_bytes() {
+jlong CgroupSubsystem::memory_limit_in_bytes(julong upper_bound) {
   CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
   CachedMetric* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
   }
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
-  log_trace(os, container)("total physical memory: " JULONG_FORMAT, phys_mem);
-  jlong mem_limit = contrl->controller()->read_memory_limit_in_bytes(phys_mem);
+  jlong mem_limit = contrl->controller()->read_memory_limit_in_bytes(upper_bound);
   // Update cached metric to avoid re-reading container settings too often
   memory_limit->set_value(mem_limit, OSCONTAINER_CACHE_TIMEOUT);
   return mem_limit;
@@ -841,21 +839,16 @@ jlong CgroupController::limit_from_str(char* limit_str) {
 
 // CgroupSubsystem implementations
 
-jlong CgroupSubsystem::memory_and_swap_limit_in_bytes() {
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
-  julong host_swap = os::Linux::host_swap();
-  return memory_controller()->controller()->memory_and_swap_limit_in_bytes(phys_mem, host_swap);
+jlong CgroupSubsystem::memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
+  return memory_controller()->controller()->memory_and_swap_limit_in_bytes(upper_mem_bound, upper_swap_bound);
 }
 
-jlong CgroupSubsystem::memory_and_swap_usage_in_bytes() {
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
-  julong host_swap = os::Linux::host_swap();
-  return memory_controller()->controller()->memory_and_swap_usage_in_bytes(phys_mem, host_swap);
+jlong CgroupSubsystem::memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
+  return memory_controller()->controller()->memory_and_swap_usage_in_bytes(upper_mem_bound, upper_swap_bound);
 }
 
-jlong CgroupSubsystem::memory_soft_limit_in_bytes() {
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
-  return memory_controller()->controller()->memory_soft_limit_in_bytes(phys_mem);
+jlong CgroupSubsystem::memory_soft_limit_in_bytes(julong upper_bound) {
+  return memory_controller()->controller()->memory_soft_limit_in_bytes(upper_bound);
 }
 
 jlong CgroupSubsystem::memory_throttle_limit_in_bytes() {
@@ -894,7 +887,6 @@ jlong CgroupSubsystem::cpu_usage_in_micros() {
   return cpuacct_controller()->cpu_usage_in_micros();
 }
 
-void CgroupSubsystem::print_version_specific_info(outputStream* st) {
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
-  memory_controller()->controller()->print_version_specific_info(st, phys_mem);
+void CgroupSubsystem::print_version_specific_info(outputStream* st, julong upper_mem_bound) {
+  memory_controller()->controller()->print_version_specific_info(st, upper_mem_bound);
 }
