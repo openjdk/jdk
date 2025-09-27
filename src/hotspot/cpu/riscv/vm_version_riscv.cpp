@@ -158,7 +158,7 @@ void VM_Version::common_initialize() {
     }
   }
 
-  if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
+  if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses) && unaligned_access.enabled()) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_access.value() != MISALIGNED_FAST);
   }
@@ -173,7 +173,7 @@ void VM_Version::common_initialize() {
 
   // See JDK-8026049
   // This machine has fast unaligned memory accesses
-  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses) && unaligned_access.enabled()) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
       unaligned_access.value() == MISALIGNED_FAST);
   }
