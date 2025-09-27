@@ -2499,6 +2499,26 @@ C2V_VMENTRY_NULL(jobject, getJavaMirror, (JNIEnv* env, jobject, ARGUMENT_PAIR(kl
   return JVMCIENV->get_jobject(result);
 C2V_END
 
+C2V_VMENTRY_NULL(jobject, getLoader, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_NULL(NullPointerException);
+  }
+  JVMCIObject result = JVMCIENV->get_object_constant(klass->class_loader());
+  return JVMCIENV->get_jobject(result);
+C2V_END
+
+C2V_VMENTRY_NULL(jobject, getProtectionDomain, (JNIEnv* env, jobject, ARGUMENT_PAIR(klass)))
+  Klass* klass = UNPACK_PAIR(Klass, klass);
+  if (klass == nullptr) {
+    JVMCI_THROW_NULL(NullPointerException);
+  }
+  oop pd = klass->protection_domain();
+  if (pd != nullptr) {
+    return JNIHandles::make_local(pd);
+  }
+  return nullptr;
+C2V_END
 
 C2V_VMENTRY_0(jint, getArrayLength, (JNIEnv* env, jobject, jobject x))
   if (x == nullptr) {
@@ -3422,6 +3442,8 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "asJavaType",                                   CC "(" OBJECTCONSTANT ")" HS_RESOLVED_TYPE,                                           FN_PTR(asJavaType)},
   {CC "asString",                                     CC "(" OBJECTCONSTANT ")" STRING,                                                     FN_PTR(asString)},
   {CC "equals",                                       CC "(" OBJECTCONSTANT "J" OBJECTCONSTANT "J)Z",                                       FN_PTR(equals)},
+  {CC "getLoader",                                    CC "(" HS_KLASS2 ")" OBJECTCONSTANT,                                                  FN_PTR(getLoader)},
+  {CC "getProtectionDomain",                          CC "(" HS_KLASS2 ")" OBJECT,                                                          FN_PTR(getProtectionDomain)},
   {CC "getJavaMirror",                                CC "(" HS_KLASS2 ")" OBJECTCONSTANT,                                                  FN_PTR(getJavaMirror)},
   {CC "getArrayLength",                               CC "(" OBJECTCONSTANT ")I",                                                           FN_PTR(getArrayLength)},
   {CC "readArrayElement",                             CC "(" OBJECTCONSTANT "I)Ljava/lang/Object;",                                         FN_PTR(readArrayElement)},
