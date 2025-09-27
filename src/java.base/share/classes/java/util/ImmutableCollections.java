@@ -352,7 +352,7 @@ class ImmutableCollections {
 
         @Override
         public List<E> reversed() {
-            return size() < 2 ? this : ReverseOrderListView.of(this, false);
+            return ReverseOrderListView.of(this, false);
         }
 
         IndexOutOfBoundsException outOfBounds(int index) {
@@ -645,12 +645,6 @@ class ImmutableCollections {
             } else {
                 return -1;
             }
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public List<E> reversed() {
-            return e1 == EMPTY ? this : new List12<>((E) e1, e0);
         }
 
         @java.io.Serial

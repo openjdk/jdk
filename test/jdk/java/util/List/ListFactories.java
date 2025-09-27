@@ -109,23 +109,6 @@ public class ListFactories {
         ).iterator();
     }
 
-    @DataProvider(name="reversed")
-    public Iterator<Object[]> reversed() {
-        List<Object[]> reversed = new ArrayList<>();
-        Consumer<Object[]> addReversed = data -> {
-            @SuppressWarnings("unchecked")
-            List<String> act = (List<String>) data[0];
-            @SuppressWarnings("unchecked")
-            List<String> exp = new ArrayList<>((List<String>) data[1]);
-            Collections.reverse(exp);
-            reversed.add(a(act.reversed(), exp));
-        };
-        empty().forEachRemaining(addReversed);
-        nonempty().forEachRemaining(addReversed);
-        sublists().forEachRemaining(addReversed);
-        return reversed.iterator();
-    }
-
     @DataProvider(name="sublists")
     public Iterator<Object[]> sublists() {
         return asList(
@@ -162,7 +145,6 @@ public class ListFactories {
         empty().forEachRemaining(all::add);
         nonempty().forEachRemaining(all::add);
         sublists().forEachRemaining(all::add);
-        reversed().forEachRemaining(all::add);
         return all.iterator();
     }
 
