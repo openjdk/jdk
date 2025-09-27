@@ -48,7 +48,6 @@ public class NMethod extends CodeBlob {
   /** Offsets for different nmethod parts */
   private static CIntegerField exceptionOffsetField;
   private static CIntegerField deoptHandlerOffsetField;
-  private static CIntegerField deoptMhHandlerOffsetField;
   private static CIntegerField origPCOffsetField;
   private static CIntegerField stubOffsetField;
   private static CIntField     handlerTableOffsetField;
@@ -86,7 +85,6 @@ public class NMethod extends CodeBlob {
     immutableDataSizeField      = type.getCIntegerField("_immutable_data_size");
     exceptionOffsetField        = type.getCIntegerField("_exception_offset");
     deoptHandlerOffsetField     = type.getCIntegerField("_deopt_handler_offset");
-    deoptMhHandlerOffsetField   = type.getCIntegerField("_deopt_mh_handler_offset");
     origPCOffsetField           = type.getCIntegerField("_orig_pc_offset");
     stubOffsetField             = type.getCIntegerField("_stub_offset");
     scopesPCsOffsetField        = type.getCIntegerField("_scopes_pcs_offset");
@@ -125,7 +123,6 @@ public class NMethod extends CodeBlob {
   public Address instsEnd()             { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address exceptionBegin()       { return headerBegin().addOffsetTo(getExceptionOffset());    }
   public Address deoptHandlerBegin()    { return headerBegin().addOffsetTo(getDeoptHandlerOffset());   }
-  public Address deoptMhHandlerBegin()  { return headerBegin().addOffsetTo(getDeoptMhHandlerOffset()); }
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address stubEnd()              { return dataBegin();                                        }
   public Address oopsBegin()            { return dataBegin();                                        }
@@ -250,22 +247,10 @@ public class NMethod extends CodeBlob {
     return VMObjectFactory.newObject(NMethod.class, osrLinkField.getValue(addr));
   }
 
-  // MethodHandle
-  public boolean isMethodHandleReturn(Address returnPc) {
-    // Hard to read a bit fields from Java and it's only there for performance
-    // so just go directly to the PCDesc
-    // if (!hasMethodHandleInvokes())  return false;
-    PCDesc pd = getPCDescAt(returnPc);
-    if (pd == null)
-      return false;
-    return pd.isMethodHandleInvoke();
-  }
-
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
-  public boolean isDeoptPc      (Address pc) { return isDeoptEntry(pc) || isDeoptMhEntry(pc); }
+  public boolean isDeoptPc      (Address pc) { return isDeoptEntry(pc); }
   public boolean isDeoptEntry   (Address pc) { return pc == deoptHandlerBegin(); }
-  public boolean isDeoptMhEntry (Address pc) { return pc == deoptMhHandlerBegin(); }
 
   /** Tells whether frames described by this nmethod can be
       deoptimized. Note: native wrappers cannot be deoptimized. */
@@ -494,7 +479,6 @@ public class NMethod extends CodeBlob {
   private int getEntryBCI()           { return (int) entryBCIField          .getValue(addr); }
   private int getExceptionOffset()    { return (int) exceptionOffsetField   .getValue(addr); }
   private int getDeoptHandlerOffset()   { return (int) deoptHandlerOffsetField  .getValue(addr); }
-  private int getDeoptMhHandlerOffset() { return (int) deoptMhHandlerOffsetField.getValue(addr); }
   private int getStubOffset()         { return (int) stubOffsetField        .getValue(addr); }
   private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
   private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }

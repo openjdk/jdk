@@ -960,7 +960,6 @@ public:
   ciMethod* _method;                 // Method being direct called
   bool      _override_symbolic_info; // Override symbolic call site info from bytecode
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
-  bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list
   MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);

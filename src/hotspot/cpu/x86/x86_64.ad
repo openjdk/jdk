@@ -1697,11 +1697,6 @@ RegMask Matcher::modL_proj_mask() {
   return LONG_RDX_REG_mask();
 }
 
-// Register for saving SP into on method handle invokes. Not used on x86_64.
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-    return NO_REG_mask();
-}
-
 %}
 
 //----------ENCODING BLOCK-----------------------------------------------------
