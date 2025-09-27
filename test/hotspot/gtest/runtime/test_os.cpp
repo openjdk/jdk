@@ -763,7 +763,7 @@ TEST_VM(os, find_mapping_simple) {
       ASSERT_EQ(mapping_info.base, p);
       ASSERT_EQ(mapping_info.regions, 1);
       ASSERT_EQ(mapping_info.size, total_range_len);
-      ASSERT_EQ(mapping_info.committed_size, 0);
+      ASSERT_EQ(mapping_info.committed_size, size_t{0});
     }
     // Test just outside the allocation
     if (os::win32::find_mapping(p - 1, &mapping_info)) {
