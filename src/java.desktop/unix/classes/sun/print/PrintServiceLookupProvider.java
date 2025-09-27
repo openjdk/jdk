@@ -876,12 +876,16 @@ public final class PrintServiceLookupProvider extends PrintServiceLookup
                     FileReader reader = new FileReader(f);
                     bufferedReader = new BufferedReader(reader);
                     String line;
+                    results = new ArrayList<>();
                     while ((line = bufferedReader.readLine())
                            != null) {
                         results.add(line);
                     }
                 }
-            } finally {
+            } catch (Exception e) {
+                // Print exception for tracking printer command errors
+                System.err.println(e);
+           } finally {
                 f.delete();
                 // promptly close all streams.
                 if (bufferedReader != null) {
