@@ -1619,15 +1619,14 @@ static int num_java_frames(ContinuationWrapper& cont) {
 }
 
 static void invalidate_jvmti_stack(JavaThread* thread) {
-  if (thread->is_interp_only_mode()) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != nullptr)
-      state->invalidate_cur_stack_depth();
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
   }
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
+  if (JvmtiExport::has_frame_pops(thread)) {
     int num_frames = num_java_frames(cont);
 
     ContinuationWrapper::SafepointOp so(Thread::current(), cont);

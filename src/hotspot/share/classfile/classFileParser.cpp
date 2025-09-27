@@ -2445,7 +2445,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
       cfs->skip_u2_fast(method_parameters_length);
       cfs->skip_u2_fast(method_parameters_length);
       // ignore this attribute if it cannot be reflected
-      if (!vmClasses::Parameter_klass_loaded())
+      if (!vmClasses::reflect_Parameter_klass_is_loaded())
         method_parameters_length = -1;
     } else if (method_attribute_name == vmSymbols::tag_synthetic()) {
       if (method_attribute_length != 0) {
@@ -3979,7 +3979,7 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
 #endif
 
   // Check if this klass supports the java.lang.Cloneable interface
-  if (vmClasses::Cloneable_klass_loaded()) {
+  if (vmClasses::Cloneable_klass_is_loaded()) {
     if (ik->is_subtype_of(vmClasses::Cloneable_klass())) {
       ik->set_is_cloneable();
     }
@@ -5162,46 +5162,6 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   // Fill in field values obtained by parse_classfile_attributes
   if (_parsed_annotations->has_any_annotations())
     _parsed_annotations->apply_to(ik);
-
-  // AOT-related checks.
-  // Note we cannot check this in general due to instrumentation or module patching
-  if (CDSConfig::is_initing_classes_at_dump_time()) {
-    // Check the aot initialization safe status.
-    // @AOTSafeClassInitializer is used only to support ahead-of-time initialization of classes
-    // in the AOT assembly phase.
-    if (ik->has_aot_safe_initializer()) {
-      // If a type is included in the tables inside can_archive_initialized_mirror(), we require that
-      //   - all super classes must be included
-      //   - all super interfaces that have <clinit> must be included.
-      // This ensures that in the production run, we don't run the <clinit> of a supertype but skips
-      // ik's <clinit>.
-      if (_super_klass != nullptr) {
-        guarantee_property(_super_klass->has_aot_safe_initializer(),
-                           "Missing @AOTSafeClassInitializer in superclass %s for class %s",
-                           _super_klass->external_name(),
-                           CHECK);
-      }
-
-      int len = _local_interfaces->length();
-      for (int i = 0; i < len; i++) {
-        InstanceKlass* intf = _local_interfaces->at(i);
-        guarantee_property(intf->class_initializer() == nullptr || intf->has_aot_safe_initializer(),
-                           "Missing @AOTSafeClassInitializer in superinterface %s for class %s",
-                           intf->external_name(),
-                           CHECK);
-      }
-
-      if (log_is_enabled(Info, aot, init)) {
-        ResourceMark rm;
-        log_info(aot, init)("Found @AOTSafeClassInitializer class %s", ik->external_name());
-      }
-    } else {
-      // @AOTRuntimeSetup only meaningful in @AOTClassInitializer
-      guarantee_property(!ik->is_runtime_setup_required(),
-                         "@AOTRuntimeSetup meaningless in non-@AOTSafeClassInitializer class %s",
-                         CHECK);
-    }
-  }
 
   apply_parsed_class_attributes(ik);
 

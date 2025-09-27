@@ -340,6 +340,11 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
       break;
     }
 
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
+
     // Give a warning if we seem to be looping forever.
     if ((QueuedAllocationWarningCount > 0) &&
         (try_count % QueuedAllocationWarningCount == 0)) {
@@ -774,7 +779,7 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  _young_gen->gc_epilogue(full);
+  _young_gen->gc_epilogue();
   _old_gen->gc_epilogue();
 
   if (_is_heap_almost_full) {

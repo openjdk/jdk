@@ -124,7 +124,7 @@ bool AOTMetaspace::_use_optimized_module_handling = true;
 // These regions are aligned with AOTMetaspace::core_region_alignment().
 //
 // These 2 regions are populated in the following steps:
-// [0] All classes are loaded in AOTMetaspace::preload_classes(). All metadata are
+// [0] All classes are loaded in AOTMetaspace::load_classes(). All metadata are
 //     temporarily allocated outside of the shared regions.
 // [1] We enter a safepoint and allocate a buffer for the rw/ro regions.
 // [2] C++ vtables are copied into the rw region.
@@ -804,6 +804,23 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
   AOTClassLinker::initialize();
   AOTClassInitializer::init_test_class(CHECK);
 
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    // - Load and link all classes used in the training run.
+    // - Initialize @AOTSafeClassInitializer classes that were
+    //   initialized in the training run.
+    // - Perform per-class optimization such as AOT-resolution of
+    //   constant pool entries that were resolved during the training run.
+    FinalImageRecipes::apply_recipes(CHECK);
+
+    // Because the AOT assembly phase does not run the same exact code as in the
+    // training run (e.g., we use different lambda form invoker classes;
+    // generated lambda form classes are not recorded in FinalImageRecipes),
+    // the recipes do not cover all classes that have been loaded so far. As
+    // a result, we might have some unlinked classes at this point. Since we
+    // require cached classes to be linked, all such classes will be linked
+    // by the following step.
+  }
+
   link_all_loaded_classes(THREAD);
 
   // Eargerly resolve all string constants in constant pools
@@ -817,18 +834,12 @@ void AOTMetaspace::link_shared_classes(TRAPS) {
       AOTConstantPoolResolver::preresolve_string_cp_entries(ik, CHECK);
     }
   }
-
-  if (CDSConfig::is_dumping_final_static_archive()) {
-    FinalImageRecipes::apply_recipes(CHECK);
-  }
 }
 
-// Preload classes from a list, populate the shared spaces and dump to a
-// file.
-void AOTMetaspace::preload_and_dump(TRAPS) {
+void AOTMetaspace::dump_static_archive(TRAPS) {
   CDSConfig::DumperThreadMark dumper_thread_mark(THREAD);
   ResourceMark rm(THREAD);
- HandleMark hm(THREAD);
+  HandleMark hm(THREAD);
 
  if (CDSConfig::is_dumping_final_static_archive() && AOTPrintTrainingInfo) {
    tty->print_cr("==================== archived_training_data ** before dumping ====================");
@@ -836,7 +847,7 @@ void AOTMetaspace::preload_and_dump(TRAPS) {
  }
 
   StaticArchiveBuilder builder;
-  preload_and_dump_impl(builder, THREAD);
+  dump_static_archive_impl(builder, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
       aot_log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
@@ -902,7 +913,7 @@ void AOTMetaspace::get_default_classlist(char* default_classlist, const size_t b
                Arguments::get_java_home(), filesep, filesep);
 }
 
-void AOTMetaspace::preload_classes(TRAPS) {
+void AOTMetaspace::load_classes(TRAPS) {
   char default_classlist[JVM_MAXPATHLEN];
   const char* classlist_path;
 
@@ -929,8 +940,8 @@ void AOTMetaspace::preload_classes(TRAPS) {
     }
   }
 
-  // Some classes are used at CDS runtime but are not loaded, and therefore archived, at
-  // dumptime. We can perform dummmy calls to these classes at dumptime to ensure they
+  // Some classes are used at CDS runtime but are not yet loaded at this point.
+  // We can perform dummmy calls to these classes at dumptime to ensure they
   // are archived.
   exercise_runtime_cds_code(CHECK);
 
@@ -946,10 +957,10 @@ void AOTMetaspace::exercise_runtime_cds_code(TRAPS) {
   CDSProtectionDomain::to_file_URL("dummy.jar", Handle(), CHECK);
 }
 
-void AOTMetaspace::preload_and_dump_impl(StaticArchiveBuilder& builder, TRAPS) {
+void AOTMetaspace::dump_static_archive_impl(StaticArchiveBuilder& builder, TRAPS) {
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // We are running with -Xshare:dump
-    preload_classes(CHECK);
+    load_classes(CHECK);
 
     if (SharedArchiveConfigFile) {
       log_info(aot)("Reading extra data from %s ...", SharedArchiveConfigFile);
