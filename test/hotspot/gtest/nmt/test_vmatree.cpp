@@ -92,14 +92,15 @@ public:
   // Adjacent reservations are merged if the properties match.
   void adjacent_2_nodes(const VMATree::RegionData& rd) {
     Tree tree;
+    VMATree::SummaryDiff not_used;
     for (int i = 0; i < 10; i++) {
-      tree.reserve_mapping(i * 100, 100, rd);
+      tree.reserve_mapping(i * 100, 100, rd, not_used);
     }
     EXPECT_EQ(2, count_nodes(tree));
 
     // Reserving the exact same space again should result in still having only 2 nodes
     for (int i = 0; i < 10; i++) {
-      tree.reserve_mapping(i * 100, 100, rd);
+      tree.reserve_mapping(i * 100, 100, rd, not_used);
     }
     EXPECT_EQ(2, count_nodes(tree));
 
@@ -111,7 +112,7 @@ public:
     //        ...
     // 0--100
     for (int i = 9; i >= 0; i--) {
-      tree2.reserve_mapping(i * 100, 100, rd);
+      tree2.reserve_mapping(i * 100, 100, rd, not_used);
     }
     EXPECT_EQ(2, count_nodes(tree2));
   }
@@ -119,16 +120,17 @@ public:
   // After removing all ranges we should be left with an entirely empty tree
   void remove_all_leaves_empty_tree(const VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100 * 10, rd);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100 * 10, rd, not_used);
     for (int i = 0; i < 10; i++) {
-      tree.release_mapping(i * 100, 100);
+      tree.release_mapping(i * 100, 100, not_used);
     }
     EXPECT_EQ(nullptr, rbtree_root(tree));
 
     // Other way around
-    tree.reserve_mapping(0, 100 * 10, rd);
+    tree.reserve_mapping(0, 100 * 10, rd, not_used);
     for (int i = 9; i >= 0; i--) {
-      tree.release_mapping(i * 100, 100);
+      tree.release_mapping(i * 100, 100, not_used);
     }
     EXPECT_EQ(nullptr, rbtree_root(tree));
   }
@@ -136,9 +138,10 @@ public:
   // Committing in a whole reserved range results in 2 nodes
   void commit_whole(const VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100 * 10, rd);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100 * 10, rd, not_used);
     for (int i = 0; i < 10; i++) {
-      tree.commit_mapping(i * 100, 100, rd);
+      tree.commit_mapping(i * 100, 100, rd, not_used);
     }
     rbtree(tree).visit_in_order([&](TNode* x) {
       VMATree::StateType in = in_type_of(x);
@@ -153,8 +156,9 @@ public:
   // Committing in middle of reservation ends with a sequence of 4 nodes
   void commit_middle(const VMATree::RegionData& rd) {
     Tree tree;
-    tree.reserve_mapping(0, 100, rd);
-    tree.commit_mapping(50, 25, rd);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100, rd, not_used);
+    tree.commit_mapping(50, 25, rd, not_used);
 
     size_t found[16];
     size_t wanted[4] = {0, 50, 75, 100};
@@ -342,8 +346,9 @@ public:
 TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
+  VMATree::SummaryDiff not_used;
   for (int i = 99; i >= 0; i--) {
-    tree.reserve_mapping(i * 100, 101, rd);
+    tree.reserve_mapping(i * 100, 101, rd, not_used);
   }
   EXPECT_EQ(2, count_nodes(tree));
 }
@@ -351,8 +356,9 @@ TEST_VM_F(NMTVMATreeTest, OverlappingReservationsResultInTwoNodes) {
 TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
   VMATree::RegionData rd{si[0], mtTest};
   Tree tree;
-  tree.reserve_mapping(100, 100, rd);
-  tree.reserve_mapping(100, 100, rd);
+  VMATree::SummaryDiff not_used;
+  tree.reserve_mapping(100, 100, rd, not_used);
+  tree.reserve_mapping(100, 100, rd, not_used);
   EXPECT_EQ(2, count_nodes(tree));
   VMATree::VMARBTree::Range r = tree.tree().find_enclosing_range(110);
   EXPECT_EQ(100, (int)(r.end->key() - r.start->key()));
@@ -360,15 +366,16 @@ TEST_VM_F(NMTVMATreeTest, DuplicateReserve) {
 
 TEST_VM_F(NMTVMATreeTest, UseTagInplace) {
   Tree tree;
+  VMATree::SummaryDiff not_used;
   VMATree::RegionData rd_Test_cs0(si[0], mtTest);
   VMATree::RegionData rd_None_cs1(si[1], mtNone);
-  tree.reserve_mapping(0, 100, rd_Test_cs0);
+  tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
   // reserve:   0---------------------100
   // commit:        20**********70
   // uncommit:          30--40
   // post-cond: 0---20**30--40**70----100
-  tree.commit_mapping(20, 50, rd_None_cs1, true);
-  tree.uncommit_mapping(30, 10, rd_None_cs1);
+  tree.commit_mapping(20, 50, rd_None_cs1, not_used, true);
+  tree.uncommit_mapping(30, 10, rd_None_cs1, not_used);
   tree.visit_in_order([&](const TNode* node) {
     if (node->key() != 100) {
       EXPECT_EQ(mtTest, node->val().out.mem_tag()) << "failed at: " << node->key();
@@ -395,10 +402,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Identical operation but different metadata should not merge
     Tree tree;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_Test_cs0{si[0], mtTest};
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
-    tree.reserve_mapping(0, 100, rd_Test_cs0);
-    tree.reserve_mapping(100, 100, rd_NMT_cs1);
+    tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
+    tree.reserve_mapping(100, 100, rd_NMT_cs1, not_used);
 
     EXPECT_EQ(3, count_nodes(tree));
     int found_nodes = 0;
@@ -406,10 +414,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Reserving after commit should overwrite commit
     Tree tree;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_Test_cs0{si[0], mtTest};
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
-    tree.commit_mapping(50, 50, rd_NMT_cs1);
-    tree.reserve_mapping(0, 100, rd_Test_cs0);
+    tree.commit_mapping(50, 50, rd_NMT_cs1, not_used);
+    tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
     rbtree(tree).visit_in_order([&](const TNode* x) {
       EXPECT_TRUE(x->key() == 0 || x->key() == 100);
       if (x->key() == 0UL) {
@@ -423,20 +432,22 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_Test_cs0{si[0], mtTest};
     VMATree::RegionData rd_NMT_cs1{si[1], mtNMT};
     VMATree::RegionData rd_None_cs0{si[0], mtNone};
-    tree.reserve_mapping(0, 100, rd_Test_cs0);
-    tree.reserve_mapping(0, 50, rd_NMT_cs1);
-    tree.reserve_mapping(50, 50, rd_None_cs0);
+    tree.reserve_mapping(0, 100, rd_Test_cs0, not_used);
+    tree.reserve_mapping(0, 50, rd_NMT_cs1, not_used);
+    tree.reserve_mapping(50, 50, rd_None_cs0, not_used);
 
     EXPECT_EQ(3, count_nodes(tree));
   }
   { // One big reserve + release leaves an empty tree
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
     Tree tree;
-    tree.reserve_mapping(0, 500000, rd_NMT_cs0);
-    tree.release_mapping(0, 500000);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 500000, rd_NMT_cs0, not_used);
+    tree.release_mapping(0, 500000, not_used);
 
     EXPECT_EQ(nullptr, rbtree_root(tree));
   }
@@ -446,8 +457,9 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
     VMATree::RegionData rd_Test_cs1{si[1], mtTest};
     Tree tree;
-    tree.reserve_mapping(0, 100, rd_NMT_cs0);
-    tree.commit_mapping(0, 100, rd_Test_cs1);
+    VMATree::SummaryDiff not_used;
+    tree.reserve_mapping(0, 100, rd_NMT_cs0, not_used);
+    tree.commit_mapping(0, 100, rd_Test_cs1, not_used);
     rbtree(tree).visit_range_in_order(0, 99999, [&](TNode* x) {
       if (x->key() == 0) {
         EXPECT_EQ(mtTest, x->val().out.reserved_regiondata().mem_tag);
@@ -461,10 +473,11 @@ TEST_VM_F(NMTVMATreeTest, LowLevel) {
 
   { // Attempting to reserve or commit an empty region should not change the tree.
     Tree tree;
+    VMATree::SummaryDiff not_used;
     VMATree::RegionData rd_NMT_cs0{si[0], mtNMT};
-    tree.reserve_mapping(0, 0, rd_NMT_cs0);
+    tree.reserve_mapping(0, 0, rd_NMT_cs0, not_used);
     EXPECT_EQ(nullptr, rbtree_root(tree));
-    tree.commit_mapping(0, 0, rd_NMT_cs0);
+    tree.commit_mapping(0, 0, rd_NMT_cs0, not_used);
     EXPECT_EQ(nullptr, rbtree_root(tree));
   }
 }
@@ -520,8 +533,9 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {500, 600, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
 
-    tree.reserve_mapping(0, 600, rd);
+    tree.reserve_mapping(0, 600, rd, not_used);
 
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
@@ -540,6 +554,7 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {575, 600, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
 
     // 0---------------------------------------------------600
     //        100****225
@@ -548,11 +563,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
     // 0------100****225---------550***560---565***575-----600
     // 0------100****225---500---550***560---565***575-----600
     // <-------mtGC---------><-----------mtClassShared------->
-    tree.reserve_mapping(0, 600, rd);
+    tree.reserve_mapping(0, 600, rd, not_used);
     // The committed areas
-    tree.commit_mapping(100, 125, rd);
-    tree.commit_mapping(550, 10, rd);
-    tree.commit_mapping(565, 10, rd);
+    tree.commit_mapping(100, 125, rd, not_used);
+    tree.commit_mapping(550, 10, rd, not_used);
+    tree.commit_mapping(565, 10, rd, not_used);
     // OK, set tag
     tree.set_tag(0, 500, mtGC);
     tree.set_tag(500, 100, mtClassShared);
@@ -564,10 +579,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {0, 200, mtGC, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData gc(si, mtGC);
     Tree::RegionData compiler(si, mtCompiler);
-    tree.reserve_mapping(0, 100, gc);
-    tree.reserve_mapping(100, 100, compiler);
+    tree.reserve_mapping(0, 100, gc, not_used);
+    tree.reserve_mapping(100, 100, compiler, not_used);
     tree.set_tag(0, 200, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -580,10 +596,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {100, 200, mtGC, si2, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData gc(si1, mtGC);
     Tree::RegionData compiler(si2, mtCompiler);
-    tree.reserve_mapping(0, 100, gc);
-    tree.reserve_mapping(100, 100, compiler);
+    tree.reserve_mapping(0, 100, gc, not_used);
+    tree.reserve_mapping(100, 100, compiler, not_used);
     tree.set_tag(0, 200, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -595,8 +612,9 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {150, 200, mtCompiler, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData compiler(si, mtCompiler);
-    tree.reserve_mapping(0, 200, compiler);
+    tree.reserve_mapping(0, 200, compiler, not_used);
     tree.set_tag(100, 50, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -608,10 +626,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {125, 200, mtCompiler, si, State::Reserved},
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData gc(si, mtGC);
     Tree::RegionData compiler(si, mtCompiler);
-    tree.reserve_mapping(0, 100, gc);
-    tree.reserve_mapping(100, 100, compiler);
+    tree.reserve_mapping(0, 100, gc, not_used);
+    tree.reserve_mapping(100, 100, compiler, not_used);
     tree.set_tag(75, 50, mtClass);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -624,9 +643,10 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {80, 100, mtClassShared, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(0, 50, class_shared);
-    tree.reserve_mapping(75, 25, class_shared);
+    tree.reserve_mapping(0, 50, class_shared, not_used);
+    tree.reserve_mapping(75, 25, class_shared, not_used);
     tree.set_tag(0, 80, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -636,8 +656,9 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {10, 20, mtCompiler, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(10, 10, class_shared);
+    tree.reserve_mapping(10, 10, class_shared, not_used);
     tree.set_tag(0, 100, mtCompiler);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -651,10 +672,11 @@ TEST_VM_F(NMTVMATreeTest, SetTag) {
         {99, 100,   mtGC, si, State::Reserved}
     };
     VMATree tree;
+    VMATree::SummaryDiff not_used;
     Tree::RegionData class_shared(si, mtClassShared);
-    tree.reserve_mapping(0, 100, class_shared);
-    tree.release_mapping(1, 49);
-    tree.release_mapping(75, 24);
+    tree.reserve_mapping(0, 100, class_shared, not_used);
+    tree.release_mapping(1, 49, not_used);
+    tree.release_mapping(75, 24, not_used);
     tree.set_tag(0, 100, mtGC);
     expect_equivalent_form(expected, tree, __LINE__);
   }
@@ -666,7 +688,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree::RegionData rd_NMT_cs0(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd_Test_cs0);
+    VMATree::SummaryDiff all_diff;
+    tree.reserve_mapping(0, 100, rd_Test_cs0, all_diff);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
@@ -675,7 +698,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
-    all_diff = tree.reserve_mapping(50, 25, rd_NMT_cs0);
+    tree.reserve_mapping(50, 25, rd_NMT_cs0, all_diff);
 //              1         2         3         4         5         6         7         8         9         10         11
 //    01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //    AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBBBBBBBBBBBBBBBBBBBBBBCCCCCCCCCCCCCCCCCCCCCCCCC..........
@@ -692,7 +715,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Fully release reserved mapping
     Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd_Test_cs0);
+    VMATree::SummaryDiff all_diff;
+    tree.reserve_mapping(0, 100, rd_Test_cs0, all_diff);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
@@ -701,7 +725,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(100, diff.reserve);
-    all_diff = tree.release_mapping(0, 100);
+    tree.release_mapping(0, 100, all_diff);
 //            1         2         3         4         5         6         7         8         9         10        11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  ..............................................................................................................
@@ -712,7 +736,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Convert some of a released mapping to a committed one
     Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 100, rd_Test_cs0);
+    VMATree::SummaryDiff all_diff;
+    tree.reserve_mapping(0, 100, rd_Test_cs0, all_diff);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA..........
@@ -721,7 +746,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 100);
-    all_diff = tree.commit_mapping(0, 100, rd_Test_cs0);
+    tree.commit_mapping(0, 100, rd_Test_cs0, all_diff);
 //            1         2         3         4         5         6         7         8         9         10         11
 //  01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
 //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
@@ -735,7 +760,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // Adjacent reserved mappings with same type
     Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd_Test_cs0);
+    VMATree::SummaryDiff all_diff;
+    tree.reserve_mapping(0, 10, rd_Test_cs0, all_diff);
 //            1         2
 //  01234567890123456789
 //  AAAAAAAAAA..........
@@ -744,7 +770,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 10);
-    all_diff = tree.reserve_mapping(10, 10, rd_Test_cs0);
+    tree.reserve_mapping(10, 10, rd_Test_cs0, all_diff);
 //            1         2         3
 //  012345678901234567890123456789
 //  AAAAAAAAAAAAAAAAAAAA..........
@@ -758,7 +784,8 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
     Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
     Tree::RegionData rd_NMT_cs0(NCS::StackIndex(), mtNMT);
     Tree tree;
-    VMATree::SummaryDiff all_diff = tree.reserve_mapping(0, 10, rd_Test_cs0);
+    VMATree::SummaryDiff all_diff;
+    tree.reserve_mapping(0, 10, rd_Test_cs0, all_diff);
 //            1         2
 //  01234567890123456789
 //  AAAAAAAAAA..........
@@ -767,7 +794,7 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 //  . - free
     VMATree::SingleDiff diff = all_diff.tag[NMTUtil::tag_to_index(mtTest)];
     EXPECT_EQ(diff.reserve, 10);
-    all_diff = tree.reserve_mapping(10, 10, rd_NMT_cs0);
+    tree.reserve_mapping(10, 10, rd_NMT_cs0, all_diff);
 //            1         2         3
 //  012345678901234567890123456789
 //  AAAAAAAAAABBBBBBBBBB..........
@@ -784,22 +811,23 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
   { // A commit with two previous commits inside of it should only register
     // the new memory in the commit diff.
     Tree tree;
+    VMATree::SummaryDiff diff;
     Tree::RegionData rd_Test_cs0(NCS::StackIndex(), mtTest);
-    tree.commit_mapping(16, 16, rd_Test_cs0);
+    tree.commit_mapping(16, 16, rd_Test_cs0, diff);
 //            1         2         3         4
 //  0123456789012345678901234567890123456789
 //  ................aaaaaaaaaaaaaaaa..........
 //  Legend:
 //  a - Test (committed)
 //  . - free
-    tree.commit_mapping(32, 32, rd_Test_cs0);
+    tree.commit_mapping(32, 32, rd_Test_cs0, diff);
 //            1         2         3         4         5         6         7
 //  0123456789012345678901234567890123456789012345678901234567890123456789
 //  ................aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
 //  Legend:
 //  a - Test (committed)
 //  . - free
-    VMATree::SummaryDiff diff = tree.commit_mapping(0, 64, rd_Test_cs0);
+    tree.commit_mapping(0, 64, rd_Test_cs0, diff);
 //            1         2         3         4         5         6         7
 //  0123456789012345678901234567890123456789012345678901234567890123456789
 //  aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa..........
@@ -814,11 +842,12 @@ TEST_VM_F(NMTVMATreeTest, SummaryAccounting) {
 TEST_VM_F(NMTVMATreeTest, SummaryAccountingReserveAsUncommit) {
   Tree tree;
   Tree::RegionData rd(NCS::StackIndex(), mtTest);
-  VMATree::SummaryDiff diff1 = tree.reserve_mapping(1200, 100, rd);
-  VMATree::SummaryDiff diff2 = tree.commit_mapping(1210, 50, rd);
+  VMATree::SummaryDiff diff1, diff2, diff3;
+  tree.reserve_mapping(1200, 100, rd, diff1);
+  tree.commit_mapping(1210, 50, rd, diff2);
   EXPECT_EQ(100, diff1.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(50, diff2.tag[NMTUtil::tag_to_index(mtTest)].commit);
-  VMATree::SummaryDiff diff3 = tree.reserve_mapping(1220, 20, rd);
+  tree.reserve_mapping(1220, 20, rd, diff3);
   EXPECT_EQ(-20, diff3.tag[NMTUtil::tag_to_index(mtTest)].commit);
   EXPECT_EQ(0, diff3.tag[NMTUtil::tag_to_index(mtTest)].reserve);
 }
@@ -951,13 +980,13 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
     VMATree::SummaryDiff simple_diff;
     if (kind == SimpleVMATracker::Reserved) {
       simple_diff = tr->reserve(start, size, stack, mem_tag);
-      tree_diff = tree.reserve_mapping(start, size, data);
+      tree.reserve_mapping(start, size, data, tree_diff);
     } else if (kind == SimpleVMATracker::Committed) {
       simple_diff = tr->commit(start, size, stack, mem_tag);
-      tree_diff = tree.commit_mapping(start, size, data);
+      tree.commit_mapping(start, size, data, tree_diff);
     } else {
       simple_diff = tr->release(start, size);
-      tree_diff = tree.release_mapping(start, size);
+      tree.release_mapping(start, size, tree_diff);
     }
 
     for (int j = 0; j < mt_number_of_tags; j++) {
@@ -1024,33 +1053,34 @@ TEST_VM_F(NMTVMATreeTest, TestConsistencyWithSimpleTracker) {
 
 TEST_VM_F(NMTVMATreeTest, SummaryAccountingWhenUseTagInplace) {
   Tree tree;
+  VMATree::SummaryDiff diff;
   VMATree::RegionData rd_Test_cs0(si[0], mtTest);
   VMATree::RegionData rd_None_cs1(si[1], mtNone);
-//            1         2         3         4         5
-//  012345678901234567890123456789012345678901234567890
-//  ..................................................
-  tree.reserve_mapping(0, 50, rd_Test_cs0);
-//            1         2         3         4         5
-//  012345678901234567890123456789012345678901234567890
-//  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
-VMATree::SummaryDiff diff = tree.commit_mapping(0, 25, rd_None_cs1, true);
-//            1         2         3         4         5
-//  012345678901234567890123456789012345678901234567890
-//  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrr
+  //            1         2         3         4         5
+  //  012345678901234567890123456789012345678901234567890
+  //  ..................................................
+  tree.reserve_mapping(0, 50, rd_Test_cs0, diff);
+  //            1         2         3         4         5
+  //  012345678901234567890123456789012345678901234567890
+  //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
+  tree.commit_mapping(0, 25, rd_None_cs1, diff, true);
+  //            1         2         3         4         5
+  //  012345678901234567890123456789012345678901234567890
+  //  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrr
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 
-  diff = tree.commit_mapping(30, 5, rd_None_cs1, true);
-//            1         2         3         4         5
-//  012345678901234567890123456789012345678901234567890
-//  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrCCCCCrrrrrrrrrrrrrrr
+  tree.commit_mapping(30, 5, rd_None_cs1, diff, true);
+  //            1         2         3         4         5
+  //  012345678901234567890123456789012345678901234567890
+  //  CCCCCCCCCCCCCCCCCCCCCCCCCrrrrrCCCCCrrrrrrrrrrrrrrr
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(5, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 
-  diff = tree.uncommit_mapping(0, 25, rd_None_cs1);
-//            1         2         3         4         5
-//  012345678901234567890123456789012345678901234567890
-//  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrCCCCCrrrrrrrrrrrrrrr
+  tree.uncommit_mapping(0, 25, rd_None_cs1, diff);
+  //            1         2         3         4         5
+  //  012345678901234567890123456789012345678901234567890
+  //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrCCCCCrrrrrrrrrrrrrrr
   EXPECT_EQ(0, diff.tag[NMTUtil::tag_to_index(mtTest)].reserve);
   EXPECT_EQ(-25, diff.tag[NMTUtil::tag_to_index(mtTest)].commit);
 }
@@ -1079,7 +1109,8 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
 
   {// Check committing into a reserved region inherits the call stacks
     Tree tree;
-    tree.reserve_mapping(0, 50, rd_Test_cs1); // reserve in an empty tree
+    VMATree::SummaryDiff diff;
+    tree.reserve_mapping(0, 50, rd_Test_cs1, diff); // reserve in an empty tree
     // Pre: empty tree.
     // Post:
     //            1         2         3         4         5
@@ -1091,7 +1122,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , si_1  , -1    },
                            {-1    , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
-    tree.commit_mapping(25, 10, rd_None_cs2, true); // commit at the middle of the region
+    tree.commit_mapping(25, 10, rd_None_cs2, diff, true); // commit at the middle of the region
     // Post:
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
@@ -1103,7 +1134,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et2, __LINE__);
 
-    tree.commit_mapping(0, 20, rd_None_cs2, true); // commit at the beginning of the region
+    tree.commit_mapping(0, 20, rd_None_cs2, diff, true); // commit at the beginning of the region
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  CCCCCCCCCCCCCCCCCCCCrrrrrCCCCCCCCCCrrrrrrrrrrrrrrr.
@@ -1114,7 +1145,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , si_2  , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et3, __LINE__);
 
-    tree.commit_mapping(40, 10, rd_None_cs2, true); // commit at the end of the region
+    tree.commit_mapping(40, 10, rd_None_cs2, diff, true); // commit at the end of the region
     // Post:
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
@@ -1128,7 +1159,8 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// committing overlapped regions does not destroy the old call-stacks
     Tree tree;
-    tree.reserve_mapping(0, 50, rd_Test_cs1); // reserving in an empty tree
+    VMATree::SummaryDiff diff;
+    tree.reserve_mapping(0, 50, rd_Test_cs1, diff); // reserving in an empty tree
     // Pre: empty tree.
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
@@ -1140,7 +1172,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.commit_mapping(10, 10, rd_None_cs2, true);
+    tree.commit_mapping(10, 10, rd_None_cs2, diff, true);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1154,7 +1186,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     SIndex si_3 = si[2];
     VMATree::RegionData rd_Test_cs3(si_3, mtTest);
     // commit with overlap at the region's start
-    tree.commit_mapping(5, 10, rd_Test_cs3);
+    tree.commit_mapping(5, 10, rd_Test_cs3, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1168,7 +1200,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     SIndex si_4 = si[3];
     VMATree::RegionData call_stack_4(si_4, mtTest);
     // commit with overlap at the region's end
-    tree.commit_mapping(15, 10, call_stack_4);
+    tree.commit_mapping(15, 10, call_stack_4, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrCCCCCCCCCCCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1181,13 +1213,14 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// uncommit should not store any call-stack
     Tree tree;
-    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    VMATree::SummaryDiff diff;
+    tree.reserve_mapping(0, 50, rd_Test_cs1, diff);
 
-    tree.commit_mapping(10, 10, rd_None_cs2, true);
+    tree.commit_mapping(10, 10, rd_None_cs2, diff, true);
 
-    tree.commit_mapping(0, 5, rd_None_cs2, true);
+    tree.commit_mapping(0, 5, rd_None_cs2, diff, true);
 
-    tree.uncommit_mapping(0, 3, rd_None_cs2);
+    tree.uncommit_mapping(0, 3, rd_None_cs2, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrCCrrrrrCCCCCCCCCCrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1198,7 +1231,7 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
                            {-1    , -1    , si_2  , -1    , si_2  , -1    , -1    }};
     check_tree(tree, et1, __LINE__);
 
-    tree.uncommit_mapping(5, 10, rd_None_cs2);
+    tree.uncommit_mapping(5, 10, rd_None_cs2, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrCCrrrrrrrrrrCCCCCrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr.
@@ -1214,8 +1247,9 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
     VMATree::RegionData call_stack_4(si_4, mtTest);
 
     Tree tree;
-    tree.reserve_mapping(0, 50, rd_Test_cs1);
-    tree.reserve_mapping(10, 10, call_stack_4);
+    VMATree::SummaryDiff diff;
+    tree.reserve_mapping(0, 50, rd_Test_cs1, diff);
+    tree.reserve_mapping(10, 10, call_stack_4, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1228,7 +1262,8 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// commit without reserve
     Tree tree;
-    tree.commit_mapping(0, 50, rd_Test_cs1);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(0, 50, rd_Test_cs1, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -1241,8 +1276,9 @@ TEST_VM_F(NMTVMATreeTest, SeparateStacksForCommitAndReserve) {
   }
   {// reserve after commit
     Tree tree;
-    tree.commit_mapping(0, 50, rd_None_cs2);
-    tree.reserve_mapping(0, 50, rd_Test_cs1);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(0, 50, rd_None_cs2, diff);
+    tree.reserve_mapping(0, 50, rd_Test_cs1, diff);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
@@ -1287,7 +1323,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
                            {-1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC..........................
@@ -1314,7 +1351,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows0To3) {
                            {-1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 15, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCC...............................
@@ -1359,7 +1397,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(20, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(20, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrr..........CCCCCCCCCCCCCCCCCCCC...........
@@ -1386,7 +1425,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(10, 10, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(10, 10, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....rrrrrCCCCCCCCCC...............................
@@ -1413,7 +1453,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(7, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(7, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCCCCCCCCC........................
@@ -1440,7 +1481,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows4to7) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(7, 13, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(7, 13, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCC...............................
@@ -1492,7 +1534,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(10, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(10, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCCCCCCCCCCC.....................
@@ -1519,7 +1562,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(0, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(0, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  CCCCCCCCCCCCCCCCCCCC...............................
@@ -1546,7 +1590,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC..........................
@@ -1573,7 +1618,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows8to11) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 15, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCC...............................
@@ -1619,7 +1665,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
@@ -1646,7 +1693,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
                            {-1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCCrrrrr.....................
@@ -1673,7 +1721,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
@@ -1700,7 +1749,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows12to15) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff ;
+    tree.commit_mapping(5, 15, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  .....CCCCCCCCCCCCCCC..........rrrrrrrrrr...........
@@ -1745,7 +1795,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(15, 10, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(15, 10, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrr.....CCCCCCCCCC.....rrrrrrrrrr...........
@@ -1772,7 +1823,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(15, 10, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(15, 10, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrr.....CCCCCCCCCCrrrrr.....................
@@ -1799,7 +1851,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(7, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(7, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCCCCCCCCC...rrrrrrrrrr...........
@@ -1826,7 +1879,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows16to19) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(7, 13, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(7, 13, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrr..CCCCCCCCCCCCC..........rrrrrrrrrr...........
@@ -1872,7 +1926,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(10, 15, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(10, 15, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
@@ -1899,7 +1954,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
                            {-1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(10, 15, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(10, 15, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrrrrrrCCCCCCCCCCCCCCCrrrrr.....................
@@ -1926,7 +1982,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 20, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 20, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrCCCCCCCCCCCCCCCCCCCC.....rrrrrrrrrr...........
@@ -1953,7 +2010,8 @@ TEST_VM_F(NMTVMATreeTest, OverlapTableRows20to23) {
                            {-1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    , -1    }
                           };
     create_tree(tree, pre, __LINE__);
-    VMATree::SummaryDiff diff = tree.commit_mapping(5, 15, rd_Test_cs2, false);
+    VMATree::SummaryDiff diff;
+    tree.commit_mapping(5, 15, rd_Test_cs2, diff, false);
     //            1         2         3         4         5
     //  012345678901234567890123456789012345678901234567890
     //  rrrrrCCCCCCCCCCCCCCC..........rrrrrrrrrr...........
