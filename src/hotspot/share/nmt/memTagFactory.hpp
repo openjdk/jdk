@@ -24,6 +24,7 @@
 
 // Dual-mapping tag to name and name to tag
 // where strings are malloc-allocated
+#include "classfile/altHashing.hpp";
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTag.hpp"
@@ -65,20 +66,23 @@ struct NameToTagTable {
     }
   };
 
-  GrowableArrayCHeap<Entry, mtNMT> entries;
-  const int table_size;
-  EntryRef* table;
-  GrowableArrayCHeap<const char*, mtNMT> names;
-  GrowableArrayCHeap<const char*, mtNMT> human_readable_names;
+  GrowableArrayCHeap<Entry, mtNMT> _entries;
+  const int _table_size;
+  EntryRef* _table;
+  GrowableArrayCHeap<const char*, mtNMT> _names;
+  GrowableArrayCHeap<const char*, mtNMT> _human_readable_names;
+  const uint64_t _seed;
   volatile int _number_of_tags;
 
   NameToTagTable()
     : entries(),
-      table_size(nr_of_buckets),
+      _table_size(nr_of_buckets),
       table(nullptr),
-      names(), human_readable_names(), _number_of_tags(0) {
+      names(), human_readable_names(),
+      _seed(AltHashing::compute_seed()),
+      _number_of_tags(0) {
     table = NEW_C_HEAP_ARRAY(EntryRef, table_size, mtNMT);
-    for (int i = 0; i < table_size; i++) {
+    for (int i = 0; i < _table_size; i++) {
       table[i] = Nil;
     }
   }

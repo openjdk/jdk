@@ -25,44 +25,37 @@
 #include <nmt/memTagFactory.hpp>
 
 DeferredStatic<MemTagFactory::Instance> MemTagFactory::_instance;
-int NameToTagTable::string_hash(const char* t) {
-  char c;
-  int k = 0;
-  int32_t sum = 0;
-  const char* s = (const char*)t;
 
-  while (((c = *s++) != '\0')) {
-    c = (c << 1) + 1;
-    sum += c + (c << (k++ % 6));
-  }
-  return abs((int)((sum + 261) >> 1));
+int NameToTagTable::string_hash(const char* t) {
+  return AltHashing::halfsiphash_32(_seed, t, strlen(t));
 }
 
 void NameToTagTable::put_if_absent(MemTag tag, const char* name) {
-  int bucket = string_hash(name) % table_size;
-  EntryRef link = table[bucket];
+  int bucket = string_hash(name) % _table_size;
+  EntryRef link = _table[bucket];
   while (link != Nil) {
-    Entry e = entries.at(link);
+    Entry e = _entries.at(link);
     MemTagI ei = index(e.tag);
-    if (strcmp(names.at(ei), name) == 0) {
+    if (strcmp(_names.at(ei), name) == 0) {
       return;
     }
     link = e.next;
   }
   const char* name_copy = os::strdup(name, mtNMT);
   MemTagI idx = index(tag);
-  names.at_grow(idx, name_copy);
+  _names.at_grow(idx, name_copy);
   Entry nentry(tag, table[bucket]);
-  entries.push(nentry);
-  table[bucket] = entries.length() - 1;
+  _entries.push(nentry);
+  _table[bucket] = _entries.length() - 1;
   AtomicAccess::inc(&_number_of_tags);
 }
+
 MemTag NameToTagTable::tag_of(const char* name) {
-  int bucket = string_hash(name) % table_size;
-  EntryRef link = table[bucket];
+  int bucket = string_hash(name) % _table_size;
+  EntryRef link = _table[bucket];
   while (link != Nil) {
-    Entry e = entries.at(link);
-    if (strcmp(names.at(index(e.tag)), name) == 0) {
+    Entry e = _entries.at(link);
+    if (strcmp(_names.at(index(e.tag)), name) == 0) {
       return e.tag;
     }
     link = e.next;
@@ -71,12 +64,13 @@ MemTag NameToTagTable::tag_of(const char* name) {
 }
 
 const char* NameToTagTable::name_of(MemTag tag) {
-  return names.at(index(tag));
+  return _names.at(index(tag));
 }
+
 const char* NameToTagTable::human_readable_name_of(MemTag tag) {
   MemTagI i = index(tag);
-  if (i < human_readable_names.length()) {
-    return human_readable_names.at(index(tag));
+  if (i < _human_readable_names.length()) {
+    return _human_readable_names.at(index(tag));
   }
   return nullptr;
 }
@@ -84,7 +78,7 @@ const char* NameToTagTable::human_readable_name_of(MemTag tag) {
 void NameToTagTable::set_human_readable_name_of(MemTag tag, const char* hrn) {
   MemTagI i = index(tag);
   const char* copy = os::strdup(hrn);
-  const char*& ref = human_readable_names.at_grow(i, nullptr);
+  const char*& ref = _human_readable_names.at_grow(i, nullptr);
   ref = copy;
 }
 
