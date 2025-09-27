@@ -100,7 +100,7 @@ public:
   }
 
   virtual bool is_safe(nmethod* nm) {
-    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading()) {
+    if (SafepointSynchronize::is_at_safepoint() || nm->is_unloading() || (NMethodState_lock->owned_by_self() && nm->is_not_installed())) {
       return true;
     }
 

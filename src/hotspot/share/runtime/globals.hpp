@@ -1565,6 +1565,9 @@ const int ObjectAlignmentInBytes = 8;
           "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
+  product(bool, NMethodRelocation, false, EXPERIMENTAL,                     \
+          "Enables use of experimental function nmethod::relocate()")       \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
