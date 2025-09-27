@@ -40,6 +40,9 @@
 #ifndef SHARE_NMT_MEMTAGFACTORY_HPP
 #define SHARE_NMT_MEMTAGFACTORY_HPP
 
+// NameToTagTable is a closed addressing hash table.
+// We don't expect MemTag creation or lookup to be a common operation, so we focus
+// on minimal memory usage.
 struct NameToTagTable {
   using EntryRef = std::underlying_type_t<MemTag>;
   constexpr static const EntryRef Nil = std::numeric_limits<EntryRef>::max() - 1;
