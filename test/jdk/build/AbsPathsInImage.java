@@ -21,6 +21,8 @@
  * questions.
  */
 
+import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -42,7 +44,7 @@ import java.util.zip.ZipInputStream;
  * @requires !vm.debug
  * @comment ASAN keeps the 'unwanted' paths in the binaries because of its build options
  * @requires !vm.asan
- * @run main/othervm -Xmx900m AbsPathsInImage
+ * @run main AbsPathsInImage
  */
 public class AbsPathsInImage {
 
@@ -180,7 +182,11 @@ public class AbsPathsInImage {
     }
 
     private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
-        List<String> matches = scanBytes(Files.readAllBytes(file), searchPatterns);
+        List<String> matches;
+        InputStream inputStream = Files.newInputStream(file);
+        try (BufferedInputStream input = new BufferedInputStream(inputStream)) {
+            matches = scanBytes(input, searchPatterns);
+        }
         if (matches.size() > 0) {
             matchFound = true;
             System.out.println(file + ":");
@@ -192,10 +198,12 @@ public class AbsPathsInImage {
     }
 
     private void scanZipFile(Path zipFile, List<byte[]> searchPatterns) throws IOException {
-        try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
-            ZipEntry zipEntry;
-            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                List<String> matches = scanBytes(zipInputStream.readAllBytes(), searchPatterns);
+        ZipEntry zipEntry;
+        InputStream inputStream = Files.newInputStream(zipFile);
+        BufferedInputStream bufferedStream = new BufferedInputStream(inputStream);
+        try (ZipInputStream input = new ZipInputStream(bufferedStream)) {
+            while ((zipEntry = input.getNextEntry()) != null) {
+                List<String> matches = scanBytes(input, searchPatterns);
                 if (matches.size() > 0) {
                     matchFound = true;
                     System.out.println(zipFile + ", " + zipEntry.getName() + ":");
@@ -208,46 +216,31 @@ public class AbsPathsInImage {
         }
     }
 
-    private List<String> scanBytes(byte[] data, List<byte[]> searchPatterns) {
+    private List<String> scanBytes(InputStream input, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = new ArrayList<>();
-        for (int i = 0; i < data.length; i++) {
-            for (byte[] searchPattern : searchPatterns) {
-                boolean found = true;
-                for (int j = 0; j < searchPattern.length; j++) {
-                    if ((i + j >= data.length || data[i + j] != searchPattern[j])) {
-                        found = false;
-                        break;
-                    }
-                }
+        ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+        int[] states = new int[searchPatterns.size()];
+        boolean found = false;
+        int datum;
+        while ((datum = input.read()) != -1) {
+            if (datum < 32 || datum > 126) {
                 if (found) {
-                    matches.add(new String(data, charsStart(data, i), charsOffset(data, i, searchPattern.length)));
-                    // No need to search the same string for multiple patterns
-                    break;
+                    matches.add(buffer.toString());
+                    found = false;
+                }
+                buffer.reset();
+            } else {
+                buffer.write(datum);
+            }
+            for (int i = 0; i < searchPatterns.size(); i++) {
+                if (datum != searchPatterns.get(i)[states[i]]) {
+                    states[i] = 0;
+                } else if (++states[i] == searchPatterns.get(i).length) {
+                    states[i] = 0;
+                    found = true;
                 }
             }
         }
         return matches;
-    }
-
-    private int charsStart(byte[] data, int startIndex) {
-        int index = startIndex;
-        while (--index > 0) {
-            byte datum = data[index];
-            if (datum < 32 || datum > 126) {
-                break;
-            }
-        }
-        return index + 1;
-    }
-
-    private int charsOffset(byte[] data, int startIndex, int startOffset) {
-        int offset = startOffset;
-        while (startIndex + ++offset < data.length) {
-            byte datum = data[startIndex + offset];
-            if (datum < 32 || datum > 126) {
-                break;
-            }
-        }
-        return offset;
     }
 }
