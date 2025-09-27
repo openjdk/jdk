@@ -22,7 +22,6 @@
  *
  */
 
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"

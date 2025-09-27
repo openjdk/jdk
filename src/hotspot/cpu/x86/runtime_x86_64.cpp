@@ -23,7 +23,6 @@
  */
 
 #ifdef COMPILER2
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
