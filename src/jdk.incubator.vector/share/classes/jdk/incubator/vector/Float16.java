@@ -223,6 +223,16 @@ public final class Float16
     public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
+     * The overflow threshold (for round to nearest) is MAX_VALUE + 1/2 ulp.
+     */
+    private static final double OVERFLOW_THRESH = 0x1.ffcp15 + 0x0.002p15;
+
+    /**
+     * The underflow threshold (for round to nearest) is MIN_VALUE * 0.5.
+     */
+    private static final double UNDERFLOW_THRESH = 0x1.0p-24d * 0.5d;
+
+    /**
      * Returns a string representation of the {@code Float16}
      * argument.
      *
@@ -350,16 +360,14 @@ public final class Float16
         short sign_bit = (short)((doppel & 0x8000_0000_0000_0000L) >> (64 - 16));
         double abs_d = Math.abs(d);
 
-        // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
-        if (abs_d >= (0x1.ffcp15 + 0x0.002p15) ) {
+        if (abs_d >= OVERFLOW_THRESH) {
              // correctly signed infinity
             return new Float16((short)(sign_bit | 0x7c00));
         }
 
-        // Smallest magnitude nonzero representable binary16 value
-        // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
-        if (abs_d <= 0x1.0p-24d * 0.5d) { // Covers double zeros and subnormals.
-            return new Float16(sign_bit); // Positive or negative zero
+        if (abs_d <= UNDERFLOW_THRESH) { // Covers double zeros and subnormals.
+            // positive or negative zero
+            return new Float16(sign_bit);
         }
 
         // Dealing with finite values in exponent range of binary16
