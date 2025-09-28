@@ -63,7 +63,7 @@ public class JImageReadTest {
         return new Object[][] {
                 {"java.base", "java/lang/String.class"},
                 {"java.base", "java/lang/Object.class"},
-                {"java.base", "sun/reflect/generics/tree/TypeArgument.class"},
+                {"java.base", "jdk/internal/misc/Unsafe.class"},
                 {"java.base", "sun/net/www/content-types.properties"},
                 {"java.logging", "java/util/logging/Logger.class"},
                 {"java.base", "java/NOSUCHCLASS/yyy.class"},    // non-existent
