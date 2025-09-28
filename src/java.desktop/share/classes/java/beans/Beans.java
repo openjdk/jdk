@@ -65,7 +65,7 @@ public class Beans {
      * Instantiate a JavaBean.
      * </p>
      * The bean is created based on a name relative to a class-loader.
-     * This name should be a {@linkplain ClassLoader##binary-name binary name} of a class such as "a.b.c".
+     * This name should be a {@linkplain ClassLoader##binary-name binary name} of a class such as "a.b.C".
      * <p>
      * The given name can indicate either a serialized object or a class.
      * We first try to treat the {@code beanName} as a serialized object
@@ -101,7 +101,7 @@ public class Beans {
      * Instantiate a JavaBean.
      * </p>
      * The bean is created based on a name relative to a class-loader.
-     * This name should be a {@linkplain ClassLoader##binary-name binary name} of a class such as "a.b.c".
+     * This name should be a {@linkplain ClassLoader##binary-name binary name} of a class such as "a.b.C".
      * <p>
      * The given name can indicate either a serialized object or a class.
      * We first try to treat the {@code beanName} as a serialized object
