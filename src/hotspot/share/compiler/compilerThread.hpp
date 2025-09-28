@@ -51,6 +51,7 @@ class CompilerThreadTimeoutGeneric : public CHeapObj<mtCompiler> {
   CompilerThreadTimeoutGeneric() {};
   void arm() {};
   void disarm() {};
+  void reset() {};
   bool init_timeout() { return true; };
 };
 #endif // !LINUX

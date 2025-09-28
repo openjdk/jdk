@@ -112,6 +112,7 @@ public class Lint {
     }
 
     private final Context context;
+    private final Options options;
     private final LintMapper lintMapper;
 
     // These are initialized lazily to avoid dependency loops
@@ -133,8 +134,9 @@ public class Lint {
     protected Lint(Context context) {
         this.context = context;
         context.put(lintKey, this);
-        symbol = null;
+        options = Options.instance(context);
         lintMapper = LintMapper.instance(context);
+        symbol = null;
     }
 
     // Instantiate a non-root ("symbol scoped") instance
@@ -142,6 +144,7 @@ public class Lint {
         Assert.check(symbol != null);
         this.symbol = symbol;
         this.context = other.context;
+        this.options = other.options;
         this.lintMapper = other.lintMapper;
         this.syms = other.syms;
         this.names = other.names;
@@ -157,7 +160,6 @@ public class Lint {
             return;
 
         // Initialize enabled categories based on "-Xlint" flags
-        Options options = Options.instance(context);
         if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
             // If -Xlint or -Xlint:all is given, enable all categories by default
             values = EnumSet.allOf(LintCategory.class);
@@ -166,24 +168,7 @@ public class Lint {
             values = LintCategory.newEmptySet();
         } else {
             // otherwise, enable on-by-default categories
-            values = LintCategory.newEmptySet();
-
-            Source source = Source.instance(context);
-            if (source.compareTo(Source.JDK9) >= 0) {
-                values.add(LintCategory.DEP_ANN);
-            }
-            if (Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source)) {
-                values.add(LintCategory.STRICTFP);
-            }
-            values.add(LintCategory.REQUIRES_TRANSITIVE_AUTOMATIC);
-            values.add(LintCategory.OPENS);
-            values.add(LintCategory.MODULE);
-            values.add(LintCategory.REMOVAL);
-            if (!options.isSet(Option.PREVIEW)) {
-                values.add(LintCategory.PREVIEW);
-            }
-            values.add(LintCategory.IDENTITY);
-            values.add(LintCategory.INCUBATING);
+            values = getDefaults();
         }
 
         // Look for specific overrides
@@ -196,6 +181,23 @@ public class Lint {
         }
 
         suppressedValues = LintCategory.newEmptySet();
+    }
+
+    // Obtain the set of on-by-default categories. Note that for a few categories,
+    // whether the category is on-by-default depends on other compiler options.
+    private EnumSet<LintCategory> getDefaults() {
+        EnumSet<LintCategory> defaults = LintCategory.newEmptySet();
+        Source source = Source.instance(context);
+        Stream.of(LintCategory.values())
+          .filter(lc ->
+            switch (lc) {
+                case DEP_ANN  -> source.compareTo(Source.JDK9) >= 0;
+                case STRICTFP -> Source.Feature.REDUNDANT_STRICTFP.allowedInSource(source);
+                case PREVIEW  -> !options.isSet(Option.PREVIEW);
+                default       -> lc.enabledByDefault;
+            })
+          .forEach(defaults::add);
+        return defaults;
     }
 
     @Override
@@ -230,7 +232,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        CLASSFILE("classfile", false),
+        CLASSFILE("classfile", false, false),
 
         /**
          * Warn about "dangling" documentation comments,
@@ -247,7 +249,7 @@ public class Lint {
          * Warn about items which are documented with an {@code @deprecated} JavaDoc
          * comment, but which do not have {@code @Deprecated} annotation.
          */
-        DEP_ANN("dep-ann"),
+        DEP_ANN("dep-ann", true, true),
 
         /**
          * Warn about division by constant integer 0.
@@ -277,7 +279,7 @@ public class Lint {
         /**
          * Warn about uses of @ValueBased classes where an identity class is expected.
          */
-        IDENTITY("identity", true, "synchronization"),
+        IDENTITY("identity", true, true, "synchronization"),
 
         /**
          * Warn about use of incubating modules.
@@ -285,7 +287,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        INCUBATING("incubating", false),
+        INCUBATING("incubating", false, true),
 
         /**
           * Warn about compiler possible lossy conversions.
@@ -300,12 +302,12 @@ public class Lint {
         /**
          * Warn about module system related issues.
          */
-        MODULE("module"),
+        MODULE("module", true, true),
 
         /**
          * Warn about issues regarding module opens.
          */
-        OPENS("opens"),
+        OPENS("opens", true, true),
 
         /**
          * Warn about issues relating to use of command line options.
@@ -313,7 +315,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OPTIONS("options", false),
+        OPTIONS("options", false, false),
 
         /**
          * Warn when any output file is written to more than once.
@@ -321,7 +323,7 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        OUTPUT_FILE_CLASH("output-file-clash", false),
+        OUTPUT_FILE_CLASH("output-file-clash", false, false),
 
         /**
          * Warn about issues regarding method overloads.
@@ -339,12 +341,15 @@ public class Lint {
          * <p>
          * This category is not supported by {@code @SuppressWarnings}.
          */
-        PATH("path", false),
+        PATH("path", false, false),
 
         /**
          * Warn about issues regarding annotation processing.
+         *
+         * <p>
+         * This category is not supported by {@code @SuppressWarnings}.
          */
-        PROCESSING("processing"),
+        PROCESSING("processing", false, false),
 
         /**
          * Warn about unchecked operations on raw types.
@@ -354,7 +359,7 @@ public class Lint {
         /**
          * Warn about use of deprecated-for-removal items.
          */
-        REMOVAL("removal"),
+        REMOVAL("removal", true, true),
 
         /**
          * Warn about use of automatic modules in the requires clauses.
@@ -364,7 +369,7 @@ public class Lint {
         /**
          * Warn about automatic modules in requires transitive.
          */
-        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic"),
+        REQUIRES_TRANSITIVE_AUTOMATIC("requires-transitive-automatic", true, true),
 
         /**
          * Warn about Serializable classes that do not provide a serial version ID.
@@ -379,7 +384,7 @@ public class Lint {
         /**
          * Warn about unnecessary uses of the strictfp modifier
          */
-        STRICTFP("strictfp"),
+        STRICTFP("strictfp", true, true),
 
         /**
          * Warn about recognized {@code @SuppressWarnings} lint categories that don't actually suppress any warnings.
@@ -414,7 +419,7 @@ public class Lint {
         /**
          * Warn about use of preview features.
          */
-        PREVIEW("preview"),
+        PREVIEW("preview", true, true),
 
         /**
          * Warn about use of restricted methods.
@@ -422,12 +427,13 @@ public class Lint {
         RESTRICTED("restricted");
 
         LintCategory(String option) {
-            this(option, true);
+            this(option, true, false);
         }
 
-        LintCategory(String option, boolean annotationSuppression, String... aliases) {
+        LintCategory(String option, boolean annotationSuppression, boolean enabledByDefault, String... aliases) {
             this.option = option;
             this.annotationSuppression = annotationSuppression;
+            this.enabledByDefault = enabledByDefault;
             ArrayList<String> optionList = new ArrayList<>(1 + aliases.length);
             optionList.add(option);
             Collections.addAll(optionList, aliases);
@@ -464,6 +470,12 @@ public class Lint {
 
         /** Does this category support being suppressed by the {@code @SuppressWarnings} annotation? */
         public final boolean annotationSuppression;
+
+        /**
+         * Is this category included in the default set of enabled lint categories?
+         * Note that for some categories, command line options can alter this at runtime.
+         */
+        public final boolean enabledByDefault;
     }
 
     /**
