@@ -297,29 +297,6 @@ void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   memset(_region_data + beg_region, 0, region_cnt * sizeof(RegionData));
 }
 
-void
-ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
-{
-  assert(is_region_aligned(beg), "not RegionSize aligned");
-  assert(is_region_aligned(end), "not RegionSize aligned");
-
-  size_t cur_region = addr_to_region_idx(beg);
-  const size_t end_region = addr_to_region_idx(end);
-  HeapWord* addr = beg;
-  while (cur_region < end_region) {
-    _region_data[cur_region].set_destination(addr);
-    _region_data[cur_region].set_destination_count(0);
-    _region_data[cur_region].set_source_region(cur_region);
-
-    // Update live_obj_size so the region appears completely full.
-    size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
-    _region_data[cur_region].set_live_obj_size(live_size);
-
-    ++cur_region;
-    addr += RegionSize;
-  }
-}
-
 // The total live words on src_region would overflow the target space, so find
 // the overflowing object and record the split point. The invariant is that an
 // obj should not cross space boundary.
@@ -894,7 +871,6 @@ void PSParallelCompact::summary_phase(bool should_do_max_compaction)
 
     if (dense_prefix_end != old_space->bottom()) {
       fill_dense_prefix_end(id);
-      _summary_data.summarize_dense_prefix(old_space->bottom(), dense_prefix_end);
     }
 
     // Compacting objs in [dense_prefix_end, old_space->top())
@@ -1089,9 +1065,7 @@ public:
 
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
 
-    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure,
-                                                 !NMethodToOopClosure::FixRelocations,
-                                                 true /* keepalive nmethods */);
+    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure);
 
     thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
@@ -1383,9 +1357,7 @@ public:
     _nworkers(nworkers) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-    if (nworkers > 1) {
-      Threads::change_thread_claim_token();
-    }
+    Threads::change_thread_claim_token();
   }
 
   ~PSAdjustTask() {
@@ -1539,17 +1511,16 @@ void PSParallelCompact::forward_to_new_addr() {
 #ifdef ASSERT
 void PSParallelCompact::verify_forward() {
   HeapWord* const old_dense_prefix_addr = dense_prefix(SpaceId(old_space_id));
-  RegionData* old_region = _summary_data.region(_summary_data.addr_to_region_idx(old_dense_prefix_addr));
-  HeapWord* bump_ptr = old_region->partial_obj_size() != 0
-                       ? old_dense_prefix_addr + old_region->partial_obj_size()
-                       : old_dense_prefix_addr;
+  // The destination addr for the first live obj after dense-prefix.
+  HeapWord* bump_ptr = old_dense_prefix_addr
+                     + _summary_data.addr_to_region_ptr(old_dense_prefix_addr)->partial_obj_size();
   SpaceId bump_ptr_space = old_space_id;
 
   for (uint id = old_space_id; id < last_space_id; ++id) {
     MutableSpace* sp = PSParallelCompact::space(SpaceId(id));
-    HeapWord* dense_prefix_addr = dense_prefix(SpaceId(id));
+    // Only verify objs after dense-prefix, because those before dense-prefix are not moved (forwarded).
+    HeapWord* cur_addr = dense_prefix(SpaceId(id));
     HeapWord* top = sp->top();
-    HeapWord* cur_addr = dense_prefix_addr;
 
     while (cur_addr < top) {
       cur_addr = mark_bitmap()->find_obj_beg(cur_addr, top);
@@ -1689,21 +1660,19 @@ static void compaction_with_stealing_work(TaskTerminator* terminator, uint worke
 }
 
 class FillDensePrefixAndCompactionTask: public WorkerTask {
-  uint _num_workers;
   TaskTerminator _terminator;
 
 public:
   FillDensePrefixAndCompactionTask(uint active_workers) :
       WorkerTask("FillDensePrefixAndCompactionTask"),
-      _num_workers(active_workers),
       _terminator(active_workers, ParCompactionManager::region_task_queues()) {
   }
 
   virtual void work(uint worker_id) {
-    {
+    if (worker_id == 0) {
       auto start = Ticks::now();
-      PSParallelCompact::fill_dead_objs_in_dense_prefix(worker_id, _num_workers);
-      log_trace(gc, phases)("Fill dense prefix by worker %u: %.3f ms", worker_id, (Ticks::now() - start).seconds() * 1000);
+      PSParallelCompact::fill_dead_objs_in_dense_prefix();
+      log_trace(gc, phases)("Fill dense prefix by worker 0: %.3f ms", (Ticks::now() - start).seconds() * 1000);
     }
     compaction_with_stealing_work(&_terminator, worker_id);
   }
@@ -1716,9 +1685,10 @@ void PSParallelCompact::fill_range_in_dense_prefix(HeapWord* start, HeapWord* en
     assert(mark_bitmap()->find_obj_beg(start, end) == end, "precondition");
     HeapWord* bottom = _space_info[old_space_id].space()->bottom();
     if (start != bottom) {
+      // The preceding live obj.
       HeapWord* obj_start = mark_bitmap()->find_obj_beg_reverse(bottom, start);
-      HeapWord* after_obj = obj_start + cast_to_oop(obj_start)->size();
-      assert(after_obj == start, "precondition");
+      HeapWord* obj_end = obj_start + cast_to_oop(obj_start)->size();
+      assert(obj_end == start, "precondition");
     }
   }
 #endif
@@ -1732,58 +1702,51 @@ void PSParallelCompact::fill_range_in_dense_prefix(HeapWord* start, HeapWord* en
   } while (addr < end);
 }
 
-void PSParallelCompact::fill_dead_objs_in_dense_prefix(uint worker_id, uint num_workers) {
+void PSParallelCompact::fill_dead_objs_in_dense_prefix() {
   ParMarkBitMap* bitmap = mark_bitmap();
 
   HeapWord* const bottom = _space_info[old_space_id].space()->bottom();
   HeapWord* const prefix_end = dense_prefix(old_space_id);
 
-  if (bottom == prefix_end) {
-    return;
-  }
+  const size_t region_size = ParallelCompactData::RegionSize;
 
-  size_t bottom_region = _summary_data.addr_to_region_idx(bottom);
-  size_t prefix_end_region = _summary_data.addr_to_region_idx(prefix_end);
+  // Fill dead space in [start_addr, end_addr)
+  HeapWord* const start_addr = bottom;
+  HeapWord* const end_addr   = prefix_end;
 
-  size_t start_region;
-  size_t end_region;
-  split_regions_for_worker(bottom_region, prefix_end_region,
-                           worker_id, num_workers,
-                           &start_region, &end_region);
+  for (HeapWord* cur_addr = start_addr; cur_addr < end_addr; /* empty */) {
+    RegionData* cur_region_ptr = _summary_data.addr_to_region_ptr(cur_addr);
+    if (cur_region_ptr->data_size() == region_size) {
+      // Full; no dead space. Next region.
+      if (_summary_data.is_region_aligned(cur_addr)) {
+        cur_addr += region_size;
+      } else {
+        cur_addr = _summary_data.region_align_up(cur_addr);
+      }
+      continue;
+    }
 
-  if (start_region == end_region) {
-    return;
-  }
+    // Fill dead space inside cur_region.
+    if (_summary_data.is_region_aligned(cur_addr)) {
+      cur_addr += cur_region_ptr->partial_obj_size();
+    }
 
-  HeapWord* const start_addr = _summary_data.region_to_addr(start_region);
-  HeapWord* const end_addr = _summary_data.region_to_addr(end_region);
-
-  // Skip live partial obj (if any) from previous region.
-  HeapWord* cur_addr;
-  RegionData* start_region_ptr = _summary_data.region(start_region);
-  if (start_region_ptr->partial_obj_size() != 0) {
-    HeapWord* partial_obj_start = start_region_ptr->partial_obj_addr();
-    assert(bitmap->is_marked(partial_obj_start), "inv");
-    cur_addr = partial_obj_start + cast_to_oop(partial_obj_start)->size();
-  } else {
-    cur_addr = start_addr;
-  }
-
-  // end_addr is inclusive to handle regions starting with dead space.
-  while (cur_addr <= end_addr) {
-    // Use prefix_end to handle trailing obj in each worker region-chunk.
-    HeapWord* live_start = bitmap->find_obj_beg(cur_addr, prefix_end);
-    if (cur_addr != live_start) {
-      // Only worker 0 handles proceeding dead space.
-      if (cur_addr != start_addr || worker_id == 0) {
+    HeapWord* region_end_addr = _summary_data.region_align_up(cur_addr + 1);
+    assert(region_end_addr <= end_addr, "inv");
+    while (cur_addr < region_end_addr) {
+      // Use end_addr to allow filler-obj to cross region boundary.
+      HeapWord* live_start = bitmap->find_obj_beg(cur_addr, end_addr);
+      if (cur_addr != live_start) {
+        // Found dead space [cur_addr, live_start).
         fill_range_in_dense_prefix(cur_addr, live_start);
       }
+      if (live_start >= region_end_addr) {
+        cur_addr = live_start;
+        break;
+      }
+      assert(bitmap->is_marked(live_start), "inv");
+      cur_addr = live_start + cast_to_oop(live_start)->size();
     }
-    if (live_start >= end_addr) {
-      break;
-    }
-    assert(bitmap->is_marked(live_start), "inv");
-    cur_addr = live_start + cast_to_oop(live_start)->size();
   }
 }
 
@@ -1816,15 +1779,38 @@ void PSParallelCompact::compact() {
 void PSParallelCompact::verify_filler_in_dense_prefix() {
   HeapWord* bottom = _space_info[old_space_id].space()->bottom();
   HeapWord* dense_prefix_end = dense_prefix(old_space_id);
-  HeapWord* cur_addr = bottom;
-  while (cur_addr < dense_prefix_end) {
-    oop obj = cast_to_oop(cur_addr);
-    oopDesc::verify(obj);
-    if (!mark_bitmap()->is_marked(cur_addr)) {
-      Klass* k = cast_to_oop(cur_addr)->klass();
-      assert(k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass(), "inv");
+
+  const size_t region_size = ParallelCompactData::RegionSize;
+
+  for (HeapWord* cur_addr = bottom; cur_addr < dense_prefix_end; /* empty */) {
+    RegionData* cur_region_ptr = _summary_data.addr_to_region_ptr(cur_addr);
+    if (cur_region_ptr->data_size() == region_size) {
+      // Full; no dead space. Next region.
+      if (_summary_data.is_region_aligned(cur_addr)) {
+        cur_addr += region_size;
+      } else {
+        cur_addr = _summary_data.region_align_up(cur_addr);
+      }
+      continue;
     }
-    cur_addr += obj->size();
+
+    // This region contains filler objs.
+    if (_summary_data.is_region_aligned(cur_addr)) {
+      cur_addr += cur_region_ptr->partial_obj_size();
+    }
+
+    HeapWord* region_end_addr = _summary_data.region_align_up(cur_addr + 1);
+    assert(region_end_addr <= dense_prefix_end, "inv");
+
+    while (cur_addr < region_end_addr) {
+      oop obj = cast_to_oop(cur_addr);
+      oopDesc::verify(obj);
+      if (!mark_bitmap()->is_marked(cur_addr)) {
+        Klass* k = cast_to_oop(cur_addr)->klass();
+        assert(k == Universe::fillerArrayKlass() || k == vmClasses::FillerObject_klass(), "inv");
+      }
+      cur_addr += obj->size();
+    }
   }
 }
 
