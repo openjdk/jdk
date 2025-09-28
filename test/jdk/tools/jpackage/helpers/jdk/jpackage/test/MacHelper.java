@@ -74,7 +74,8 @@ public final class MacHelper {
 
         Path mountPoint = null;
         try {
-            var plist = readPList(attachExecutor.getOutput());
+            // The first "dict" item of "system-entities" array property contains "mount-point" string property.
+            var plist = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).findFirst().map(PListReader.class::cast).orElseThrow();
             mountPoint = Path.of(plist.queryValue("mount-point"));
 
             // code here used to copy just <runtime name> or <app name>.app

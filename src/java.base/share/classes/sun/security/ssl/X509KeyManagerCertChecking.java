@@ -39,16 +39,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.StandardConstants;
 import javax.net.ssl.X509ExtendedKeyManager;
 import javax.security.auth.x500.X500Principal;
 import sun.security.provider.certpath.AlgorithmChecker;
+import sun.security.ssl.SSLAlgorithmConstraints.SIGNATURE_CONSTRAINTS_MODE;
 import sun.security.util.KnownOIDs;
 import sun.security.validator.Validator;
 
@@ -74,6 +73,15 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
     }
 
     abstract boolean isCheckingDisabled();
+
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicClientAlias(String[] keyTypes, Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
+
+    // TODO move this method to a public interface / class
+    abstract String chooseQuicServerAlias(String keyType,
+                                          X500Principal[] issuers,
+                                          QuicTLSEngineImpl quicTLSEngine);
 
     // Entry point to do all certificate checks.
     protected EntryStatus checkAlias(int keyStoreIndex, String alias,
@@ -168,19 +176,8 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
         }
 
         if (socket instanceof SSLSocket sslSocket && sslSocket.isConnected()) {
-            SSLSession session = sslSocket.getHandshakeSession();
-
-            if (session instanceof ExtendedSSLSession extSession
-                    && ProtocolVersion.useTLS12PlusSpec(
-                    extSession.getProtocol())) {
-                // Use peer supported certificate signature algorithms
-                // sent with "signature_algorithms_cert" TLS extension.
-                return SSLAlgorithmConstraints.forSocket(sslSocket,
-                        extSession.getPeerSupportedSignatureAlgorithms(),
-                        true);
-            }
-
-            return SSLAlgorithmConstraints.forSocket(sslSocket, true);
+            return SSLAlgorithmConstraints.forSocket(
+                    sslSocket, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
         }
 
         return SSLAlgorithmConstraints.DEFAULT;
@@ -193,21 +190,19 @@ abstract class X509KeyManagerCertChecking extends X509ExtendedKeyManager {
             return null;
         }
 
-        if (engine != null) {
-            SSLSession session = engine.getHandshakeSession();
+        return SSLAlgorithmConstraints.forEngine(
+                engine, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
+    }
 
-            if (session instanceof ExtendedSSLSession extSession
-                    && ProtocolVersion.useTLS12PlusSpec(
-                    extSession.getProtocol())) {
-                // Use peer supported certificate signature algorithms
-                // sent with "signature_algorithms_cert" TLS extension.
-                return SSLAlgorithmConstraints.forEngine(engine,
-                        extSession.getPeerSupportedSignatureAlgorithms(),
-                        true);
-            }
+    // Gets algorithm constraints of QUIC TLS engine.
+    protected AlgorithmConstraints getAlgorithmConstraints(QuicTLSEngineImpl engine) {
+
+        if (checksDisabled) {
+            return null;
         }
 
-        return SSLAlgorithmConstraints.forEngine(engine, true);
+        return SSLAlgorithmConstraints.forQUIC(
+                engine, SIGNATURE_CONSTRAINTS_MODE.PEER, true);
     }
 
     // Algorithm constraints check.
