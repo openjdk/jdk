@@ -1973,7 +1973,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 rescan = false;
                 int i = r, step = (r >>> 16) | 1;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-                scan: for (int j = n; j > 0; --j, i += step) {
+                scan: for (int j = n << 1; j != 0; --j, i += step) { // 2 sweeps
                     WorkQueue q; int qid;
                     if ((q = qs[qid = i & (n - 1)]) != null) {
                         for (;;) {                        // poll queue q
@@ -2027,7 +2027,8 @@ public class ForkJoinPool extends AbstractExecutorService
     private int deactivate(WorkQueue w) {
         int idle = 1;
         if (w != null) {                        // always true; hoist checks
-            int activePhase = (w.phase += IDLE) + IDLE; // advance
+            int inactive = w.phase |= IDLE;     // set status
+            int activePhase = inactive + IDLE;  // phase value when reactivated
             long ap = activePhase & LMASK, pc = ctl, qc;
             do {                                // enqueue
                 qc = ap | ((pc - RC_UNIT) & UMASK);
@@ -2039,24 +2040,21 @@ public class ForkJoinPool extends AbstractExecutorService
                 ((e & SHUTDOWN) == 0L || (qc & RC_MASK) > 0L || quiescent() <= 0) &&
                 (qs = queues) != null && (n = qs.length) > 1) {
                 long psp = pc & LMASK;          // ctl predecessor prefix
-                for (int i = 1;;) {             // scan; stagger origins
-                    long c;
-                    WorkQueue q = qs[(activePhase + i) & (n - 1)];
-                    if ((idle = w.phase - activePhase) == 0)
-                        break;
-                    if (q != null && q.top - q.base > 0 &&
-                        (int)(c = ctl) == activePhase &&
-                        compareAndSetCtl(c, psp | ((c + RC_UNIT) & UMASK))) {
-                        w.phase = activePhase;
-                        idle = 0;               // possible missed signal
-                        break;
-                    }
-                    if (++i == n) {
-                        idle = awaitWork(w, activePhase);
+                for (int i = 1; i < n; ++i) {   // scan; stagger origins
+                    WorkQueue q; long c;        // missed signal check
+                    if ((q = qs[(activePhase + i) & (n - 1)]) != null &&
+                        q.top - q.base > 0) {
+                        if ((idle = w.phase - activePhase) != 0 &&
+                            (int)(c = ctl) == activePhase &&
+                            compareAndSetCtl(c, psp | ((c + RC_UNIT) & UMASK))) {
+                            w.phase = activePhase;
+                            idle = 0;           // reactivated
+                        }                       // else ineligible or lost race
                         break;
                     }
-                    Thread.onSpinWait();        // reduce memory traffic
                 }
+                if (idle != 0 && (idle = w.phase - activePhase) != 0)
+                    idle = awaitWork(w, activePhase, n);
             }
         }
         return idle;
@@ -2067,14 +2065,16 @@ public class ForkJoinPool extends AbstractExecutorService
      *
      * @param w the work queue
      * @param activePhase w's next active phase
+     * @param qsize current size of queues array
      * @return zero if now active
      */
-    private int awaitWork(WorkQueue w, int activePhase) {
+    private int awaitWork(WorkQueue w, int activePhase, int qsize) {
         int idle = 1;
+        int spins = qsize | (qsize - 1);      // approx traversal cost
         if (w != null) {                      // always true; hoist checks
             boolean trimmable; long deadline, c;
             long trimTime = (w.source == INVALID_ID) ? TIMEOUT_SLOP : keepAlive;
-            if ((w.config & CLEAR_TLS) != 0 &&
+            if ((w.config & CLEAR_TLS) != 0 && // instanceof check always true
                 Thread.currentThread() instanceof ForkJoinWorkerThread f)
                 f.resetThreadLocals();        // clear while accessing thread state
             LockSupport.setCurrentBlocker(this);
@@ -2082,26 +2082,28 @@ public class ForkJoinPool extends AbstractExecutorService
                 deadline = trimTime + System.currentTimeMillis();
             else
                 deadline = 0L;
-            if ((idle = w.phase - activePhase) != 0) {
-                for (;;) {
-                    int trim;
-                    Thread.interrupted();     // clear status
-                    if ((runState & STOP) != 0L)
+            for (;;) {
+                int s = spins, trim;
+                Thread.interrupted();         // clear status
+                if ((runState & STOP) != 0L)
+                    break;
+                while ((idle = w.phase - activePhase) != 0 && --s != 0)
+                    Thread.onSpinWait();      // spin before blocking
+                if (idle == 0)
+                    break;
+                if (trimmable &&
+                    (trim = tryTrim(w, activePhase, deadline)) != 0) {
+                    if (trim > 0)
                         break;
-                    w.parking = 1;            // enable unpark and recheck
-                    if ((idle = w.phase - activePhase) != 0)
-                        U.park(trimmable, deadline);
-                    w.parking = 0;            // close unpark window
-                    if (idle == 0 || (idle = w.phase - activePhase) == 0)
-                        break;
-                    if (trimmable &&
-                        (trim = tryTrim(w, activePhase, deadline)) != 0) {
-                        if (trim > 0)
-                            break;
-                        trimmable = false;
-                        deadline = 0L;
-                    }
+                    trimmable = false;
+                    deadline = 0L;
                 }
+                w.parking = 1;                // enable unpark and recheck
+                if ((idle = w.phase - activePhase) != 0)
+                    U.park(trimmable, deadline);
+                w.parking = 0;                // close unpark window
+                if (idle == 0 || (idle = w.phase - activePhase) == 0)
+                    break;
             }
             LockSupport.setCurrentBlocker(null);
         }
