@@ -28,9 +28,8 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -527,8 +526,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
+
+  const size_t pip_used_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage) / 100;
 
   size_t old_consumed = 0;
   size_t promo_potential = 0;
@@ -567,10 +567,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // skip over regions that aren't regular young with some live data
       continue;
     }
-    if (r->age() >= tenuring_threshold) {
-      if ((r->garbage() < old_garbage_threshold)) {
-        // This tenure-worthy region has too little garbage, so we do not want to expend the copying effort to
-        // reclaim the garbage; instead this region may be eligible for promotion-in-place to old generation.
+    if (heap->is_tenurable(r)) {
+      if ((r->garbage() < old_garbage_threshold) && (r->used() > pip_used_threshold)) {
+        // We prefer to promote this region in place because it has a small amount of garbage and a large usage.
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
         if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top) {
@@ -632,7 +631,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
 
         // During evacuation, we exclude from promotion regions for which age > tenure threshold, garbage < garbage-threshold,
-        //  and get_top_before_promote() != tams
+        //  used > pip_used_threshold, and get_top_before_promote() != tams
       } else {
         // Record this promotion-eligible candidate region. After sorting and selecting the best candidates below,
         // we may still decide to exclude this promotion-eligible region from the current collection set.  If this
@@ -657,7 +656,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
+      if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
         if (r->garbage() >= old_garbage_threshold) {
           promo_potential += r->get_live_data_bytes();
         }
@@ -741,7 +740,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold
-  if (is_generational && ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+  if (is_generational && ShenandoahGenerationalAdaptiveTenuring) {
     // Objects above TAMS weren't included in the age census. Since they were all
     // allocated in this cycle they belong in the age 0 cohort. We walk over all
     // young regions and sum the volume of objects between TAMS and top.

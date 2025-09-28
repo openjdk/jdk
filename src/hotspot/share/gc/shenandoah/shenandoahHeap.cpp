@@ -29,10 +29,10 @@
 #include "classfile/systemDictionary.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/fullGCForwarding.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/locationPrinter.inline.hpp"
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
@@ -86,7 +86,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -710,7 +710,7 @@ size_t ShenandoahHeap::used() const {
 }
 
 size_t ShenandoahHeap::committed() const {
-  return Atomic::load(&_committed);
+  return AtomicAccess::load(&_committed);
 }
 
 void ShenandoahHeap::increase_committed(size_t bytes) {
@@ -763,7 +763,7 @@ size_t ShenandoahHeap::max_capacity() const {
 }
 
 size_t ShenandoahHeap::soft_max_capacity() const {
-  size_t v = Atomic::load(&_soft_max_size);
+  size_t v = AtomicAccess::load(&_soft_max_size);
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
@@ -774,7 +774,7 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
   assert(min_capacity() <= v && v <= max_capacity(),
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
-  Atomic::store(&_soft_max_size, v);
+  AtomicAccess::store(&_soft_max_size, v);
 }
 
 size_t ShenandoahHeap::min_capacity() const {
@@ -826,7 +826,7 @@ void ShenandoahHeap::notify_explicit_gc_requested() {
 }
 
 bool ShenandoahHeap::check_soft_max_changed() {
-  size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
+  size_t new_soft_max = AtomicAccess::load(&SoftMaxHeapSize);
   size_t old_soft_max = soft_max_capacity();
   if (new_soft_max != old_soft_max) {
     new_soft_max = MAX2(min_capacity(), new_soft_max);
@@ -1068,8 +1068,7 @@ HeapWord* ShenandoahHeap::allocate_memory_under_lock(ShenandoahAllocRequest& req
   return result;
 }
 
-HeapWord* ShenandoahHeap::mem_allocate(size_t size,
-                                        bool*  gc_overhead_limit_was_exceeded) {
+HeapWord* ShenandoahHeap::mem_allocate(size_t size) {
   ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared(size);
   return allocate_memory(req);
 }
@@ -1346,8 +1345,11 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     return ShenandoahBarrierSet::resolve_forwarded(p);
   }
 
+  if (ShenandoahEvacTracking) {
+    evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+  }
+
   // Copy the object:
-  NOT_PRODUCT(evac_tracker()->begin_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
 
   // Try to install the new forwarding pointer.
@@ -1357,7 +1359,9 @@ oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapReg
     // Successfully evacuated. Our copy is now the public one!
     ContinuationGCSupport::relativize_stack_chunk(copy_val);
     shenandoah_assert_correct(nullptr, copy_val);
-    NOT_PRODUCT(evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen));
+    if (ShenandoahEvacTracking) {
+      evac_tracker()->end_evacuation(thread, size * HeapWordSize, from_region->affiliation(), target_gen);
+    }
     return copy_val;
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -1409,6 +1413,27 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   for (size_t i = 0; i < num_regions(); i++) {
     get_region(i)->print_on(st);
   }
+}
+
+void ShenandoahHeap::process_gc_stats() const {
+  // Commit worker statistics to cycle data
+  phase_timings()->flush_par_workers_to_cycle();
+
+  // Print GC stats for current cycle
+  LogTarget(Info, gc, stats) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    phase_timings()->print_cycle_on(&ls);
+    if (ShenandoahEvacTracking) {
+      ShenandoahCycleStats  evac_stats = evac_tracker()->flush_cycle_to_global();
+      evac_tracker()->print_evacuations_on(&ls, &evac_stats.workers,
+                                               &evac_stats.mutators);
+    }
+  }
+
+  // Commit statistics to globals
+  phase_timings()->flush_cycle_to_global();
 }
 
 size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
@@ -1587,12 +1612,11 @@ void ShenandoahHeap::print_tracing_info() const {
     ResourceMark rm;
     LogStream ls(lt);
 
-#ifdef NOT_PRODUCT
-    evac_tracker()->print_global_on(&ls);
-
-    ls.cr();
-    ls.cr();
-#endif
+    if (ShenandoahEvacTracking) {
+      evac_tracker()->print_global_on(&ls);
+      ls.cr();
+      ls.cr();
+    }
 
     phase_timings()->print_global_on(&ls);
 
@@ -1953,8 +1977,8 @@ public:
     size_t stride = _stride;
 
     size_t max = _heap->num_regions();
-    while (Atomic::load(&_index) < max) {
-      size_t cur = Atomic::fetch_then_add(&_index, stride, memory_order_relaxed);
+    while (AtomicAccess::load(&_index) < max) {
+      size_t cur = AtomicAccess::fetch_then_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -2290,9 +2314,25 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahHeapLocker locker(heap->lock());
-  free_set()->reset_bytes_allocated_since_gc_start();
+  // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
+  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
+  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
+  // allocation rate computations.  This effect is considered to be be negligible.
+
+  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
+  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
+  // bytes are allocated after the start of subsequent gc.
+  size_t unaccounted_bytes;
+  ShenandoahFreeSet* _free_set = free_set();
+  size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
+  if (mode()->is_generational()) {
+    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
+  } else {
+    // Single-gen Shenandoah uses global heuristics.
+    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+  }
+  ShenandoahHeapLocker locker(lock());
+  _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

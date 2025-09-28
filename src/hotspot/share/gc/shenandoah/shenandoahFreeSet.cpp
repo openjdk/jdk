@@ -31,7 +31,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/logStream.hpp"
@@ -289,9 +288,9 @@ void ShenandoahFreeSet::resize_old_collector_capacity(size_t regions) {
   // else, old generation is already appropriately sized
 }
 
-void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start() {
+void ShenandoahFreeSet::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
   shenandoah_assert_heaplocked();
-  _mutator_bytes_allocated_since_gc_start = 0;
+  _mutator_bytes_allocated_since_gc_start = initial_bytes_allocated;
 }
 
 void ShenandoahFreeSet::increase_bytes_allocated(size_t bytes) {
@@ -1885,7 +1884,7 @@ private:
   void get_lock_and_flush_buffer(size_t region_count, size_t overflow_region_used, size_t overflow_region_index) {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     ShenandoahHeapLocker locker(heap->lock());
-    size_t recycled_regions = Atomic::load(&_recycled_region_count);
+    size_t recycled_regions = AtomicAccess::load(&_recycled_region_count);
     size_t region_tallies[int(ShenandoahRegionPartitions::NumPartitions)];
     size_t used_byte_tallies[int(ShenandoahRegionPartitions::NumPartitions)];
     for (int p = 0; p < int(ShenandoahRegionPartitions::NumPartitions); p++) {

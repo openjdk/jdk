@@ -81,6 +81,7 @@ public:
     return _age_census;
   }
 
+  inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.

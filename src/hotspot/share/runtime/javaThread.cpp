@@ -32,8 +32,8 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
-#include "compiler/compileTask.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/compileTask.hpp"
 #include "gc/shared/oopStorage.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -56,7 +56,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
@@ -88,10 +88,10 @@
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
-#include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
-#include "runtime/vmThread.hpp"
+#include "runtime/vframeArray.hpp"
 #include "runtime/vmOperations.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/threadService.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1063,17 +1063,12 @@ JavaThread* JavaThread::active() {
   }
 }
 
-bool JavaThread::is_lock_owned(address adr) const {
-  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
-  return is_in_full_stack(adr);
-}
-
 oop JavaThread::exception_oop() const {
-  return Atomic::load(&_exception_oop);
+  return AtomicAccess::load(&_exception_oop);
 }
 
 void JavaThread::set_exception_oop(oop o) {
-  Atomic::store(&_exception_oop, o);
+  AtomicAccess::store(&_exception_oop, o);
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
@@ -1140,7 +1135,7 @@ void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
   ResourceMark rm;
   if (log_is_enabled(Info, exceptions)) {
     log_info(exceptions)("Pending Async. exception installed of type: %s",
-                         InstanceKlass::cast(exception->klass())->external_name());
+                         exception->klass()->external_name());
   }
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception->klass()->external_name());
@@ -1437,9 +1432,8 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
     entry = entry->parent();
   }
 
-  if (LockingMode == LM_LIGHTWEIGHT) {
-    lock_stack().oops_do(f);
-  }
+  // Due to lightweight locking
+  lock_stack().oops_do(f);
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, NMethodClosure* cf) {
@@ -1999,22 +1993,9 @@ void JavaThread::trace_stack() {
 // this slow-path.
 void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-
-  if (LockingMode != LM_LEGACY) {
-    // Nothing to do. Just do some sanity check.
-    assert(_held_monitor_count == 0, "counter should not be used");
-    assert(_jni_monitor_count == 0, "counter should not be used");
-    return;
-  }
-
-  assert(_held_monitor_count >= 0, "Must always be non-negative: %zd", _held_monitor_count);
-  _held_monitor_count += i;
-  if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be non-negative: %zd", _jni_monitor_count);
-    _jni_monitor_count += i;
-  }
-  assert(_held_monitor_count >= _jni_monitor_count, "Monitor count discrepancy detected - held count "
-         "%zd is less than JNI count %zd", _held_monitor_count, _jni_monitor_count);
+  // Nothing to do. Just do some sanity check.
+  assert(_held_monitor_count == 0, "counter should not be used");
+  assert(_jni_monitor_count == 0, "counter should not be used");
 #endif // SUPPORT_MONITOR_COUNT
 }
 
@@ -2022,26 +2003,9 @@ void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 // this slow-path.
 void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-
-  if (LockingMode != LM_LEGACY) {
-    // Nothing to do. Just do some sanity check.
-    assert(_held_monitor_count == 0, "counter should not be used");
-    assert(_jni_monitor_count == 0, "counter should not be used");
-    return;
-  }
-
-  _held_monitor_count -= i;
-  assert(_held_monitor_count >= 0, "Must always be non-negative: %zd", _held_monitor_count);
-  if (jni) {
-    _jni_monitor_count -= i;
-    assert(_jni_monitor_count >= 0, "Must always be non-negative: %zd", _jni_monitor_count);
-  }
-  // When a thread is detaching with still owned JNI monitors, the logic that releases
-  // the monitors doesn't know to set the "jni" flag and so the counts can get out of sync.
-  // So we skip this assert if the thread is exiting. Once all monitors are unlocked the
-  // JNI count is directly set to zero.
-  assert(_held_monitor_count >= _jni_monitor_count || is_exiting(), "Monitor count discrepancy detected - held count "
-         "%zd is less than JNI count %zd", _held_monitor_count, _jni_monitor_count);
+  // Nothing to do. Just do some sanity check.
+  assert(_held_monitor_count == 0, "counter should not be used");
+  assert(_jni_monitor_count == 0, "counter should not be used");
 #endif // SUPPORT_MONITOR_COUNT
 }
 

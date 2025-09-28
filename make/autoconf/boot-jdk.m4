@@ -597,10 +597,9 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
   AC_ARG_WITH(build-jdk, [AS_HELP_STRING([--with-build-jdk],
       [path to JDK of same version as is being built@<:@the newly built JDK@:>@])])
 
-  CREATE_BUILDJDK=false
-  EXTERNAL_BUILDJDK=false
-  BUILD_JDK_FOUND="no"
+  EXTERNAL_BUILDJDK_PATH=""
   if test "x$with_build_jdk" != "x"; then
+    BUILD_JDK_FOUND=no
     BOOTJDK_CHECK_BUILD_JDK([
       if test "x$with_build_jdk" != x; then
         BUILD_JDK=$with_build_jdk
@@ -608,40 +607,15 @@ AC_DEFUN([BOOTJDK_SETUP_BUILD_JDK],
         AC_MSG_NOTICE([Found potential Build JDK using configure arguments])
       fi
     ])
-    EXTERNAL_BUILDJDK=true
-  else
-    if test "x$COMPILE_TYPE" = "xcross"; then
-      BUILD_JDK="\$(BUILDJDK_OUTPUTDIR)/jdk"
-      BUILD_JDK_FOUND=yes
-      CREATE_BUILDJDK=true
+    if test "x$BUILD_JDK_FOUND" != "xyes"; then
       AC_MSG_CHECKING([for Build JDK])
-      AC_MSG_RESULT([yes, will build it for the host platform])
-    else
-      BUILD_JDK="\$(JDK_OUTPUTDIR)"
-      BUILD_JDK_FOUND=yes
-      AC_MSG_CHECKING([for Build JDK])
-      AC_MSG_RESULT([yes, will use output dir])
+      AC_MSG_RESULT([no])
+      AC_MSG_ERROR([Could not find a suitable Build JDK])
     fi
+    EXTERNAL_BUILDJDK_PATH="$BUILD_JDK"
   fi
 
-  # Since these tools do not yet exist, we cannot use UTIL_FIXUP_EXECUTABLE to
-  # detect the need of fixpath
-  JMOD="$BUILD_JDK/bin/jmod"
-  UTIL_ADD_FIXPATH(JMOD)
-  JLINK="$BUILD_JDK/bin/jlink"
-  UTIL_ADD_FIXPATH(JLINK)
-  AC_SUBST(JMOD)
-  AC_SUBST(JLINK)
-
-  if test "x$BUILD_JDK_FOUND" != "xyes"; then
-    AC_MSG_CHECKING([for Build JDK])
-    AC_MSG_RESULT([no])
-    AC_MSG_ERROR([Could not find a suitable Build JDK])
-  fi
-
-  AC_SUBST(CREATE_BUILDJDK)
-  AC_SUBST(BUILD_JDK)
-  AC_SUBST(EXTERNAL_BUILDJDK)
+  AC_SUBST(EXTERNAL_BUILDJDK_PATH)
 ])
 
 # The docs-reference JDK is used to run javadoc for the docs-reference targets.

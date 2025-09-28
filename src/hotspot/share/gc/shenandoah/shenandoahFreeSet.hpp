@@ -646,7 +646,7 @@ public:
     return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
   }
 
-  void reset_bytes_allocated_since_gc_start();
+  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
 
   void increase_bytes_allocated(size_t bytes);
 
