@@ -210,50 +210,6 @@ ObjectMonitor* MonitorList::Iterator::next() {
 //
 // -----------------------------------------------------------------------------
 
-#ifdef DTRACE_ENABLED
-
-// Only bother with this argument setup if dtrace is available
-// TODO-FIXME: probes should not fire when caller is _blocked.  assert() accordingly.
-
-#define DTRACE_MONITOR_PROBE_COMMON(obj, thread)                           \
-  char* bytes = nullptr;                                                      \
-  int len = 0;                                                             \
-  jlong jtid = SharedRuntime::get_java_tid(thread);                        \
-  Symbol* klassname = obj->klass()->name();                                \
-  if (klassname != nullptr) {                                                 \
-    bytes = (char*)klassname->bytes();                                     \
-    len = klassname->utf8_length();                                        \
-  }
-
-#define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                             \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
-      HOTSPOT_MONITOR_WAIT(jtid,                                           \
-                           (uintptr_t)(monitor), bytes, len, (millis));    \
-    }                                                                      \
-  }
-
-#define HOTSPOT_MONITOR_PROBE_notify HOTSPOT_MONITOR_NOTIFY
-#define HOTSPOT_MONITOR_PROBE_notifyAll HOTSPOT_MONITOR_NOTIFYALL
-#define HOTSPOT_MONITOR_PROBE_waited HOTSPOT_MONITOR_WAITED
-
-#define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)                  \
-  {                                                                        \
-    if (DTraceMonitorProbes) {                                             \
-      DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
-      HOTSPOT_MONITOR_PROBE_##probe(jtid, /* probe = waited */             \
-                                    (uintptr_t)(monitor), bytes, len);     \
-    }                                                                      \
-  }
-
-#else //  ndef DTRACE_ENABLED
-
-#define DTRACE_MONITOR_WAIT_PROBE(obj, thread, millis, mon)    {;}
-#define DTRACE_MONITOR_PROBE(probe, obj, thread, mon)          {;}
-
-#endif // ndef DTRACE_ENABLED
-
 // This exists only as a workaround of dtrace bug 6254741
 static int dtrace_waited_probe(ObjectMonitor* monitor, Handle obj, JavaThread* thr) {
   DTRACE_MONITOR_PROBE(waited, monitor, obj(), thr);
