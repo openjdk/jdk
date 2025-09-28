@@ -168,7 +168,6 @@ public:
 };
 
 class os: AllStatic {
-  friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class MallocTracker;
 
