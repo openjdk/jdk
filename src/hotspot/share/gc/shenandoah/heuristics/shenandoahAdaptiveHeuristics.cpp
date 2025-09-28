@@ -248,6 +248,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   // Track allocation rate even if we decide to start a cycle for other reasons.
   double rate = _allocation_rate.sample(allocated);
   _last_trigger = OTHER;
+
   size_t min_threshold = min_free_threshold();
   if (available < min_threshold) {
     log_trigger("Free (%zu%s) is below minimum threshold (%zu%s)",
@@ -367,9 +368,9 @@ double ShenandoahAllocationRate::sample(size_t allocated) {
       rate = instantaneous_rate(now, allocated);
       _rate.add(rate);
       _rate_avg.add(_rate.avg());
-      _last_sample_time = now;
-      _last_sample_value = allocated;
     }
+    _last_sample_time = now;
+    _last_sample_value = allocated;
   }
   return rate;
 }
