@@ -59,7 +59,7 @@ class ContinuationWrapper;
     if (DTraceMonitorProbes) {                                             \
       DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
       HOTSPOT_MONITOR_WAIT(jtid,                                           \
-                           (monitor), bytes, len, (millis));               \
+                           (uintptr_t) monitor, bytes, len, millis);       \
     }                                                                      \
   }
 
@@ -75,7 +75,7 @@ class ContinuationWrapper;
     if (DTraceMonitorProbes) {                                             \
       DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
       HOTSPOT_MONITOR_##probe(jtid,                                        \
-                              (uintptr_t)(monitor), bytes, len);           \
+                              (uintptr_t) monitor, bytes, len);            \
     }                                                                      \
   }
 
