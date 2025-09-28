@@ -110,7 +110,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
   // Check that Klass range is fully engulfed in the encoding range
   const address encoding_start = _base;
   const address encoding_end = (address)
-      LP64_ONLY(p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift))
+      LP64_ONLY((p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift)))
       NOT_LP64(max_klass_range_size());
   ASSERT_HERE_2(_klass_range_start >= _base && _klass_range_end <= encoding_end,
                 "Resulting encoding range does not fully cover the class range");

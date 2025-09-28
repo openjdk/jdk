@@ -39,7 +39,6 @@ private:
   ShenandoahRegionIterator* _regions;
   bool _concurrent;
   bool _only_promote_regions;
-  uint _tenuring_threshold;
 
 public:
   ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* sh,

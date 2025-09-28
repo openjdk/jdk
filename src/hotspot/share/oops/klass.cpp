@@ -50,7 +50,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"
@@ -279,16 +279,17 @@ static markWord make_prototype(const Klass* kls) {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
     // With compact object headers, the narrow Klass ID is part of the mark word.
-    // We therfore seed the mark word with the narrow Klass ID.
-    // Note that only those Klass that can be instantiated have a narrow Klass ID.
-    // For those who don't, we leave the klass bits empty and assert if someone
-    // tries to use those.
-    const narrowKlass nk = CompressedKlassPointers::is_encodable(kls) ?
-        CompressedKlassPointers::encode(const_cast<Klass*>(kls)) : 0;
+    // We therefore seed the mark word with the narrow Klass ID.
+    precond(CompressedKlassPointers::is_encodable(kls));
+    const narrowKlass nk = CompressedKlassPointers::encode(const_cast<Klass*>(kls));
     prototype = prototype.set_narrow_klass(nk);
   }
 #endif
   return prototype;
+}
+
+void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
+  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
 Klass::Klass() : _kind(UnknownKlassKind) {
@@ -617,11 +618,11 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 Klass* Klass::subklass(bool log) const {
   // Need load_acquire on the _subklass, because it races with inserts that
   // publishes freshly initialized data.
-  for (Klass* chain = Atomic::load_acquire(&_subklass);
+  for (Klass* chain = AtomicAccess::load_acquire(&_subklass);
        chain != nullptr;
        // Do not need load_acquire on _next_sibling, because inserts never
        // create _next_sibling edges to dead data.
-       chain = Atomic::load(&chain->_next_sibling))
+       chain = AtomicAccess::load(&chain->_next_sibling))
   {
     if (chain->is_loader_alive()) {
       return chain;
@@ -638,9 +639,9 @@ Klass* Klass::subklass(bool log) const {
 Klass* Klass::next_sibling(bool log) const {
   // Do not need load_acquire on _next_sibling, because inserts never
   // create _next_sibling edges to dead data.
-  for (Klass* chain = Atomic::load(&_next_sibling);
+  for (Klass* chain = AtomicAccess::load(&_next_sibling);
        chain != nullptr;
-       chain = Atomic::load(&chain->_next_sibling)) {
+       chain = AtomicAccess::load(&chain->_next_sibling)) {
     // Only return alive klass, there may be stale klass
     // in this chain if cleaned concurrently.
     if (chain->is_loader_alive()) {
@@ -657,7 +658,7 @@ Klass* Klass::next_sibling(bool log) const {
 
 void Klass::set_subklass(Klass* s) {
   assert(s != this, "sanity check");
-  Atomic::release_store(&_subklass, s);
+  AtomicAccess::release_store(&_subklass, s);
 }
 
 void Klass::set_next_sibling(Klass* s) {
@@ -665,7 +666,7 @@ void Klass::set_next_sibling(Klass* s) {
   // Does not need release semantics. If used by cleanup, it will link to
   // already safely published data, and if used by inserts, will be published
   // safely using cmpxchg.
-  Atomic::store(&_next_sibling, s);
+  AtomicAccess::store(&_next_sibling, s);
 }
 
 void Klass::append_to_sibling_list() {
@@ -684,7 +685,7 @@ void Klass::append_to_sibling_list() {
   super->clean_subklass();
 
   for (;;) {
-    Klass* prev_first_subklass = Atomic::load_acquire(&_super->_subklass);
+    Klass* prev_first_subklass = AtomicAccess::load_acquire(&_super->_subklass);
     if (prev_first_subklass != nullptr) {
       // set our sibling to be the super' previous first subklass
       assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
@@ -693,7 +694,7 @@ void Klass::append_to_sibling_list() {
     // Note that the prev_first_subklass is always alive, meaning no sibling_next links
     // are ever created to not alive klasses. This is an important invariant of the lock-free
     // cleaning protocol, that allows us to safely unlink dead klasses from the sibling list.
-    if (Atomic::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
+    if (AtomicAccess::cmpxchg(&super->_subklass, prev_first_subklass, this) == prev_first_subklass) {
       return;
     }
   }
@@ -703,12 +704,12 @@ void Klass::append_to_sibling_list() {
 void Klass::clean_subklass() {
   for (;;) {
     // Need load_acquire, due to contending with concurrent inserts
-    Klass* subklass = Atomic::load_acquire(&_subklass);
+    Klass* subklass = AtomicAccess::load_acquire(&_subklass);
     if (subklass == nullptr || subklass->is_loader_alive()) {
       return;
     }
     // Try to fix _subklass until it points at something not dead.
-    Atomic::cmpxchg(&_subklass, subklass, subklass->next_sibling());
+    AtomicAccess::cmpxchg(&_subklass, subklass, subklass->next_sibling());
   }
 }
 
@@ -1060,7 +1061,7 @@ void Klass::verify_on(outputStream* st) {
   // This can be expensive, but it is worth checking that this klass is actually
   // in the CLD graph but not in production.
 #ifdef ASSERT
-  if (UseCompressedClassPointers && needs_narrow_id()) {
+  if (UseCompressedClassPointers) {
     // Stricter checks for both correct alignment and placement
     CompressedKlassPointers::check_encodable(this);
   } else {

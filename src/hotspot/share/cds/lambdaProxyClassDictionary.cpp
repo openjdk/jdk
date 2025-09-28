@@ -471,12 +471,12 @@ class LambdaProxyClassDictionary::CleanupDumpTimeLambdaProxyClassTable: StackObj
 
     // If the caller class and/or nest_host are excluded, the associated lambda proxy
     // must also be excluded.
-    bool always_exclude = SystemDictionaryShared::check_for_exclusion(caller_ik, nullptr) ||
-                          SystemDictionaryShared::check_for_exclusion(nest_host, nullptr);
+    bool always_exclude = SystemDictionaryShared::should_be_excluded(caller_ik) ||
+                          SystemDictionaryShared::should_be_excluded(nest_host);
 
     for (int i = info._proxy_klasses->length() - 1; i >= 0; i--) {
       InstanceKlass* ik = info._proxy_klasses->at(i);
-      if (always_exclude || SystemDictionaryShared::check_for_exclusion(ik, nullptr)) {
+      if (always_exclude || SystemDictionaryShared::should_be_excluded(ik)) {
         LambdaProxyClassDictionary::reset_registered_lambda_proxy_class(ik);
         info._proxy_klasses->remove_at(i);
       }

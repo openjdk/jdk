@@ -67,24 +67,39 @@ markCloseOnExec(int fd)
     return 0;
 }
 
+#if !defined(_AIX)
+  /* The /proc file system on AIX does not contain open system files
+   * like /dev/random. Therefore we use a different approach and do
+   * not need isAsciiDigit() or FD_DIR */
 static int
 isAsciiDigit(char c)
 {
   return c >= '0' && c <= '9';
 }
 
-#if defined(_AIX)
-  /* AIX does not understand '/proc/self' - it requires the real process ID */
-  #define FD_DIR aix_fd_dir
-#elif defined(_ALLBSD_SOURCE)
-  #define FD_DIR "/dev/fd"
-#else
-  #define FD_DIR "/proc/self/fd"
+  #if defined(_ALLBSD_SOURCE)
+    #define FD_DIR "/dev/fd"
+  #else
+    #define FD_DIR "/proc/self/fd"
+  #endif
 #endif
 
 static int
 markDescriptorsCloseOnExec(void)
 {
+#if defined(_AIX)
+    /* On AIX, we cannot rely on proc file system iteration to find all open files. Since
+     * iteration over all possible file descriptors, and subsequently closing them, can
+     * take a very long time, we use a bulk close via `ioctl` that is available on AIX.
+     * Since we hard-close, we need to make sure to keep the fail pipe file descriptor
+     * alive until the exec call. Therefore we mark the fail pipe fd with close on exec
+     * like the other OSes do, but then proceed to hard-close file descriptors beyond that.
+     */
+    if (fcntl(FAIL_FILENO + 1, F_CLOSEM, 0) == -1 ||
+        (markCloseOnExec(FAIL_FILENO) == -1 && errno != EBADF)) {
+        return -1;
+    }
+#else
     DIR *dp;
     struct dirent *dirp;
     /* This function marks all file descriptors beyond stderr as CLOEXEC.
@@ -92,12 +107,6 @@ markDescriptorsCloseOnExec(void)
      * one to stay open up until the execve, but it should be closed with the
      * execve. */
     const int fd_from = STDERR_FILENO + 1;
-
-#if defined(_AIX)
-    /* AIX does not understand '/proc/self' - it requires the real process ID */
-    char aix_fd_dir[32];     /* the pid has at most 19 digits */
-    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
-#endif
 
     if ((dp = opendir(FD_DIR)) == NULL)
         return -1;
@@ -114,6 +123,7 @@ markDescriptorsCloseOnExec(void)
     }
 
     closedir(dp);
+#endif
 
     return 0;
 }
@@ -405,6 +415,10 @@ childProcess(void *arg)
 
     /* We moved the fail pipe fd */
     fail_pipe_fd = FAIL_FILENO;
+
+    /* For AIX: The code in markDescriptorsCloseOnExec() relies on the current
+     * semantic of this function. When this point here is reached only the
+     * FDs 0,1,2 and 3 are further used until the exec() or the exit(-1). */
 
     /* close everything */
     if (markDescriptorsCloseOnExec() == -1) { /* failed,  close the old way */

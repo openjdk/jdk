@@ -536,6 +536,7 @@ const intptr_t NULL_WORD = 0;
 // JVM spec restrictions
 
 const int max_method_code_size = 64*K - 1;  // JVM spec, 2nd ed. section 4.8.1 (p.134)
+const int max_method_parameter_length = 255; // JVM spec, 22nd ed. section 4.3.3 (p.83)
 
 //----------------------------------------------------------------------------------------------------
 // old CDS options
@@ -1003,17 +1004,6 @@ enum JavaThreadState {
   _thread_blocked_trans     = 11, // corresponding transition state
   _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
 };
-
-enum LockingMode {
-  // Use only heavy monitors for locking
-  LM_MONITOR     = 0,
-  // Legacy stack-locking, with monitors as 2nd tier
-  LM_LEGACY      = 1,
-  // New lightweight locking, with monitors as 2nd tier
-  LM_LIGHTWEIGHT = 2
-};
-
-extern const int LockingMode;
 
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
