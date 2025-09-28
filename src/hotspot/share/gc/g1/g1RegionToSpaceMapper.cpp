@@ -216,18 +216,18 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       log_debug(gc,ihop)("commit-regions start-region %u num_regions %zu start-page %zu end-page %zu", start_idx, num_regions, start_page, end_page);
 
       size_t uncommitted_l = find_first_uncommitted(start_page, end_page);
-      size_t committed_r = find_first_committed(uncommitted_l + 1, end_page);
+      size_t uncommitted_r = find_first_committed(uncommitted_l + 1, end_page);
 
       first_newly_committed = uncommitted_l;
-      num_committed_pages = committed_r - uncommitted_l;
+      num_committed_pages = uncommitted_r - uncommitted_l;
 
-      log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, committed_r, num_committed_pages);
+      log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, uncommitted_r, num_committed_pages);
       if (num_committed_pages > 0 &&
           !commit_pages(first_newly_committed, num_committed_pages)) {
         all_zero_filled = false;
       }
 
-      all_zero_filled &= (uncommitted_l == start_page) && (committed_r == end_page);
+      all_zero_filled &= (uncommitted_l == start_page) && (uncommitted_r == end_page);
 
       // Update the commit map for the given range. Not using the par_set_range
       // since updates to _region_commit_map for this mapper is protected by _lock.
@@ -264,11 +264,11 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // the page is still marked as committed after the clear we should
     // not uncommit it.
     size_t uncommitted_l = find_first_uncommitted(start_page, end_page);
-    size_t committed_r = find_first_committed(uncommitted_l + 1, end_page);
+    size_t uncommitted_r = find_first_committed(uncommitted_l + 1, end_page);
 
-    size_t num_uncommitted_pages_found = committed_r - uncommitted_l;
+    size_t num_uncommitted_pages_found = uncommitted_r - uncommitted_l;
 
-    log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, committed_r, num_uncommitted_pages_found);
+    log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, uncommitted_r, num_uncommitted_pages_found);
 
     if (num_uncommitted_pages_found > 0) {
       _storage.uncommit(uncommitted_l, num_uncommitted_pages_found);
