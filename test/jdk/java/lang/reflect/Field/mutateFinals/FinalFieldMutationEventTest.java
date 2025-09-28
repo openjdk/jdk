@@ -26,22 +26,28 @@
  * @bug 8353835
  * @summary Basic test for JFR FinalFieldMutation event
  * @requires vm.hasJFR
+ * @modules jdk.jfr/jdk.jfr.events
  * @run junit FinalFieldMutationEventTest
  * @run junit/othervm --illegal-final-field-mutation=allow FinalFieldMutationEventTest
  * @run junit/othervm --illegal-final-field-mutation=warn FinalFieldMutationEventTest
  * @run junit/othervm --illegal-final-field-mutation=debug FinalFieldMutationEventTest
  * @run junit/othervm --illegal-final-field-mutation=deny FinalFieldMutationEventTest
- * @run junit/othervm --enable-native-access=ALL-UNNAMED FinalFieldMutationEventTest
  */
 
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.stream.Stream;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedEvent;
+import jdk.jfr.consumer.RecordedMethod;
 import jdk.jfr.consumer.RecordingFile;
+import jdk.jfr.events.FinalFieldMutationEvent;
+import jdk.jfr.events.StackFilter;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -68,7 +74,7 @@ class FinalFieldMutationEventTest {
         field.setAccessible(true);
 
         try (Recording recording = new Recording()) {
-            recording.enable(EVENT_NAME);
+            recording.enable(EVENT_NAME).withStackTrace();
 
             boolean mutated = false;
             recording.start();
@@ -89,7 +95,7 @@ class FinalFieldMutationEventTest {
             System.err.println(events);
             if (mutated) {
                 assertEquals(1, events.size(), "1 event expected");
-                checkEvent(events.get(0), field);
+                checkEvent(events.get(0), field, "java.lang.reflect.Field::setInt");
             } else {
                 assertEquals(0, events.size(), "No events expected");
             }
@@ -105,7 +111,7 @@ class FinalFieldMutationEventTest {
         field.setAccessible(true);
 
         try (Recording recording = new Recording()) {
-            recording.enable(EVENT_NAME);
+            recording.enable(EVENT_NAME).withStackTrace();
 
             boolean unreflected = false;
             recording.start();
@@ -123,7 +129,7 @@ class FinalFieldMutationEventTest {
             System.err.println(events);
             if (unreflected) {
                 assertEquals(1, events.size(), "1 event expected");
-                checkEvent(events.get(0), field);
+                checkEvent(events.get(0), field, "java.lang.invoke.MethodHandles$Lookup::unreflectSetter");
             } else {
                 assertEquals(0, events.size(), "No events expected");
             }
@@ -131,13 +137,44 @@ class FinalFieldMutationEventTest {
     }
 
     /**
-     * Test an event has the expected declaringClass and fieldName of the given Field.
+     * Test that a FinalFieldMutationEvent event has the declaringClass and fieldName of
+     * the given Field, and the expected top frame.
      */
-    private void checkEvent(RecordedEvent e, Field f) {
+    private void checkEvent(RecordedEvent e, Field f, String expectedTopFrame) {
         RecordedClass clazz = e.getClass("declaringClass");
         assertNotNull(clazz);
         assertEquals(f.getDeclaringClass().getName(), clazz.getName());
         assertEquals(f.getName(), e.getString("fieldName"));
+
+        // check the top-frame of the stack trace
+        RecordedMethod m = e.getStackTrace().getFrames().getFirst().getMethod();
+        assertEquals(expectedTopFrame, m.getType().getName() + "::" + m.getName());
+    }
+
+    /**
+     * Tests that FinalFieldMutationEvent's stack filter value names classes/methods that
+     * exist. This will help detect stale values when the implementation is refactored.
+     */
+    @Test
+    void testFinalFieldMutationEventStackFilter() throws Exception {
+        String[] filters = FinalFieldMutationEvent.class.getAnnotation(StackFilter.class).value();
+        for (String filter : filters) {
+            String[] classAndMethod = filter.split("::");
+            String cn = classAndMethod[0];
+
+            // throws if class not found
+            Class<?> clazz = Class.forName(cn);
+
+            // if the filter has a method name then check a method of that name exists
+            if (classAndMethod.length > 1) {
+                String mn = classAndMethod[1];
+                Method method = Stream.of(clazz.getDeclaredMethods())
+                        .filter(m -> m.getName().equals(mn))
+                        .findFirst()
+                        .orElse(null);
+                assertNotNull(method, cn + "::" + mn + " not found");
+            }
+        }
     }
 
     /**
