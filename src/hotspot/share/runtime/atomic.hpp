@@ -514,7 +514,7 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated>
 public:
   using ValueType = T;
 
-  // If T is default constructible, construct from a a default constructed T.
+  // If T is default constructible, construct from a default constructed T.
   template<typename Dep = T, ENABLE_IF(std::is_default_constructible_v<Dep>)>
   Atomic() : Atomic(T()) {}
 
