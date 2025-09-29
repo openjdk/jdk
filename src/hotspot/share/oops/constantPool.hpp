@@ -122,6 +122,11 @@ public:
     assert(index >= 0 && index < argument_count(), "invariant");
     argument_indexes()[index] = value;
   }
+
+  // How many u2s are required to store a BSM entry with argc arguments?
+  static size_t u2s_required (u2 argc) {
+    return 1 /* index */ + 1  /* argc */ + argc /* argv */;
+  }
 };
 
 // The BSMAttributeEntries stores the state of the BootstrapMethods attribute.
