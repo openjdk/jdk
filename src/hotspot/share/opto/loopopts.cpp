@@ -2825,21 +2825,23 @@ int PhaseIdealLoop::stride_of_possible_iv(Node* iff) {
     Node* phi = cmp1;
     for (uint i = 1; i < phi->req(); i++) {
       Node* in = phi->in(i);
-      CountedLoopNode::TruncatedIncrement add = CountedLoopNode::match_incr_with_optional_truncation(in, T_INT);
-      if (add.incr != nullptr && add.incr->in(1) == phi) {
-        add2 = add.incr->in(2);
+      CountedLoopNode::TruncatedIncrement add(in, T_INT);
+      add.build();
+      if (add.is_valid() && add.incr()->in(1) == phi) {
+        add2 = add.incr()->in(2);
         break;
       }
     }
   } else {
     // (If (Bool (CmpX addtrunc:(Optional-trunc((AddI (Phi ...addtrunc...) add2)) )))
     Node* addtrunc = cmp1;
-    CountedLoopNode::TruncatedIncrement add = CountedLoopNode::match_incr_with_optional_truncation(addtrunc, T_INT);
-    if (add.incr != nullptr && add.incr->in(1)->is_Phi()) {
-      Node* phi = add.incr->in(1);
+    CountedLoopNode::TruncatedIncrement add(addtrunc, T_INT);
+    add.build();
+    if (add.is_valid() && add.incr()->in(1)->is_Phi()) {
+      Node* phi = add.incr()->in(1);
       for (uint i = 1; i < phi->req(); i++) {
         if (phi->in(i) == addtrunc) {
-          add2 = add.incr->in(2);
+          add2 = add.incr()->in(2);
           break;
         }
       }
@@ -4263,13 +4265,14 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
     // if the extra phi is removed
     inner = 0;
     for (uint i = 1; i < loop_exit.incr()->req(); ++i) {
-      CountedLoopNode::TruncatedIncrement increment = CountedLoopNode::match_incr_with_optional_truncation(loop_exit.incr()->in(i), T_INT);
-      if (increment.incr == nullptr) {
+      CountedLoopNode::TruncatedIncrement increment(loop_exit.incr()->in(i), T_INT);
+      increment.build();
+      if (!increment.is_valid()) {
         continue;
       }
-      assert(increment.incr->Opcode() == Op_AddI, "wrong increment code");
+      assert(increment.incr()->Opcode() == Op_AddI, "wrong increment code");
 
-      LoopIVStride stride(increment.incr);
+      LoopIVStride stride(increment.incr());
       stride.build();
       if (!stride.is_valid()) {
         continue;
@@ -4277,8 +4280,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
 
       PhiNode* phi = loop_iv_phi(stride.xphi(), nullptr, head);
       if (phi == nullptr ||
-          (increment.trunc1 == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
-          (increment.trunc1 != nullptr && phi->in(LoopNode::LoopBackControl) != increment.trunc1)) {
+          (increment.trunc1() == nullptr && phi->in(LoopNode::LoopBackControl) != loop_exit.incr()) ||
+          (increment.trunc1() != nullptr && phi->in(LoopNode::LoopBackControl) != increment.trunc1())) {
         return false;
       }
 
