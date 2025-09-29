@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8327640 8331485 8333456 8335668
+ * @bug 6177299 8327640 8331485 8333456 8335668
  * @summary Test suite for NumberFormat parsing when lenient.
  * @run junit/othervm -Duser.language=en -Duser.country=US LenientParseTest
  * @run junit/othervm -Duser.language=ja -Duser.country=JP LenientParseTest
@@ -188,6 +188,30 @@ public class LenientParseTest {
     }
 
     // ---- PercentFormat tests ----
+    @Test
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void largePosParseTest() {
+        var df = NumberFormat.getPercentInstance(); // Default w/ multiplier 100
+        // Parsed string after multiplier applied is beyond long range
+        assertEquals(9.223372036854777E18, assertDoesNotThrow(() -> df.parse("922,337,203,685,477,700,000%")));
+        // Fails before 6177299 fix and returns as long
+        assertEquals(9.223372036854776E18, assertDoesNotThrow(() -> df.parse("922,337,203,685,477,600,000%")));
+        // Within long range -> Expect to get longs as long as ulp >= 1
+        assertEquals((long) 9.223372036854775E18, assertDoesNotThrow(() -> df.parse("922,337,203,685,477,500,000%")));
+    }
+
+    @Test
+    @EnabledIfSystemProperty(named = "user.language", matches = "en")
+    public void largeNegParseTest() {
+        var df = NumberFormat.getPercentInstance(); // Default w/ multiplier 100
+        // Parsed string after multiplier applied is beyond long range
+        assertEquals(-9.223372036854777E18, assertDoesNotThrow(() -> df.parse("-922,337,203,685,477,700,000%")));
+        // Fails before 6177299 fix and returns as long
+        assertEquals(-9.223372036854776E18, assertDoesNotThrow(() -> df.parse("-922,337,203,685,477,600,000%")));
+        // Within long range -> Expect to get longs as long as ulp >= 1
+        assertEquals((long) -9.223372036854775E18, assertDoesNotThrow(() -> df.parse("-922,337,203,685,477,500,000%")));
+    }
+
     // All input Strings should pass and return expected value.
     @ParameterizedTest
     @MethodSource("percentValidFullParseStrings")
