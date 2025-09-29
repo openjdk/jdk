@@ -1676,23 +1676,20 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
   // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
   // except for the phi node associated with the loop head), we have the guarantee of a
   // linear memory subgraph within the outer loop body.
-  while (true) {
-    Node* unique_next = nullptr;
-    for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
-      Node* use = last->fast_out(l);
-      if (use->is_Store() && use->in(MemNode::Memory) == last) {
+  Node* unique_next = store;
+  do {
+    out = unique_next;
+    for (DUIterator_Fast imax, l = out->fast_outs(imax); l < imax; l++) {
+      Node* use = out->fast_out(l);
+      if (use->is_Mem() && use->in(MemNode::Memory) == out) {
         IdealLoopTree* use_loop = get_loop(get_ctrl(use));
         if (outer_loop->is_member(use_loop)) {
-          assert(unique_next == nullptr, "memory node should only have one usage in the loop body");
+          assert(unique_next == out, "memory node should only have one usage in the loop body");
           unique_next = use;
         }
       }
     }
-    if (unique_next == nullptr) {
-      break;
-    }
-    last = unique_next;
-  }
+  } while (out != unique_next);
   return last;
 }
 
