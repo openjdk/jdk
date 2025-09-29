@@ -2431,14 +2431,6 @@ void MacroAssembler::pop_cont_fastpath() {
   bind(L_done);
 }
 
-void MacroAssembler::inc_held_monitor_count() {
-  incrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-}
-
-void MacroAssembler::dec_held_monitor_count() {
-  decrementq(Address(r15_thread, JavaThread::held_monitor_count_offset()));
-}
-
 #ifdef ASSERT
 void MacroAssembler::stop_if_in_cont(Register cont, const char* name) {
   Label no_cont;

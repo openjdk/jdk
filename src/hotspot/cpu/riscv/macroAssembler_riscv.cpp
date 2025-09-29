@@ -225,36 +225,6 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   bind(done);
 }
 
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  addi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count overflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  subi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
 int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleScope scope(this);
   intptr_t before = offset();
