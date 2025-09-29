@@ -563,7 +563,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
         }
       }
     } else
-      // _basic_type_mirrors[T_INT], etc, are null if archived heap is not mapped.
+      // _basic_type_mirrors[T_INT], etc, are null if not using an archived heap
 #endif
     {
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
