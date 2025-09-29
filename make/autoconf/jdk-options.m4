@@ -565,9 +565,14 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_UNDEFINED_BEHAVIOR_SANITIZER],
   # with an additional define LLVM_SYMBOLIZER, which we set here.
   # To calculate the correct llvm_symbolizer path we can use the location of the compiler, because
   # their relation is fixed.
+  # In the ubsan case we have to link every binary with the C++-compiler as linker, because inherently
+  # the C-Compiler and the C++-compiler used as linker provide a different set of ubsan exports.
+  # Linking an executable with the C-compiler and one of its shared libraries with the C++-compiler
+  # leeds to unresolved symbols.
   if test "x$TOOLCHAIN_TYPE" = "xclang" && test "x$OPENJDK_TARGET_OS" = "xaix"; then
-      UBSAN_CFLAGS="$UBSAN_CFLAGS -fno-sanitize=function,vptr -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
-      UBSAN_LDFLAGS="$UBSAN_LDFLAGS -fno-sanitize=function,vptr -Wl,-bbigtoc"
+    UBSAN_CFLAGS="$UBSAN_CFLAGS -DLLVM_SYMBOLIZER=$(dirname $(dirname $CC))/tools/ibm-llvm-symbolizer"
+    UBSAN_LDFLAGS="$UBSAN_LDFLAGS -Wl,-bbigtoc"
+    LD="$LDCXX"
   fi
   UTIL_ARG_ENABLE(NAME: ubsan, DEFAULT: false, RESULT: UBSAN_ENABLED,
       DESC: [enable UndefinedBehaviorSanitizer],
@@ -897,15 +902,15 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_REPRODUCIBLE_BUILD],
     # for the rest of configure.
     SOURCE_DATE_EPOCH="$SOURCE_DATE"
     if test "x$IS_GNU_DATE" = xyes; then
-      SOURCE_DATE_ISO_8601_FIXED=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+      SOURCE_DATE_ISO_8601=`$DATE --utc --date="@$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
     else
-      SOURCE_DATE_ISO_8601_FIXED=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
+      SOURCE_DATE_ISO_8601=`$DATE -u -j -f "%s" "$SOURCE_DATE" +"$ISO_8601_FORMAT_STRING" 2> /dev/null`
     fi
   fi
 
   AC_SUBST(SOURCE_DATE)
   AC_SUBST(ISO_8601_FORMAT_STRING)
-  AC_SUBST(SOURCE_DATE_ISO_8601_FIXED)
+  AC_SUBST(SOURCE_DATE_ISO_8601)
 ])
 
 ################################################################################
