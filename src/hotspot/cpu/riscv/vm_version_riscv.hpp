@@ -99,20 +99,6 @@ class VM_Version : public Abstract_VM_Version {
       }
       va_end(va);
     }
-
-    void verify_deps(RVFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-
-      va_list va;
-      va_start(va, dep0);
-      RVFeatureValue* next = dep0;
-      while (next != nullptr) {
-        // The dependant must be declared before this.
-        assert((uintptr_t)(this) > (uintptr_t)(next), "Invalid");
-        next = va_arg(va, RVFeatureValue*);
-      }
-      va_end(va);
-    }
   };
 
   #define UPDATE_DEFAULT(flag)           \
