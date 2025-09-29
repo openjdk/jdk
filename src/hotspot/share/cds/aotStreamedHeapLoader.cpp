@@ -431,7 +431,9 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
   copy_object(object_index, archive_object, heap_object, size, dfs_stack);
 
   if (string_intern) {
-    // Interned string... finish materializing and link it to the string table
+    // Interned string. Because the objects are laid out in DFS order, the value
+    // array will always be the next object in iteration order. Finish materializing
+    // and link it to the string table.
     int value_object_index = object_index + 1;
     oop value_heap_object = materialize_object(value_object_index, dfs_stack, thread);
 
@@ -577,7 +579,11 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_ob
     if (last_object_was_interned_string) {
       int string_object_index = i - 1;
       oop string_object = heap_object_for_object_index(string_object_index);
-      replace_heap_object_for_object_index(string_object_index, StringTable::intern(string_object, thread));
+
+      // Replace string with interned string
+      string_object = StringTable::intern(string_object, thread);
+      replace_heap_object_for_object_index(string_object_index, string_object);
+
       last_object_was_interned_string = false;
     } else if (string_intern) {
       // Because the objects are laid out in DFS order, the value array will always
