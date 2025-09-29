@@ -30,8 +30,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.spec.AlgorithmParameterSpec;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -55,6 +53,7 @@ class MacData {
 
     private static final Debug debug = Debug.getInstance("pkcs12");
     private final String digestAlgorithmName;
+    private String macAlgorithm = null;
     private final byte[] digest;
     private final byte[] macSalt;
     private final int iterations;
@@ -93,14 +92,14 @@ class MacData {
             PBMAC1Parameters algParams;
 
             algParams = new PBMAC1Parameters();
-            algParams.engineInit(digestAlgorithmId.getEncodedParams());
+            algParams.Init(digestAlgorithmId.getEncodedParams());
 
             this.iterations = algParams.getIterations();
             this.macSalt = algParams.getSalt();
 
-            String ps = algParams.engineToString();
-            this.kdfHmac = parseKdfHmac(ps);
-            this.Hmac = parseHmac(ps);
+            this.kdfHmac = algParams.getPrf();
+            this.Hmac = algParams.getHmac();
+            this.macAlgorithm = "PBEWith" + this.kdfHmac + "And" + this.Hmac;
         } else {
             this.macSalt = macData[1].getOctetString();
             if (macData.length > 2) {
@@ -108,6 +107,8 @@ class MacData {
             } else {
                 this.iterations = 1;
             }
+            this.macAlgorithm = "HmacPBE"
+                    + this.digestAlgorithmName.replace("-", "");
         }
     }
 
@@ -170,31 +171,6 @@ class MacData {
         }
     }
 
-    /**
-     * Retries an action with password "\0" if "" fails.
-     * @param <T> the return type
-     */
-    @FunctionalInterface
-    private interface RetryWithZero<T> {
-
-        T tryOnce(char[] password) throws Exception;
-
-        static <S> S run(RetryWithZero<S> f, char[] password) throws Exception {
-            try {
-                return f.tryOnce(password);
-            } catch (Exception e) {
-                if (password.length == 0) {
-                    // Retry using an empty password with a NUL terminator.
-                    if (debug != null) {
-                        debug.println("Retry with a NUL password");
-                    }
-                    return f.tryOnce(new char[1]);
-                }
-                throw e;
-            }
-        }
-    }
-
     void processMacData(AlgorithmParameterSpec params,
             MacData macData, char[] password, byte[] data, String macAlgorithm)
             throws  Exception {
@@ -213,32 +189,29 @@ class MacData {
                 kdfHmac.equals("HmacSHA512") ?
                 "PBKDF2WithHmacSHA512" : "PBKDF2WithHmacSHA256");
 
-        RetryWithZero.run(pass -> {
-            SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(pass,
-                    ((PBEParameterSpec)params).getSalt(),
-                    ((PBEParameterSpec)params).getIterationCount(),
-                    Hmac.equals("HmacSHA512") ? 64*8 : 32*8));
-            Mac m = Mac.getInstance(Hmac);
-            try {
-                m.init(pbeKey);
-            } finally {
-                destroyPBEKey(pbeKey);
-            }
-            m.update(data);
-            byte[] macResult = m.doFinal();
+        SecretKey pbeKey = skf.generateSecret(new PBEKeySpec(password,
+                ((PBEParameterSpec)params).getSalt(),
+                ((PBEParameterSpec)params).getIterationCount(),
+                Hmac.equals("HmacSHA512") ? 64*8 : 32*8));
+        Mac m = Mac.getInstance(Hmac);
+        try {
+            m.init(pbeKey);
+        } finally {
+            destroyPBEKey(pbeKey);
+        }
+        m.update(data);
+        byte[] macResult = m.doFinal();
 
-            if (debug != null) {
-                debug.println("Checking keystore integrity " +
-                        "(" + m.getAlgorithm() + " iterations: "
-                        + macData.getIterations() + ")");
-            }
+        if (debug != null) {
+            debug.println("Checking keystore integrity " +
+                    "(" + m.getAlgorithm() + " iterations: "
+                    + macData.getIterations() + ")");
+        }
 
-            if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
-                throw new UnrecoverableKeyException("Failed PKCS12" +
-                        " integrity checking");
-            }
-            return (Void) null;
-        }, password);
+        if (!MessageDigest.isEqual(macData.getDigest(), macResult)) {
+            throw new UnrecoverableKeyException("Failed PKCS12" +
+                    " integrity checking");
+        }
     }
 
     /*
@@ -247,10 +220,10 @@ class MacData {
      * Hash-based MAC algorithm combines secret key with message digest to
      * create a message authentication code (MAC)
      */
-    public static byte[] calculateMac(char[] passwd, byte[] data, boolean newKeystore,
-            String macAlgorithm, int macIterationCount, byte[] salt)
-        throws IOException, NoSuchAlgorithmException
-    {
+    public static byte[] calculateMac(char[] passwd, byte[] data,
+            boolean newKeystore, String macAlgorithm, int macIterationCount,
+            byte[] salt)
+        throws IOException, NoSuchAlgorithmException {
         final byte[] mData;
         final PBEParameterSpec params;
         final MacData macData;
@@ -267,6 +240,7 @@ class MacData {
                 }
             }
         } else {
+            // existing keystore
             String tmp = MacData.parseKdfHmac(macAlgorithm);
             if (tmp != null) {
                 kdfHmac = tmp;
@@ -313,6 +287,10 @@ class MacData {
 
     String getDigestAlgName() {
         return this.digestAlgorithmName;
+    }
+
+    String getMacAlgorithm() {
+        return this.macAlgorithm;
     }
 
     byte[] getSalt() {
@@ -427,36 +405,23 @@ class MacData {
     }
 
     public static String parseKdfHmac(String text) {
-        final String word1 = "With";
-        final String word2 = "And";
-
-        String regex1 = Pattern.quote(word1) + "(.*?)" + Pattern.quote(word2);
-        Pattern pattern1 = Pattern.compile(regex1);
-        Matcher matcher1 = pattern1.matcher(text);
-
-        String regex2 = Pattern.quote(word1) + "(.*?)$";
-        Pattern pattern2 = Pattern.compile(regex2);
-        Matcher matcher2 = pattern2.matcher(text);
-
-        if (matcher1.find()) {
-            return matcher1.group(1);
-        } else if (matcher2.find()) {
-                return matcher2.group(1);
+        int index1 = text.indexOf("With") + 4;
+        int index2 = text.indexOf("And");
+        if (index1 == 3) { // -1 + 4
+            return null;
+        } else if (index2 == -1) {
+            return text.substring(index1);
+        } else {
+            return text.substring(index1, index2);
         }
-        return null;
     }
 
     public static String parseHmac(String text) {
-        final String word2 = "And";
-
-        String regex = Pattern.quote(word2) + "(.*?)$";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(text);
-
-        if (matcher.find()) {
-            return matcher.group(1);
-        } else {
+        int index1 = text.indexOf("And") + 3;;
+        if (index1 == 2) { // -1 + 3
             return null;
+        } else {
+            return text.substring(index1);
         }
     }
 }

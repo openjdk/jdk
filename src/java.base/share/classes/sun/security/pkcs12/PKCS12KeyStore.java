@@ -2082,20 +2082,14 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                 "MAC iteration count too large: " + ic);
                     }
 
-                    String algName =
-                            macData.getDigestAlgName().toUpperCase(Locale.ENGLISH);
-                    if (algName.equals("PBMAC1")) {
-                        macAlgorithm = "PBEWith" + macData.getKdfHmac()
-                        + "And" + macData.getHmac();
-                    } else {
-                        // Change SHA-1 to SHA1
-                        algName = algName.replace("-", "");
-                        macAlgorithm = "HmacPBE" + algName;
-                    }
+                    macAlgorithm = macData.getMacAlgorithm();
                     macIterationCount = ic;
                     PBEParameterSpec params = new PBEParameterSpec(salt, ic);
-                    macData.processMacData(params, macData, password, authSafeData,
-                            macAlgorithm);
+                    RetryWithZero.run(pass -> {
+                        macData.processMacData(params, macData, pass,
+                                authSafeData, macAlgorithm);
+                        return (Void) null;
+                    }, password);
                 } catch (Exception e) {
                     throw new IOException("Integrity check failed: " + e, e);
                 }
