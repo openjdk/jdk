@@ -4088,8 +4088,8 @@ instruct stkL_to_regL(iRegL dst, stackSlotL src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LG      $dst,$src\t # stk reload long" %}
-  size(Z_DISP1_SIZE);
   opcode(LG_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
   ins_pipe(pipe_class_dummy);
@@ -9080,6 +9080,7 @@ instruct z196_maxI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP1_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
   format %{ "MaxI $dst $src1,$src2\t MaxI (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9112,6 +9113,7 @@ instruct z10_maxI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(VM_Version::has_CompareBranch());
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP2_SIZE + Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "MaxI $dst $src1,$src2\t MaxI (z10 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9145,6 +9147,7 @@ instruct maxI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(!VM_Version::has_CompareBranch());
   ins_cost(3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP1_SIZE + 3 * Z_DISP2_SIZE);
   format %{ "MaxI $dst $src1,$src2\t MaxI" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9207,6 +9210,7 @@ instruct maxI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP2_SIZE * 2 + Z_DISP3_SIZE * 2);
   format %{ "MaxI $dst $src1,$src2\t MaxI const32" %}
   ins_encode %{
     Label done;
@@ -9250,6 +9254,7 @@ instruct maxI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(4 * Z_DISP2_SIZE);	
   format %{ "MaxI $dst $src1,$src2\t MaxI const16" %}
   ins_encode %{
     Label done;
@@ -9270,6 +9275,7 @@ instruct z10_maxI_reg_imm8(iRegI dst, iRegI src1, immI8 src2, flagsReg cr) %{
   predicate(VM_Version::has_CompareBranch());
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP2_SIZE + Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "MaxI $dst $src1,$src2\t MaxI const8" %}
   ins_encode %{
     Label done;
@@ -9557,6 +9563,7 @@ instruct testAndBranchLoopEnd_Reg(cmpOpT boolnode, iRegI src1, iRegI src2, label
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end SHORT" %}
   opcode(CRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9571,6 +9578,7 @@ instruct cmpb_RegI(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, flagsReg
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CRJ,$boolnode  $src1,$src2,$labl\t # SHORT" %}
   opcode(CRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9585,6 +9593,7 @@ instruct cmpbU_RegI(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, flagsRe
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CLRJ,$boolnode  $src1,$src2,$labl\t # SHORT" %}
   opcode(CLRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9599,6 +9608,7 @@ instruct cmpb_RegL(cmpOpT boolnode, iRegL src1, iRegL src2, label labl, flagsReg
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CGRJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CGRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9618,6 +9628,7 @@ instruct cmpb_RegPP(cmpOpT boolnode, iRegP src1, iRegP src2, label labl, flagsRe
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CLGRJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9631,6 +9642,7 @@ instruct cmpb_RegNN(cmpOpT boolnode, iRegN src1, iRegN src2, label labl, flagsRe
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);	
   format %{ "CLGRJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9645,6 +9657,7 @@ instruct testAndBranchLoopEnd_Imm(cmpOpT boolnode, iRegI src1, immI8 src2, label
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end SHORT" %}
   opcode(CIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9659,6 +9672,7 @@ instruct cmpb_RegI_imm(cmpOpT boolnode, iRegI src1, immI8 src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);	
   format %{ "CIJ,$boolnode  $src1,$src2,$labl\t # SHORT" %}
   opcode(CIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9673,6 +9687,7 @@ instruct cmpbU_RegI_imm(cmpOpT boolnode, iRegI src1, uimmI8 src2, label labl, fl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CLIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9687,6 +9702,7 @@ instruct cmpb_RegL_imm(cmpOpT boolnode, iRegL src1, immL8 src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9706,6 +9722,7 @@ instruct cmpb_RegP_immP(cmpOpT boolnode, iRegP src1, immP8 src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CLGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9720,6 +9737,7 @@ instruct cmpb_RegN_immP0(cmpOpT boolnode, iRegN src1, immP0 src2, label labl, fl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CLGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9733,6 +9751,7 @@ instruct cmpb_RegN_imm(cmpOpT boolnode, iRegN src1, immN8 src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "CLGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9750,6 +9769,7 @@ instruct testAndBranchLoopEnd_RegFar(cmpOpT boolnode, iRegI src1, iRegI src2, la
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end FAR" %}
   opcode(CR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9764,6 +9784,7 @@ instruct cmpb_RegI_Far(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "CRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9778,6 +9799,7 @@ instruct cmpbU_RegI_Far(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "CLRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9792,6 +9814,7 @@ instruct cmpb_RegL_Far(cmpOpT boolnode, iRegL src1, iRegL src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "CGRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CGR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9811,6 +9834,7 @@ instruct cmpb_RegPP_Far(cmpOpT boolnode, iRegP src1, iRegP src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "CLGRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9824,6 +9848,7 @@ instruct cmpb_RegNN_Far(cmpOpT boolnode, iRegN src1, iRegN src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "CLGRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9838,6 +9863,7 @@ instruct testAndBranchLoopEnd_ImmFar(cmpOpT boolnode, iRegI src1, immI8 src2, la
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end FAR" %}
   opcode(CHI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9852,6 +9878,7 @@ instruct cmpb_RegI_imm_Far(cmpOpT boolnode, iRegI src1, immI8 src2, label labl, 
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "CIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CHI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9866,6 +9893,7 @@ instruct cmpbU_RegI_imm_Far(cmpOpT boolnode, iRegI src1, uimmI8 src2, label labl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "CLIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9880,6 +9908,7 @@ instruct cmpb_RegL_imm_Far(cmpOpT boolnode, iRegL src1, immL8 src2, label labl, 
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "CGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CGHI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9899,6 +9928,7 @@ instruct cmpb_RegP_immP_Far(cmpOpT boolnode, iRegP src1, immP8 src2, label labl,
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "CLGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9913,6 +9943,7 @@ instruct cmpb_RegN_immP0_Far(cmpOpT boolnode, iRegN src1, immP0 src2, label labl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "CLGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9926,6 +9957,7 @@ instruct cmpb_RegN_immN_Far(cmpOpT boolnode, iRegN src1, immN8 src2, label labl,
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
   format %{ "CLGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9989,6 +10021,7 @@ instruct safePoint() %{
   match(SafePoint);
   predicate(false);
   // TODO: s390 port size(FIXED_SIZE);
+  size(0);
   format %{ "UNIMPLEMENTED Safepoint_ " %}
   ins_encode(enc_unimplemented());
   ins_pipe(pipe_class_dummy);
@@ -10886,6 +10919,7 @@ instruct expand_storeF(stackSlotF mem, regF src) %{
   predicate(false);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "STE      $src,$mem\t # replicate(float2stack)" %}
   opcode(STE_ZOPC, STE_ZOPC);
   ins_encode(z_form_rt_mem(src, mem));
@@ -10898,6 +10932,7 @@ instruct expand_LoadLogical_I2L(iRegL dst, stackSlotF mem) %{
   predicate(false);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LLGF     $dst,$mem\t # replicate(stack2reg(unsigned))" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem(dst, mem));
@@ -10911,6 +10946,7 @@ instruct expand_Repl2I_reg(iRegL dst, iRegL src) %{
   predicate(false);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "REPLIC2F $dst,$src\t # replicate(pack2F)" %}
   ins_encode %{
     if ($dst$$Register == $src$$Register) {
@@ -11370,6 +11406,7 @@ instruct storeA8B(memory mem, iRegL src) %{
   predicate(n->as_StoreVector()->memory_size() == 8);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "STG     $src,$mem\t # ST(packed8B)" %}
   opcode(STG_ZOPC, STG_ZOPC);
   ins_encode(z_form_rt_mem_opt(src, mem));
@@ -11396,6 +11433,7 @@ instruct loadV8(iRegL dst, memory mem) %{
   predicate(n->as_LoadVector()->memory_size() == 8);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE);
   format %{ "LG      $dst,$mem\t # L(packed8B)" %}
   opcode(LG_ZOPC, LG_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
@@ -11743,6 +11781,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
   predicate(UseByteReverseInstruction);  // See Matcher::match_rule_supported
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
+  size(Z_DISP2_SIZE);
   format %{ "LRVGR   $dst,$src\t # byte reverse long" %}
   opcode(LRVGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -11879,6 +11918,7 @@ instruct countTrailingZerosL(revenRegI dst, iRegL src, roddRegL tmp, flagsReg cr
   effect(TEMP_DEF dst, KILL tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
+  size(5 * Z_DISP2_SIZE + Z_DISP1_SIZE);
   format %{ "LCGR    $dst,$src  \t # preserve src\n\t"
             "NGR     $dst,$src  \t #\n\t"
             "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
