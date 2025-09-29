@@ -884,7 +884,7 @@ public final class PrintServiceLookupProvider extends PrintServiceLookup
                 }
             } catch (Exception e) {
                 // Print exception for tracking printer command errors
-                System.err.println(e);
+                IPPPrintService.debug_println("Printer command error: " + e);
            } finally {
                 f.delete();
                 // promptly close all streams.
