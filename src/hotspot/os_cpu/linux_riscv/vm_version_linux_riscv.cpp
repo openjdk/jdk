@@ -100,7 +100,6 @@
 #endif
 
 uint32_t VM_Version::cpu_vector_length() {
-  assert(ext_V.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
