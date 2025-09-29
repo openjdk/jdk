@@ -358,7 +358,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
   return buffered_obj_offset;
 }
 
-// Oop relocation
+// Oop mapping?
 
 inline void AOTStreamedHeapWriter::store_oop_in_buffer(oop* buffered_addr, int dfs_index) {
   *(ssize_t*)buffered_addr = dfs_index;
