@@ -299,6 +299,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     return true;
   }
 
+#ifdef SHENANDOAH_USE_AVERAGE_RATE_TRIGGER
   if (avg_cycle_time * avg_alloc_rate2 > allocation_headroom) {
     log_trigger("Average GC time (%.2f ms) is above the time for average allocation rate (%.0f %sB/s)"
                  " to deplete free headroom (%zu%s) (margin of error = %.2f)",
@@ -325,6 +326,7 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
     accept_trigger_with_type(SPIKE);
     return true;
   }
+#endif
 
   if (ShenandoahHeuristics::should_start_gc()) {
     _start_gc_is_pending = true;
