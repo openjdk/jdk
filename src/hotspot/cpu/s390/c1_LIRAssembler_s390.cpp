@@ -287,14 +287,14 @@ int LIR_Assembler::emit_deopt_handler() {
   __ load_const(Z_R1_scratch, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1_scratch);
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
 
   __ z_bru(start);
 
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
-  return entry_point;
+  return entry_offset;
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {

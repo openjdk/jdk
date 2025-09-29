@@ -1247,13 +1247,13 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   __ call(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
 
   __ jmp(start);
 
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow %d", (__ offset() - offset));
   __ end_a_stub();
-  return entry_point;
+  return entry_offset;
 }
 
 static Assembler::Width widthForType(BasicType bt) {

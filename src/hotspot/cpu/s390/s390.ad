@@ -1686,14 +1686,14 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   __ load_const(Z_R1, SharedRuntime::deopt_blob()->unpack());
   __ call(Z_R1);
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
 
   __ z_bru(start);
 
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
 
   __ end_a_stub();
-  return entry_point;
+  return entry_offset;
 }
 
 //=============================================================================

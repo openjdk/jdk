@@ -277,7 +277,7 @@ int LIR_Assembler::emit_deopt_handler() {
 
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
   __ mov_relative_address(LR, __ pc());
   __ push(LR); // stub expects LR to be saved
   __ b(start);
@@ -285,7 +285,7 @@ int LIR_Assembler::emit_deopt_handler() {
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
-  return entry_point;
+  return entry_offset;
 }
 
 

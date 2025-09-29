@@ -886,7 +886,7 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
 
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
   address deopt_pc = __ pc();
   // Preserve R0 and reserve space for the address of the entry point
   __ push(RegisterSet(R0) | RegisterSet(R1));
@@ -899,7 +899,7 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   assert(__ offset() - offset <= (int) size_deopt_handler(), "overflow");
 
   __ end_a_stub();
-  return entry_point;
+  return entry_offset;
 }
 
 bool Matcher::match_rule_supported(int opcode) {

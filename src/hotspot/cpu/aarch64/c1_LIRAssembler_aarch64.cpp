@@ -458,13 +458,13 @@ int LIR_Assembler::emit_deopt_handler() {
 
   __ far_jump(RuntimeAddress(SharedRuntime::deopt_blob()->unpack()));
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
   __ b(start);
 
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
-  return entry_point;
+  return entry_offset;
 }
 
 void LIR_Assembler::add_debug_info_for_branch(address adr, CodeEmitInfo* info) {

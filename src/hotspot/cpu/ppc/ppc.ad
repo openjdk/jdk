@@ -2125,14 +2125,14 @@ int HandlerImpl::emit_deopt_handler(C2_MacroAssembler* masm) {
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
                         relocInfo::runtime_call_type);
 
-  int entry_point = __ offset();
+  int entry_offset = __ offset();
 
   __ b(start);
 
   assert(__ offset() - offset == (int) size_deopt_handler(), "must be fixed size");
   __ end_a_stub();
 
-  return entry_point;
+  return entry_offset;
 }
 
 //=============================================================================
