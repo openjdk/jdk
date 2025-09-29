@@ -368,22 +368,22 @@ inline void AOTStreamedHeapWriter::store_oop_in_buffer(narrowOop* buffered_addr,
   *(int32_t*)buffered_addr = (int32_t)dfs_index;
 }
 
-template <typename T> void AOTStreamedHeapWriter::relocate_field_in_buffer(oop obj, T* field_addr_in_buffer, CHeapBitMap* oopmap) {
-  if (obj != nullptr) {
-    int dfs_index = *_dfs_order_table->get(obj);
-    store_oop_in_buffer(field_addr_in_buffer, dfs_index);
-    mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
-  } else {
-    store_oop_in_buffer(field_addr_in_buffer, 0);
-    mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
-  }
-}
-
 template <typename T> void AOTStreamedHeapWriter::mark_oop_pointer(T* buffered_addr, CHeapBitMap* oopmap) {
   // Mark the pointer in the oopmap
   size_t buffered_offset = buffered_address_to_offset((address)buffered_addr);
   BitMap::idx_t idx = bit_idx_for_buffer_offset(buffered_offset);
   oopmap->set_bit(idx);
+}
+
+template <typename T> void AOTStreamedHeapWriter::store_field_in_buffer(oop obj, T* field_addr_in_buffer, CHeapBitMap* oopmap) {
+  if (obj == nullptr) {
+    store_oop_in_buffer(field_addr_in_buffer, 0);
+  } else {
+    int dfs_index = *_dfs_order_table->get(obj);
+    store_oop_in_buffer(field_addr_in_buffer, dfs_index);
+  }
+
+  mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
 }
 
 void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_addr, oop src_obj,  Klass* src_klass) {
@@ -437,7 +437,7 @@ private:
   void do_oop_work(T *p) {
     size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
     oop obj = HeapShared::maybe_remap_referent(_is_java_lang_ref, field_offset, HeapAccess<>::oop_load(p));
-    AOTStreamedHeapWriter::relocate_field_in_buffer<T>(obj, (T*)(_buffered_obj + field_offset), _oopmap);
+    AOTStreamedHeapWriter::store_field_in_buffer<T>(obj, (T*)(_buffered_obj + field_offset), _oopmap);
   }
 };
 
@@ -464,7 +464,6 @@ void AOTStreamedHeapWriter::map_embedded_oops(GrowableArrayCHeap<oop, mtClassSha
     HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(src_obj);
     assert(info != nullptr, "must be");
     address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
-
     update_header_for_buffered_addr(buffered_obj, src_obj, src_obj->klass());
     EmbeddedOopMapper mapper(src_obj, buffered_obj, heap_info->oopmap());
     src_obj->oop_iterate(&mapper);
