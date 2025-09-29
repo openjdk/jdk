@@ -24,16 +24,18 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073
+ * @bug 8029661 8325164 8368073 8368514
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
  *          java.base/com.sun.crypto.provider
  * @library /test/lib ../..
  * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.2
- *      -Djdk.tls.useExtendedMasterSecret=false FipsModeTLS12
- * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet
- * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS12
+ *      -Djdk.tls.useExtendedMasterSecret=false
+ *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS
+ * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet.
+ *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669
+ * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS
  */
 
 import java.io.File;
@@ -73,7 +75,7 @@ import sun.security.internal.spec.TlsMasterSecretParameterSpec;
 import sun.security.internal.spec.TlsPrfParameterSpec;
 import sun.security.internal.spec.TlsRsaPremasterSecretParameterSpec;
 
-public final class FipsModeTLS12 extends SecmodTest {
+public final class FipsModeTLS extends SecmodTest {
 
     private static final boolean enableDebug = true;
 
@@ -101,8 +103,9 @@ public final class FipsModeTLS12 extends SecmodTest {
             // Test against JCE
             testTlsAuthenticationCodeGeneration();
 
-            // Self-integrity test (complete TLS 1.2 communication)
-            new testTLS12SunPKCS11Communication().run();
+            // Self-integrity test (complete TLS communication)
+            testTLSSunPKCS11Communication.initSslContext();
+            testTLSSunPKCS11Communication.run();
 
             System.out.println("Test PASS - OK");
         } else {
@@ -269,15 +272,18 @@ public final class FipsModeTLS12 extends SecmodTest {
         }
     }
 
-    private static class testTLS12SunPKCS11Communication {
+    private static class testTLSSunPKCS11Communication {
         public static void run() throws Exception {
             SSLEngine[][] enginesToTest = getSSLEnginesToTest();
-
+            boolean firstSession = true;
             for (SSLEngine[] engineToTest : enginesToTest) {
 
                 SSLEngine clientSSLEngine = engineToTest[0];
                 SSLEngine serverSSLEngine = engineToTest[1];
-
+                // The first connection needs to do a full handshake.
+                // Verify that subsequent handshakes use resumption.
+                clientSSLEngine.setEnableSessionCreation(firstSession);
+                firstSession = false;
                 // SSLEngine code based on RedhandshakeFinished.java
 
                 boolean dataDone = false;
@@ -400,14 +406,6 @@ public final class FipsModeTLS12 extends SecmodTest {
         static private SSLEngine createSSLEngine(boolean client)
                 throws Exception {
             SSLEngine ssle;
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
-            kmf.init(ks, passphrase);
-
-            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
-            tmf.init(ts);
-
-            SSLContext sslCtx = SSLContext.getInstance("TLS", "SunJSSE");
-            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             ssle = sslCtx.createSSLEngine("localhost", 443);
             ssle.setUseClientMode(client);
             SSLParameters sslParameters = ssle.getSSLParameters();
@@ -430,6 +428,18 @@ public final class FipsModeTLS12 extends SecmodTest {
             ssle.setSSLParameters(sslParameters);
 
             return ssle;
+        }
+
+        private static SSLContext sslCtx;
+        private static void initSslContext() throws Exception {
+            KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX", "SunJSSE");
+            kmf.init(ks, passphrase);
+
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", "SunJSSE");
+            tmf.init(ts);
+
+            sslCtx = SSLContext.getInstance("TLS", "SunJSSE");
+            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
         }
     }
 
