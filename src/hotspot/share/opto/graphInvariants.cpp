@@ -53,6 +53,13 @@ bool LocalGraphInvariant::LazyReachableCFGNodes::is_node_dead(const Node* n) {
   return !_reachable_nodes.member(n);
 }
 
+static void print_node_list(const Node_List& nodes, stringStream& ss) {
+  for (uint i = 0; i < nodes.size(); ++i) {
+    ss.print("  ");
+    nodes.at(i)->dump("\n", false, &ss);
+  }
+}
+
 /* A base for local invariants that mostly work using a pattern.
  */
 struct PatternBasedCheck : LocalGraphInvariant {
@@ -168,8 +175,7 @@ struct IfProjections : PatternBasedCheck {
             And::make(
                 new HasNOutputs(2),
                 new AtSingleOutputOfType(&Node::is_IfTrue, new TruePattern()),
-                new AtSingleOutputOfType(&Node::is_IfFalse, new TruePattern()))) {
-  }
+                new AtSingleOutputOfType(&Node::is_IfFalse, new TruePattern()))) {}
   CheckResult check(const Node* center, LazyReachableCFGNodes& reachable_cfg_nodes, PathInGraph& path, stringStream& ss) const override {
     return CheckHelper::for_reachable_center(this, center, reachable_cfg_nodes, path, ss)
         .applies_if_center(&Node::is_If)
@@ -192,8 +198,7 @@ public:
                 new HasAtLeastNInputs(2),
                 new AtInput(
                     0,
-                    NodeClassIsAndBind(Region, _region_node)))) {
-  }
+                    NodeClassIsAndBind(Region, _region_node)))) {}
   CheckResult check(const Node* center, LazyReachableCFGNodes&, PathInGraph& path, stringStream& ss) const override {
     return CheckHelper::for_any_center(this, center, path, ss)
         .applies_if_center(&Node::is_Phi)
@@ -270,14 +275,6 @@ struct ControlSuccessor : LocalGraphInvariant {
 
     return CheckResult::VALID;
   }
-
-private:
-  static void print_node_list(const Node_List& ctrl_succ, stringStream& ss) {
-    for (uint i = 0; i < ctrl_succ.size(); ++i) {
-      ss.print("  ");
-      ctrl_succ.at(i)->dump("\n", false, &ss);
-    }
-  }
 };
 
 /* Checks that Region, Start and Root nodes' first input is a self loop, except for copy regions, which then must have only one non null input.
@@ -322,9 +319,7 @@ struct SelfLoopInvariant : LocalGraphInvariant {
         }
         if (non_null_inputs.size() != 1) {
           ss.print_cr("%s copy nodes must have exactly one non-null input. Found: %d.", center->Name(), non_null_inputs.size());
-          for (uint i = 0; i < non_null_inputs.size(); ++i) {
-            non_null_inputs.at(i)->dump("\n", false, &ss);
-          }
+          print_node_list(non_null_inputs, ss);
           return CheckResult::FAILED;
         }
       }
@@ -449,7 +444,7 @@ struct MultiBranchNodeOut : LocalGraphInvariant {
 
     MultiBranchNode* mb = center->as_MultiBranch();
     if (mb->required_outcnt() < static_cast<int>(mb->outcnt())) {
-      ss.print_cr("The required_outcnt of a MultiBranch node must be smaller than or equal to its outcnt. But required_outcnt=%d vs. outcnt=%d", mb->required_outcnt(), mb->outcnt());
+      ss.print_cr("The required_outcnt of a MultiBranch node must be smaller than or equal to its outcnt. But required_outcnt=%d vs. outcnt=%u", mb->required_outcnt(), mb->outcnt());
       return CheckResult::FAILED;
     }
 

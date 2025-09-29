@@ -88,6 +88,6 @@ public:
   static void print_path(const PathInGraph& path, stringStream& ss);
   bool run() const;
 };
-#endif
+#endif // !PRODUCT
 
 #endif // SHARE_OPTO_GRAPHINVARIANTS_HPP
