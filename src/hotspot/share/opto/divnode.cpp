@@ -629,10 +629,7 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
-  if( !ti->is_con() ) return nullptr;
-  jint i = ti->get_con();       // Get divisor
-
-  if (i == 0) {
+  if (t == TypeInt::ZERO) {
     if (can_reshape) {
       PhaseIterGVN* igvn = phase->is_IterGVN();
       ResourceMark rm;
@@ -640,6 +637,9 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
     return nullptr;   // Dividing by zero constant does not idealize
   }
+
+  if( !ti->is_con() ) return nullptr;
+  jint i = ti->get_con();       // Get divisor
 
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return nullptr;
@@ -703,10 +703,17 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
+  if (t == TypeLong::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
+
   if( !tl->is_con() ) return nullptr;
   jlong l = tl->get_con();      // Get divisor
-
-  if (l == 0) return nullptr;   // Dividing by zero constant does not idealize
 
   // Dividing by MINLONG does not optimize as a power-of-2 shift.
   if( l == min_jlong ) return nullptr;
@@ -1044,6 +1051,10 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
     return TypeInt::ONE;
   }
 
+  if (t2 == TypeInt::ZERO) {
+    return Type::TOP;
+  }
+
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type *bot = bottom_type();
   if( (t1 == bot) || (t2 == bot) ||
@@ -1056,6 +1067,15 @@ const Type* UDivINode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (phase->type(in(2)) == TypeInt::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
+
   return unsigned_div_ideal<TypeInt, juint>(phase, can_reshape, this);
 }
 
@@ -1080,6 +1100,10 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::ONE;
   }
 
+  if (t2 == TypeLong::ZERO) {
+    return Type::TOP;
+  }
+
   // Either input is BOTTOM ==> the result is the local BOTTOM
   const Type *bot = bottom_type();
   if( (t1 == bot) || (t2 == bot) ||
@@ -1092,6 +1116,15 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
 
 //------------------------------Idealize---------------------------------------
 Node *UDivLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (phase->type(in(2)) == TypeLong::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
+
   return unsigned_div_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
 
@@ -1114,6 +1147,16 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     set_req(0, nullptr);        // Yank control input
     return this;
   }
+
+  if (t == TypeInt::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
+
 
   // See if we are MOD'ing by 2^k or 2^k-1.
   if( !ti->is_con() ) return nullptr;
@@ -1384,10 +1427,22 @@ static const Type* unsigned_mod_value(PhaseGVN* phase, const Node* mod) {
 }
 
 Node* UModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (phase->type(in(2)) == TypeInt::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
+
   return unsigned_mod_ideal<TypeInt, juint>(phase, can_reshape, this);
 }
 
 const Type* UModINode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeInt::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeInt, juint, jint>(phase, this);
 }
 
@@ -1409,6 +1464,15 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
     set_req(0, nullptr);        // Yank control input
     return this;
+  }
+
+  if (t == TypeLong::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
   }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
@@ -1524,10 +1588,21 @@ const Type* ModLNode::Value(PhaseGVN* phase) const {
 }
 
 Node *UModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  if (phase->type(in(2)) == TypeLong::ZERO) {
+    if (can_reshape) {
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      ResourceMark rm;
+      make_paths_from_here_dead(igvn, nullptr, "igvn");
+    }
+    return nullptr;   // Dividing by zero constant does not idealize
+  }
   return unsigned_mod_ideal<TypeLong, julong>(phase, can_reshape, this);
 }
 
 const Type* UModLNode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(2)) == TypeLong::ZERO) {
+    return Type::TOP;
+  }
   return unsigned_mod_value<TypeLong, julong, jlong>(phase, this);
 }
 

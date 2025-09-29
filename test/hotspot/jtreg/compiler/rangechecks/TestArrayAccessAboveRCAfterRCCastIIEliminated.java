@@ -99,6 +99,30 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             test20(0, 9, 1, false, false);
             inlined20_2(9, 1, 1, true, 0);
             inlined20_3(0, 0);
+            test21(0, 9, 1, true, false);
+            test21(0, 9, 1, false, false);
+            inlined21_2(9, 1, 1, true, 0);
+            inlined21_3(0, 0);
+            test22(0, 9, 1, true, false);
+            test22(0, 9, 1, false, false);
+            inlined22_2(9, 1, 1, true, 0);
+            inlined22_3(0, 0);
+            test23(0, 9, 1, true, false);
+            test23(0, 9, 1, false, false);
+            inlined23_2(9, 1, 1, true, 0);
+            inlined23_3(0, 0);
+            test24(0, 9, 1, true, false);
+            test24(0, 9, 1, false, false);
+            inlined24_2(9, 1, 1, true, 0);
+            inlined24_3(0, 0);
+            test25(0, 9, 1, true, false);
+            test25(0, 9, 1, false, false);
+            inlined25_2(9, 1, 1, true, 0);
+            inlined25_3(0, 0);
+            test26(0, 9, 1, true, false);
+            test26(0, 9, 1, false, false);
+            inlined26_2(9, 1, 1, true, 0);
+            inlined26_3(0, 0);
         }
 //        try {
 //            test1(-1, 10, 1, true);
@@ -854,6 +878,348 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             }
         }
         return arrayField20[0] + array2[k] * (j - 10);
+    }
+
+    private static void test21(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined21_3(j, l);
+
+        int i = inlined21(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined21_2(j, flag, i, flag3, m);
+        } else {
+            inlined21_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined21_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static int test21D = 1;
+
+    private static void inlined21_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            intField = test21D % (otherArray.length + 2);
+        }
+    }
+
+    static int[] arrayField21 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined21(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField21[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField21[0] + array2[k] * (j - 10);
+    }
+
+    private static void test22(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined22_3(j, l);
+
+        int i = inlined22(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined22_2(j, flag, i, flag3, m);
+        } else {
+            inlined22_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined22_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static long test22D = 1;
+
+    private static void inlined22_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            longField = test22D % (otherArray.length + 2);
+        }
+    }
+
+    static int[] arrayField22 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined22(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField22[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField22[0] + array2[k] * (j - 10);
+    }
+
+    private static void test23(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined23_3(j, l);
+
+        int i = inlined23(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined23_2(j, flag, i, flag3, m);
+        } else {
+            inlined23_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined23_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static int test23D = 1;
+
+    private static void inlined23_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            intField = Integer.divideUnsigned(test23D, (otherArray.length + 2));
+        }
+    }
+
+    static int[] arrayField23 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined23(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField23[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField23[0] + array2[k] * (j - 10);
+    }
+
+    private static void test24(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined24_3(j, l);
+
+        int i = inlined24(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined24_2(j, flag, i, flag3, m);
+        } else {
+            inlined24_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined24_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static long test24D = 1;
+
+    private static void inlined24_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            longField = Long.divideUnsigned(test24D, (otherArray.length + 2));
+        }
+    }
+
+    static int[] arrayField24 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined24(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField24[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField24[0] + array2[k] * (j - 10);
+    }
+
+    private static void test25(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined25_3(j, l);
+
+        int i = inlined25(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined25_2(j, flag, i, flag3, m);
+        } else {
+            inlined25_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined25_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static int test25D = 1;
+
+    private static void inlined25_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            intField = Integer.remainderUnsigned(test25D, (otherArray.length + 2));
+        }
+    }
+
+    static int[] arrayField25 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined25(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField25[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField25[0] + array2[k] * (j - 10);
+    }
+
+    private static void test26(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined26_3(j, l);
+
+        int i = inlined26(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined26_2(j, flag, i, flag3, m);
+        } else {
+            inlined26_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined26_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static long test26D = 1;
+
+    private static void inlined26_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            longField = Long.remainderUnsigned(test26D, (otherArray.length + 2));
+        }
+    }
+
+    static int[] arrayField26 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined26(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField26[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField26[0] + array2[k] * (j - 10);
     }
 
     private static void notInlined(int[] array) {
