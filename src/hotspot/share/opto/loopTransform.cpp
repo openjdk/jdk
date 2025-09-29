@@ -1668,7 +1668,7 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
   loop->record_for_igvn();
 }
 
-Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, IdealLoopTree* outer_loop) {
+Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
   assert(store != nullptr && store->is_Store(), "starting point should be a store node");
   Node* last = store;
   // Follow the memory uses until we get out of the loop.
