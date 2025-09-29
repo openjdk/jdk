@@ -25,7 +25,6 @@
  */
 
 #include "classfile/vmIntrinsics.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/vm_version.hpp"
@@ -72,8 +71,6 @@ void VM_Version::useRVA23U64Profile() {
 }
 
 void VM_Version::initialize() {
-  ResourceMark rm;
-
   common_initialize();
 #ifdef COMPILER2
   c2_initialize();
