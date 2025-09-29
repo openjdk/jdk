@@ -36,7 +36,7 @@ public class ProcessExamples {
             writer.close();
             // Read all lines and print each
             reader.readAllLines()
-                    .forEach(System.err::println);
+                    .forEach(System.out::println);
             var status = p.waitFor();
             if (status != 0)
                 throw new RuntimeException("unexpected process status: " + status);

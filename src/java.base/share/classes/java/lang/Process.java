@@ -186,7 +186,7 @@ public abstract class Process implements Closeable {
      * data or text and call {@linkplain #waitFor() waitFor} if the exit value is needed.
      * The contents of streams that have not been read fully are lost,
      * they are discarded or ignored.
-     * Streams should be {@code closed} when no longer needed.
+     * Streams should be closed when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
      * If an {@code IOException} occurs when closing a stream it is
      * re-thrown after the process is terminated. Additional {@code IOExceptions}
@@ -199,6 +199,9 @@ public abstract class Process implements Closeable {
      * is not available and the process is forcibly terminated.
      * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
      * the try-with-resources block allows the process time to clean up and exit.
+     * Calling {@linkplain #waitFor() waitFor} after {@linkplain #close() close}
+     * or after the try-with-resources block exits returns the status after
+     * {@link #destroy() destroying the process}.
      * <p>
      * Try-with-resources example to write text to a process, read back the
      * response, and close the streams and process:
@@ -234,12 +237,12 @@ public abstract class Process implements Closeable {
     // Quietly close.
     // If an IOException occurs and it is the first, return it.
     // Otherwise, add the exception as a suppressed exception to the first.
-    private IOException quietClose(Closeable c, IOException firstIOE) {
+    private static IOException quietClose(Closeable c, IOException firstIOE) {
         try {
             c.close();
             return firstIOE;
         } catch (IOException ioe) {
-            if (firstIOE == null) {
+            if (firstIOE == null || firstIOE == ioe) {
                 return ioe;
             } else {
                 firstIOE.addSuppressed(ioe);
