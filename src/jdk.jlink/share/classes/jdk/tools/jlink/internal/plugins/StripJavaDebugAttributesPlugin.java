@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.function.Predicate;
+import java.lang.IllegalArgumentException;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassTransform;
 import java.lang.classfile.CodeTransform;
@@ -32,6 +33,7 @@ import java.lang.classfile.MethodTransform;
 import java.lang.classfile.attribute.MethodParametersAttribute;
 import java.lang.classfile.attribute.SourceFileAttribute;
 import java.lang.classfile.attribute.SourceDebugExtensionAttribute;
+import java.util.Map;
 
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -40,17 +42,50 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
 /**
  *
  * Strip java debug attributes plugin
+ *
+ * Usage: --strip-java-debug-attributes(=+parameter_names)
  */
 public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
+    public static final String NAME = "strip-java-debug-attributes";
+    public static final String DROP_METHOD_PARAMETER_NAMES = "+parameter-names";
+
     private final Predicate<String> predicate;
+    private boolean isDroppingMethodNames;
 
     public StripJavaDebugAttributesPlugin() {
         this((path) -> false);
     }
 
     StripJavaDebugAttributesPlugin(Predicate<String> predicate) {
-        super("strip-java-debug-attributes");
+        super(NAME);
         this.predicate = predicate;
+        isDroppingMethodNames = false;
+    }
+
+    @Override
+    public boolean hasArguments() {
+        return true;
+    }
+
+    @Override
+    public boolean hasRawArgument() {
+        return true;
+    }
+
+    @Override
+    public void configure(Map<String, String> config) {
+        var rawArg = config.get(NAME);
+        if (rawArg != null) {
+            if (rawArg.isEmpty()) {
+                return;
+            } else if (rawArg.equals(DROP_METHOD_PARAMETER_NAMES)) {
+                isDroppingMethodNames = true;
+            } else {
+                // We only support one value for now, other values is illegal.
+                throw new IllegalArgumentException(
+                        PluginsResourceBundle.getMessage("err.illegal.argument", rawArg));
+            }
+        }
     }
 
     @Override
@@ -67,13 +102,19 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
                         var clm = newClassReader(path, resource,
                                 ClassFile.DebugElementsOption.DROP_DEBUG,
                                 ClassFile.LineNumbersOption.DROP_LINE_NUMBERS);
+
+                        MethodTransform mt;
+                        if (isDroppingMethodNames) {
+                            mt = MethodTransform.dropping(me -> me instanceof MethodParametersAttribute)
+                                    .andThen(MethodTransform.transformingCode(CodeTransform.ACCEPT_ALL));
+                        } else {
+                            mt = MethodTransform.transformingCode(CodeTransform.ACCEPT_ALL);
+                        }
+
                         byte[] content = ClassFile.of().transformClass(clm, ClassTransform
                                         .dropping(cle -> cle instanceof SourceFileAttribute
                                                             || cle instanceof SourceDebugExtensionAttribute)
-                                              .andThen(ClassTransform.transformingMethods(MethodTransform
-                                                    .dropping(me -> me instanceof MethodParametersAttribute)
-                                                    .andThen(MethodTransform
-                                                            .transformingCode(CodeTransform.ACCEPT_ALL)))));
+                                              .andThen(ClassTransform.transformingMethods(mt)));
                         res = resource.copyWithContent(content);
                     }
                 }
