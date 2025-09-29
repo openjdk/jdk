@@ -898,10 +898,19 @@ void AOTStreamedHeapLoader::finish_materialize_objects() {
 
   jlong start = os::javaTimeNanos();
 
-  MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
-  // Wait for the AOT thread to finish
-  while (IterativeObjectLoader::has_more()) {
-    AOTHeapLoading_lock->wait();
+  if (CDSConfig::is_using_full_module_graph()) {
+    MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
+    // Wait for the AOT thread to finish
+    while (IterativeObjectLoader::has_more()) {
+      AOTHeapLoading_lock->wait();
+    }
+  } else {
+    // Without the full module graph we have done only lazy tracing materialization.
+    // Ensure all roots are processed here by triggering root loading on every root.
+    for (int i = 0; i < _num_roots; ++i) {
+      HeapShared::get_root(i, false /* clear */);
+    }
+    cleanup();
   }
 
   _final_materialization_time_ns = os::javaTimeNanos() - start;
@@ -960,6 +969,11 @@ void AOTStreamedHeapLoader::initialize() {
   if (FLAG_IS_DEFAULT(AOTEagerlyLoadObjects)) {
     // Concurrency will not help much if there are no extra cores available.
     FLAG_SET_ERGO(AOTEagerlyLoadObjects, os::initial_active_processor_count() <= 1);
+  }
+
+  if (!CDSConfig::is_using_full_module_graph()) {
+    // When not using FMG, fall back to tracing materialization
+    return;
   }
 
   if (AOTEagerlyLoadObjects) {
