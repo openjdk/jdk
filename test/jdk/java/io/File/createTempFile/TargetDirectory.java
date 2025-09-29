@@ -60,7 +60,6 @@ class TargetDirectory {
         File target = Files.createDirectory(dir).toFile();
         File tmp = File.createTempFile("passes", null, target);
         assertTrue(Files.exists(tmp.toPath()), "Temp file not created");
-        tmp.delete();
     }
 
     @Test
