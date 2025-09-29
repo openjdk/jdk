@@ -178,7 +178,7 @@ void VM_Version::common_initialize() {
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
-  if (FLAG_IS_DEFAULT(AlignVector) && unaligned_vector.enabled()) {
+  if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector,
       unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
