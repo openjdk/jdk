@@ -57,7 +57,7 @@ void Asan::initialize() {
   // For documentation of __asan_set_error_report_callback() see asan_interface.h .
   g_callback_setter = (callback_setter_t) dlsym(RTLD_DEFAULT, "__asan_set_error_report_callback");
   if (g_callback_setter == nullptr) {
-    log_warning(asan)("*** Failed to install JVM callback for ASAN. ASAN errors will not generate hs-err files. ***");
+    log_info(asan)("*** Failed to install JVM callback for ASAN. ASAN errors will not generate hs-err files. ***");
     return;
   }
 
