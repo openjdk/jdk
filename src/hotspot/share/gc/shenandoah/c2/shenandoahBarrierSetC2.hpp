@@ -27,7 +27,6 @@
 
 #include "shenandoahBarrierSetC2.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
-#include "gc/shenandoah/c2/shenandoahSupport.hpp"
 #include "utilities/growableArray.hpp"
 
 static const uint8_t ShenandoahBarrierStrong          = 1 << 0;
@@ -42,7 +41,6 @@ static const uint8_t ShenandoahBarrierCardMarkNotNull = 1 << 7;
 class ShenandoahBarrierStubC2;
 
 class ShenandoahBarrierSetC2State : public BarrierSetC2State {
-  GrowableArray<ShenandoahLoadReferenceBarrierNode*>* _load_reference_barriers;
   GrowableArray<ShenandoahBarrierStubC2*>* _stubs;
   int _stubs_start_offset;
 
@@ -51,11 +49,6 @@ public:
 
   bool needs_liveness_data(const MachNode* mach) const override;
   bool needs_livein_data() const override;
-
-  int load_reference_barriers_count() const;
-  ShenandoahLoadReferenceBarrierNode* load_reference_barrier(int idx) const;
-  void add_load_reference_barrier(ShenandoahLoadReferenceBarrierNode* n);
-  void remove_load_reference_barrier(ShenandoahLoadReferenceBarrierNode * n);
 
   GrowableArray<ShenandoahBarrierStubC2*>* stubs() {
     return _stubs;
@@ -86,14 +79,10 @@ public:
   static ShenandoahBarrierSetC2* bsc2();
 
   static bool is_shenandoah_clone_call(Node* call);
-  static bool is_shenandoah_lrb_call(Node* call);
-  static bool is_shenandoah_state_load(Node* n);
 
   ShenandoahBarrierSetC2State* state() const;
 
   static const TypeFunc* clone_barrier_Type();
-  static const TypeFunc* load_reference_barrier_Type();
-  virtual bool has_load_barrier_nodes() const { return true; }
 
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
@@ -103,18 +92,11 @@ public:
 
   // Support for GC barriers emitted during parsing
   virtual bool is_gc_barrier_node(Node* node) const;
-  virtual Node* step_over_gc_barrier(Node* c) const;
   virtual bool expand_barriers(Compile* C, PhaseIterGVN& igvn) const;
-  virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const;
-  virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
-  virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return mode == LoopOptsShenandoahExpand; }
 
   // Support for macro expanded GC barriers
-  virtual void register_potential_barrier_node(Node* node) const;
-  virtual void unregister_potential_barrier_node(Node* node) const;
   virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
-  virtual void eliminate_useless_gc_barriers(Unique_Node_List &useful, Compile* C) const;
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
   // This could for example comprise macro nodes to be expanded during macro expansion.
@@ -123,12 +105,6 @@ public:
 #ifdef ASSERT
   virtual void verify_gc_barriers(Compile* compile, CompilePhase phase) const;
 #endif
-
-  virtual Node* ideal_node(PhaseGVN* phase, Node* n, bool can_reshape) const;
-  virtual bool final_graph_reshaping(Compile* compile, Node* n, uint opcode, Unique_Node_List& dead_nodes) const;
-
-  virtual bool escape_add_to_con_graph(ConnectionGraph* conn_graph, PhaseGVN* gvn, Unique_Node_List* delayed_worklist, Node* n, uint opcode) const;
-  virtual bool escape_add_final_edges(ConnectionGraph* conn_graph, PhaseGVN* gvn, Node* n, uint opcode) const;
 
   int estimate_stub_size() const /* override */;
   void emit_stubs(CodeBuffer& cb) const /* override */;
