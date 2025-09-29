@@ -2309,11 +2309,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (mod != 0) // the scale for normalizing must be a multiple of nAbs
             normScale += nAbs - mod;
 
-        final long workingScale = x.scale - normScale;
-        if (workingScale != (int) workingScale)
-            throw new ArithmeticException("Overflow");
-
-        BigDecimal working = new BigDecimal(x.intVal, x.intCompact, (int) workingScale, x.precision);
+        BigDecimal working = new BigDecimal(x.intVal, x.intCompact, checkScaleNonZero(x.scale - normScale), x.precision);
         BigInteger workingInt = working.toBigInteger();
 
         BigInteger root;
@@ -2365,7 +2361,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (result.scale > preferredScale) // else can't increase result's precision to fit the preferred scale
                 result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
         } else {
-            result = ONE.divide(new BigDecimal(root, checkScale(root, resultScale)), mc);
+            result = ONE.divide(new BigDecimal(root, checkScaleNonZero(resultScale)), mc);
             // Adjust to requested precision and preferred
             // scale as appropriate.
             result = result.adjustToPreferredScale(preferredScale, mc.precision);
