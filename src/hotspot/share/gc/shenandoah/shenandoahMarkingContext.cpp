@@ -97,7 +97,3 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
   assert(is_bitmap_range_within_region_clear(bottom, r->end()),
          "Region %zu should have no marks in bitmap", r->index());
 }
-
-size_t ShenandoahMarkingContext::count_live_objects(HeapWord* start, HeapWord* end) const {
-  return _mark_bit_map.count_marked(start, end);
-}

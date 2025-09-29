@@ -27,7 +27,6 @@
 
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "gc/shenandoah/c2/shenandoahSupport.hpp"
-#include "opto/c2_CodeStubs.hpp"
 #include "utilities/growableArray.hpp"
 
 class ShenandoahBarrierStub;

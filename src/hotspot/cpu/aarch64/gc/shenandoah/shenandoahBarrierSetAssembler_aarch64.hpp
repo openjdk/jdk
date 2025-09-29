@@ -90,8 +90,6 @@ public:
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
-  // void cmpxchg_oop(const MachNode* node, MacroAssembler* masm, Register addr, Register expected, Register new_val,
-  //                  bool acquire, bool release, bool is_cae, Register result);
 #ifdef COMPILER2
   void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm,
                       Register addr, Register expected, Register new_val, Register result,

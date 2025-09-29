@@ -117,7 +117,7 @@ void ShenandoahCollectionSet::add_region(ShenandoahHeapRegion* r) {
 void ShenandoahCollectionSet::switch_to_forward_table(ShenandoahHeapRegion* r) {
   assert(is_in(r), "Must be in collection set");
   CSetState state = ShenandoahForwardingTable::use_compact() ? CSetState::FWDTABLE_COMPACT : CSetState::FWDTABLE_WIDE;
-  Atomic::store(&_cset_map._cset_map[r->index()], state);
+  AtomicAccess::store(&_cset_map._cset_map[r->index()], state);
 }
 
 void ShenandoahCollectionSet::clear() {

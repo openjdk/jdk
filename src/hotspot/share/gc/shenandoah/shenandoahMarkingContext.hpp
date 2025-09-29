@@ -90,8 +90,6 @@ public:
 
   bool is_bitmap_clear() const;
   bool is_bitmap_range_within_region_clear(const HeapWord* start, const HeapWord* end) const;
-
-  size_t count_live_objects(HeapWord* start, HeapWord* end) const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARKINGCONTEXT_HPP

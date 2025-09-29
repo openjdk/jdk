@@ -448,60 +448,18 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
 }
 
-// Special Shenandoah CAS implementation that handles false negatives due
-// to concurrent evacuation.  The service is more complex than a
-// traditional CAS operation because the CAS operation is intended to
-// succeed if the reference at addr exactly matches expected or if the
-// reference at addr holds a pointer to a from-space object that has
-// been relocated to the location named by expected.  There are two
-// races that must be addressed:
-//  a) A parallel thread may mutate the contents of addr so that it points
-//     to a different object.  In this case, the CAS operation should fail.
-//  b) A parallel thread may heal the contents of addr, replacing a
-//     from-space pointer held in addr with the to-space pointer
-//     representing the new location of the object.
-// Upon entry to cmpxchg_oop, it is assured that new_val equals null
-// or it refers to an object that is not being evacuated out of
-// from-space, or it refers to the to-space version of an object that
-// is being evacuated out of from-space.
+// Implements CAS on references for the C2 CAS intrinsics.
 //
-// By default the value held in the result register following execution
-// of the generated code sequence is 0 to indicate failure of CAS,
-// non-zero to indicate success. If is_cae, the result is the value most
-// recently fetched from addr rather than a boolean success indicator.
+// We need to avoid false negatives: failing CAS could be caused by attempting
+// a CAS on a from-space reference in memory, and an expected value of the
+// same object, but with a to-space reference.
 //
-// Clobbers rscratch1, rscratch2
-// void ShenandoahBarrierSetAssembler::cmpxchg_oop(const MachNode* node,
-//                                                 MacroAssembler* masm,
-//                                                 Register addr,
-//                                                 Register expected,
-//                                                 Register new_val,
-//                                                 bool acquire, bool release,
-//                                                 bool is_cae,
-//                                                 Register result) {
-//
-//   Register tmp1 = rscratch1;
-//   Register tmp2 = rscratch2;
-//   assert_different_registers(addr, expected, new_val, result, tmp1, tmp2);
-//
-//   ShenandoahCASBarrierSlowStub* const slow_stub = ShenandoahCASBarrierSlowStub::create(node, addr, expected, new_val, result, is_cae);
-//   ShenandoahCASBarrierMidStub* const mid_stub = ShenandoahCASBarrierMidStub::create(node, slow_stub, tmp1, is_cae);
-//   bool is_narrow = UseCompressedOops;
-//   Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
-//
-//   __ cmpxchg(addr, expected, new_val, size, acquire, release, false, result);
-//   if (!is_cae) {
-//     __ cset(result, Assembler::EQ);
-//   }
-//
-//   // If CAS failed, we need to check in the mid-path whether or not we need to deal with
-//   // false negatives.
-//   __ br(Assembler::NE, *mid_stub->entry());
-//
-//   __ bind(*slow_stub->continuation());
-//   __ bind(*mid_stub->continuation());
-// }
-
+// The implementation attempts a normal CAS on the fast path. When the CAS
+// fails, it checks if evacuation is in progress, and if so, calls into the
+// runtime to deal with false negatives.
+// Note: we can not (easily) handle false negatives in assembly (as we did in
+// an earlier implementation) because forwardings might be stored in a
+// forwarding table.
 void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
                                                    MacroAssembler* masm,
                                                    Register addr,
