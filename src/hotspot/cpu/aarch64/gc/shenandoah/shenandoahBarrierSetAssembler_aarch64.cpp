@@ -653,6 +653,7 @@ void ShenandoahBarrierSetAssembler::card_barrier_c2(const MachNode* node, MacroA
     return;
   }
 
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
   __ lsr(tmp, addr, CardTable::card_shift());
 
   assert(CardTable::dirty_card_val() == 0, "must be");
@@ -711,6 +712,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
 #define __ masm.
 
 void ShenandoahLoadRefBarrierStubC2::emit_code(MacroAssembler& masm) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   __ bind(*entry());
   Register obj = _obj;
   if (_narrow) {
@@ -763,6 +765,7 @@ void ShenandoahLoadRefBarrierStubC2::emit_code(MacroAssembler& masm) {
 }
 
 void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   __ bind(*entry());
   // Do we need to load the previous value?
   if (_addr_reg != noreg) {
@@ -799,6 +802,7 @@ void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
 }
 
 void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   __ bind(*entry());
 
   // Check if CAS result is null. If it is, then we must have a legitimate failure.
@@ -821,6 +825,7 @@ void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
 }
 
 void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
   __ bind(*entry());
   Assembler::operand_size size = UseCompressedOops ? Assembler::word : Assembler::xword;
 
