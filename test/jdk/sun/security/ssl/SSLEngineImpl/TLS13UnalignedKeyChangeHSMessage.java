@@ -142,6 +142,7 @@ public class TLS13UnalignedKeyChangeHSMessage extends SSLEngineTemplate {
 
                     cTOs.compact();
 
+                    // need to wrap again on the client to throw delegated exception
                     clientEngine.wrap(clientOut, cTOs);
                 },
                 ex -> {
