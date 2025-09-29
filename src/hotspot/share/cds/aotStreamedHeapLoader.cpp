@@ -327,8 +327,6 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
                                              oop heap_object,
                                              size_t size,
                                              LinkerT linker) {
-  CopyConjointLinkingOopClosure cl(heap_object, linker);
-
   if (!_allow_gc) {
     // Without concurrent GC running, we can copy incorrect object references
     // and metadata references into the heap object and then fix them up in-place.
@@ -337,6 +335,8 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
     HeapWord* heap_start = cast_from_oop<HeapWord*>(heap_object) + 1;
 
     Copy::disjoint_words(archive_start, heap_start, payload_size);
+
+    CopyConjointLinkingOopClosure cl(heap_object, linker);
     heap_object->oop_iterate(&cl);
     HeapShared::remap_loaded_metadata(heap_object);
     return;
@@ -378,7 +378,10 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
 
     // Copy metadata field
     Metadata* archive_metadata = *(Metadata**)(uintptr_t(archive_object) + metadata_offset);
-    Metadata* runtime_metadata = (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta());
+    Metadata* runtime_metadata = archive_metadata;
+    if (archive_metadata != nullptr) {
+      runtime_metadata = (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta());
+    }
     heap_object->metadata_field_put(metadata_offset, runtime_metadata);
     curr_bit = metadata_field_idx + skip;
   });
