@@ -55,8 +55,6 @@ public final class AESCrypt extends SymmetricCipher {
     private static final int AES_256_NKEYS = 32;
 
     private int rounds;
-    private int[] expandedKey = null;
-    private int[] invExpandedKey = null;
     private byte[] prevKey = null;
 
     // Following two attributes are specific to Intrinsics where sessionK is
@@ -747,8 +745,6 @@ public final class AESCrypt extends SymmetricCipher {
                     "Invalid key length (" + key.length + ").");
         }
         if (!MessageDigest.isEqual(prevKey, key)) {
-            expandedKey = genRKeys(key, nk);
-            invExpandedKey = invGenRKeys();
 
             if (sessionK == null) {
                 sessionK = new int[2][];
@@ -759,8 +755,8 @@ public final class AESCrypt extends SymmetricCipher {
             if (prevKey != null) {
                 Arrays.fill(prevKey, (byte) 0);
             }
-            sessionK[0] = expandedKey;
-            sessionK[1] = invExpandedKey;
+            sessionK[0] = genRKeys(key, nk);
+            sessionK[1] = invGenRKeys();
             prevKey = key.clone();
         }
         K = sessionK[decrypt];
@@ -846,22 +842,23 @@ public final class AESCrypt extends SymmetricCipher {
      */
     private int[] invGenRKeys() {
         int len = WB;
-        int[] wM = new int[len];
-        int[] w1 = new int[expandedKey.length];
+        int kLen = sessionK[0].length;;
+        int[] w = new int[len];
+        int[] tw = new int[kLen];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
         // without a mix column transform.
         for (int i = 1; i < rounds; i++) {
-            System.arraycopy(expandedKey, i * len, wM, 0, len);
-            invMixRKey(wM);
-            System.arraycopy(wM, 0, w1, expandedKey.length - i * len, len);
+            System.arraycopy(sessionK[0], i * len, w, 0, len);
+            invMixRKey(w);
+            System.arraycopy(w, 0, tw, kLen - i * len, len);
         }
-        System.arraycopy(expandedKey, expandedKey.length - len, w1, len, len);
-        System.arraycopy(expandedKey, 0, w1, 0, len);
-        Arrays.fill(wM, 0);
+        System.arraycopy(sessionK[0], kLen - len, tw, len, len);
+        System.arraycopy(sessionK[0], 0, tw, 0, len);
+        Arrays.fill(w, 0);
 
-        return w1;
+        return tw;
     }
 
     /**
@@ -885,33 +882,6 @@ public final class AESCrypt extends SymmetricCipher {
     }
 
     /**
-     * Convert integer array to byte array with specified offset.
-     *
-     * @param s [out] the output of converted bytes.
-     * @param ti [in] the integer array to be converted to bytes.
-     * @param so [in] the offset of the output byte array.
-     */
-    private void finalState(byte[] s, int[] ti, int so) {
-        // The following statements are flattened for optimization purposes.
-        s[so] = (byte) ((ti[0] >> 24) & 0xFF);
-        s[so + 1] = (byte) ((ti[0] >> 16) & 0xFF);
-        s[so + 2] = (byte) ((ti[0] >> 8) & 0xFF);
-        s[so + 3] = (byte) (ti[0] & 0xFF);
-        s[so + 4] = (byte) ((ti[1] >> 24) & 0xFF);
-        s[so + 5] = (byte) ((ti[1] >> 16) & 0xFF);
-        s[so + 6] = (byte) ((ti[1] >> 8) & 0xFF);
-        s[so + 7] = (byte) (ti[1] & 0xFF);
-        s[so + 8] = (byte) ((ti[2] >> 24) & 0xFF);
-        s[so + 9] = (byte) ((ti[2] >> 16) & 0xFF);
-        s[so + 10] = (byte) ((ti[2] >> 8) & 0xFF);
-        s[so + 11] = (byte) (ti[2] & 0xFF);
-        s[so + 12] = (byte) ((ti[3] >> 24) & 0xFF);
-        s[so + 13] = (byte) ((ti[3] >> 16) & 0xFF);
-        s[so + 14] = (byte) ((ti[3] >> 8) & 0xFF);
-        s[so + 15] = (byte) (ti[3] & 0xFF);
-    }
-
-    /**
      * Method for one block of encryption.
      *
      * @param p [in] the plaintext to be encrypted.
@@ -920,186 +890,173 @@ public final class AESCrypt extends SymmetricCipher {
      * @param co [in] the ciphertext offset in the array of bytes.
      */
     private void encryptJava(byte[] p, int po, byte[] c, int co) {
-        int[] ti = new int[WB];
+        int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
-        int w = 0;
+        int w = 40;
 
-        ti[0] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
-                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
-        ti[1] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
-                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
-        ti[2] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
-                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
-        ti[3] = ((p[po++] & 0xFF) << 24) ^ ((p[po++] & 0xFF) << 16)
-                ^ ((p[po++] & 0xFF) << 8) ^ (p[po++] & 0xFF) ^ expandedKey[w++];
+        a0 = ((p[po] & 0xFF) << 24) ^ ((p[po + 1] & 0xFF) << 16)
+                ^ ((p[po + 2] & 0xFF) << 8) ^ (p[po + 3] & 0xFF) ^ K[0];
+        a1 = ((p[po + 4] & 0xFF) << 24) ^ ((p[po + 5] & 0xFF) << 16)
+                ^ ((p[po + 6] & 0xFF) << 8) ^ (p[po + 7] & 0xFF) ^ K[1];
+        a2 = ((p[po + 8] & 0xFF) << 24) ^ ((p[po + 9] & 0xFF) << 16)
+                ^ ((p[po + 10] & 0xFF) << 8) ^ (p[po + 11] & 0xFF) ^ K[2];
+        a3 = ((p[po + 12] & 0xFF) << 24) ^ ((p[po + 13] & 0xFF) << 16)
+                ^ ((p[po + 14] & 0xFF) << 8) ^ (p[po + 15] & 0xFF) ^ K[3];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[4];
+        ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[5];
+        ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[6];
+        ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[7];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
+                ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[8];
+        a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
+                ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[9];
+        a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
+                ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[10];
+        a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
+                ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[11];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[12];
+        ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[13];
+        ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[14];
+        ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[15];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
+                ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[16];
+        a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
+                ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[17];
+        a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
+                ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[18];
+        a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
+                ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[19];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[20];
+        ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[21];
+        ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[22];
+        ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[23];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
+                ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[24];
+        a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
+                ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[25];
+        a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
+                ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[26];
+        a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
+                ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[27];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[28];
+        ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[29];
+        ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[30];
+        ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[31];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
+                ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[32];
+        a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
+                ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[33];
+        a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
+                ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[34];
+        a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
+                ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[35];
 
-        a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF] ^ expandedKey[w++];
-        a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF] ^ expandedKey[w++];
-        a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF] ^ expandedKey[w++];
-        a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF] ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[36];
+        ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[37];
+        ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[38];
+        ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[39];
 
         if (rounds > AES_128_ROUNDS) {
-            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
-                    ^ expandedKey[w++];
-            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
-                    ^ expandedKey[w++];
-            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
-                    ^ expandedKey[w++];
-            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
-                    ^ expandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
+                    ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[w];
+            a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
+                    ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[w + 1];
+            a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
+                    ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[w + 2];
+            a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
+                    ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[w + 3];
 
-            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
-                    ^ expandedKey[w++];
-            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
-                    ^ expandedKey[w++];
-            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
-                    ^ expandedKey[w++];
-            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
-                    ^ expandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                    ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[w + 4];
+            ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                    ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[w + 5];
+            ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                    ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[w + 6];
+            ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                    ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[w + 7];
+            w += 8;
         }
         if (rounds > AES_192_ROUNDS) {
-            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
-                    ^ expandedKey[w++];
-            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
-                    ^ expandedKey[w++];
-            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
-                    ^ expandedKey[w++];
-            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
-                    ^ expandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
+                    ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[w];
+            a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
+                    ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[w + 1];
+            a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
+                    ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[w + 2];
+            a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
+                    ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[w + 3];
 
-            a0 = T0[(ti[0] >> 24) & 0xFF] ^ T1[(ti[1] >> 16) & 0xFF]
-                    ^ T2[(ti[2] >> 8) & 0xFF] ^ T3[ti[3] & 0xFF]
-                    ^ expandedKey[w++];
-            a1 = T0[(ti[1] >> 24) & 0xFF] ^ T1[(ti[2] >> 16) & 0xFF]
-                    ^ T2[(ti[3] >> 8) & 0xFF] ^ T3[ti[0] & 0xFF]
-                    ^ expandedKey[w++];
-            a2 = T0[(ti[2] >> 24) & 0xFF] ^ T1[(ti[3] >> 16) & 0xFF]
-                    ^ T2[(ti[0] >> 8) & 0xFF] ^ T3[ti[1] & 0xFF]
-                    ^ expandedKey[w++];
-            a3 = T0[(ti[3] >> 24) & 0xFF] ^ T1[(ti[0] >> 16) & 0xFF]
-                    ^ T2[(ti[1] >> 8) & 0xFF] ^ T3[ti[2] & 0xFF]
-                    ^ expandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
+                    ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[w + 4];
+            ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
+                    ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[w + 5];
+            ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
+                    ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[w + 6];
+            ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
+                    ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[w + 7];
+            w += 8;
         }
-        a0 = T2[(ti[0] >> 24) & 0xFF] & 0xFF000000
-                ^ T3[(ti[1] >> 16) & 0xFF] & 0xFF0000
-                ^ T0[(ti[2] >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti[3] & 0xFF] & 0xFF ^ expandedKey[w++];
-        a1 = T2[(ti[1] >> 24) & 0xFF] & 0xFF000000
-                ^ T3[(ti[2] >> 16) & 0xFF] & 0xFF0000
-                ^ T0[(ti[3] >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti[0] & 0xFF] & 0xFF ^ expandedKey[w++];
-        a2 = T2[(ti[2] >> 24) & 0xFF] & 0xFF000000
-                ^ T3[(ti[3] >> 16) & 0xFF] & 0xFF0000
-                ^ T0[(ti[0] >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti[1] & 0xFF] & 0xFF ^ expandedKey[w++];
-        a3 = T2[(ti[3] >> 24) & 0xFF] & 0xFF000000
-                ^ T3[(ti[0] >> 16) & 0xFF] & 0xFF0000
-                ^ T0[(ti[1] >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti[2] & 0xFF] & 0xFF ^ expandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = T2[ti0 >>> 24] & 0xFF000000
+                ^ T3[(ti1 >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti2 >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti3 & 0xFF] & 0xFF ^ K[w];
+        a1 = T2[ti1 >>> 24] & 0xFF000000
+                ^ T3[(ti2 >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti3 >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti0 & 0xFF] & 0xFF ^ K[w+1];
+        a2 = T2[ti2 >>> 24] & 0xFF000000
+                ^ T3[(ti3 >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti0 >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti1 & 0xFF] & 0xFF ^ K[w+2];
+        a3 = T2[ti3 >>> 24] & 0xFF000000
+                ^ T3[(ti0 >> 16) & 0xFF] & 0xFF0000
+                ^ T0[(ti1 >> 8) & 0xFF] & 0xFF00
+                ^ T1[ti2 & 0xFF] & 0xFF ^ K[w+3];
 
-        finalState(c, ti, co);
+        c[co] = (byte) (a0 >>> 24);
+        c[co + 1] = (byte) ((a0 >> 16) & 0xFF);
+        c[co + 2] = (byte) ((a0 >> 8) & 0xFF);
+        c[co + 3] = (byte) (a0 & 0xFF);
+        c[co + 4] = (byte) (a1 >>> 24);
+        c[co + 5] = (byte) ((a1 >> 16) & 0xFF);
+        c[co + 6] = (byte) ((a1 >> 8) & 0xFF);
+        c[co + 7] = (byte) (a1 & 0xFF);
+        c[co + 8] = (byte) (a2 >>> 24);
+        c[co + 9] = (byte) ((a2 >> 16) & 0xFF);
+        c[co + 10] = (byte) ((a2 >> 8) & 0xFF);
+        c[co + 11] = (byte) (a2 & 0xFF);
+        c[co + 12] = (byte) (a3 >> 24);
+        c[co + 13] = (byte) ((a3 >> 16) & 0xFF);
+        c[co + 14] = (byte) ((a3 >> 8) & 0xFF);
+        c[co + 15] = (byte) (a3 & 0xFF);
     }
 
     /**
@@ -1111,229 +1068,163 @@ public final class AESCrypt extends SymmetricCipher {
      * @param po [in] the plaintext offset in the array of bytes.
      */
     private void decryptJava(byte[] c, int co, byte[] p, int po) {
-        int[] ti = new int[WB];
+        int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
-        int w = 4;
+        int w = 44;
 
-        ti[0] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
-                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
-                ^ invExpandedKey[w++];
-        ti[1] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
-                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
-                ^ invExpandedKey[w++];
-        ti[2] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
-                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
-                ^ invExpandedKey[w++];
-        ti[3] = ((c[co++] & 0xFF) << 24) ^ ((c[co++] & 0xFF) << 16)
-                ^ ((c[co++] & 0xFF) << 8) ^ (c[co++] & 0xFF)
-                ^ invExpandedKey[w++];
+        ti0 = ((c[co] & 0xFF) << 24) ^ ((c[co + 1] & 0xFF) << 16)
+                ^ ((c[co + 2] & 0xFF) << 8) ^ (c[co + 3] & 0xFF) ^ K[4];
+        ti1 = ((c[co + 4] & 0xFF) << 24) ^ ((c[co + 5] & 0xFF) << 16)
+                ^ ((c[co + 6] & 0xFF) << 8) ^ (c[co + 7] & 0xFF) ^ K[5];
+        ti2 = ((c[co + 8] & 0xFF) << 24) ^ ((c[co + 9] & 0xFF) << 16)
+                ^ ((c[co + 10] & 0xFF) << 8) ^ (c[co + 11] & 0xFF) ^ K[6];
+        ti3 = ((c[co + 12] & 0xFF) << 24) ^ ((c[co + 13] & 0xFF) << 16)
+                ^ ((c[co + 14] & 0xFF) << 8) ^ (c[co + 15] & 0xFF) ^ K[7];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[8];
+        a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[9];
+        a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[10];
+        a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[11];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
+                ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[12];
+        ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
+                ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[13];
+        ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
+                ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[14];
+        ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
+                ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[15];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[16];
+        a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[17];
+        a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[18];
+        a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[19];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
+                ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[20];
+        ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
+                ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[21];
+        ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
+                ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[22];
+        ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
+                ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[23];
+        a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[24];
+        a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[25];
+        a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[26];
+        a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[27];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
+                ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[28];
+        ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
+                ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[29];
+        ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
+                ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[30];
+        ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
+                ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[31];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[32];
+        a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[33];
+        a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[34];
+        a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[35];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
+                ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[36];
+        ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
+                ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[37];
+        ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
+                ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[38];
+        ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
+                ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[39];
 
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
-
-        a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                ^ invExpandedKey[w++];
-        a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                ^ invExpandedKey[w++];
-        a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                ^ invExpandedKey[w++];
-        a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                ^ invExpandedKey[w++];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+        a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[40];
+        a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[41];
+        a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[42];
+        a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[43];
 
         if (rounds > AES_128_ROUNDS) {
-            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                    ^ invExpandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
+                    ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[w];
+            ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
+                    ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[w + 1];
+            ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
+                    ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[w + 2];
+            ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
+                    ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[w + 3];
 
-            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                    ^ invExpandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                    ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[w + 4];
+            a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                    ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[w + 5];
+            a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                    ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[w + 6];
+            a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                    ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[w + 7];
+            w += 8;
         }
         if (rounds > AES_192_ROUNDS) {
-            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                    ^ invExpandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
+                    ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[w];
+            ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
+                    ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[w + 1];
+            ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
+                    ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[w + 2];
+            ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
+                    ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[w + 3];
 
-            a0 = TI0[(ti[0] >> 24) & 0xFF] ^ TI1[(ti[3] >> 16) & 0xFF]
-                    ^ TI2[(ti[2] >> 8) & 0xFF] ^ TI3[ti[1] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a1 = TI0[(ti[1] >> 24) & 0xFF] ^ TI1[(ti[0] >> 16) & 0xFF]
-                    ^ TI2[(ti[3] >> 8) & 0xFF] ^ TI3[ti[2] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a2 = TI0[(ti[2] >> 24) & 0xFF] ^ TI1[(ti[1] >> 16) & 0xFF]
-                    ^ TI2[(ti[0] >> 8) & 0xFF] ^ TI3[ti[3] & 0xFF]
-                    ^ invExpandedKey[w++];
-            a3 = TI0[(ti[3] >> 24) & 0xFF] ^ TI1[(ti[2] >> 16) & 0xFF]
-                    ^ TI2[(ti[1] >> 8) & 0xFF] ^ TI3[ti[0] & 0xFF]
-                    ^ invExpandedKey[w++];
-            ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
+            a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
+                    ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[w + 4];
+            a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
+                    ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[w + 5];
+            a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
+                    ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[w + 6];
+            a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
+                    ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[w + 7];
         }
-        a0 = TI4[(ti[0] >> 24) & 0xFF] & 0xFF000000
-                ^ TI4[(ti[3] >> 16) & 0xFF] & 0xFF0000
-                ^ TI4[(ti[2] >> 8) & 0xFF] & 0xFF00
-                ^ TI4[ti[1] & 0xFF] & 0xFF
-                ^ invExpandedKey[0];
-        a1 = TI4[(ti[1] >> 24) & 0xFF] & 0xFF000000
-                ^ TI4[(ti[0] >> 16) & 0xFF] & 0xFF0000
-                ^ TI4[(ti[3] >> 8) & 0xFF] & 0xFF00
-                ^ TI4[ti[2] & 0xFF] & 0xFF
-                ^ invExpandedKey[1];
-        a2 = TI4[(ti[2] >> 24) & 0xFF] & 0xFF000000
-                ^ TI4[(ti[1] >> 16) & 0xFF] & 0xFF0000
-                ^ TI4[(ti[0] >> 8) & 0xFF] & 0xFF00
-                ^ TI4[ti[3] & 0xFF] & 0xFF
-                ^ invExpandedKey[2];
-        a3 = TI4[(ti[3] >> 24) & 0xFF] & 0xFF000000
-                ^ TI4[(ti[2] >> 16) & 0xFF] & 0xFF0000
-                ^ TI4[(ti[1] >> 8) & 0xFF] & 0xFF00
-                ^ TI4[ti[0] & 0xFF] & 0xFF
-                ^ invExpandedKey[3];
-        ti[0] = a0; ti[1] = a1; ti[2] = a2; ti[3] = a3;
-        finalState(p, ti, po);
+        ti0 = TI4[a0 >>> 24] & 0xFF000000 ^ TI4[(a3 >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(a2 >> 8) & 0xFF] & 0xFF00 ^ TI4[a1 & 0xFF] & 0xFF ^ K[0];
+        ti1 = TI4[a1 >>> 24] & 0xFF000000 ^ TI4[(a0 >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(a3 >> 8) & 0xFF] & 0xFF00 ^ TI4[a2 & 0xFF] & 0xFF ^ K[1];
+        ti2 = TI4[a2 >>> 24] & 0xFF000000 ^ TI4[(a1 >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(a0 >> 8) & 0xFF] & 0xFF00 ^ TI4[a3 & 0xFF] & 0xFF ^ K[2];
+        ti3 = TI4[a3 >>> 24] & 0xFF000000 ^ TI4[(a2 >> 16) & 0xFF] & 0xFF0000
+                ^ TI4[(a1 >> 8) & 0xFF] & 0xFF00 ^ TI4[a0 & 0xFF] & 0xFF ^ K[3];
+
+        p[po] = (byte) (ti0 >>> 24);
+        p[po + 1] = (byte) ((ti0 >> 16) & 0xFF);
+        p[po + 2] = (byte) ((ti0 >> 8) & 0xFF);
+        p[po + 3] = (byte) (ti0 & 0xFF);
+        p[po + 4] = (byte) (ti1 >>> 24);
+        p[po + 5] = (byte) ((ti1 >> 16) & 0xFF);
+        p[po + 6] = (byte) ((ti1 >> 8) & 0xFF);
+        p[po + 7] = (byte) (ti1 & 0xFF);
+        p[po + 8] = (byte) (ti2 >>> 24);
+        p[po + 9] = (byte) ((ti2 >> 16) & 0xFF);
+        p[po + 10] = (byte) ((ti2 >> 8) & 0xFF);
+        p[po + 11] = (byte) (ti2 & 0xFF);
+        p[po + 12] = (byte) (ti3 >>> 24);
+        p[po + 13] = (byte) ((ti3 >> 16) & 0xFF);
+        p[po + 14] = (byte) ((ti3 >> 8) & 0xFF);
+        p[po + 15] = (byte) (ti3 & 0xFF);
     }
 
     /**
