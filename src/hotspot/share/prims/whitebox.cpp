@@ -2214,23 +2214,16 @@ static bool canWriteJavaHeapArchive() {
   return !CDSConfig::are_vm_options_incompatible_with_dumping_heap();
 }
 
-static bool canWriteMappedJavaHeapArchive() {
-  return canWriteJavaHeapArchive() &&
-         UseG1GC &&
-         UseCompressedOops &&
-         !AOTStreamableObjects;
-}
-
 WB_ENTRY(jboolean, WB_CanWriteJavaHeapArchive(JNIEnv* env))
   return canWriteJavaHeapArchive();
 WB_END
 
 WB_ENTRY(jboolean, WB_CanWriteMappedJavaHeapArchive(JNIEnv* env))
-  return canWriteMappedJavaHeapArchive();
+  return canWriteJavaHeapArchive() && !AOTStreamableObjects;
 WB_END
 
 WB_ENTRY(jboolean, WB_CanWriteStreamedJavaHeapArchive(JNIEnv* env))
-  return canWriteJavaHeapArchive() && !canWriteMappedJavaHeapArchive();
+  return canWriteJavaHeapArchive() && AOTStreamableObjects;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsJFRIncluded(JNIEnv* env))

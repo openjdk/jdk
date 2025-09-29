@@ -35,6 +35,7 @@
 #include "cds/aotStreamedHeapWriter.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/cdsHeapVerifier.hpp"
@@ -373,8 +374,15 @@ void HeapShared::initialize_loading_mode_if_not_set() {
 }
 
 void HeapShared::initialize_writing_mode() {
+  assert(!FLAG_IS_ERGO(AOTStreamableObjects), "Should not have been ergonomically set yet");
+
   if (!CDSConfig::is_dumping_archive()) {
     assert(_heap_write_mode == HeapArchiveMode::_uninitialized, "already initialized?");
+    if (FLAG_IS_CMDLINE(AOTStreamableObjects)) {
+      log_info(cds)("-XX:%cAOTStreamableObjects was specified, "
+                    "AOTStreamableObjects is only used for dumping",
+                    AOTStreamableObjects ? '+' : '-');
+    }
     _heap_write_mode = HeapArchiveMode::_none;
     return;
   }
@@ -387,7 +395,8 @@ void HeapShared::initialize_writing_mode() {
     }
 
     if (!UseG1GC) {
-      log_warning(cds)("Heap archiving without streaming only supported for -XX:+UseG1GC -XX:-UseCompressedOops");
+      log_warning(cds)("Heap archiving without streaming only supported for -XX:+UseG1GC");
+      FLAG_SET_ERGO(AOTStreamableObjects, false);
       _heap_write_mode = HeapArchiveMode::_streaming;
       return;
     }
@@ -398,8 +407,10 @@ void HeapShared::initialize_writing_mode() {
 
   // Select default mode
   if (UseG1GC && UseCompressedOops) {
+    FLAG_SET_DEFAULT(AOTStreamableObjects, false);
     _heap_write_mode = HeapArchiveMode::_mapping;
   } else {
+    assert(AOTStreamableObjects, "Unexpected default value");
     _heap_write_mode = HeapArchiveMode::_streaming;
   }
 }
