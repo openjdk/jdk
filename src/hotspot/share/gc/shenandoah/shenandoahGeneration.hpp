@@ -131,6 +131,7 @@ private:
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
   virtual size_t used() const override;
+  virtual size_t get_affiliated_region_count() const;
 
   size_t available() const override;
   size_t available_with_reserve() const;
@@ -146,19 +147,7 @@ private:
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const override;
 
-  size_t bytes_allocated_since_gc_start() const override {
-    if (_type == ShenandoahGenerationType::YOUNG) {
-      size_t result = _free_set->get_bytes_allocated_since_gc_start();
-      return result;
-    } else if (_type == ShenandoahGenerationType::NON_GEN) {
-      assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
-      size_t result = _free_set->get_bytes_allocated_since_gc_start();
-      return result;
-    } else {
-      size_t result = 0;
-      return result;
-    }
-  }
+  virtual size_t bytes_allocated_since_gc_start() const override;
 
   void log_status(const char* msg) const;
 
@@ -218,24 +207,6 @@ private:
 
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
-
-  size_t get_affiliated_region_count() const {
-    size_t result;
-    switch (_type) {
-    case ShenandoahGenerationType::OLD:
-      result = _free_set->old_affiliated_regions();
-      break;
-    case ShenandoahGenerationType::YOUNG:
-      result = _free_set->young_affiliated_regions();
-      break;
-    case ShenandoahGenerationType::GLOBAL:
-    case ShenandoahGenerationType::NON_GEN:
-    default:
-      result = _free_set->global_affiliated_regions();
-      break;
-    }
-    return result;
-  }
 
   size_t get_humongous_waste() const {
     size_t result;

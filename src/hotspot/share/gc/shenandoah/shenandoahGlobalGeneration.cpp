@@ -50,6 +50,26 @@ size_t ShenandoahGlobalGeneration::used() const {
   return _free_set->global_used();
 }
 
+size_t ShenandoahGlobalGeneration::bytes_allocated_since_gc_start() const {
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  bool is_generational = heap->mode()->is_generational();
+  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
+         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
+#endif
+  return _free_set->get_bytes_allocated_since_gc_start();
+}
+
+size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  bool is_generational = heap->mode()->is_generational();
+  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
+         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
+#endif
+  return _free_set->global_affiliated_regions();
+}
+
 size_t ShenandoahGlobalGeneration::used_regions() const {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   assert(heap->mode()->is_generational(), "Region usage accounting is only for generational mode");

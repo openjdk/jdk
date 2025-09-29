@@ -100,6 +100,17 @@ size_t ShenandoahYoungGeneration::used() const {
   return _free_set->young_used();
 }
 
+size_t ShenandoahYoungGeneration::bytes_allocated_since_gc_start() const {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
+  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Young implies generational");
+  return _free_set->get_bytes_allocated_since_gc_start();
+}
+
+size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
+  return _free_set->young_affiliated_regions();
+}
+
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.

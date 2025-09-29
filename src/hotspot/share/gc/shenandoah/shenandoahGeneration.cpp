@@ -928,6 +928,18 @@ size_t ShenandoahGeneration::used() const {
   return _free_set->global_used();
 }
 
+
+size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
+  return _free_set->get_bytes_allocated_since_gc_start();
+}
+
+size_t ShenandoahGeneration::get_affiliated_region_count() const {
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  return _free_set->global_affiliated_regions();
+}
+
 size_t ShenandoahGeneration::used_regions() const {
   size_t result;
   switch (_type) {
