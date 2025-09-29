@@ -183,7 +183,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     while (page < end && is_page_committed(page)) {
       page++;
     }
-    return MIN2(page, end);
+    return page;
   }
 
   size_t find_first_committed(size_t page, size_t end) {
@@ -213,7 +213,6 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // underlying OS page. See lock declaration for more details.
     {
       MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-      log_debug(gc,ihop)("commit-regions start-region %u num_regions %zu start-page %zu end-page %zu", start_idx, num_regions, start_page, end_page);
 
       size_t uncommitted_l = find_first_uncommitted(start_page, end_page);
       size_t uncommitted_r = find_first_committed(uncommitted_l + 1, end_page);
@@ -221,7 +220,6 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       first_newly_committed = uncommitted_l;
       num_committed_pages = uncommitted_r - uncommitted_l;
 
-      log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, uncommitted_r, num_committed_pages);
       if (num_committed_pages > 0 &&
           !commit_pages(first_newly_committed, num_committed_pages)) {
         all_zero_filled = false;
@@ -253,9 +251,6 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     // Concurrent operations might operate on regions sharing the same
     // underlying OS page. See lock declaration for more details.
     MutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
-
-    log_debug(gc,ihop)("uncommit-regions start-region %u num_regions %zu start-page %zu end-page %zu", start_idx, num_regions, start_page, end_page);
-
     // Clear commit map for the given range. Not using the par_clear_range since
     // updates to _region_commit_map for this mapper is protected by _lock.
     _region_commit_map.clear_range(start_idx, region_limit, BitMap::unknown_range);
@@ -267,8 +262,6 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
     size_t uncommitted_r = find_first_committed(uncommitted_l + 1, end_page);
 
     size_t num_uncommitted_pages_found = uncommitted_r - uncommitted_l;
-
-    log_debug(gc,ihop)("uncommit-regions chunk page %zu to page %zu size %zu", uncommitted_l, uncommitted_r, num_uncommitted_pages_found);
 
     if (num_uncommitted_pages_found > 0) {
       _storage.uncommit(uncommitted_l, num_uncommitted_pages_found);
