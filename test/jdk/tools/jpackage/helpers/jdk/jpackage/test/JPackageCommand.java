@@ -46,6 +46,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -811,11 +812,19 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return exec;
     }
 
+    public Executor.Result executeIgnoreExitCode() {
+        return execute(OptionalInt.empty());
+    }
+
     public Executor.Result execute() {
         return execute(0);
     }
 
     public Executor.Result execute(int expectedExitCode) {
+        return execute(OptionalInt.of(expectedExitCode));
+    }
+
+    private Executor.Result execute(OptionalInt expectedExitCode) {
         verifyMutable();
         executePrerequisiteActions();
 
@@ -852,7 +861,8 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             }
         }
 
-        if (expectedExitCode == 0 && !isImagePackageType()) {
+        if (expectedExitCode.isPresent() && expectedExitCode.orElseThrow() == 0
+                && !isImagePackageType()) {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
@@ -860,11 +870,17 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         final var directoriesAssert = new ReadOnlyPathsAssert(copy);
 
-        Executor.Result result = copy.createExecutor().execute(expectedExitCode);
+        Executor.Result result;
+        if (expectedExitCode.isEmpty()) {
+            result = copy.createExecutor().executeWithoutExitCodeCheck();
+        } else {
+            result = copy.createExecutor().execute(expectedExitCode.orElseThrow());
+        }
 
         directoriesAssert.updateAndAssert();
 
-        if (expectedExitCode == 0 && isImagePackageType()) {
+        if (expectedExitCode.isPresent() && expectedExitCode.orElseThrow() == 0
+                && isImagePackageType()) {
             ConfigFilesStasher.INSTANCE.accept(this);
         }
 
@@ -872,7 +888,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             outputValidator.accept(result.getOutput().iterator());
         }
 
-        if (result.exitCode() == 0) {
+        if (result.exitCode() == 0 && expectedExitCode.isPresent()) {
             verifyActions.run();
         }
 
@@ -1069,7 +1085,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         MAIN_LAUNCHER_FILES(cmd -> {
             if (!cmd.isRuntime()) {
-                new LauncherVerifier(cmd).verify(cmd, LauncherVerifier.Action.VERIFY_INSTALLED);
+                new LauncherVerifier(cmd).verify(cmd,
+                        LauncherVerifier.Action.VERIFY_INSTALLED,
+                        LauncherVerifier.Action.VERIFY_MAC_ENTITLEMENTS);
             }
         }),
         MAIN_JAR_FILE(cmd -> {
@@ -1174,10 +1192,15 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                     "Check for unexpected value of <app-store> property in app image file");
             }
 
-            TKit.assertStringListEquals(
-                    addLauncherNames().stream().sorted().toList(),
-                    aif.addLaunchers().keySet().stream().sorted().toList(),
-                    "Check additional launcher names");
+            // Don't compare the add launchers configured on the command line with the
+            // add launchers listed in the `.jpackage.xml` file if the latter comes from
+            // a predefined app image.
+            if (!hasArgument("--app-image")) {
+                TKit.assertStringListEquals(
+                        addLauncherNames().stream().sorted().toList(),
+                        aif.addLaunchers().keySet().stream().sorted().toList(),
+                        "Check additional launcher names");
+            }
         }
     }
 

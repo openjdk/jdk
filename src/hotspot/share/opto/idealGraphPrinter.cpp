@@ -448,6 +448,11 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         }
       }
     }
+    if (n->adr_type() != nullptr) {
+      stringStream adr_type_stream;
+      n->adr_type()->dump_on(&adr_type_stream);
+      print_prop("adr_type", adr_type_stream.freeze());
+    }
 
     if (C->cfg() != nullptr) {
       Block* block = C->cfg()->get_block_for_node(node);
@@ -640,8 +645,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         jint value = typeInt->get_con();
 
         // Only use up to 4 chars and fall back to a generic "I" to keep it short.
-        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), "%d", value);
-        if (written_chars <= 4) {
+        int written_chars = os::snprintf(buffer, sizeof(buffer), "%d", value);
+        if (written_chars > 0 && written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "I");
@@ -654,8 +659,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
         jlong value = typeLong->get_con();
 
         // Only use up to 4 chars and fall back to a generic "L" to keep it short.
-        int written_chars = os::snprintf_checked(buffer, sizeof(buffer), JLONG_FORMAT, value);
-        if (written_chars <= 4) {
+        int written_chars = os::snprintf(buffer, sizeof(buffer), JLONG_FORMAT, value);
+        if (written_chars > 0 && written_chars <= 4) {
           print_prop(short_name, buffer);
         } else {
           print_prop(short_name, "L");

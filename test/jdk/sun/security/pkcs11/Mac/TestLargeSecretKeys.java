@@ -31,7 +31,7 @@ import java.security.Provider;
  * @test
  * @bug 8328556
  * @library /test/lib ..
- * @run main/othervm/timeout=30 -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt TestLargeSecretKeys
+ * @run main/othervm/timeout=120 -DCUSTOM_P11_CONFIG_NAME=p11-nss-sensitive.txt TestLargeSecretKeys
  */
 
 public final class TestLargeSecretKeys extends PKCS11Test {

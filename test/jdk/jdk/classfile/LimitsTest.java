@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,22 @@
 
 /*
  * @test
- * @bug 8320360 8330684 8331320 8331655 8331940 8332486 8335820 8336833
+ * @bug 8320360 8330684 8331320 8331655 8331940 8332486 8335820 8336833 8361635
  * @summary Testing ClassFile limits.
  * @run junit LimitsTest
  */
+
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.AttributedElement;
 import java.lang.classfile.Attributes;
-import java.lang.classfile.constantpool.PoolEntry;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.ConstantDescs;
-import java.lang.constant.MethodTypeDesc;
+import java.lang.classfile.BufWriter;
 import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassReader;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.Label;
 import java.lang.classfile.Opcode;
+import java.lang.classfile.Signature;
 import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.classfile.attribute.LineNumberInfo;
 import java.lang.classfile.attribute.LineNumberTableAttribute;
@@ -41,8 +46,16 @@ import java.lang.classfile.attribute.LocalVariableTableAttribute;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.classfile.constantpool.ConstantPoolException;
 import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.instruction.SwitchCase;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
 
 import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
@@ -51,6 +64,8 @@ import jdk.internal.classfile.impl.LabelContext;
 import jdk.internal.classfile.impl.UnboundAttribute;
 import org.junit.jupiter.api.Test;
 
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LimitsTest {
@@ -71,6 +86,114 @@ class LimitsTest {
                 cb.withField("field" + i, ConstantDescs.CD_int, fb -> {});
             }
         }));
+    }
+
+    @Test
+    void testBsmOverLimit() {
+        AtomicBoolean reached = new AtomicBoolean();
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> {
+            var cp = clb.constantPool();
+            var mhe = cp.methodHandleEntry(BSM_GET_STATIC_FINAL);
+            var digits = new IntegerEntry[10];
+            for (int i = 0; i < 10; i++) {
+                digits[i] = cp.intEntry(i);
+            }
+            int lastIndex = -1;
+            for (int i = 0; i < 66000; i++) {
+                lastIndex = cp.bsmEntry(mhe, List.of(
+                        digits[i / 10000 % 10],
+                        digits[i / 1000 % 10],
+                        digits[i / 100 % 10],
+                        digits[i / 10 % 10],
+                        digits[i / 1 % 10])).bsmIndex();
+            }
+            assertEquals(65999, lastIndex);
+            reached.set(true);
+        }));
+        assertTrue(reached.get());
+    }
+
+    @Test
+    void testTooManyFields() {
+        AtomicBoolean reached = new AtomicBoolean();
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> {
+            for (int i = 1; i < 66000; i++) {
+                clb.withField("f", CD_int, 0);
+            }
+            reached.set(true);
+        }));
+        assertTrue(reached.get());
+    }
+
+    @Test
+    void testTooManyMethods() {
+        AtomicBoolean reached = new AtomicBoolean();
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> {
+            for (int i = 1; i < 66000; i++) {
+                clb.withMethodBody("m", MTD_void, 0, CodeBuilder::return_);
+            }
+            reached.set(true);
+        }));
+        assertTrue(reached.get());
+    }
+
+    static final class MyAttribute extends CustomAttribute<MyAttribute> {
+        static final MyAttribute INSTANCE = new MyAttribute();
+
+        private enum Mapper implements AttributeMapper<MyAttribute> {
+            INSTANCE;
+
+            @Override
+            public MyAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void writeAttribute(BufWriter buf, MyAttribute attr) {
+                buf.writeIndex(buf.constantPool().utf8Entry("MyAttribute"));
+                buf.writeInt(0);
+            }
+
+            @Override
+            public boolean allowMultiple() {
+                return true;
+            }
+
+            @Override
+            public AttributeStability stability() {
+                return AttributeStability.STATELESS;
+            }
+
+
+        }
+
+        private MyAttribute() {
+            super(Mapper.INSTANCE);
+        }
+    }
+
+    @Test
+    void testTooManyClassAttributes() {
+        AtomicBoolean reached = new AtomicBoolean();
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> {
+            for (int i = 1; i < 66000; i++) {
+                clb.with(MyAttribute.INSTANCE);
+            }
+            reached.set(true);
+        }));
+        assertTrue(reached.get());
+    }
+
+    @Test
+    void testTooManyFieldAttributes() {
+        AtomicBoolean reached = new AtomicBoolean();
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> clb.withField("f", CD_int, fb -> {
+            for (int i = 1; i < 66000; i++) {
+                fb.with(MyAttribute.INSTANCE);
+            }
+            reached.set(true);
+        })));
+        assertTrue(reached.get());
     }
 
     @Test
@@ -97,6 +220,91 @@ class LimitsTest {
                 "aMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> cob.return_()))).methods().get(0).code().get();
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(-1));
         assertThrows(IllegalArgumentException.class, () -> lc.getLabel(10));
+    }
+
+    private static void testPseudoOverflow(BiConsumer<CodeBuilder, Label> handler) {
+        ClassFile cf = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS);
+        AtomicBoolean reached = new AtomicBoolean(false);
+        assertDoesNotThrow(() -> cf.build(CD_Void, cb -> cb.withMethodBody("test", MTD_void, ACC_STATIC, cob -> {
+            cob.nop();
+            var label = cob.newLabel();
+            for (int i = 0; i < 65535; i++) {
+                handler.accept(cob, label);
+            }
+            cob.labelBinding(label);
+            cob.return_();
+            reached.set(true);
+        })));
+        assertTrue(reached.get());
+
+        reached.set(false);
+        assertThrows(IllegalArgumentException.class, () -> cf.build(CD_Void, cb -> cb.withMethodBody("test", MTD_void, ACC_STATIC, cob -> {
+            cob.nop();
+            var label = cob.newLabel();
+            for (int i = 0; i < 65536; i++) {
+                handler.accept(cob, label);
+            }
+            cob.labelBinding(label);
+            cob.return_();
+            reached.set(true);
+        })));
+        assertTrue(reached.get());
+    }
+
+    @Test
+    void testExceptionCatchOverflow() {
+        testPseudoOverflow((cob, label) -> cob.exceptionCatch(cob.startLabel(), label, label, CD_Throwable));
+    }
+
+    @Test
+    void testLocalVariableOverflow() {
+        testPseudoOverflow((cob, label) -> cob.localVariable(0, "fake", CD_int, cob.startLabel(), label));
+    }
+
+    @Test
+    void testLocalVariableTypeOverflow() {
+        testPseudoOverflow((cob, label) -> cob.localVariableType(0, "fake", Signature.of(CD_int), cob.startLabel(), label));
+    }
+
+    @Test
+    void testCharacterRangeOverflow() {
+        testPseudoOverflow((cob, label) -> cob.characterRange(cob.startLabel(), label, 0, 0, 0));
+    }
+
+    // LineNumber deduplicates so cannot really overflow
+
+    @Test
+    void testHugeLookupswitch() {
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> clb.withMethodBody("test", MTD_void, ACC_STATIC, cob -> {
+            var l = cob.newLabel();
+            // 10000 * 8 > 65535
+            var cases = new ArrayList<SwitchCase>(10000);
+            for (int i = 0; i < 10000; i++) {
+                cases.add(SwitchCase.of(i, l));
+            }
+            cob.lookupswitch(l, cases);
+            cob.labelBinding(l);
+            cob.return_();
+        })));
+    }
+
+    @Test
+    void testHugeTableswitch() {
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> clb.withMethodBody("test", MTD_void, ACC_STATIC, cob -> {
+            var l = cob.newLabel();
+            // 20000 * 4 > 65535
+            cob.tableswitch(-10000, 10000, l, List.of());
+            cob.labelBinding(l);
+            cob.return_();
+        })));
+    }
+
+    @Test
+    void testHugeUtf8Entry() {
+        var longString = String.valueOf((char) 0x800).repeat(22000);
+        assertThrows(IllegalArgumentException.class, () -> ClassFile.of().build(CD_Void, clb -> {
+            clb.constantPool().utf8Entry(longString);
+        }));
     }
 
     @Test

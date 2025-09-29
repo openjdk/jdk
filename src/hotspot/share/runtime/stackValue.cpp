@@ -30,9 +30,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zBarrier.inline.hpp"
-#endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif

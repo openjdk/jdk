@@ -158,6 +158,11 @@ public class RawHtml extends Content {
     }
 
     @Override
+    public Content stripTags() {
+        return Text.of(rawHtmlContent.replaceAll("<[^>]*>", ""));
+    }
+
+    @Override
     public String toString() {
         return rawHtmlContent;
     }

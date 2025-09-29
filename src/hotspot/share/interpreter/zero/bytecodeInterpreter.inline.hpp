@@ -27,6 +27,7 @@
 
 #include "interpreter/zero/bytecodeInterpreter.hpp"
 
+#include "bytecodeInterpreter_zero.inline.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/macros.hpp"
 
@@ -41,7 +42,5 @@
 #else
 #define VERIFY_OOP(o)
 #endif
-
-# include "bytecodeInterpreter_zero.inline.hpp"
 
 #endif // SHARE_INTERPRETER_BYTECODEINTERPRETER_INLINE_HPP

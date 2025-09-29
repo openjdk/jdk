@@ -338,7 +338,7 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r10_opr);
-    stub = new MonitorExitStub(FrameMap::r10_opr, true, 0);
+    stub = new MonitorExitStub(FrameMap::r10_opr, 0);
     __ unlock_object(x15, x14, x10, x16, *stub->entry());
     __ bind(*stub->continuation());
   }
@@ -1494,14 +1494,12 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register lock = op->lock_opr()->as_register();
   Register temp = op->scratch_opr()->as_register();
   if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     // add debug info for NullPointerException only if one is possible
     int null_check_offset = __ lock_object(hdr, obj, lock, temp, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
     }
   } else if (op->code() == lir_unlock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     __ unlock_object(hdr, obj, lock, temp, *op->stub()->entry());
   } else {
     Unimplemented();
@@ -1589,8 +1587,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     __ increment(counter_addr, DataLayout::counter_increment);
   }
 }
-
-void LIR_Assembler::emit_delay(LIR_OpDelay*) { Unimplemented(); }
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   __ la(dst->as_register(), frame_map()->address_for_monitor_lock(monitor_no));
@@ -1821,7 +1817,7 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
   }
 
   LIR_Address* adr = addr->as_address_ptr();
-  Register dst = dest->as_register_lo();
+  Register dst = dest->as_pointer_register();
 
   assert_different_registers(dst, t0);
   if (adr->base()->is_valid() && dst == adr->base()->as_pointer_register() && (!adr->index()->is_cpu_register())) {

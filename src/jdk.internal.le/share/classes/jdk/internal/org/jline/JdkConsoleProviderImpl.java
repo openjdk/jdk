@@ -50,7 +50,7 @@ public class JdkConsoleProviderImpl implements JdkConsoleProvider {
      */
     @Override
     public JdkConsole console(boolean isTTY, Charset inCharset, Charset outCharset) {
-        return new LazyDelegatingJdkConsoleImpl(inCharset, outCharset);
+        return isTTY ? new LazyDelegatingJdkConsoleImpl(inCharset, outCharset) : null;
     }
 
     private static class LazyDelegatingJdkConsoleImpl implements JdkConsole {
