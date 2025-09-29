@@ -27,6 +27,9 @@
 # Fake minimalistic spec file for RunTestsPrebuilt.gmk.
 ################################################################################
 
+# Make sure all shell commands are executed with the C locale
+export LC_ALL := C
+
 define VerifyVariable
   ifeq ($$($1), )
     $$(info Error: Variable $1 is missing, needed by RunTestPrebuiltSpec.gmk)
@@ -54,24 +57,46 @@ $(eval $(call VerifyVariable,BASH))
 # The "human readable" name of this configuration
 CONF_NAME := run-test-prebuilt
 
-LOCALE_USED := C
-
 # Number of parallel jobs to use for compilation
-CONF_JOBS := $(NUM_CORES)
-CONF_TEST_JOBS := 0
+JOBS ?= $(NUM_CORES)
+TEST_JOBS ?= 0
 
 # Use hard-coded values for java flags (one size, fits all!)
 JAVA_FLAGS := -Duser.language=en -Duser.country=US
 JAVA_FLAGS_BIG := -Xms64M -Xmx2048M
 JAVA_FLAGS_SMALL := -XX:+UseSerialGC -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
-BUILD_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
-BOOTCYCLE_JVM_ARGS_BIG := $(JAVA_FLAGS_BIG)
+BUILDJDK_JAVA_FLAGS_SMALL := -Xms32M -Xmx512M -XX:TieredStopAtLevel=1
+BUILD_JAVA_FLAGS := $(JAVA_FLAGS_BIG)
+
+################################################################################
+# Hard-coded values copied from spec.gmk.in.
+X :=
+SPACE := $(X) $(X)
+COMMA := ,
+MAKE_ARGS = $(MAKE_LOG_FLAGS) -r -R -I $(TOPDIR)/make/common SPEC=$(SPEC) \
+    MAKE_LOG_FLAGS="$(MAKE_LOG_FLAGS)" LOG_LEVEL=$(LOG_LEVEL)
+BASH_ARGS := -o pipefail -e
+SHELL := $(BASH) $(BASH_ARGS)
 
 ################################################################################
 # Set some reasonable defaults for features
 DEBUG_LEVEL := release
 HOTSPOT_DEBUG_LEVEL := release
 BUILD_FAILURE_HANDLER := true
+
+################################################################################
+# Alias some paths (that should not really be used) to our JDK image under test.
+SUPPORT_OUTPUTDIR := $(OUTPUTDIR)/support
+BUILDTOOLS_OUTPUTDIR := $(OUTPUTDIR)/buildtools
+HOTSPOT_OUTPUTDIR := $(OUTPUTDIR)/hotspot
+JDK_OUTPUTDIR := $(OUTPUTDIR)/jdk
+IMAGES_OUTPUTDIR := $(OUTPUTDIR)/images
+BUNDLES_OUTPUTDIR := $(OUTPUTDIR)/bundles
+TESTMAKE_OUTPUTDIR := $(OUTPUTDIR)/test-make
+MAKESUPPORT_OUTPUTDIR := $(OUTPUTDIR)/make-support
+BUILDJDK_OUTPUTDIR := $(OUTPUTDIR)/buildjdk
+
+JRE_IMAGE_DIR := $(JDK_IMAGE_DIR)
 
 ################################################################################
 # Assume build platform is same as target platform
@@ -84,19 +109,30 @@ OPENJDK_BUILD_CPU_ARCH := $(OPENJDK_TARGET_CPU_ARCH)
 OPENJDK_BUILD_CPU_BITS := $(OPENJDK_TARGET_CPU_BITS)
 OPENJDK_BUILD_CPU_ENDIAN := $(OPENJDK_TARGET_CPU_ENDIAN)
 
-EXTERNAL_BUILDJDK_PATH :=
-
 ################################################################################
 # Java executable definitions
-JAVA_CMD := $(FIXPATH) $(BOOT_JDK)/bin/java
-JAVAC_CMD := $(FIXPATH) $(BOOT_JDK)/bin/javac
-JAR_CMD := $(FIXPATH) $(BOOT_JDK)/bin/jar
+JAVA_CMD := $(BOOT_JDK)/bin/java
+JAVAC_CMD := $(BOOT_JDK)/bin/javac
+JAR_CMD := $(BOOT_JDK)/bin/jar
+JLINK_CMD := $(JDK_OUTPUTDIR)/bin/jlink
+JMOD_CMD := $(JDK_OUTPUTDIR)/bin/jmod
 
+JAVA := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+JAVA_SMALL := $(FIXPATH) $(JAVA_CMD) $(JAVA_FLAGS_SMALL) $(JAVA_FLAGS)
+JAVAC := $(FIXPATH) $(JAVAC_CMD)
+JAR := $(FIXPATH) $(JAR_CMD)
+JLINK := $(FIXPATH) $(JLINK_CMD)
+JMOD := $(FIXPATH) $(JMOD_CMD)
+
+JTREG_JAVA := $(FIXPATH) $(JTREG_JDK)/bin/java $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
+
+BUILD_JAVA := $(JDK_IMAGE_DIR)/bin/JAVA
 ################################################################################
 # Some common tools. Assume most common name and no path.
 AWK := awk
 BASENAME := basename
 CAT := cat
+CD := cd
 CHMOD := chmod
 CP := cp
 CUT := cut

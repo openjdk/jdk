@@ -305,7 +305,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   $ECHO "* Version string: $VERSION_STRING ($VERSION_SHORT)"
 
   if test "x$SOURCE_DATE" != xupdated; then
-    source_date_info="$SOURCE_DATE ($SOURCE_DATE_ISO_8601_FIXED)"
+    source_date_info="$SOURCE_DATE ($SOURCE_DATE_ISO_8601)"
   else
     source_date_info="Determined at build time"
   fi
@@ -330,7 +330,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
 
   $ECHO ""
   $ECHO "Build performance summary:"
-  $ECHO "* Build jobs:     $CONF_JOBS"
+  $ECHO "* Build jobs:     $JOBS"
   $ECHO "* Memory limit:   $MEMORY_SIZE MB"
   if test "x$CCACHE_STATUS" != "x"; then
     $ECHO "* ccache status:  $CCACHE_STATUS"
