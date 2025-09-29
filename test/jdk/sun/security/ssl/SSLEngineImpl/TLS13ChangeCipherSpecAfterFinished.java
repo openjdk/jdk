@@ -43,6 +43,9 @@ import javax.net.ssl.SSLProtocolException;
 
 public class TLS13ChangeCipherSpecAfterFinished extends SSLEngineTemplate {
 
+    private static final ContextParameters testContextParams =
+            new ContextParameters("TLSv1.3", "PKIX", "SunX509");
+
     private final String exMsg;
 
     protected TLS13ChangeCipherSpecAfterFinished(String exMsg)
@@ -53,9 +56,13 @@ public class TLS13ChangeCipherSpecAfterFinished extends SSLEngineTemplate {
 
     @Override
     protected ContextParameters getServerContextParameters() {
-        return new ContextParameters("TLSv1.3", "PKIX", "SunX509");
+        return testContextParams;
     }
 
+    @Override
+    protected ContextParameters getClientContextParameters() {
+        return testContextParams;
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1) {
@@ -65,8 +72,9 @@ public class TLS13ChangeCipherSpecAfterFinished extends SSLEngineTemplate {
         boolean useCompatibilityMode = Boolean.parseBoolean(args[0]);
 
         if (useCompatibilityMode) {
-            // Use existing CCS rejection after Finished message with client's
-            // Middlebox Compatibility Mode on (which is the default).
+            // Test existing unexpected message detection mechanism
+            // with client's Middlebox Compatibility Mode on
+            // (which is the default).
             new TLS13ChangeCipherSpecAfterFinished(
                     "(unexpected_message) Unexpected content: 20").run();
         } else {
@@ -108,10 +116,10 @@ public class TLS13ChangeCipherSpecAfterFinished extends SSLEngineTemplate {
 
         // Send a valid CCS message after Finished.
         ByteBuffer changeCipher = ByteBuffer.allocate(6);
-        //        ContentType type: change_cipher_spec(20)
-        //        ProtocolVersion:  0x0303
-        //        uint16 length:    0x0001
-        //        opaque fragment:  0x01
+        // ContentType type: change_cipher_spec(20)
+        // ProtocolVersion:  0x0303
+        // uint16 length:    0x0001
+        // opaque fragment:  0x01
         changeCipher.put(new byte[]{20, 3, 3, 0, 1, 1});
         changeCipher.flip();
 
@@ -119,7 +127,7 @@ public class TLS13ChangeCipherSpecAfterFinished extends SSLEngineTemplate {
                 () -> serverEngine.unwrap(changeCipher, serverIn),
                 ex -> {
                     assertTrue(ex instanceof SSLProtocolException);
-                    assertEquals(ex.getMessage(), exMsg);
+                    assertEquals(exMsg, ex.getMessage());
                 });
     }
 }
