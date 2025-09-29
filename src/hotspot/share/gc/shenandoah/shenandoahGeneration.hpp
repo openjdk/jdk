@@ -130,10 +130,7 @@ private:
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  virtual size_t used() const override {
-    assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-    return _free_set->global_used();
-  }
+  virtual size_t used() const override;
 
   size_t available() const override;
   size_t available_with_reserve() const;

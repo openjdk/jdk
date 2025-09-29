@@ -923,6 +923,11 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   }
 }
 
+size_t ShenandoahGeneration::used() const {
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  return _free_set->global_used();
+}
+
 size_t ShenandoahGeneration::used_regions() const {
   size_t result;
   switch (_type) {

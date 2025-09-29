@@ -38,16 +38,7 @@ public:
 public:
   const char* name() const override;
 
-  size_t used() const override {
-#ifdef ASSERT
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    bool is_generational = heap->mode()->is_generational();
-    assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-           (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
-    return _free_set->global_used();
-  }
-
+  size_t used() const override;
   size_t max_capacity() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;

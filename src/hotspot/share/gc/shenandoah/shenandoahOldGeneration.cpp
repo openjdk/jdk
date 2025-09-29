@@ -829,3 +829,8 @@ void ShenandoahOldGeneration::clear_cards_for(ShenandoahHeapRegion* region) {
 void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
   _card_scan->mark_card_as_dirty((HeapWord*)location);
 }
+
+size_t ShenandoahOldGeneration::used() const {
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
+  return _free_set->old_used();
+}

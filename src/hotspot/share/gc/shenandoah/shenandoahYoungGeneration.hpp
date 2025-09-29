@@ -73,14 +73,9 @@ public:
     return _old_gen_task_queues != nullptr;
   }
 
-  size_t used() const override {
-    assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
-    return _free_set->young_used();
-  }
-
+  size_t used() const override;
   size_t available() const override;
 
-  // Do not override available_with_reserve() because that needs to see memory reserved for Collector
 
   size_t soft_available() const override;
 

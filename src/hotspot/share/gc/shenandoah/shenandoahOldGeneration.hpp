@@ -326,11 +326,7 @@ public:
 
   static const char* state_name(State state);
 
-  size_t used() const override {
-    assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
-    return _free_set->old_used();
-  }
-
+  size_t used() const override;
 };
 
 

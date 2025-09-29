@@ -95,6 +95,11 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
   return _heuristics;
 }
 
+size_t ShenandoahYoungGeneration::used() const {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
+  return _free_set->young_used();
+}
+
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.
