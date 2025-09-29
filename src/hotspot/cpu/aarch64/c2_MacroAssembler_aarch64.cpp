@@ -2203,14 +2203,14 @@ void C2_MacroAssembler::sve_gen_mask_imm(PRegister dst, BasicType bt, uint32_t l
 // Pack active elements of src, under the control of mask, into the lowest-numbered elements of dst.
 // Any remaining elements of dst will be filled with zero.
 // Clobbers: rscratch1
-// Preserves: mask, vtmp_zr
+// Preserves: mask, vzr
 void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                                           FloatRegister vtmp, FloatRegister vtmp_zr,
+                                           FloatRegister vzr, FloatRegister vtmp,
                                            PRegister pgtmp, unsigned vector_length_in_bytes) {
   assert(pgtmp->is_governing(), "This register has to be a governing predicate register");
   // When called by sve_compress_byte, src and vtmp may be the same register.
-  assert_different_registers(dst, src, vtmp_zr);
-  assert_different_registers(dst, vtmp, vtmp_zr);
+  assert_different_registers(dst, src, vzr);
+  assert_different_registers(dst, vtmp, vzr);
   assert_different_registers(mask, pgtmp);
   // high <-- low
   // Example input:   src   = hh gg ff ee dd cc bb aa, one character is 8 bits.
@@ -2228,7 +2228,7 @@ void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src,
   sve_compact(dst, S, dst, pgtmp);
   // Narrow the result back to type SHORT.
   // dst   = 00 00 00 00 00 dd bb aa
-  sve_uzp1(dst, H, dst, vtmp_zr);
+  sve_uzp1(dst, H, dst, vzr);
 
   // Return if the vector length is no more than MaxVectorSize/2, since the
   // highest half is invalid.
@@ -2248,7 +2248,7 @@ void C2_MacroAssembler::sve_compress_short(FloatRegister dst, FloatRegister src,
   // vtmp  =  0000  0000  00hh  00ee
   sve_compact(vtmp, S, vtmp, pgtmp);
   // vtmp  = 00 00 00 00 00 00 hh ee
-  sve_uzp1(vtmp, H, vtmp, vtmp_zr);
+  sve_uzp1(vtmp, H, vtmp, vzr);
 
   // pgtmp = 00 00 00 00 00 01 01 01
   sve_whilelt(pgtmp, H, zr, rscratch1);
@@ -2272,6 +2272,7 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   //                  mask  = 0 1 0 0 0 0 0 1 0 1 0 0 0 1 0 1, one character is 1 bit.
   // Expected result: dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
   sve_dup(vtmp3, B, 0);
+  FloatRegister vzr = vtmp3;
 
   // Extend lowest half to type SHORT.
   // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
@@ -2282,10 +2283,10 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   // and fill the remainings with zero.
   // dst   =  00  00  00  00  00  0g  0c  0a
   unsigned extended_size = vector_length_in_bytes << 1;
-  sve_compress_short(dst, vtmp1, ptmp, vtmp2, vtmp3, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
+  sve_compress_short(dst, vtmp1, ptmp, vzr, vtmp2, pgtmp, extended_size > MaxVectorSize ? MaxVectorSize : extended_size);
   // Narrow the result back to type BYTE.
   // dst   = 0 0 0 0 0 0 0 0 0 0 0 0 0 g c a
-  sve_uzp1(dst, B, dst, vtmp3);
+  sve_uzp1(dst, B, dst, vzr);
 
   // Return if the vector length is no more than MaxVectorSize/2, since the
   // highest half is invalid.
@@ -2302,9 +2303,9 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   // vtmp2 =  0q  0p  0n  0m  0l  0k  0j  0i
   sve_uunpkhi(vtmp2, H, src);
   // vtmp1 =  00  00  00  00  00  00  0p  0i
-  sve_compress_short(vtmp1, vtmp2, ptmp, vtmp2, vtmp3, pgtmp, extended_size - MaxVectorSize);
+  sve_compress_short(vtmp1, vtmp2, ptmp, vzr, vtmp2, pgtmp, extended_size - MaxVectorSize);
   // vtmp1 = 0 0 0 0 0 0 0 0 0 0 0 0 0 0 p i
-  sve_uzp1(vtmp1, B, vtmp1, vtmp3);
+  sve_uzp1(vtmp1, B, vtmp1, vzr);
 
   // ptmp  = 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1
   sve_whilelt(ptmp, B, zr, rscratch2);

@@ -5090,7 +5090,7 @@ instruct vcompressS(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2, pRegGov p
   format %{ "vcompressS $dst, $src, $pg\t# KILL $tmp1, $tmp2, $pgtmp" %}
   ins_encode %{
     uint length_in_bytes = Matcher::vector_length_in_bytes(this);
-    __ sve_dup($tmp2$$FloatRegister, __ H, 0);
+    __ sve_dup($tmp1$$FloatRegister, __ H, 0);
     __ sve_compress_short($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
                           $tmp1$$FloatRegister, $tmp2$$FloatRegister, $pgtmp$$PRegister,
                           length_in_bytes);

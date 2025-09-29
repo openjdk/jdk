@@ -177,7 +177,7 @@
                          PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                          FloatRegister vtmp, FloatRegister vtmp_zr,
+                          FloatRegister vzr, FloatRegister vtmp,
                           PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
