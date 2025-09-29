@@ -234,36 +234,6 @@ void VM_Version::common_initialize() {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
-
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbb, false);
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    warning("Cannot enable UseZvbc on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbc, false);
-  }
-
-  // UseZvkn (depends on RVV).
-  if (UseZvkn && !UseRVV) {
-    warning("Cannot enable UseZvkn on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvkn, false);
-  }
-
-  // UseZvfh (depends on RVV)
-  if (UseZvfh) {
-    if (!UseRVV) {
-      warning("Cannot enable UseZvfh on cpu without RVV support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
-    if (!UseZfh) {
-      warning("Cannot enable UseZvfh on cpu without Zfh support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
-  }
 }
 
 #ifdef COMPILER2
