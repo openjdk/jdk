@@ -107,16 +107,15 @@ private:
                        size_t max_capacity);
   ~ShenandoahGeneration();
 
-  bool is_young() const  { return _type == YOUNG; }
-  bool is_old() const    { return _type == OLD; }
-  bool is_global() const { return _type == GLOBAL || _type == NON_GEN; }
+  inline bool is_young() const                 { return _type == YOUNG; }
+  inline bool is_old() const                   { return _type == OLD; }
+  inline bool is_global() const                { return _type == GLOBAL || _type == NON_GEN; }
+  inline ShenandoahGenerationType type() const { return _type; }
 
   // see description in field declaration
   void set_evacuation_reserve(size_t new_val);
   size_t get_evacuation_reserve() const;
   void augment_evacuation_reserve(size_t increment);
-
-  inline ShenandoahGenerationType type() const { return _type; }
 
   virtual ShenandoahHeuristics* heuristics() const { return _heuristics; }
 
@@ -131,22 +130,9 @@ private:
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override {
-    size_t result;
-    switch (_type) {
-    case ShenandoahGenerationType::OLD:
-      result = _free_set->old_used();
-      break;
-    case ShenandoahGenerationType::YOUNG:
-      result = _free_set->young_used();
-      break;
-    case ShenandoahGenerationType::GLOBAL:
-    case ShenandoahGenerationType::NON_GEN:
-    default:
-      result = _free_set->global_used();
-      break;
-    }
-    return result;
+  virtual size_t used() const override {
+    assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+    return _free_set->global_used();
   }
 
   size_t available() const override;
