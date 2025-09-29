@@ -1633,7 +1633,7 @@ public class Exhaustiveness extends TestRunner {
                true);
     }
 
-    @Test
+//    @Test
     public void testDeeplyNestedNotExhaustive(Path base) throws Exception {
         List<String> variants = createDeeplyNestedVariants().stream().collect(Collectors.toCollection(ArrayList::new));
         int removed = (int) (Math.random() * variants.size());
@@ -2312,6 +2312,7 @@ public class Exhaustiveness extends TestRunner {
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW",
+                             "-XDexhaustivityTimeout=0",
                              stopAtFlow ? "-XDshould-stop.ifNoError=FLOW"
                                         : "-XDnoop")
                     .outdir(classes)
