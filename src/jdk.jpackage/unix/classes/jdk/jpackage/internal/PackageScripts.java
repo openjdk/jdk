@@ -79,13 +79,11 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
     static class ResourceConfig {
 
         ResourceConfig(String defaultName, String categoryId) {
-            this(Optional.of(defaultName), Optional.empty(), categoryId);
+            this(Optional.of(defaultName), categoryId);
         }
 
-        ResourceConfig(Optional<String> defaultName, Optional<String> publicName,
-                String categoryId) {
+        ResourceConfig(Optional<String> defaultName, String categoryId) {
             this.defaultName = defaultName;
-            this.publicName = publicName;
             this.category = I18N.getString(categoryId);
         }
 
@@ -102,9 +100,7 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         }
 
         private Optional<String> getDefaultPublicName() {
-            if (publicName.isPresent()) {
-                return publicName;
-            } else if (defaultName.isPresent()) {
+            if (defaultName.isPresent()) {
                 final String wellKnownSuffix = ".template";
                 if (defaultName.get().endsWith(wellKnownSuffix)) {
                     return Optional.of(defaultName.get().substring(0,
@@ -115,7 +111,6 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         }
 
         private final Optional<String> defaultName;
-        private final Optional<String> publicName;
         private final String category;
     }
 

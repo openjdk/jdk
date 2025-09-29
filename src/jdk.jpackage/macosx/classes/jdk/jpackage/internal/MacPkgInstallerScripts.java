@@ -34,9 +34,9 @@ import jdk.jpackage.internal.PackageScripts.ResourceConfig;
 final class MacPkgInstallerScripts {
 
     enum AppScripts implements Supplier<OverridableResource> {
-        preinstall(new ResourceConfig(Optional.empty(), Optional.of("preinstall"),
+        preinstall(new ResourceConfig(Optional.empty(),
                 "resource.pkg-preinstall-script")),
-        postinstall(new ResourceConfig(Optional.empty(), Optional.of("postinstall"),
+        postinstall(new ResourceConfig(Optional.empty(),
                 "resource.pkg-postinstall-script"));
 
         AppScripts(ResourceConfig cfg) {
@@ -45,7 +45,18 @@ final class MacPkgInstallerScripts {
 
         @Override
         public OverridableResource get() {
-            return cfg.createResource();
+            return cfg.createResource().setPublicName(getPublicName());
+        }
+
+        private String getPublicName() {
+            if (this == preinstall) {
+                return "preinstall";
+            } else if (this == postinstall) {
+                return "postinstall";
+            }
+
+            // Should never be reached
+            return null;
         }
 
         private final ResourceConfig cfg;
