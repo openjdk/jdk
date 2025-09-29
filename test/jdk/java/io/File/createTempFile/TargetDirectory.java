@@ -69,6 +69,7 @@ class TargetDirectory {
         Path dir = tempDir.resolve("target");
         File target = Files.createDirectory(dir).toFile();
 
+        // Make 'target' read-only
         if (Files.getFileStore(dir).supportsFileAttributeView("posix")) {
             PosixFileAttributeView view =
                 Files.getFileAttributeView(dir, PosixFileAttributeView.class);
@@ -98,15 +99,13 @@ class TargetDirectory {
 
     @Test
     void testNonExistentDirectory() {
-        File voidDir = new File(tempDir.toFile(), "void");
         assertThrows(IOException.class,
-            () -> File.createTempFile("nonexistent", null, voidDir));
+            () -> File.createTempFile("nonexistent", null, new File(tempDir.toFile(), "void")));
     }
 
     @Test
     void testTargetIsFile() throws Exception {
-        Path filePath = tempDir.resolve("file");
-        File target = Files.createFile(filePath).toFile();
+        File target = Files.createFile(tempDir.resolve("file")).toFile();
         assertThrows(IOException.class,
             () -> File.createTempFile("file", null, target));
     }
