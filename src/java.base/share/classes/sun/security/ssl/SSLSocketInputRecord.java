@@ -368,7 +368,7 @@ final class SSLSocketInputRecord extends InputRecord implements SSLRecord {
                     // From RFC 8446:
                     // "Implementations MUST verify that all messages immediately
                     // preceding a key change align with a record boundary; if
-                    // znot, then they MUST terminate the connection with an
+                    // not, then they MUST terminate the connection with an
                     // "unexpected_message" alert. Because the ClientHello,
                     // EndOfEarlyData, ServerHello, Finished, and KeyUpdate
                     // messages can immediately precede a key change, implementations
