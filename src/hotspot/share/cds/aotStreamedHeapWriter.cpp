@@ -464,7 +464,9 @@ void AOTStreamedHeapWriter::map_embedded_oops(GrowableArrayCHeap<oop, mtClassSha
     HeapShared::CachedOopInfo* info = HeapShared::get_cached_oop_info(src_obj);
     assert(info != nullptr, "must be");
     address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
+
     update_header_for_buffered_addr(buffered_obj, src_obj, src_obj->klass());
+
     EmbeddedOopMapper mapper(src_obj, buffered_obj, heap_info->oopmap());
     src_obj->oop_iterate(&mapper);
     HeapShared::remap_dumped_metadata(src_obj, buffered_obj);
