@@ -257,9 +257,9 @@ public final class TestActiveSettingEvent {
                     String settingName = type.getName() + "#" + s.getName();
                     String value = settingValues.get(settingName);
                     if (value == null) {
-                        String message = "Could not find setting with name " + settingName;
+                        String message = "Could not find setting with name " + settingName + ".";
                         if (settingName.equals("duration") || settingName.equals("stackTrace")) {
-                            message +=". Use @RemoveField(\"" + settingName + "\") to drop the field";
+                            message += " Use @RemoveField(\"" + settingName + "\") to drop the field.";
                         }
                         throw new Exception(message);
                     }
