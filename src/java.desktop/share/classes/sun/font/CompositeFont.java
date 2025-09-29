@@ -114,8 +114,8 @@ public final class CompositeFont extends Font2D {
             components[msCnt] = fm.getEUDCFont();
             deferredInitialisation = new boolean[numSlots];
             if (defer) {
-                for (int i=0; i<numSlots-1; i++) {
-                    deferredInitialisation[i] = true;
+                for (int i=0; i<numSlots; i++) {
+                    deferredInitialisation[i] = (i != msCnt);
                 }
             }
         } else {
