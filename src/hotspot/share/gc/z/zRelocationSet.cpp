@@ -33,7 +33,7 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zWorkers.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 class ZRelocationSetInstallTask : public ZTask {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,28 @@ package jdk.internal.net.http.common;
 import java.net.http.HttpHeaders;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
+
 import jdk.internal.net.http.frame.DataFrame;
 import jdk.internal.net.http.frame.Http2Frame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
+import jdk.internal.net.http.quic.frames.AckFrame;
+import jdk.internal.net.http.quic.frames.CryptoFrame;
+import jdk.internal.net.http.quic.frames.HandshakeDoneFrame;
+import jdk.internal.net.http.quic.frames.PaddingFrame;
+import jdk.internal.net.http.quic.frames.PingFrame;
+import jdk.internal.net.http.quic.frames.QuicFrame;
+import jdk.internal.net.http.quic.frames.StreamFrame;
+import jdk.internal.net.http.quic.packets.PacketSpace;
+import jdk.internal.net.http.quic.packets.QuicPacket;
+import jdk.internal.net.http.quic.packets.QuicPacket.PacketType;
 
 import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLParameters;
@@ -43,7 +57,8 @@ import javax.net.ssl.SSLParameters;
 /**
  * -Djdk.httpclient.HttpClient.log=
  *          errors,requests,headers,
- *          frames[:control:data:window:all..],content,ssl,trace,channel
+ *          frames[:control:data:window:all..],content,ssl,trace,channel,
+ *          quic[:control:processed:retransmit:ack:crypto:data:cc:hs:dbb:ping:all]
  *
  * Any of errors, requests, headers or content are optional.
  *
@@ -57,15 +72,17 @@ public abstract class Log implements System.Logger {
 
     static final String logProp = "jdk.httpclient.HttpClient.log";
 
-    public static final int OFF = 0;
-    public static final int ERRORS = 0x1;
-    public static final int REQUESTS = 0x2;
-    public static final int HEADERS = 0x4;
-    public static final int CONTENT = 0x8;
-    public static final int FRAMES = 0x10;
-    public static final int SSL = 0x20;
-    public static final int TRACE = 0x40;
-    public static final int CHANNEL = 0x80;
+    public static final int OFF      = 0x00;
+    public static final int ERRORS   = 0x01;
+    public static final int REQUESTS = 0x02;
+    public static final int HEADERS  = 0x04;
+    public static final int CONTENT  = 0x08;
+    public static final int FRAMES   = 0x10;
+    public static final int SSL      = 0x20;
+    public static final int TRACE    = 0x40;
+    public static final int CHANNEL  = 0x80;
+    public static final int QUIC     = 0x0100;
+    public static final int HTTP3    = 0x0200;
     static int logging;
 
     // Frame types: "control", "data", "window", "all"
@@ -74,6 +91,27 @@ public abstract class Log implements System.Logger {
     public static final int WINDOW_UPDATES = 4;
     public static final int ALL = CONTROL| DATA | WINDOW_UPDATES;
     static int frametypes;
+
+    // Quic message types
+    public static final int QUIC_CONTROL    = 1;
+    public static final int QUIC_PROCESSED  = 2;
+    public static final int QUIC_RETRANSMIT = 4;
+    public static final int QUIC_DATA       = 8;
+    public static final int QUIC_CRYPTO     = 16;
+    public static final int QUIC_ACK        = 32;
+    public static final int QUIC_PING       = 64;
+    public static final int QUIC_CC         = 128;
+    public static final int QUIC_TIMER      = 256;
+    public static final int QUIC_DIRECT_BUFFER_POOL = 512;
+    public static final int QUIC_HANDSHAKE = 1024;
+    public static final int QUIC_ALL = QUIC_CONTROL
+            | QUIC_PROCESSED | QUIC_RETRANSMIT
+            | QUIC_DATA | QUIC_CRYPTO
+            | QUIC_ACK | QUIC_PING | QUIC_CC
+            | QUIC_TIMER | QUIC_DIRECT_BUFFER_POOL
+            | QUIC_HANDSHAKE;
+    static int quictypes;
+
 
     static final System.Logger logger;
 
@@ -94,6 +132,12 @@ public abstract class Log implements System.Logger {
                     case "headers":
                         logging |= HEADERS;
                         break;
+                    case "quic":
+                        logging |= QUIC;
+                        break;
+                    case "http3":
+                        logging |= HTTP3;
+                        break;
                     case "content":
                         logging |= CONTENT;
                         break;
@@ -107,13 +151,14 @@ public abstract class Log implements System.Logger {
                         logging |= TRACE;
                         break;
                     case "all":
-                        logging |= CONTENT|HEADERS|REQUESTS|FRAMES|ERRORS|TRACE|SSL| CHANNEL;
+                        logging |= CONTENT | HEADERS | REQUESTS | FRAMES | ERRORS | TRACE | SSL | CHANNEL | QUIC | HTTP3;
                         frametypes |= ALL;
+                        quictypes |= QUIC_ALL;
                         break;
                     default:
                         // ignore bad values
                 }
-                if (val.startsWith("frames")) {
+                if (val.startsWith("frames:") || val.equals("frames")) {
                     logging |= FRAMES;
                     String[] types = val.split(":");
                     if (types.length == 1) {
@@ -132,6 +177,56 @@ public abstract class Log implements System.Logger {
                                     break;
                                 case "all":
                                     frametypes = ALL;
+                                    break;
+                                default:
+                                    // ignore bad values
+                            }
+                        }
+                    }
+                }
+                if (val.startsWith("quic:") || val.equals("quic")) {
+                    logging |= QUIC;
+                    String[] types = val.split(":");
+                    if (types.length == 1) {
+                        quictypes = QUIC_ALL & ~QUIC_TIMER & ~QUIC_DIRECT_BUFFER_POOL;
+                    } else {
+                        for (String type : types) {
+                            switch (type.toLowerCase(Locale.US)) {
+                                case "control":
+                                    quictypes |= QUIC_CONTROL;
+                                    break;
+                                case "data":
+                                    quictypes |= QUIC_DATA;
+                                    break;
+                                case "processed":
+                                    quictypes |= QUIC_PROCESSED;
+                                    break;
+                                case "retransmit":
+                                    quictypes |= QUIC_RETRANSMIT;
+                                    break;
+                                case "crypto":
+                                    quictypes |= QUIC_CRYPTO;
+                                    break;
+                                case "cc":
+                                    quictypes |= QUIC_CC;
+                                    break;
+                                case "hs":
+                                    quictypes |= QUIC_HANDSHAKE;
+                                    break;
+                                case "ack":
+                                    quictypes |= QUIC_ACK;
+                                    break;
+                                case "ping":
+                                    quictypes |= QUIC_PING;
+                                    break;
+                                case "timer":
+                                    quictypes |= QUIC_TIMER;
+                                    break;
+                                case "dbb":
+                                    quictypes |= QUIC_DIRECT_BUFFER_POOL;
+                                    break;
+                                case "all":
+                                    quictypes = QUIC_ALL;
                                     break;
                                 default:
                                     // ignore bad values
@@ -173,6 +268,119 @@ public abstract class Log implements System.Logger {
 
     public static boolean channel() {
         return (logging & CHANNEL) != 0;
+    }
+
+    public static boolean altsvc() { return headers(); }
+
+    public static boolean quicRetransmit() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_RETRANSMIT) != 0;
+    }
+
+    // not called directly - but impacts isLogging(QuicFrame)
+    public static boolean quicHandshake() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_HANDSHAKE) != 0;
+    }
+
+    public static boolean quicProcessed() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_PROCESSED) != 0;
+    }
+
+    // not called directly - but impacts isLogging(QuicFrame)
+    public static boolean quicData() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_DATA) != 0;
+    }
+
+    public static boolean quicCrypto() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_CRYPTO) != 0;
+    }
+
+    public static boolean quicCC() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_CC) != 0;
+    }
+
+    public static boolean quicControl() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_CONTROL) != 0;
+    }
+
+    public static boolean quicTimer() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_TIMER) != 0;
+    }
+    public static boolean quicDBB() {
+        return (logging & QUIC) != 0 && (quictypes & QUIC_DIRECT_BUFFER_POOL) != 0;
+    }
+
+    public static boolean quic() {
+        return (logging & QUIC) != 0;
+    }
+
+    public static boolean http3() {
+        return (logging & HTTP3) != 0;
+    }
+
+    public static void logHttp3(String s, Object... s1) {
+        if (http3()) {
+            logger.log(Level.INFO, "HTTP3: " + s, s1);
+        }
+    }
+
+    private static boolean isLogging(QuicFrame frame) {
+        if (frame instanceof StreamFrame sf)
+            return (quictypes & QUIC_DATA) != 0
+                    || (quictypes & QUIC_CONTROL) != 0 && sf.isLast()
+                    || (quictypes & QUIC_CONTROL) != 0 && sf.offset() == 0;
+        if (frame instanceof AckFrame)
+            return (quictypes & QUIC_ACK) != 0;
+        if (frame instanceof CryptoFrame)
+            return (quictypes & QUIC_CRYPTO) != 0
+                    || (quictypes & QUIC_HANDSHAKE) != 0;
+        if (frame instanceof PingFrame)
+            return (quictypes & QUIC_PING) != 0;
+        if (frame instanceof PaddingFrame) return false;
+        if (frame instanceof HandshakeDoneFrame && quicHandshake())
+            return true;
+        return (quictypes & QUIC_CONTROL) != 0;
+    }
+
+    private static final EnumSet<PacketType> HS_TYPES = EnumSet.complementOf(
+            EnumSet.of(PacketType.ONERTT));
+
+    private static boolean quicPacketLoggable(QuicPacket packet) {
+        return (logging & QUIC) != 0
+                && (quictypes == QUIC_ALL
+                || quicHandshake() && HS_TYPES.contains(packet.packetType())
+                || stream(packet.frames()).anyMatch(Log::isLogging));
+    }
+
+    public static boolean quicPacketOutLoggable(QuicPacket packet) {
+        return quicPacketLoggable(packet);
+    }
+
+    private static <T> Stream<T> stream(Collection<T> list) {
+        return list == null ? Stream.empty() : list.stream();
+    }
+
+    public static boolean quicPacketInLoggable(QuicPacket packet) {
+        return quicPacketLoggable(packet);
+    }
+
+    public static void logQuic(String s, Object... s1) {
+        if (quic()) {
+            logger.log(Level.INFO, "QUIC: " + s, s1);
+        }
+    }
+
+    public static void logQuicPacketOut(String connectionTag, QuicPacket packet) {
+        if (quicPacketOutLoggable(packet)) {
+            logger.log(Level.INFO, "QUIC: {0} OUT: {1}",
+                    connectionTag, packet.prettyPrint());
+        }
+    }
+
+    public static void logQuicPacketIn(String connectionTag, QuicPacket packet) {
+        if (quicPacketInLoggable(packet)) {
+            logger.log(Level.INFO, "QUIC: {0} IN: {1}",
+                    connectionTag, packet.prettyPrint());
+        }
     }
 
     public static void logError(String s, Object... s1) {
@@ -234,6 +442,12 @@ public abstract class Log implements System.Logger {
     public static void logHeaders(String s, Object... s1) {
         if (headers()) {
             logger.log(Level.INFO, "HEADERS: " + s, s1);
+        }
+    }
+
+    public static void logAltSvc(String s, Object... s1) {
+        if (altsvc()) {
+            logger.log(Level.INFO, "ALTSVC: " + s, s1);
         }
     }
 
