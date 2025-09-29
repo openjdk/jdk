@@ -59,10 +59,13 @@ import java.io.*;
 import java.lang.reflect.*;
 import java.rmi.registry.*;
 import sun.rmi.transport.*;
+import java.util.concurrent.CountDownLatch;
 
 public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
     public CheckLeaseLeak() throws RemoteException { }
-    public void ping () throws RemoteException { }
+    public void ping () throws RemoteException {
+        remoteCallsComplete.countDown();
+    }
 
     /**
      * Id to fake the DGC_ID, so we can later get a reference to the
@@ -74,6 +77,9 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
     private final static int numberPingCalls = 0;
     private final static int CHECK_INTERVAL = 400;
     private final static int LEASE_VALUE = 20;
+    private static final int NO_OF_CLIENTS = ITERATIONS;
+    private static final int GOOD_LUCK_FACTOR = 2;
+    private static CountDownLatch remoteCallsComplete = new CountDownLatch(NO_OF_CLIENTS);
 
     public static void main (String[] args) {
         CheckLeaseLeak leakServer = null;
@@ -113,7 +119,13 @@ public class CheckLeaseLeak extends UnicastRemoteObject implements LeaseLeak {
                     jvm.destroy();
                 }
             }
-            Thread.sleep(3000);
+            try {
+                remoteCallsComplete.await();
+                System.out.println("remoteCallsComplete . . . ");
+            } catch (InterruptedException intEx) {
+                System.out.println("remoteCallsComplete.await interrupted . . . ");
+            }
+            Thread.sleep(NO_OF_CLIENTS * LEASE_VALUE * GOOD_LUCK_FACTOR);
             numLeft = getDGCLeaseTableSize();
 
         } catch(Exception e) {
