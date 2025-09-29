@@ -36,7 +36,6 @@ class ShenandoahLoadReferenceBarrierStub;
 class StubAssembler;
 #endif
 #ifdef COMPILER2
-class ShenandoahSATBBarrierStubC2;
 class MachNode;
 #endif // COMPILER2
 class StubCodeGenerator;
@@ -97,6 +96,7 @@ public:
 
   void load_ref_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register addr, Register tmp, bool narrow, bool maybe_null);
   void satb_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register pre_val);
+  void card_barrier_c2(const MachNode* node, MacroAssembler* masm, Register addr, Register tmp);
   void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm, Register addr, Register expected, Register new_val, Register result,
                       bool acquire, bool release, bool weak, bool is_cae);
 #endif

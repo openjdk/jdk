@@ -34,7 +34,6 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
-#include "runtime/continuationHelper.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #ifdef COMPILER1
@@ -646,6 +645,30 @@ void ShenandoahBarrierSetAssembler::satb_barrier_c2(const MachNode* node, MacroA
   __ tstw(rscratch1, ShenandoahHeap::MARKING);
   __ br(Assembler::NE, *stub->entry());
   __ bind(*stub->continuation());
+}
+
+void ShenandoahBarrierSetAssembler::card_barrier_c2(const MachNode* node, MacroAssembler* masm, Register addr, Register tmp) {
+  if (!ShenandoahCardBarrier ||
+      (node->barrier_data() & (ShenandoahBarrierCardMark | ShenandoahBarrierCardMarkNotNull)) == 0) {
+    return;
+  }
+
+  __ lsr(tmp, addr, CardTable::card_shift());
+
+  assert(CardTable::dirty_card_val() == 0, "must be");
+
+  Address curr_ct_holder_addr(rthread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ ldr(rscratch1, curr_ct_holder_addr);
+
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ ldrb(rscratch2, Address(tmp, rscratch1));
+    __ cbz(rscratch2, L_already_dirty);
+    __ strb(zr, Address(tmp, rscratch1));
+    __ bind(L_already_dirty);
+  } else {
+    __ strb(zr, Address(tmp, rscratch1));
+  }
 }
 
 void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
