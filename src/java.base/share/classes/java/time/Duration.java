@@ -141,11 +141,29 @@ public final class Duration
     /**
      * Constant for the most negative supported duration.
      *
+     * @apiNote This and {@link Duration#MAX} constants are {@code Duration}
+     * edge values. They are intended to be used in comparisons with other
+     * durations or testing.
+     *
+     * They should never be added to or subtracted from an {@linkplain Instant
+     * instant}, as doing so will cause overflow. Extreme care should be taken
+     * when performing {@code Duration} arithmetic on them, such as adding
+     * them to or subtracting them from another duration.
+     *
      * @since 26
      */
     public static final Duration MIN = new Duration(Long.MIN_VALUE, 0);
     /**
      * Constant for the most positive supported duration.
+     *
+     * @apiNote This and {@link Duration#MIN} constants are {@code Duration}
+     * edge values. They are intended to be used in comparisons with other
+     * durations or for testing.
+     *
+     * They should never be added to or subtracted from an {@linkplain Instant
+     * instant}, as doing so will cause overflow. Extreme care should be taken
+     * when performing {@code Duration} arithmetic on them, such as adding
+     * them to or subtracting them from another duration.
      *
      * @since 26
      */
