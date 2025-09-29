@@ -1486,16 +1486,26 @@ bool FileMapInfo::has_heap_region() {
   return (region_at(AOTMetaspace::hp)->used() > 0);
 }
 
-void FileMapInfo::stream_heap_region() {
-  bool success = false;
+static void on_heap_region_loading_error() {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // It's too late to recover -- we have already committed to use the archived metaspace objects, but
+    // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
+    // all AOT-linked classes are visible.
+    //
+    // We get here because the heap is too small. The app will fail anyway. So let's quit.
+    aot_log_error(aot)("%s has aot-linked classes but the archived "
+                       "heap objects cannot be loaded. Try increasing your heap size.",
+                       CDSConfig::type_of_archive_being_loaded());
+    AOTMetaspace::unrecoverable_loading_error();
+  }
+  CDSConfig::stop_using_full_module_graph();
+}
 
+void FileMapInfo::stream_heap_region() {
   if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
     HeapShared::initialize_streaming();
-    success = true;
-  }
-
-  if (!success) {
-    CDSConfig::stop_using_full_module_graph();
+  } else {
+    on_heap_region_loading_error();
   }
 }
 
@@ -1510,18 +1520,7 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    if (CDSConfig::is_using_aot_linked_classes()) {
-      // It's too late to recover -- we have already committed to use the archived metaspace objects, but
-      // the archived heap objects cannot be loaded, so we don't have the archived FMG to guarantee that
-      // all AOT-linked classes are visible.
-      //
-      // We get here because the heap is too small. The app will fail anyway. So let's quit.
-      aot_log_error(aot)("%s has aot-linked classes but the archived "
-                     "heap objects cannot be loaded. Try increasing your heap size.",
-                     CDSConfig::type_of_archive_being_loaded());
-      AOTMetaspace::unrecoverable_loading_error();
-    }
-    CDSConfig::stop_using_full_module_graph("archive heap loading failed");
+    on_heap_region_loading_error();
   }
 }
 
