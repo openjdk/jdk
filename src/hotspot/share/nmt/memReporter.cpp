@@ -419,7 +419,7 @@ void MemDetailReporter::report_virtual_memory_region(const VirtualMemoryRegion* 
   outputStream* out = output();
   const char* scale = current_scale();
   const NativeCallStack*  stack = reserved_rgn->reserved_call_stack();
-  bool all_committed = reserved_rgn->size() == VirtualMemoryTracker::Instance::committed_size(reserved_rgn);
+  bool all_committed = reserved_rgn->size() == _baseline.virtual_memory_allocations()->committed_size(*reserved_rgn);
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
@@ -433,7 +433,7 @@ void MemDetailReporter::report_virtual_memory_region(const VirtualMemoryRegion* 
 
   if (all_committed) {
     bool reserved_and_committed = false;
-    VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
+    _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
                                                                   [&](VirtualMemoryRegion& committed_rgn) {
       if (committed_rgn.equals(*reserved_rgn)) {
         // One region spanning the entire reserved region, with the same stack trace.
@@ -466,7 +466,7 @@ void MemDetailReporter::report_virtual_memory_region(const VirtualMemoryRegion* 
     )
   };
 
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*reserved_rgn,
+  _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
                                                                   [&](VirtualMemoryRegion& crgn) {
     print_committed_rgn(crgn);
     return true;

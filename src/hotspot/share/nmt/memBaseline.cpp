@@ -125,10 +125,14 @@ bool MemBaseline::baseline_allocation_sites() {
   // The malloc sites are collected in size order
   _malloc_sites_order = by_size;
 
-  // Virtual memory allocation sites
-  VirtualMemoryAllocationWalker virtual_memory_walker;
-  if (!MemTracker::walk_virtual_memory(&virtual_memory_walker)) {
-    return false;
+  assert(_vma_allocations == nullptr, "must");
+
+  {
+    MemTracker::NmtVirtualMemoryLocker locker;
+    _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
+    if (_vma_allocations == nullptr)  {
+      return false;
+    }
   }
 
   if (!aggregate_virtual_memory_allocation_sites()) {
@@ -182,7 +186,8 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
       site = node->data();
     }
     site->reserve_memory(rgn.size());
-    site->commit_memory(VirtualMemoryTracker::Instance::committed_size(&rgn));
+
+    site->commit_memory(_vma_allocations->committed_size(rgn));
     return true;
   });
 

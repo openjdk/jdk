@@ -30,6 +30,7 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/rbTree.hpp"
 #include "utilities/rbTree.inline.hpp"
 
 #include <cstdint>
@@ -65,7 +66,6 @@ private:
   static const char* statetype_strings[static_cast<uint8_t>(StateType::st_number_of_states)];
 
 public:
-
 
   static const char* statetype_to_string(StateType type) {
     assert(type < StateType::st_number_of_states, "must be");
@@ -227,7 +227,8 @@ private:
 public:
   VMATree() : _tree() {}
   VMATree(const VMATree& other) : _tree() {
-    assert(other._tree.copy_into(_tree), "VMATree dies on OOM");
+    bool success = other._tree.copy_into(_tree);
+    assert(success, "VMATree dies on OOM");
   }
   VMATree& operator=(VMATree const&) = delete;
 

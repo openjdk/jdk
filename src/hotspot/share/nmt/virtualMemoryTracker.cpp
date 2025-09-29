@@ -209,7 +209,7 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   bool ret = true;
-  tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+  tree()->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
     if (!walker->do_allocation_site(&rgn)) {
       ret = false;
       return false;

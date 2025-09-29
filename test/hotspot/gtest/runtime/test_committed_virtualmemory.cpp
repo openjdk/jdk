@@ -108,7 +108,7 @@ public:
     }
 
     // trigger the test
-    ReservedMemoryRegion rmr_found;
+    VirtualMemoryRegion rmr_found;
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
       VirtualMemoryTracker::Instance::snapshot_thread_stacks();
@@ -121,7 +121,7 @@ public:
     bool precise_tracking_supported = false;
     {
       MemTracker::NmtVirtualMemoryLocker nvml;
-      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const CommittedMemoryRegion& cmr){
+      VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rmr_found, [&](const VirtualMemoryRegion& cmr){
         if (cmr.size() == size) {
           return false;
         } else {
