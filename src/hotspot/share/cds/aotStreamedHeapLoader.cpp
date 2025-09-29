@@ -30,6 +30,7 @@
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
@@ -930,6 +931,9 @@ void AOTStreamedHeapLoader::initialize() {
   // The first int is the length of the array
   _roots_archive = ((int*)(((address)_heap_region->mapped_base()) + roots_offset)) + 1;
   _num_roots = _roots_archive[-1];
+
+  // We can't retire a TLAB until the filler klass is set; set it to the archived object klass.
+  CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 
   objArrayOop roots = oopFactory::new_objectArray(_num_roots, thread);
   if (roots == nullptr) {
