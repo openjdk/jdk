@@ -1241,7 +1241,7 @@ final class ServerHello {
 
             if (chc.conContext.inputRecord.t13keyChangeHsExceedsRecordBoundary()) {
                 throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
-                        "CLIENT_HELLO messages must align with a record boundary");
+                        "SERVER_HELLO messages must align with a record boundary");
             }
 
             chc.negotiatedCipherSuite = serverHello.cipherSuite;
