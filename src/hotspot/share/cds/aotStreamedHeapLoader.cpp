@@ -533,9 +533,9 @@ int oop_handle_cmp(const void* left, const void* right) {
   oop* right_handle = *(oop**)right;
 
   if (right_handle > left_handle) {
-    return 1;
-  } else if (left_handle > right_handle) {
     return -1;
+  } else if (left_handle > right_handle) {
+    return 1;
   }
 
   return 0;
@@ -766,11 +766,16 @@ void AOTStreamedHeapLoader::cleanup() {
     oop** handles = ((oop**)_object_index_to_heap_object_table) + 1;
     // Sort the handles so that oop storage can release them faster
     qsort(handles, num_handles, sizeof(oop*), (int (*)(const void*, const void*))oop_handle_cmp);
-    for (size_t i = 0; i < num_handles; ++i) {
-      oop* handle = handles[i];
+    size_t num_null_handles = 0;
+    for (size_t handles_remaining = num_handles; handles_remaining != 0; --handles_remaining) {
+      oop* handle = handles[handles_remaining - 1];
+      if (handle == nullptr) {
+        num_null_handles = handles_remaining;
+        break;
+      }
       NativeAccess<>::oop_store(handle, nullptr);
     }
-    Universe::vm_global()->release(handles, num_handles);
+    Universe::vm_global()->release(&handles[num_null_handles], num_handles - num_null_handles);
   }
 
   FREE_C_HEAP_ARRAY(void*, _object_index_to_heap_object_table);
@@ -914,10 +919,11 @@ void AOTStreamedHeapLoader::finish_materialize_objects() {
       AOTHeapLoading_lock->wait();
     }
   } else {
+    assert(!AOTEagerlyLoadObjects && AOTThread::aot_thread() == nullptr, "When !is_using_full_module_graph() only trace the roots");
     // Without the full module graph we have done only lazy tracing materialization.
     // Ensure all roots are processed here by triggering root loading on every root.
     for (int i = 0; i < _num_roots; ++i) {
-      HeapShared::get_root(i, false /* clear */);
+      get_root(i);
     }
     cleanup();
   }
