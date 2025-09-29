@@ -1359,17 +1359,14 @@ bool MemNode::is_out_of_bound_access(PhaseGVN* phase) const {
   }
 
   const TypeInt* array_size = ary_t->size();
+  assert(array_size->_lo >= 0, "array can't have negative length");
 
-  if (!array_size->is_con()) {
-    return false;
-  }
-
-  int size = array_size->get_con();
+  uintptr_t size = array_size->_hi;
   uintptr_t off = offset_t->get_con();
 
   BasicType bt = elem_t->array_element_basic_type();
   uint shift  = exact_log2(type2aelembytes(bt));
-  uint header = arrayOopDesc::base_offset_in_bytes(bt);
+  uintptr_t header = arrayOopDesc::base_offset_in_bytes(bt);
 
   if (off + memory_size() > header + (size << shift)) {
     return true;

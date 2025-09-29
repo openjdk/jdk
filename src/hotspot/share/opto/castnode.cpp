@@ -117,7 +117,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return res;
     }
   }
-  if (can_reshape && Opcode() != Op_CastPP) {
+  if (can_reshape && Opcode() != Op_CastPP && 0) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     const Type* t = Value(phase);
     if (t->singleton() && t != Type::TOP && !_dependency.narrows_type()) {

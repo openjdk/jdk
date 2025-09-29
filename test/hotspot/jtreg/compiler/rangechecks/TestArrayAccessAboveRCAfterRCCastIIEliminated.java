@@ -123,6 +123,10 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             test26(0, 9, 1, false, false);
             inlined26_2(9, 1, 1, true, 0);
             inlined26_3(0, 0);
+            test27(0, 9, 1, true, false, 10);
+            test27(0, 9, 1, false, false, 10);
+            inlined27_2(9, 1, 0, arrayField27, true, 0);
+            inlined27_3(0, 0);
         }
 //        try {
 //            test1(-1, 10, 1, true);
@@ -1220,6 +1224,62 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             }
         }
         return arrayField26[0] + array2[k] * (j - 10);
+    }
+
+    private static void test27(int k, int j, int flag, boolean flag2, boolean flag3, int arraySize) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined27_3(j, l);
+
+        int i = inlined27(k);
+        j = Integer.min(j, 9);
+        arraySize = Integer.max(arraySize, 10);
+        int[] array = new int[arraySize];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined27_2(j, flag, i, array, flag3, m);
+        } else {
+            inlined27_2(j, flag, i, array, flag3, m);
+        }
+    }
+
+    private static int inlined27_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    private static void inlined27_2(int j, int flag, int i, int[] array, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [min+1..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            intField = array[otherArray.length];
+        }
+    }
+
+    static int[] arrayField27 = new int[10];
+
+    // produces Integer.MIN_VALUE after macro expansion
+    private static int inlined27(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField27[0] = Integer.MIN_VALUE;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField27[0] + array2[k] * (j - 10);
     }
 
     private static void notInlined(int[] array) {
