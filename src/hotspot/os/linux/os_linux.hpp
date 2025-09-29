@@ -33,7 +33,6 @@ class os::Linux {
   friend class os;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
-  static int (*_pthread_setname_np)(pthread_t, const char*);
 
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
