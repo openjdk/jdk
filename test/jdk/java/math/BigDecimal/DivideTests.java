@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4851776 4907265 6177836 6876282 8066842
+ * @bug 4851776 4907265 6177836 6876282 8066842 8367603
  * @summary Some tests for the divide methods.
  * @author Joseph D. Darcy
  */
@@ -423,7 +423,7 @@ public class DivideTests {
             if (!quotient.equals(tc[2])) {
                 failures++;
                 System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] +
-                                   "; expected " + tc[3] + " got " + quotient);
+                                   "; expected " + tc[2] + " got " + quotient);
             }
         }
 
