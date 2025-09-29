@@ -409,6 +409,27 @@ public class DivideTests {
         return failures;
     }
 
+    private static int extremeScaleTests() {
+        int failures = 0;
+
+        int max = Integer.MAX_VALUE, min = Integer.MIN_VALUE;
+        BigDecimal[][] testCases = {
+                { BigDecimal.TEN, BigDecimal.valueOf(1L, min), BigDecimal.valueOf(1L, max) },
+                { BigDecimal.valueOf(1L, min), BigDecimal.valueOf(1L, 1), BigDecimal.valueOf(10L, min) }
+        };
+
+        for (BigDecimal tc[] : testCases) {
+            BigDecimal quotient = tc[0].divide(tc[1]);
+            if (!quotient.equals(tc[2])) {
+                failures++;
+                System.err.println("Unexpected quotient from " + tc[0] + " / " + tc[1] +
+                                   "; expected " + tc[3] + " got " + quotient);
+            }
+        }
+
+        return failures;
+    }
+
     public static void main(String argv[]) {
         int failures = 0;
 
@@ -418,6 +439,7 @@ public class DivideTests {
         failures += trailingZeroTests();
         failures += scaledRoundedDivideTests();
         failures += divideByOneTests();
+        failures += extremeScaleTests();
 
         if (failures > 0) {
             throw new RuntimeException("Incurred " + failures +
