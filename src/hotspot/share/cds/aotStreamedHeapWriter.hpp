@@ -127,7 +127,7 @@ class AOTStreamedHeapWriter : AllStatic {
   inline static void store_oop_in_buffer(narrowOop* buffered_addr, int dfs_index);
 
   template <typename T> static void mark_oop_pointer(T* buffered_addr, CHeapBitMap* oopmap);
-  template <typename T> static void store_field_in_buffer(oop obj, T* field_addr_in_buffer, CHeapBitMap* oopmap);
+  template <typename T> static void map_oop_field_in_buffer(oop obj, T* field_addr_in_buffer, CHeapBitMap* oopmap);
 
   static void update_header_for_buffered_addr(address buffered_addr, oop src_obj, Klass* src_klass);
 

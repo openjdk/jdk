@@ -358,7 +358,7 @@ size_t AOTStreamedHeapWriter::copy_one_source_obj_to_buffer(oop src_obj) {
   return buffered_obj_offset;
 }
 
-// Oop mapping?
+// Oop mapping
 
 inline void AOTStreamedHeapWriter::store_oop_in_buffer(oop* buffered_addr, int dfs_index) {
   *(ssize_t*)buffered_addr = dfs_index;
@@ -375,7 +375,7 @@ template <typename T> void AOTStreamedHeapWriter::mark_oop_pointer(T* buffered_a
   oopmap->set_bit(idx);
 }
 
-template <typename T> void AOTStreamedHeapWriter::store_field_in_buffer(oop obj, T* field_addr_in_buffer, CHeapBitMap* oopmap) {
+template <typename T> void AOTStreamedHeapWriter::map_oop_field_in_buffer(oop obj, T* field_addr_in_buffer, CHeapBitMap* oopmap) {
   if (obj == nullptr) {
     store_oop_in_buffer(field_addr_in_buffer, 0);
   } else {
@@ -437,7 +437,7 @@ private:
   void do_oop_work(T *p) {
     size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
     oop obj = HeapShared::maybe_remap_referent(_is_java_lang_ref, field_offset, HeapAccess<>::oop_load(p));
-    AOTStreamedHeapWriter::store_field_in_buffer<T>(obj, (T*)(_buffered_obj + field_offset), _oopmap);
+    AOTStreamedHeapWriter::map_oop_field_in_buffer<T>(obj, (T*)(_buffered_obj + field_offset), _oopmap);
   }
 };
 
