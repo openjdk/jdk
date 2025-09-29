@@ -143,13 +143,16 @@ public abstract class ClientHelloInterOp {
         //
         // EC private key related to cert endEntityCertStrs[0].
         //
+        "-----BEGIN PRIVATE KEY-----\n" +
         "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgA3pmS+OrIjGyUv2F\n" +
         "K/PkyayJIePM2RTFYxNoQqmJGnihRANCAASHi9c1QnNQurh7t8A68XRaJZTpyWU4\n" +
-        "Ay6zUapMW9ydE84KGXyy5my+Sw7QKlmoveGNeZVf12nUVX+tQEYujVob",
+        "Ay6zUapMW9ydE84KGXyy5my+Sw7QKlmoveGNeZVf12nUVX+tQEYujVob\n" +
+        "-----END PRIVATE KEY-----",
 
         //
         // RSA private key related to cert endEntityCertStrs[1].
         //
+        "-----BEGIN PRIVATE KEY-----\n" +
         "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDfq0lpd8nYH8AW\n" +
         "8RL62e57JA9I0AFW72d8x1T40Q9qYn4UftwQXxnVKmvW+VCA3MKkNRWt+eZPvmsJ\n" +
         "qmDPmV0D37L7eF19TIeNkHPN/H7oYdcsHi7p5TY0BNru+pIs1twtx9nv9CaQWqDg\n" +
@@ -175,8 +178,9 @@ public abstract class ClientHelloInterOp {
         "sZ2JRtyK3OV9RtL/MYmYzPLqm1Ah02+GXLVNnvKWmwKBgE8Ble8CzrXYuuPdGxXz\n" +
         "BZU6HnXQrmTUcgeze0tj8SDHzCfsGsaG6pHrVNkT7CKsRuCHTZLM0kXmUijLFKuP\n" +
         "5xyE257z4IbbEbs+tcbB3p28n4/47MzZkSR3kt8+FrsEMZq5oOHbFTGzgp9dhZCC\n" +
-        "dKUqlw5BPHdbxoWB/JpSHGCV"
-        };
+        "dKUqlw5BPHdbxoWB/JpSHGCV\n" +
+        "-----END PRIVATE KEY-----"
+    };
 
     // Private key names of endEntityPrivateKeys.
     private final static String[] endEntityPrivateKeyNames = {
@@ -293,12 +297,10 @@ public abstract class ClientHelloInterOp {
                 String keyCertStr = keyMaterialCerts[i];
 
                 // generate the private key.
-                String keyMaterialStrPEMFormat = new PEMRecord("PRIVATE KEY", keyMaterialKeys[i]).toString();
-
                 PrivateKey priKey = switch (keyMaterialKeyAlgs[i]) {
-                    case "RSA" -> pemDecoder.decode(keyMaterialStrPEMFormat, RSAPrivateKey.class);
-                    case "EC" -> pemDecoder.decode(keyMaterialStrPEMFormat, ECPrivateKey.class);
-                    default -> pemDecoder.decode(keyMaterialStrPEMFormat, PrivateKey.class);
+                    case "RSA" -> pemDecoder.decode(keyMaterialKeys[i], RSAPrivateKey.class);
+                    case "EC" -> pemDecoder.decode(keyMaterialKeys[i], ECPrivateKey.class);
+                    default -> pemDecoder.decode(keyMaterialKeys[i], PrivateKey.class);
                 };
 
                 // generate certificate chain
