@@ -95,6 +95,10 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             test19(0, 9, 1, false, false);
             inlined19_2(9, 1, 1, true, 0);
             inlined19_3(0, 0);
+            test20(0, 9, 1, true, false);
+            test20(0, 9, 1, false, false);
+            inlined20_2(9, 1, 1, true, 0);
+            inlined20_3(0, 0);
         }
 //        try {
 //            test1(-1, 10, 1, true);
@@ -793,6 +797,63 @@ public class TestArrayAccessAboveRCAfterRCCastIIEliminated {
             }
         }
         return arrayField19[0] + array2[k] * (j - 10);
+    }
+
+    private static void test20(int k, int j, int flag, boolean flag2, boolean flag3) {
+        int l = 0;
+        for (; l < 10; l++);
+        int m = inlined20_3(j, l);
+
+        int i = inlined20(k);
+        j = Integer.min(j, 9);
+        int[] array = new int[10];
+        notInlined(array);
+        if (flag == 0) {
+            throw new RuntimeException("never taken");
+        }
+        if (flag2) {
+            inlined20_2(j, flag, i, flag3, m);
+        } else {
+            inlined20_2(j, flag, i, flag3, m);
+        }
+    }
+
+    private static int inlined20_3(int j, int l) {
+        if (l == 10) {
+            j = 1;
+        }
+        return j;
+    }
+
+    static long test20D = 1;
+
+    private static void inlined20_2(int j, int flag, int i, boolean flag3, int m) {
+        if (flag3) {
+            float[] newArray = new float[j + 1]; // j + 1 in [0..10]
+            // RC i <u (CastII j [min..max]) + 1
+            newArray[i + m] = 42; // i + m in [0..9]
+            float[] otherArray = new float[i + m];
+            if (flag == 0) {
+                throw new RuntimeException("never taken");
+            }
+            longField = test20D / (otherArray.length + 2);
+        }
+    }
+
+    static int[] arrayField20 = new int[10];
+
+    // produces 0 after macro expansion
+    private static int inlined20(int k) {
+        k = Integer.max(0, Integer.min(k, 9));
+        arrayField20[0] = -3;
+        int[] array2 = new int[10];
+        int j;
+        for (j = 0; j < 10; j++) {
+            for (int i = 0; i < 10; i++) {
+
+            }
+        }
+        return arrayField20[0] + array2[k] * (j - 10);
     }
 
     private static void notInlined(int[] array) {
