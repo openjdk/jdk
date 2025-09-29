@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,14 @@ public final class ClassHierarchyImpl {
     }
 
     private ClassHierarchyInfoImpl resolve(ClassDesc classDesc) {
-        var res = resolver.getClassInfo(classDesc);
+        ClassHierarchyResolver.ClassHierarchyInfo res;
+        try {
+            res = resolver.getClassInfo(classDesc);
+        } catch (Exception ex) {
+            if (ex instanceof IllegalArgumentException iae)
+                throw iae;
+            throw new IllegalArgumentException("Could not resolve class " + classDesc.displayName(), ex);
+        }
         if (res != null) return (ClassHierarchyInfoImpl) res;
         throw new IllegalArgumentException("Could not resolve class " + classDesc.displayName());
     }

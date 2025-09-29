@@ -31,6 +31,7 @@
  * @run junit ClassHierarchyInfoTest
  */
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.invoke.MethodHandles;
@@ -111,6 +112,16 @@ class ClassHierarchyInfoTest {
         // A lookup from this test class, cannot access nested classes in HashMap
         var lookup = MethodHandles.lookup();
         assertThrows(IllegalArgumentException.class, () -> transformAndVerify(ClassHierarchyResolver.ofClassLoading(lookup)));
+    }
+
+    /// A failure in the resolver should result in an IllegalArgumentException
+    @Test
+    void testFailingResolver() {
+        var failure = new UncheckedIOException(new IOException("erroneous"));
+        var ex = assertThrows(IllegalArgumentException.class, () -> transformAndVerify(_ -> {
+            throw failure;
+        }));
+        assertEquals(failure, ex.getCause());
     }
 
     void transformAndVerify(ClassHierarchyResolver res) throws Exception {
