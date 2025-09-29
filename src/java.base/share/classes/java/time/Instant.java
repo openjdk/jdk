@@ -789,6 +789,31 @@ public final class Instant
     }
 
     /**
+     * Returns a copy of this instant with the specified duration added.
+     * <p>
+     * This method behaves the same as {@link #plus(TemporalAmount)} passed
+     * with the specified duration as its argument, if no numeric overflow
+     * occurs. If it does, then instead of throwing {@link ArithmeticException}
+     * or {@link DateTimeException} like {@code plus} does, this method returns
+     * {@link Instant#MIN} or {@link Instant#MAX} if the result exceeds minimum
+     * or maximum instant respectively.
+     *
+     * @param duration the duration to add, not null
+     * @return an {@code Instant} based on this instant with the addition made, not null
+     *
+     * @since 26
+     */
+    public Instant plusSaturating(Duration duration) {
+        if (duration.isNegative()) {
+            return Duration.between(this, Instant.MIN).compareTo(duration) >= 0
+                    ? Instant.MIN : this.plus(duration);
+        } else {
+            return Duration.between(this, Instant.MAX).compareTo(duration) >= 0
+                    ? this.plus(duration) : Instant.MAX;
+        }
+    }
+
+    /**
      * Returns a copy of this instant with the specified amount added.
      * <p>
      * This returns an {@code Instant}, based on this one, with the amount
