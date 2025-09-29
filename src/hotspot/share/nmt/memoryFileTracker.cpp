@@ -108,6 +108,78 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
   }
 #endif
 }
+class XmlNodeHelper {
+ private:
+  xmlStream* xs;
+  const char* _name;
+ public:
+  XmlNodeHelper(xmlStream* st, const char* name) : xs(st), _name(name) {
+    xs->head("%s", _name);
+  }
+  ~XmlNodeHelper() {
+    xs->tail(_name);
+  }
+};
+#define XmlNode(txt) XmlNodeHelper _not_used(stream, txt)
+
+#define ElemText(ename, txt, ...) \
+    stream->head(ename);              \
+    stream->text()->print_cr(txt, ##__VA_ARGS__); \
+    stream->tail(ename);
+
+
+void MemoryFileTracker::print_report_xml_on(const MemoryFile* file, xmlStream* stream, size_t scale) {
+  assert(MemTracker::tracking_level() == NMT_detail, "must");
+
+  XmlNode("fileMemoryMap");
+  ElemText("file", "%s", file->_descriptive_name);
+  const VMATree::TNode* prev = nullptr;
+#ifdef ASSERT
+  const VMATree::TNode* broken_start = nullptr;
+  const VMATree::TNode* broken_end = nullptr;
+#endif
+  file->_tree.visit_in_order([&](const VMATree::TNode* current) {
+    if (prev == nullptr) {
+      // Must be first node.
+      prev = current;
+      return true;
+    }
+#ifdef ASSERT
+    if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
+      broken_start = prev;
+      broken_end = current;
+    }
+#endif
+    if (prev->val().out.type() == VMATree::StateType::Committed) {
+      const VMATree::position& start_addr = prev->key();
+      const VMATree::position& end_addr = current->key();
+      XmlNode("region");
+      ElemText("base", PTR_FORMAT, start_addr);
+      ElemText("end", PTR_FORMAT, end_addr);
+      ElemText("allocated", "%zu", NMTUtil::amount_in_scale(end_addr - start_addr, scale));
+      ElemText("scale", "%s", NMTUtil::scale_name(scale));
+      ElemText("tag", "%s", NMTUtil::tag_to_name(prev->val().out.mem_tag()));
+
+      {
+        XmlNode("stack");
+        stream->text()->print("\"");
+        _stack_storage.get(prev->val().out.reserved_stack()).print_on(stream);
+        stream->text()->print("\"");
+      }
+    }
+    prev = current;
+    return true;
+  });
+#ifdef ASSERT
+  if (broken_start != nullptr) {
+    tty->print_cr("Broken tree found with first occurrence at nodes %zu, %zu",
+                  broken_start->key(), broken_end->key());
+    tty->print_cr("Expected start out to have same type as end in, but was: %s, %s",
+                  VMATree::statetype_to_string(broken_start->val().out.type()),
+                  VMATree::statetype_to_string(broken_end->val().in.type()));
+  }
+#endif
+}
 
 MemoryFileTracker::MemoryFile* MemoryFileTracker::make_file(const char* descriptive_name) {
   MemoryFile* file_place = new MemoryFile{descriptive_name};
@@ -158,6 +230,13 @@ void MemoryFileTracker::Instance::print_report_on(const MemoryFile* file,
   _tracker->print_report_on(file, stream, scale);
 }
 
+void MemoryFileTracker::Instance::print_report_xml_on(const MemoryFile* file,
+                                                  xmlStream* stream, size_t scale) {
+  assert(file != nullptr, "must be");
+  assert(stream != nullptr, "must be");
+  _tracker->print_report_xml_on(file, stream, scale);
+}
+
 void MemoryFileTracker::Instance::print_all_reports_on(outputStream* stream, size_t scale) {
   const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& files =
       MemoryFileTracker::Instance::files();
@@ -167,6 +246,16 @@ void MemoryFileTracker::Instance::print_all_reports_on(outputStream* stream, siz
   for (int i = 0; i < files.length(); i++) {
     MemoryFileTracker::MemoryFile* file = files.at(i);
     MemoryFileTracker::Instance::print_report_on(file, stream, scale);
+  }
+}
+
+void MemoryFileTracker::Instance::print_all_reports_xml_on(xmlStream* stream, size_t scale) {
+  const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& files =
+      MemoryFileTracker::Instance::files();
+  XmlNode("memoryFileDetails");
+  for (int i = 0; i < files.length(); i++) {
+    MemoryFileTracker::MemoryFile* file = files.at(i);
+    MemoryFileTracker::Instance::print_report_xml_on(file, stream, scale);
   }
 }
 

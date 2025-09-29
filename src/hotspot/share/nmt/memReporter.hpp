@@ -238,7 +238,7 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
     _stackprinter(output) { }
 
   // Generate detail comparison report
-  virtual void report_diff();
+  void report_diff() const;
 
   // Malloc allocation site comparison
   void diff_malloc_sites() const;
@@ -259,6 +259,191 @@ class MemDetailDiffReporter : public MemSummaryDiffReporter {
   // Compare virtual memory allocation site, it is in both baseline
   void diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
                                 const VirtualMemoryAllocationSite* current)  const;
+
+  void diff_malloc_site(const NativeCallStack* stack, size_t current_size,
+    size_t currrent_count, size_t early_size, size_t early_count, MemTag mem_tag) const;
+  void diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
+    size_t current_committed, size_t early_reserved, size_t early_committed, MemTag mem_tag) const;
+};
+
+class XmlMemSummaryReporter : public StackObj {
+ private:
+  MallocMemorySnapshot*   _malloc_snapshot;
+  VirtualMemorySnapshot*  _vm_snapshot;
+  size_t                  _instance_class_count;
+  size_t                  _array_class_count;
+  const size_t  _scale;         // report in this scale
+
+ protected:
+  xmlStream*              _xml_output;
+
+ public:
+  static const size_t default_scale = K;
+  // This constructor is for normal reporting from a recent baseline.
+  XmlMemSummaryReporter(MemBaseline& baseline, fileStream* output,
+    size_t scale = default_scale);
+
+  inline xmlStream* xml_output() const { return _xml_output; }
+
+  size_t scale() const {
+    return _scale;
+  }
+  inline const char* current_scale() const {
+    return NMTUtil::scale_name(_scale);
+  }
+  // Convert memory amount in bytes to current reporting scale
+  inline size_t amount_in_current_scale(size_t amount) const {
+    return NMTUtil::amount_in_scale(amount, _scale);
+  }
+
+  // Convert diff amount in bytes to current reporting scale
+  // We use int64_t instead of ssize_t because on 32-bit it allows us to express deltas larger than 2 gb.
+  // On 64-bit we never expect memory sizes larger than INT64_MAX.
+  int64_t diff_in_current_scale(size_t s1, size_t s2) const {
+    assert(_scale != 0, "wrong scale");
+
+#ifdef _LP64
+    assert(s1 < INT64_MAX, "exceeded possible memory limits");
+    assert(s2 < INT64_MAX, "exceeded possible memory limits");
+#endif
+
+    bool is_negative = false;
+    if (s1 < s2) {
+      is_negative = true;
+      swap(s1, s2);
+    }
+
+    size_t amount = s1 - s2;
+    // We can split amount into p + q, where
+    //     q = amount % _scale
+    // and p = amount - q   (which is also (amount / _scale) * _scale).
+    // Then use
+    //   size_t scaled = (p + q + _scale/2) / _scale;
+    // =>
+    //   size_t scaled = (p / _scale) + ((q + _scale/2) / _scale);
+    // The lefthand side of the addition is exact.
+    // The righthand side is 0 if q <= (_scale - 1)/2, else 1. (The -1 is to account for odd _scale values.)
+    size_t scaled = (amount / _scale);
+    if ((amount % _scale) > (_scale - 1)/2) {
+      scaled += 1;
+    }
+
+    int64_t result = static_cast<int64_t>(scaled);
+    return is_negative ? -result : result;
+  }
+
+  void report(bool summary_only = true) const;
+  ~XmlMemSummaryReporter();
+
+ protected:
+  void report_summary_of_tag(MemTag mem_tag, MallocMemory* malloc_memory, VirtualMemory* virtual_memory) const;
+  void report_metadata(Metaspace::MetadataType type) const;
+  void print_malloc(const MemoryCounter* c, MemTag mem_tag) const;
+  void print_virtual_memory(size_t reserved, size_t committed, size_t peak) const;
+  void print_arena(const MemoryCounter* c) const;
+  void print_virtual_memory_region(const char* type, address base, size_t size) const;
+};
+
+class XmlMemDetailReporter : public XmlMemSummaryReporter {
+ private:
+  MemBaseline&   _baseline;
+  NativeCallStackPrinter _stackprinter;
+ public:
+  XmlMemDetailReporter(MemBaseline& baseline, fileStream* output, size_t scale = default_scale) :
+    XmlMemSummaryReporter(baseline, output, scale),
+     _baseline(baseline), _stackprinter((outputStream*)_xml_output) { }
+
+  // Generate detail report.
+  // The report contains summary and detail sections.
+  void report() const;
+ private:
+  // Report detail tracking data.
+  void report_detail() const;
+  // Report virtual memory map
+  void report_virtual_memory_map() const;
+  // Report all physical devices
+  void report_memory_file_allocations() const;
+  // Report malloc allocation sites; returns number of omitted sites
+  int report_malloc_sites() const;
+  // Report virtual memory reservation sites; returns number of omitted sites
+  int report_virtual_memory_allocation_sites() const;
+
+  // Report a virtual memory region
+  void report_virtual_memory_region(const ReservedMemoryRegion* rgn) const;
+};
+
+class XmlMemSummaryDiffReporter : public XmlMemSummaryReporter {
+ protected:
+  MemBaseline&      _early_baseline;
+  MemBaseline&      _current_baseline;
+
+  static size_t reserved_total(const MallocMemory* malloc, const VirtualMemory* vm);
+  static size_t committed_total(const MallocMemory* malloc, const VirtualMemory* vm);
+ public:
+  static const size_t default_scale = K;
+  XmlMemSummaryDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
+    fileStream* output, size_t scale = default_scale) : XmlMemSummaryReporter(early_baseline, output) ,
+    _early_baseline(early_baseline), _current_baseline(current_baseline) {
+    assert(early_baseline.baseline_type()   != MemBaseline::Not_baselined, "Not baselined");
+    assert(current_baseline.baseline_type() != MemBaseline::Not_baselined, "Not baselined");
+  }
+
+
+  void report_diff(bool summary_only = true) const;
+
+ private:
+  // report the comparison of each mem_tag
+  void diff_summary_of_tag(MemTag mem_tag,
+    const MallocMemory* early_malloc, const VirtualMemory* early_vm,
+    const MetaspaceCombinedStats& early_ms,
+    const MallocMemory* current_malloc, const VirtualMemory* current_vm,
+    const MetaspaceCombinedStats& current_ms) const;
+
+ protected:
+  void print_malloc_diff(size_t current_amount, size_t current_count,
+    size_t early_amount, size_t early_count, MemTag mem_tag) const;
+  void print_virtual_memory_diff(size_t current_reserved, size_t current_committed,
+    size_t early_reserved, size_t early_committed) const;
+  void print_arena_diff(size_t current_amount, size_t current_count,
+    size_t early_amount, size_t early_count) const;
+
+  void print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
+                            const MetaspaceCombinedStats& early_ms) const;
+  void print_metaspace_diff(const char* header,
+                            const MetaspaceStats& current_ms,
+                            const MetaspaceStats& early_ms) const;
+};
+
+class XmlMemDetailDiffReporter : public XmlMemSummaryDiffReporter {
+  NativeCallStackPrinter _stackprinter;
+ public:
+  XmlMemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
+    fileStream* output, size_t scale = default_scale) :
+    XmlMemSummaryDiffReporter(early_baseline, current_baseline, output, scale),
+    _stackprinter((outputStream*)xml_output()) { }
+
+  // Generate detail comparison report
+  void report_diff() const;
+
+  // Malloc allocation site comparison
+  void diff_malloc_sites() const;
+  // Virtual memory reservation site comparison
+  void diff_virtual_memory_sites() const;
+
+  // New malloc allocation site in recent baseline
+  void new_malloc_site (const MallocSite* site) const;
+  // The malloc allocation site is not in recent baseline
+  void old_malloc_site (const MallocSite* site) const;
+  // Compare malloc allocation site, it is in both baselines
+  void diff_malloc_site(const MallocSite* early, const MallocSite* current)  const;
+
+  // New virtual memory allocation site in recent baseline
+  void new_virtual_memory_site (const VirtualMemoryAllocationSite* callsite) const;
+  // The virtual memory allocation site is not in recent baseline
+  void old_virtual_memory_site (const VirtualMemoryAllocationSite* callsite) const;
+  // Compare virtual memory allocation site, it is in both baseline
+  void diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
+                                const VirtualMemoryAllocationSite* current) const;
 
   void diff_malloc_site(const NativeCallStack* stack, size_t current_size,
     size_t currrent_count, size_t early_size, size_t early_count, MemTag mem_tag) const;

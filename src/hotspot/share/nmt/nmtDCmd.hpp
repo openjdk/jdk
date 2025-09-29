@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,11 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<bool>  _detail_diff;
   DCmdArgument<bool>  _statistics;
   DCmdArgument<char*> _scale;
+  DCmdArgument<bool>  _xml_output;
+  DCmdArgument<char*> _xml_file_name;
 
  public:
-  static int num_arguments() { return 7; }
+  static int num_arguments() { return 9; }
   NMTDCmd(outputStream* output, bool heap);
   static const char* name() { return "VM.native_memory"; }
   static const char* description() {
