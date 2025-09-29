@@ -365,17 +365,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 identifier = m.group();
             }
         }
-        code = code.substring(0, cursor);
-        if (code.trim().isEmpty()) { //TODO: comment handling
-            code += ";";
-        }
-        boolean[] moduleImport = new boolean[1];
-        OuterWrap codeWrap = switch (guessKind(code, moduleImport)) {
-            case IMPORT -> moduleImport[0] ? proc.outerMap.wrapImport(Wrap.simpleWrap(code), null)
-                                           : proc.outerMap.wrapImport(Wrap.simpleWrap(code + "any.any"), null);
-            case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
-            default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
-        };
+
+        OuterWrap codeWrap = wrapCodeForCompletion(code, cursor, true);
         return computeSuggestions(codeWrap, code, cursor, identifier, suggestionConvertor);
     }
 
@@ -1825,15 +1816,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     };
 
     private List<Documentation> documentationImpl(String code, int cursor, boolean computeJavadoc) {
-        code = code.substring(0, cursor);
-        if (code.trim().isEmpty()) { //TODO: comment handling
-            code += ";";
-        }
-
-        if (guessKind(code) == Kind.IMPORT)
+        OuterWrap codeWrap = wrapCodeForCompletion(code, cursor, false);
+        if (codeWrap == null) {
+            //import:
             return Collections.emptyList();
-
-        OuterWrap codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
+        }
         return proc.taskFactory.analyze(codeWrap, List.of(keepParameterNames), at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
@@ -2512,6 +2499,99 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
     public static void waitCurrentBackgroundTasksFinished() throws Exception {
         INDEXER.submit(() -> {}).get();
+    }
+
+    private OuterWrap wrapCodeForCompletion(String code, int cursor, boolean wrapImports) {
+        code = code.substring(0, cursor);
+        if (code.trim().isEmpty()) { //TODO: comment handling
+            code += ";";
+        }
+
+        List<String> imports = new ArrayList<>();
+        List<Wrap> declarationParts = new ArrayList<>();
+        String lastImport = null;
+        boolean lastImportIsModuleImport = false;
+        Wrap declarationWrap = null;
+        Wrap pendingWrap = null;
+        String input = code;
+        boolean cont = true;
+        int startOffset = 0;
+
+        while (cont) {
+            if (lastImport != null) {
+                imports.add(lastImport);
+                lastImport = null;
+            }
+            if (declarationWrap != null) {
+                declarationParts.add(declarationWrap);
+                declarationWrap = null;
+                pendingWrap = null;
+            }
+
+            String current;
+            SourceCodeAnalysis.CompletionInfo completeness = analyzeCompletion(input);
+            int newStartOffset;
+
+            if (completeness.completeness().isComplete() && !completeness.remaining().isBlank()) {
+                current = input.substring(0, input.length() - completeness.remaining().length());
+                newStartOffset = startOffset + input.length() - completeness.remaining().length();
+                input = completeness.remaining();
+                cont = true;
+            } else {
+                current = input;
+                cont = false;
+                newStartOffset = startOffset;
+            }
+
+            boolean[] moduleImport = new boolean[1];
+
+            switch (guessKind(current, moduleImport)) {
+                case IMPORT -> {
+                    lastImport = current;
+                    lastImportIsModuleImport = moduleImport[0];
+                }
+                case CLASS, METHOD -> {
+                    pendingWrap = declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                }
+                case VARIABLE -> {
+                    declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                    pendingWrap = Wrap.methodWrap(whitespaces(code, startOffset) + current);
+                }
+                default -> {
+                    pendingWrap = declarationWrap = Wrap.methodWrap(whitespaces(code, startOffset) + current);
+                }
+            }
+
+            startOffset = newStartOffset;
+        }
+
+        if (lastImport != null) {
+            if (wrapImports) {
+                return proc.outerMap.wrapImport(Wrap.simpleWrap(whitespaces(code, startOffset) + lastImport + (!lastImportIsModuleImport ? "any.any" : "")), null);
+            } else {
+                return null;
+            }
+        }
+
+        if (pendingWrap != null) {
+            return proc.outerMap.wrapInTrialClass(imports, declarationParts, pendingWrap);
+        }
+
+        throw new IllegalStateException("No pending wrap for: " + code);
+    }
+
+    private static String whitespaces(String input, int offset) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < offset; i++) {
+            if (input.charAt(i) == '\n') {
+                result.append('\n');
+            } else {
+                result.append(' ');
+            }
+        }
+
+        return result.toString();
     }
 
     /**
