@@ -105,9 +105,9 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
 
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
-  VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   {
     MemTracker::NmtVirtualMemoryLocker nvml;
+    VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
     MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
   }
 
@@ -126,14 +126,9 @@ bool MemBaseline::baseline_allocation_sites() {
   _malloc_sites_order = by_size;
 
   // Virtual memory allocation sites
- assert(_vma_allocations == nullptr, "must");
-
-  {
-    MemTracker::NmtVirtualMemoryLocker locker;
-    _vma_allocations = new (mtNMT, std::nothrow) RegionsTree(*VirtualMemoryTracker::Instance::tree());
-    if (_vma_allocations == nullptr)  {
-      return false;
-    }
+  VirtualMemoryAllocationWalker virtual_memory_walker;
+  if (!MemTracker::walk_virtual_memory(&virtual_memory_walker)) {
+    return false;
   }
 
   if (!aggregate_virtual_memory_allocation_sites()) {

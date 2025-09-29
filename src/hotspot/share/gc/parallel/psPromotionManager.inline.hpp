@@ -31,7 +31,7 @@
 #include "gc/parallel/parMarkBitMap.inline.hpp"
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psPromotionLAB.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/parallel/psStringDedup.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
@@ -139,7 +139,8 @@ inline void PSPromotionManager::push_contents_bounded(oop obj, HeapWord* left, H
 
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_to_survivor_space(oop o) {
-  assert(should_scavenge(&o), "Sanity");
+  assert(PSScavenge::is_obj_in_young(o), "precondition");
+  assert(!PSScavenge::is_obj_in_to_space(o), "precondition");
 
   // NOTE! We must be very careful with any methods that access the mark
   // in o. There may be multiple threads racing on it, and it may be forwarded
@@ -235,9 +236,7 @@ inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
                                                                markWord test_mark) {
-  assert(should_scavenge(&o), "Sanity");
-
-  oop new_obj = nullptr;
+  HeapWord* new_obj_addr = nullptr;
   bool new_obj_is_tenured = false;
 
   // NOTE: With compact headers, it is not safe to load the Klass* from old, because
@@ -260,32 +259,33 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   if (!promote_immediately) {
     // Try allocating obj in to-space (unless too old)
     if (age < PSScavenge::tenuring_threshold()) {
-      new_obj = cast_to_oop(allocate_in_young_gen(klass, new_obj_size, age));
+      new_obj_addr = allocate_in_young_gen(klass, new_obj_size, age);
     }
   }
 
   // Otherwise try allocating obj tenured
-  if (new_obj == nullptr) {
-    new_obj = cast_to_oop(allocate_in_old_gen(klass, new_obj_size, age));
-    if (new_obj == nullptr) {
+  if (new_obj_addr == nullptr) {
+    new_obj_addr = allocate_in_old_gen(klass, new_obj_size, age);
+    if (new_obj_addr == nullptr) {
       return oop_promotion_failed(o, test_mark);
     }
     new_obj_is_tenured = true;
   }
 
-  assert(new_obj != nullptr, "allocation should have succeeded");
+  assert(new_obj_addr != nullptr, "allocation should have succeeded");
 
   // Copy obj
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), new_obj_addr, new_obj_size);
 
   // Now we have to CAS in the header.
   // Because the forwarding is done with memory_order_relaxed there is no
   // ordering with the above copy.  Clients that get the forwardee must not
   // examine its contents without other synchronization, since the contents
   // may not be up to date for them.
-  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_relaxed);
+  oop forwardee = o->forward_to_atomic(cast_to_oop(new_obj_addr), test_mark, memory_order_relaxed);
   if (forwardee == nullptr) {  // forwardee is null when forwarding is successful
     // We won any races, we "own" this object.
+    oop new_obj = cast_to_oop(new_obj_addr);
     assert(new_obj == o->forwardee(), "Sanity");
 
     // Increment age if obj still in new generation. Now that
@@ -322,9 +322,9 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     assert(o->forwardee() == forwardee, "invariant");
 
     if (new_obj_is_tenured) {
-      _old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+      _old_lab.unallocate_object(new_obj_addr, new_obj_size);
     } else {
-      _young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+      _young_lab.unallocate_object(new_obj_addr, new_obj_size);
     }
     return forwardee;
   }
@@ -334,7 +334,6 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
 template <bool promote_immediately, class T>
 inline void PSPromotionManager::copy_and_push_safe_barrier(T* p) {
   assert(ParallelScavengeHeap::heap()->is_in_reserved(p), "precondition");
-  assert(should_scavenge(p, true), "revisiting object?");
 
   oop o = RawAccess<IS_NOT_NULL>::oop_load(p);
   oop new_obj = copy_to_survivor_space<promote_immediately>(o);

@@ -1720,8 +1720,8 @@ public:
 
   void init_serial_nums(volatile int* thread_counter, volatile int* frame_counter) {
     assert(_start_frame_serial_num == 0, "already initialized");
-    _thread_serial_num = Atomic::fetch_then_add(thread_counter, 1);
-    _start_frame_serial_num = Atomic::fetch_then_add(frame_counter, frame_count());
+    _thread_serial_num = AtomicAccess::fetch_then_add(thread_counter, 1);
+    _start_frame_serial_num = AtomicAccess::fetch_then_add(frame_counter, frame_count());
   }
 
   bool oom_thread() const {
@@ -2252,7 +2252,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   static bool is_vm_dumper(int dumper_id) { return dumper_id == VMDumperId; }
   // the 1st dumper calling get_next_dumper_id becomes VM dumper
   int get_next_dumper_id() {
-    return Atomic::fetch_then_add(&_dump_seq, 1);
+    return AtomicAccess::fetch_then_add(&_dump_seq, 1);
   }
 
   DumpWriter* writer() const { return _writer; }
