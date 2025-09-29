@@ -48,7 +48,7 @@ public class UUIDTest {
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
         epochMillisTest();
-        epochMillisTest_Multi();
+        epochMillisTest_Multi()
         epochMillis_userInputTest();
         stringTest();
         versionTest();
@@ -151,10 +151,12 @@ public class UUIDTest {
 
     private static void epochMillisTest() throws Exception {
         List<UUID> collisions = new ArrayList<>();
-
         Set<UUID> set = new HashSet<>();
+        long now = System.currentTimeMillis();
+
         for (int i = 0; i < COUNT; i++) {
-            UUID u = UUID.epochMillis();
+            long ts = now + i;
+            UUID u = UUID.epochMillis(ts);
             if (u.version() != 7) {
                 throw new Exception("Bad version: " + u);
             }
@@ -175,12 +177,12 @@ public class UUIDTest {
     }
 
     private static void epochMillisTest_Multi() throws Exception {
+        long now = System.currentTimeMillis();
         List<UUID> uuids = IntStream.range(0, COUNT).parallel()
-                .mapToObj(i -> UUID.epochMillis())
+                .mapToObj(i -> UUID.epochMillis(now + 1))
                 .toList();
 
         List<UUID> collisions = new ArrayList<>();
-
         Set<UUID> set = new HashSet<>();
         for (UUID u : uuids) {
             if (u.version() != 7) {
@@ -265,7 +267,8 @@ public class UUIDTest {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
         }
 
-        test = UUID.epochMillis();
+        long now = System.currentTimeMillis();
+        test = UUID.epochMillis(now);
         if (test.version() != 7) {
             throw new Exception("timestampUUID not type 7: " + test);
         }
@@ -324,7 +327,8 @@ public class UUIDTest {
             throw new Exception("nameUUIDFromBytes not variant 2");
         }
 
-        test = UUID.epochMillis();
+        long now = System.currentTimeMillis();
+        test = UUID.epochMillis(now);
         if (test.variant() != 2) {
             throw new Exception("timestampUUID not variant 2");
         }

@@ -95,18 +95,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
 
     private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
-    /**
-     * Record a fixed point in nano-time corresponding to a fix point in System.currentTimeMillis()
-     * and use the delta from the current nano-time as the current nano-time.
-     */
-    private static final long ORIGIN_MS = System.currentTimeMillis();
-
-    private static final long ORIGIN_NS = System.nanoTime();
-
-    private static long monotonicMS() {
-        return ORIGIN_MS + (System.nanoTime() - ORIGIN_NS) / 1_000_000;
-    }
-
     /*
      * The random number generator used by this class to create random
      * based UUIDs. In a holder class to defer initialization until needed.
@@ -191,27 +179,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         md5Bytes[8]  &= 0x3f;  /* clear variant        */
         md5Bytes[8]  |= (byte) 0x80;  /* set to IETF variant  */
         return new UUID(md5Bytes);
-    }
-
-    /**
-     * Static factory to create a version 7 (Unix epoch time-based) {@code UUID} with the current
-     * Unix timestamp in milliseconds.
-     *
-     * The {@code UUID} embeds the current Unix Epoch timestamp in milliseconds using
-     * {@link System#currentTimeMillis()} into the first 6 bytes, sets the version and
-     * variant bits as per the specification and fills the remaining bytes with random
-     * data from a cryptographically strong pseudo-random number generator.
-     *
-     * @return a {@code UUID} generated with the current Unix timestamp
-     *
-     * @spec https://www.rfc-editor.org/rfc/rfc9562.html
-     *       RFC 9562 Universally Unique IDentifiers (UUIDs)
-     *
-     * @since 26
-     */
-    public static UUID epochMillis() {
-        long timestamp = monotonicMS();
-        return epochMillis(timestamp);
     }
 
     /**
