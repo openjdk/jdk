@@ -1927,7 +1927,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
       return;
     }
     // Zero-trip test uses an 'opaque' node which is not shared.
-    assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
+    assert(StressLoopPeeling || (opaq->outcnt() == 1 && opaq->in(1) == limit), "");
   }
 
   C->set_major_progress();
@@ -1976,7 +1976,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     // adjustment underflows or overflows, then the main loop is skipped.
     Node* cmp = loop_end->cmp_node();
     assert(cmp->in(2) == limit, "sanity");
-    assert(opaq != nullptr && opaq->in(1) == limit, "sanity");
+    assert(StressLoopPeeling || (opaq != nullptr && opaq->in(1) == limit), "sanity");
 
     // Verify that policy_unroll result is still valid.
     const TypeInt* limit_type = _igvn.type(limit)->is_int();
