@@ -187,6 +187,8 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
+  Node* load_default_array_klass(Node* klass_node);
+
   Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
                                    ByteSize offset, const Type* type, BasicType bt);
   Node* generate_misc_flags_guard(Node* kls,
@@ -200,10 +202,10 @@ class LibraryCallKit : public GraphKit {
   Node* generate_non_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
     return generate_array_guard_common(kls, region, false, true, obj);
   }
-  Node* generate_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+  Node* generate_refArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
     return generate_array_guard_common(kls, region, true, false, obj);
   }
-  Node* generate_non_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+  Node* generate_non_refArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
     return generate_array_guard_common(kls, region, true, true, obj);
   }
   Node* generate_array_guard_common(Node* kls, RegionNode* region,
