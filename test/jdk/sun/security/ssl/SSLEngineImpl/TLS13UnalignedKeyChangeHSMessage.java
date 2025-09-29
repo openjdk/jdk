@@ -40,13 +40,13 @@ import javax.net.ssl.SSLProtocolException;
 
 public class TLS13UnalignedKeyChangeHSMessage extends SSLEngineTemplate {
 
-    private final String exMsg = "(unexpected_message) SERVER_HELLO messages must align with a record boundary";
+    private static final String exMsg = "(unexpected_message) SERVER_HELLO messages must align with a record boundary";
 
-    private static int SERVER_HELLO_ID = 2;
+    private static final int SERVER_HELLO_ID = 2;
     // HandShake type: encrypted_extension(8)
     // Body length:    0x000002
     // Body:           0x0000
-    private static byte[] SERVER_ENCRYPTED_EXTENSIONS = { 0x08, 0x00, 0x00, 0x02, 0x00, 0x00 };
+    private static final byte[] SERVER_ENCRYPTED_EXTENSIONS = { 0x08, 0x00, 0x00, 0x02, 0x00, 0x00 };
 
     protected TLS13UnalignedKeyChangeHSMessage()
             throws Exception {
