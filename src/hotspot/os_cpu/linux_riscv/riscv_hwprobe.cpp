@@ -267,12 +267,17 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::ext_Zicond.enable_feature();
   }
 #endif
-  // RISCV_HWPROBE_KEY_CPUPERF_0 is deprecated. Keep it there for backward
+  // RISCV_HWPROBE_KEY_CPUPERF_0 is deprecated and returns similar values
+  // to RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF. Keep it there for backward
   // compatibility with old kernels.
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
     VM_Version::unaligned_scalar.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);
+  } else if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF)) {
+    VM_Version::unaligned_scalar.enable_feature(
+       query[RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF].value);
   }
+
   if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF)) {
     VM_Version::unaligned_vector.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF].value);
