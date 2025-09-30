@@ -117,8 +117,6 @@ OopStorage* ObjectMonitor::_oop_storage = nullptr;
 OopHandle ObjectMonitor::_vthread_list_head;
 ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 
-ObjectWaiter* const ObjectWaiter::badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
-
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
 //
