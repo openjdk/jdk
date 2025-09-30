@@ -1530,9 +1530,6 @@ void HeapShared::resolve_or_init(Klass* k, bool do_init, TRAPS) {
 void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphInfoRecord* record) {
   verify_the_heap(k, "before");
 
-  // Load the subgraph entry fields from the record and store them back to
-  // the corresponding fields within the mirror.
-  oop m = k->java_mirror();
   Array<int>* entry_field_records = record->entry_field_records();
   if (entry_field_records != nullptr) {
     int efr_len = entry_field_records->length();
@@ -1540,6 +1537,9 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
     for (int i = 0; i < efr_len; i += 2) {
       int field_offset = entry_field_records->at(i);
       int root_index = entry_field_records->at(i+1);
+      // Load the subgraph entry fields from the record and store them back to
+      // the corresponding fields within the mirror.
+      oop m = k->java_mirror();
       oop v = get_root(root_index, /*clear=*/true);
       if (k->has_aot_initialized_mirror()) {
         assert(v == m->obj_field(field_offset), "must be aot-initialized");
