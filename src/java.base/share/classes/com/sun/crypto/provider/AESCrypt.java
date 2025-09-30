@@ -889,7 +889,8 @@ public final class AESCrypt extends SymmetricCipher {
      * @param c [out] the encrypted ciphertext output.
      * @param co [in] the ciphertext offset in the array of bytes.
      */
-    private void encryptJava(byte[] p, int po, byte[] c, int co) {
+    @IntrinsicCandidate
+    private void implEncryptBlock(byte[] p, int po, byte[] c, int co) {
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
         int w = 40;
@@ -1024,6 +1025,7 @@ public final class AESCrypt extends SymmetricCipher {
                     ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[w + 7];
             w += 8;
         }
+
         a0 = T2[ti0 >>> 24] & 0xFF000000
                 ^ T3[(ti1 >> 16) & 0xFF] & 0xFF0000
                 ^ T0[(ti2 >> 8) & 0xFF] & 0xFF00
@@ -1067,7 +1069,8 @@ public final class AESCrypt extends SymmetricCipher {
      * @param p [out] the decrypted plaintext output.
      * @param po [in] the plaintext offset in the array of bytes.
      */
-    private void decryptJava(byte[] c, int co, byte[] p, int po) {
+    @IntrinsicCandidate
+    private void implDecryptBlock(byte[] c, int co, byte[] p, int po) {
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
         int w = 44;
@@ -1116,6 +1119,7 @@ public final class AESCrypt extends SymmetricCipher {
                 ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[22];
         ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
                 ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[23];
+
         a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
                 ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[24];
         a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
@@ -1200,6 +1204,7 @@ public final class AESCrypt extends SymmetricCipher {
             a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
                     ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[w + 7];
         }
+
         ti0 = TI4[a0 >>> 24] & 0xFF000000 ^ TI4[(a3 >> 16) & 0xFF] & 0xFF0000
                 ^ TI4[(a2 >> 8) & 0xFF] & 0xFF00 ^ TI4[a1 & 0xFF] & 0xFF ^ K[0];
         ti1 = TI4[a1 >>> 24] & 0xFF000000 ^ TI4[(a0 >> 16) & 0xFF] & 0xFF0000
@@ -1249,39 +1254,5 @@ public final class AESCrypt extends SymmetricCipher {
      */
     public void decryptBlock(byte[] cipher, int cOff, byte[] plain, int pOff) {
         implDecryptBlock(cipher, cOff, plain, pOff);
-    }
-
-    /**
-     * Instrinsic method for one block of encryption.
-     *
-     * @param plain [in] the plaintext to be encrypted.
-     * @param pOff [in] the plaintext offset in the array of bytes.
-     * @param cipher [out] the encrypted ciphertext output.
-     * @param cOff [in] the ciphertext offset in the array of bytes.
-     *
-     * Note: {@code pOff} and {@code cOff} are not output parameters as
-     * classes like CipherCore increment offsets.
-     */
-    @IntrinsicCandidate
-    private void implEncryptBlock(byte[] plain, int pOff, byte[] cipher,
-                                  int cOff) {
-        encryptJava(plain, pOff, cipher, cOff);
-    }
-
-    /**
-     * Instrinsic method for one block of decryption.
-     *
-     * @param cipher [in] the ciphertext to be decrypted.
-     * @param cOff [in] the ciphertext offset in the array of bytes.
-     * @param plain [out] the decrypted plaintext output.
-     * @param pOff [in] the plaintext offset in the array of bytes.
-     *
-     * Note: {@code cOff} and {@code pOff} are not output parameters as
-     * classes like CipherCore increment offsets.
-     */
-    @IntrinsicCandidate
-    private void implDecryptBlock(byte[] cipher, int cOff, byte[] plain,
-                                  int pOff) {
-        decryptJava(cipher, cOff, plain, pOff);
     }
 }
