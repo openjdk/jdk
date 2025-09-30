@@ -29,14 +29,15 @@
  * @run main FrameLocation
  */
 
-import javax.imageio.ImageIO;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.io.File;
+import javax.imageio.ImageIO;
 
 public class FrameLocation {
     private static final int X = 250;
@@ -68,7 +69,7 @@ public class FrameLocation {
                 if (xPos != X || yPos != Y) {
                     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
                     ImageIO.write(robot.createScreenCapture(
-                                    new Rectangle(0, 0, screenSize.width, screenSize.height)),
+                                    new Rectangle(new Point(), screenSize)),
                             "png", new File("FailureImage.png"));
                     throw new RuntimeException("The frame location is wrong! Current: " +
                             xPos + ", " + yPos + ";  expected: " + X + ", " + Y);
