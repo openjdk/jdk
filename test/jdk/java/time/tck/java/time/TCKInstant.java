@@ -1240,12 +1240,12 @@ public class TCKInstant extends AbstractDateTimeTest {
         verifySaturating(Instant.MAX, Duration.ZERO);
         verifySaturating(Instant.MAX, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Instant.MAX);
         // 2. {edge or constant instants} x {normal durations}
-        verifySaturating(Instant.MIN, Duration.ofDays(-32));
+        verifySaturating(Instant.MIN, Duration.ofDays(-32), Instant.MIN);
         verifySaturating(Instant.MIN, Duration.ofDays(32));
         verifySaturating(Instant.EPOCH, Duration.ofDays(-32));
         verifySaturating(Instant.EPOCH, Duration.ofDays(32));
         verifySaturating(Instant.MAX, Duration.ofDays(-32));
-        verifySaturating(Instant.MAX, Duration.ofDays(32));
+        verifySaturating(Instant.MAX, Duration.ofDays(32), Instant.MAX);
         // 3. {normal instants with both positive and negative epoch seconds} x {edge or constant durations}
         verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Instant.MIN);
         verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ZERO);
