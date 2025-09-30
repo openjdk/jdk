@@ -242,14 +242,14 @@ void VMATree::update_region(TNode* n1, TNode* n2, const RequestInfo& req, Summar
 }
 
 
-VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateType state,
-                                               const RegionData& metadata, bool use_tag_inplace) {
+void VMATree::register_mapping(position _A, position _B, StateType state,
+                                               const RegionData& metadata, VMATree::SummaryDiff& diff, bool use_tag_inplace) {
 
+  diff.clear();
   if (_A == _B) {
-    return SummaryDiff();
+    return;
   }
   assert(_A < _B, "should be");
-  SummaryDiff diff;
   RequestInfo req{_A, _B, state, metadata.mem_tag, metadata.stack_idx, use_tag_inplace};
   IntervalChange stA{
       IntervalState{StateType::Released, empty_regiondata},
@@ -644,8 +644,6 @@ VMATree::SummaryDiff VMATree::register_mapping(position _A, position _B, StateTy
   while(to_be_removed.length() != 0) {
     _tree.remove(to_be_removed.pop());
   }
-
-  return diff;
 }
 
 #ifdef ASSERT
@@ -702,7 +700,8 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
   // Ignore any released ranges, these must be mtNone and have no stack
   if (type != StateType::Released) {
     RegionData new_data = RegionData(out.reserved_stack(), tag);
-    SummaryDiff result = register_mapping(from, end, type, new_data);
+    SummaryDiff result;
+    register_mapping(from, end, type, new_data, result);
     diff.add(result);
   }
 
@@ -723,7 +722,8 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
 
     if (type != StateType::Released) {
       RegionData new_data = RegionData(out.reserved_stack(), tag);
-      SummaryDiff result = register_mapping(from, end, type, new_data);
+      SummaryDiff result;
+      register_mapping(from, end, type, new_data, result);
       diff.add(result);
     }
     remsize = remsize - (end - from);
