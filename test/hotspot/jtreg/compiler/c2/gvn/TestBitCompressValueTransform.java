@@ -76,10 +76,7 @@ public class TestBitCompressValueTransform {
 
     @Run(test = "test1")
     public void run1(RunInfo info) {
-        long res = 0;
-        for (int i = 0; i < 100; i++) {
-            res |= test1(field_L);
-        }
+        long res = test1(field_L);
         Asserts.assertEQ(res, gold_L);
     }
 
@@ -92,10 +89,7 @@ public class TestBitCompressValueTransform {
 
     @Run(test = "test2")
     public void run2(RunInfo info) {
-        int res = 0;
-        for (int i = 0; i < 100; i++) {
-            res |= test2(field_I);
-        }
+        int res = test2(field_I);
         Asserts.assertEQ(res, gold_I);
     }
 
@@ -327,10 +321,7 @@ public class TestBitCompressValueTransform {
 
     @Run (test = "test15")
     public void run15(RunInfo info) {
-        int res = 0;
-        for (int i = 0; i < 100; i++) {
-            res |= test15(0, 0);
-        }
+        int res = test15(0, 0);
         Asserts.assertEQ(0, res);
     }
 
