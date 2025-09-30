@@ -808,7 +808,7 @@ public final class Instant
             return Duration.between(this, Instant.MIN).compareTo(duration) >= 0
                     ? Instant.MIN : this.plus(duration);
         } else {
-            return Duration.between(this, Instant.MAX).compareTo(duration) >= 0
+            return Duration.between(this, Instant.MAX).compareTo(duration) > 0
                     ? this.plus(duration) : Instant.MAX;
         }
     }
