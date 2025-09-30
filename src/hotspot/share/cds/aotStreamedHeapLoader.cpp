@@ -438,6 +438,7 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
     // array will always be the next object in iteration order. Finish materializing
     // and link it to the string table.
     int value_object_index = object_index + 1;
+    heap_object = nullptr; // Materializing the value array might invalidate this oop.
     oop value_heap_object = materialize_object(value_object_index, dfs_stack, thread);
 
     heap_object = heap_object_for_object_index(object_index);
@@ -540,20 +541,6 @@ int oop_handle_cmp(const void* left, const void* right) {
 
   return 0;
 }
-
-class InflateReferenceOopClosure : public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p) { do_oop_work(p, (int)*(intptr_t*)p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p, *(int*)p); }
-
-  template <typename T>
-  void do_oop_work(T* p, int object_index) {
-    if (object_index != 0) {
-      oop obj = AOTStreamedHeapLoader::heap_object_for_object_index(object_index);
-      HeapAccess<IS_DEST_UNINITIALIZED>::oop_store(p, obj);
-    }
-  }
-};
 
 void AOTStreamedHeapLoader::IterativeObjectLoader::copy_object(oopDesc* archive_object, oop heap_object, size_t size) {
   auto linker = [&](uintptr_t p_offset, int pointee_object_index) {
