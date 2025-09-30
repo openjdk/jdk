@@ -1936,7 +1936,7 @@ public final class DateTimeFormatterBuilder {
                     padNext(pad); // pad and continue parsing
                 }
                 // main rules
-                TemporalField field = FIELD_MAP[cur];
+                TemporalField field = getField(cur);
                 if (field != null) {
                     parseField(cur, count, field);
                 } else if (cur == 'z') {
@@ -2184,49 +2184,41 @@ public final class DateTimeFormatterBuilder {
         }
     }
 
-    /** Map of letters to fields. */
-    @Stable
-    private static final TemporalField[] FIELD_MAP = new TemporalField[128];
-    static {
-        // SDF = SimpleDateFormat
-        FIELD_MAP['G'] = ChronoField.ERA;                       // SDF, LDML (different to both for 1/2 chars)
-        FIELD_MAP['y'] = ChronoField.YEAR_OF_ERA;               // SDF, LDML
-        FIELD_MAP['u'] = ChronoField.YEAR;                      // LDML (different in SDF)
-        FIELD_MAP['Q'] = IsoFields.QUARTER_OF_YEAR;             // LDML (removed quarter from 310)
-        FIELD_MAP['q'] = IsoFields.QUARTER_OF_YEAR;             // LDML (stand-alone)
-        FIELD_MAP['M'] = ChronoField.MONTH_OF_YEAR;             // SDF, LDML
-        FIELD_MAP['L'] = ChronoField.MONTH_OF_YEAR;             // SDF, LDML (stand-alone)
-        FIELD_MAP['D'] = ChronoField.DAY_OF_YEAR;               // SDF, LDML
-        FIELD_MAP['d'] = ChronoField.DAY_OF_MONTH;              // SDF, LDML
-        FIELD_MAP['F'] = ChronoField.ALIGNED_WEEK_OF_MONTH;     // SDF, LDML
-        FIELD_MAP['E'] = ChronoField.DAY_OF_WEEK;               // SDF, LDML (different to both for 1/2 chars)
-        FIELD_MAP['c'] = ChronoField.DAY_OF_WEEK;               // LDML (stand-alone)
-        FIELD_MAP['e'] = ChronoField.DAY_OF_WEEK;               // LDML (needs localized week number)
-        FIELD_MAP['a'] = ChronoField.AMPM_OF_DAY;               // SDF, LDML
-        FIELD_MAP['H'] = ChronoField.HOUR_OF_DAY;               // SDF, LDML
-        FIELD_MAP['k'] = ChronoField.CLOCK_HOUR_OF_DAY;         // SDF, LDML
-        FIELD_MAP['K'] = ChronoField.HOUR_OF_AMPM;              // SDF, LDML
-        FIELD_MAP['h'] = ChronoField.CLOCK_HOUR_OF_AMPM;        // SDF, LDML
-        FIELD_MAP['m'] = ChronoField.MINUTE_OF_HOUR;            // SDF, LDML
-        FIELD_MAP['s'] = ChronoField.SECOND_OF_MINUTE;          // SDF, LDML
-        FIELD_MAP['S'] = ChronoField.NANO_OF_SECOND;            // LDML (SDF uses milli-of-second number)
-        FIELD_MAP['A'] = ChronoField.MILLI_OF_DAY;              // LDML
-        FIELD_MAP['n'] = ChronoField.NANO_OF_SECOND;            // 310 (proposed for LDML)
-        FIELD_MAP['N'] = ChronoField.NANO_OF_DAY;               // 310 (proposed for LDML)
-        FIELD_MAP['g'] = JulianFields.MODIFIED_JULIAN_DAY;
-        // 310 - z - time-zone names, matches LDML and SimpleDateFormat 1 to 4
-        // 310 - Z - matches SimpleDateFormat and LDML
-        // 310 - V - time-zone id, matches LDML
-        // 310 - v - general timezone names, not matching exactly with LDML because LDML specify to fall back
-        //           to 'VVVV' if general-nonlocation unavailable but here it's not falling back because of lack of data
-        // 310 - p - prefix for padding
-        // 310 - X - matches LDML, almost matches SDF for 1, exact match 2&3, extended 4&5
-        // 310 - x - matches LDML
-        // 310 - w, W, and Y are localized forms matching LDML
-        // LDML - B - day periods
-        // LDML - U - cycle year name, not supported by 310 yet
-        // LDML - l - deprecated
-        // LDML - j - not relevant
+    /**
+     * Returns the TemporalField for the given pattern character.
+     *
+     * @param ch the pattern character
+     * @return the TemporalField for the given pattern character, or null if not applicable
+     */
+    private static TemporalField getField(char ch) {
+        return switch (ch) {
+            case 'G' -> ChronoField.ERA;                       // SDF, LDML (different to both for 1/2 chars)
+            case 'y' -> ChronoField.YEAR_OF_ERA;               // SDF, LDML
+            case 'u' -> ChronoField.YEAR;                      // LDML (different in SDF)
+            case 'Q' -> IsoFields.QUARTER_OF_YEAR;             // LDML (removed quarter from 310)
+            case 'q' -> IsoFields.QUARTER_OF_YEAR;             // LDML (stand-alone)
+            case 'M' -> ChronoField.MONTH_OF_YEAR;             // SDF, LDML
+            case 'L' -> ChronoField.MONTH_OF_YEAR;             // SDF, LDML (stand-alone)
+            case 'D' -> ChronoField.DAY_OF_YEAR;               // SDF, LDML
+            case 'd' -> ChronoField.DAY_OF_MONTH;              // SDF, LDML
+            case 'F' -> ChronoField.ALIGNED_WEEK_OF_MONTH;     // SDF, LDML
+            case 'E' -> ChronoField.DAY_OF_WEEK;               // SDF, LDML (different to both for 1/2 chars)
+            case 'c' -> ChronoField.DAY_OF_WEEK;               // LDML (stand-alone)
+            case 'e' -> ChronoField.DAY_OF_WEEK;               // LDML (needs localized week number)
+            case 'a' -> ChronoField.AMPM_OF_DAY;               // SDF, LDML
+            case 'H' -> ChronoField.HOUR_OF_DAY;               // SDF, LDML
+            case 'k' -> ChronoField.CLOCK_HOUR_OF_DAY;         // SDF, LDML
+            case 'K' -> ChronoField.HOUR_OF_AMPM;              // SDF, LDML
+            case 'h' -> ChronoField.CLOCK_HOUR_OF_AMPM;        // SDF, LDML
+            case 'm' -> ChronoField.MINUTE_OF_HOUR;            // SDF, LDML
+            case 's' -> ChronoField.SECOND_OF_MINUTE;          // SDF, LDML
+            case 'S' -> ChronoField.NANO_OF_SECOND;            // LDML (SDF uses milli-of-second number)
+            case 'A' -> ChronoField.MILLI_OF_DAY;              // LDML
+            case 'n' -> ChronoField.NANO_OF_SECOND;            // 310 (proposed for LDML)
+            case 'N' -> ChronoField.NANO_OF_DAY;               // 310 (proposed for LDML)
+            case 'g' -> JulianFields.MODIFIED_JULIAN_DAY;
+            default -> null;
+        };
     }
 
     //-----------------------------------------------------------------------
