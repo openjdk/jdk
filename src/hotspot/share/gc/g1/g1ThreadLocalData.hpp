@@ -42,9 +42,9 @@ private:
   //
   // Tests showed that embedding this value in the TLS block is the cheapest
   // way for fast access to this value in the barrier.
-  // E.g. embedding an address to that value directly into the code stream similar
-  // to Serial/Parallel and then loading from that was found to be slower at least
-  // on non-x64, and increases code size a lot.
+  // E.g. embedding an address to that value directly into the code stream and
+  // then loading from that was found to be slower on non-x64 architectures.
+  // Additionally it increases code size a lot.
   G1CardTable::CardValue* _byte_map_base;
 
   // Per-thread cache of pinned object count to reduce atomic operation traffic
