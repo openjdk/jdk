@@ -78,9 +78,6 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 /**
  * Verifies {@link HttpRequest#timeout() HttpRequest.timeout()} is effective
  * for <b>response header</b> timeouts.
- *
- * @see TimeoutBasic Server <b>connection</b> timeout tests
- * @see TimeoutResponseBodyTest Server <b>response body</b> timeout tests
  */
 class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
 

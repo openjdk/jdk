@@ -91,9 +91,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>
  * Each test is provided a pristine ephemeral client to avoid any unexpected
  * effects due to pooling.
- *
- * @see TimeoutBasic Server <b>connection</b> timeout tests
- * @see TimeoutResponseHeaderTest Server <b>response header</b> timeout tests
  */
 class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
