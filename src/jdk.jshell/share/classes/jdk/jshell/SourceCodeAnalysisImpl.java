@@ -2303,7 +2303,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     //if an index exists for the given entry, the existing index is kept unless the timestamp is modified
     private ClassIndex indexForPath(Path path) {
         if (!Files.isDirectory(path)) {
-            if (Files.exists(path)) {
+            if (Files.exists(path) &&
+                !isJRTMarkerFile(path)) { //don't directly index lib/modules
                 return PATH_TO_INDEX.compute(path, (p, index) -> {
                     try {
                         long lastModified = Files.getLastModifiedTime(p).toMillis();
@@ -2332,6 +2333,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 return index;
             });
         }
+    }
+
+    private static boolean isJRTMarkerFile(Path path) {
+        return path.equals(Paths.get(System.getProperty("java.home"), "lib", "modules"));
     }
 
     //create an index based on the content of the given dirs; the original JavaFileManager entry is originalPath.
