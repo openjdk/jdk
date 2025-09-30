@@ -123,7 +123,6 @@ import java.util.regex.Pattern;
 
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.vm.annotation.Stable;
 
 import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
@@ -2218,6 +2217,19 @@ public final class DateTimeFormatterBuilder {
             case 'N' -> ChronoField.NANO_OF_DAY;               // 310 (proposed for LDML)
             case 'g' -> JulianFields.MODIFIED_JULIAN_DAY;
             default -> null;
+            // 310 - z - time-zone names, matches LDML and SimpleDateFormat 1 to 4
+            // 310 - Z - matches SimpleDateFormat and LDML
+            // 310 - V - time-zone id, matches LDML
+            // 310 - v - general timezone names, not matching exactly with LDML because LDML specify to fall back
+            //           to 'VVVV' if general-nonlocation unavailable but here it's not falling back because of lack of data
+            // 310 - p - prefix for padding
+            // 310 - X - matches LDML, almost matches SDF for 1, exact match 2&3, extended 4&5
+            // 310 - x - matches LDML
+            // 310 - w, W, and Y are localized forms matching LDML
+            // LDML - B - day periods
+            // LDML - U - cycle year name, not supported by 310 yet
+            // LDML - l - deprecated
+            // LDML - j - not relevant
         };
     }
 
