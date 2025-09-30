@@ -62,7 +62,8 @@ public class GlyphMetricsTest {
         }
     }
 
-    private static void assertEqual(double d1, double d2, double variance, String scenario, int index) {
+    private static void assertEqual(double d1, double d2, double variance,
+                                    String scenario, int index) {
         if (Math.abs(d1 - d2) > variance) {
             String msg = String.format("%s for index %d: %f != %f", scenario, index, d1, d2);
             throw new RuntimeException(msg);
