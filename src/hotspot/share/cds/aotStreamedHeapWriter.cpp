@@ -120,8 +120,8 @@ int AOTStreamedHeapWriter::cmp_dfs_order(oop* o1, oop* o2) {
 void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassShared>* roots) {
   Stack<oop, mtClassShared> dfs_stack;
   _dfs_order_table = new (mtClassShared) SourceObjectToDFSOrderTable(8, max_table_capacity);
-  _roots_highest_dfs = NEW_C_HEAP_ARRAY(int, roots->length(), mtClassShared);
-  _dfs_to_archive_object_table = NEW_C_HEAP_ARRAY(size_t, _source_objs->length() + 1, mtClassShared);
+  _roots_highest_dfs = NEW_C_HEAP_ARRAY(int, (size_t)roots->length(), mtClassShared);
+  _dfs_to_archive_object_table = NEW_C_HEAP_ARRAY(size_t, (size_t)_source_objs->length() + 1, mtClassShared);
 
   for (int i = 0; i < _source_objs->length(); ++i) {
     oop obj = _source_objs->at(i);
@@ -187,7 +187,7 @@ void AOTStreamedHeapWriter::ensure_buffer_space(size_t min_bytes) {
 
 void AOTStreamedHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
   int length = roots->length();
-  size_t byte_size = align_up(sizeof(int) + sizeof(int) * length, HeapWordSize);
+  size_t byte_size = align_up(sizeof(int) + sizeof(int) * (size_t)length, (size_t)HeapWordSize);
 
   size_t new_used = _buffer_used + byte_size;
   ensure_buffer_space(new_used);
@@ -510,7 +510,7 @@ void AOTStreamedHeapWriter::populate_archive_heap_info(ArchiveStreamedHeapInfo* 
   info->set_num_roots((size_t)HeapShared::pending_roots()->length());
   info->set_forwarding_offset(_forwarding_offset);
   info->set_root_highest_object_index_table_offset(_root_highest_object_index_table_offset);
-  info->set_num_archived_objects(_source_objs->length());
+  info->set_num_archived_objects((size_t)_source_objs->length());
 }
 
 AOTMapLogger::OopDataIterator* AOTStreamedHeapWriter::oop_iterator(ArchiveStreamedHeapInfo* heap_info) {
