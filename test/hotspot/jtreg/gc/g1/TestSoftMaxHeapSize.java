@@ -66,7 +66,7 @@ public class TestSoftMaxHeapSize {
 
         public static void main(String[] args) {
             wb.fullGC(); // Clean up heap.
-        
+
             for (String value : args) {
               setSoftMaxHeapSize(Long.parseLong(value));
               wb.youngGC();
@@ -112,7 +112,7 @@ public class TestSoftMaxHeapSize {
         for (long l: tests) {
             allArgs.add(String.valueOf(l));
         }
-        
+
         output = ProcessTools.executeLimitedTestJava(allArgs);
 
         System.out.println(output.getStdout());
@@ -128,7 +128,7 @@ public class TestSoftMaxHeapSize {
           Asserts.assertEQ(expected[i - 1], Long.parseLong(m.group(1)), "Expected SoftMaxHeapSize of " + expected[i - 1] + "B but got " + m.group(1) + "B for test #" + i);
           i++;
         }
-        Asserts.assertEQ(i - 1, expected.length, "Expected " + (i - 1) + " log lines, got " + expected.length); 
+        Asserts.assertEQ(i - 1, expected.length, "Expected " + (i - 1) + " log lines, got " + expected.length);
 
         output.shouldHaveExitValue(0);
     }
