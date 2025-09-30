@@ -755,20 +755,22 @@ void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
   FileMapRegion* r = mapinfo->region_at(heap_region_index);
   size_t alignment = ObjectAlignmentInBytes;
 
-  // Allocate a buffer and read the image of the archived heap region. This buffer is outside
-  // of the real Java heap, so we must use FakeOop to access the contents of the archived heap objects.
-  char* buffer = resource_allocate_bytes(r->used() + alignment);
-  address buffer_start = (address)align_up(buffer, alignment);
-  address buffer_end = buffer_start + r->used();
-  if (!mapinfo->read_region(heap_region_index, (char*)buffer_start, r->used(), /* do_commit = */ false)) {
-    log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
-    return;
-  }
-
   if (mapinfo->object_streaming_mode()) {
+    address buffer_start = (address)r->mapped_base();
+    address buffer_end = buffer_start + r->used();
     log_region_range("heap", buffer_start, buffer_end, nullptr);
     log_archived_objects(AOTStreamedHeapLoader::oop_iterator(mapinfo, buffer_start, buffer_end));
   } else {
+    // Allocate a buffer and read the image of the archived heap region. This buffer is outside
+    // of the real Java heap, so we must use FakeOop to access the contents of the archived heap objects.
+    char* buffer = resource_allocate_bytes(r->used() + alignment);
+    address buffer_start = (address)align_up(buffer, alignment);
+    address buffer_end = buffer_start + r->used();
+    if (!mapinfo->read_region(heap_region_index, (char*)buffer_start, r->used(), /* do_commit = */ false)) {
+      log_error(aot)("Cannot read heap region; AOT map logging of heap objects failed");
+      return;
+    }
+
     address requested_base = UseCompressedOops ? (address)mapinfo->narrow_oop_base() : AOTMappedHeapLoader::heap_region_requested_address(mapinfo);
     address requested_start = requested_base + r->mapping_offset();
     log_region_range("heap", buffer_start, buffer_end, requested_start);
