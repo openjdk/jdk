@@ -39,33 +39,32 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Test mutating final fields from different modules.
  */
-
 class TestMain {
-    // the names of modules that can mutate finals in m1/p1
+    // the names of the modules that are allowed to mutate finals in m1/p1
     static Set<String> allowedToMutate;
+
+    // the list of all mutators
+    static List<ServiceLoader.Provider<Mutator>> providers;
+
+    // the module and package name of this class
     static Module mainModule;
     static String mainPackageName;
 
     @BeforeAll
-    static void setup() {
+    static void setup() throws Exception {
         String s = System.getProperty("allowedToMutate");
-        if (s == null) {
-            allowedToMutate = Set.of();
-        } else {
-            String[] names = s.split(",");
-            allowedToMutate = Stream.of(names).collect(Collectors.toSet());
-        }
-
+        String[] names = s.split(",");
+        allowedToMutate = Stream.of(names).collect(Collectors.toSet());
+        providers = ServiceLoader.load(Mutator.class).stream().toList();
         mainModule = TestMain.class.getModule();
         mainPackageName = TestMain.class.getPackageName();
     }
 
     /**
-     * Returns a stream of Mutators that can mutate final fields in m1/p1.
+     * Returns a stream of Mutators that are allowed to mutate final fields in m1/p1.
      */
     static Stream<Mutator> mutators() {
-        return ServiceLoader.load(Mutator.class)
-                .stream()
+        return providers.stream()
                 .filter(p -> allowedToMutate.contains(p.type().getModule().getName()))
                 .map(ServiceLoader.Provider::get);
     }
@@ -74,8 +73,7 @@ class TestMain {
      * Returns a stream of Mutators that can not mutate final fields in m1/p1.
      */
     static Stream<Mutator> deniedMutators() {
-        List<Mutator> mutators = ServiceLoader.load(Mutator.class)
-                .stream()
+        List<Mutator> mutators = providers.stream()
                 .filter(p -> !allowedToMutate.contains(p.type().getModule().getName()))
                 .map(ServiceLoader.Provider::get)
                 .toList();

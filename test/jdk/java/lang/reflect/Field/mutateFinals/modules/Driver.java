@@ -27,6 +27,7 @@
  * @summary Test mutating final field in m1 from m1, m2 and m3. The package with the final
  *     field is open to m2 and not open to m3.
  * @build m1/* m2/* m3/*
+ * @run junit/othervm -DallowedToMutate=m1,m2 m1/p1.TestMain
  * @run junit/othervm --illegal-final-field-mutation=allow -DallowedToMutate=m1,m2 m1/p1.TestMain
  * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=m1 -DallowedToMutate=m1 m1/p1.TestMain
  * @run junit/othervm --illegal-final-field-mutation=deny --enable-final-field-mutation=m2 -DallowedToMutate=m2 m1/p1.TestMain

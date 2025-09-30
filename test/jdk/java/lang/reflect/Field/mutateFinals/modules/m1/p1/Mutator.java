@@ -31,7 +31,6 @@ public interface Mutator {
     void setByte(Field f, Object obj, byte value) throws IllegalAccessException;
     void setChar(Field f, Object obj, char value) throws IllegalAccessException;
     void setShort(Field f, Object obj, short value) throws IllegalAccessException;
-    void setInt(Field f, Object obj, short value) throws IllegalAccessException;
     void setInt(Field f, Object obj, int value) throws IllegalAccessException;
     void setLong(Field f, Object obj, long value) throws IllegalAccessException;
     void setFloat(Field f, Object obj, float value) throws IllegalAccessException;
@@ -58,10 +57,6 @@ public interface Mutator {
             }
             @Override
             public void setShort(Field f, Object obj, short value) throws IllegalAccessException {
-                throw new IllegalAccessException();
-            }
-            @Override
-            public void setInt(Field f, Object obj, short value) throws IllegalAccessException {
                 throw new IllegalAccessException();
             }
             @Override

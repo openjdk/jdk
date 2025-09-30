@@ -162,6 +162,14 @@ class CommandLineTest {
             .shouldContain(WARNING_UNREFLECTED)
             .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
             .shouldHaveExitValue(0);
+
+        test("testUnreflectSetter+testFieldSetInt", "--illegal-final-field-mutation=debug")
+                .shouldContain("Final field value in class " + HELPER)
+                .shouldContain(WARNING_UNREFLECTED)
+                .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
+                .shouldContain(WARNING_MUTATED)
+                .shouldContain("java.lang.reflect.Field.setInt")
+                .shouldHaveExitValue(0);
     }
 
     /**
@@ -192,6 +200,11 @@ class CommandLineTest {
             .shouldNotContain(WARNING_MUTATED)
             .shouldContain("java.lang.IllegalAccessException")
             .shouldNotHaveExitValue(0);
+
+        test("testFieldSetInt", "--illegal-final-field-mutation=deny", "--illegal-final-field-mutation=warn")
+            .shouldContain(WARNING_LINE1)
+            .shouldContain(WARNING_MUTATED)
+            .shouldHaveExitValue(0);
     }
 
     /**
@@ -206,7 +219,7 @@ class CommandLineTest {
     }
 
     /**
-     * Test setting system property to "allow" at runtime. The saved value from startu
+     * Test setting system property to "allow" at runtime. The saved value from startup
      * should be used, not the system property set at run-time.
      */
     @Test

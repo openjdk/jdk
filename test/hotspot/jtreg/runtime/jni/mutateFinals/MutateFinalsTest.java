@@ -100,7 +100,7 @@ class MutateFinalsTest {
      * The names of two mutation methods. One uses JNI to set a final instance field.
      * The other uses JNI to set a final static field.
      */
-    static Stream<String> someMutationMethods() {
+    static Stream<String> twoMutationMethods() {
         List<String> list1 = mutateInstanceFieldMethods().toList();
         List<String> list2 = mutateStaticFieldMethods().toList();
         var rand = new Random();
@@ -122,14 +122,17 @@ class MutateFinalsTest {
     }
 
     /**
-     * Attemtpt to mutate final fields with JNI when running with -Xcheck:jni. The
-     * child VM is expected to exit with a fatal error.
+     * Attempt to mutate final fields with JNI when running with -Xcheck:jni. The test
+     * launches a child VM with -Xcheck:jni and expects it to exit with a fatal error.
      *
-     * This method uses someMutationMethods as the method source to avoid starting a
-     * child VM to test every mutation method.
+     * This test uses twoMutationMethods as the method source. This will test two JNI
+     * functions: one will attempt to mutate a final instance field, the other will
+     * attempt to mutate a final static field. This is preferrable than testing all JNI
+     * functions as it may be costly on some platforms/configurations to start a child VM
+     * and have it terminate with a fatal error.
      */
     @ParameterizedTest
-    @MethodSource("someMutationMethods")
+    @MethodSource("twoMutationMethods")
     void testMutateFinalWithXCheckJni(String methodName) throws Exception {
         test(methodName, "-Xcheck:jni")
                 .shouldContain("FATAL ERROR in native method")

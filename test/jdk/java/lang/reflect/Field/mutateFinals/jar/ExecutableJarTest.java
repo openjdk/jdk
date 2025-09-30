@@ -44,6 +44,8 @@ import jdk.test.lib.util.JarUtils;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ExecutableJarTest {
@@ -136,13 +138,15 @@ class ExecutableJarTest {
     }
 
     /**
-     * Test executable JAR with Enable-Final-Field-Mutation set to a bad value in the manifest.
+     * Test executable JAR with Enable-Final-Field-Mutation with that a value that is not
+     * "ALL-UNNAMED".
      */
-     @Test
-     void testFinalFieldMutationBadValue() throws Exception {
-         String jarFile = createExecutableJar(Map.of("Enable-Final-Field-Mutation", "BadValue"));
-         testExecutableJar(jarFile, "testFieldSetInt")
-                 .shouldContain("Error: illegal value \"BadValue\" for Enable-Final-Field-Mutation" +
+    @ParameterizedTest
+    @ValueSource(strings = {"java.base", "BadValue", " ", ""})
+    void testFinalFieldMutationBadValue(String value) throws Exception {
+        String jarFile = createExecutableJar(Map.of("Enable-Final-Field-Mutation", value));
+        testExecutableJar(jarFile, "testFieldSetInt")
+                 .shouldContain("Error: illegal value \"" + value + "\" for Enable-Final-Field-Mutation" +
                          " manifest attribute. Only ALL-UNNAMED is allowed")
                  .shouldNotHaveExitValue(0);
      }

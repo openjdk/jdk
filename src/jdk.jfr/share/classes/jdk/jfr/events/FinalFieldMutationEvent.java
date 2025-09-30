@@ -29,12 +29,13 @@ import jdk.jfr.Category;
 import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
+import jdk.jfr.internal.Type;
 import jdk.jfr.internal.MirrorEvent;
 import jdk.jfr.internal.RemoveFields;
 
 @Category("Java Application")
 @Label("Final Field Mutation")
-@Name("jdk.FinalFieldMutation")
+@Name(Type.EVENT_NAME_PREFIX + "FinalFieldMutation")
 @RemoveFields("duration")
 @StackFilter({"jdk.internal.event.FinalFieldMutationEvent::offer",
         "java.lang.reflect.Field::postSetFinal",

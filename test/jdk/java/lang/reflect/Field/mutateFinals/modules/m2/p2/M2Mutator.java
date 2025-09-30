@@ -54,11 +54,6 @@ public class M2Mutator implements p1.Mutator {
     }
 
     @Override
-    public void setInt(Field f, Object obj, short value) throws IllegalAccessException {
-        f.setShort(obj, value);
-    }
-
-    @Override
     public void setInt(Field f, Object obj, int value) throws IllegalAccessException {
         f.setInt(obj, value);
     }
