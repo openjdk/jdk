@@ -27,6 +27,7 @@ package jdk.internal.math;
 
 import jdk.internal.vm.annotation.Stable;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -97,6 +98,25 @@ public class FloatingDecimal {
         int getChars(byte[] result);
 
         /**
+         * Retrieves the decimal exponent most closely corresponding to this value.
+         * @return The decimal exponent.
+         */
+        int getDecimalExponent();
+
+        /**
+         * Retrieves the value as an array of digits.
+         * @param digits The digit array.
+         * @return The number of valid digits copied into the array.
+         */
+        int getDigits(byte[] digits);
+
+        /**
+         * Indicates the sign of the value.
+         * @return {@code value < 0.0}.
+         */
+        boolean isNegative();
+
+        /**
          * Indicates whether the value is either infinite or not a number.
          *
          * @return <code>true</code> if and only if the value is <code>NaN</code>
@@ -126,9 +146,11 @@ public class FloatingDecimal {
      */
     private static class ExceptionalBinaryToASCIIBuffer implements BinaryToASCIIConverter {
         private final String image;
+        private final boolean isNegative;
 
-        public ExceptionalBinaryToASCIIBuffer(String image) {
+        public ExceptionalBinaryToASCIIBuffer(String image, boolean isNegative) {
             this.image = image;
+            this.isNegative = isNegative;
         }
 
         @Override
@@ -136,6 +158,21 @@ public class FloatingDecimal {
         public int getChars(byte[] chars) {
             image.getBytes(0, image.length(), chars, 0);
             return image.length();
+        }
+
+        @Override
+        public int getDecimalExponent() {
+            throw new IllegalArgumentException("Exceptional value does not have an exponent");
+        }
+
+        @Override
+        public int getDigits(byte[] digits) {
+            throw new IllegalArgumentException("Exceptional value does not have digits");
+        }
+
+        @Override
+        public boolean isNegative() {
+            return isNegative;
         }
 
         @Override
@@ -157,9 +194,9 @@ public class FloatingDecimal {
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP);
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP);
-    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP);
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer(INFINITY_REP, false);
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_INFINITY = new ExceptionalBinaryToASCIIBuffer("-" + INFINITY_REP, true);
+    private static final BinaryToASCIIConverter B2AC_NOT_A_NUMBER = new ExceptionalBinaryToASCIIBuffer(NAN_REP, false);
     private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[] {'0'});
     private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[] {'0'});
 
@@ -203,6 +240,22 @@ public class FloatingDecimal {
             this.digits = digits;
             this.firstDigitIndex = 0;
             this.nDigits = digits.length;
+        }
+
+        @Override
+        public int getDecimalExponent() {
+            return decExponent;
+        }
+
+        @Override
+        public int getDigits(byte[] digits) {
+            System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
+            return this.nDigits;
+        }
+
+        @Override
+        public boolean isNegative() {
+            return isNegative;
         }
 
         @Override
@@ -914,6 +967,7 @@ public class FloatingDecimal {
      * Further, it is assumed that d_1 > 0.
      */
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
+        private static final BigInteger MASK = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
         private final boolean isNegative;
         private final int e;
         private final byte[] d;
@@ -939,7 +993,7 @@ public class FloatingDecimal {
         public double doubleValue() {
             /*
              * As described above, the magnitude of the mathematical value is
-             *      |x| = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
+             *      x = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
              * where f = d_1...d_n and ep = e - n are integers.
              */
             if (e <= E_THR_Z[BINARY_64_IX]) {
@@ -984,8 +1038,8 @@ public class FloatingDecimal {
             }
             /*
              * Here we have n ≤ 18, hence f < 10^18.
-             * If 0 < ep & n + ep ≤ 18 then |x| = f 10^ep < 10^n 10^ep ≤ 10^18.
-             * Thus, |x| = (f 10^ep) 10^0 fits in a long as well.
+             * If 0 < ep & n + ep ≤ 18 then x = f 10^ep < 10^n 10^ep ≤ 10^18.
+             * Thus, x = (f 10^ep) 10^0 fits in a long as well.
              */
             if (0 < ep && n + ep <= FLOG_10_MAX_LONG) {
                 /* 0 < ep < 18, hence the arg to pow10() is safe. */
@@ -997,7 +1051,7 @@ public class FloatingDecimal {
                 /*
                  * While f might not be an exact double, v is correctly rounded.
                  * This case includes precisely all x values that are
-                 * integers meeting |x| < 10^18.
+                 * integers meeting x < 10^18.
                  */
                 return isNegative ? -v : v;
             }
@@ -1059,228 +1113,6 @@ public class FloatingDecimal {
         }
 
         private double highPrecisionDoubleValue(long f) {
-            f *= MathUtils.pow10(MathUtils.N - n);
-            int ep = e - MathUtils.N;
-            /*
-             * As N = 19, we now have
-             *      |x| = f 10^ep
-             *      2^59 < 3 2^58 < 10^(N-1) ≤ f < 10^N < 3 2^62 < 2^64,
-             * (Different bounds serve different purposes.)
-             *
-             * We approximate |x| = f 10^ep as follows.
-             * Let integers g and r such that (see comments in MathUtils)
-             *      (g - 1) 2^r ≤ 10^ep < g 2^r
-             * Thus,
-             *      f (g - 1) ≤ |x| 2^(-r) < f g
-             * If both the products f (g - 1) and f g round to the same double,
-             * so does |x| 2^(-r).
-             * 
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             * We choose g such that (see MathUtils for the details of g0, g1)
-             *      2^125 ≤ g - 1 < g < 2^126
-             *      g = g1 2^63 + g0
-             * where
-             *      2^62 < g1 + 1 < 2^31 (2^32 - 1), 0 < g0 < 2^63
-             * leading to
-             *      f (g1 - 1) 2^63 < f (g - 1) < f g < f (g1 + 1) 2^63
-             * hence to
-             *      f (g1 - 1) < |x| 2^(-r-63) < f (g1 + 1)
-             *
-             * We further have
-             *      f (g1 - 1) > 3 2^58 (2^62 - 1) = 2^121 + 2^120 - 3 2^58
-             *          > 2^121 + 2^120 - 4 2^58 = 2^121 + 2^120 - 2^60 > 2^121
-             * Similarly,
-             *      f (g1 + 1) < 2^64 2^31 (2^32 - 1) < 2^64 2^63 = 2^127
-             * This shows that both products f (g1 - 1) and f (g1 + 1) are
-             * well inside the normal double range.
-             * If they both round to the same double, then so does |x| 2^(-r-63).
-             *
-             * Now, both products are much wider than a long, having a bitlength
-             * in the interval [122, 127], as shown above.
-             * Note, however, that the minimal bitlength of 122 means that
-             * discarding the lowermost 64 bits still leaves 58 bits in the
-             * higher part, which has room for P bits + 1 rounding bit
-             * + at least one sticky bit.
-             * Therefore, rather than rounding the wide products directly,
-             * we split them into the lower 64 bits and the higher bits.
-             *      f (g1 - 1) = l1 2^64 + l0
-             *      l1 = unsignedMultiplyHigh(f, g1 - 1)
-             *      l0 = f (g1 - 1) % 2^64
-             * and similarly for f (g1 + 1)
-             *      f (g1 + 1) = h1 2^64 + h0
-             *      h1 = unsignedMultiplyHigh(f, g1 + 1)
-             *      h0 = f (g1 + 1) % 2^64
-             * We then modify the least significant bit of l1 and h1
-             * to represent the sticky bits of the wide products.
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             * We get
-             *      l1 < |x| 2^(-r-127) < h1 + 1
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             * We further have
-             *      f (g1 - 1) > 3 2^58 (2^62 - 1) = 2^121 + 2^120 - 3 2^58
-             *          > 2^121 + 2^120 - 2^60 > 2^121
-             * so
-             *      l1 = ⌊f (g1 - 1) 2^(-64)⌋ ≥ ⌊2^121 2^(-64)⌋ = 2^57
-             * Similarly,
-             *      f (g1 - 1) < 2^64 (2^31 (2^32 - 1) - 1)
-             *          < 2^64 2^63 = 2^127
-             * so
-             *      l1 = ⌊f (g1 - 1) 2^(-64)⌋ < 2^63
-             * and finally
-             *      2^57 ≤ l1 < 2^63
-             * The bitlength of l1 is in the interval [58, 63], and l1 itself
-             * is well inside the normal range of a double.
-             *
-             * A similar reasoning shows that
-             *      2^57 < h1 + 1 < 2^63
-             * so the bitlength of h1 + 1 is in the same interval [58, 63] and
-             * h1 + 1 itself is in the normal range of a double
-             *
-             * The above inequality
-             *      l1 < |x| 2^(-r-127) < h1 + 1
-             * shows that if both l1 and h1 + 1 round to the same double x',
-             * so does |x| 2^(-r-127).
-             * TODO Then |x| rounds to x' 2^(r+127), including when it overflows to
-             *  infinity or when it underflows.
-             *
-             *
-             *
-             * where
-             *      2^184 = 2^59 2^125 < f (g - 1) < f g < 2^64 2^126 = 2^190
-             * Both products are thus well inside the range of normal doubles.
-             * If they both round to the same double x', so does |x| 2^(-r).
-             * TODO Then |x| rounds to x' 2^r, including when it overflows to
-             *  infinity or when it underflows.
-             *
-             * We pursue these observations by attempting with smaller
-             * quantities.
-             * We have (see MathUtils for the details of g0, g1)
-             *      g = g1 2^63 + g0
-             * where
-             *      2^62 ≤ g1 < 2^31 (2^32 - 1) - 1, 0 < g0 < 2^63
-             * leading to
-             *      f (g1 - 1) 2^63 < f (g - 1) < f g < f (g1 + 1) 2^63
-             * Split f (g1 - 1) into the lower 64 bits l0 and the higher bits l1
-             *      f (g1 - 1) = l1 2^64 + l0
-             *      l1 = unsignedMultiplyHigh(f, g1 - 1)
-             *      l0 = f (g1 - 1) % 2^64
-             * and similarly for f (g1 + 1)
-             *      f (g1 + 1) = h1 2^64 + h0
-             *      h1 = unsignedMultiplyHigh(f, g1 + 1)
-             *      h0 = f (g1 + 1) % 2^64
-             *
-             * On the one hand,
-             *
-             *
-             *
-             *
-             *
-             *
-             *
-             *      3 2^58 (2^62 - 1) < f (g1 - 1) 2^63 < g - 1 and f (g1 - 1) 2^63 < f (g - 1)
-             * and thus // TODO
-             *      l1 2^127 < f (g - 1)
-             *      l1 2^(127+r) < |x|
-             *
-             *
-             * so
-             *      g < (g1 + 1) 2^63 and f g < f (g1 + 1) 2^63
-             *
-             *
-             * where f (g1 + 1) < 2^64 2^63, meaning that this product fits
-             * in two longs.
-             * Split it into the lower 64 bits h0 and the higher bits h1.
-             *      f (g1 + 1) = h1 2^64 + h0
-             *      h1 = unsignedMultiplyHigh(f, g1 + 1)
-             *      h0 = f (g1 + 1) % 2^64
-             * Hence,
-             *      f (g1 + 1) < h1 2^64 + 2^64 = (h1 + 1) 2^64
-             * leading to
-             *      f g < f (g1 + 1) 2^63 < (h1 + 1) 2^127
-             *      |x| < f g 2^r < (h1 + 1) 2^(127+r)
-             *
-             * Similarly,
-             *      (g1 - 1) 2^63 < g - 1 and f (g1 - 1) 2^63 < f (g - 1)
-             * Again, split f (g1 - 1), obtaining
-             *      l1 = unsignedMultiplyHigh(f, g1 - 1)
-             *      l0 = f (g1 - 1) % 2^64
-             * and thus // TODO
-             *      l1 2^127 < f (g - 1)
-             *      l1 2^(127+r) < |x|
-             *
-             * Putting all together we get
-             *      l1 < |x| 2^(-127-r) < h1 + 1
-             * We conclude that when l1 and h1 + 1 round to the same double x',
-             * then so does |x| 2^(-127-r).
-             * Then |x| rounds to x' 2^(127+r).
-             *
-             * Since r = floor(log2(10^ep)) - 125 (see MathUtils), we end up
-             * with the code below.
-             */
-            long g1 = MathUtils.g1(ep);
-            long l1 = Math.unsignedMultiplyHigh(f, g1 - 1);
-            long l0 = f * (g1 - 1);
-            l1 |= l0 != 0 ? 1 : 0;
-            long h1 = Math.unsignedMultiplyHigh(f, g1 + 1);
-            long h0 = f * (g1 + 1);
-            h1 |= h0 != 0 ? 1 : 0;
-            double xp = (double) l1;
-            if (xp == (double) h1) {
-                int rp = MathUtils.flog2pow10(ep) + 2;
-                double xabs = Math.scalb(xp, rp);
-                return isNegative ? -xabs : xabs;
-            }
-
-            /*
-             * If the above fails, we could further compute the full precision
-             * f (g - 1) and f g products and proceed analogously.
-             * It would be quite rare to encounter such cases, though,
-             * and the code gets messy fast.
-             * Instead, we failover to the full precision product f 10^e
-             * using big integer arithmetic.
-             */
-            System.out.printf("%dE%d%n", f, ep);
             return fullPrecisionDoubleValue();
         }
 
@@ -1550,7 +1382,7 @@ public class FloatingDecimal {
         public float floatValue() {
             /*
              * As described above, the magnitude of the mathematical value is
-             *      |x| = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
+             *      x = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
              * where f = d_1...d_n and ep = e - n are integers.
              */
             if (e <= E_THR_Z[BINARY_32_IX]) {
