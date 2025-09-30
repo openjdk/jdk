@@ -315,7 +315,8 @@ public class ProcessCloseTest {
 
         private static void stderrExpectPolo(Process p) {
             String line = readLine(p.getErrorStream());
-            Assertions.assertEquals("Polo", line, "Stderr Expected Polo");        }
+            Assertions.assertEquals("Polo", line, "Stderr Expected Polo");
+        }
 
         private static void stdoutExpectEmpty(Process p) {
             String line = readLine(p.getInputStream());
@@ -568,7 +569,7 @@ public class ProcessCloseTest {
 
     /*
      * Invasive hack to force closing a FileDescriptor to throw an exception on FileDescriptor.close().
-     * The output stream is pealed back to get the FileDescriptor containing the fd or handle.
+     * The input stream is pealed back to get the FileDescriptor containing the fd or handle.
      * On Linux, the existing fd is closed to prevent a leak and the fd is replaced by a bad fd.
      * On Windows, the existing handle is closed
      * @param in an InputStream from Process.getInputStream

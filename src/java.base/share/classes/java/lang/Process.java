@@ -182,10 +182,15 @@ public abstract class Process implements Closeable {
      * This method is idempotent, if the process has already been closed
      * invoking this method has no effect.
      * <p>
-     * Before calling this method the caller should read the streams for any
-     * data or text and call {@linkplain #waitFor() waitFor} if the exit value is needed.
-     * The contents of streams that have not been read fully are lost,
-     * they are discarded or ignored.
+     * If the data from the process streams is needed, it must be read before calling this method.
+     * The contents of streams that have not been read fully are lost, they are discarded or ignored.
+     * <p>
+     * If the process should be allowed to run to completion or the exit value of the process
+     * is of interest, then the caller must {@linkplain #waitFor() wait} for the process
+     * to complete before calling this method.
+     * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
+     * the try-with-resources block allows the process time to clean up and exit normally.
+     * <p>
      * Streams should be closed when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
      * If an {@code IOException} occurs when closing a stream it is
@@ -197,10 +202,9 @@ public abstract class Process implements Closeable {
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
      * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
      * is not available and the process is forcibly terminated.
-     * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
-     * the try-with-resources block allows the process time to clean up and exit.
-     * Calling {@linkplain #waitFor() waitFor} after {@linkplain #close() close}
-     * or after the try-with-resources block exits returns the status after
+     * The {@linkplain #waitFor() waitFor} method SHOULD NOT be called after
+     * {@linkplain #close() close} or after the try-with-resources block exits;
+     * the status returned might be from normal termination or the result of
      * {@link #destroy() destroying the process}.
      * <p>
      * Try-with-resources example to write text to a process, read back the
