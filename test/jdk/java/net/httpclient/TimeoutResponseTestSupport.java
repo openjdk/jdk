@@ -24,8 +24,12 @@
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.Utils;
+import jdk.internal.net.http.frame.ErrorFrame;
+import jdk.internal.net.http.http3.Http3Error;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -37,6 +41,8 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,6 +50,7 @@ import java.util.stream.Stream;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -61,10 +68,50 @@ public class TimeoutResponseTestSupport {
 
     private static final SSLContext SSL_CONTEXT = createSslContext();
 
-    /**
-     * A timeout long enough for all test platforms to ensure that the request reaches to the handler.
-     */
-    protected static final Duration TIMEOUT = Duration.ofSeconds(1);
+    protected static final Duration REQUEST_TIMEOUT =
+            Duration.ofMillis(Long.parseLong(System.getProperty("test.requestTimeoutMillis")));
+
+    static {
+        assertTrue(
+                REQUEST_TIMEOUT.isPositive(),
+                "was expecting `test.requestTimeoutMillis > 0`, found: " + REQUEST_TIMEOUT);
+    }
+
+    protected static final int RETRY_LIMIT =
+            Integer.parseInt(System.getProperty("jdk.httpclient.redirects.retrylimit", "0"));
+
+    private static final long RESPONSE_Failure_WAIT_DURATION_MILLIS =
+            Long.parseLong(System.getProperty("test.responseFailureWaitDurationMillis", "0"));
+
+    static {
+        if (RETRY_LIMIT > 0) {
+
+            // Verify that response failure wait duration is provided
+            if (RESPONSE_Failure_WAIT_DURATION_MILLIS <= 0) {
+                String message = String.format(
+                        "`jdk.httpclient.redirects.retrylimit` (%s) is greater than zero. " +
+                                "`test.responseFailureWaitDurationMillis` (%s) must be greater than zero too.",
+                        RETRY_LIMIT, RESPONSE_Failure_WAIT_DURATION_MILLIS);
+                throw new AssertionError(message);
+            }
+
+            // Verify that the total response failure waits exceed the request timeout
+            Duration totalResponseFailureWaitDuration = Duration
+                    .ofMillis(RESPONSE_Failure_WAIT_DURATION_MILLIS)
+                    .multipliedBy(RETRY_LIMIT);
+            if (totalResponseFailureWaitDuration.compareTo(REQUEST_TIMEOUT) <= 0) {
+                String message = ("`test.responseFailureWaitDurationMillis * jdk.httpclient.redirects.retrylimit` (%s * %s = %s) " +
+                        "must be greater than `test.requestTimeoutMillis` (%s)")
+                        .formatted(
+                                RESPONSE_Failure_WAIT_DURATION_MILLIS,
+                                RETRY_LIMIT,
+                                totalResponseFailureWaitDuration,
+                                REQUEST_TIMEOUT);
+                throw new AssertionError(message);
+            }
+
+        }
+    }
 
     protected static final ServerRequestPair
             HTTP1 = ServerRequestPair.of(Version.HTTP_1_1, false),
@@ -88,6 +135,8 @@ public class TimeoutResponseTestSupport {
 
         private static final ExecutorService EXECUTOR = Executors.newVirtualThreadPerTaskExecutor();
 
+        private static final CountDownLatch SHUT_DOWN_LATCH = new CountDownLatch(1);
+
         private static final AtomicInteger SERVER_COUNTER = new AtomicInteger();
 
         /**
@@ -104,6 +153,8 @@ public class TimeoutResponseTestSupport {
 
         public static volatile ServerHandlerBehaviour SERVER_HANDLER_BEHAVIOUR;
 
+        public static volatile int SERVER_HANDLER_PENDING_FAILURE_COUNT = 0;
+
         private static ServerRequestPair of(Version version, boolean secure) {
 
             // Create the server and the request URI
@@ -119,7 +170,7 @@ public class TimeoutResponseTestSupport {
             server.addHandler(createServerHandler(serverId), handlerPath);
 
             // Create the request
-            HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).timeout(TIMEOUT).build();
+            HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).timeout(REQUEST_TIMEOUT).build();
 
             // Create the pair
             ServerRequestPair pair = new ServerRequestPair(server, request, secure);
@@ -145,15 +196,41 @@ public class TimeoutResponseTestSupport {
         private static HttpServerAdapters.HttpTestHandler createServerHandler(String serverId) {
             return (exchange) -> {
                 String connectionKey = exchange.getConnectionKey();
-                LOGGER.log("Server[%s] has received request (connectionKey=%s)", serverId, connectionKey);
+                LOGGER.log(
+                        "Server[%s] has received request %s",
+                        serverId, Map.of("connectionKey", connectionKey));
                 try (exchange) {
 
                     // Short-circuit on `HEAD` requests.
                     // They are used for admitting established connections to the pool.
                     if ("HEAD".equals(exchange.getRequestMethod())) {
-                        LOGGER.log("Server[%s] is responding to the `HEAD` request (connectionKey=%s)", serverId, connectionKey);
+                        LOGGER.log(
+                                "Server[%s] is responding to the `HEAD` request %s",
+                                serverId, Map.of("connectionKey", connectionKey));
                         exchange.sendResponseHeaders(200, 0);
                         return;
+                    }
+
+                    // Short-circuit if instructed to fail
+                    synchronized (ServerRequestPair.class) {
+                        if (SERVER_HANDLER_PENDING_FAILURE_COUNT > 0) {
+                            LOGGER.log(
+                                    "Server[%s] is prematurely failing as instructed %s",
+                                    serverId,
+                                    Map.of(
+                                            "connectionKey", connectionKey,
+                                            "SERVER_HANDLER_PENDING_FAILURE_COUNT", SERVER_HANDLER_PENDING_FAILURE_COUNT));
+                            // Closing the exchange will trigger an `END_STREAM` without a headers frame.
+                            // This is a protocol violation, hence we must reset the stream first.
+                            // We are doing so using by rejecting the stream, which is known to make the client retry.
+                            if (Version.HTTP_2.equals(exchange.getExchangeVersion())) {
+                                exchange.resetStream(ErrorFrame.REFUSED_STREAM);
+                            } else if (Version.HTTP_3.equals(exchange.getExchangeVersion())) {
+                                exchange.resetStream(Http3Error.H3_REQUEST_REJECTED.code());
+                            }
+                            SERVER_HANDLER_PENDING_FAILURE_COUNT--;
+                            return;
+                        }
                     }
 
                     switch (SERVER_HANDLER_BEHAVIOUR) {
@@ -174,7 +251,9 @@ public class TimeoutResponseTestSupport {
                     }
 
                 } catch (Exception exception) {
-                    String message = "Server[%s] has failed! (connectionKey=%s)".formatted(serverId, connectionKey);
+                    String message = String.format(
+                            "Server[%s] has failed! %s",
+                            serverId, Map.of("connectionKey", connectionKey));
                     LOGGER.log(System.Logger.Level.ERROR, message, exception);
                     if (exception instanceof InterruptedException) {
                         // Restore the interrupt
@@ -186,8 +265,8 @@ public class TimeoutResponseTestSupport {
         }
 
         private static void sleepIndefinitely(String serverId, String connectionKey) throws InterruptedException {
-            LOGGER.log("Server[%s] is sleeping (connectionKey=%s)", serverId, connectionKey);
-            Thread.sleep(Long.MAX_VALUE);
+            LOGGER.log("Server[%s] is sleeping %s", serverId, Map.of("connectionKey", connectionKey));
+            SHUT_DOWN_LATCH.await();
         }
 
         private static void sendResponseHeaders(
@@ -195,7 +274,7 @@ public class TimeoutResponseTestSupport {
                 HttpServerAdapters.HttpTestExchange exchange,
                 String connectionKey)
                 throws IOException {
-            LOGGER.log("Server[%s] is sending headers (connectionKey=%s)", serverId, connectionKey);
+            LOGGER.log("Server[%s] is sending headers %s", serverId, Map.of("connectionKey", connectionKey));
             exchange.sendResponseHeaders(200, CONTENT_LENGTH);
             // Force the headers to be flushed
             exchange.getResponseBody().flush();
@@ -208,14 +287,14 @@ public class TimeoutResponseTestSupport {
                 throws Exception {
             Duration perBytePauseDuration = Duration.ofMillis(100);
             assertTrue(
-                    perBytePauseDuration.multipliedBy(CONTENT_LENGTH).compareTo(TIMEOUT) > 0,
+                    perBytePauseDuration.multipliedBy(CONTENT_LENGTH).compareTo(REQUEST_TIMEOUT) > 0,
                     "Per-byte pause duration (%s) must be long enough to exceed the timeout (%s) when delivering the content (%s bytes)".formatted(
-                            perBytePauseDuration, TIMEOUT, CONTENT_LENGTH));
+                            perBytePauseDuration, REQUEST_TIMEOUT, CONTENT_LENGTH));
             try (OutputStream responseBody = exchange.getResponseBody()) {
                 for (int i = 0; i < CONTENT_LENGTH; i++) {
                     LOGGER.log(
-                            "Server[%s] is sending the body %s/%s (connectionKey=%s)",
-                            serverId, i, CONTENT_LENGTH, connectionKey);
+                            "Server[%s] is sending the body %s/%s %s",
+                            serverId, i, CONTENT_LENGTH, Map.of("connectionKey", connectionKey));
                     responseBody.write(i);
                     responseBody.flush();
                     Thread.sleep(perBytePauseDuration);
@@ -254,8 +333,12 @@ public class TimeoutResponseTestSupport {
 
     @AfterAll
     static void closeServers() {
+
         // Terminate all handlers before shutting down the server, which would block otherwise.
-        ServerRequestPair.EXECUTOR.shutdownNow();
+        ServerRequestPair.SHUT_DOWN_LATCH.countDown();
+        ServerRequestPair.EXECUTOR.shutdown();
+
+        // Shut down servers
         Exception[] exceptionRef = {null};
         serverRequestPairs()
                 .forEach(pair -> {
@@ -272,6 +355,23 @@ public class TimeoutResponseTestSupport {
         if (exceptionRef[0] != null) {
             throw new RuntimeException("failed closing one or more server resources", exceptionRef[0]);
         }
+
+    }
+
+    /**
+     * Configures how many times the handler should fail.
+     */
+    @BeforeEach
+    void resetServerHandlerFailureIndex() {
+        ServerRequestPair.SERVER_HANDLER_PENDING_FAILURE_COUNT = Math.max(0, RETRY_LIMIT - 1);
+    }
+
+    /**
+     * Ensures that the handler has failed as many times as instructed.
+     */
+    @AfterEach
+    void verifyServerHandlerFailureIndex() {
+        assertEquals(0, ServerRequestPair.SERVER_HANDLER_PENDING_FAILURE_COUNT);
     }
 
     protected static Stream<ServerRequestPair> serverRequestPairs() {

@@ -41,22 +41,40 @@ import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /*
- * @test
+ * @test id=retriesDisabled
  * @bug 8208693
- * @summary Verifies `HttpRequest::timeout` is effective for *response body* timeouts
+ * @summary Verifies `HttpRequest::timeout` is effective for *response body*
+ *          timeouts when all retry mechanisms are disabled.
  *
  * @library /test/lib
  *          /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters
- *        jdk.test.lib.net.SimpleSSLContext
- *        TimeoutResponseTestSupport
+ * @build TimeoutResponseTestSupport
  *
- * @comment `-Djdk.httpclient.{disableRetryConnect,auth.retrylimit=0}` are
- *          added to keep retry mechanisms out of the picture, and solely
- *          focus on basic request-response round trip.
  * @run junit/othervm
- *      -Djdk.httpclient.disableRetryConnect
  *      -Djdk.httpclient.auth.retrylimit=0
+ *      -Djdk.httpclient.disableRetryConnect
+ *      -Djdk.httpclient.redirects.retrylimit=0
+ *      -Dtest.requestTimeoutMillis=1000
+ *      TimeoutResponseBodyTest
+ */
+
+/*
+ * @test id=retriesEnabledForResponseFailure
+ * @bug 8208693
+ * @summary Verifies `HttpRequest::timeout` is effective for *response body*
+ *          timeouts, where some initial responses are intentionally configured
+ *          to fail to trigger retries.
+ *
+ * @library /test/lib
+ *          /test/jdk/java/net/httpclient/lib
+ * @build TimeoutResponseTestSupport
+ *
+ * @run junit/othervm
+ *      -Djdk.httpclient.auth.retrylimit=0
+ *      -Djdk.httpclient.disableRetryConnect
+ *      -Djdk.httpclient.redirects.retrylimit=3
+ *      -Dtest.requestTimeoutMillis=1000
+ *      -Dtest.responseFailureWaitDurationMillis=600
  *      TimeoutResponseBodyTest
  */
 
@@ -90,7 +108,7 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_BODY_DELIVERY;
 
         try (HttpClient client = pair.createClientWithEstablishedConnection()) {
-            assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
+            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
                 HttpResponse<InputStream> response = client.send(
                         pair.request(), HttpResponse.BodyHandlers.ofInputStream());
@@ -109,7 +127,7 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_BODY_DELIVERY;
 
         try (HttpClient client = pair.createClientWithEstablishedConnection()) {
-            assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
+            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
                 CompletableFuture<HttpResponse<InputStream>> responseFuture = client.sendAsync(
                         pair.request(), HttpResponse.BodyHandlers.ofInputStream());
@@ -143,7 +161,7 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_BODY_SLOWLY;
 
         try (HttpClient client = pair.createClientWithEstablishedConnection()) {
-            assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
+            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request");
                 HttpResponse<InputStream> response = client.send(
                         pair.request(), HttpResponse.BodyHandlers.ofInputStream());
@@ -162,7 +180,7 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                 ServerRequestPair.ServerHandlerBehaviour.DELIVER_BODY_SLOWLY;
 
         try (HttpClient client = pair.createClientWithEstablishedConnection()) {
-            assertTimeoutPreemptively(TIMEOUT.multipliedBy(2), () -> {
+            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> {
                 LOGGER.log("Sending the request asynchronously");
                 CompletableFuture<HttpResponse<InputStream>> responseFuture = client.sendAsync(
                         pair.request(), HttpResponse.BodyHandlers.ofInputStream());
