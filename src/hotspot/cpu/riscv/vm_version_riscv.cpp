@@ -160,7 +160,7 @@ void VM_Version::common_initialize() {
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
-      unaligned_access.value() != MISALIGNED_FAST);
+      unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
   }
 
   if (!AvoidUnalignedAccesses) {
@@ -175,7 +175,12 @@ void VM_Version::common_initialize() {
   // This machine has fast unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      unaligned_access.value() == MISALIGNED_FAST);
+      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
 #ifdef __riscv_ztso

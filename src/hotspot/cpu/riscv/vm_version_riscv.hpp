@@ -227,7 +227,8 @@ class VM_Version : public Abstract_VM_Version {
   // mvendorid Manufactory JEDEC id encoded, ISA vol 2 3.1.2..
   // marchid   Id for microarch. Mvendorid plus marchid uniquely identify the microarch.
   // mimpid    A unique encoding of the version of the processor implementation.
-  // unaligned_access Unaligned memory accesses (unknown, unspported, emulated, slow, firmware, fast)
+  // unaligned_scalar Performance of misaligned scalar accesses (unknown, emulated, slow, fast, unsupported)
+  // unaligned_vector Performance of misaligned vector accesses (unknown, unspported, slow, fast)
   // satp mode SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64
 
  public:
@@ -287,11 +288,12 @@ class VM_Version : public Abstract_VM_Version {
   // Non-extension features
   //
   #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                       \
-  decl(unaligned_access ,  Unaligned       ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
   decl(mvendorid        ,  VendorId        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
   decl(marchid          ,  ArchId          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
   decl(mimpid           ,  ImpId           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
   decl(satp_mode        ,  SATP            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(unaligned_scalar ,  UnalignedScalar ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
+  decl(unaligned_vector ,  UnalignedVector ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
   decl(zicboz_block_size,  ZicbozBlockSize ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)      \
 
   #define DECLARE_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF)      \
@@ -432,12 +434,19 @@ private:
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
-  enum UNALIGNED_ACCESS : int {
-    MISALIGNED_UNKNOWN     = 0,
-    MISALIGNED_EMULATED    = 1,
-    MISALIGNED_SLOW        = 2,
-    MISALIGNED_FAST        = 3,
-    MISALIGNED_UNSUPPORTED = 4
+  enum UNALIGNED_SCALAR_ACCESS : int {
+    MISALIGNED_SCALAR_UNKNOWN     = 0,
+    MISALIGNED_SCALAR_EMULATED    = 1,
+    MISALIGNED_SCALAR_SLOW        = 2,
+    MISALIGNED_SCALAR_FAST        = 3,
+    MISALIGNED_SCALAR_UNSUPPORTED = 4
+  };
+
+  enum UNALIGNED_VECTOR_ACCESS : int {
+    MISALIGNED_VECTOR_UNKNOWN     = 0,
+    MISALIGNED_VECTOR_SLOW        = 2,
+    MISALIGNED_VECTOR_FAST        = 3,
+    MISALIGNED_VECTOR_UNSUPPORTED = 4
   };
 
   // Null terminated list
