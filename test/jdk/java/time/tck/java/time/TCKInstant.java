@@ -106,6 +106,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import java.util.Optional;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -1225,48 +1226,50 @@ public class TCKInstant extends AbstractDateTimeTest {
         t.plusNanos(-1);
     }
 
-    @Test
-    void saturating_plus() {
-        // This test verifies a subset of the following cartesian product:
-        // {edge or constant instants, normal instants} x {edge or constant durations, normal durations)
-        // 1. {edge or constant instants} x {edge or constant durations}
-        verifySaturating(Instant.MIN, Duration.ofSeconds(Long.MIN_VALUE, 0), Instant.MIN);
-        verifySaturating(Instant.MIN, Duration.ZERO);
-        verifySaturating(Instant.MIN, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Instant.MAX);
-        verifySaturating(Instant.EPOCH, Duration.ofSeconds(Long.MIN_VALUE, 0), Instant.MIN);
-        verifySaturating(Instant.EPOCH, Duration.ZERO);
-        verifySaturating(Instant.EPOCH, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Instant.MAX);
-        verifySaturating(Instant.MAX, Duration.ofSeconds(Long.MIN_VALUE, 0), Instant.MIN);
-        verifySaturating(Instant.MAX, Duration.ZERO);
-        verifySaturating(Instant.MAX, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Instant.MAX);
-        // 2. {edge or constant instants} x {normal durations}
-        verifySaturating(Instant.MIN, Duration.ofDays(-32), Instant.MIN);
-        verifySaturating(Instant.MIN, Duration.ofDays(32));
-        verifySaturating(Instant.EPOCH, Duration.ofDays(-32));
-        verifySaturating(Instant.EPOCH, Duration.ofDays(32));
-        verifySaturating(Instant.MAX, Duration.ofDays(-32));
-        verifySaturating(Instant.MAX, Duration.ofDays(32), Instant.MAX);
-        // 3. {normal instants with both positive and negative epoch seconds} x {edge or constant durations}
-        verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Instant.MIN);
-        verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ZERO);
-        verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Instant.MAX);
-        verifySaturating(Instant.parse("1990-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Instant.MIN);
-        verifySaturating(Instant.parse("1990-01-01T00:00:00Z"), Duration.ZERO);
-        verifySaturating(Instant.parse("1990-01-01T00:00:00Z"), Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Instant.MAX);
-        // 4. {normal instants with both positive and negative epoch seconds} x {normal durations}
-        verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(-32));
-        verifySaturating(Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(32));
-        verifySaturating(Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(-32));
-        verifySaturating(Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(32));
+    @DataProvider(name = "PlusSaturating")
+    Object[][] provider_plusSaturating() {
+        return new Object[][]{
+                // 1. {edge or constant instants} x {edge or constant durations}
+                {Instant.MIN, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MIN)},
+                {Instant.MIN, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MIN)},
+                {Instant.MIN, Duration.ZERO, Optional.empty()},
+                {Instant.MIN, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MAX)},
+                {Instant.EPOCH, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MIN)},
+                {Instant.EPOCH, Duration.ZERO, Optional.empty()},
+                {Instant.EPOCH, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MAX)},
+                {Instant.MAX, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MIN)},
+                {Instant.MAX, Duration.ZERO, Optional.empty()},
+                {Instant.MAX, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MAX)},
+                // 2. {edge or constant instants} x {normal durations}
+                {Instant.MIN, Duration.ofDays(-32), Optional.of(Instant.MIN)},
+                {Instant.MIN, Duration.ofDays(32), Optional.empty()},
+                {Instant.EPOCH, Duration.ofDays(-32), Optional.empty()},
+                {Instant.EPOCH, Duration.ofDays(32), Optional.empty()},
+                {Instant.MAX, Duration.ofDays(-32), Optional.empty()},
+                {Instant.MAX, Duration.ofDays(32), Optional.of(Instant.MAX)},
+                // 3. {normal instants with both positive and negative epoch seconds} x {edge or constant durations}
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MIN)},
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ZERO, Optional.empty()},
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MAX)},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MIN)},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ZERO, Optional.empty()},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MAX)},
+                // 4. {normal instants with both positive and negative epoch seconds} x {normal durations}
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(-32), Optional.empty()},
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(32), Optional.empty()},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(-32), Optional.empty()},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(32), Optional.empty()},
+        };
     }
 
-    private static void verifySaturating(Instant i, Duration d, Instant... optionalInstant) {
+    @Test(dataProvider = "PlusSaturating")
+    public void plusSaturating(Instant i, Duration d, Optional<Instant> value) {
         var actual = i.plusSaturating(d);
         try {
             assertEquals(actual, i.plus(d));
         } catch (DateTimeException /* instant overflow */
                  | ArithmeticException /* long overflow */ e) {
-            assertEquals(actual, optionalInstant[0]);
+            assertEquals(actual, value.get());
         }
     }
 
