@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2020, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +24,8 @@
 
 /*
  * @test
- * @summary Test that G1 checks SoftMaxHeapSize
- * @requires vm.gc.g1
+ * @summary Test that Shenandoah checks SoftMaxHeapSize
+ * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
