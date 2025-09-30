@@ -50,7 +50,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/plab.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -76,6 +75,7 @@ class G1GCPhaseTimes;
 class G1HeapSizingPolicy;
 class G1NewTracer;
 class G1RemSet;
+class G1ReviseYoungLengthTask;
 class G1ServiceTask;
 class G1ServiceThread;
 class GCMemoryManager;
@@ -172,9 +172,23 @@ private:
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
+  G1ReviseYoungLengthTask* _revise_young_length_task;
 
   WorkerThreads* _workers;
-  G1CardTable* _card_table;
+
+  // The current epoch for refinement, i.e. the number of times the card tables
+  // have been swapped by a garbage collection.
+  // Used for detecting whether concurrent refinement has been interrupted by a
+  // garbage collection.
+  size_t _refinement_epoch;
+
+  // The following members are for tracking safepoint durations between garbage
+  // collections.
+  jlong _last_synchronized_start;
+
+  jlong _last_refinement_epoch_start;
+  jlong _yield_duration_in_refinement_epoch;       // Time spent in safepoints since beginning of last refinement epoch.
+  size_t _last_safepoint_refinement_epoch;         // Refinement epoch before last safepoint.
 
   Ticks _collection_pause_end;
 
@@ -273,6 +287,14 @@ private:
   // (d) cause == _wb_breakpoint,
   // (e) cause == _g1_periodic_collection and +G1PeriodicGCInvokesConcurrent.
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
+
+  // Wait until a full mark (either currently in progress or one that completed
+  // after the current request) has finished. Returns whether that full mark started
+  // after this request. If so, we typically do not need another one.
+  bool wait_full_mark_finished(GCCause::Cause cause,
+                               uint old_marking_started_before,
+                               uint old_marking_started_after,
+                               uint old_marking_completed_after);
 
   // Attempt to start a concurrent cycle with the indicated cause.
   // precondition: should_do_concurrent_full_gc(cause)
@@ -434,8 +456,7 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  HeapWord* mem_allocate(size_t word_size,
-                         bool*  gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t word_size) override;
 
   // First-level mutator allocation attempt: try to allocate out of
   // the mutator alloc region without taking the Heap_lock. This
@@ -472,6 +493,8 @@ private:
   G1HeapRegion* new_gc_alloc_region(size_t word_size, G1HeapRegionAttr dest, uint node_index);
   void retire_gc_alloc_region(G1HeapRegion* alloc_region,
                               size_t allocated_bytes, G1HeapRegionAttr dest);
+
+  void resize_heap(size_t resize_bytes, bool should_expand);
 
   // - if clear_all_soft_refs is true, all soft references should be
   //   cleared during the GC.
@@ -533,12 +556,17 @@ public:
   void run_batch_task(G1BatchedTask* cl);
 
   // Return "optimal" number of chunks per region we want to use for claiming areas
-  // within a region to claim.
+  // within a region to claim during card table scanning.
   // The returned value is a trade-off between granularity of work distribution and
   // memory usage and maintenance costs of that table.
   // Testing showed that 64 for 1M/2M region, 128 for 4M/8M regions, 256 for 16/32M regions,
   // and so on seems to be such a good trade-off.
-  static uint get_chunks_per_region();
+  static uint get_chunks_per_region_for_scan();
+  // Return "optimal" number of chunks per region we want to use for claiming areas
+  // within a region to claim during card table merging.
+  // This is much smaller than for scanning as the merge work is much smaller.
+  // Currently 1 for 1M regions, 2 for 2/4M regions, 4 for 8/16M regions and so on.
+  static uint get_chunks_per_region_for_merge();
 
   G1Allocator* allocator() {
     return _allocator;
@@ -558,7 +586,8 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void resize_heap_if_necessary(size_t allocation_word_size);
+  void resize_heap_after_young_collection(size_t allocation_word_size);
+  void resize_heap_after_full_collection(size_t allocation_word_size);
 
   // Check if there is memory to uncommit and if so schedule a task to do it.
   void uncommit_regions_if_necessary();
@@ -678,11 +707,6 @@ public:
 
   // Add the given region to the retained regions collection set candidates.
   void retain_region(G1HeapRegion* hr);
-  // It dirties the cards that cover the block so that the post
-  // write barrier never queues anything when updating objects on this
-  // block. It is assumed (and in fact we assert) that the block
-  // belongs to a young region.
-  inline void dirty_young_block(HeapWord* start, size_t word_size);
 
   // Frees a humongous region by collapsing it into individual regions
   // and calling free_region() for each of them. The freed regions
@@ -743,11 +767,11 @@ private:
   // followed by a by-policy upgrade to a full collection.
   // precondition: at safepoint on VM thread
   // precondition: !is_stw_gc_active()
-  void do_collection_pause_at_safepoint();
+  void do_collection_pause_at_safepoint(size_t allocation_word_size = 0);
 
   // Helper for do_collection_pause_at_safepoint, containing the guts
   // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper();
+  void do_collection_pause_at_safepoint_helper(size_t allocation_word_size);
 
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
@@ -764,8 +788,6 @@ public:
   // Must be called before any decision based on pin counts.
   void flush_region_pin_cache();
 
-  void expand_heap_after_young_collection();
-  // Update object copying statistics.
   void record_obj_copy_mem_stats();
 
 private:
@@ -783,11 +805,6 @@ public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
   G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
-  G1CardSet* young_regions_cardset() { return _young_regions_cset_group.card_set(); };
-
-  G1MonotonicArenaMemoryStats young_regions_card_set_memory_stats() { return _young_regions_cset_group.card_set_memory_stats(); }
-
-  void prepare_group_cardsets_for_scan();
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -795,7 +812,7 @@ public:
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
-  void abandon_collection_set(G1CollectionSet* collection_set);
+  void abandon_collection_set();
 
   // The concurrent marker (and the thread it runs in.)
   G1ConcurrentMark* _cm;
@@ -882,18 +899,22 @@ public:
 private:
   jint initialize_concurrent_refinement();
   jint initialize_service_thread();
+
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   // Initialize the G1CollectedHeap to have the initial and
   // maximum sizes and remembered and barrier sets
   // specified by the policy object.
   jint initialize() override;
 
-  // Returns whether concurrent mark threads (and the VM) are about to terminate.
-  bool concurrent_mark_is_terminating() const;
-
-  void stop() override;
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;
+
+  jlong last_refinement_epoch_start() const { return _last_refinement_epoch_start; }
+  void set_last_refinement_epoch_start(jlong epoch_start, jlong last_yield_duration);
+  jlong yield_duration_in_refinement_epoch();
 
   // Does operations required after initialization has been done.
   void post_initialize() override;
@@ -1022,6 +1043,8 @@ public:
 
   void start_concurrent_gc_for_metadata_allocation(GCCause::Cause gc_cause);
 
+  bool last_gc_was_periodic() { return _gc_lastcause == GCCause::_g1_periodic_collection; }
+
   void remove_from_old_gen_sets(const uint old_regions_removed,
                                 const uint humongous_regions_removed);
   void prepend_to_freelist(G1FreeRegionList* list);
@@ -1057,7 +1080,16 @@ public:
   }
 
   G1CardTable* card_table() const {
-    return _card_table;
+    return static_cast<G1CardTable*>(G1BarrierSet::g1_barrier_set()->card_table());
+  }
+
+  G1CardTable* refinement_table() const {
+    return G1BarrierSet::g1_barrier_set()->refinement_table();
+  }
+
+  G1CardTable::CardValue* card_table_base() const {
+    assert(card_table() != nullptr, "must be");
+    return card_table()->byte_map_base();
   }
 
   // Iteration functions.
@@ -1190,6 +1222,7 @@ public:
 
   // Print the maximum heap capacity.
   size_t max_capacity() const override;
+  size_t min_capacity() const;
 
   Tickspan time_since_last_collection() const { return Ticks::now() - _collection_pause_end; }
 
@@ -1199,11 +1232,11 @@ public:
     return named_heap<G1CollectedHeap>(CollectedHeap::G1);
   }
 
-  void set_region_short_lived_locked(G1HeapRegion* hr);
   // add appropriate methods for any other surv rate groups
 
   G1SurvivorRegions* survivor() { return &_survivor; }
 
+  inline uint eden_target_length() const;
   uint eden_regions_count() const { return _eden.length(); }
   uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
   uint survivor_regions_count() const { return _survivor.length(); }
@@ -1308,9 +1341,6 @@ public:
   void print_gc_on(outputStream* st) const override;
 
   void gc_threads_do(ThreadClosure* tc) const override;
-
-  // Override
-  void print_tracing_info() const override;
 
   // Used to print information about locations in the hs_err file.
   bool print_location(outputStream* st, void* addr) const override;

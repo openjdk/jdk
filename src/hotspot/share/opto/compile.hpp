@@ -308,7 +308,7 @@ class Compile : public Phase {
   InlineTree*           _ilt;                   // Ditto (temporary).
   address               _stub_function;         // VM entry for stub being compiled, or null
   const char*           _stub_name;             // Name of stub or adapter being compiled, or null
-  int                   _stub_id;               // unique id for stub or -1
+  StubId                   _stub_id;               // unique id for stub or NO_STUBID
   address               _stub_entry_point;      // Compile code entry for generated stub, or null
 
   // Control of this compilation.
@@ -526,6 +526,12 @@ public:
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
   int                   _interpreter_frame_size;
 
+  // Holds dynamically allocated extensions of short-lived register masks. Such
+  // extensions are potentially quite large and need tight resource marks which
+  // may conflict with other allocations in the default resource area.
+  // Therefore, we use a dedicated resource area for register masks.
+  ResourceArea          _regmask_arena;
+
   PhaseOutput*          _output;
 
  public:
@@ -572,7 +578,7 @@ public:
   InlineTree*       ilt() const                 { return _ilt; }
   address           stub_function() const       { return _stub_function; }
   const char*       stub_name() const           { return _stub_name; }
-  int               stub_id() const             { return _stub_id; }
+  StubId            stub_id() const             { return _stub_id; }
   address           stub_entry_point() const    { return _stub_entry_point; }
   void          set_stub_entry_point(address z) { _stub_entry_point = z; }
 
@@ -1113,6 +1119,7 @@ public:
   Matcher*          matcher()                   { return _matcher; }
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   RegMask&          FIRST_STACK_mask()          { return _FIRST_STACK_mask; }
+  ResourceArea*     regmask_arena()             { return &_regmask_arena; }
   Arena*            indexSet_arena()            { return _indexSet_arena; }
   void*             indexSet_free_block_list()  { return _indexSet_free_block_list; }
   DebugInformationRecorder* debug_info()        { return env()->debug_info(); }
@@ -1145,7 +1152,7 @@ public:
   // convention.
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
-          int stub_id, int is_fancy_jump, bool pass_tls,
+          StubId stub_id, int is_fancy_jump, bool pass_tls,
           bool return_pc, DirectiveSet* directive);
 
   ~Compile();

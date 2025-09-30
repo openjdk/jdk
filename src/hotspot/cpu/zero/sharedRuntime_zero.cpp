@@ -38,12 +38,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-
-static address zero_null_code_stub() {
-  address start = ShouldNotCallThisStub();
-  return start;
-}
-
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
                                            int total_args_passed) {
@@ -55,11 +49,8 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                             int comp_args_on_stack,
                                             const BasicType *sig_bt,
                                             const VMRegPair *regs,
-                                            AdapterHandlerEntry* handler) {
-  handler->set_entry_points(CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            CAST_FROM_FN_PTR(address,zero_null_code_stub),
-                            nullptr);
+                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+  ShouldNotCallThis();
   return;
 }
 
@@ -108,15 +99,15 @@ void SharedRuntime::generate_deopt_blob() {
   _deopt_blob = generate_empty_deopt_blob();
 }
 
-SafepointBlob* SharedRuntime::generate_handler_blob(SharedStubId id, address call_ptr) {
+SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   return generate_empty_safepoint_blob();
 }
 
-RuntimeStub* SharedRuntime::generate_resolve_blob(SharedStubId id, address destination) {
+RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination) {
   return generate_empty_runtime_stub();
 }
 
-RuntimeStub* SharedRuntime::generate_throw_exception(SharedStubId id, address runtime_entry) {
+RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_entry) {
   return generate_empty_runtime_stub();
 }
 

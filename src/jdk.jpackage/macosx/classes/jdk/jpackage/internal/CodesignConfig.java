@@ -44,7 +44,9 @@ record CodesignConfig(Optional<SigningIdentity> identity, Optional<String> ident
         Objects.requireNonNull(keychain);
 
         if (identity.isPresent() != identifierPrefix.isPresent()) {
-            throw new IllegalArgumentException("Signing identity and identifier prefix mismatch");
+            throw new IllegalArgumentException(
+                "Signing identity (" + identity + ") and identifier prefix (" +
+                identifierPrefix + ") mismatch");
         }
 
         identifierPrefix.ifPresent(v -> {

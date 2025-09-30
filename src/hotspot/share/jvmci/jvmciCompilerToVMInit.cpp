@@ -51,7 +51,7 @@
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -144,12 +144,15 @@ int CompilerToVM::Data::sizeof_ZStoreBarrierEntry = sizeof(ZStoreBarrierEntry);
 address CompilerToVM::Data::dsin;
 address CompilerToVM::Data::dcos;
 address CompilerToVM::Data::dtan;
+address CompilerToVM::Data::dsinh;
 address CompilerToVM::Data::dtanh;
 address CompilerToVM::Data::dcbrt;
 address CompilerToVM::Data::dexp;
 address CompilerToVM::Data::dlog;
 address CompilerToVM::Data::dlog10;
 address CompilerToVM::Data::dpow;
+
+address CompilerToVM::Data::crc_table_addr;
 
 address CompilerToVM::Data::symbol_init;
 address CompilerToVM::Data::symbol_clinit;
@@ -287,8 +290,10 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
     name = nullptr;                                             \
   }
 
+  SET_TRIGFUNC_OR_NULL(dsinh);
   SET_TRIGFUNC_OR_NULL(dtanh);
   SET_TRIGFUNC_OR_NULL(dcbrt);
+  SET_TRIGFUNC_OR_NULL(crc_table_addr);
 
 #undef SET_TRIGFUNC_OR_NULL
 
@@ -432,8 +437,8 @@ JVMCIObjectArray CompilerToVM::initialize_intrinsics(JVMCI_TRAPS) {
 
 jobjectArray readConfiguration0(JNIEnv *env, JVMCI_TRAPS) {
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
-  ResourceHashtable<jlong, JVMCIObject> longs;
-  ResourceHashtable<const char*, JVMCIObject,
+  HashTable<jlong, JVMCIObject> longs;
+  HashTable<const char*, JVMCIObject,
                     256, AnyObj::RESOURCE_AREA, mtInternal,
                     &CompilerToVM::cstring_hash, &CompilerToVM::cstring_equals> strings;
 

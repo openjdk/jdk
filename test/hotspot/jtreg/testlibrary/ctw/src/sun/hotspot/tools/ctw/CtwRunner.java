@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -292,6 +292,8 @@ public class CtwRunner {
                 "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
                 "--add-exports", "java.base/jdk.internal.reflect=ALL-UNNAMED",
                 "--add-exports", "java.base/jdk.internal.access=ALL-UNNAMED",
+                // Graphics clinits may run, force headless mode
+                "-Djava.awt.headless=true",
                 // enable diagnostic logging
                 "-XX:+LogCompilation",
                 // use phase specific log, hs_err and ciReplay files
@@ -318,6 +320,7 @@ public class CtwRunner {
                 "-XX:+StressIGVN",
                 "-XX:+StressCCP",
                 "-XX:+StressMacroExpansion",
+                "-XX:+StressMacroElimination",
                 "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),

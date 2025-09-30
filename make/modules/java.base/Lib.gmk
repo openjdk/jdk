@@ -155,6 +155,8 @@ endif
 
 ################################################################################
 ## Build libsyslookup
+## The LIBDL dependency on Linux is needed to dynamically access libdl symbols,
+## which may be needed as part of resolving some standard symbols
 ################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSYSLOOKUP, \
@@ -197,7 +199,7 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       OPTIMIZATION := HIGH, \
       CXXFLAGS := -std=c++17, \
       DISABLED_WARNINGS_gcc := unused-variable, \
-      LIBS_linux := $(LIBDL) $(LIBM), \
+      LIBS_linux := $(LIBM), \
   ))
 
   TARGETS += $(BUILD_LIBSIMD_SORT)

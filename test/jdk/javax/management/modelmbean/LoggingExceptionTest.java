@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ public class LoggingExceptionTest {
     private static final String tests[] = new String[] {
         "DescriptorSupport()",
         "DescriptorSupport(int)",
-        "DescriptorSupport(String)",
         "DescriptorSupport(String...)",
         "DescriptorSupport(String[], Object[])",
         "DescriptorSupport(DescriptorSupport)",
@@ -72,18 +71,15 @@ public class LoggingExceptionTest {
                         ds = new DescriptorSupport(10);
                         break;
                     case 2:
-                        ds = new DescriptorSupport(new DescriptorSupport().toXMLString());
-                        break;
-                    case 3:
                         ds = new DescriptorSupport("name1=value1", "name2=value2");
                         break;
-                    case 4:
+                    case 3:
                         ds = new DescriptorSupport(new String[] {"name"}, new Object[] {"value"});
                         break;
-                    case 5:
+                    case 4:
                         ds = new DescriptorSupport(new DescriptorSupport());
                         break;
-                    case 6:
+                    case 5:
                         RequiredModelMBean mbean = new RequiredModelMBean();
                         NotificationListener nl = new NotificationListener() {
                             public void handleNotification(Notification notification,

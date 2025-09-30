@@ -26,7 +26,7 @@
 #ifndef CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 #define CPU_PPC_ASSEMBLER_PPC_INLINE_HPP
 
-#include "asm/assembler.inline.hpp"
+#include "asm/assembler.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
 #include "runtime/vm_version.hpp"
@@ -1091,6 +1091,9 @@ inline void Assembler::vctzw(   VectorRegister d, VectorRegister b)             
 inline void Assembler::vctzd(   VectorRegister d, VectorRegister b)                   { emit_int32( VCTZD_OPCODE    | vrt(d) | vrb(b)); }
 inline void Assembler::mtvscr(  VectorRegister b)                                     { emit_int32( MTVSCR_OPCODE   | vrb(b)); }
 inline void Assembler::mfvscr(  VectorRegister d)                                     { emit_int32( MFVSCR_OPCODE   | vrt(d)); }
+
+// Vector Negate Word (introduced with Power 9)
+inline void Assembler::vnegw(   VectorRegister d, VectorRegister b)                   { emit_int32( VNEGW_OPCODE    | vrt(d) | vrb(b)); }
 
 // AES (introduced with Power 8)
 inline void Assembler::vcipher(     VectorRegister d, VectorRegister a, VectorRegister b) { emit_int32( VCIPHER_OPCODE      | vrt(d) | vra(a) | vrb(b)); }

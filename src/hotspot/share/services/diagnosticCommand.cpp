@@ -22,8 +22,8 @@
  *
  */
 
-#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoaderHierarchyDCmd.hpp"
 #include "classfile/classLoaderStats.hpp"
@@ -32,13 +32,13 @@
 #include "classfile/vmClasses.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
-#include "compiler/compiler_globals.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/directivesParser.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "jvm.h"
-#include "memory/metaspaceUtils.hpp"
 #include "memory/metaspace/metaspaceDCmd.hpp"
+#include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/memMapPrinter.hpp"
@@ -55,8 +55,8 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
+#include "runtime/vmOperations.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
 #include "services/diagnosticFramework.hpp"
@@ -69,9 +69,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/parseInteger.hpp"
 #ifdef LINUX
-#include "os_posix.hpp"
 #include "mallocInfoDcmd.hpp"
+#include "os_posix.hpp"
 #include "trimCHeapDCmd.hpp"
+
 #include <errno.h>
 #endif
 

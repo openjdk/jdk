@@ -25,14 +25,14 @@
 #include "code/relocInfo.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
-#include "oops/metadata.hpp"
-#include "runtime/os.hpp"
 #include "interpreter/invocationCounter.hpp"
+#include "oops/metadata.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/flags/jvmFlagConstraintsCompiler.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
+#include "runtime/os.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 /**
@@ -355,10 +355,8 @@ JVMFlag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
    }
 
   int minimum_alignment = 16;
-#if defined(X86) && !defined(AMD64)
+#if (defined(X86) && !defined(AMD64)) || defined(S390)
   minimum_alignment = 4;
-#elif defined(S390)
-  minimum_alignment = 2;
 #endif
 
   if (InteriorEntryAlignment < minimum_alignment) {

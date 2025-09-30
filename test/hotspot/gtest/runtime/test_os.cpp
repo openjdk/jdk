@@ -1181,3 +1181,9 @@ TEST_VM(os, map_memory_to_file_aligned) {
 }
 
 #endif // !defined(_AIX)
+
+TEST_VM(os, dll_load_null_error_buf) {
+  // This should not crash.
+  void* lib = os::dll_load("NoSuchLib", nullptr, 0);
+  ASSERT_NULL(lib);
+}

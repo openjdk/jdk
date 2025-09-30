@@ -29,16 +29,20 @@
  * @run junit DebugOptions
  */
 
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
-
 import java.security.KeyStore;
 import java.security.Security;
-import java.util.stream.Stream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class DebugOptions {
 
@@ -47,54 +51,133 @@ public class DebugOptions {
             "properties\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
     static final String EXPECTED_PROP_KEYSTORE_REGEX =
             "properties\\[.*\\|main|" + DATE_REGEX +
-                    ".*\\Rkeystore\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
+            ".*\\Rkeystore\\[.*\\|main|" + DATE_REGEX + ".*\\]:";
     static final String EXPECTED_ALL_REGEX =
             "properties\\[.*\\|main.*\\|" + DATE_REGEX +
-                    ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|"
-                    + DATE_REGEX + ".*\\]:";
+            ".*\\]((.*\\R)*)keystore\\[.*\\|main.*\\|"
+            + DATE_REGEX + ".*\\]:";
 
-    private static Stream<Arguments> patternMatches() {
-        return Stream.of(
-                // test for thread and timestamp info
-                Arguments.of("properties",
-                        EXPECTED_PROP_REGEX,
-                        "properties:"),
-                // test for thread and timestamp info
-                Arguments.of("properties+thread",
-                        EXPECTED_PROP_REGEX,
-                        "properties:"),
-                // flip the arguments of previous test
-                Arguments.of("properties+thread+timestamp",
-                        EXPECTED_PROP_REGEX,
-                        "properties:"),
-                // regular keystore,properties component string
-                Arguments.of("keystore,properties",
-                        EXPECTED_PROP_KEYSTORE_REGEX,
-                        "properties:"),
-                // turn on all
-                Arguments.of("all",
-                        EXPECTED_ALL_REGEX,
-                        "properties:"),
-                // expect thread and timestamp info
-                Arguments.of("all+thread",
-                        EXPECTED_ALL_REGEX,
-                        "properties:")
-        );
-    }
+    private static final List<String[]> patternMatches = List.of(
+            // test for thread and timestamp info
+            new String[]{"properties",
+                    EXPECTED_PROP_REGEX,
+                    "properties:"},
+            // test for thread and timestamp info
+            new String[]{"properties+thread",
+                    EXPECTED_PROP_REGEX,
+                    "properties:"},
+            // flip the arguments of previous test
+            new String[]{"properties+thread+timestamp",
+                    EXPECTED_PROP_REGEX,
+                    "properties:"},
+            // regular keystore,properties component string
+            new String[]{"keystore,properties",
+                    EXPECTED_PROP_KEYSTORE_REGEX,
+                    "properties:"},
+            // turn on all
+            new String[]{"all",
+                    EXPECTED_ALL_REGEX,
+                    "properties:"},
+            // expect thread and timestamp info
+            new String[]{"all+thread",
+                    EXPECTED_ALL_REGEX,
+                    "properties:"}
+    );
 
-    @ParameterizedTest
-    @MethodSource("patternMatches")
-    public void shouldContain(String params, String expected, String notExpected) throws Exception {
-        OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                "-Djava.security.debug=" + params,
-                "DebugOptions"
-        );
+    /**
+     * This will execute the test logic, but first change the param
+     * to be mixed case
+     *
+     * @param paramName   name of the parameter e.g. -Djava.security.debug=
+     * @param paramVal    value of the parameter
+     * @param expected    expected output
+     * @param notExpected not expected output
+     */
+    public void testMixedCaseParameter(String paramName,
+                                       String paramVal,
+                                       String expected,
+                                       String notExpected) throws Exception {
+
+        final String formattedParam = makeFirstAndLastLetterUppercase(paramVal);
+        System.out.printf("Executing: {%s%s DebugOptions}%n",
+                paramName,
+                formattedParam);
+
+        final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
+                paramName + formattedParam,
+                "DebugOptions");
         outputAnalyzer.shouldHaveExitValue(0)
                 .shouldMatch(expected)
                 .shouldNotMatch(notExpected);
     }
 
+    /**
+     * This method will change the input string to have
+     * first and last letters uppercase
+     * <p>
+     * e.g.:
+     * hello -> HellO
+     *
+     * @param paramString string to change. Must not be null or empty
+     * @return resulting string
+     */
+    private String makeFirstAndLastLetterUppercase(final String paramString) {
+        Assertions.assertTrue(paramString != null && !paramString.isEmpty());
+
+        final int length = paramString.length();
+        final String firstLetter = paramString.substring(0, 1);
+        final String lastLetter = paramString.substring((length - 1),
+                length);
+
+        return firstLetter.toUpperCase()
+               + paramString.substring(1, length - 1)
+               + lastLetter.toUpperCase();
+    }
+
+    /**
+     * This test will run all options in parallel with all param names
+     * in mixed case
+     */
+    @Test
+    public void debugOptionsMixedCaseTest() throws Exception {
+
+        try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            final List<Callable<Void>> testsCallables = new ArrayList<>();
+
+            patternMatches.forEach(params -> {
+                testsCallables.add(() -> {
+                    testMixedCaseParameter(
+                            "-Djava.security.debug=",
+                            params[0],
+                            params[1],
+                            params[2]);
+                    return null;
+                });
+                testsCallables.add(() -> {
+                    testMixedCaseParameter(
+                            "-Djava.security.auth.debug=",
+                            params[0],
+                            params[1],
+                            params[2]);
+                    return null;
+                });
+
+                System.out.println("Option added to all mixed case tests " + Arrays.toString(params));
+            });
+
+            System.out.println("Starting all the threads");
+            final List<Future<Void>> res = executorService.invokeAll(testsCallables);
+            for (final Future<Void> future : res) {
+                future.get();
+            }
+        }
+    }
+
+    /**
+     * This is used for the test logic itself
+     */
     public static void main(String[] args) throws Exception {
+
         // something to trigger "properties" debug output
         Security.getProperty("test");
         // trigger "keystore" debug output

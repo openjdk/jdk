@@ -286,7 +286,7 @@ class nmethod : public CodeBlob {
   volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
 
   DeoptimizationStatus deoptimization_status() const {
-    return Atomic::load(&_deoptimization_status);
+    return AtomicAccess::load(&_deoptimization_status);
   }
 
   // Initialize fields to their default values
@@ -913,10 +913,13 @@ public:
   JVMCINMethodData* jvmci_nmethod_data() const {
     return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
+
+  // Returns true if the runtime should NOT collect deoptimization profile for a JVMCI
+  // compiled method
+  bool jvmci_skip_profile_deopt() const;
 #endif
 
-  void oops_do(OopClosure* f) { oops_do(f, false); }
-  void oops_do(OopClosure* f, bool allow_dead);
+  void oops_do(OopClosure* f);
 
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.
@@ -1075,6 +1078,15 @@ public:
   };
 
   static const Vptr _vpntr;
+};
+
+struct NMethodMarkingScope : StackObj {
+  NMethodMarkingScope() {
+    nmethod::oops_do_marking_prologue();
+  }
+  ~NMethodMarkingScope() {
+    nmethod::oops_do_marking_epilogue();
+  }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

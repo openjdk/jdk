@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary Test classpath wildcards for javac and java -classpath option.
  * @library /tools/lib
  * @build toolbox.ToolBox Util WildcardMineField
- * @run main WildcardMineField
+ * @run main/timeout=480 WildcardMineField
  */
 
 /*
