@@ -128,7 +128,6 @@ public class StripParameterNamesTest {
         try (Stream<Path> walk = Files.walk(dir)) {
             walk.sorted(Comparator.reverseOrder())
                     .map(Path::toFile)
-                    .peek(System.out::println)
                     .forEach(File::delete);
         }
     }
@@ -246,6 +245,17 @@ public class StripParameterNamesTest {
             .assertSuccess();
         assertHasParameterNames(imageDir, false);
     }
+
+    @Test
+    public void testWithoutStripParameterName() throws Exception {
+        var imageDir = Paths.get("img");
+        var jmod = testJmods.get(0);
+        buildImage(jmod.moduleDir(), imageDir,
+                "--strip-debug", "--strip-java-debug-attributes")
+            .assertSuccess();
+        assertHasParameterNames(imageDir, jmod.withParameterNames());
+    }
+
     @Test
     public void testInvalidArgument() throws Exception {
         var imageDir = Paths.get("img");

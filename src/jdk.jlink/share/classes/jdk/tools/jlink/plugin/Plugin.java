@@ -166,6 +166,10 @@ public interface Plugin {
         return false;
     }
 
+    public default boolean isArgumentOptional() {
+        return false;
+    }
+
     /**
      * The plugin argument(s) description.
      * @return  The argument(s) description.

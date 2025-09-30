@@ -73,6 +73,11 @@ public final class StripJavaDebugAttributesPlugin extends AbstractPlugin {
     }
 
     @Override
+    public boolean isArgumentOptional() {
+        return true;
+    }
+
+    @Override
     public void configure(Map<String, String> config) {
         var rawArg = config.get(NAME);
         if (rawArg != null) {
