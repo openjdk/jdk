@@ -35,6 +35,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @summary Promote vector IR node sharing
+ * @requires vm.opt.EnableVectorSupport == true
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.VectorCommutativeOperSharingTest

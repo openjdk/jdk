@@ -456,7 +456,7 @@ void Modules::define_module(Handle module, jboolean is_open, jstring version,
 #if COMPILER2_OR_JVMCI
   // Special handling of jdk.incubator.vector
   if (strcmp(module_name, "jdk.incubator.vector") == 0) {
-    if (FLAG_IS_DEFAULT(EnableVectorSupport)) {
+    if (FLAG_IS_DEFAULT(EnableVectorSupport) RISCV64_ONLY(&& !AlignVector)) {
       FLAG_SET_DEFAULT(EnableVectorSupport, true);
     }
     if (EnableVectorSupport && FLAG_IS_DEFAULT(EnableVectorReboxing)) {

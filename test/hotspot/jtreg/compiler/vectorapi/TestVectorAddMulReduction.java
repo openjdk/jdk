@@ -41,6 +41,7 @@ import jdk.test.lib.Utils;
  * @library /test/lib /
  * @summary Verify non-strictly ordered AddReductionVF/VD and MulReductionVF/VD
  *          nodes are generated in VectorAPI
+ * @requires vm.opt.EnableVectorSupport == true
  * @modules jdk.incubator.vector
  * @run driver compiler.vectorapi.TestVectorAddMulReduction
  */

@@ -48,6 +48,7 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @requires vm.cpu.features ~= ".*sve.*" | vm.cpu.features ~= ".*rvv.*"
+ * @requires vm.opt.EnableVectorSupport == true
  * @summary Add optimized rules for masked vector multiply-add/sub for SVE and RVV
  * @modules jdk.incubator.vector
  *
