@@ -2190,6 +2190,7 @@ public final class DateTimeFormatterBuilder {
      * @return the TemporalField for the given pattern character, or null if not applicable
      */
     private static TemporalField getField(char ch) {
+        // SDF = SimpleDateFormat
         return switch (ch) {
             case 'G' -> ChronoField.ERA;                       // SDF, LDML (different to both for 1/2 chars)
             case 'y' -> ChronoField.YEAR_OF_ERA;               // SDF, LDML
