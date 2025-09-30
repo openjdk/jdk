@@ -1872,7 +1872,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // although the raw address of the object may have changed.
     // (Don't cache naked oops over safepoints, of course).
 
-    
+
 
     OrderAccess::fence();
 
@@ -1904,7 +1904,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         guarantee(node.TState == ObjectWaiter::TS_RUN, "invariant");
         current->set_current_pending_monitor(nullptr);
         enter(current, false);
-      }      
+      }
       assert(has_owner(current), "invariant");
       node.wait_reenter_end(this);
     }
