@@ -32,6 +32,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
