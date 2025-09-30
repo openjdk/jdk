@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,16 +27,15 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /**
  * @test
  * @bug 8246774
  * @summary test for varargs record components
- * @run testng VarargsRecordsTest
+ * @run junit VarargsRecordsTest
  */
-@Test
 public class VarargsRecordsTest {
     public record RI(int... xs) { }
     public record RII(int x, int... xs) { }
@@ -49,49 +48,52 @@ public class VarargsRecordsTest {
     RII r5 = new RII(1, 2);
     RII r6 = new RII(1, 2, 3);
 
+    @Test
     public void assertVarargsInstances() {
-        assertEquals(r1.xs.length, 0);
-        assertEquals(r2.xs.length, 1);
-        assertEquals(r3.xs.length, 2);
-        assertEquals(r4.xs.length, 0);
-        assertEquals(r5.xs.length, 1);
-        assertEquals(r6.xs.length, 2);
+        assertEquals(0, r1.xs.length);
+        assertEquals(1, r2.xs.length);
+        assertEquals(2, r3.xs.length);
+        assertEquals(0, r4.xs.length);
+        assertEquals(1, r5.xs.length);
+        assertEquals(2, r6.xs.length);
 
-        assertEquals(r2.xs[0], 1);
-        assertEquals(r3.xs[0], 1);
-        assertEquals(r3.xs[1], 2);
+        assertEquals(1, r2.xs[0]);
+        assertEquals(1, r3.xs[0]);
+        assertEquals(2, r3.xs[1]);
 
-        assertEquals(r5.xs[0], 2);
-        assertEquals(r6.xs[0], 2);
-        assertEquals(r6.xs[1], 3);
+        assertEquals(2, r5.xs[0]);
+        assertEquals(2, r6.xs[0]);
+        assertEquals(3, r6.xs[1]);
     }
 
+    @Test
     public void testMembers() throws ReflectiveOperationException {
         Constructor c = RI.class.getConstructor(int[].class);
         assertNotNull(c);
         assertTrue(c.isVarArgs());
         Parameter[] parameters = c.getParameters();
-        assertEquals(parameters.length, 1);
-        assertEquals(parameters[0].getName(), "xs");
+        assertEquals(1, parameters.length);
+        assertEquals("xs", parameters[0].getName());
 
         RI ri = (RI) c.newInstance(new int[]{1, 2});
-        assertEquals(ri.xs()[0], 1);
-        assertEquals(ri.xs()[1], 2);
+        assertEquals(1, ri.xs()[0]);
+        assertEquals(2, ri.xs()[1]);
 
         Field xsField = RI.class.getDeclaredField("xs");
-        assertEquals(xsField.getType(), int[].class);
-        assertEquals((xsField.getModifiers() & Modifier.STATIC), 0);
+        assertEquals(int[].class, xsField.getType());
+        assertEquals(0, (xsField.getModifiers() & Modifier.STATIC));
         assertTrue((xsField.getModifiers() & Modifier.PRIVATE) != 0);
         assertTrue((xsField.getModifiers() & Modifier.FINAL) != 0);
-        assertEquals(((int[]) xsField.get(ri))[0], 1);
+        assertEquals(1, ((int[]) xsField.get(ri))[0]);
 
         Method xsMethod = RI.class.getDeclaredMethod("xs");
-        assertEquals(xsMethod.getReturnType(), int[].class);
-        assertEquals(xsMethod.getParameterCount(), 0);
-        assertEquals((xsMethod.getModifiers() & (Modifier.PRIVATE | Modifier.PROTECTED | Modifier.STATIC | Modifier.ABSTRACT)), 0);
-        assertEquals(((int[]) xsMethod.invoke(ri))[0], 1);
+        assertEquals(int[].class, xsMethod.getReturnType());
+        assertEquals(0, xsMethod.getParameterCount());
+        assertEquals(0, (xsMethod.getModifiers() & (Modifier.PRIVATE | Modifier.PROTECTED | Modifier.STATIC | Modifier.ABSTRACT)));
+        assertEquals(1, ((int[]) xsMethod.invoke(ri))[0]);
     }
 
+    @Test
     public void testNotVarargs() throws ReflectiveOperationException {
         Constructor c = RX.class.getConstructor(int[].class);
         assertFalse(c.isVarArgs());

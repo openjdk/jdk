@@ -253,35 +253,6 @@ class ThreadAPI {
     }
 
     /**
-     * Test Thread::stop from current thread.
-     */
-    @Test
-    void testStop1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::stop);
-        });
-    }
-
-    /**
-     * Test Thread::stop from another thread.
-     */
-    @Test
-    void testStop2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, thread::stop);
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
-    }
-
-    /**
      * Test Thread.join before thread starts, platform thread invokes join.
      */
     @Test

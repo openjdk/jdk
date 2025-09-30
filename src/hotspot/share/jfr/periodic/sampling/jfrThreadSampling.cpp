@@ -368,6 +368,7 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   tl->set_has_cpu_time_jfr_requests(false);
   if (queue.lost_samples() > 0) {
     JfrCPUTimeThreadSampling::send_lost_event( now, JfrThreadLocal::thread_id(jt), queue.get_and_reset_lost_samples());
+    queue.resize_if_needed();
   }
   if (lock) {
     tl->release_cpu_time_jfr_queue_lock();

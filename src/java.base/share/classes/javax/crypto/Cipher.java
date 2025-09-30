@@ -30,7 +30,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.*;
 
-
 import java.security.*;
 import java.security.Provider.Service;
 import java.security.spec.AlgorithmParameterSpec;
@@ -46,6 +45,7 @@ import java.nio.ReadOnlyBufferException;
 import sun.security.util.Debug;
 import sun.security.jca.*;
 import sun.security.util.KnownOIDs;
+import sun.security.util.CryptoAlgorithmConstraints;
 
 /**
  * This class provides the functionality of a cryptographic cipher for
@@ -297,6 +297,7 @@ public class Cipher {
         if (transformation == null) {
             throw new NoSuchAlgorithmException("No transformation given");
         }
+
         /*
          * Components of a cipher transformation:
          *
@@ -482,8 +483,10 @@ public class Cipher {
      * requirements of your application.
      *
      * @implNote
-     * The JDK Reference Implementation additionally uses the
-     * {@code jdk.security.provider.preferred}
+     * The JDK Reference Implementation additionally uses the following
+     * security properties:
+     * <ul>
+     * <li>the {@code jdk.security.provider.preferred}
      * {@link Security#getProperty(String) Security} property to determine
      * the preferred provider order for the specified algorithm. This
      * may be different than the order of providers returned by
@@ -491,6 +494,14 @@ public class Cipher {
      * See also the Cipher Transformations section of the {@extLink
      * security_guide_jdk_providers JDK Providers} document for information
      * on the transformation defaults used by JDK providers.
+     * </li>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     * </li>
+     * </ul>
      *
      * @param transformation the name of the transformation, e.g.,
      * <i>AES/CBC/PKCS5Padding</i>.
@@ -504,12 +515,12 @@ public class Cipher {
      * transformation
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if no provider supports a {@code CipherSpi}
-     *         implementation for the specified algorithm
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation is not found or
+     *         is found but does not support the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         is found but does not support the padding scheme
      *
      * @see java.security.Provider
      */
@@ -519,6 +530,13 @@ public class Cipher {
         if ((transformation == null) || transformation.isEmpty()) {
             throw new NoSuchAlgorithmException("Null or empty transformation");
         }
+
+        // throws NoSuchAlgorithmException if java.security disables it
+        if (!CryptoAlgorithmConstraints.permits("Cipher", transformation)) {
+            throw new NoSuchAlgorithmException(transformation +
+                    " is disabled");
+        }
+
         List<Transform> transforms = getTransforms(transformation);
         List<ServiceId> cipherServices = new ArrayList<>(transforms.size());
         for (Transform transform : transforms) {
@@ -555,8 +573,12 @@ public class Cipher {
                 failure = e;
             }
         }
+        if (failure instanceof NoSuchPaddingException nspe) {
+            throw nspe;
+        }
         throw new NoSuchAlgorithmException
-            ("Cannot find any provider supporting " + transformation, failure);
+                ("Cannot find any provider supporting " + transformation,
+                failure);
     }
 
     /**
@@ -564,8 +586,8 @@ public class Cipher {
      * transformation.
      *
      * <p> A new {@code Cipher} object encapsulating the
-     * {@code CipherSpi} implementation from the specified provider
-     * is returned.  The specified provider must be registered
+     * {@code CipherSpi} implementation from the specified {@code provider}
+     * is returned.  The specified {@code provider} must be registered
      * in the security provider list.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -581,6 +603,14 @@ public class Cipher {
      * See the Cipher Transformations section of the {@extLink
      * security_guide_jdk_providers JDK Providers} document for information
      * on the transformation defaults used by JDK providers.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
      *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
@@ -599,15 +629,16 @@ public class Cipher {
      *         is {@code null} or empty
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation for the
-     *         specified algorithm is not available from the specified
-     *         provider
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation from the specified
+     *         {@code provider} is not found or is found but does not support
+     *         the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         from the specified {@code provider} is found but does not
+     *         support the padding scheme
      *
-     * @throws NoSuchProviderException if the specified provider is not
+     * @throws NoSuchProviderException if the specified {@code provider} is not
      *         registered in the security provider list
      *
      * @see java.security.Provider
@@ -655,6 +686,14 @@ public class Cipher {
      * security_guide_jdk_providers JDK Providers} document for information
      * on the transformation defaults used by JDK providers.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses
+     * the {@code jdk.crypto.disabledAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is allowed. If the
+     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
+     * the security property value.
+     *
      * @param transformation the name of the transformation,
      * e.g., <i>AES/CBC/PKCS5Padding</i>.
      * See the Cipher section in the <a href=
@@ -672,13 +711,14 @@ public class Cipher {
      *         is {@code null}
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation for the
-     *         specified algorithm is not available from the specified
-     *         {@code provider} object
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation from the specified
+     *         {@code provider} is not found or is found but does not support
+     *         the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         from the specified {@code provider} is found but does not
+     *         support the padding scheme
      *
      * @see java.security.Provider
      */
@@ -692,6 +732,13 @@ public class Cipher {
         if (provider == null) {
             throw new IllegalArgumentException("Missing provider");
         }
+
+        // throws NoSuchAlgorithmException if java.security disables it
+        if (!CryptoAlgorithmConstraints.permits("Cipher", transformation)) {
+            throw new NoSuchAlgorithmException(transformation +
+                    " is disabled");
+        }
+
         Exception failure = null;
         List<Transform> transforms = getTransforms(transformation);
         boolean providerChecked = false;
