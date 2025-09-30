@@ -97,6 +97,11 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
     private static final Logger LOGGER = Utils.getDebugLogger(
             TimeoutResponseBodyTest.class.getSimpleName()::toString, Utils.DEBUG);
 
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#send(HttpRequest, HttpResponse.BodyHandler) HttpClient::send}
+     * against a server blocking without delivering the response body.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSendOnMissingBody(ServerRequestPair pair) throws Exception {
@@ -116,6 +121,11 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     }
 
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#sendAsync(HttpRequest, HttpResponse.BodyHandler) HttpClient::sendAsync}
+     * against a server blocking without delivering the response body.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSendAsyncOnMissingBody(ServerRequestPair pair) throws Exception {
@@ -150,6 +160,11 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
         assertInstanceOf(HttpTimeoutException.class, exception.getCause());
     }
 
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#send(HttpRequest, HttpResponse.BodyHandler) HttpClient::send}
+     * against a server delivering the response body very slowly.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSendOnSlowBody(ServerRequestPair pair) throws Exception {
@@ -169,6 +184,11 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     }
 
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#sendAsync(HttpRequest, HttpResponse.BodyHandler) HttpClient::sendAsync}
+     * against a server delivering the response body very slowly.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSendAsyncOnSlowBody(ServerRequestPair pair) throws Exception {

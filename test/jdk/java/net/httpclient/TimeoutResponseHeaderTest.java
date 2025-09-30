@@ -89,6 +89,11 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
                 ServerRequestPair.ServerHandlerBehaviour.BLOCK_BEFORE_HEADER_DELIVERY;
     }
 
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#send(HttpRequest, HttpResponse.BodyHandler) HttpClient::send}
+     * against a server blocking without delivering any response headers.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSend(ServerRequestPair pair) throws Exception {
@@ -102,6 +107,11 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
         }
     }
 
+    /**
+     * Tests timeouts using
+     * {@link HttpClient#sendAsync(HttpRequest, HttpResponse.BodyHandler) HttpClient::sendAsync}
+     * against a server blocking without delivering any response headers.
+     */
     @ParameterizedTest
     @MethodSource("serverRequestPairs")
     void testSendAsync(ServerRequestPair pair) throws Exception {
