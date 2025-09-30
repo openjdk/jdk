@@ -111,6 +111,11 @@ size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {
   return _free_set->young_affiliated_regions();
 }
 
+size_t ShenandoahYoungGeneration::get_humongous_waste() const {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
+  return _free_set->humongous_waste_in_mutator();
+}
+
 size_t ShenandoahYoungGeneration::available() const {
   // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
   // at what is available to the mutator when reporting how much memory is available.

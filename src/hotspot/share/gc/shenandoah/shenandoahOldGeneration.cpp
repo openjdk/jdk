@@ -846,3 +846,10 @@ size_t ShenandoahOldGeneration::get_affiliated_region_count() const {
   return _free_set->old_affiliated_regions();
 }
 
+size_t ShenandoahOldGeneration::get_humongous_waste() const {
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
+  return _free_set->humongous_waste_in_old();
+}
+
+
+

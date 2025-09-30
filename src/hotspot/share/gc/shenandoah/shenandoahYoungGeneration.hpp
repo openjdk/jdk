@@ -76,6 +76,7 @@ public:
   size_t used() const override;
   size_t bytes_allocated_since_gc_start() const override;
   size_t get_affiliated_region_count() const override;
+  size_t get_humongous_waste() const override;
 
   size_t available() const override;
 

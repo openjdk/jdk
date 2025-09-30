@@ -208,23 +208,7 @@ private:
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
 
-  size_t get_humongous_waste() const {
-    size_t result;
-    switch (_type) {
-    case ShenandoahGenerationType::OLD:
-      result = _free_set->humongous_waste_in_old();
-      break;
-    case ShenandoahGenerationType::YOUNG:
-      result = _free_set->humongous_waste_in_mutator();
-      break;
-    case ShenandoahGenerationType::GLOBAL:
-    case ShenandoahGenerationType::NON_GEN:
-    default:
-      result = _free_set->total_humongous_waste();
-      break;
-    }
-    return result;
-  }
+  virtual size_t get_humongous_waste() const;
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();

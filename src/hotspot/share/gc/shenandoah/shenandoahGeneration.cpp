@@ -940,6 +940,11 @@ size_t ShenandoahGeneration::get_affiliated_region_count() const {
   return _free_set->global_affiliated_regions();
 }
 
+size_t ShenandoahGeneration::get_humongous_waste() const {
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  return _free_set->total_humongous_waste();
+}
+
 size_t ShenandoahGeneration::used_regions() const {
   size_t result;
   switch (_type) {
