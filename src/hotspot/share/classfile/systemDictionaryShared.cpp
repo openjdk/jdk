@@ -354,11 +354,13 @@ void SystemDictionaryShared::check_exclusion_for_self_and_dependencies(InstanceK
   });
 }
 
-// Returns true so the caller can do:    return warn_excluded(".....");
-bool SystemDictionaryShared::warn_excluded(InstanceKlass* k, const char* reason) {
+void SystemDictionaryShared::log_exclusion(InstanceKlass* k, const char* reason, bool is_warning) {
   ResourceMark rm;
-  aot_log_warning(aot)("Skipping %s: %s", k->name()->as_C_string(), reason);
-  return true;
+  if (is_warning) {
+    aot_log_warning(aot)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  } else {
+    aot_log_info(aot)("Skipping %s: %s", k->name()->as_C_string(), reason);
+  }
 }
 
 bool SystemDictionaryShared::is_jfr_event_class(InstanceKlass *k) {
@@ -377,23 +379,35 @@ bool SystemDictionaryShared::is_early_klass(InstanceKlass* ik) {
 }
 
 bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
+  bool log_warning = false;
+  const char* error = check_self_exclusion_helper(k, log_warning);
+  if (error != nullptr) {
+    log_exclusion(k, error, log_warning);
+    return true; // Should be excluded
+  } else {
+    return false; // Should not be excluded
+  }
+}
+
+const char* SystemDictionaryShared::check_self_exclusion_helper(InstanceKlass* k, bool& log_warning) {
   assert_lock_strong(DumpTimeTable_lock);
   if (CDSConfig::is_dumping_final_static_archive() && k->defined_by_other_loaders()
       && k->in_aot_cache()) {
-    return false; // Do not exclude: unregistered classes are passed from preimage to final image.
+    return nullptr; // Do not exclude: unregistered classes are passed from preimage to final image.
   }
 
   if (k->is_in_error_state()) {
-    return warn_excluded(k, "In error state");
+    log_warning = true;
+    return "In error state";
   }
   if (k->is_scratch_class()) {
-    return warn_excluded(k, "A scratch class");
+    return "A scratch class";
   }
   if (!k->is_loaded()) {
-    return warn_excluded(k, "Not in loaded state");
+    return "Not in loaded state";
   }
   if (has_been_redefined(k)) {
-    return warn_excluded(k, "Has been redefined");
+    return "Has been redefined";
   }
   if (!k->is_hidden() && k->shared_classpath_index() < 0 && is_builtin(k)) {
     if (k->name()->starts_with("java/lang/invoke/BoundMethodHandle$Species_")) {
@@ -401,43 +415,42 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
       if (CDSConfig::is_dumping_method_handles()) {
         k->set_shared_classpath_index(0);
       } else {
-        ResourceMark rm;
-        aot_log_info(aot)("Skipping %s because it is dynamically generated", k->name()->as_C_string());
-        return true; // exclude without warning
+        return "dynamically generated";
       }
     } else {
       // These are classes loaded from unsupported locations (such as those loaded by JVMTI native
       // agent during dump time).
-      return warn_excluded(k, "Unsupported location");
+      return "Unsupported location";
     }
   }
   if (k->signers() != nullptr) {
     // We cannot include signed classes in the archive because the certificates
     // used during dump time may be different than those used during
     // runtime (due to expiration, etc).
-    return warn_excluded(k, "Signed JAR");
+    return "Signed JAR";
   }
   if (is_jfr_event_class(k)) {
     // We cannot include JFR event classes because they need runtime-specific
     // instrumentation in order to work with -XX:FlightRecorderOptions:retransform=false.
     // There are only a small number of these classes, so it's not worthwhile to
     // support them and make CDS more complicated.
-    return warn_excluded(k, "JFR event class");
+    return "JFR event class";
   }
 
   if (!k->is_linked()) {
     if (has_class_failed_verification(k)) {
-      return warn_excluded(k, "Failed verification");
+      log_warning = true;
+      return "Failed verification";
     } else if (CDSConfig::is_dumping_aot_linked_classes()) {
       // Most loaded classes should have been speculatively linked by AOTMetaspace::link_class_for_cds().
       // Old classes may not be linked if CDSConfig::is_preserving_verification_constraints()==false.
       // An unlinked class may fail to verify in AOTLinkedClassBulkLoader::init_required_classes_for_loader(),
       // causing the JVM to fail at bootstrap.
-      return warn_excluded(k, "Unlinked class not supported by AOTClassLinking");
+      return "Unlinked class not supported by AOTClassLinking";
     } else if (CDSConfig::is_dumping_preimage_static_archive()) {
       // When dumping the final static archive, we will unconditionally load and link all
       // classes from the preimage. We don't want to get a VerifyError when linking this class.
-      return warn_excluded(k, "Unlinked class not supported by AOTConfiguration");
+      return "Unlinked class not supported by AOTConfiguration";
     }
   } else {
     if (!k->can_be_verified_at_dumptime()) {
@@ -447,17 +460,15 @@ bool SystemDictionaryShared::check_self_exclusion(InstanceKlass* k) {
       // won't work at runtime.
       // As a result, we cannot store this class. It must be loaded and fully verified
       // at runtime.
-      return warn_excluded(k, "Old class has been linked");
+      return "Old class has been linked";
     }
   }
 
   if (UnregisteredClasses::check_for_exclusion(k)) {
-    ResourceMark rm;
-    aot_log_info(aot)("Skipping %s: used only when dumping CDS archive", k->name()->as_C_string());
-    return true;
+    return "used only when dumping CDS archive";
   }
 
-  return false;
+  return nullptr;
 }
 
 // Returns true if DumpTimeClassInfo::is_excluded() is true for at least one of k's exclusion dependencies.
@@ -511,7 +522,7 @@ bool SystemDictionaryShared::is_dependency_excluded(InstanceKlass* k, InstanceKl
   DumpTimeClassInfo* dependency_info = get_info_locked(dependency);
   if (dependency_info->is_excluded()) {
     ResourceMark rm;
-    aot_log_warning(aot)("Skipping %s: %s %s is excluded", k->name()->as_C_string(), type, dependency->name()->as_C_string());
+    aot_log_info(aot)("Skipping %s: %s %s is excluded", k->name()->as_C_string(), type, dependency->name()->as_C_string());
     return true;
   }
   return false;
@@ -838,7 +849,7 @@ public:
       InstanceKlass* k = _list.at(i);
       bool i_am_first = SystemDictionaryShared::add_unregistered_class(_thread, k);
       if (!i_am_first) {
-        SystemDictionaryShared::warn_excluded(k, "Duplicated unregistered class");
+        SystemDictionaryShared::log_exclusion(k, "Duplicated unregistered class");
         SystemDictionaryShared::set_excluded_locked(k);
       }
     }
@@ -967,7 +978,7 @@ bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
 }
 
 void SystemDictionaryShared::set_from_class_file_load_hook(InstanceKlass* ik) {
-  warn_excluded(ik, "From ClassFileLoadHook");
+  log_exclusion(ik, "From ClassFileLoadHook");
   set_excluded(ik);
 }
 

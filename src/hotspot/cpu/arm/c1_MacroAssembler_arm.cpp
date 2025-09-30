@@ -176,17 +176,17 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len,
   initialize_object(obj, tmp1, klass, len, tmp2, tmp3, header_size_in_bytes, -1, /* is_tlab_allocated */ UseTLAB);
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lock, Label& slow_case) {
   int null_check_offset = 0;
 
   const Register tmp2 = Rtemp; // Rtemp should be free at c1 LIR level
-  assert_different_registers(hdr, obj, disp_hdr, tmp2);
+  assert_different_registers(hdr, obj, basic_lock, tmp2);
 
   assert(BasicObjectLock::lock_offset() == 0, "adjust this code");
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
   // save object being locked into the BasicObjectLock
-  str(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  str(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
 
   null_check_offset = offset();
 
@@ -197,26 +197,26 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     b(slow_case, ne);
   }
 
-  Register t1 = disp_hdr; // Needs saving, probably
-  Register t2 = hdr;      // blow
-  Register t3 = Rtemp;    // blow
+  Register t1 = basic_lock; // Needs saving, probably
+  Register t2 = hdr;        // blow
+  Register t3 = Rtemp;      // blow
 
   lightweight_lock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
   // Success: fall through
   return null_check_offset;
 }
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
-  assert_different_registers(hdr, obj, disp_hdr, Rtemp);
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic_lock, Label& slow_case) {
+  assert_different_registers(hdr, obj, basic_lock, Rtemp);
 
   assert(BasicObjectLock::lock_offset() == 0, "adjust this code");
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
-  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  ldr(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
 
-  Register t1 = disp_hdr; // Needs saving, probably
-  Register t2 = hdr;      // blow
-  Register t3 = Rtemp;    // blow
+  Register t1 = basic_lock; // Needs saving, probably
+  Register t2 = hdr;        // blow
+  Register t3 = Rtemp;      // blow
 
   lightweight_unlock(obj, t1, t2, t3, 1 /* savemask - save t1 */, slow_case);
   // Success: fall through
