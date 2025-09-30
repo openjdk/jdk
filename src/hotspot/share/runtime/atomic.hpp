@@ -181,6 +181,7 @@ class AtomicImpl {
   //     [with T = unsigned int]' is private within this context
   // The only reference is the default template parameter value in the Atomic
   // class a couple lines below, in this same class!
+  // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=122098
 public:
 #endif
   // Selection of Atomic<T> category, based on T.
