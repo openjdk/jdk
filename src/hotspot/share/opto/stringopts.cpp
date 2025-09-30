@@ -54,7 +54,10 @@ class StringConcat : public ResourceObj {
                                        // to restart at the initial JVMState.
 
   static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
-
+                                                          // The value 256 was derived by measuring
+                                                          // compilation time on variable length sequences
+                                                          // of stackable concatenations and chosen to keep
+                                                          // a safe margin to any critical point.
  public:
   // Mode for converting arguments to Strings
   enum {
@@ -316,6 +319,11 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
     // -- leading to high memory use, compilation time, and later, a large number of IR nodes
     // -- and bail out in that case.
     if (arguments_appended > STACKED_CONCAT_UPPER_BOUND) {
+#ifndef PRODUCT
+      if (PrintOptimizeStringConcat) {
+        tty->print_cr("Merge candidate of length %d exceeds argument limit", arguments_appended);
+      }
+#endif
       return nullptr;
     }
   }

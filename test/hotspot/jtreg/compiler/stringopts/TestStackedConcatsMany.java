@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8357105
+ * @bug 8362394
  * @summary Test that repeated stacked string concatenations do not
  *          consume too many compilation resources.
  * @requires vm.compiler2.enabled
@@ -34,7 +34,7 @@
  *                   compiler.stringopts.TestStackedConcatsMany
  */
 
-// The test uses -XX:-OptoScheduling to avoid the assert "too many D-U pinch points" on aarch64.
+// The test uses -XX:-OptoScheduling to avoid the assert "too many D-U pinch points" on aarch64 (JDK-8328078).
 
 package compiler.stringopts;
 
