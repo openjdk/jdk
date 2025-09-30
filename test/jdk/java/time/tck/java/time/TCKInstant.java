@@ -1259,6 +1259,11 @@ public class TCKInstant extends AbstractDateTimeTest {
                 {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(32), Optional.empty()},
                 {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(-32), Optional.empty()},
                 {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(32), Optional.empty()},
+                // 5. instant boundary
+                {Instant.MIN, Duration.between(Instant.MIN, Instant.MAX), Optional.of(Instant.MAX)},
+                {Instant.EPOCH, Duration.between(Instant.EPOCH, Instant.MAX), Optional.of(Instant.MAX)},
+                {Instant.EPOCH, Duration.between(Instant.EPOCH, Instant.MIN), Optional.of(Instant.MIN)},
+                {Instant.MAX, Duration.between(Instant.MAX, Instant.MIN), Optional.of(Instant.MIN)}
         };
     }
 
@@ -1267,8 +1272,17 @@ public class TCKInstant extends AbstractDateTimeTest {
         var actual = i.plusSaturating(d);
         try {
             assertEquals(actual, i.plus(d));
+            // If `value` is present, perform an additional check. It may be
+            // important to ensure that not only does the result of `plusSaturating`
+            // match that of `plus`, but that it also matches our expectation.
+            // Because if it doesn’t, then the test isn’t testing what we think
+            // it is, and needs to be fixed.
+            value.ifPresent(instant -> assertEquals(actual, instant));
         } catch (DateTimeException /* instant overflow */
                  | ArithmeticException /* long overflow */ e) {
+            if (value.isEmpty()) {
+                throw new AssertionError();
+            }
             assertEquals(actual, value.get());
         }
     }
