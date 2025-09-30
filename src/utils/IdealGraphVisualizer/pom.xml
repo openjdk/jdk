@@ -58,6 +58,9 @@
                     <version>${mvncompilerplugin.version}</version>
                     <configuration>
                         <release>17</release>
+                        <compilerArgs>
+                            <arg>-proc:full</arg>
+                        </compilerArgs>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -109,7 +112,7 @@
         <module>View</module>
     </modules>
     <properties>
-        <netbeans.version>RELEASE200</netbeans.version>
+        <netbeans.version>RELEASE270</netbeans.version>
         <swinglayouts.version>1.0.2</swinglayouts.version>
         <nbmmvnplugin.version>3.7</nbmmvnplugin.version>
         <mvncompilerplugin.version>3.12.1</mvncompilerplugin.version>
