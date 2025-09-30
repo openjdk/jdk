@@ -52,11 +52,14 @@ class VM_Version : public Abstract_VM_Version {
     const char* const _pretty;
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
+    const uint32_t    _dependent_index;
     int64_t           _value;
    public:
-    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
+    // For non-ext flags, they don't have dependency relationship among each other,
+    // in this situation, just use the default value -1.
+    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring, int dependent_index = -1) :
       _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _value(-1) {
+      _dependent_index(dependent_index), _value(-1) {
     }
     virtual void enable_feature(int64_t value = 0) {
       _value = value;
@@ -68,6 +71,7 @@ class VM_Version : public Abstract_VM_Version {
     uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
     int64_t value()              { return _value; }
+    int dependent_index()        { return _dependent_index; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
 
@@ -99,6 +103,24 @@ class VM_Version : public Abstract_VM_Version {
       }
       va_end(va);
     }
+
+    void verify_deps(RVFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      assert(dependent_index() >= 0, "must");
+
+      va_list va;
+      va_start(va, dep0);
+      RVFeatureValue* next = dep0;
+      while (next != nullptr) {
+        // The dependant ones must be declared before this, for example, v must be declared
+        // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
+        // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
+        // based on v.
+        assert(dependent_index() > next->dependent_index(), "Invalid");
+        next = va_arg(va, RVFeatureValue*);
+      }
+      va_end(va);
+    }
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -117,8 +139,9 @@ class VM_Version : public Abstract_VM_Version {
   #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
   void update_flag() {                                                                                      \
       assert(enabled(), "Must be.");                                                                        \
+      verify_deps(dep0, ##__VA_ARGS__);                                                                     \
       if (FLAG_IS_DEFAULT(flag)) {                                                                          \
-        if (this->deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                  \
+        if (deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                        \
           FLAG_SET_DEFAULT(flag, true);                                                                     \
         } else {                                                                                            \
           FLAG_SET_DEFAULT(flag, false);                                                                    \
@@ -151,7 +174,7 @@ class VM_Version : public Abstract_VM_Version {
     const uint32_t _cpu_feature_index;
    public:
     RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
-      RVFeatureValue(pretty, linux_bit_num, fstring),
+      RVFeatureValue(pretty, linux_bit_num, fstring, cpu_feature_index),
       _cpu_feature_index(cpu_feature_index) {
     }
     bool enabled() {
