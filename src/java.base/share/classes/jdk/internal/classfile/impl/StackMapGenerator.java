@@ -1150,7 +1150,7 @@ public final class StackMapGenerator {
                     merge(locals[i], target.locals, i, target);
                 }
                 if (stackSize != target.stackSize) {
-                    throw generatorError("Stack size mismatch");
+                    throw generatorError("Stack size mismatch: stackSize = " + stackSize + " targetSize = " + target.stackSize);
                 }
                 for (int i = 0; i < target.stackSize; i++) {
                     if (merge(stack[i], target.stack, i, target) == Type.TOP_TYPE) {

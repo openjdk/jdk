@@ -45,7 +45,8 @@ public enum EventWriterMethod {
      PUT_CLASS("putClass", "(Ljava/lang/Class;)V", "Ljava/lang/Class;"),
      PUT_STRING("putString", "(Ljava/lang/String;)V", "Ljava/lang/String;"),
      PUT_EVENT_THREAD("putEventThread", "()V", "???"),
-     PUT_STACK_TRACE("putStackTrace", "()V", "???");
+     PUT_STACK_TRACE("putStackTrace", "()V", "???"),
+     PUT_TARGET_THREAD("putTargetThread", "(Ljava/lang/Thread;)V", "Ljava/lang/Thread");
 
     final MethodDesc method;
     final String fieldType;

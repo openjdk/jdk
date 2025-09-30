@@ -48,6 +48,7 @@ import java.util.function.Consumer;
 
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
+import jdk.jfr.internal.event.BufferedEventWriter;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
 import jdk.jfr.internal.util.Bytecode;
@@ -73,7 +74,9 @@ public final class EventInstrumentation {
     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
     private static final ClassDesc TYPE_ISE = classDesc(IllegalStateException.class);
     private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
+    private static final ClassDesc TYPE_BUFFERED_EVENT_WRITER = classDesc(BufferedEventWriter.class);
     private static final ClassDesc TYPE_OBJECT = classDesc(Object.class);
+    private static final ClassDesc TYPE_THREAD = classDesc(Thread.class);
 
     private static final MethodDesc METHOD_BEGIN = MethodDesc.of("begin", "()V");
     private static final MethodDesc METHOD_COMMIT = MethodDesc.of("commit", "()V");
@@ -90,10 +93,14 @@ public final class EventInstrumentation {
     private static final MethodDesc METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG_LONG = MethodDesc.of("shouldThrottleCommit", "(JJ)Z");
     private static final MethodDesc METHOD_EVENT_SHOULD_THROTTLE_COMMIT_LONG = MethodDesc.of("shouldThrottleCommit", "(J)Z");
     private static final MethodDesc METHOD_GET_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_EVENT_WRITER.descriptorString());
+    private static final MethodDesc METHOD_GET_BUFFERED_EVENT_WRITER = MethodDesc.of("getEventWriter", "()" + TYPE_BUFFERED_EVENT_WRITER.descriptorString());
     private static final MethodDesc METHOD_IS_ENABLED = MethodDesc.of("isEnabled", "()Z");
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
+    private static final MethodDesc METHOD_CURRENT_THREAD = MethodDesc.of("currentThread", "()Ljava/lang/Thread;");
+    private static final MethodDesc METHOD_THREAD_EQUALS = MethodDesc.of("equals", "(Ljava/lang/Object;)Z");
+    private static final MethodDesc METHOD_IS_VIRTUAL = MethodDesc.of("isVirtual", "()Z");
 
     private final ClassInspector inspector;
     private final long eventTypeId;
@@ -118,6 +125,7 @@ public final class EventInstrumentation {
             // Only user-defined events have custom settings.
             inspector.buildSettings();
         }
+
         this.inspector = inspector;
         this.eventTypeId = id;
         this.guardEventConfiguration = guardEventConfiguration;
@@ -291,7 +299,7 @@ public final class EventInstrumentation {
             blockCodeBuilder.goto_(end);
         }, catchBuilder -> {
             catchBuilder.catchingAll(catchAllHandler -> {
-                getEventWriter(catchAllHandler);
+                getSyncEventWriter(catchAllHandler);
                 // stack: [ex] [EW]
                 catchAllHandler.dup();
                 // stack: [ex] [EW] [EW]
@@ -384,7 +392,7 @@ public final class EventInstrumentation {
         int fieldIndex = 0;
         ClassDesc[] argumentTypes = staticCommitMethod.descriptor().parameterArray();
         TypeKind tk = null;
-        getEventWriter(blockCodeBuilder);
+        getSyncEventWriter(blockCodeBuilder);
         // stack: [EW],
         blockCodeBuilder.dup();
         // stack: [EW], [EW]
@@ -464,6 +472,7 @@ public final class EventInstrumentation {
         blockCodeBuilder.ifne(l0);
         blockCodeBuilder.return_();
         blockCodeBuilder.labelBinding(l0);
+
         // long startTime = this.startTime
         blockCodeBuilder.aload(0);
         getfield(blockCodeBuilder, eventClassDesc, ImplicitFields.FIELD_START_TIME);
@@ -505,7 +514,104 @@ public final class EventInstrumentation {
         blockCodeBuilder.aload(0);
         invokevirtual(blockCodeBuilder, eventClassDesc, METHOD_EVENT_SHOULD_COMMIT);
         blockCodeBuilder.ifeq(end);
-        getEventWriter(blockCodeBuilder);
+
+        // Asynchronous event
+        Label syncEvent = blockCodeBuilder.newLabel();
+        Label blockend = blockCodeBuilder.newLabel();
+        if (!this.inspector.isSynchronousEvent()) {
+            // load target thread
+            blockCodeBuilder.aload(0);
+            getfield(blockCodeBuilder, eventClassDesc, inspector.getTargetThread());
+            blockCodeBuilder.astore(3);
+
+            // if targetThread == null
+            blockCodeBuilder.aload(3);
+            blockCodeBuilder.aconst_null();
+            blockCodeBuilder.if_acmpeq(syncEvent);
+
+            // If targetThread is a virtual thread, no event will be emitted
+            blockCodeBuilder.aload(3);
+            invokevirtual(blockCodeBuilder, TYPE_THREAD, METHOD_IS_VIRTUAL);
+            blockCodeBuilder.ifne(end);
+
+            // if targetThread == Thread.currentThread
+            blockCodeBuilder.aload(3);
+            invokestatic(blockCodeBuilder, TYPE_THREAD, METHOD_CURRENT_THREAD);
+            invokevirtual(blockCodeBuilder, TYPE_THREAD, METHOD_THREAD_EQUALS);
+            blockCodeBuilder.ifne(syncEvent);
+            updateAsyncInstanceCommit(blockCodeBuilder, excluded, blockend);
+        }
+
+        blockCodeBuilder.labelBinding(syncEvent);
+        updateSyncInstanceCommit(blockCodeBuilder, excluded, end);
+        blockCodeBuilder.labelBinding(blockend);
+    }
+
+    private void updateAsyncInstanceCommit(BlockCodeBuilder blockCodeBuilder, Label excluded, Label end) {
+
+        System.out.println("Creating async event: " + this.inspector.getEventName());
+
+        getAsyncEventWriter(blockCodeBuilder);
+        // stack: [EW]
+        blockCodeBuilder.dup();
+        // stack: [EW] [EW]
+        getEventConfiguration(blockCodeBuilder);
+        // stack: [EW] [EW] [EC]
+        blockCodeBuilder.loadConstant(eventTypeId);
+        invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.BEGIN_EVENT.method());
+        // stack: [EW] [int]
+        blockCodeBuilder.ifeq(excluded);
+
+        // Set target thread
+        // stack: [EW]
+        blockCodeBuilder.dup();
+        // stack: [EW] [EW]
+        blockCodeBuilder.aload(3);
+        // stack: [EW] [EW] [thread]
+        invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_TARGET_THREAD.method());
+
+        // stack: [EW]
+        int fieldIndex = 0;
+        blockCodeBuilder.dup();
+        // stack: [EW] [EW]
+        blockCodeBuilder.lload(1);
+        // stack: [EW] [EW] [long]
+        invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+        fieldIndex++;
+        // stack: [EW]
+        if (inspector.hasDuration()) {
+            // write duration
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            getDuration(blockCodeBuilder);
+            // stack: [EW] [EW] [long]
+            invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
+            fieldIndex++;
+        }
+        // stack: [EW]
+        List<FieldDesc> fieldDescs = inspector.getFields();
+        while (fieldIndex < fieldDescs.size()) {
+            FieldDesc field = fieldDescs.get(fieldIndex);
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            blockCodeBuilder.aload(0);
+            // stack: [EW] [EW] [this]
+            getfield(blockCodeBuilder, eventClassDesc, field);
+            // stack: [EW] [EW] <T>
+            EventWriterMethod eventMethod = EventWriterMethod.lookupMethod(field);
+            invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, eventMethod.method());
+            // stack: [EW]
+            fieldIndex++;
+        }
+        // stack:[EW]
+        // Asynchronous writer always returns true
+        invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.END_EVENT.method());
+        // stack:[int]
+        blockCodeBuilder.goto_(end);
+    }
+
+    private void updateSyncInstanceCommit(BlockCodeBuilder blockCodeBuilder, Label excluded, Label end) {
+        getSyncEventWriter(blockCodeBuilder);
         // stack: [EW]
         blockCodeBuilder.dup();
         // stack: [EW] [EW]
@@ -597,8 +703,12 @@ public final class EventInstrumentation {
         putfield(codeBuilder, eventClassDesc, ImplicitFields.FIELD_DURATION);
     }
 
-    private static void getEventWriter(CodeBuilder codeBuilder) {
+    private static void getSyncEventWriter(CodeBuilder codeBuilder) {
         invokestatic(codeBuilder, TYPE_EVENT_WRITER, METHOD_GET_EVENT_WRITER);
+    }
+
+    private static void getAsyncEventWriter(CodeBuilder codeBuilder) {
+        invokestatic(codeBuilder, TYPE_BUFFERED_EVENT_WRITER, METHOD_GET_BUFFERED_EVENT_WRITER);
     }
 
     private void getEventConfiguration(CodeBuilder codeBuilder) {
