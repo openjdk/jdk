@@ -51,7 +51,7 @@ import java.util.regex.Pattern;
 
 public class TestSoftMaxHeapSize {
     static final int M = 1024 * 1024;
-    static final int MinHeapSize = 100 * M;
+    static final int MinHeapSize = 128 * M;
     static final int MaxHeapSize = 512 * M;
 
     // Sets SoftMaxHeapSize using jcmd to the values passed in as arguments, executing
