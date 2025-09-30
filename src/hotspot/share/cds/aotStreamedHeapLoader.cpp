@@ -46,6 +46,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
 #include <type_traits>
@@ -161,16 +162,16 @@ static size_t archive_object_size(oopDesc* archive_object) {
     if (Klass::layout_helper_needs_slow_path(lh)) {
       return ((size_t*)(archive_object))[-1];
     } else {
-      return Klass::layout_helper_size_in_bytes(lh) >> LogHeapWordSize;
+      return (size_t)Klass::layout_helper_size_in_bytes(lh) >> LogHeapWordSize;
     }
   } else if (Klass::layout_helper_is_array(lh)) {
     // Array
     size_t size_in_bytes;
     size_t array_length = (size_t)archive_array_length(archive_object);
     size_in_bytes = array_length << Klass::layout_helper_log2_element_size(lh);
-    size_in_bytes += Klass::layout_helper_header_size(lh);
+    size_in_bytes += (size_t)Klass::layout_helper_header_size(lh);
 
-    return align_up(size_in_bytes, MinObjAlignmentInBytes) / HeapWordSize;
+    return align_up(size_in_bytes, (size_t)MinObjAlignmentInBytes) / HeapWordSize;
   } else {
     // Other
     return ((size_t*)(archive_object))[-1];
@@ -239,7 +240,7 @@ public:
   template <typename T>
   void do_oop_work(T* p, int object_index) {
     if (object_index != 0) {
-      uintptr_t field_offset = uintptr_t(p) - cast_from_oop<uintptr_t>(_object);
+      int field_offset = pointer_delta_as_int((address)p, cast_from_oop<address>(_object));
       _dfs_stack.push({object_index, _object_index, field_offset});
     }
   }
@@ -263,7 +264,7 @@ public:
 
   template <typename T>
   void do_oop_work(T* p, int object_index) {
-    uintptr_t p_offset = uintptr_t(p) - cast_from_oop<uintptr_t>(_obj);
+    int p_offset = pointer_delta_as_int((address)p, cast_from_oop<address>(_obj));
     oop pointee = _linker(p_offset, object_index);
     if (pointee != nullptr) {
       _obj->obj_field_put_access<IS_DEST_UNINITIALIZED>((int)p_offset, pointee);
@@ -308,7 +309,7 @@ void AOTStreamedHeapLoader::copy_payload_carefully(oopDesc* archive_object,
       RawElementT* archive_p = (RawElementT*)archive_payload_addr;
       OopElementT* heap_p = (OopElementT*)heap_payload_addr;
       int pointee_object_index = (int)*archive_p;
-      uintptr_t heap_p_offset = uintptr_t(heap_p) - cast_from_oop<uintptr_t>(heap_object);
+      int heap_p_offset = pointer_delta_as_int((address)heap_p, cast_from_oop<address>(heap_object));
 
       // Disjoint linking in the heap object.
       oop obj = linker(heap_p_offset, pointee_object_index);
@@ -362,8 +363,8 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   // shady metadata fields from the archive that do not point at real metadata.
   // We deal with this by explicitly reading the requested address from the
   // archive and fixing it to real Metadata before writing it into the heap object.
-  HeapShared::do_metadata_offsets(heap_object, [&](int metadata_offset){
-    BitMap::idx_t metadata_field_idx = header_bit + metadata_offset / sizeof(RawElementT);
+  HeapShared::do_metadata_offsets(heap_object, [&](int metadata_offset) {
+    BitMap::idx_t metadata_field_idx = header_bit + (size_t)metadata_offset / sizeof(RawElementT);
     BitMap::idx_t skip = word_scale;
     assert(metadata_field_idx >= start_bit && metadata_field_idx + skip <= end_bit,
            "Metadata field out of bounds");
@@ -377,7 +378,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
                                       linker);
 
     // Copy metadata field
-    Metadata* archive_metadata = *(Metadata**)(uintptr_t(archive_object) + metadata_offset);
+    Metadata* archive_metadata = *(Metadata**)(uintptr_t(archive_object) + (size_t)metadata_offset);
     Metadata* runtime_metadata = archive_metadata;
     if (archive_metadata != nullptr) {
       runtime_metadata = (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta());
@@ -404,7 +405,7 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
                                                              oop heap_object,
                                                              size_t size,
                                                              Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack) {
-  auto linker = [&](uintptr_t p_offset, int pointee_object_index) {
+  auto linker = [&](int p_offset, int pointee_object_index) {
     dfs_stack.push({pointee_object_index, object_index, p_offset});
 
     // The tracing linker is a bit lazy and mutates the reference fields in its traversal.
@@ -491,9 +492,9 @@ void AOTStreamedHeapLoader::TracingObjectLoader::drain_stack(Stack<AOTHeapTraver
     oop pointee_heap_object = materialize_object(pointee_object_index, dfs_stack, thread);
     oop heap_object = heap_object_for_object_index(entry._base_object_index);
     if (_allow_gc) {
-      heap_object->obj_field_put((int)entry._heap_field_offset_bytes, pointee_heap_object);
+      heap_object->obj_field_put(entry._heap_field_offset_bytes, pointee_heap_object);
     } else {
-      heap_object->obj_field_put_access<IS_DEST_UNINITIALIZED>((int)entry._heap_field_offset_bytes, pointee_heap_object);
+      heap_object->obj_field_put_access<IS_DEST_UNINITIALIZED>(entry._heap_field_offset_bytes, pointee_heap_object);
     }
   }
 }
@@ -547,7 +548,7 @@ int oop_handle_cmp(const void* left, const void* right) {
 }
 
 void AOTStreamedHeapLoader::IterativeObjectLoader::copy_object(oopDesc* archive_object, oop heap_object, size_t size) {
-  auto linker = [&](uintptr_t p_offset, int pointee_object_index) {
+  auto linker = [&](int p_offset, int pointee_object_index) {
     return AOTStreamedHeapLoader::heap_object_for_object_index(pointee_object_index);
   };
   if (UseCompressedOops) {
@@ -807,10 +808,10 @@ void AOTStreamedHeapLoader::log_statistics() {
   log_info(aot, heap)("async materialization time: %zuus",
                       async_time / 1000);
 
-  jlong iterative_time = AOTEagerlyLoadObjects ? sync_time : async_time;
+  size_t iterative_time = (size_t)(AOTEagerlyLoadObjects ? sync_time : async_time);
   size_t materialized_bytes = _allocated_words * HeapWordSize;
   log_info(aot, heap)("%s materialized %zuK (%zuM/s)", async_or_sync,
-                      materialized_bytes / 1024, size_t(materialized_bytes * UCONST64(1000000000) / M / iterative_time));
+                      materialized_bytes / 1024, size_t(materialized_bytes * UCONST64(1'000'000'000) / M / iterative_time));
 }
 
 void AOTStreamedHeapLoader::materialize_objects() {

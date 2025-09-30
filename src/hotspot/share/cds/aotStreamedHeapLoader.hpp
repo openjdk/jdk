@@ -31,6 +31,7 @@
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.hpp"
@@ -118,11 +119,12 @@
 class FileMapInfo;
 class OopStorage;
 class Thread;
+struct AOTHeapTraversalEntry;
 
-struct AOTHeapTraversalEntry {
+struct alignas(AOTHeapTraversalEntry* /* Requirement of Stack<AOTHeapTraversalEntry> */) AOTHeapTraversalEntry {
   int _pointee_object_index;
   int _base_object_index;
-  uintptr_t _heap_field_offset_bytes;
+  int _heap_field_offset_bytes;
 };
 
 class AOTStreamedHeapLoader {
