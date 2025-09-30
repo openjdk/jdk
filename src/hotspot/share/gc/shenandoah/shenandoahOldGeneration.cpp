@@ -856,6 +856,12 @@ size_t ShenandoahOldGeneration::used_regions() const {
   return _free_set->old_affiliated_regions();
 }
 
+size_t ShenandoahOldGeneration::used_regions_size() const {
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
+  size_t used_regions = _free_set->old_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
 size_t ShenandoahOldGeneration::max_capacity() const {
   assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   size_t total_regions = _free_set->total_old_regions();

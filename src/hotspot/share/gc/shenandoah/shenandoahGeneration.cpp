@@ -962,20 +962,8 @@ size_t ShenandoahGeneration::free_unaffiliated_regions() const {
 }
 
 size_t ShenandoahGeneration::used_regions_size() const {
-  size_t used_regions;
-  switch (_type) {
-  case ShenandoahGenerationType::OLD:
-    used_regions = _free_set->old_affiliated_regions();
-    break;
-  case ShenandoahGenerationType::YOUNG:
-    used_regions = _free_set->young_affiliated_regions();
-    break;
-  case ShenandoahGenerationType::GLOBAL:
-  case ShenandoahGenerationType::NON_GEN:
-  default:
-    used_regions = _free_set->global_affiliated_regions();
-    break;
-  }
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  size_t used_regions = _free_set->global_affiliated_regions();
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 

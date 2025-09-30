@@ -121,6 +121,12 @@ size_t ShenandoahYoungGeneration::used_regions() const {
   return _free_set->young_affiliated_regions();
 }
 
+size_t ShenandoahYoungGeneration::used_regions_size() const {
+  assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
+  size_t used_regions = _free_set->young_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
+}
+
 size_t ShenandoahYoungGeneration::max_capacity() const {
   assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
   size_t total_regions = _free_set->total_young_regions();

@@ -41,12 +41,12 @@ public:
   size_t used() const override;
 
   size_t used_regions() const override;
+  size_t used_regions_size() const override;
   size_t bytes_allocated_since_gc_start() const override;
   size_t get_affiliated_region_count() const override;
   size_t get_humongous_waste() const override;
   size_t max_capacity() const override;
   size_t free_unaffiliated_regions() const override;
-  size_t used_regions_size() const override;
   size_t available() const override;
   size_t soft_available() const override;
 

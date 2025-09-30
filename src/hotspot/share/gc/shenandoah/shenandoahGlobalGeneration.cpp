@@ -109,7 +109,14 @@ size_t ShenandoahGlobalGeneration::used_regions() const {
 }
 
 size_t ShenandoahGlobalGeneration::used_regions_size() const {
-  return ShenandoahHeap::heap()->capacity();
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  bool is_generational = heap->mode()->is_generational();
+  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
+         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
+#endif
+  size_t used_regions = _free_set->global_affiliated_regions();
+  return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGlobalGeneration::available() const {
