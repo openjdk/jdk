@@ -37,7 +37,14 @@ const char* ShenandoahGlobalGeneration::name() const {
 }
 
 size_t ShenandoahGlobalGeneration::max_capacity() const {
-  return ShenandoahHeap::heap()->max_capacity();
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  bool is_generational = heap->mode()->is_generational();
+  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
+         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
+#endif
+  size_t total_regions = _free_set->total_global_regions();
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGlobalGeneration::used() const {

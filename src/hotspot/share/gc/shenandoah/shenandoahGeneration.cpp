@@ -951,20 +951,8 @@ size_t ShenandoahGeneration::used_regions() const {
 }
 
 size_t ShenandoahGeneration::max_capacity() const {
-  size_t total_regions;
-  switch (_type) {
-  case ShenandoahGenerationType::OLD:
-    total_regions = _free_set->total_old_regions();
-    break;
-  case ShenandoahGenerationType::YOUNG:
-    total_regions = _free_set->total_young_regions();
-    break;
-  case ShenandoahGenerationType::GLOBAL:
-  case ShenandoahGenerationType::NON_GEN:
-  default:
-    total_regions = _free_set->total_global_regions();
-    break;
-  }
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  size_t total_regions = _free_set->total_global_regions();
   return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 

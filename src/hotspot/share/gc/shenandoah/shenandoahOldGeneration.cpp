@@ -1,3 +1,4 @@
+
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
@@ -853,4 +854,10 @@ size_t ShenandoahOldGeneration::get_humongous_waste() const {
 size_t ShenandoahOldGeneration::used_regions() const {
   assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   return _free_set->old_affiliated_regions();
+}
+
+size_t ShenandoahOldGeneration::max_capacity() const {
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
+  size_t total_regions = _free_set->total_old_regions();
+  return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }

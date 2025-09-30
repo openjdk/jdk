@@ -125,7 +125,7 @@ private:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  size_t max_capacity() const override;
+  virtual size_t max_capacity() const override;
 
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
