@@ -72,7 +72,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 
-  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
+  static ObjectWaiter* const badObjectWaiterPtr;
   void set_bad_pointers() {
 #ifdef ASSERT
     this->_prev  = badObjectWaiterPtr;
