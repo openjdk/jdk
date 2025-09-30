@@ -863,6 +863,6 @@ size_t ShenandoahOldGeneration::max_capacity() const {
 }
 
 size_t ShenandoahOldGeneration::free_unaffiliated_regions() const {
-  assert(type() == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   return _free_set->old_unaffiliated_regions();
 }
