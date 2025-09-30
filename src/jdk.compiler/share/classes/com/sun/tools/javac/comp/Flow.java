@@ -1080,7 +1080,6 @@ public class Flow {
                                                         continue NEXT_PATTERN;
                                                     }
                                                 } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                    boolean foundMatchingReplaced = false;
                                                     Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
 
                                                     while (!pendingReplacedPatterns.isEmpty()) {
@@ -1089,15 +1088,12 @@ public class Flow {
                                                         pendingReplacedPatterns.remove(currentReplaced);
 
                                                         if (nestedRPOne.equals(currentReplaced)) {
-                                                            foundMatchingReplaced = true;
-                                                            break;
+                                                            continue ACCEPT;
                                                         }
 
                                                         pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
                                                     }
-                                                    if (!foundMatchingReplaced) {
-                                                        continue NEXT_PATTERN;
-                                                    }
+                                                    continue NEXT_PATTERN;
                                                 } else {
                                                     continue NEXT_PATTERN;
                                                 }
