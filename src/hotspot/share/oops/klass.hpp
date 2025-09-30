@@ -78,7 +78,7 @@ class Klass : public Metadata {
     UnknownKlassKind
   };
 
-  static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
+  static const uint KLASS_KIND_COUNT = RefArrayKlassKind + 1;
  protected:
 
   // If you add a new field that points to any metaspace object, you

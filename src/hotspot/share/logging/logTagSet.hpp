@@ -73,8 +73,7 @@ class LogTagSet {
   }
 
   static LogTagSet* first() {
-    return nullptr;
-    // return _list;
+    return _list;
   }
 
   static size_t ntagsets() {
