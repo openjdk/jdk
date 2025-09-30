@@ -2999,6 +2999,12 @@ void AdapterHandlerEntry::link() {
 void AdapterHandlerLibrary::link_aot_adapters() {
   uint max_id = 0;
   assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
+  /* It is possible that some adapters generated in assembly phase are not stored in the cache.
+   * That implies adapter ids of the adapters in the cache may not be contiguous.
+   * If the size of the _aot_adapter_handler_table is used to initialize _id_counter, then it may
+   * result in collision of adapter ids between AOT stored handlers and runtime generated handlers.
+   * To avoid such situation, initialize the _id_counter with the largest adapter id among the AOT stored handlers.
+   */
   _aot_adapter_handler_table.iterate([&](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
