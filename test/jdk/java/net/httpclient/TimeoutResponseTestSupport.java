@@ -38,6 +38,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
+import java.net.http.HttpOption;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
@@ -170,7 +171,7 @@ public class TimeoutResponseTestSupport {
             server.addHandler(createServerHandler(serverId), handlerPath);
 
             // Create the request
-            HttpRequest request = HttpRequest.newBuilder(requestUri).version(version).timeout(REQUEST_TIMEOUT).build();
+            HttpRequest request = createRequestBuilder(requestUri, version).timeout(REQUEST_TIMEOUT).build();
 
             // Create the pair
             ServerRequestPair pair = new ServerRequestPair(server, request, secure);
@@ -314,9 +315,17 @@ public class TimeoutResponseTestSupport {
             // helps to cross out any possibilities of a timeout before a
             // request makes it to the server handler. For instance, consider
             // HTTP/1.1 to HTTP/2 upgrades, or long-running TLS handshakes.
-            HttpRequest headRequest = HttpRequest.newBuilder(this.request.uri()).version(version).HEAD().build();
+            HttpRequest headRequest = createRequestBuilder(request.uri(), version).HEAD().build();
             client.send(headRequest, HttpResponse.BodyHandlers.discarding());
             return client;
+        }
+
+        private static HttpRequest.Builder createRequestBuilder(URI uri, Version version) {
+            HttpRequest.Builder requestBuilder = HttpRequest.newBuilder(uri).version(version);
+            if (Version.HTTP_3.equals(version)) {
+                requestBuilder.setOption(HttpOption.H3_DISCOVERY, HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY);
+            }
+            return requestBuilder;
         }
 
         @Override
