@@ -26,6 +26,7 @@
 #define SHARE_CDS_AOTTHREAD_HPP
 
 #include "runtime/javaThread.hpp"
+#include "utilities/macros.hpp"
 
 // A hidden from external view JavaThread for materializing archived objects
 
@@ -43,7 +44,7 @@ public:
 
   static void materialize_thread_object();
 
-  static AOTThread* aot_thread() { return _aot_thread; };
+  static AOTThread* aot_thread() { return NOT_CDS(nullptr) CDS_ONLY(_aot_thread); };
 };
 
 #endif // SHARE_CDS_AOTTHREAD_HPP
