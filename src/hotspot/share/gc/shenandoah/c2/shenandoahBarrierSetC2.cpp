@@ -576,20 +576,14 @@ void ShenandoahBarrierStubC2::register_stub() {
   }
 }
 
-ShenandoahLoadRefBarrierStubC2* ShenandoahLoadRefBarrierStubC2::create(const MachNode* node, Register obj, Register addr, Register tmp, bool narrow) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahLoadRefBarrierStubC2(node, obj, addr, tmp, narrow);
+ShenandoahLoadRefBarrierStubC2* ShenandoahLoadRefBarrierStubC2::create(const MachNode* node, Register obj, Register addr, Register tmp1, Register tmp2, Register tmp3, bool narrow) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahLoadRefBarrierStubC2(node, obj, addr, tmp1, tmp2, tmp3, narrow);
   stub->register_stub();
   return stub;
 }
 
-ShenandoahSATBBarrierStubC2* ShenandoahSATBBarrierStubC2::create(const MachNode* node, Register addr_reg, Register preval) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahSATBBarrierStubC2(node, addr_reg, Address(), preval, noreg);
-  stub->register_stub();
-  return stub;
-}
-
-ShenandoahSATBBarrierStubC2* ShenandoahSATBBarrierStubC2::create(const MachNode* node, Address addr, Register preval, Register tmp) {
-  auto* stub = new (Compile::current()->comp_arena()) ShenandoahSATBBarrierStubC2(node, noreg, addr, preval, tmp);
+ShenandoahSATBBarrierStubC2* ShenandoahSATBBarrierStubC2::create(const MachNode* node, Register addr, Register preval, Register tmp) {
+  auto* stub = new (Compile::current()->comp_arena()) ShenandoahSATBBarrierStubC2(node, addr, preval, tmp);
   stub->register_stub();
   return stub;
 }

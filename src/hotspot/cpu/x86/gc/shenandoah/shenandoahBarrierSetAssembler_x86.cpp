@@ -675,7 +675,11 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
   // with filters.
 
   // Filter: when offending in-memory value is null, the failure is definitely legitimate
-  __ testptr(oldval, oldval);
+  if (UseCompressedOops) {
+    __ testl(oldval, oldval);
+  } else {
+    __ testptr(oldval, oldval);
+  }
   __ jcc(Assembler::zero, L_failure);
 
   // Filter: when heap is stable, the failure is definitely legitimate
@@ -778,8 +782,36 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
 }
 
 #ifdef COMPILER2
+void ShenandoahBarrierSetAssembler::load_ref_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register addr, Register tmp1, Register tmp2, Register tmp3, bool narrow) {
+  if (!ShenandoahLoadRefBarrierStubC2::needs_barrier(node)) {
+    return;
+  }
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+
+  ShenandoahLoadRefBarrierStubC2* const stub = ShenandoahLoadRefBarrierStubC2::create(node, obj, addr, tmp1, tmp2, tmp3, narrow);
+  stub->dont_preserve(obj);
+
+  // Test for null.
+  if (narrow) {
+    __ testl(obj, obj);
+  } else {
+    __ testptr(obj, obj);
+  }
+  __ jccb(Assembler::zero, *stub->continuation());
+
+  Address gc_state(r15_thread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  int flags = ShenandoahHeap::HAS_FORWARDED;
+  bool is_strong = (node->barrier_data() & ShenandoahBarrierStrong) != 0;
+  if (!is_strong) {
+    flags |= ShenandoahHeap::WEAK_ROOTS;
+  }
+  __ testb(gc_state, flags);
+  __ jcc(Assembler::notZero, *stub->entry());
+  __ bind(*stub->continuation());
+}
+
 void ShenandoahBarrierSetAssembler::satb_barrier_c2(const MachNode* node, MacroAssembler* masm,
-                                                    Address addr, Register preval, Register tmp) {
+                                                    Register addr, Register preval, Register tmp) {
   if (!ShenandoahSATBBarrierStubC2::needs_barrier(node)) {
     return;
   }
@@ -791,10 +823,37 @@ void ShenandoahBarrierSetAssembler::satb_barrier_c2(const MachNode* node, MacroA
   __ bind(*stub->continuation());
 }
 
+void ShenandoahBarrierSetAssembler::card_barrier_c2(const MachNode* node, MacroAssembler* masm,
+                                                    Register addr, Register addr_tmp, Register tmp) {
+  if (!ShenandoahCardBarrier ||
+      (node->barrier_data() & (ShenandoahBarrierCardMark | ShenandoahBarrierCardMarkNotNull)) == 0) {
+    return;
+  }
+  Assembler::InlineSkippedInstructionsCounter skip_counter(masm);
+  if (addr != noreg) {
+    __ mov(addr_tmp, addr);
+  }
+  __ shrptr(addr_tmp, CardTable::card_shift());
+
+  Address curr_ct_holder_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  __ movptr(tmp, curr_ct_holder_addr);
+  Address card_addr(tmp, addr_tmp, Address::times_1);
+
+  int dirty = CardTable::dirty_card_val();
+  if (UseCondCardMark) {
+    Label L_already_dirty;
+    __ cmpb(card_addr, dirty);
+    __ jccb(Assembler::equal, L_already_dirty);
+    __ movb(card_addr, dirty);
+    __ bind(L_already_dirty);
+  } else {
+    __ movb(card_addr, dirty);
+  }
+}
+
 void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm,
                                                 Register res, Address addr, Register oldval, Register newval, Register tmp1, Register tmp2,
                                                 bool exchange) {
-  assert(ShenandoahCASBarrier, "Should only be used when CAS barrier is enabled");
   assert(oldval == rax, "must be in rax for implicit use in cmpxchg");
   assert_different_registers(oldval, tmp1, tmp2);
   assert_different_registers(newval, tmp1, tmp2);
@@ -805,13 +864,28 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAs
   Label L_success, L_failure;
 
   // Remember oldval for retry logic below. It will be overwritten by the CAS.
-  __ movptr(tmp2, oldval);
+  if (ShenandoahCASBarrier) {
+    __ movptr(tmp2, oldval);
+  }
 
   // Step 1. Fast-path.
   //
   // Try to CAS with given arguments. If successful, then we are done.
   __ lock();
-  __ cmpxchgptr(newval, addr);
+  if (UseCompressedOops) {
+    __ cmpxchgl(newval, addr);
+  } else {
+    __ cmpxchgptr(newval, addr);
+  }
+
+  if (!ShenandoahCASBarrier) {
+    if (!exchange) {
+      assert(res != noreg, "need result register");
+      __ setcc(Assembler::equal, res);
+    }
+    return;
+  }
+
   __ jcc(Assembler::notEqual, *mid_stub->entry());
 
   // Slow-stub re-enters with condition flags according to CAS, we may need to
@@ -834,6 +908,67 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node, MacroAs
 #undef __
 #define __ masm.
 
+void ShenandoahLoadRefBarrierStubC2::emit_code(MacroAssembler& masm) {
+  Assembler::InlineSkippedInstructionsCounter skip_counter(&masm);
+  __ bind(*entry());
+
+  Register obj = _obj;
+  if (_narrow) {
+    __ movl(_tmp1, _obj);
+    __ decode_heap_oop(_tmp1);
+    obj = _tmp1;
+  }
+
+  // Weak/phantom loads always need to go to runtime.
+  if ((_node->barrier_data() & ShenandoahBarrierStrong) != 0) {
+    __ movptr(_tmp2, obj);
+    __ shrptr(_tmp2, ShenandoahHeapRegion::region_size_bytes_shift_jint());
+    __ movptr(_tmp3, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
+    __ movbool(_tmp2, Address(_tmp2, _tmp3, Address::times_1));
+    __ testbool(_tmp2);
+    __ jcc(Assembler::zero, *continuation());
+  }
+
+  {
+    SaveLiveRegisters save_registers(&masm, this);
+    if (c_rarg0 != obj) {
+      if (c_rarg0 == _addr) {
+        __ movptr(_tmp2, _addr);
+        _addr = _tmp2;
+      }
+      __ movptr(c_rarg0, obj);
+    }
+    __ movptr(c_rarg1, _addr);
+
+    address entry;
+    if (_narrow) {
+      if ((_node->barrier_data() & ShenandoahBarrierStrong) != 0) {
+        entry = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong_narrow);
+      } else if ((_node->barrier_data() & ShenandoahBarrierWeak) != 0) {
+        entry = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak_narrow);
+      } else if ((_node->barrier_data() & ShenandoahBarrierPhantom) != 0) {
+        entry = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom_narrow);
+      }
+    } else {
+      if ((_node->barrier_data() & ShenandoahBarrierStrong) != 0) {
+        entry = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_strong);
+      } else if ((_node->barrier_data() & ShenandoahBarrierWeak) != 0) {
+        entry = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
+      } else if ((_node->barrier_data() & ShenandoahBarrierPhantom) != 0) {
+        entry = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
+      }
+    }
+    __ call(RuntimeAddress(entry), rax);
+    assert(!save_registers.contains(_obj), "must not save result register");
+    __ movptr(_obj, rax);
+  }
+  if (_narrow) {
+    __ encode_heap_oop(_obj);
+  }
+
+  __ jmp(*continuation());
+}
+
 void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
   __ bind(*entry());
   Address index(r15_thread, in_bytes(ShenandoahThreadLocalData::satb_mark_queue_index_offset()));
@@ -842,8 +977,8 @@ void ShenandoahSATBBarrierStubC2::emit_code(MacroAssembler& masm) {
   Label runtime;
 
   // Do we need to load the previous value?
-  if (_addr.base() != noreg) {
-    __ load_heap_oop(_preval, _addr, noreg, AS_RAW);
+  if (_addr != noreg) {
+    __ load_heap_oop(_preval, Address(_addr, 0), noreg, AS_RAW);
   }
   // Is the previous value null?
   __ cmpptr(_preval, NULL_WORD);
@@ -890,7 +1025,11 @@ void ShenandoahCASBarrierMidStubC2::emit_code(MacroAssembler& masm) {
   }
   // Check if CAS result is null. If it is, then we must have a legitimate failure.
   // This makes loading the fwdptr in the slow-path simpler.
-  __ testptr(_expected, _expected);
+  if (UseCompressedOops) {
+    __ testl(_expected, _expected);
+  } else {
+    __ testptr(_expected, _expected);
+  }
   __ jcc(Assembler::equal, *continuation());
 
   // Check if GC is in progress, otherwise we must have a legitimate failure.
@@ -955,7 +1094,11 @@ void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
   // Note: expected holds encoded from-space pointer that matches to-space
   // object residing at tmp1.
   __ lock();
-  __ cmpxchgptr(_new_val, _addr);
+  if (UseCompressedOops) {
+    __ cmpxchgl(_new_val, _addr);
+  } else {
+    __ cmpxchgptr(_new_val, _addr);
+  }
 
   // If fetched value did not equal the new expected, this could
   // still be a false negative because some other (GC) thread may have
@@ -966,8 +1109,11 @@ void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
   // This should be very rare.
   __ movptr(_expected, _tmp2);
   __ lock();
-  __ cmpxchgptr(_new_val, _addr);
-
+  if (UseCompressedOops) {
+    __ cmpxchgl(_new_val, _addr);
+  } else {
+    __ cmpxchgptr(_new_val, _addr);
+  }
   // At this point, there can no longer be false negatives.
   __ jmp(*continuation());
 }

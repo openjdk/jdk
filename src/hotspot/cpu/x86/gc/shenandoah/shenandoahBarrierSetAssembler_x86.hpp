@@ -78,8 +78,11 @@ public:
                    Register res, Address addr, Register oldval, Register newval,
                    bool exchange, Register tmp1, Register tmp2);
 #ifdef COMPILER2
+  void load_ref_barrier_c2(const MachNode* node, MacroAssembler* masm, Register obj, Register addr, Register tmp1, Register tmp2, Register tmp3, bool narrow);
   void satb_barrier_c2(const MachNode* node, MacroAssembler* masm,
-                       Address addr, Register preval, Register tmp);
+                       Register addr, Register preval, Register tmp);
+  void card_barrier_c2(const MachNode* node, MacroAssembler* masm,
+                       Register addr, Register addr_tmp, Register tmp);
   void cmpxchg_oop_c2(const MachNode* node, MacroAssembler* masm,
                       Register res, Address addr, Register oldval, Register newval, Register tmp1, Register tmp2,
                       bool exchange);
