@@ -1487,17 +1487,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="1">ပၢၼ်1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="1">ပၢၼ်1</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="1">ပၢၼ်1</era>
-					</eraNarrow>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -1824,20 +1813,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0">ပၢၼ်0</era>
-						<era type="1">ပၢၼ်1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">ပၢၼ်0</era>
-						<era type="1">ပၢၼ်1</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0">ပၢၼ်0</era>
-						<era type="1">ပၢၼ်1</era>
-					</eraNarrow>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -1929,19 +1904,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraNames>
-						<era type="0">ပၢၼ်0</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">ပၢၼ်0</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0">ပၢၼ်0</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

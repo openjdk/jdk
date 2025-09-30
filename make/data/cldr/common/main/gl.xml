@@ -3839,7 +3839,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="other" draft="contributed">pesetas</displayName>
 				<symbol>₧</symbol>
 				<decimal>,</decimal>
-				<group>❰NBTSP❱</group>
+				<group> </group>
 			</currency>
 			<currency type="ETB">
 				<displayName>birr etíope</displayName>

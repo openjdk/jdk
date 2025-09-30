@@ -1563,16 +1563,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">до воплощения Христа</era>
-						<era type="1" draft="contributed">от воплощения Христа</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">до Христа</era>
-						<era type="1" draft="contributed">от Христа</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

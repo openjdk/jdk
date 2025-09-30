@@ -1703,20 +1703,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0">antes de la Encarnación</era>
-						<era type="1">después de la Encarnación</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">a. E.</era>
-						<era type="1">d. E.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0">aE</era>
-						<era type="1">dE</era>
-					</eraNarrow>
-				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="yMMMd">

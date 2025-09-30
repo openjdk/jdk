@@ -774,8 +774,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<alias source="locale" path="../eraAbbr"/>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">ERA0</era>
-						<era type="1">ERA1</era>
+						<era type="0">AA</era>
+						<era type="1">AM</era>
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>
@@ -809,7 +809,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<alias source="locale" path="../eraAbbr"/>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">ERA0</era>
+						<era type="0">AA</era>
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>
@@ -1781,7 +1781,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<alias source="locale" path="../eraAbbr"/>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">Saka</era>
+						<era type="0">Śaka</era>
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>
@@ -2898,8 +2898,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<alias source="locale" path="../eraAbbr"/>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">Before R.O.C.</era>
-						<era type="1">R.O.C.</era>
+						<era type="0">BROC</era>
+						<era type="1">ROC</era>
 					</eraAbbr>
 					<eraNarrow>
 						<alias source="locale" path="../eraAbbr"/>

@@ -1583,16 +1583,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">înainte de Întrupare</era>
-						<era type="1" draft="contributed">după Întrupare</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">î.Într.</era>
-						<era type="1" draft="contributed">d.Într.</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

@@ -1679,17 +1679,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="1">1. tidsalder</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="1">1. t.a.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="1">TA1</era>
-					</eraNarrow>
-				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="h">
@@ -1721,20 +1710,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0">0. tidsalder</era>
-						<era type="1">1. tidsalder</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">0. t.a.</era>
-						<era type="1">1. t.a.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0">TA0</era>
-						<era type="1">TA1</era>
-					</eraNarrow>
-				</eras>
 				<dateTimeFormats>
 					<intervalFormats>
 						<intervalFormatItem id="h">
@@ -1745,19 +1720,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">0. tidsalder</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">0. t.a.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">TA0</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

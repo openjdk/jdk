@@ -1563,13 +1563,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</eraAbbr>
 				</eras>
 			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraAbbr>
-						<era type="0">𞤘𞤋𞤈𞥐</era>
-					</eraAbbr>
-				</eras>
-			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">

@@ -3786,16 +3786,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</months>
 				<eras>
 					<eraNames>
-						<era type="0">Христос ҫураличченхи</era>
-						<era type="1">Христос ҫуралнӑран</era>
+						<era type="0">тӗнче пуҫланнӑран</era>
 					</eraNames>
 					<eraAbbr>
-						<era type="0">Х. ҫ-ч.</era>
-						<era type="1">Х. ҫ-р.</era>
+						<era type="0">т. п-р.</era>
 					</eraAbbr>
 					<eraNarrow>
-						<era type="0">Х. ҫ-ч.</era>
-						<era type="1">Х. ҫ-р.</era>
+						<era type="0">т. п-р.</era>
 					</eraNarrow>
 				</eras>
 				<dateFormats>

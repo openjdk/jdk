@@ -1274,16 +1274,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">pirms Kristus iemiesošanās</era>
-						<era type="1" draft="contributed">pēc Kristus iemiesošanās</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">pirms Kristus</era>
-						<era type="1" draft="contributed">pēc Kristus</era>
-					</eraAbbr>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

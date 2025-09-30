@@ -1405,17 +1405,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="1" draft="contributed">1. tidsregning</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="1" draft="contributed">1. tidsr.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="1" draft="contributed">1. t.</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1437,20 +1426,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">0. tidsregning</era>
-						<era type="1" draft="contributed">1. tidsregning</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">0. tidsr.</era>
-						<era type="1" draft="contributed">1. tidsr.</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">0. t.</era>
-						<era type="1" draft="contributed">1. t.</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

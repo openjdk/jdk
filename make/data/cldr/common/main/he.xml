@@ -1504,11 +1504,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="1" draft="contributed">עידן 1</era>
-					</eraNames>
-				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1530,12 +1525,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">עידן 0</era>
-						<era type="1" draft="contributed">עידן 1</era>
-					</eraNames>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>

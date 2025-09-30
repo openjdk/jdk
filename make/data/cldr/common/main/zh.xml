@@ -2060,16 +2060,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0">埃塞俄比亚历前</era>
-						<era type="1">埃塞俄比亚历</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">埃历前</era>
-						<era type="1" draft="contributed">埃历</era>
-					</eraAbbr>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
@@ -2078,13 +2068,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
-			</calendar>
-			<calendar type="ethiopic-amete-alem">
-				<eras>
-					<eraNames>
-						<era type="0">埃塞俄比亚阿米特阿莱姆历</era>
-					</eraNames>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
