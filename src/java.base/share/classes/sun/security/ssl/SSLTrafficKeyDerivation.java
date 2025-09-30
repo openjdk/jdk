@@ -210,9 +210,7 @@ enum SSLTrafficKeyDerivation implements SSLKeyDerivationGenerator {
         }
 
         String getAlgorithm(CipherSuite cs, String algorithm) {
-            if (this == TlsKey)
-                return cs.bulkCipher.algorithm;
-            return algorithm;
+            return this == TlsKey ? cs.bulkCipher.algorithm : algorithm;
         }
     }
 
