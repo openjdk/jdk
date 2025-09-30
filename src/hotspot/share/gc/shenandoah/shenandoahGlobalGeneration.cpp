@@ -47,6 +47,16 @@ size_t ShenandoahGlobalGeneration::max_capacity() const {
   return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
+size_t ShenandoahGlobalGeneration::free_unaffiliated_regions() const {
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  bool is_generational = heap->mode()->is_generational();
+  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
+         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
+#endif
+  return _free_set->global_unaffiliated_regions();
+}
+
 size_t ShenandoahGlobalGeneration::used() const {
 #ifdef ASSERT
   ShenandoahHeap* heap = ShenandoahHeap::heap();

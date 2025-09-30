@@ -332,6 +332,7 @@ public:
   size_t get_humongous_waste() const override;
   size_t used_regions() const override;
   size_t max_capacity() const override;
+  size_t free_unaffiliated_regions() const override;
 };
 
 
