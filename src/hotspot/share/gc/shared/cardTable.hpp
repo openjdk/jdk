@@ -61,10 +61,11 @@ protected:
 
   inline size_t compute_byte_map_size(size_t num_bytes);
 
-  // We use 0x00 (zero) as "dirty" and 0xff as "clean" because this reduces the
-  // barrier code by one instruction. Many architectures have a constant-zero
-  // register that can be used for the store, so the dirty value does not need
-  // to be explicitly loaded.
+  // We use 0x00 (zero) to represent dirty and 0xFF to represent clean because
+  // this choice reduces the barrier code by one instruction on architectures with
+  // a constant-zero register. On such architectures, the dirty value (0x00) is
+  // directly accessible through the zero register, eliminating the need to load
+  // the value explicitly and thereby saving one instruction
   //
   // E.g. see
   //  Urs Hölzle. A fast write barrier for generational garbage collectors.
