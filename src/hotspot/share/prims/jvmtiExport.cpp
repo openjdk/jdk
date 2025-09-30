@@ -2222,12 +2222,12 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
     address = last_frame.interpreter_frame_bcp();
   } else {
     RegisterMap reg_map(thread,
-                        RegisterMap::UpdateMap::include,
+                        RegisterMap::UpdateMap::skip,
                         RegisterMap::ProcessFrames::skip,
                         RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     method = jvf->method();
-    address =  jvf->method()->code_base();
+    address = jvf->method()->code_base();
   }
   post_field_access(thread, method, address, klass, h_obj, fieldID);
 }
@@ -2325,12 +2325,12 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
     address = last_frame.interpreter_frame_bcp();
   } else {
     RegisterMap reg_map(thread,
-                        RegisterMap::UpdateMap::include,
+                        RegisterMap::UpdateMap::skip,
                         RegisterMap::ProcessFrames::skip,
                         RegisterMap::WalkContinuation::skip);
     javaVFrame *jvf = thread->last_java_vframe(&reg_map);
     method = jvf->method();
-    address =  jvf->method()->code_base();
+    address = jvf->method()->code_base();
   }
 
   post_field_modification(thread, method, address,
