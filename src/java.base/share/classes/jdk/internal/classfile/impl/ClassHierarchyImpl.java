@@ -74,9 +74,9 @@ public final class ClassHierarchyImpl {
         ClassHierarchyResolver.ClassHierarchyInfo res;
         try {
             res = resolver.getClassInfo(classDesc);
-        } catch (Exception ex) {
-            if (ex instanceof IllegalArgumentException iae)
-                throw iae;
+        } catch (IllegalArgumentException iae) {
+            throw iae;
+        } catch (RuntimeException ex) {
             throw new IllegalArgumentException("Could not resolve class " + classDesc.displayName(), ex);
         }
         if (res != null) return (ClassHierarchyInfoImpl) res;
