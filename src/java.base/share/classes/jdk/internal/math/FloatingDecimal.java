@@ -1549,8 +1549,7 @@ public class FloatingDecimal{
         // Discover obvious special cases of NaN and Infinity.
         if ( binExp == (int)(DoubleConsts.EXP_BIT_MASK>>EXP_SHIFT) ) {
             if ( fractBits == 0L ){
-                throw new IllegalArgumentException((isNegative ? "-" : "+") + INFINITY_REP
-                );
+                throw new IllegalArgumentException((isNegative ? "-" : "") + INFINITY_REP);
             } else {
                 throw new IllegalArgumentException(NAN_REP);
             }
