@@ -78,8 +78,8 @@
                             <configuration>
                                 <rules>
                                     <requireJavaVersion>
-                                      <version>[17,22)</version>
-                                      <message>IGV requires a JDK version between 17 and 21</message>
+                                        <version>[17,26)</version>
+                                        <message>IGV requires a JDK version between 17 and 25</message>
                                     </requireJavaVersion>
                                 </rules>
                             </configuration>
