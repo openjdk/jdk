@@ -52,14 +52,11 @@ class VM_Version : public Abstract_VM_Version {
     const char* const _pretty;
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
-    const uint32_t    _dependent_index;
     int64_t           _value;
    public:
-    // For non-ext flags, they don't have dependency relationship among each other,
-    // in this situation, just use the default value -1.
-    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring, int dependent_index = -1) :
+    RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _dependent_index(dependent_index), _value(-1) {
+      _value(-1) {
     }
     virtual void enable_feature(int64_t value = 0) {
       _value = value;
@@ -67,11 +64,13 @@ class VM_Version : public Abstract_VM_Version {
     virtual void disable_feature() {
       _value = -1;
     }
-    const char* pretty()         { return _pretty; }
-    uint64_t feature_bit()       { return _linux_feature_bit; }
-    bool feature_string()        { return _feature_string; }
-    int64_t value()              { return _value; }
-    int dependent_index()        { return _dependent_index; }
+    const char* pretty()          { return _pretty; }
+    uint64_t feature_bit()        { return _linux_feature_bit; }
+    bool feature_string()         { return _feature_string; }
+    int64_t value()               { return _value; }
+    // For non-ext flags, they don't have dependency relationship among each other,
+    // in this situation, just return the default value -1.
+    virtual int dependent_index() { return -1; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
 
@@ -112,6 +111,8 @@ class VM_Version : public Abstract_VM_Version {
       va_start(va, dep0);
       RVFeatureValue* next = dep0;
       while (next != nullptr) {
+        assert(next->dependent_index() >= 0, "must");
+        // We only need to check depenency relationship for extension flags.
         // The dependant ones must be declared before this, for example, v must be declared
         // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
         // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
@@ -174,8 +175,13 @@ class VM_Version : public Abstract_VM_Version {
     const uint32_t _cpu_feature_index;
    public:
     RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
-      RVFeatureValue(pretty, linux_bit_num, fstring, cpu_feature_index),
+      RVFeatureValue(pretty, linux_bit_num, fstring),
       _cpu_feature_index(cpu_feature_index) {
+    }
+    int dependent_index() {
+      // Use _cpu_feature_index as dependent_index, it can be used to check for example v is declared
+      // before Zvfh in RV_EXT_FEATURE_FLAGS.
+      return _cpu_feature_index;
     }
     bool enabled() {
       return RVExtFeatures::current()->support_feature(_cpu_feature_index);
