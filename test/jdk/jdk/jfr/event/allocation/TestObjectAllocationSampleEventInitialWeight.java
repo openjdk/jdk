@@ -25,6 +25,8 @@ package jdk.jfr.event.allocation;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
+import java.util.List;
+import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.jfr.EventNames;
