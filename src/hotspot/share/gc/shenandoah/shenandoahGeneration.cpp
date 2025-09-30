@@ -946,21 +946,8 @@ size_t ShenandoahGeneration::get_humongous_waste() const {
 }
 
 size_t ShenandoahGeneration::used_regions() const {
-  size_t result;
-  switch (_type) {
-    case ShenandoahGenerationType::OLD:
-      result = _free_set->old_affiliated_regions();
-      break;
-    case ShenandoahGenerationType::YOUNG:
-      result = _free_set->young_affiliated_regions();
-      break;
-    case ShenandoahGenerationType::GLOBAL:
-    case ShenandoahGenerationType::NON_GEN:
-    default:
-      result = _free_set->global_affiliated_regions();
-      break;
-  }
-  return result;
+  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
+  return _free_set->global_affiliated_regions();
 }
 
 size_t ShenandoahGeneration::max_capacity() const {
