@@ -3011,6 +3011,7 @@ void AdapterHandlerLibrary::link_aot_adapters() {
     max_id = MAX2(max_id, entry->id());
   });
   // Set adapter id to the maximum id found in the AOTCache
+  assert(_id_counter == 0, "Did not expect new AdapterHandlerEntry to be created at this stage");
   _id_counter = max_id;
 }
 
