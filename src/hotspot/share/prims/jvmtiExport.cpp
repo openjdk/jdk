@@ -2209,10 +2209,27 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
     assert(obj != nullptr, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  post_field_access(thread,
-                    thread->last_frame().interpreter_frame_method(),
-                    thread->last_frame().interpreter_frame_bcp(),
-                    klass, h_obj, fieldID);
+
+
+  frame last_frame = thread->last_frame();
+  Method *method;
+  address address;
+
+  assert(thread->is_interp_only_mode(), "should be interponly");
+  // The frame might be still compiled if not executed yet after deoptimization.
+  if (last_frame.is_interpreted_frame()) {
+    method = last_frame.interpreter_frame_method();
+    address = last_frame.interpreter_frame_bcp();
+  } else {
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::skip);
+    javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+    method = jvf->method();
+    address =  jvf->method()->code_base();
+  }
+  post_field_access(thread, method, address, klass, h_obj, fieldID);
 }
 
 void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
@@ -2296,9 +2313,27 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
     assert(obj != nullptr, "non-static needs an object");
     h_obj = Handle(thread, obj);
   }
-  post_field_modification(thread,
-                          thread->last_frame().interpreter_frame_method(),
-                          thread->last_frame().interpreter_frame_bcp(),
+
+  frame last_frame = thread->last_frame();
+  Method *method;
+  address address;
+
+  assert(thread->is_interp_only_mode(), "should be interponly");
+  // The frame might be still compiled if not executed yet after deoptimization.
+  if (last_frame.is_interpreted_frame()) {
+    method = last_frame.interpreter_frame_method();
+    address = last_frame.interpreter_frame_bcp();
+  } else {
+    RegisterMap reg_map(thread,
+                        RegisterMap::UpdateMap::include,
+                        RegisterMap::ProcessFrames::skip,
+                        RegisterMap::WalkContinuation::skip);
+    javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+    method = jvf->method();
+    address =  jvf->method()->code_base();
+  }
+
+  post_field_modification(thread, method, address,
                           klass, h_obj, fieldID, sig_type, value);
 }
 

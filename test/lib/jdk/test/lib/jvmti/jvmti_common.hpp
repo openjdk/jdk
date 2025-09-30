@@ -324,6 +324,18 @@ get_method_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
   return mname;
 }
 
+static char*
+get_field_name(jvmtiEnv *jvmti, JNIEnv* jni, jclass field_class, jfieldID field) {
+  char* name = nullptr;
+  char* signature = nullptr;
+  char* generic = nullptr;
+  jvmtiError err = jvmti->GetFieldName(field_class, field, &name, &signature, &generic);
+  check_jvmti_status(jni, err, "get_field_name: errot in JVMTI GetFieldName call");
+  deallocate(jvmti,jni, signature);
+  deallocate(jvmti,jni, generic);
+  return name;
+}
+
 static jclass
 find_class(jvmtiEnv *jvmti, JNIEnv *jni, jobject loader, const char* cname) {
   jclass *classes = nullptr;
