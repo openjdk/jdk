@@ -303,7 +303,7 @@ void VM_Version::rivos_features() {
 
   ext_Zvfh.enable_feature();
 
-  unaligned_access.enable_feature(MISALIGNED_FAST);
+  unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.
