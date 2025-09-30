@@ -515,12 +515,12 @@ public class Cipher {
      * transformation
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if no provider supports a {@code CipherSpi}
-     *         implementation for the specified algorithm
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation is not found or
+     *         is found but does not support the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         is found but does not support the padding scheme
      *
      * @see java.security.Provider
      */
@@ -573,8 +573,12 @@ public class Cipher {
                 failure = e;
             }
         }
+        if (failure instanceof NoSuchPaddingException nspe) {
+            throw nspe;
+        }
         throw new NoSuchAlgorithmException
-            ("Cannot find any provider supporting " + transformation, failure);
+                ("Cannot find any provider supporting " + transformation,
+                failure);
     }
 
     /**
@@ -582,8 +586,8 @@ public class Cipher {
      * transformation.
      *
      * <p> A new {@code Cipher} object encapsulating the
-     * {@code CipherSpi} implementation from the specified provider
-     * is returned.  The specified provider must be registered
+     * {@code CipherSpi} implementation from the specified {@code provider}
+     * is returned.  The specified {@code provider} must be registered
      * in the security provider list.
      *
      * <p> Note that the list of registered providers may be retrieved via
@@ -625,15 +629,16 @@ public class Cipher {
      *         is {@code null} or empty
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation for the
-     *         specified algorithm is not available from the specified
-     *         provider
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation from the specified
+     *         {@code provider} is not found or is found but does not support
+     *         the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         from the specified {@code provider} is found but does not
+     *         support the padding scheme
      *
-     * @throws NoSuchProviderException if the specified provider is not
+     * @throws NoSuchProviderException if the specified {@code provider} is not
      *         registered in the security provider list
      *
      * @see java.security.Provider
@@ -706,13 +711,14 @@ public class Cipher {
      *         is {@code null}
      *
      * @throws NoSuchAlgorithmException if {@code transformation}
-     *         is {@code null}, empty, in an invalid format,
-     *         or if a {@code CipherSpi} implementation for the
-     *         specified algorithm is not available from the specified
-     *         {@code provider} object
+     *         is {@code null}, empty or in an invalid format;
+     *         or if a {@code CipherSpi} implementation from the specified
+     *         {@code provider} is not found or is found but does not support
+     *         the mode
      *
-     * @throws NoSuchPaddingException if {@code transformation}
-     *         contains a padding scheme that is not available
+     * @throws NoSuchPaddingException if a {@code CipherSpi} implementation
+     *         from the specified {@code provider} is found but does not
+     *         support the padding scheme
      *
      * @see java.security.Provider
      */
