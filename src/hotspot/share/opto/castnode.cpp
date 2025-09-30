@@ -117,7 +117,7 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return res;
     }
   }
-  if (can_reshape && Opcode() != Op_CastPP && 0) {
+  if (can_reshape && Opcode() != Op_CastPP) {
     PhaseIterGVN* igvn = phase->is_IterGVN();
     const Type* t = Value(phase);
     if (t->singleton() && t != Type::TOP && !_dependency.narrows_type()) {
@@ -192,15 +192,21 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
               }
               continue;
             }
-            int op = use->Opcode();
-            if (op == Op_DivI || op == Op_DivL || op == Op_ModI || op == Op_ModL) {
-              if (use->in(2) != node) {
-                assert(use->in(1) == node, "");
-                continue;
-              }
-              // ShouldNotReachHere();
+            if (use->is_Phi()) {
+              continue;
             }
-            if (op == Op_StrInflatedCopy || op == Op_CacheWB) {
+            int op = use->Opcode();
+            // if (op == Op_DivI || op == Op_DivL || op == Op_ModI || op == Op_ModL) {
+            //   if (use->in(2) != node) {
+            //     assert(use->in(1) == node, "");
+            //     continue;
+            //   }
+            //   // ShouldNotReachHere();
+            // }
+            if (op == Op_StrInflatedCopy || op == Op_CacheWB || op == Op_PrefetchAllocation || op == Op_ClearArray) {
+              continue;
+            }
+            if (use->is_CMove() && use->in(1) == node) {
               continue;
             }
             stack.push(use, 0);

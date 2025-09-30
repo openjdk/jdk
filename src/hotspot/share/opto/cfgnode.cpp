@@ -2248,6 +2248,14 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     uncasted = true;
     uin = unique_input(phase, true);
   }
+
+  if (can_reshape && uin != top) {
+    Node* res = TypeNode::Ideal(phase, can_reshape);
+    if (res != nullptr) {
+      return res;
+    }
+  }
+
   if (uin == top) {             // Simplest case: no alive inputs.
     if (can_reshape)            // IGVN transformation
       return top;
