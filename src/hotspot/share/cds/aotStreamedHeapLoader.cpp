@@ -490,7 +490,11 @@ void AOTStreamedHeapLoader::TracingObjectLoader::drain_stack(Stack<AOTHeapTraver
     int pointee_object_index = entry._pointee_object_index;
     oop pointee_heap_object = materialize_object(pointee_object_index, dfs_stack, thread);
     oop heap_object = heap_object_for_object_index(entry._base_object_index);
-    heap_object->obj_field_put_access<IS_DEST_UNINITIALIZED>((int)entry._heap_field_offset_bytes, pointee_heap_object);
+    if (_allow_gc) {
+      heap_object->obj_field_put((int)entry._heap_field_offset_bytes, pointee_heap_object);
+    } else {
+      heap_object->obj_field_put_access<IS_DEST_UNINITIALIZED>((int)entry._heap_field_offset_bytes, pointee_heap_object);
+    }
   }
 }
 
