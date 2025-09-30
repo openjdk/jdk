@@ -1539,8 +1539,8 @@ void HeapShared::init_archived_fields_for(Klass* k, const ArchivedKlassSubGraphI
       int root_index = entry_field_records->at(i+1);
       // Load the subgraph entry fields from the record and store them back to
       // the corresponding fields within the mirror.
-      oop m = k->java_mirror();
       oop v = get_root(root_index, /*clear=*/true);
+      oop m = k->java_mirror();
       if (k->has_aot_initialized_mirror()) {
         assert(v == m->obj_field(field_offset), "must be aot-initialized");
       } else {
