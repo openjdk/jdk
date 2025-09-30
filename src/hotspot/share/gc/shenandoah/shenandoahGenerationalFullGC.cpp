@@ -41,7 +41,7 @@ void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation
 }
 
 void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
-  assert(generation->used_including_humongous_waste() <= generation->used_regions_size(),
+  assert(generation->used() <= generation->used_regions_size(),
          "%s consumed can be no larger than span of affiliated regions", generation->name());
 }
 #else
@@ -84,7 +84,7 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
   assert_usage_not_more_than_regions_used(young);
 
   // Establish baseline for next old-has-grown trigger.
-  old->set_live_bytes_after_last_mark(old->used_including_humongous_waste());
+  old->set_live_bytes_after_last_mark(old->used());
 }
 
 void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) {
