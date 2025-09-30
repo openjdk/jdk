@@ -906,7 +906,6 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
     assert(CDSConfig::is_dumping_heap(), "sanity");
 #if INCLUDE_CDS_JAVA_HEAP
     assert(!CDSConfig::is_dumping_dynamic_archive(), "must be");
-    mapping_offset = 0;
     if (HeapShared::is_writing_mapping_mode()) {
       requested_base = (char*)AOTMappedHeapWriter::requested_address();
       if (UseCompressedOops) {
