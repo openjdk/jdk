@@ -199,7 +199,7 @@ class MemSummaryDiffReporter : public MemReporterBase {
   }
 
   // Generate summary comparison report
-  virtual void report_diff();
+  void report_diff() const;
 
  private:
   // report the comparison of each mem_tag
