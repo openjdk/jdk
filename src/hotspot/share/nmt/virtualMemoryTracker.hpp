@@ -197,7 +197,8 @@ class VirtualMemoryRegion {
   address         _base_address;
   size_t          _size;
   MemTag          _mem_tag;
-  NativeCallStack _reserved_stack, _committed_stack;
+  NativeCallStack _reserved_stack;
+  NativeCallStack _committed_stack;
 
  public:
   VirtualMemoryRegion() :
@@ -233,7 +234,7 @@ class VirtualMemoryRegion {
   inline bool is_empty() const { return size() == 0; }
 
   inline bool contain_address(address addr) const {
-    assert(is_valid(), "snaity");
+    assert(is_valid(), "sanity");
     return (addr >= base() && addr < end());
   }
 
@@ -241,7 +242,7 @@ class VirtualMemoryRegion {
   inline bool overlap_region(address addr, size_t sz) const {
     assert(sz > 0, "Invalid size");
     assert(size() > 0, "Invalid size");
-    assert(is_valid(), "snaity");
+    assert(is_valid(), "sanity");
     return MAX2(addr, base()) < MIN2(addr + sz, end());
   }
 
@@ -265,28 +266,15 @@ class VirtualMemoryRegion {
   }
 
   bool equals_including_stacks(const VirtualMemoryRegion& other) const;
-  inline void set_committed_call_stack(const NativeCallStack& stack) { _committed_stack = stack; }
   inline const NativeCallStack* committed_call_stack() const         { return &_committed_stack; }
 
   bool is_valid() const { return base() != nullptr && size() != 0;}
 
-  inline void  set_reserved_call_stack(const NativeCallStack& stack) { _reserved_stack = stack; }
   inline const NativeCallStack* reserved_call_stack() const          { return &_reserved_stack;  }
 
   inline MemTag mem_tag() const { return _mem_tag;  }
 
   const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
-
- protected:
-  void set_base(address base) {
-    assert(base != nullptr, "Sanity check");
-    _base_address = base;
-  }
-
-  void set_size(size_t  size) {
-    assert(size > 0, "Sanity check");
-    _size = size;
-  }
 };
 
 class VirtualMemoryWalker : public StackObj {
