@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -345,12 +345,10 @@ public class EventHandler implements Runnable {
                     public boolean eventReceived(Event event) {
                         if (event instanceof VMDisconnectEvent) {
                             display("receieved VMDisconnect");
-                            synchronized(EventHandler.this) {
-                                vmDisconnected = true;
-                                status = 0; // OK finish
-                                EventHandler.this.notifyAll();
-                                removeListener(this);
-                            }
+                            vmDisconnected = true;
+                            status = 0; // OK finish
+                            EventHandler.this.notifyAll();
+                            removeListener(this);
                             return true;
                         }
                         return false;
@@ -431,6 +429,10 @@ public class EventHandler implements Runnable {
             }
 
             public boolean eventReceived(Event event) {
+                if (en.event != null) {
+                    // If we already got the requested event, don't handle this one.
+                    return false;
+                }
                 EventSet set = en.set;
                 en.set = null; // We'll reset it below if the event matches a request.
                 for (int i = 0; i < requests.length; i++) {
@@ -441,11 +443,9 @@ public class EventHandler implements Runnable {
                     if (request.equals(event.request())) {
                         display("waitForRequestedEventCommon: Received event(" + event +
                                 ") for request(" + request + ")");
-                        synchronized (EventHandler.this) {
-                            en.event = event;
-                            en.set = set;
-                            EventHandler.this.notifyAll();
-                        }
+                        en.event = event;
+                        en.set = set;
+                        EventHandler.this.notifyAll();
                         return true; // event was handled
                     }
                 }
