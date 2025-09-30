@@ -67,6 +67,7 @@ bool AOTStreamedHeapLoader::_allow_gc;
 bool AOTStreamedHeapLoader::_objects_are_handles;
 size_t AOTStreamedHeapLoader::_num_archived_objects;
 int AOTStreamedHeapLoader::_num_roots;
+size_t AOTStreamedHeapLoader::_heap_region_used;
 
 size_t* AOTStreamedHeapLoader::_object_index_to_buffer_offset_table;
 void** AOTStreamedHeapLoader::_object_index_to_heap_object_table;
@@ -705,8 +706,10 @@ bool AOTStreamedHeapLoader::materialize_early() {
   jlong start = os::javaTimeNanos();
   JavaThread* thread = JavaThread::current();
 
+  // Only help with early materialization from the AOT thread if the heap archive can be allocated
+  // without the need for a GC. Otherwise, do lazy loading until GC is enabled later in the bootstrapping.
   size_t bootstrap_max_memory = Universe::heap()->bootstrap_max_memory();
-  size_t bootstrap_min_memory = 2 * M;
+  size_t bootstrap_min_memory = MAX2(_heap_region_used, 2 * M);
 
   size_t before_gc_materialize_budget_bytes = (bootstrap_max_memory > bootstrap_min_memory) ? bootstrap_max_memory - bootstrap_min_memory : 0;
   size_t before_gc_materialize_budget_words = before_gc_materialize_budget_bytes / HeapWordSize;
@@ -950,6 +953,7 @@ void AOTStreamedHeapLoader::initialize() {
   // The first int is the length of the array
   _roots_archive = ((int*)(((address)_heap_region->mapped_base()) + roots_offset)) + 1;
   _num_roots = _roots_archive[-1];
+  _heap_region_used = _heap_region->used();
 
   // We can't retire a TLAB until the filler klass is set; set it to the archived object klass.
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
