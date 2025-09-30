@@ -1670,26 +1670,26 @@ void PhaseIdealLoop::insert_vector_post_loop(IdealLoopTree *loop, Node_List &old
 
 Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop) {
   assert(store != nullptr && store->is_Store(), "starting point should be a store node");
-  Node* last = store;
   // Follow the memory uses until we get out of the loop.
   // Store nodes in the outer loop body were moved by PhaseIdealLoop::try_move_store_after_loop.
   // Because of the conditions in try_move_store_after_loop (no other usage in the loop body
   // except for the phi node associated with the loop head), we have the guarantee of a
   // linear memory subgraph within the outer loop body.
+  Node* last = store;
   Node* unique_next = store;
   do {
-    out = unique_next;
-    for (DUIterator_Fast imax, l = out->fast_outs(imax); l < imax; l++) {
-      Node* use = out->fast_out(l);
-      if (use->is_Mem() && use->in(MemNode::Memory) == out) {
+    last = unique_next;
+    for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
+      Node* use = last->fast_out(l);
+      if (use->is_Store() && use->in(MemNode::Memory) == last) {
         IdealLoopTree* use_loop = get_loop(get_ctrl(use));
         if (outer_loop->is_member(use_loop)) {
-          assert(unique_next == out, "memory node should only have one usage in the loop body");
+          assert(unique_next == last, "memory node should only have one usage in the loop body");
           unique_next = use;
         }
       }
     }
-  } while (out != unique_next);
+  } while (last != unique_next);
   return last;
 }
 
