@@ -278,8 +278,6 @@ class VM_Version : public Abstract_VM_Version {
   // Non-extension features
   //
   #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                       \
-  /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
-  decl(VendorId        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
   /* Id for microarch. Mvendorid plus marchid uniquely identify the microarch. */              \
   decl(ArchId          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
   /* A unique encoding of the version of the processor implementation. */                      \
@@ -290,6 +288,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(UnalignedScalar ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
   /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
   decl(UnalignedVector ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
+  decl(VendorId        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
   decl(ZicbozBlockSize ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
 
   #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                        \
