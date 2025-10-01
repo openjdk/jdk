@@ -1072,9 +1072,6 @@ void XmlMemSummaryReporter::report(bool summary_only) const {
 
   xs->head("nativeMemoryTracking scale=\"%s\"", current_scale());
   XmlElementWithText("report", summary_only ? "Summary" : "Detail");
-  if (scale() > 1) {
-    XmlElementWithText("warning", "(Omitting categories weighting less than 1%s)", current_scale());
-  }
   {
     XmlParentElement("total");
     XmlElementWithText("reserved", "%zu", amount_in_current_scale(total_reserved_amount));
@@ -1239,27 +1236,38 @@ void XmlMemDetailReporter::report_detail() const {
 
   XmlParentElement("details");
 
-  int num_omitted = report_malloc_sites() + report_virtual_memory_allocation_sites();
+  OmittedAllocations malloc_omitted = report_malloc_sites();
+  OmittedAllocations vma_omitted = report_virtual_memory_allocation_sites();
   {
-    XmlParentElement("ommitted");
-    XmlElementWithText("count", "%d", num_omitted);
-    XmlElementWithText("scale", "%s", current_scale());
+    XmlParentElement("omitted");
+    {
+      XmlParentElement("malloc");
+      XmlElementWithText("amount", "%zu", malloc_omitted.amount);
+      XmlElementWithText("count", "%d", malloc_omitted.count);
+    }
+    {
+      XmlParentElement("virtualMemory");
+      XmlElementWithText("amount", "%zu", vma_omitted.amount);
+      XmlElementWithText("count", "%d", vma_omitted.count);
+    }
   }
 }
 
-int XmlMemDetailReporter::report_malloc_sites() const {
+XmlMemDetailReporter::OmittedAllocations XmlMemDetailReporter::report_malloc_sites() const {
   MallocSiteIterator         malloc_itr = _baseline.malloc_sites(MemBaseline::by_size);
-  if (malloc_itr.is_empty()) return 0;
+  OmittedAllocations omitted;
+  if (malloc_itr.is_empty()) return omitted;
 
   xmlStream* xs = xml_output();
 
   const MallocSite* malloc_site;
-  int num_omitted = 0;
+
   XmlParentElement("mallocSites");
   while ((malloc_site = malloc_itr.next()) != nullptr) {
     // Omit printing if the current value and the historic peak value both fall below the reporting scale threshold
     if (amount_in_current_scale(MAX2(malloc_site->size(), malloc_site->peak_size())) == 0) {
-      num_omitted ++;
+      omitted.count ++;
+      omitted.amount += malloc_site->size();
       continue;
     }
     XmlParentElement("mallocSite");
@@ -1275,20 +1283,19 @@ int XmlMemDetailReporter::report_malloc_sites() const {
       print_malloc(malloc_site->counter(), mem_tag);
     }
   }
-  return num_omitted;
+  return omitted;
 }
 
-int XmlMemDetailReporter::report_virtual_memory_allocation_sites() const {
+XmlMemDetailReporter::OmittedAllocations XmlMemDetailReporter::report_virtual_memory_allocation_sites() const {
   VirtualMemorySiteIterator  virtual_memory_itr =
     _baseline.virtual_memory_sites(MemBaseline::by_size);
 
-  if (virtual_memory_itr.is_empty()) return 0;
-
+  OmittedAllocations omitted;
+  if (virtual_memory_itr.is_empty()) return omitted;
 
   xmlStream* xs = xml_output();
 
   const VirtualMemoryAllocationSite*  virtual_memory_site;
-  int num_omitted = 0;
   XmlParentElement("virtualMemoryAllocationSites");
   while ((virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
     // Don't report free sites; does not count toward omitted count.
@@ -1299,7 +1306,8 @@ int XmlMemDetailReporter::report_virtual_memory_allocation_sites() const {
     // reporting scale threshold
     if (amount_in_current_scale(MAX2(virtual_memory_site->reserved(),
                                      virtual_memory_site->peak_size())) == 0) {
-      num_omitted++;
+      omitted.count++;
+      omitted.amount += virtual_memory_site->reserved();
       continue;
     }
     {
@@ -1316,7 +1324,7 @@ int XmlMemDetailReporter::report_virtual_memory_allocation_sites() const {
       }
     }
   }
-  return num_omitted;
+  return omitted;
 }
 
 void XmlMemDetailReporter::report_virtual_memory_map() const{
@@ -1403,11 +1411,6 @@ void XmlMemSummaryDiffReporter::report_diff(bool summary_only) const {
   xmlStream* xs = xml_output();
   xs->head("nativeMemoryTracking scale=\"%s\"", current_scale());
   XmlElementWithText("report", summary_only ? "Summary Diff" : "Detail Diff");
-
-
-  if (scale() > 1) {
-    XmlElementWithText("warning", "(Omitting categories weighting less than 1%s)", current_scale());
-  }
 
   // Overall diff
   {

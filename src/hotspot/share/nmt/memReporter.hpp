@@ -357,6 +357,11 @@ class XmlMemDetailReporter : public XmlMemSummaryReporter {
   // The report contains summary and detail sections.
   void report() const;
  private:
+  struct OmittedAllocations {
+    size_t amount;
+    int count;
+    OmittedAllocations() : amount(0), count(0) { }
+  };
   // Report detail tracking data.
   void report_detail() const;
   // Report virtual memory map
@@ -364,9 +369,9 @@ class XmlMemDetailReporter : public XmlMemSummaryReporter {
   // Report all physical devices
   void report_memory_file_allocations() const;
   // Report malloc allocation sites; returns number of omitted sites
-  int report_malloc_sites() const;
+  OmittedAllocations  report_malloc_sites() const;
   // Report virtual memory reservation sites; returns number of omitted sites
-  int report_virtual_memory_allocation_sites() const;
+  OmittedAllocations report_virtual_memory_allocation_sites() const;
 
   // Report a virtual memory region
   void report_virtual_memory_region(const ReservedMemoryRegion* rgn) const;
