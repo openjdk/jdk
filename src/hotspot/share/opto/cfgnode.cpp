@@ -2099,8 +2099,11 @@ bool PhiNode::is_split_through_mergemem_terminating() const {
 bool PhiNode::wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const {
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
     Node* n = in(i);
-    if (n != nullptr && n->is_ConstraintCast() && igvn->_worklist.member(n)) {
-      return true;
+    while (n != nullptr && n->is_ConstraintCast()) {
+      if (igvn->_worklist.member(n)) {
+        return true;
+      }
+      n = n->in(1);
     }
   }
   return false;
