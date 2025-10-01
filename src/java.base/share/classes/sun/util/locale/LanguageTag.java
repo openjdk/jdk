@@ -332,9 +332,7 @@ public record LanguageTag(String language,
         String[] subtags = tag.split(SEP);
 
         // Legacy tags
-        String potentialLegacy = tag.toLowerCase(Locale.ROOT);
-        var modern = legacyToModern(potentialLegacy);
-        if (modern != null) {
+        if (legacyToModern(tag.toLowerCase(Locale.ROOT)) != null) {
             // Fold the legacy tag
             for (int i = 0; i < subtags.length ; i++) {
                 // 2 ALPHA Region subtag(s) are upper, all other subtags are lower
