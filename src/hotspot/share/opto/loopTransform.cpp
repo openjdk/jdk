@@ -1682,8 +1682,7 @@ Node* PhaseIdealLoop::find_last_store_in_outer_loop(Node* store, const IdealLoop
     for (DUIterator_Fast imax, l = last->fast_outs(imax); l < imax; l++) {
       Node* use = last->fast_out(l);
       if (use->is_Store() && use->in(MemNode::Memory) == last) {
-        IdealLoopTree* use_loop = get_loop(get_ctrl(use));
-        if (outer_loop->is_member(use_loop)) {
+        if (is_member(outer_loop, get_ctrl(use))) {
           assert(unique_next == last, "memory node should only have one usage in the loop body");
           unique_next = use;
         }
@@ -1796,8 +1795,7 @@ Node *PhaseIdealLoop::insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
       // as this is when we would normally expect a Phi as input. If the memory input
       // is in the loop body as well, then we can safely assume it is still correct as the entire
       // body was cloned as a unit
-      IdealLoopTree* input_loop = get_loop(get_ctrl(store->in(MemNode::Memory)));
-      if (!outer_loop->is_member(input_loop)) {
+      if (!is_member(outer_loop, get_ctrl(store->in(MemNode::Memory)))) {
         Node* mem_out = find_last_store_in_outer_loop(store, outer_loop);
         Node* store_new = old_new[store->_idx];
         store_new->set_req(MemNode::Memory, mem_out);
