@@ -42,7 +42,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  */
 public final class AESCrypt extends SymmetricCipher {
 
-    // Number of bytes in a word (32 bits)
+    // Number of words in a block
     private static final int WB = 4;
 
     private static final int AES_128_ROUNDS = 10;
@@ -702,8 +702,7 @@ public final class AESCrypt extends SymmetricCipher {
      *
      * @return {@code true} if the size of the key is valid else {@code false}.
      */
-    static final boolean isKeySizeValid(int len) {
-
+    static boolean isKeySizeValid(int len) {
         return len == AES_128_NKEYS || len == AES_192_NKEYS
                 || len == AES_256_NKEYS;
     }
@@ -745,7 +744,6 @@ public final class AESCrypt extends SymmetricCipher {
                     "Invalid key length (" + key.length + ").");
         }
         if (!MessageDigest.isEqual(prevKey, key)) {
-
             if (sessionK == null) {
                 sessionK = new int[2][];
             } else {
@@ -848,7 +846,7 @@ public final class AESCrypt extends SymmetricCipher {
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
-        // without a mix column transform.
+        // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
             System.arraycopy(sessionK[0], i * len, w, 0, len);
             invMixRKey(w);
@@ -870,7 +868,7 @@ public final class AESCrypt extends SymmetricCipher {
      * @return the substituted word.
      */
     private int subByte(int state, byte[][] sub) {
-        byte b0 = (byte) ((state >> 24) & 0xFF);
+        byte b0 = (byte) (state >>> 24);
         byte b1 = (byte) ((state >> 16) & 0xFF);
         byte b2 = (byte) ((state >> 8) & 0xFF);
         byte b3 = (byte) (state & 0xFF);
