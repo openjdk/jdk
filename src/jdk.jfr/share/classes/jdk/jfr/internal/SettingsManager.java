@@ -130,10 +130,12 @@ final class SettingsManager {
     }
 
    private Map<String, InternalSetting> availableSettings = new LinkedHashMap<>();
+   private Set<String> enabled = HashSet.newHashSet(0);
 
     void setSettings(List<Map<String, String>> activeSettings, boolean writeSettingEvents) {
         // store settings so they are available if a new event class is loaded
         availableSettings = createSettingsMap(activeSettings);
+        createEnabled();
         List<EventControl> eventControls = MetadataRepository.getInstance().getEventControls();
         if (!JVM.isRecording()) {
             for (EventControl ec : eventControls) {
@@ -151,6 +153,16 @@ final class SettingsManager {
         if (JVM.getAllowedToDoEventRetransforms()) {
             updateRetransform(JVM.getAllEventClasses());
         }
+    }
+
+    private synchronized void createEnabled() {
+        Set<String> set = HashSet.newHashSet(availableSettings.size());
+        for (var entry : availableSettings.entrySet()) {
+            if (entry.getValue().isEnabled()) {
+                set.add(entry.getKey());
+            }
+        }
+        enabled = set;
     }
 
     public void updateRetransform(List<Class<? extends jdk.internal.event.Event>> eventClasses) {
@@ -290,11 +302,7 @@ final class SettingsManager {
         return sb.toString();
     }
 
-    boolean isEnabled(String eventName) {
-        InternalSetting is = availableSettings.get(eventName);
-        if (is == null) {
-            return false;
-        }
-        return is.isEnabled();
+    synchronized boolean isEnabled(String eventName) {
+        return enabled.contains(eventName);
     }
 }
