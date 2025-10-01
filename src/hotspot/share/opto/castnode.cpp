@@ -607,8 +607,9 @@ Node* ConstraintCastNode::optimize_integer_cast(PhaseGVN* phase, BasicType bt) {
   }
   const Type* t = Value(phase);
   if (t != Type::TOP) {
-    const TypeInteger* wide_t = widen_type(phase, t, bt);
-    if (wide_t != t) {
+    const Type* bottom_t = bottom_type();
+    const TypeInteger* wide_t = widen_type(phase, bottom_t, bt);
+    if (wide_t != bottom_t) {
       // Widening the type of the Cast (to allow some commoning) causes the Cast to change how it can be optimized (if
       // type of its input is narrower than the Cast's type, we can't remove it to not loose the dependency).
       return make_with(in(1), wide_t, _dependency.widen_type_dependency());
