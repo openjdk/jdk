@@ -74,6 +74,7 @@ class PSPromotionManager {
 
   PSYoungPromotionLAB                 _young_lab;
   PSOldPromotionLAB                   _old_lab;
+  bool                                _young_gen_has_alloc_failure;
   bool                                _young_gen_is_full;
   bool                                _old_gen_is_full;
 
@@ -111,6 +112,13 @@ class PSPromotionManager {
 
   template<bool promote_immediately>
   oop copy_unmarked_to_survivor_space(oop o, markWord m);
+
+  inline HeapWord* allocate_in_young_gen(Klass* klass,
+                                         size_t obj_size,
+                                         uint age);
+  inline HeapWord* allocate_in_old_gen(Klass* klass,
+                                       size_t obj_size,
+                                       uint age);
 
  public:
   // Static

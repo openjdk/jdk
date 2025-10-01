@@ -882,6 +882,7 @@ void CodeCache::do_unloading(bool unloading_occurred) {
 
 void CodeCache::verify_clean_inline_caches() {
 #ifdef ASSERT
+  if (!VerifyInlineCaches) return;
   NMethodIterator iter(NMethodIterator::not_unloading);
   while(iter.next()) {
     nmethod* nm = iter.method();
@@ -1184,7 +1185,7 @@ static void check_live_nmethods_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   FlagSetting fs(Dependencies::_verify_in_progress, true);
 
-  typedef ResourceHashtable<DependencySignature, int, 11027,
+  typedef HashTable<DependencySignature, int, 11027,
                             AnyObj::RESOURCE_AREA, mtInternal,
                             &DependencySignature::hash,
                             &DependencySignature::equals> DepTable;

@@ -38,8 +38,8 @@
 #include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
-#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/suspendResumeManager.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
@@ -53,7 +53,7 @@
 #include "utilities/ticks.hpp"
 #endif
 
-class AsyncExceptionHandshake;
+class AsyncExceptionHandshakeClosure;
 class DeoptResourceMark;
 class InternalOOMEMark;
 class JNIHandleBlock;
@@ -233,13 +233,13 @@ class JavaThread: public Thread {
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshake;
-  friend class AsyncExceptionHandshake;
+  friend class InstallAsyncExceptionHandshakeClosure;
+  friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshake* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
@@ -755,9 +755,6 @@ public:
     return (_suspend_flags & _obj_deopt) != 0;
   }
 
-  // Stack-locking support (not for LM_LIGHTWEIGHT)
-  bool is_lock_owned(address adr) const;
-
   // Accessors for vframe array top
   // The linked list of vframe arrays are sorted on sp. This means when we
   // unpack the head must contain the vframe array to unpack.
@@ -1164,7 +1161,7 @@ public:
   // Used by the interpreter in fullspeed mode for frame pop, method
   // entry, method exit and single stepping support. This field is
   // only set to non-zero at a safepoint or using a direct handshake
-  // (see EnterInterpOnlyModeClosure).
+  // (see EnterInterpOnlyModeHandshakeClosure).
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.

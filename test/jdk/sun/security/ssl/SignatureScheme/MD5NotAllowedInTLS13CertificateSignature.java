@@ -150,9 +150,11 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         // create SSL context
         SSLContext ctx = SSLContext.getInstance(protocol);
 
-        // Using "SunX509" which doesn't check peer supported signature
-        // algorithms, so we check against local supported signature
+        // Disable KeyManager's algorithm constraints checking,
+        // so we check against local supported signature
         // algorithms which constitutes the fix being tested.
+        System.setProperty(
+                "jdk.tls.SunX509KeyManager.certChecking", "false");
         KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         kmf.init(ks, passphrase);
 
@@ -166,7 +168,6 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
 
     private void setupCertificates() throws Exception {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
-        kpg.initialize(1024);
         KeyPair caKeys = kpg.generateKeyPair();
         this.serverKeys = kpg.generateKeyPair();
         this.clientKeys = kpg.generateKeyPair();
@@ -215,7 +216,7 @@ public class MD5NotAllowedInTLS13CertificateSignature extends
         CertificateBuilder builder = new CertificateBuilder()
                 .setSubjectName(subjectName)
                 .setPublicKey(publicKey)
-                .setNotAfter(
+                .setNotBefore(
                         Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
                 .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
                 .setSerialNumber(

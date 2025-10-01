@@ -183,7 +183,7 @@ void ShenandoahGeneration::log_status(const char *msg) const {
   // byte size in proper unit and proper unit for byte size are consistent.
   const size_t v_used = used();
   const size_t v_used_regions = used_regions_size();
-  const size_t v_soft_max_capacity = soft_max_capacity();
+  const size_t v_soft_max_capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t v_max_capacity = max_capacity();
   const size_t v_available = available();
   const size_t v_humongous_waste = get_humongous_waste();
@@ -799,14 +799,13 @@ void ShenandoahGeneration::cancel_marking() {
 
 ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
                                            uint max_workers,
-                                           size_t max_capacity,
-                                           size_t soft_max_capacity) :
+                                           size_t max_capacity) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
   _used(0), _bytes_allocated_since_gc_start(0),
-  _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
+  _max_capacity(max_capacity),
   _heuristics(nullptr)
 {
   _is_marking_complete.set();
@@ -952,7 +951,7 @@ size_t ShenandoahGeneration::available_with_reserve() const {
 }
 
 size_t ShenandoahGeneration::soft_available() const {
-  return available(soft_max_capacity());
+  return available(ShenandoahHeap::heap()->soft_max_capacity());
 }
 
 size_t ShenandoahGeneration::available(size_t capacity) const {

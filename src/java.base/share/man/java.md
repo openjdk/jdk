@@ -1515,6 +1515,15 @@ These `java` options control the runtime behavior of the Java HotSpot VM.
 
     This option is similar to `-Xss`.
 
+`-XX:+UseCompactObjectHeaders`
+:   Enables compact object headers. By default, this option is disabled.
+    Enabling this option reduces memory footprint in the Java heap by
+    4 bytes per object (on average) and often improves performance.
+
+    The feature remains disabled by default while it continues to be evaluated.
+    In a future release it is expected to be enabled by default, and
+    eventually will be the only mode of operation.
+
 `-XX:-UseCompressedOops`
 :   Disables the use of compressed pointers. By default, this option is
     enabled, and compressed pointers are used. This will automatically limit
@@ -2492,10 +2501,9 @@ Java HotSpot VM.
 
 `-XX:MaxGCPauseMillis=`*time*
 :   Sets a target for the maximum GC pause time (in milliseconds). This is a
-    soft goal, and the JVM will make its best effort to achieve it. The
-    specified value doesn't adapt to your heap size. By default, for G1 the
-    maximum pause time target is 200 milliseconds. The other generational
-    collectors do not use a pause time goal by default.
+    soft goal, and the JVM will make its best effort to achieve it. Only G1
+    and Parallel support a maximum GC pause time target. For G1, the default
+    maximum pause time target is 200 milliseconds.
 
     The following example shows how to set the maximum target pause time to 500
     ms:
@@ -2701,14 +2709,6 @@ Java HotSpot VM.
 
     >   `-XX:ParallelGCThreads=2`
 
-`-XX:+ParallelRefProcEnabled`
-:   Enables parallel reference processing. By default, collectors employing multiple
-    threads perform parallel reference processing if the number of parallel threads
-    to use is larger than one.
-    The option is available only when the throughput or G1 garbage collector is used
-    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
-    threads always perform reference processing in parallel.
-
 `-XX:+PrintAdaptiveSizePolicy`
 :   Enables printing of information about adaptive-generation sizing. By
     default, this option is disabled.
@@ -2808,9 +2808,8 @@ Java HotSpot VM.
 `-XX:+UseNUMA`
 :   Enables performance optimization of an application on a machine with
     nonuniform memory architecture (NUMA) by increasing the application's use
-    of lower latency memory. By default, this option is disabled and no
-    optimization for NUMA is made. The option is available only when the
-    parallel garbage collector is used (`-XX:+UseParallelGC`).
+    of lower latency memory. The default value for this option depends on the
+    garbage collector.
 
 `-XX:+UseParallelGC`
 :   Enables the use of the parallel scavenge garbage collector (also known as
@@ -2883,6 +2882,46 @@ Java HotSpot VM.
     expensive operations. Using a lower value will cause heap memory to be
     uncommitted earlier, at the risk of soon having to commit it again.
 
+`-XX:+UseShenandoahGC`
+:   Enables the use of the Shenandoah garbage collector. This is a low pause
+    time, concurrent garbage collector. Its pause times are not proportional to
+    the size of the heap. Shenandoah garbage collector can work with compressed
+    pointers. See `-XX:UseCompressedOops` for further information about
+    compressed pointers.
+
+`-XX:ShenandoahGCMode=`*mode*
+:   Sets the GC mode for Shenandoah GC to use. By default, this option is set
+    to `satb`. Among other things, this defines which barriers are in use.
+    Possible mode values include the following:
+
+    `satb`
+    :   Snapshot-at-the-beginning concurrent GC (three pass mark-evac-update).
+        It is a single generation GC.
+
+    `generational`
+    :   It is also a snapshot-at-the-beginning and concurrent GC, but it is
+        generational. Please see [JEP 404](https://openjdk.org/jeps/404) and
+        [JEP 521](https://openjdk.org/jeps/521) for its advantages and risks.
+
+`-XX:ShenandoahGCHeuristics=`*heuristics*
+:   Sets the heuristics for Shenandoah GC to use. By default, this option is
+    set to `adaptive`. This fine-tunes the GC mode selected, by choosing when
+    to start the GC, how much to process on each cycle, and what other features
+    to automatically enable. When `-XX:ShenandoahGCMode` is `generational`, the
+    only supported option is the default, `adaptive`.
+
+    Possible heuristics are the following:
+
+    `adaptive`
+    :   To maintain the given amount of free heap at all times, even during
+        the GC cycle.
+
+    `static`
+    :   Trigger GC when free heap falls below a specified threshold.
+
+    `compact`
+    :   Run GC more frequently and with deeper targets to free up more memory.
+
 ## Deprecated Java Options
 
 These `java` options are deprecated and might be removed in a future JDK
@@ -2903,6 +2942,14 @@ they're used.
 `-XX:+FlightRecorder`
 :   Enables the use of Java Flight Recorder (JFR) during the runtime of the
     application. Since JDK 8u40 this option has not been required to use JFR.
+
+`-XX:+ParallelRefProcEnabled`
+:   Enables parallel reference processing. By default, collectors employing multiple
+    threads perform parallel reference processing if the number of parallel threads
+    to use is larger than one.
+    The option is available only when the throughput or G1 garbage collector is used
+    (`-XX:+UseParallelGC` or `-XX:+UseG1GC`). Other collectors employing multiple
+    threads always perform reference processing in parallel.
 
 ## Obsolete Java Options
 
@@ -3748,9 +3795,10 @@ general form:
     be loaded on top of those in the `<static_archive>`.
 -   On Windows, the above path delimiter `:` should be replaced with `;`
 
-(The names "static" and "dynamic" are used for historical reasons.
-The only significance is that the "static" archive is loaded first and
-the "dynamic" archive is loaded second).
+The names "static" and "dynamic" are used for historical reasons. The dynamic
+archive, while still useful, supports fewer optimizations than
+available for the static CDS archive. If the full set of CDS/AOT
+optimizations are desired, consider using the AOT cache described below.
 
 The JVM can use up to two archives. To use only a single `<static_archive>`,
 you can omit the `<dynamic_archive>` portion:

@@ -150,7 +150,7 @@ public:
         ShenandoahNMethod::heal_nmethod_metadata(nm_data);
         // Code cache unloading needs to know about on-stack nmethods. Arm the nmethods to get
         // mark_as_maybe_on_stack() callbacks when they are used again.
-        _bs->set_guard_value(nm, 0);
+        _bs->arm(nm);
       }
     }
 

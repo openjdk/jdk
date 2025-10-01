@@ -302,7 +302,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 Klass::Klass(KlassKind kind) : _kind(kind),
                                _prototype_header(make_prototype(this)),
                                _shared_class_path_index(-1) {
-  CDS_ONLY(_shared_class_flags = 0;)
+  CDS_ONLY(_aot_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
   set_super_check_offset(in_bytes(primary_supers_offset()));
@@ -611,12 +611,6 @@ GrowableArray<Klass*>* Klass::compute_secondary_supers(int num_extra_slots,
 }
 
 
-// superklass links
-InstanceKlass* Klass::superklass() const {
-  assert(super() == nullptr || super()->is_instance_klass(), "must be instance klass");
-  return _super == nullptr ? nullptr : InstanceKlass::cast(_super);
-}
-
 // subklass links.  Used by the compiler (and vtable initialization)
 // May be cleaned concurrently, so must use the Compile_lock.
 // The log parameter is for clean_weak_klass_links to report unlinked classes.
@@ -679,11 +673,11 @@ void Klass::append_to_sibling_list() {
     assert_locked_or_safepoint(Compile_lock);
   }
   DEBUG_ONLY(verify();)
-  // add ourselves to superklass' subklass list
-  InstanceKlass* super = superklass();
+  // add ourselves to super' subklass list
+  InstanceKlass* super = java_super();
   if (super == nullptr) return;     // special case: class Object
   assert((!super->is_interface()    // interfaces cannot be supers
-          && (super->superklass() == nullptr || !is_interface())),
+          && (super->java_super() == nullptr || !is_interface())),
          "an interface can only be a subklass of Object");
 
   // Make sure there is no stale subklass head
@@ -692,7 +686,7 @@ void Klass::append_to_sibling_list() {
   for (;;) {
     Klass* prev_first_subklass = Atomic::load_acquire(&_super->_subklass);
     if (prev_first_subklass != nullptr) {
-      // set our sibling to be the superklass' previous first subklass
+      // set our sibling to be the super' previous first subklass
       assert(prev_first_subklass->is_loader_alive(), "May not attach not alive klasses");
       set_next_sibling(prev_first_subklass);
     }
@@ -749,14 +743,17 @@ void Klass::clean_weak_klass_links(bool unloading_occurred, bool clean_alive_kla
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_weak_instanceklass_links();
-
-      // JVMTI RedefineClasses creates previous versions that are not in
-      // the class hierarchy, so process them here.
-      while ((ik = ik->previous_versions()) != nullptr) {
-        ik->clean_weak_instanceklass_links();
-      }
+      clean_weak_instanceklass_links(ik);
     }
+  }
+}
+
+void Klass::clean_weak_instanceklass_links(InstanceKlass* ik) {
+  ik->clean_weak_instanceklass_links();
+  // JVMTI RedefineClasses creates previous versions that are not in
+  // the class hierarchy, so process them here.
+  while ((ik = ik->previous_versions()) != nullptr) {
+    ik->clean_weak_instanceklass_links();
   }
 }
 
@@ -808,7 +805,7 @@ void Klass::remove_unshareable_info() {
 
   // Null out class_loader_data because we don't share that yet.
   set_class_loader_data(nullptr);
-  set_is_shared();
+  set_in_aot_cache();
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // "Classic" static archives are required to have deterministic contents.
@@ -861,7 +858,7 @@ void Klass::remove_java_mirror() {
 
 void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   assert(is_klass(), "ensure C++ vtable is restored");
-  assert(is_shared(), "must be set");
+  assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, aot, unshareable)) {
@@ -896,7 +893,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
     module_entry = ModuleEntryTable::javabase_moduleEntry();
   }
   // Obtain java.lang.Module, if available
-  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module() : (oop)nullptr));
+  Handle module_handle(THREAD, ((module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr));
 
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);

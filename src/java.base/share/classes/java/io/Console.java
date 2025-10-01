@@ -31,26 +31,27 @@ import jdk.internal.access.JavaIOAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.io.JdkConsoleImpl;
 import jdk.internal.io.JdkConsoleProvider;
+import jdk.internal.util.StaticProperty;
 import sun.nio.cs.UTF_8;
 
 /**
  * Methods to access the character-based console device, if any, associated
  * with the current Java virtual machine.
  *
- * <p> Whether a virtual machine has a console is dependent upon the
+ * <p> Whether a virtual machine's console exists is dependent upon the
  * underlying platform and also upon the manner in which the virtual
  * machine is invoked.  If the virtual machine is started from an
  * interactive command line without redirecting the standard input and
- * output streams then its console will exist and will typically be
+ * output streams, then its console will generally exist and will be
  * connected to the keyboard and display from which the virtual machine
- * was launched.  If the virtual machine is started automatically, for
- * example by a background job scheduler, then it may not
- * have a console.
+ * was launched. If the standard input or standard output have been
+ * redirected (for example, to a file or to a pipe), or if the virtual
+ * machine was started from a background job scheduler, the console
+ * will not exist.
  * <p>
- * If this virtual machine has a console then it is represented by a
- * unique instance of this class which can be obtained by invoking the
- * {@link java.lang.System#console()} method.  If no console device is
- * available then an invocation of that method will return {@code null}.
+ * If the console exists, then it is represented by a unique instance of this
+ * class which can be obtained by invoking the {@link System#console()} method.
+ * If the console does not exist, that method will return {@code null}.
  * <p>
  * Read and write operations are synchronized to guarantee the atomic
  * completion of critical operations; therefore invoking methods
@@ -534,18 +535,14 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     /**
      * {@return {@code true} if the {@code Console} instance is a terminal}
      * <p>
-     * This method returns {@code true} if the console device, associated with the current
-     * Java virtual machine, is a terminal, typically an interactive command line
-     * connected to a keyboard and display.
-     *
-     * @implNote The default implementation returns the value equivalent to calling
-     * {@code isatty(stdin/stdout)} on POSIX platforms, or whether standard in/out file
-     * descriptors are character devices or not on Windows.
+     * This method always returns {@code true}, since {@link System#console()}
+     * provides a {@code Console} instance only when both standard input and
+     * output are unredirected, that is, when running in an interactive terminal.
      *
      * @since 22
      */
     public boolean isTerminal() {
-        return istty;
+        return true;
     }
 
     private static UnsupportedOperationException newUnsupportedOperationException() {
@@ -555,9 +552,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
 
     private static final boolean istty = istty();
     private static final Charset STDIN_CHARSET =
-        Charset.forName(System.getProperty("stdin.encoding"), UTF_8.INSTANCE);
+        Charset.forName(StaticProperty.stdinEncoding(), UTF_8.INSTANCE);
     private static final Charset STDOUT_CHARSET =
-        Charset.forName(System.getProperty("stdout.encoding"), UTF_8.INSTANCE);
+        Charset.forName(StaticProperty.stdoutEncoding(), UTF_8.INSTANCE);
     private static final Console cons = instantiateConsole();
     static {
         // Set up JavaIOAccess in SharedSecrets

@@ -668,7 +668,7 @@ ciKlass* Compilation::cha_exact_type(ciType* type) {
   if (type != nullptr && type->is_loaded() && type->is_instance_klass()) {
     ciInstanceKlass* ik = type->as_instance_klass();
     assert(ik->exact_klass() == nullptr, "no cha for final klass");
-    if (DeoptC1 && UseCHA && !(ik->has_subklass() || ik->is_interface())) {
+    if (UseCHA && !(ik->has_subklass() || ik->is_interface())) {
       dependency_recorder()->assert_leaf_type(ik);
       return ik;
     }

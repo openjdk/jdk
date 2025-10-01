@@ -26,11 +26,10 @@
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "nmt/mallocTracker.hpp"
-#include "nmt/memTag.hpp"
-#include "nmt/memReporter.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
-#include "nmt/regionsTree.hpp"
+#include "nmt/memReporter.hpp"
+#include "nmt/memTag.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/regionsTree.inline.hpp"
 #include "nmt/threadStackTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
@@ -422,7 +421,7 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   outputStream* out = output();
   const char* scale = current_scale();
   const NativeCallStack*  stack = reserved_rgn->call_stack();
-  bool all_committed = reserved_rgn->size() == reserved_rgn->committed_size();
+  bool all_committed = reserved_rgn->size() == VirtualMemoryTracker::Instance::committed_size(reserved_rgn);
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
   print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());

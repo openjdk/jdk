@@ -32,12 +32,12 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"
 #include "services/management.hpp"
 #include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
-#include "services/gcNotifier.hpp"
 #include "utilities/dtrace.hpp"
 
 MemoryManager::MemoryManager(const char* name)

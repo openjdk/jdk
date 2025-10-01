@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,8 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
  * Windows rendition of the component.
  */
 public final class WindowsMenuUI extends BasicMenuUI {
-    protected Integer menuBarHeight;
-    protected boolean hotTrackingOn;
+    private Integer menuBarHeight;
+    private boolean hotTrackingOn;
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
@@ -62,6 +62,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
                 return menuItem;
             }
 
+            @Override
             public State getState(JMenuItem menu) {
                 State state = menu.isEnabled() ? State.NORMAL
                         : State.DISABLED;
@@ -129,6 +130,26 @@ public final class WindowsMenuUI extends BasicMenuUI {
         Object obj      = UIManager.get("MenuBar.rolloverEnabled");
         hotTrackingOn = (obj instanceof Boolean) ? (Boolean)obj : true;
     }
+
+    /**
+     * Paint MenuItem.
+     */
+    protected void paintMenuItem(Graphics g, JComponent c,
+                              Icon checkIcon, Icon arrowIcon,
+                              Color background, Color foreground,
+                              int defaultTextIconGap) {
+        if (WindowsMenuItemUI.isVistaPainting()) {
+            WindowsMenuItemUI.paintMenuItem(accessor, g, c, checkIcon, arrowIcon,
+                                            background, foreground,
+                                            disabledForeground, acceleratorSelectionForeground,
+                                            acceleratorForeground, defaultTextIconGap, menuItem,
+                                            getPropertyPrefix());
+            return;
+        }
+        super.paintMenuItem(g, c, checkIcon, arrowIcon, background,
+                                   foreground, defaultTextIconGap);
+    }
+
 
     /**
      * Draws the background of the menu.

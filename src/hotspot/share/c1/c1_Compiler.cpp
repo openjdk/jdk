@@ -141,7 +141,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_arraycopy:
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
-  case vmIntrinsics::_Reference_get:
+  case vmIntrinsics::_Reference_get0:
     // Use the intrinsic version of Reference.get() so that the value in
     // the referent field can be registered by the G1 pre-barrier code.
     // Also to prevent commoning reads from this field across safepoint
@@ -166,6 +166,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_dcos:
   case vmIntrinsics::_dtan:
   #if defined(AMD64)
+  case vmIntrinsics::_dsinh:
   case vmIntrinsics::_dtanh:
   case vmIntrinsics::_dcbrt:
   #endif
@@ -237,7 +238,7 @@ bool Compiler::is_intrinsic_supported(vmIntrinsics::ID id) {
   case vmIntrinsics::_counterTime:
 #endif
   case vmIntrinsics::_getObjectSize:
-#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV) || defined(PPC64)
+#if defined(X86) || defined(AARCH64) || defined(S390) || defined(RISCV64) || defined(PPC64)
   case vmIntrinsics::_clone:
 #endif
     break;

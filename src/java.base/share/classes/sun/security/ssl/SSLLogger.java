@@ -179,7 +179,7 @@ public final class SSLLogger {
     }
 
     public static void finest(String msg, Object... params) {
-        SSLLogger.log(Level.ALL, msg, params);
+        SSLLogger.log(Level.TRACE, msg, params);
     }
 
     private static void log(Level level, String msg, Object... params) {

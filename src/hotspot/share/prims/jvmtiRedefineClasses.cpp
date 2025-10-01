@@ -22,15 +22,16 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/metadataOnStackMark.hpp"
-#include "classfile/symbolTable.hpp"
 #include "classfile/klassFactory.hpp"
+#include "classfile/metadataOnStackMark.hpp"
+#include "classfile/stackMapTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -54,8 +55,8 @@
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "prims/resolvedMethodTable.hpp"
 #include "prims/methodComparator.hpp"
+#include "prims/resolvedMethodTable.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.inline.hpp"
@@ -66,6 +67,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 Array<Method*>* VM_RedefineClasses::_old_methods = nullptr;
 Array<Method*>* VM_RedefineClasses::_new_methods = nullptr;
@@ -250,7 +254,7 @@ void VM_RedefineClasses::doit() {
     // shared readwrite, private just in case we need to redefine
     // a shared class. We do the remap during the doit() phase of
     // the safepoint to be safer.
-    if (!MetaspaceShared::remap_shared_readonly_as_readwrite()) {
+    if (!AOTMetaspace::remap_shared_readonly_as_readwrite()) {
       log_info(redefine, class, load)("failed to remap shared readonly space to readwrite, private");
       _res = JVMTI_ERROR_INTERNAL;
       _timer_vm_op_doit.stop();
@@ -1174,7 +1178,6 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
           }
         }
       }
-      JFR_ONLY(k_new_method->copy_trace_flags(k_old_method->trace_flags());)
       log_trace(redefine, class, normalize)
         ("Method matched: new: %s [%d] == old: %s [%d]",
          k_new_method->name_and_sig_as_C_string(), ni, k_old_method->name_and_sig_as_C_string(), oi);
@@ -1355,10 +1358,12 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
     // constant pools
     HandleMark hm(current);
     InstanceKlass* the_class = get_ik(_class_defs[i].klass);
-
+    size_t avail_mem = 0;
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
-      ("loading name=%s kind=%d (avail_mem=" UINT64_FORMAT "K)",
-       the_class->external_name(), _class_load_kind, os::available_memory() >> 10);
+      ("loading name=%s kind=%d (avail_mem=%zuK)",
+       the_class->external_name(), _class_load_kind, avail_mem >> 10);
 
     ClassFileStream st((u1*)_class_defs[i].class_bytes,
                        _class_defs[i].class_byte_count,
@@ -1522,9 +1527,10 @@ jvmtiError VM_RedefineClasses::load_new_class_versions() {
         return JVMTI_ERROR_INTERNAL;
       }
     }
-
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::available_memory(avail_mem);
     log_debug(redefine, class, load)
-      ("loaded name=%s (avail_mem=" UINT64_FORMAT "K)", the_class->external_name(), os::available_memory() >> 10);
+      ("loaded name=%s (avail_mem=%zuK)", the_class->external_name(), avail_mem >> 10);
   }
 
   return JVMTI_ERROR_NONE;
@@ -3267,7 +3273,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     // same_frame {
     //   u1 frame_type = SAME; /* 0-63 */
     // }
-    if (frame_type <= 63) {
+    if (frame_type <= StackMapReader::SAME_FRAME_END) {
       // nothing more to do for same_frame
     }
 
@@ -3275,13 +3281,15 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = SAME_LOCALS_1_STACK_ITEM; /* 64-127 */
     //   verification_type_info stack[1];
     // }
-    else if (frame_type >= 64 && frame_type <= 127) {
+    else if (frame_type >= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME_START &&
+             frame_type <= StackMapReader::SAME_LOCALS_1_STACK_ITEM_FRAME_END) {
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
     }
 
     // reserved for future use
-    else if (frame_type >= 128 && frame_type <= 246) {
+    else if (frame_type >= StackMapReader::RESERVED_START &&
+             frame_type <= StackMapReader::RESERVED_END) {
       // nothing more to do for reserved frame_types
     }
 
@@ -3290,7 +3298,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 offset_delta;
     //   verification_type_info stack[1];
     // }
-    else if (frame_type == 247) {
+    else if (frame_type == StackMapReader::SAME_LOCALS_1_STACK_ITEM_EXTENDED) {
       stackmap_p += 2;
       rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
         calc_number_of_entries, frame_type);
@@ -3300,28 +3308,30 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u1 frame_type = CHOP; /* 248-250 */
     //   u2 offset_delta;
     // }
-    else if (frame_type >= 248 && frame_type <= 250) {
+    else if (frame_type >= StackMapReader::CHOP_FRAME_START &&
+             frame_type <= StackMapReader::CHOP_FRAME_END) {
       stackmap_p += 2;
     }
 
     // same_frame_extended {
-    //   u1 frame_type = SAME_FRAME_EXTENDED; /* 251*/
+    //   u1 frame_type = SAME_EXTENDED; /* 251 */
     //   u2 offset_delta;
     // }
-    else if (frame_type == 251) {
+    else if (frame_type == StackMapReader::SAME_FRAME_EXTENDED) {
       stackmap_p += 2;
     }
 
     // append_frame {
     //   u1 frame_type = APPEND; /* 252-254 */
     //   u2 offset_delta;
-    //   verification_type_info locals[frame_type - 251];
+    //   verification_type_info locals[frame_type - SAME_EXTENDED];
     // }
-    else if (frame_type >= 252 && frame_type <= 254) {
+    else if (frame_type >= StackMapReader::APPEND_FRAME_START &&
+             frame_type <= StackMapReader::APPEND_FRAME_END) {
       assert(stackmap_p + 2 <= stackmap_end,
         "no room for offset_delta");
       stackmap_p += 2;
-      u1 len = frame_type - 251;
+      u1 len = frame_type - StackMapReader::APPEND_FRAME_START + 1;
       for (u1 i = 0; i < len; i++) {
         rewrite_cp_refs_in_verification_type_info(stackmap_p, stackmap_end,
           calc_number_of_entries, frame_type);
@@ -3336,7 +3346,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
     //   u2 number_of_stack_items;
     //   verification_type_info stack[number_of_stack_items];
     // }
-    else if (frame_type == 255) {
+    else if (frame_type == StackMapReader::FULL_FRAME) {
       assert(stackmap_p + 2 + 2 <= stackmap_end,
         "no room for smallest full_frame");
       stackmap_p += 2;
@@ -3784,6 +3794,13 @@ void VM_RedefineClasses::AdjustAndCleanMetadata::do_klass(Klass* k) {
 void VM_RedefineClasses::update_jmethod_ids() {
   for (int j = 0; j < _matching_methods_length; ++j) {
     Method* old_method = _matching_old_methods[j];
+    // The method_idnum should be within the range of 1..number-of-methods
+    // until incremented later for obsolete methods.
+    // The increment is so if a jmethodID is created for an old obsolete method
+    // it gets a new jmethodID cache slot in the InstanceKlass.
+    // They're cleaned out later when all methods of the previous version are purged.
+    assert(old_method->method_idnum() <= _old_methods->length(),
+           "shouldn't be incremented yet for obsolete methods");
     jmethodID jmid = old_method->find_jmethod_id_or_null();
     if (jmid != nullptr) {
       // There is a jmethodID, change it to point to the new method
@@ -4394,7 +4411,7 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
   // keep track of previous versions of this class
   the_class->add_previous_version(scratch_class, emcp_method_count);
 
-  JFR_ONLY(ON_KLASS_REDEFINITION(the_class, current);)
+  JFR_ONLY(Jfr::on_klass_redefinition(the_class, scratch_class);)
 
   _timer_rsc_phase1.stop();
   if (log_is_enabled(Info, redefine, class, timer)) {
@@ -4421,9 +4438,12 @@ void VM_RedefineClasses::redefine_single_class(Thread* current, jclass the_jclas
     ResourceMark rm(current);
     // increment the classRedefinedCount field in the_class and in any
     // direct and indirect subclasses of the_class
+    size_t avail_mem = 0;
+    // Return value ignored - defaulting to 0 on failure.
+    (void)os::available_memory(avail_mem);
     log_info(redefine, class, load)
-      ("redefined name=%s, count=%d (avail_mem=" UINT64_FORMAT "K)",
-       the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), os::available_memory() >> 10);
+      ("redefined name=%s, count=%d (avail_mem=%zuK)",
+       the_class->external_name(), java_lang_Class::classRedefinedCount(the_class->java_mirror()), avail_mem >> 10);
     Events::log_redefinition(current, "redefined class name=%s, count=%d",
                              the_class->external_name(),
                              java_lang_Class::classRedefinedCount(the_class->java_mirror()));

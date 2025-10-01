@@ -27,6 +27,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/modules.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -69,7 +70,7 @@ ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
 
-typedef ResourceHashtable<
+typedef HashTable<
       size_t,    // offset of a filler from ArchiveHeapWriter::buffer_bottom()
       size_t,    // size of this filler (in bytes)
       127,       // prime number
@@ -159,6 +160,44 @@ oop ArchiveHeapWriter::buffered_addr_to_source_obj(address buffered_addr) {
   } else {
     return nullptr;
   }
+}
+
+Klass* ArchiveHeapWriter::real_klass_of_buffered_oop(address buffered_addr) {
+  oop p = buffered_addr_to_source_obj(buffered_addr);
+  if (p != nullptr) {
+    return p->klass();
+  } else if (get_filler_size_at(buffered_addr) > 0) {
+    return Universe::fillerArrayKlass();
+  } else {
+    // This is one of the root segments
+    return Universe::objectArrayKlass();
+  }
+}
+
+size_t ArchiveHeapWriter::size_of_buffered_oop(address buffered_addr) {
+  oop p = buffered_addr_to_source_obj(buffered_addr);
+  if (p != nullptr) {
+    return p->size();
+  }
+
+  size_t nbytes = get_filler_size_at(buffered_addr);
+  if (nbytes > 0) {
+    assert((nbytes % BytesPerWord) == 0, "should be aligned");
+    return nbytes / BytesPerWord;
+  }
+
+  address hrs = buffer_bottom();
+  for (size_t seg_idx = 0; seg_idx < _heap_root_segments.count(); seg_idx++) {
+    nbytes = _heap_root_segments.size_in_bytes(seg_idx);
+    if (hrs == buffered_addr) {
+      assert((nbytes % BytesPerWord) == 0, "should be aligned");
+      return nbytes / BytesPerWord;
+    }
+    hrs += nbytes;
+  }
+
+  ShouldNotReachHere();
+  return 0;
 }
 
 address ArchiveHeapWriter::buffered_addr_to_requested_addr(address buffered_addr) {
@@ -543,6 +582,10 @@ template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_
   oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
   if (source_referent != nullptr) {
     if (java_lang_Class::is_instance(source_referent)) {
+      Klass* k = java_lang_Class::as_Klass(source_referent);
+      if (RegeneratedClasses::has_been_regenerated(k)) {
+        source_referent = RegeneratedClasses::get_regenerated_object(k)->java_mirror();
+      }
       // When the source object points to a "real" mirror, the buffered object should point
       // to the "scratch" mirror, which has all unarchivable fields scrubbed (to be reinstated
       // at run time).
@@ -704,27 +747,6 @@ void ArchiveHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
   }
 }
 
-// Do we have a jlong/jint field that's actually a pointer to a MetaspaceObj?
-bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset) {
-  HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
-  assert(p != nullptr, "must be");
-
-  // requested_field_addr = the address of this field in the requested space
-  oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
-  Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);
-  assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
-
-  BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
-  // Leading zeros have been removed so some addresses may not be in the ptrmap
-  size_t start_pos = FileMapInfo::current_info()->heap_ptrmap_start_pos();
-  if (idx < start_pos) {
-    return false;
-  } else {
-    idx -= start_pos;
-  }
-  return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
-}
-
 void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
   int num_non_null_ptrs = 0;
   Metadata** bottom = (Metadata**) _requested_bottom;
@@ -754,7 +776,12 @@ void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
     Metadata** buffered_field_addr = requested_addr_to_buffered_addr(requested_field_addr);
     Metadata* native_ptr = *buffered_field_addr;
     guarantee(native_ptr != nullptr, "sanity");
-    guarantee(ArchiveBuilder::current()->has_been_buffered((address)native_ptr),
+
+    if (RegeneratedClasses::has_been_regenerated(native_ptr)) {
+      native_ptr = RegeneratedClasses::get_regenerated_object(native_ptr);
+    }
+
+    guarantee(ArchiveBuilder::current()->has_been_archived((address)native_ptr),
               "Metadata %p should have been archived", native_ptr);
 
     address buffered_native_ptr = ArchiveBuilder::current()->get_buffered_addr((address)native_ptr);

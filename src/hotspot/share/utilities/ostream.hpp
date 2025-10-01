@@ -165,6 +165,20 @@ class outputStream : public CHeapObjBase {
 
    void dec_cr() { dec(); cr(); }
    void inc_cr() { inc(); cr(); }
+
+   // Append strings returned by gen, separating each with separator.
+   // Stops when gen returns null.
+   template <typename Generator>
+   void join(Generator gen, const char* separator) {
+     bool first = true;
+     const char* str = gen();
+     while (str != nullptr) {
+       const char* sep = first ? "" : separator;
+       print("%s%s", sep, str);
+       first = false;
+       str = gen();
+     }
+   }
 };
 
 // standard output
@@ -182,7 +196,7 @@ class StreamIndentor {
   NONCOPYABLE(StreamIndentor);
 
  public:
-  StreamIndentor(outputStream* os, int indentation) :
+  StreamIndentor(outputStream* os, int indentation = 2) :
     _stream(os),
     _indentation(indentation),
     _old_autoindent(_stream->set_autoindent(true)) {

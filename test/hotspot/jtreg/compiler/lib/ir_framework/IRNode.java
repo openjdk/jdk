@@ -99,11 +99,9 @@ public class IRNode {
 
     private static final String POSTFIX = "#_";
 
-    private static final String START = "(\\d+(\\s){2}(";
-    private static final String MID = ".*)+(\\s){2}===.*";
-    private static final String END = ")";
-    private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
-    private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
+    public static final String START = "(\\d+(\\s){2}(";
+    public static final String MID = ".*)+(\\s){2}===.*";
+    public static final String END = ")";
 
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
@@ -585,6 +583,21 @@ public class IRNode {
     public static final String CMP_P = PREFIX + "CMP_P" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_P, "CmpP");
+    }
+
+    public static final String CMP_LT_MASK = PREFIX + "CMP_LT_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CMP_LT_MASK, "CmpLTMask");
+    }
+
+    public static final String ROUND_F = PREFIX + "ROUND_F" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROUND_F, "RoundF");
+    }
+
+    public static final String ROUND_D = PREFIX + "ROUND_D" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(ROUND_D, "RoundD");
     }
 
     public static final String COMPRESS_BITS = PREFIX + "COMPRESS_BITS" + POSTFIX;
@@ -1389,6 +1402,21 @@ public class IRNode {
         vectorNode(UMAX_VL, "UMaxV", TYPE_LONG);
     }
 
+    public static final String MASK_ALL = PREFIX + "MASK_ALL" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MASK_ALL, "MaskAll");
+    }
+
+    public static final String VECTOR_LONG_TO_MASK = PREFIX + "VECTOR_LONG_TO_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_LONG_TO_MASK, "VectorLongToMask");
+    }
+
+    public static final String VECTOR_MASK_TO_LONG = PREFIX + "VECTOR_MASK_TO_LONG" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTOR_MASK_TO_LONG, "VectorMaskToLong");
+    }
+
     // Can only be used if avx512_vnni is available.
     public static final String MUL_ADD_VS2VI_VNNI = PREFIX + "MUL_ADD_VS2VI_VNNI" + POSTFIX;
     static {
@@ -1483,16 +1511,6 @@ public class IRNode {
     public static final String MAX_REDUCTION_V = PREFIX + "MAX_REDUCTION_V" + POSTFIX;
     static {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
-    }
-
-    public static final String NEG_F = PREFIX + "NEG_F" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(NEG_F, "NegF");
-    }
-
-    public static final String NEG_D = PREFIX + "NEG_D" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(NEG_D, "NegD");
     }
 
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
@@ -1663,6 +1681,11 @@ public class IRNode {
     public static final String RANGE_CHECK_TRAP = PREFIX + "RANGE_CHECK_TRAP" + POSTFIX;
     static {
         trapNodes(RANGE_CHECK_TRAP, "range_check");
+    }
+
+    public static final String SHORT_RUNNING_LOOP_TRAP = PREFIX + "SHORT_RUNNING_LOOP_TRAP" + POSTFIX;
+    static {
+        trapNodes(SHORT_RUNNING_LOOP_TRAP, "short_running_loop");
     }
 
     public static final String REINTERPRET_S2HF = PREFIX + "REINTERPRET_S2HF" + POSTFIX;
@@ -2843,6 +2866,46 @@ public class IRNode {
         fromBeforeRemoveUselessToFinalCode(BLACKHOLE, "Blackhole");
     }
 
+    public static final String SELECT_FROM_TWO_VECTOR_VB = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VB" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VB, "SelectFromTwoVector", TYPE_BYTE);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VS = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VS" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VS, "SelectFromTwoVector", TYPE_SHORT);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VI = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VI" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VI, "SelectFromTwoVector", TYPE_INT);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VF = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VF" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VF, "SelectFromTwoVector", TYPE_FLOAT);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VD = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VD" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VD, "SelectFromTwoVector", TYPE_DOUBLE);
+    }
+
+    public static final String SELECT_FROM_TWO_VECTOR_VL = VECTOR_PREFIX + "SELECT_FROM_TWO_VECTOR_VL" + POSTFIX;
+    static {
+        vectorNode(SELECT_FROM_TWO_VECTOR_VL, "SelectFromTwoVector", TYPE_LONG);
+    }
+
+    public static final String REPLICATE_HF = PREFIX + "REPLICATE_HF" + POSTFIX;
+    static {
+        machOnlyNameRegex(REPLICATE_HF, "replicateHF");
+    }
+
+    public static final String REPLICATE_HF_IMM8 = PREFIX + "REPLICATE_HF_IMM8" + POSTFIX;
+    static {
+        machOnlyNameRegex(REPLICATE_HF_IMM8, "replicateHF_imm8_gt128b");
+    }
+
     /*
      * Utility methods to set up IR_NODE_MAPPINGS.
      */
@@ -2969,13 +3032,25 @@ public class IRNode {
                                                                           CompilePhase.AFTER_LOOP_OPTS));
     }
 
+    // Typename in load/store have the structure:
+    // @fully/qualified/package/name/to/TheClass+12 *
+    // And variation:
+    // - after @, we can have "stable:" or other labels, with optional space after ':'
+    // - the class can actually be a subclass, with $ separator (and it must be ok to give only the deepest one
+    // - after the class name, we can have a comma-separated list of implemented interfaces enclosed in parentheses
+    // - before the offset, we can have something like ":NotNull", either way, seeing "+" or ":" means the end of the type
+    // Worst case, it can be something like:
+    // @bla: bli:a/b/c$d$e (f/g,h/i/j):NotNull+24 *
+    private static final String LOAD_STORE_PREFIX = "@(\\w+: ?)*[\\w/\\$]*\\b";
+    private static final String LOAD_STORE_SUFFIX = "( \\([^\\)]+\\))?(:|\\+)\\S* \\*";
+
     private static void loadOfNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + LOAD_OF_CLASS_POSTFIX;
+        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 
     private static void storeOfNodes(String irNodePlaceholder, String irNodeRegex) {
-        String regex = START + irNodeRegex + MID + "@\\S*" + IS_REPLACED + STORE_OF_CLASS_POSTFIX;
+        String regex = START + irNodeRegex + MID + LOAD_STORE_PREFIX + IS_REPLACED + LOAD_STORE_SUFFIX + END;
         beforeMatching(irNodePlaceholder, regex);
     }
 

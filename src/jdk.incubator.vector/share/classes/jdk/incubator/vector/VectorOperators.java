@@ -577,7 +577,7 @@ public abstract class VectorOperators {
     /** Produce saturating unsigned {@code a+b}.  Integral only.
      * @see VectorMath#addSaturatingUnsigned(int, int)
      */
-    public static final Binary SUADD = binary("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP);
+    public static final Associative SUADD = assoc("SUADD", "+", VectorSupport.VECTOR_OP_SUADD, VO_NOFP+VO_ASSOC);
     /** Produce saturating {@code a-b}.  Integral only.
      * @see VectorMath#subSaturating(int, int)
      */

@@ -44,16 +44,16 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Provides default implementations of {@link ExecutorService}
- * execution methods. This class implements the {@code submit},
- * {@code invokeAny} and {@code invokeAll} methods using a
- * {@link RunnableFuture} returned by {@code newTaskFor}, which defaults
- * to the {@link FutureTask} class provided in this package.  For example,
- * the implementation of {@code submit(Runnable)} creates an
- * associated {@code RunnableFuture} that is executed and
- * returned. Subclasses may override the {@code newTaskFor} methods
- * to return {@code RunnableFuture} implementations other than
- * {@code FutureTask}.
+ * Provides default implementations of {@link ExecutorService} methods
+ * other than {@link Executor#execute}. This class implements the {@code
+ * submit}, {@code invokeAny} and {@code invokeAll} methods using a
+ * {@link RunnableFuture} returned by {@code newTaskFor}, which
+ * defaults to the {@link FutureTask} class provided in this package.
+ * For example, the implementation of {@code submit(Runnable)} creates
+ * an associated {@code RunnableFuture} that is executed and
+ * returned. Subclasses may override the {@code newTaskFor} methods to
+ * return {@code RunnableFuture} implementations other than {@code
+ * FutureTask}.
  *
  * <p><b>Extension example.</b> Here is a sketch of a class
  * that customizes {@link ThreadPoolExecutor} to use

@@ -44,7 +44,6 @@
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiCodeBlobEvents.hpp"
-#include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -61,7 +60,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -675,6 +673,13 @@ void JvmtiExport::post_early_vm_start() {
 void JvmtiExport::post_vm_start() {
   EVT_TRIG_TRACE(JVMTI_EVENT_VM_START, ("Trg VM start event triggered" ));
 
+  // The JvmtiThreadState is incomplete if initialized in post_early_vm_start
+  // before classes are initialized. It should be updated now.
+  JavaThread *thread  = JavaThread::current();
+  if (thread->jvmti_thread_state() != nullptr) {
+    thread->jvmti_thread_state()->update_thread_oop_during_vm_start();
+  }
+
   // can now enable some events
   JvmtiEventController::vm_start();
 
@@ -684,7 +689,6 @@ void JvmtiExport::post_vm_start() {
     if (!env->early_vmstart_env() && env->is_enabled(JVMTI_EVENT_VM_START)) {
       EVT_TRACE(JVMTI_EVENT_VM_START, ("Evt VM start event sent" ));
 
-      JavaThread *thread  = JavaThread::current();
       JvmtiThreadEventMark jem(thread);
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMStart callback = env->callbacks()->VMStart;
@@ -859,47 +863,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   return JVMTI_ERROR_NONE;
 }
 
-// Convert an oop to a JavaThread found on the specified ThreadsList.
-// The ThreadsListHandle in the caller "protects" the returned
-// JavaThread *.
-//
-// On success, *jt_pp is set to the converted JavaThread * and
-// JVMTI_ERROR_NONE is returned. On error, returns various
-// JVMTI_ERROR_* values.
-//
-jvmtiError
-JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
-                                  JavaThread ** jt_pp) {
-  assert(t_list != nullptr, "must have a ThreadsList");
-  assert(thread_oop != nullptr, "must have an oop");
-  assert(jt_pp != nullptr, "must have a return JavaThread pointer");
-
-  if (!thread_oop->is_a(vmClasses::Thread_klass())) {
-    // The oop is not a java.lang.Thread.
-    return JVMTI_ERROR_INVALID_THREAD;
-  }
-  // Looks like a java.lang.Thread oop at this point.
-
-  JavaThread * java_thread = java_lang_Thread::thread(thread_oop);
-  if (java_thread == nullptr) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-  // Looks like a live JavaThread at this point.
-
-  if (!t_list->includes(java_thread)) {
-    // Not on the JavaThreads list so it is not alive.
-    return JVMTI_ERROR_THREAD_NOT_ALIVE;
-  }
-
-  // Return a live JavaThread that is "protected" by the
-  // ThreadsListHandle in the caller.
-  *jt_pp = java_thread;
-
-  return JVMTI_ERROR_NONE;
-}
-
 class JvmtiClassFileLoadHookPoster : public StackObj {
  private:
   Symbol*            _h_name;
@@ -943,12 +906,12 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
         ModuleEntry* module_entry = InstanceKlass::cast(klass)->module();
         assert(module_entry != nullptr, "module_entry should always be set");
         if (module_entry->is_named() &&
-            module_entry->module() != nullptr &&
+            module_entry->module_oop() != nullptr &&
             !module_entry->has_default_read_edges()) {
           if (!module_entry->set_has_default_read_edges()) {
             // We won a potential race.
             // Add read edges to the unnamed modules of the bootstrap and app class loaders
-            Handle class_module(_thread, module_entry->module()); // Obtain j.l.r.Module
+            Handle class_module(_thread, module_entry->module_oop()); // Obtain j.l.r.Module
             JvmtiExport::add_default_read_edges(class_module, _thread);
           }
         }
@@ -1873,25 +1836,20 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
     return;
   }
 
-  // return a flag when a method terminates by throwing an exception
-  // i.e. if an exception is thrown and it's not caught by the current method
-  bool exception_exit = state->is_exception_detected() && !state->is_exception_caught();
   Handle result;
   jvalue value;
   value.j = 0L;
 
   if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
-    // if the method hasn't been popped because of an exception then we populate
-    // the return_value parameter for the callback. At this point we only have
-    // the address of a "raw result" and we just call into the interpreter to
-    // convert this into a jvalue.
-    if (!exception_exit) {
-      oop oop_result;
-      BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
-      if (is_reference_type(type)) {
-        result = Handle(thread, oop_result);
-        value.l = JNIHandles::make_local(thread, result());
-      }
+    // At this point we only have the address of a "raw result" and
+    // we just call into the interpreter to convert this into a jvalue.
+    oop oop_result;
+    BasicType type = current_frame.interpreter_frame_result(&oop_result, &value);
+    assert(type == T_VOID || current_frame.interpreter_frame_expression_stack_size() > 0,
+           "Stack shouldn't be empty");
+    if (is_reference_type(type)) {
+      result = Handle(thread, oop_result);
+      value.l = JNIHandles::make_local(thread, result());
     }
   }
 
@@ -1899,12 +1857,10 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   // depth 0 as it is already late in the method exiting dance.
   state->set_top_frame_is_exiting();
 
-  // Deferred transition to VM, so we can stash away the return oop before GC
-  // Note that this transition is not needed when throwing an exception, because
-  // there is no oop to retain.
+  // Deferred transition to VM, so we can stash away the return oop before GC.
   JavaThread* current = thread; // for JRT_BLOCK
   JRT_BLOCK
-    post_method_exit_inner(thread, mh, state, exception_exit, current_frame, value);
+    post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
   JRT_BLOCK_END
 
   // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava desctructor. Now it is safe to allow

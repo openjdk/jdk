@@ -60,6 +60,8 @@ import java.security.cert.X509CRLSelector;
 import javax.security.auth.x500.X500Principal;
 import java.util.Base64;
 
+import jdk.internal.util.StaticProperty;
+
 import sun.security.pkcs12.PKCS12KeyStore;
 import sun.security.provider.certpath.CertPathConstraintsParameters;
 import sun.security.util.*;
@@ -1560,9 +1562,6 @@ public final class Main {
 
     private void doGenCRL(PrintStream out)
             throws Exception {
-        if (ids == null) {
-            throw new Exception("Must provide -id when -gencrl");
-        }
         Certificate signerCert = keyStore.getCertificate(alias);
         byte[] encoded = signerCert.getEncoded();
         X509CertImpl signerCertImpl = new X509CertImpl(encoded);
@@ -3549,7 +3548,7 @@ public final class Main {
 
     private static BufferedReader stdinAwareReader(InputStream in) {
         InputStreamReader reader = in == System.in
-                ? new InputStreamReader(in, Charset.forName(System.getProperty("stdin.encoding"), Charset.defaultCharset()))
+                ? new InputStreamReader(in, Charset.forName(StaticProperty.stdinEncoding(), Charset.defaultCharset()))
                 : new InputStreamReader(in);
         return new BufferedReader(reader);
     }
