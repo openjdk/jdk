@@ -509,6 +509,14 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
     PrintProperties print_node(this);
     print_node.print_node_properties(node, C);
 
+    if (node->is_Proj()) {
+      print_prop("con", (int)node->as_Proj()->_con);
+    }
+
+    if (node->is_Mach()) {
+      print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
+    }
+
     if (node->is_CountedLoop()) {
       print_loop_kind(node->as_CountedLoop());
     }
@@ -1122,8 +1130,6 @@ void PrintProperties::print_node_properties(Node* node, Compile* C){
     print_property(!(C->matcher()->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
     print_property((C->matcher()->find_old_node(node) != nullptr), "old_node_idx", C->matcher()->find_old_node(node)->_idx);
   }
-  print_property(node->is_Proj(), "con", (int)node->as_Proj()->_con);
-  print_property(node->is_Mach(), "idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
 }
 
 void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
