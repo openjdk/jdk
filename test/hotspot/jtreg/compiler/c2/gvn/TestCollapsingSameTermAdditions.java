@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2;
+package compiler.c2.gvn;
 
 import compiler.lib.generators.Generators;
 import compiler.lib.generators.RestrictableGenerator;
@@ -35,11 +35,11 @@ import java.util.Random;
 /*
  * @test
  * @bug 8325495 8347555
- * @summary C2 should optimize for series of Add of unique value. e.g., a + a + ... + a => a*n
+ * @summary C2 should optimize addition of the same terms by collapsing them into one multiplication.
  * @library /test/lib /
- * @run driver compiler.c2.TestSerialAdditions
+ * @run driver compiler.c2.gvn.TestCollapsingSameTermAdditions
  */
-public class TestSerialAdditions {
+public class TestCollapsingSameTermAdditions {
     private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
     private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
 

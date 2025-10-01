@@ -57,8 +57,7 @@ class AddNode : public Node {
     }
   };
 
-  Node* convert_serial_additions(PhaseGVN* phase, BasicType bt);
-  static Multiplication find_serial_addition_patterns(const Node* lhs, const Node* rhs, BasicType bt);
+  static Multiplication find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt);
   static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
   static Multiplication find_simple_lshift_pattern(const Node* n, BasicType bt);
   static Multiplication find_simple_multiplication_pattern(const Node* n, BasicType bt);
@@ -77,6 +76,7 @@ class AddNode : public Node {
   // and flatten expressions (so that 1+x+2 becomes x+3).
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
+  Node* Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt);
 
   // Compute a new Type for this node.  Basically we just do the pre-check,
   // then call the virtual add() to set the type.
