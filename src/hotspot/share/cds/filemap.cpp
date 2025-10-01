@@ -1039,7 +1039,7 @@ size_t FileMapInfo::write_mapped_heap_region(ArchiveMappedHeapInfo* heap_info) {
 size_t FileMapInfo::write_streamed_heap_region(ArchiveStreamedHeapInfo* heap_info) {
   char* buffer_start = heap_info->buffer_start();
   size_t buffer_size = heap_info->buffer_byte_size();
-  write_region(AOTMetaspace::hp, buffer_start, buffer_size, false, false);
+  write_region(AOTMetaspace::hp, buffer_start, buffer_size, true, false);
   header()->set_streamed_heap_header(heap_info->create_header());
   return buffer_size;
 }
