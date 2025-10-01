@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8217375 8260286 8267319
+ * @bug 8217375 8260286 8267319 8353749
  * @summary This test is used to verify the compatibility of jarsigner across
  *     different JDK releases. It also can be used to check jar signing (w/
  *     and w/o TSA) and to verify some specific signing and digest algorithms.
@@ -850,6 +850,9 @@ public class Compatibility {
             if (Test.CERTIFICATE_SELF_SIGNED.equals(line)) continue;
             if (Test.HAS_EXPIRED_CERT_VERIFYING_WARNING.equals(line)
                     && signItem.certInfo.expired) continue;
+
+            if (line.contains(Test.OUTDATED_KEYSTORE_WARNING1)) continue;
+            if (line.contains(Test.OUTDATED_KEYSTORE_WARNING2)) continue;
             System.out.println("verifyingStatus: unexpected line: " + line);
             return Status.ERROR; // treat unexpected warnings as error
         }

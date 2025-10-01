@@ -829,6 +829,19 @@ public class KeyStore {
         return (provider == null) ? "(no provider)" : provider.getName();
     }
 
+    private static void outdatedKeyStoreLog(String type) {
+        if (type != null && kdebug != null &&
+                (type.equalsIgnoreCase("JKS") ||
+                type.equalsIgnoreCase("JCEKS"))) {
+            kdebug.println("WARNING: " + type.toUpperCase(Locale.ROOT) +
+                    " uses outdated cryptographic algorithm and" +
+                    " will be removed in a future release." +
+                    " Migrate to PKCS12 using:\n" +
+                    "keytool -importkeystore -srckeystore <keystore>" +
+                    " -destkeystore <keystore> -deststoretype pkcs12");
+        }
+    }
+
     /**
      * Returns a {@code KeyStore} object of the specified type.
      *
@@ -886,6 +899,7 @@ public class KeyStore {
 
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", (String)null);
+            outdatedKeyStoreLog(type);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new KeyStoreException(type + " not found", e);
@@ -951,6 +965,7 @@ public class KeyStore {
 
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
+            outdatedKeyStoreLog(type);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
         } catch (NoSuchAlgorithmException nsae) {
             throw new KeyStoreException(type + " not found", nsae);
@@ -1012,6 +1027,7 @@ public class KeyStore {
 
         try {
             Object[] objs = Security.getImpl(type, "KeyStore", provider);
+            outdatedKeyStoreLog(type);
             return new KeyStore((KeyStoreSpi)objs[0], (Provider)objs[1], type);
         } catch (NoSuchAlgorithmException nsae) {
             throw new KeyStoreException(type + " not found", nsae);
@@ -1891,6 +1907,8 @@ public class KeyStore {
                     keystore.keyStoreSpi.engineLoad(dataStream, param);
                     keystore.initialized = true;
                 }
+
+                outdatedKeyStoreLog(keystore.getType());
                 return keystore;
             }
         }
