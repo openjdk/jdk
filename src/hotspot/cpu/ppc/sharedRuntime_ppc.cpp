@@ -1639,7 +1639,6 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
   assert_different_registers(reg_cont_obj, reg_flags);
   Register zero = R8_ARG6;
   Register tmp2 = R9_ARG7;
-  Register tmp3 = R10_ARG8;
 
   DEBUG_ONLY(__ block_comment("fill {"));
 #ifdef ASSERT
@@ -1678,7 +1677,6 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 static void continuation_enter_cleanup(MacroAssembler* masm) {
   Register tmp1 = R8_ARG6;
   Register tmp2 = R9_ARG7;
-  Register tmp3 = R10_ARG8;
 
 #ifdef ASSERT
   __ block_comment("clean {");
@@ -1689,8 +1687,8 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ ld_ptr(tmp1, ContinuationEntry::parent_cont_fastpath_offset(), R1_SP);
   __ st_ptr(tmp1, JavaThread::cont_fastpath_offset(), R16_thread);
-  __ ld_ptr(tmp3, ContinuationEntry::parent_offset(), R1_SP);
-  __ st_ptr(tmp3, JavaThread::cont_entry_offset(), R16_thread);
+  __ ld_ptr(tmp2, ContinuationEntry::parent_offset(), R1_SP);
+  __ st_ptr(tmp2, JavaThread::cont_entry_offset(), R16_thread);
   DEBUG_ONLY(__ block_comment("} clean"));
 }
 

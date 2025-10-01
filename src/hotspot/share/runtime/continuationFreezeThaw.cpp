@@ -1739,7 +1739,7 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
   if (entry->is_pinned()) {
     log_develop_debug(continuations)("PINNED due to critical section");
     verify_continuation(cont.continuation());
-    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    const freeze_result res = freeze_pinned_cs;
     if (!preempt) {
       JFR_ONLY(current->set_last_freeze_fail_result(res);)
     }
