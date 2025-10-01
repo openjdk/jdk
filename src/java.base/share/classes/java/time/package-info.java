@@ -168,7 +168,7 @@
  * The "@throws {@link java.lang.NullPointerException}" is not explicitly documented in each method.
  * </p>
  * <p>
- * All calculations check for numeric overflow and throw either an {@link java.lang.ArithmeticException}
+ * All calculations should check for numeric overflow and throw either an {@link java.lang.ArithmeticException}
  * or a {@link java.time.DateTimeException}.
  * </p>
  *
