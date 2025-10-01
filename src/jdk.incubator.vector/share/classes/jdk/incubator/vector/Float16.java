@@ -733,7 +733,7 @@ public final class Float16
     public static boolean isNaN(Float16 f16) {
         final short bits = float16ToRawShortBits(f16);
         // A NaN value has all ones in its exponent and a non-zero significand
-        return ((bits & EXP_BIT_MASK) == 0x7c00 && (bits & SIGNIF_BIT_MASK) != 0);
+        return ((bits & EXP_BIT_MASK) == EXP_BIT_MASK && (bits & SIGNIF_BIT_MASK) != 0);
     }
 
     /**
