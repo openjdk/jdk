@@ -33,7 +33,7 @@
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/basicLock.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/globals.hpp"
@@ -70,26 +70,26 @@ class ObjectMonitorDeflationLogging;
 void MonitorList::add(ObjectMonitor* m) {
   ObjectMonitor* head;
   do {
-    head = Atomic::load(&_head);
+    head = AtomicAccess::load(&_head);
     m->set_next_om(head);
-  } while (Atomic::cmpxchg(&_head, head, m) != head);
+  } while (AtomicAccess::cmpxchg(&_head, head, m) != head);
 
-  size_t count = Atomic::add(&_count, 1u, memory_order_relaxed);
+  size_t count = AtomicAccess::add(&_count, 1u, memory_order_relaxed);
   size_t old_max;
   do {
-    old_max = Atomic::load(&_max);
+    old_max = AtomicAccess::load(&_max);
     if (count <= old_max) {
       break;
     }
-  } while (Atomic::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
+  } while (AtomicAccess::cmpxchg(&_max, old_max, count, memory_order_relaxed) != old_max);
 }
 
 size_t MonitorList::count() const {
-  return Atomic::load(&_count);
+  return AtomicAccess::load(&_count);
 }
 
 size_t MonitorList::max() const {
-  return Atomic::load(&_max);
+  return AtomicAccess::load(&_max);
 }
 
 class ObjectMonitorDeflationSafepointer : public StackObj {
@@ -110,7 +110,7 @@ size_t MonitorList::unlink_deflated(size_t deflated_count,
                                     ObjectMonitorDeflationSafepointer* safepointer) {
   size_t unlinked_count = 0;
   ObjectMonitor* prev = nullptr;
-  ObjectMonitor* m = Atomic::load_acquire(&_head);
+  ObjectMonitor* m = AtomicAccess::load_acquire(&_head);
 
   while (m != nullptr) {
     if (m->is_being_async_deflated()) {
@@ -131,7 +131,7 @@ size_t MonitorList::unlink_deflated(size_t deflated_count,
           // Reached the max batch, so bail out of the gathering loop.
           break;
         }
-        if (prev == nullptr && Atomic::load(&_head) != m) {
+        if (prev == nullptr && AtomicAccess::load(&_head) != m) {
           // Current batch used to be at head, but it is not at head anymore.
           // Bail out and figure out where we currently are. This avoids long
           // walks searching for new prev during unlink under heavy list inserts.
@@ -143,7 +143,7 @@ size_t MonitorList::unlink_deflated(size_t deflated_count,
       if (prev == nullptr) {
         // The current batch is the first batch, so there is a chance that it starts at head.
         // Optimistically assume no inserts happened, and try to unlink the entire batch from the head.
-        ObjectMonitor* prev_head = Atomic::cmpxchg(&_head, m, next);
+        ObjectMonitor* prev_head = AtomicAccess::cmpxchg(&_head, m, next);
         if (prev_head != m) {
           // Something must have updated the head. Figure out the actual prev for this batch.
           for (ObjectMonitor* n = prev_head; n != m; n = n->next_om()) {
@@ -155,7 +155,7 @@ size_t MonitorList::unlink_deflated(size_t deflated_count,
       } else {
         // The current batch is preceded by another batch. This guarantees the current batch
         // does not start at head. Unlink the entire current batch without updating the head.
-        assert(Atomic::load(&_head) != m, "Sanity");
+        assert(AtomicAccess::load(&_head) != m, "Sanity");
         prev->set_next_om(next);
       }
 
@@ -180,7 +180,7 @@ size_t MonitorList::unlink_deflated(size_t deflated_count,
   // The code that runs after this unlinking does not expect deflated monitors.
   // Notably, attempting to deflate the already deflated monitor would break.
   {
-    ObjectMonitor* m = Atomic::load_acquire(&_head);
+    ObjectMonitor* m = AtomicAccess::load_acquire(&_head);
     while (m != nullptr) {
       assert(!m->is_being_async_deflated(), "All deflated monitors should be unlinked");
       m = m->next_om();
@@ -188,12 +188,12 @@ size_t MonitorList::unlink_deflated(size_t deflated_count,
   }
 #endif
 
-  Atomic::sub(&_count, unlinked_count);
+  AtomicAccess::sub(&_count, unlinked_count);
   return unlinked_count;
 }
 
 MonitorList::Iterator MonitorList::iterator() const {
-  return Iterator(Atomic::load_acquire(&_head));
+  return Iterator(AtomicAccess::load_acquire(&_head));
 }
 
 ObjectMonitor* MonitorList::Iterator::next() {
@@ -723,7 +723,7 @@ intptr_t ObjectSynchronizer::FastHashCode(Thread* current, oop obj) {
       hash = get_next_hash(current, obj);  // get a new hash
       temp = mark.copy_set_hash(hash)   ;  // merge the hash into header
       assert(temp.is_neutral(), "invariant: header=" INTPTR_FORMAT, temp.value());
-      uintptr_t v = Atomic::cmpxchg(monitor->metadata_addr(), mark.value(), temp.value());
+      uintptr_t v = AtomicAccess::cmpxchg(monitor->metadata_addr(), mark.value(), temp.value());
       test = markWord(v);
       if (test != mark) {
         // The attempt to update the ObjectMonitor's header/dmw field
@@ -928,11 +928,11 @@ size_t ObjectSynchronizer::in_use_list_ceiling() {
 }
 
 void ObjectSynchronizer::dec_in_use_list_ceiling() {
-  Atomic::sub(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
+  AtomicAccess::sub(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
 }
 
 void ObjectSynchronizer::inc_in_use_list_ceiling() {
-  Atomic::add(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
+  AtomicAccess::add(&_in_use_list_ceiling, AvgMonitorsPerThreadEstimate);
 }
 
 void ObjectSynchronizer::set_in_use_list_ceiling(size_t new_value) {
