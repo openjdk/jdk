@@ -35,10 +35,10 @@
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
 
-const ConstraintCastNode::DependencyType ConstraintCastNode::RegularDependency(true, true, "regular dependency"); // not pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::WidenTypeDependency(true, false, "widen type dependency"); // not pinned, doesn't narrow type
-const ConstraintCastNode::DependencyType ConstraintCastNode::StrongDependency(false, true, "strong dependency"); // pinned, narrows type
-const ConstraintCastNode::DependencyType ConstraintCastNode::UnconditionalDependency(false, false, "unconditional dependency"); // pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::FloatingNarrowingDependency(true, true, "regular dependency"); // not pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::FloatingNonNarrowingDependency(true, false, "widen type dependency"); // not pinned, doesn't narrow type
+const ConstraintCastNode::DependencyType ConstraintCastNode::NonFloatingNarrowingDependency(false, true, "strong dependency"); // pinned, narrows type
+const ConstraintCastNode::DependencyType ConstraintCastNode::NonFloatingNonNarrowingDependency(false, false, "unconditional dependency"); // pinned, doesn't narrow type
 
 //=============================================================================
 // If input is already higher or equal to cast type, then this is an identity.

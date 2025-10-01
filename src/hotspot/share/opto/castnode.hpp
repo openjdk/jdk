@@ -74,16 +74,16 @@ protected:
 
     const DependencyType& widen_type_dependency() const {
       if (_depends_only_on_test) {
-        return WidenTypeDependency;
+        return FloatingNonNarrowingDependency;
       }
-      return UnconditionalDependency;
+      return NonFloatingNonNarrowingDependency;
     }
 
     const DependencyType& pinned_dependency() const {
       if (_narrows_type) {
-        return StrongDependency;
+        return NonFloatingNarrowingDependency;
       }
-      return UnconditionalDependency;
+      return NonFloatingNonNarrowingDependency;
     }
 
   private:
@@ -94,10 +94,10 @@ protected:
 
 public:
 
-  static const DependencyType RegularDependency;
-  static const DependencyType WidenTypeDependency;
-  static const DependencyType StrongDependency;
-  static const DependencyType UnconditionalDependency;
+  static const DependencyType FloatingNarrowingDependency;
+  static const DependencyType FloatingNonNarrowingDependency;
+  static const DependencyType NonFloatingNarrowingDependency;
+  static const DependencyType NonFloatingNonNarrowingDependency;
 
   protected:
   const DependencyType& _dependency;
@@ -132,7 +132,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
-  bool carry_dependency() const { return !_dependency.cmp(RegularDependency); }
+  bool carry_dependency() const { return !_dependency.cmp(FloatingNarrowingDependency); }
   virtual bool depends_only_on_test() const { return _dependency.depends_only_on_test(); }
   const DependencyType& dependency() const { return _dependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
@@ -169,7 +169,7 @@ class CastIINode: public ConstraintCastNode {
   virtual uint size_of() const;
 
   public:
-  CastIINode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
+  CastIINode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastII);
@@ -199,7 +199,7 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
-  CastLLNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CastLLNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastLL);
@@ -220,7 +220,7 @@ public:
 
 class CastHHNode: public ConstraintCastNode {
 public:
-  CastHHNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CastHHNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastHH);
@@ -231,7 +231,7 @@ public:
 
 class CastFFNode: public ConstraintCastNode {
 public:
-  CastFFNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CastFFNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastFF);
@@ -242,7 +242,7 @@ public:
 
 class CastDDNode: public ConstraintCastNode {
 public:
-  CastDDNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CastDDNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastDD);
@@ -253,7 +253,7 @@ public:
 
 class CastVVNode: public ConstraintCastNode {
 public:
-  CastVVNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CastVVNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
           : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CastVV);
@@ -267,7 +267,7 @@ public:
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
-  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastPP);
   }
@@ -279,7 +279,7 @@ class CastPPNode: public ConstraintCastNode {
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
 class CheckCastPPNode: public ConstraintCastNode {
   public:
-  CheckCastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = RegularDependency, const TypeTuple* types = nullptr)
+  CheckCastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = FloatingNarrowingDependency, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     assert(ctrl != nullptr, "control must be set");
     init_class_id(Class_CheckCastPP);
