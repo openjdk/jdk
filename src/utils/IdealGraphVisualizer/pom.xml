@@ -113,6 +113,7 @@
     </modules>
     <properties>
         <netbeans.version>RELEASE270</netbeans.version>
+        <nashorn.version>15.7</nashorn.version>
         <swinglayouts.version>1.0.2</swinglayouts.version>
         <nbmmvnplugin.version>3.7</nbmmvnplugin.version>
         <mvncompilerplugin.version>3.12.1</mvncompilerplugin.version>

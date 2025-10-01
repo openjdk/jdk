@@ -91,7 +91,7 @@
         <dependency>
             <groupId>org.openjdk.nashorn</groupId>
             <artifactId>nashorn-core</artifactId>
-            <version>15.3</version>
+            <version>${nashorn.version}</version>
         </dependency>
     </dependencies>
     <build>
