@@ -1002,20 +1002,23 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
     __ bnez(c_rarg2, call_thaw);
 
-    // Make sure the call is patchable
-    __ align(NativeInstruction::instruction_size);
+    address call_pc;
+    {
+      Assembler::IncompressibleScope scope(masm);
+      // Make sure the call is patchable
+      __ align(NativeInstruction::instruction_size);
 
-    const address tr_call = __ reloc_call(resolve);
-    if (tr_call == nullptr) {
-      fatal("CodeCache is full at gen_continuation_enter");
+      call_pc = __ reloc_call(resolve);
+      if (call_pc == nullptr) {
+        fatal("CodeCache is full at gen_continuation_enter");
+      }
+
+      oop_maps->add_gc_map(__ pc() - start, map);
+      __ post_call_nop();
     }
-
-    oop_maps->add_gc_map(__ pc() - start, map);
-    __ post_call_nop();
-
     __ j(exit);
 
-    address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
+    address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1034,26 +1037,36 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   __ bnez(c_rarg2, call_thaw);
 
-  // Make sure the call is patchable
-  __ align(NativeInstruction::instruction_size);
+  address call_pc;
+  {
+    Assembler::IncompressibleScope scope(masm);
+    // Make sure the call is patchable
+    __ align(NativeInstruction::instruction_size);
 
-  const address tr_call = __ reloc_call(resolve);
-  if (tr_call == nullptr) {
-    fatal("CodeCache is full at gen_continuation_enter");
+    call_pc = __ reloc_call(resolve);
+    if (call_pc == nullptr) {
+      fatal("CodeCache is full at gen_continuation_enter");
+    }
+
+    oop_maps->add_gc_map(__ pc() - start, map);
+    __ post_call_nop();
   }
-
-  oop_maps->add_gc_map(__ pc() - start, map);
-  __ post_call_nop();
 
   __ j(exit);
 
   __ bind(call_thaw);
 
-  ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
-  __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
-  oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
-  ContinuationEntry::_return_pc_offset = __ pc() - start;
-  __ post_call_nop();
+  // Post call nops must be natural aligned due to cmodx rules.
+  {
+    Assembler::IncompressibleScope scope(masm);
+    __ align(NativeInstruction::instruction_size);
+
+    ContinuationEntry::_thaw_call_pc_offset = __ pc() - start;
+    __ rt_call(CAST_FROM_FN_PTR(address, StubRoutines::cont_thaw()));
+    oop_maps->add_gc_map(__ pc() - start, map->deep_copy());
+    ContinuationEntry::_return_pc_offset = __ pc() - start;
+    __ post_call_nop();
+  }
 
   __ bind(exit);
   ContinuationEntry::_cleanup_offset = __ pc() - start;
@@ -1082,7 +1095,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ jr(x11); // the exception handler
   }
 
-  address stub = CompiledDirectCall::emit_to_interp_stub(masm, tr_call);
+  address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1115,10 +1128,16 @@ static void gen_continuation_yield(MacroAssembler* masm,
 
   __ mv(c_rarg1, sp);
 
+  // Post call nops must be natural aligned due to cmodx rules.
+  __ align(NativeInstruction::instruction_size);
+
   frame_complete = __ pc() - start;
   address the_pc = __ pc();
 
-  __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
+  {
+    Assembler::IncompressibleScope scope(masm);
+    __ post_call_nop(); // this must be exactly after the pc value that is pushed into the frame info, we use this nop for fast CodeBlob lookup
+  }
 
   __ mv(c_rarg0, xthread);
   __ set_last_Java_frame(sp, fp, the_pc, t0);
