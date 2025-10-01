@@ -202,9 +202,10 @@ public abstract class Process implements Closeable {
      * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
      * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
      * is not available and the process is forcibly terminated.
-     * The {@linkplain #waitFor() waitFor} method SHOULD NOT be called after
-     * {@linkplain #close() close} or after the try-with-resources block exits;
-     * the status returned might be from normal termination or the result of
+     * Calling {@linkplain #waitFor() waitFor} after
+     * {@linkplain #close() close} or after the try-with-resources block exits
+     * can verify that the process has been terminated.
+     * The status returned may be from normal termination or the result of
      * {@link #destroy() destroying the process}.
      * <p>
      * Try-with-resources example to write text to a process, read back the
