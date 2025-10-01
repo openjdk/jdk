@@ -87,7 +87,7 @@ public class TestStylesheet extends JavadocTester {
                     .summary-table > div, .details-table > div {
                         font-size: var(--nav-font-size);
                         line-height: 1.6;
-                        padding: 8px 3px 3px 7px;
+                        padding: 8px 5px 3px 7px;
                         overflow: auto hidden;
                     }""",
                 "@import url('fonts/dejavu.css');",

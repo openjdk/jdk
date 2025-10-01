@@ -28,277 +28,144 @@ ifeq ($(INCLUDE), true)
 
 ################################################################################
 
-GENSRC_VARHANDLES :=
-
-VARHANDLES_GENSRC_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/invoke
-VARHANDLES_SRC_DIR := $(MODULE_SRC)/share/classes/java/lang/invoke
+VARHANDLES_INPUT_DIR := $(MODULE_SRC)/share/classes/java/lang/invoke
+VARHANDLES_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/java/lang/invoke
 
 ################################################################################
 # Setup a rule for generating a VarHandle java class
-# Param 1 - Variable declaration prefix
-# Param 2 - Type with first letter capitalized
+#
+# arg $1: type for this varhandle
 define GenerateVarHandle
+  VARHANDLE_$1_type := $$(strip $$(if $$(filter reference, $1), Object, $1))
+  VARHANDLE_$1_Type := $$(call Conv, $1, Type)
 
-  $1_Type := $2
-
-  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandle$$($1_Type)s.java
-
-  $1_ARGS += -KCAS
-
-  ifneq ($$(findstring $$($1_Type), Byte Short Char Int Long Float Double), )
-    $1_ARGS += -KAtomicAdd
+  $1_KEYS := $$(VARHANDLE_$1_type) CAS
+  ifneq ($$(filter byte short char, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifeq ($$(filter boolean reference, $1),)
+    $1_KEYS += AtomicAdd
+  endif
+  ifeq ($$(filter float double reference, $1),)
+    $1_KEYS += Bitwise
   endif
 
-  ifneq ($$(findstring $$($1_Type), Boolean Byte Short Char Int Long), )
-    $1_ARGS += -KBitwise
-  endif
-
-  ifneq ($$(findstring $$($1_Type), Byte Short Char), )
-    $1_ARGS += -KShorterThanInt
-  endif
-
-  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandle.java.template $(BUILD_TOOLS_JDK)
-        ifeq ($$($1_Type), Reference)
-	  $$(eval $1_type := Object)
-        else
-	  $$(eval $1_type := $$$$(shell $(TR) '[:upper:]' '[:lower:]' <<< $$$$($1_Type)))
-        endif
-	$$(call MakeDir, $$(@D))
-	$(RM) $$@
-	$(TOOL_SPP) -nel -K$$($1_type) -Dtype=$$($1_type) -DType=$$($1_Type) \
-	    $$($1_ARGS) -i$$< -o$$@
-
-  GENSRC_VARHANDLES += $$($1_FILENAME)
+  $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_$1, \
+      SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandle.java.template, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandle$$(VARHANDLE_$1_Type)s.java, \
+      INFO := Generating VarHandle class for $1, \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$$(VARHANDLE_$1_type) \
+          Type=$$(VARHANDLE_$1_Type), \
+  ))
+  TARGETS += $$(GEN_VARHANDLE_$1)
 endef
-
-################################################################################
 
 ################################################################################
 # Setup a rule for generating a VarHandleByteArray java class
-# Param 1 - Variable declaration prefix
-# Param 2 - Type with first letter capitalized
+#
+# arg $1: type for this varhandle
 define GenerateVarHandleByteArray
+  VARHANDLE_BYTEARRAY_$1_Type := $$(call Conv, $1, Type)
 
-  $1_Type := $2
-
-  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandleByteArrayAs$$($1_Type)s.java
-
-  ifeq ($$($1_Type), Short)
-    $1_type := short
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
+  $1_KEYS := $1
+  ifneq ($$(filter int long float double, $1),)
+    $1_KEYS += CAS
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter int long, $1),)
+    $1_KEYS += AtomicAdd Bitwise
   endif
 
-  ifeq ($$($1_Type), Char)
-    $1_type := char
-    $1_BoxType := Character
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-  endif
-
-  ifeq ($$($1_Type), Int)
-    $1_type := int
-    $1_BoxType := Integer
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KAtomicAdd
-    $1_ARGS += -KBitwise
-  endif
-
-  ifeq ($$($1_Type), Long)
-    $1_type := long
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KAtomicAdd
-    $1_ARGS += -KBitwise
-  endif
-
-  ifeq ($$($1_Type), Float)
-    $1_type := float
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := int
-    $1_RawType := Int
-    $1_RawBoxType := Integer
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KfloatingPoint
-  endif
-
-  ifeq ($$($1_Type), Double)
-    $1_type := double
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := long
-    $1_RawType := Long
-    $1_RawBoxType := Long
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KfloatingPoint
-  endif
-
-  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleByteArrayView.java.template $(BUILD_TOOLS_JDK)
-	$$(call MakeDir, $$(@D))
-	$(RM) $$@
-	$(TOOL_SPP) -nel -K$$($1_type) \
-	    -Dtype=$$($1_type) -DType=$$($1_Type) -DBoxType=$$($1_BoxType) \
-	    -DrawType=$$($1_rawType) -DRawType=$$($1_RawType) -DRawBoxType=$$($1_RawBoxType) \
-	    $$($1_ARGS) -i$$< -o$$@
-
-  GENSRC_VARHANDLES += $$($1_FILENAME)
+  $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_BYTEARRAY_$1, \
+      SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandleByteArrayView.java.template, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandleByteArrayAs$$(VARHANDLE_BYTEARRAY_$1_Type)s.java, \
+      INFO := Generating VarHandleByteArray class for $1, \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$1 \
+          Type=$$(VARHANDLE_BYTEARRAY_$1_Type) \
+          BoxType=$$(call Conv, $1, Fulltype) \
+          rawType=$$(call Conv, $1, memtype) \
+          RawType=$$(call Conv, $1, Memtype) \
+          RawBoxType=$$(call Conv, $1, FullMemtype), \
+  ))
+  TARGETS += $$(GEN_VARHANDLE_BYTEARRAY_$1)
 endef
 
 ################################################################################
-
-################################################################################
-# Setup a rule for generating a memory segment var handle view class
-# Param 1 - Variable declaration prefix
-# Param 2 - Type with first letter capitalized
+# Setup a rule for generating a VarHandleMemorySegment java class
+#
+# arg $1: type for this varhandle
 define GenerateVarHandleMemorySegment
+  VARHANDLE_SEGMENT_$1_Type := $$(call Conv, $1, Type)
 
-  $1_Type := $2
 
-  $1_FILENAME := $(VARHANDLES_GENSRC_DIR)/VarHandleSegmentAs$$($1_Type)s.java
-
-  ifeq ($$($1_Type), Boolean)
-    $1_type := boolean
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -Kbyte
-    $1_ARGS += -KShorterThanInt
+  $1_KEYS := $1
+  ifneq ($$(filter int long float double, $1),)
+    $1_KEYS += CAS
+  endif
+  ifneq ($$(filter boolean byte, $1),)
+    $1_KEYS += byte
+  endif
+  ifneq ($$(filter float double, $1),)
+    $1_KEYS += floatingPoint
+  endif
+  ifneq ($$(filter boolean byte short char, $1),)
+    $1_KEYS += ShorterThanInt
+  endif
+  ifneq ($$(filter int long, $1),)
+    $1_KEYS += AtomicAdd Bitwise
   endif
 
-  ifeq ($$($1_Type), Byte)
-    $1_type := byte
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -Kbyte
-    $1_ARGS += -KShorterThanInt
-  endif
-
-  ifeq ($$($1_Type), Short)
-    $1_type := short
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -KShorterThanInt
-  endif
-
-  ifeq ($$($1_Type), Char)
-    $1_type := char
-    $1_BoxType := Character
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -KShorterThanInt
-  endif
-
-  ifeq ($$($1_Type), Int)
-    $1_type := int
-    $1_BoxType := Integer
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KAtomicAdd
-    $1_ARGS += -KBitwise
-  endif
-
-  ifeq ($$($1_Type), Long)
-    $1_type := long
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := $$($1_type)
-    $1_RawType := $$($1_Type)
-    $1_RawBoxType := $$($1_BoxType)
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KAtomicAdd
-    $1_ARGS += -KBitwise
-  endif
-
-  ifeq ($$($1_Type), Float)
-    $1_type := float
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := int
-    $1_RawType := Int
-    $1_RawBoxType := Integer
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KfloatingPoint
-  endif
-
-  ifeq ($$($1_Type), Double)
-    $1_type := double
-    $1_BoxType := $$($1_Type)
-
-    $1_rawType := long
-    $1_RawType := Long
-    $1_RawBoxType := Long
-
-    $1_ARGS += -KCAS
-    $1_ARGS += -KfloatingPoint
-  endif
-
-  $$($1_FILENAME): $(VARHANDLES_SRC_DIR)/X-VarHandleSegmentView.java.template $(BUILD_TOOLS_JDK)
-	$$(call MakeDir, $$(@D))
-	$(RM) $$@
-	$(TOOL_SPP) -nel -K$$($1_type) \
-	    -Dtype=$$($1_type) -DType=$$($1_Type) -DBoxType=$$($1_BoxType) \
-	    -DrawType=$$($1_rawType) -DRawType=$$($1_RawType) -DRawBoxType=$$($1_RawBoxType) \
-	    $$($1_ARGS) -i$$< -o$$@
-
-  GENSRC_VARHANDLES += $$($1_FILENAME)
+  $$(eval $$(call SetupStreamPreProcessing, GEN_VARHANDLE_SEGMENT_$1, \
+      SOURCE_FILE := $$(VARHANDLES_INPUT_DIR)/X-VarHandleSegmentView.java.template, \
+      OUTPUT_FILE := $$(VARHANDLES_OUTPUT_DIR)/VarHandleSegmentAs$$(VARHANDLE_SEGMENT_$1_Type)s.java, \
+      INFO := Generating VarHandleSegment class for $1, \
+      SUBST_EMPTY_LINES := false, \
+      KEYS := $$($1_KEYS), \
+      REPLACEMENTS := \
+          type=$1 \
+          Type=$$(VARHANDLE_SEGMENT_$1_Type) \
+          BoxType=$$(call Conv, $1, Fulltype) \
+          rawType=$$(call Conv, $1, memtype) \
+          RawType=$$(call Conv, $1, Memtype) \
+          RawBoxType=$$(call Conv, $1, FullMemtype), \
+  ))
+  TARGETS += $$(GEN_VARHANDLE_SEGMENT_$1)
 endef
 
 ################################################################################
+# Generate all VarHandle related classes
 
-# List the types to generate source for, with capitalized first letter
-VARHANDLES_TYPES := Boolean Byte Short Char Int Long Float Double Reference
-$(foreach t, $(VARHANDLES_TYPES), \
-  $(eval $(call GenerateVarHandle,VAR_HANDLE_$t,$t)))
+$(foreach t, $(PRIMITIVE_TYPES) reference, \
+  $(eval $(call GenerateVarHandle,$t)) \
+)
 
-# List the types to generate source for, with capitalized first letter
-VARHANDLES_BYTE_ARRAY_TYPES := Short Char Int Long Float Double
-$(foreach t, $(VARHANDLES_BYTE_ARRAY_TYPES), \
-  $(eval $(call GenerateVarHandleByteArray,VAR_HANDLE_BYTE_ARRAY_$t,$t)))
+$(foreach t, $(NON_BYTE_NUMBER_TYPES), \
+  $(eval $(call GenerateVarHandleByteArray,$t)) \
+)
 
-# List the types to generate source for, with capitalized first letter
-VARHANDLES_MEMORY_SEGMENT_TYPES := Boolean Byte Short Char Int Long Float Double
-$(foreach t, $(VARHANDLES_MEMORY_SEGMENT_TYPES), \
-  $(eval $(call GenerateVarHandleMemorySegment,VAR_HANDLE_MEMORY_SEGMENT_$t,$t)))
+$(foreach t, $(PRIMITIVE_TYPES), \
+  $(eval $(call GenerateVarHandleMemorySegment,$t)) \
+)
 
-TARGETS += $(GENSRC_VARHANDLES)
+################################################################################
+
+GENSRC_VARHANDLEGUARDS := $(VARHANDLES_OUTPUT_DIR)/VarHandleGuards.java
+
+$(GENSRC_VARHANDLEGUARDS): $(BUILD_TOOLS_JDK)
+	$(call LogInfo, Generating $@)
+	$(call MakeTargetDir)
+	$(TOOL_VARHANDLEGUARDMETHODGENERATOR) \
+	    $(GENSRC_VARHANDLEGUARDS)
+
+TARGETS += $(GENSRC_VARHANDLEGUARDS)
 
 ################################################################################
 

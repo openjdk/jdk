@@ -309,63 +309,65 @@ public class SimpleFileServerTest {
 
     @Test
     public void testNotReadableFileGET() throws Exception {
-        if (!Platform.isWindows()) {  // not applicable on Windows
-            var expectedBody = openHTML + """
-                <h1>File not found</h1>
-                <p>&#x2F;aFile.txt</p>
-                """ + closeHTML;
-            var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
-            var root = Files.createDirectory(TEST_DIR.resolve("testNotReadableFileGET"));
-            var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
+        if (Platform.isWindows()) {
+            throw new SkipException("Not applicable on Windows");
+        }
+        var expectedBody = openHTML + """
+            <h1>File not found</h1>
+            <p>&#x2F;aFile.txt</p>
+            """ + closeHTML;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var root = Files.createDirectory(TEST_DIR.resolve("testNotReadableFileGET"));
+        var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
 
-            file.toFile().setReadable(false, false);
-            assert !Files.isReadable(file);
+        file.toFile().setReadable(false, false);
+        assert !Files.isReadable(file);
 
-            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-            server.start();
-            try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-                var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
-                var response = client.send(request, BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 404);
-                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-                assertEquals(response.body(), expectedBody);
-            } finally {
-                server.stop(0);
-                file.toFile().setReadable(true, false);
-            }
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
+            file.toFile().setReadable(true, false);
         }
     }
 
     @Test
     public void testNotReadableSegmentGET() throws Exception {
-        if (!Platform.isWindows()) {  // not applicable on Windows
-            var expectedBody = openHTML + """
-                <h1>File not found</h1>
-                <p>&#x2F;dir&#x2F;aFile.txt</p>
-                """ + closeHTML;
-            var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
-            var root = Files.createDirectory(TEST_DIR.resolve("testNotReadableSegmentGET"));
-            var dir = Files.createDirectory(root.resolve("dir"));
-            var file = Files.writeString(dir.resolve("aFile.txt"), "some text", CREATE);
+        if (Platform.isWindows()) {
+            throw new SkipException("Not applicable on Windows");
+        }
+        var expectedBody = openHTML + """
+            <h1>File not found</h1>
+            <p>&#x2F;dir&#x2F;aFile.txt</p>
+            """ + closeHTML;
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var root = Files.createDirectory(TEST_DIR.resolve("testNotReadableSegmentGET"));
+        var dir = Files.createDirectory(root.resolve("dir"));
+        var file = Files.writeString(dir.resolve("aFile.txt"), "some text", CREATE);
 
-            dir.toFile().setReadable(false, false);
-            assert !Files.isReadable(dir);
-            assert Files.isReadable(file);
+        dir.toFile().setReadable(false, false);
+        assert !Files.isReadable(dir);
+        assert Files.isReadable(file);
 
-            var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-            server.start();
-            try {
-                var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-                var request = HttpRequest.newBuilder(uri(server, "dir/aFile.txt")).build();
-                var response = client.send(request, BodyHandlers.ofString());
-                assertEquals(response.statusCode(), 404);
-                assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-                assertEquals(response.body(), expectedBody);
-            } finally {
-                server.stop(0);
-                dir.toFile().setReadable(true, false);
-            }
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "dir/aFile.txt")).build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 404);
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.body(), expectedBody);
+        } finally {
+            server.stop(0);
+            dir.toFile().setReadable(true, false);
         }
     }
 
@@ -680,18 +682,22 @@ public class SimpleFileServerTest {
             var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
             assertTrue(iae.getMessage().contains("does not exist"));
         }
-        {   // not readable
-            if (!Platform.isWindows()) {  // not applicable on Windows
-                Path p = Files.createDirectory(TEST_DIR.resolve("aDir"));
-                p.toFile().setReadable(false, false);
-                assert !Files.isReadable(p);
-                try {
-                    var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
-                    assertTrue(iae.getMessage().contains("not readable"));
-                } finally {
-                    p.toFile().setReadable(true, false);
-                }
-            }
+    }
+
+    @Test
+    public void testNonReadablePath() throws Exception {
+        if (Platform.isWindows()) {
+            throw new SkipException("Not applicable on Windows");
+        }
+        var addr = LOOPBACK_ADDR;
+        Path p = Files.createDirectory(TEST_DIR.resolve("aDir"));
+        p.toFile().setReadable(false, false);
+        assert !Files.isReadable(p);
+        try {
+            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
+            assertTrue(iae.getMessage().contains("not readable"));
+        } finally {
+            p.toFile().setReadable(true, false);
         }
     }
 

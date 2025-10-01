@@ -286,7 +286,7 @@ class nmethod : public CodeBlob {
   volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
 
   DeoptimizationStatus deoptimization_status() const {
-    return Atomic::load(&_deoptimization_status);
+    return AtomicAccess::load(&_deoptimization_status);
   }
 
   // Initialize fields to their default values
@@ -1078,6 +1078,15 @@ public:
   };
 
   static const Vptr _vpntr;
+};
+
+struct NMethodMarkingScope : StackObj {
+  NMethodMarkingScope() {
+    nmethod::oops_do_marking_prologue();
+  }
+  ~NMethodMarkingScope() {
+    nmethod::oops_do_marking_epilogue();
+  }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP
