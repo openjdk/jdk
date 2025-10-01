@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.MBeanServerConnection;
 
 import jdk.jfr.Event;
+import jdk.jfr.StackTrace;
 import jdk.management.jfr.RemoteRecordingStream;
 
 /**
@@ -45,6 +46,7 @@ import jdk.management.jfr.RemoteRecordingStream;
  */
 public class TestMaxSize {
 
+    @StackTrace(false)
     static class Monkey extends Event {
     }
 
@@ -92,7 +94,7 @@ public class TestMaxSize {
             m.commit();
         }
         System.out.println("Emitted " + count + " events");
-        Thread.sleep(1000);
+        Thread.sleep(100);
     }
 
     private static int fileCount(Path dir) throws IOException {

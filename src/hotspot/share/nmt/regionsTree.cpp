@@ -22,13 +22,15 @@
  *
  */
 #include "nmt/regionsTree.hpp"
+#include "nmt/regionsTree.inline.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 
-VMATree::SummaryDiff RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack) {
-  return commit_mapping((VMATree::position)addr, size, make_region_data(stack, mtNone), /*use tag inplace*/ true);
+void RegionsTree::commit_region(address addr, size_t size, const NativeCallStack& stack, VMATree::SummaryDiff& diff) {
+  commit_mapping((VMATree::position)addr, size, make_region_data(stack, mtNone), diff, /*use tag inplace*/ true);
 }
 
-VMATree::SummaryDiff RegionsTree::uncommit_region(address addr, size_t size) {
-  return uncommit_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), mtNone));
+void RegionsTree::uncommit_region(address addr, size_t size, VMATree::SummaryDiff& diff) {
+  uncommit_mapping((VMATree::position)addr, size, make_region_data(NativeCallStack::empty_stack(), mtNone), diff);
 }
 
 #ifdef ASSERT
@@ -48,10 +50,19 @@ void RegionsTree::NodeHelper::print_on(outputStream* st) {
 }
 
 void RegionsTree::print_on(outputStream* st) {
-  visit_in_order([&](Node* node) {
-    NodeHelper curr(node);
+  visit_in_order([&](const Node* node) {
+    NodeHelper curr(const_cast<Node*>(node));
     curr.print_on(st);
     return true;
   });
 }
 #endif
+
+size_t RegionsTree::committed_size(const ReservedMemoryRegion& rgn) {
+  size_t result = 0;
+  visit_committed_regions(rgn, [&](CommittedMemoryRegion& crgn) {
+    result += crgn.size();
+    return true;
+  });
+  return result;
+}

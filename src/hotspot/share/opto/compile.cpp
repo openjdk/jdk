@@ -87,8 +87,8 @@
 #include "runtime/timer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/resourceHash.hpp"
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
@@ -693,7 +693,9 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _inline_printer(this),
       _java_calls(0),
       _inner_loops(0),
+      _FIRST_STACK_mask(comp_arena()),
       _interpreter_frame_size(0),
+      _regmask_arena(mtCompiler, Arena::Tag::tag_regmask),
       _output(nullptr)
 #ifndef PRODUCT
       ,
@@ -954,7 +956,9 @@ Compile::Compile(ciEnv* ci_env,
       _inline_printer(this),
       _java_calls(0),
       _inner_loops(0),
+      _FIRST_STACK_mask(comp_arena()),
       _interpreter_frame_size(0),
+      _regmask_arena(mtCompiler, Arena::Tag::tag_regmask),
       _output(nullptr),
 #ifndef PRODUCT
       _in_dump_cnt(0),
@@ -2786,7 +2790,7 @@ uint Compile::eval_macro_logic_op(uint func, uint in1 , uint in2, uint in3) {
   return res;
 }
 
-static uint eval_operand(Node* n, ResourceHashtable<Node*,uint>& eval_map) {
+static uint eval_operand(Node* n, HashTable<Node*,uint>& eval_map) {
   assert(n != nullptr, "");
   assert(eval_map.contains(n), "absent");
   return *(eval_map.get(n));
@@ -2794,7 +2798,7 @@ static uint eval_operand(Node* n, ResourceHashtable<Node*,uint>& eval_map) {
 
 static void eval_operands(Node* n,
                           uint& func1, uint& func2, uint& func3,
-                          ResourceHashtable<Node*,uint>& eval_map) {
+                          HashTable<Node*,uint>& eval_map) {
   assert(is_vector_bitwise_op(n), "");
 
   if (is_vector_unary_bitwise_op(n)) {
@@ -2818,7 +2822,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
   assert(inputs.size() <= 3, "sanity");
   ResourceMark rm;
   uint res = 0;
-  ResourceHashtable<Node*,uint> eval_map;
+  HashTable<Node*,uint> eval_map;
 
   // Populate precomputed functions for inputs.
   // Each input corresponds to one column of 3 input truth-table.

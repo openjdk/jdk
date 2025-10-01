@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -373,6 +373,7 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(return _should_post_class_file_load_hook);
     NOT_JVMTI(return false;)
   }
+  static bool has_frame_pops(JavaThread* thread) NOT_JVMTI_RETURN_(false);
   static bool is_early_phase() NOT_JVMTI_RETURN_(false);
   static bool has_early_class_hook_env() NOT_JVMTI_RETURN_(false);
   static bool has_early_vmstart_env() NOT_JVMTI_RETURN_(false);

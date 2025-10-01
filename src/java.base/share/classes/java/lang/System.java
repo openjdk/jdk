@@ -55,7 +55,6 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -238,10 +237,11 @@ public final class System {
     private static volatile Console cons;
 
     /**
-     * Returns the unique {@link java.io.Console Console} object associated
+     * Returns the unique {@link Console Console} object associated
      * with the current Java virtual machine, if any.
      *
      * @return  The system console, if any, otherwise {@code null}.
+     * @see Console
      *
      * @since   1.6
      */
@@ -2124,28 +2124,33 @@ public final class System {
             public int countPositives(byte[] bytes, int offset, int length) {
                 return StringCoding.countPositives(bytes, offset, length);
             }
+
             public int countNonZeroAscii(String s) {
                 return StringCoding.countNonZeroAscii(s);
             }
-            public String uncheckedNewStringNoRepl(byte[] bytes, Charset cs) throws CharacterCodingException  {
-                return String.newStringNoRepl(bytes, cs);
+
+            public String uncheckedNewStringWithLatin1Bytes(byte[] bytes) {
+                return String.newStringWithLatin1Bytes(bytes);
             }
+
+            public String uncheckedNewStringOrThrow(byte[] bytes, Charset cs) throws CharacterCodingException  {
+                return String.newStringOrThrow(bytes, cs);
+            }
+
             public char uncheckedGetUTF16Char(byte[] bytes, int index) {
                 return StringUTF16.getChar(bytes, index);
             }
+
             public void uncheckedPutCharUTF16(byte[] bytes, int index, int ch) {
                 StringUTF16.putChar(bytes, index, ch);
             }
-            public byte[] uncheckedGetBytesNoRepl(String s, Charset cs) throws CharacterCodingException {
-                return String.getBytesNoRepl(s, cs);
+
+            public byte[] uncheckedGetBytesOrThrow(String s, Charset cs) throws CharacterCodingException {
+                return String.getBytesOrThrow(s, cs);
             }
 
-            public String newStringUTF8NoRepl(byte[] bytes, int off, int len) {
-                return String.newStringUTF8NoRepl(bytes, off, len, true);
-            }
-
-            public byte[] getBytesUTF8NoRepl(String s) {
-                return String.getBytesUTF8NoRepl(s);
+            public byte[] getBytesUTF8OrThrow(String s) throws CharacterCodingException {
+                return String.getBytesUTF8OrThrow(s);
             }
 
             public void inflateBytesToChars(byte[] src, int srcOff, char[] dst, int dstOff, int len) {
@@ -2156,8 +2161,8 @@ public final class System {
                 return String.decodeASCII(src, srcOff, dst, dstOff, len);
             }
 
-            public int uncheckedEncodeASCII(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
-                return StringCoding.implEncodeAsciiArray(src, srcOff, dst, dstOff, len);
+            public int encodeASCII(char[] sa, int sp, byte[] da, int dp, int len) {
+                return StringCoding.encodeAsciiArray(sa, sp, da, dp, len);
             }
 
             public InputStream initialSystemIn() {
@@ -2178,18 +2183,6 @@ public final class System {
 
             public MethodHandle stringConcatHelper(String name, MethodType methodType) {
                 return StringConcatHelper.lookupStatic(name, methodType);
-            }
-
-            public long stringConcatInitialCoder() {
-                return StringConcatHelper.initialCoder();
-            }
-
-            public long stringConcatMix(long lengthCoder, String constant) {
-                return StringConcatHelper.mix(lengthCoder, constant);
-            }
-
-            public long stringConcatMix(long lengthCoder, char value) {
-                return StringConcatHelper.mix(lengthCoder, value);
             }
 
             public Object uncheckedStringConcat1(String[] constants) {
