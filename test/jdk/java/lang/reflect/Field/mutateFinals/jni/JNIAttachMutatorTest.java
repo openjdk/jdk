@@ -27,58 +27,80 @@
  * @summary Test native thread attaching to the VM with JNI AttachCurrentThread and directly
  *    invoking Field.set to set a final field
  * @library /test/lib
+ * @build m/*
  * @compile JNIAttachMutator.java
  * @run junit JNIAttachMutatorTest
  */
 
+import java.nio.file.Path;
 import java.util.stream.Stream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 class JNIAttachMutatorTest {
-    private static final String TEST_CLASSES = System.getProperty("test.classes");
-    private static final String JAVA_LIBRARY_PATH = System.getProperty("java.library.path");
+    private static String testClasses;
+    private static String modulesDir;
+    private static String javaLibraryPath;
 
-    /**
-     * Test Field.set from JNI attached thread, public field in public class, code in
-     * unnamed modules allowed to mutate final fields.
-     */
-    @Test
-    void testPublicClassPublicFieldAllowMutation() throws Exception {
-        test("JNIAttachMutator$C1", false, "--enable-final-field-mutation=ALL-UNNAMED");
+    @BeforeAll
+    static void setup() {
+        testClasses = System.getProperty("test.classes");
+        modulesDir = Path.of(testClasses, "modules").toString();
+        javaLibraryPath = System.getProperty("java.library.path");
     }
 
     /**
-     * Test Field.set from JNI attached thread, public field in public class, code in
-     * unnamed modules not allowed to mutate final fields.
+     * public final fields, public classes, packages exported to all modules.
      */
-    @Test
-    void testPublicClassPublicFieldDisallowMutation() throws Exception {
-        test("JNIAttachMutator$C1", true);
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "JNIAttachMutator$C1",     // unnamed module
+            "p.C1",                    // named module
+    })
+    void testAllowed(String cn) throws Exception {
+        test(cn, false, "--enable-final-field-mutation=ALL-UNNAMED");
     }
 
     /**
-     * Test Field.set from JNI attached thread, non-public final field in public class.
+     * Final final mutation not allowed.
      */
-    @Test
-    void testPublicClassAllowMutation() throws Exception {
-        test("JNIAttachMutator$C2", true, "--enable-final-field-mutation=ALL-UNNAMED");
+    @ParameterizedTest
+    @ValueSource(strings = {
+            // unnamed module
+            "JNIAttachMutator$C2",      // public class, non-public final field
+            "JNIAttachMutator$C3",      // non-public class, public final field
+
+            // named module
+            "p.C2",                     // public class, non-public final field, exported package
+            "p.C3",                     // non-public class, public final field, exported package
+            "q.C"                       // public class, public final field, package not exported
+    })
+    void testDenied(String cn) throws Exception {
+        test(cn, true, "--enable-final-field-mutation=ALL-UNNAMED");
     }
 
     /**
-     * Test Field.set from JNI attached thread, public field in non-public class.
+     * public final field, public class, package exported to some modules.
      */
     @Test
-    void testPublicFieldAllowMutation() throws Exception {
-        test("JNIAttachMutator$C3", true, "--enable-final-field-mutation=ALL-UNNAMED");
+    void testQualifiedExports() throws Exception {
+        test("q.C", true, "--enable-final-field-mutation=ALL-UNNAMED", "--add-exports", "m/q=ALL-UNNAMED");
     }
 
     private void test(String className, boolean expectIAE, String... extraOps) throws Exception {
         Stream<String> s1 = Stream.of(extraOps);
         Stream<String> s2 = Stream.of(
-                "-cp", TEST_CLASSES,
-                "-Djava.library.path=" + JAVA_LIBRARY_PATH,
+                "-cp", testClasses,
+                "-Djava.library.path=" + javaLibraryPath,
+                "--module-path", modulesDir,
+                "--add-modules", "m",
+                "--add-opens", "m/p=ALL-UNNAMED",    // allow setAccessible
+                "--add-opens", "m/q=ALL-UNNAMED",
                 "--enable-native-access=ALL-UNNAMED",
                 "--illegal-final-field-mutation=deny",
                 "JNIAttachMutator",

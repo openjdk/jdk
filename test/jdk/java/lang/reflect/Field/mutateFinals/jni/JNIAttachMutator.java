@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 
@@ -45,7 +46,7 @@ public class JNIAttachMutator {
     // public class, non-public final field
     public static class C2 {
         final int value;
-        public C2(int value) {
+        C2(int value) {
             this.value = value;
         }
     }
@@ -66,7 +67,9 @@ public class JNIAttachMutator {
         boolean expectIAE = Boolean.parseBoolean(args[1]);
 
         Class<?> clazz = Class.forName(args[0]);
-        obj = clazz.getDeclaredConstructor(int.class).newInstance(100);
+        Constructor<?> ctor = clazz.getDeclaredConstructor(int.class);
+        ctor.setAccessible(true);
+        obj = ctor.newInstance(100);
 
         // start native thread
         startThread();
