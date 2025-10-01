@@ -1263,7 +1263,7 @@ public class TCKInstant extends AbstractDateTimeTest {
                 {Instant.MIN, Duration.between(Instant.MIN, Instant.MAX), Optional.of(Instant.MAX)},
                 {Instant.EPOCH, Duration.between(Instant.EPOCH, Instant.MAX), Optional.of(Instant.MAX)},
                 {Instant.EPOCH, Duration.between(Instant.EPOCH, Instant.MIN), Optional.of(Instant.MIN)},
-                {Instant.MAX, Duration.between(Instant.MAX, Instant.MIN), Optional.of(Instant.MIN)}
+                {Instant.MAX, Duration.between(Instant.MAX, Instant.MIN), Optional.of(Instant.MIN)} // interesting case
         };
     }
 
@@ -1787,6 +1787,67 @@ public class TCKInstant extends AbstractDateTimeTest {
     public void minusNanos_long_overflowTooSmall() {
         Instant i = Instant.ofEpochSecond(MIN_SECOND, 0);
         i.minusNanos(1);
+    }
+
+    @DataProvider(name = "MinusSaturating")
+    Object[][] provider_minusSaturating() {
+        return new Object[][]{
+                // 1. {edge or constant instants} x {edge or constant durations}
+                {Instant.MIN, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MAX)},
+                {Instant.MIN, Duration.ZERO, Optional.empty()},
+                {Instant.MIN, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MIN)},
+                {Instant.EPOCH, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MAX)},
+                {Instant.EPOCH, Duration.ZERO, Optional.empty()},
+                {Instant.EPOCH, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MIN)},
+                {Instant.MAX, Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MAX)},
+                {Instant.MAX, Duration.ZERO, Optional.empty()},
+                {Instant.MAX, Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MIN)},
+                // 2. {edge or constant instants} x {normal durations}
+                {Instant.MIN, Duration.ofDays(-32), Optional.empty()},
+                {Instant.MIN, Duration.ofDays(32), Optional.of(Instant.MIN)},
+                {Instant.EPOCH, Duration.ofDays(-32), Optional.empty()},
+                {Instant.EPOCH, Duration.ofDays(32), Optional.empty()},
+                {Instant.MAX, Duration.ofDays(-32), Optional.of(Instant.MAX)},
+                {Instant.MAX, Duration.ofDays(32), Optional.empty()},
+                // 3. {normal instants with both positive and negative epoch seconds} x {edge or constant durations}
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MAX)},
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ZERO, Optional.empty()},
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MIN)},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofSeconds(Long.MIN_VALUE, 0), Optional.of(Instant.MAX)},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ZERO, Optional.empty()},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofSeconds(Long.MAX_VALUE, 999_999_999), Optional.of(Instant.MIN)},
+                // 4. {normal instants with both positive and negative epoch seconds} x {normal durations}
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(-32), Optional.empty()},
+                {Instant.parse("1950-01-01T00:00:00Z"), Duration.ofDays(32), Optional.empty()},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(-32), Optional.empty()},
+                {Instant.parse("1990-01-01T00:00:00Z"), Duration.ofDays(32), Optional.empty()},
+                // 5. instant boundary
+                {Instant.MIN, Duration.between(Instant.MAX, Instant.MIN), Optional.of(Instant.MAX)},
+                {Instant.EPOCH, Duration.between(Instant.MIN, Instant.EPOCH), Optional.of(Instant.MIN)},
+                {Instant.MAX, Duration.between(Instant.EPOCH, Instant.MAX), Optional.of(Instant.EPOCH)},
+                {Instant.MAX, Duration.between(Instant.MIN, Instant.MAX), Optional.of(Instant.MIN)},
+                {Instant.EPOCH, Duration.between(Instant.MAX, Instant.EPOCH), Optional.of(Instant.MAX)} // interesting case
+        };
+    }
+
+    @Test(dataProvider = "MinusSaturating")
+    public void minusSaturating(Instant i, Duration d, Optional<Instant> value) {
+        var actual = i.minusSaturating(d);
+        try {
+            assertEquals(actual, i.minus(d));
+            // If `value` is present, perform an additional check. It may be
+            // important to ensure that not only does the result of `plusSaturating`
+            // match that of `plus`, but that it also matches our expectation.
+            // Because if it doesn’t, then the test isn’t testing what we think
+            // it is, and needs to be fixed.
+            value.ifPresent(instant -> assertEquals(actual, instant));
+        } catch (DateTimeException /* instant overflow */
+                 | ArithmeticException /* long overflow */ e) {
+            if (value.isEmpty()) {
+                throw new AssertionError();
+            }
+            assertEquals(actual, value.get());
+        }
     }
 
     //-----------------------------------------------------------------------
