@@ -1836,8 +1836,8 @@ public class TCKInstant extends AbstractDateTimeTest {
         try {
             assertEquals(actual, i.minus(d));
             // If `value` is present, perform an additional check. It may be
-            // important to ensure that not only does the result of `plusSaturating`
-            // match that of `plus`, but that it also matches our expectation.
+            // important to ensure that not only does the result of `minusSaturating`
+            // match that of `minus`, but that it also matches our expectation.
             // Because if it doesn’t, then the test isn’t testing what we think
             // it is, and needs to be fixed.
             value.ifPresent(instant -> assertEquals(actual, instant));
