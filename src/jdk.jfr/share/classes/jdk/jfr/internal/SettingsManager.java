@@ -92,7 +92,7 @@ final class SettingsManager {
             return identifier;
         }
 
-        private void add(InternalSetting enabled) {
+        public void add(InternalSetting enabled) {
             for (Map.Entry<String, Set<String>> entry : enabled.enabledMap.entrySet()) {
                 for (String value : entry.getValue()) {
                     add(entry.getKey(), value);
