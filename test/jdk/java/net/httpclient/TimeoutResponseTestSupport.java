@@ -300,6 +300,10 @@ public class TimeoutResponseTestSupport {
                     responseBody.flush();
                     Thread.sleep(perBytePauseDuration);
                 }
+                throw new AssertionError("Delivery should never have succeeded due to timeout!");
+            } catch (IOException _) {
+                // Client's timeout mechanism is expected to short-circuit and cut the stream.
+                // Hence, discard I/O failures.
             }
         }
 
