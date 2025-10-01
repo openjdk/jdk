@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class JvmtiEnvThreadStateIterator : public StackObj {
 //
 // Virtual Thread Mount State Transition (VTMS transition) mechanism
 //
-class JvmtiVTMSTransitionDisabler {
+class JvmtiVTMSTransitionDisabler : public AnyObj {
  private:
   static volatile int _VTMS_transition_disable_for_one_count; // transitions for one virtual thread are disabled while it is positive
   static volatile int _VTMS_transition_disable_for_all_count; // transitions for all virtual threads are disabled while it is positive
@@ -86,6 +86,8 @@ class JvmtiVTMSTransitionDisabler {
   static volatile bool _sync_protocol_enabled_permanently; // seen a suspender: JvmtiVTMSTransitionDisabler protocol is enabled permanently
 
   bool _is_SR;                                           // is suspender or resumer
+  bool _is_virtual;                                      // target thread is virtual
+  bool _is_self;                                         // JvmtiVTMSTransitionDisabler is a no-op for current platform, carrier or virtual thread
   jthread _thread;                                       // virtual thread to disable transitions for, no-op if it is a platform thread
 
   DEBUG_ONLY(static void print_info();)
@@ -191,6 +193,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   bool              _pending_step_for_popframe;
   bool              _pending_step_for_earlyret;
   bool              _top_frame_is_exiting;
+  bool              _saved_interp_only_mode;
   int               _hide_level;
 
  public:
@@ -211,7 +214,6 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // This is only valid when is_interp_only_mode() returns true
   int               _cur_stack_depth;
-  int               _saved_interp_only_mode;
 
   JvmtiThreadEventEnable _thread_event_enable;
 
@@ -273,7 +275,7 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
 
   // Used by the interpreter for fullspeed debugging support
   bool is_interp_only_mode()                {
-    return _thread == nullptr ?  _saved_interp_only_mode != 0 : _thread->is_interp_only_mode();
+    return _thread == nullptr ? _saved_interp_only_mode : _thread->is_interp_only_mode();
   }
   void enter_interp_only_mode();
   void leave_interp_only_mode();
@@ -309,6 +311,8 @@ class JvmtiThreadState : public CHeapObj<mtInternal> {
   // Also used for carrier threads to clear/restore _thread.
   void set_thread(JavaThread* thread);
   oop get_thread_oop();
+
+  void update_thread_oop_during_vm_start();
 
   inline bool is_virtual() { return _is_virtual; } // the _thread is virtual
 

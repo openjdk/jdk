@@ -25,7 +25,7 @@
  * @test
  * @bug     5086027
  * @summary Inner class of generic class cannot extend Throwable
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile T5086027pos.java
  */
 

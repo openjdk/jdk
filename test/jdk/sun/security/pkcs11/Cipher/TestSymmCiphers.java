@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,15 @@
  * @run main/othervm TestSymmCiphers
  */
 
+import jtreg.SkippedException;
+
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -44,43 +48,33 @@ import javax.crypto.SecretKey;
 
 public class TestSymmCiphers extends PKCS11Test {
 
-    private static class CI { // class for holding Cipher Information
+    private record CI (String transformation, String keyAlgo, int dataSize){}  // record for holding Cipher Information
 
-        String transformation;
-        String keyAlgo;
-        int dataSize;
-
-        CI(String transformation, String keyAlgo, int dataSize) {
-            this.transformation = transformation;
-            this.keyAlgo = keyAlgo;
-            this.dataSize = dataSize;
-        }
-    }
     private static final CI[] TEST_LIST = {
-        new CI("ARCFOUR", "ARCFOUR", 400),
-        new CI("RC4", "RC4", 401),
-        new CI("DES/CBC/NoPadding", "DES", 400),
-        new CI("DESede/CBC/NoPadding", "DESede", 160),
-        new CI("AES/CBC/NoPadding", "AES", 4800),
-        new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
-        new CI("DES/cbc/PKCS5Padding", "DES", 6401),
-        new CI("DESede/CBC/PKCS5Padding", "DESede", 402),
-        new CI("AES/CBC/PKCS5Padding", "AES", 30),
-        new CI("Blowfish/CBC/PKCS5Padding", "Blowfish", 19),
-        new CI("DES/ECB/NoPadding", "DES", 400),
-        new CI("DESede/ECB/NoPadding", "DESede", 160),
-        new CI("AES/ECB/NoPadding", "AES", 4800),
-        new CI("DES/ECB/PKCS5Padding", "DES", 32),
-        new CI("DES/ECB/PKCS5Padding", "DES", 6400),
-        new CI("DESede/ECB/PKCS5Padding", "DESede", 400),
-        new CI("AES/ECB/PKCS5Padding", "AES", 64),
+            new CI("ARCFOUR", "ARCFOUR", 400),
+            new CI("RC4", "RC4", 401),
+            new CI("DES/CBC/NoPadding", "DES", 400),
+            new CI("DESede/CBC/NoPadding", "DESede", 160),
+            new CI("AES/CBC/NoPadding", "AES", 4800),
+            new CI("Blowfish/CBC/NoPadding", "Blowfish", 24),
+            new CI("DES/cbc/PKCS5Padding", "DES", 6401),
+            new CI("DESede/CBC/PKCS5Padding", "DESede", 402),
+            new CI("AES/CBC/PKCS5Padding", "AES", 30),
+            new CI("Blowfish/CBC/PKCS5Padding", "Blowfish", 19),
+            new CI("DES/ECB/NoPadding", "DES", 400),
+            new CI("DESede/ECB/NoPadding", "DESede", 160),
+            new CI("AES/ECB/NoPadding", "AES", 4800),
+            new CI("DES/ECB/PKCS5Padding", "DES", 32),
+            new CI("DES/ECB/PKCS5Padding", "DES", 6400),
+            new CI("DESede/ECB/PKCS5Padding", "DESede", 400),
+            new CI("AES/ECB/PKCS5Padding", "AES", 64),
 
-        new CI("DES", "DES", 6400),
-        new CI("DESede", "DESede", 408),
-        new CI("AES", "AES", 128),
+            new CI("DES", "DES", 6400),
+            new CI("DESede", "DESede", 408),
+            new CI("AES", "AES", 128),
 
-        new CI("AES/CTR/NoPadding", "AES", 3200),
-        new CI("AES/CTS/NoPadding", "AES", 3200),
+            new CI("AES/CTR/NoPadding", "AES", 3200),
+            new CI("AES/CTS/NoPadding", "AES", 3200),
 
     };
     private static final StringBuffer debugBuf = new StringBuffer();
@@ -90,11 +84,10 @@ public class TestSymmCiphers extends PKCS11Test {
         // NSS reports CKR_DEVICE_ERROR when the data passed to
         // its EncryptUpdate/DecryptUpdate is not multiple of blocks
         int firstBlkSize = 16;
-        boolean status = true;
+        List<CI> skippedList = new ArrayList<>();
         Random random = new Random();
         try {
-            for (int i = 0; i < TEST_LIST.length; i++) {
-                CI currTest = TEST_LIST[i];
+            for (CI currTest : TEST_LIST) {
                 System.out.println("===" + currTest.transformation + "===");
                 try {
                     KeyGenerator kg =
@@ -123,7 +116,8 @@ public class TestSymmCiphers extends PKCS11Test {
                     System.out.println("Decryption tests: DONE");
                 } catch (NoSuchAlgorithmException nsae) {
                     System.out.println("Skipping unsupported algorithm: " +
-                            nsae);
+                                       nsae);
+                    skippedList.add(currTest);
                 }
             }
         } catch (Exception ex) {
@@ -131,11 +125,15 @@ public class TestSymmCiphers extends PKCS11Test {
             System.out.println(debugBuf);
             throw ex;
         }
+
+        if (!skippedList.isEmpty()){
+            throw new SkippedException("Some tests skipped: " + skippedList);
+        }
     }
 
     private static void test(Cipher cipher, int mode, SecretKey key,
-            AlgorithmParameters params, int firstBlkSize,
-            byte[] in, byte[] answer) throws Exception {
+                             AlgorithmParameters params, int firstBlkSize,
+                             byte[] in, byte[] answer) throws Exception {
         // test setup
         long startTime, endTime;
         cipher.init(mode, key, params);

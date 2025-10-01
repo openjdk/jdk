@@ -20,9 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.Spliterator;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.*;
 import java.util.stream.Gatherer;
@@ -31,6 +31,7 @@ import static java.util.stream.DefaultMethodStreams.delegateTo;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
@@ -106,11 +107,11 @@ public class GathererTest {
     }
 
     final Gatherer<Integer,Void,Integer> addOne = Gatherer.of(
-            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((vöid, element, downstream) -> downstream.push(element + 1))
+            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((void_state, element, downstream) -> downstream.push(element + 1))
     );
 
     final Gatherer<Integer,Void,Integer> timesTwo = Gatherer.of(
-            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((vöid, element, downstream) -> downstream.push(element * 2))
+            Gatherer.Integrator.<Void,Integer,Integer>ofGreedy((void_state, element, downstream) -> downstream.push(element * 2))
     );
 
     @ParameterizedTest
@@ -463,6 +464,41 @@ public class GathererTest {
                     )
             ).toList()
         , expectedMessage);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = { false, true })
+    public void mustNotPropagateSizeInformation(boolean parallel) {
+        // Constructs a spliterator of unbounded length but which
+        // reports SIZED and SUBSIZED characteristics so if its size
+        // of Long.MAX_VALUE gets propagated by gather() then the
+        // resulting toList() call would allocate a huge array and as
+        // such would yield an OutOfMemoryError
+        var s = new Spliterator<Integer>() {
+            @Override
+            public boolean tryAdvance(Consumer<? super Integer> action) {
+                action.accept(0);
+                return true;
+            }
+
+            @Override public Spliterator<Integer> trySplit() { return null; }
+
+            @Override public long estimateSize() { return Long.MAX_VALUE; }
+
+            @Override
+            public int characteristics() {
+                return Spliterator.SIZED | Spliterator.IMMUTABLE | Spliterator.SUBSIZED;
+            }
+        };
+
+        var result = StreamSupport.stream(s, parallel)
+                                  .gather(
+                                      Gatherer.of(
+                                          (_, i, d)
+                                              -> d.push(i) && false
+                                      )
+                                  ).toList();
+        assertEquals(result, List.of(0));
     }
 
     private final static void assertThrowsTestException(Supplier<?> supplier, String expectedMessage) {

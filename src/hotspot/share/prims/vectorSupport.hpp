@@ -101,36 +101,12 @@ class VectorSupport : AllStatic {
     VECTOR_OP_COMPRESS_BITS = 33,
     VECTOR_OP_EXPAND_BITS = 34,
 
-    // Vector Math Library
-    VECTOR_OP_TAN   = 101,
-    VECTOR_OP_TANH  = 102,
-    VECTOR_OP_SIN   = 103,
-    VECTOR_OP_SINH  = 104,
-    VECTOR_OP_COS   = 105,
-    VECTOR_OP_COSH  = 106,
-    VECTOR_OP_ASIN  = 107,
-    VECTOR_OP_ACOS  = 108,
-    VECTOR_OP_ATAN  = 109,
-    VECTOR_OP_ATAN2 = 110,
-    VECTOR_OP_CBRT  = 111,
-    VECTOR_OP_LOG   = 112,
-    VECTOR_OP_LOG10 = 113,
-    VECTOR_OP_LOG1P = 114,
-    VECTOR_OP_POW   = 115,
-    VECTOR_OP_EXP   = 116,
-    VECTOR_OP_EXPM1 = 117,
-    VECTOR_OP_HYPOT = 118,
-
     VECTOR_OP_SADD  = 119,
     VECTOR_OP_SSUB  = 120,
     VECTOR_OP_SUADD = 121,
     VECTOR_OP_SUSUB = 122,
     VECTOR_OP_UMIN  = 123,
     VECTOR_OP_UMAX  = 124,
-
-    VECTOR_OP_MATH_START = VECTOR_OP_TAN,
-    VECTOR_OP_MATH_END   = VECTOR_OP_HYPOT,
-    NUM_VECTOR_OP_MATH   = VECTOR_OP_MATH_END - VECTOR_OP_MATH_START + 1
   };
 
   enum {
@@ -146,8 +122,6 @@ class VectorSupport : AllStatic {
     MODE_BROADCAST = 0,
     MODE_BITS_COERCED_LONG_TO_MASK = 1
   };
-
-  static const char* mathname[VectorSupport::NUM_VECTOR_OP_MATH];
 
   static int vop2ideal(jint vop, BasicType bt);
   static bool has_scalar_op(jint id);

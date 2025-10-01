@@ -24,14 +24,15 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
-import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageUserScript;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
+import jdk.jpackage.test.TKit;
 
 /*
  * @test usage of scripts from resource dir
@@ -107,7 +108,7 @@ public class WinScriptTest {
                 throw new UnsupportedOperationException();
         }
 
-        test.run();
+        test.run(Action.CREATE);
     }
 
     private static class ScriptData {
@@ -115,11 +116,11 @@ public class WinScriptTest {
             if (scriptType == PackageType.WIN_MSI) {
                 echoText = "post app image wsf";
                 envVarName = "JpAppImageDir";
-                scriptSuffixName = "post-image";
+                script = JPackageUserScript.POST_IMAGE;
             } else {
                 echoText = "post msi wsf";
                 envVarName = "JpMsiFile";
-                scriptSuffixName = "post-msi";
+                script = JPackageUserScript.POST_MSI;
             }
             this.wsfExitCode = wsfExitCode;
         }
@@ -127,19 +128,19 @@ public class WinScriptTest {
         void assertJPackageOutput(List<String> output) {
             TKit.assertTextStream(String.format("    jp: %s", echoText))
                     .predicate(String::equals)
-                    .apply(output.stream());
+                    .apply(output);
 
             String cwdPattern = String.format("    jp: CWD(%s)=", envVarName);
             TKit.assertTextStream(cwdPattern)
                     .predicate(String::startsWith)
-                    .apply(output.stream());
+                    .apply(output);
             String cwd = output.stream().filter(line -> line.startsWith(
                     cwdPattern)).findFirst().get().substring(cwdPattern.length());
 
             String envVarPattern = String.format("    jp: %s=", envVarName);
             TKit.assertTextStream(envVarPattern)
                     .predicate(String::startsWith)
-                    .apply(output.stream());
+                    .apply(output);
             String envVar = output.stream().filter(line -> line.startsWith(
                     envVarPattern)).findFirst().get().substring(envVarPattern.length());
 
@@ -149,26 +150,17 @@ public class WinScriptTest {
         }
 
         void createScript(JPackageCommand cmd) throws IOException {
-           XmlUtils.createXml(Path.of(cmd.getArgumentValue("--resource-dir"),
-                    String.format("%s-%s.wsf", cmd.name(), scriptSuffixName)), xml -> {
-                xml.writeStartElement("job");
-                xml.writeAttribute("id", "main");
-                xml.writeStartElement("script");
-                xml.writeAttribute("language", "JScript");
-                xml.writeCData(String.join("\n", List.of(
+            script.create(cmd, List.of(
                     "var shell = new ActiveXObject('WScript.Shell')",
                     "WScript.Echo('jp: " + envVarName + "=' + shell.ExpandEnvironmentStrings('%" + envVarName + "%'))",
                     "WScript.Echo('jp: CWD(" + envVarName + ")=' + shell.CurrentDirectory)",
                     String.format("WScript.Echo('jp: %s')", echoText),
                     String.format("WScript.Quit(%d)", wsfExitCode)
-                )));
-                xml.writeEndElement();
-                xml.writeEndElement();
-            });
+            ));
         }
 
         private final int wsfExitCode;
-        private final String scriptSuffixName;
+        private final JPackageUserScript script;
         private final String echoText;
         private final String envVarName;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.invoke.util;
 
 import java.lang.invoke.MethodType;
-import sun.invoke.empty.Empty;
 
 /**
  * This class centralizes information about the JVM verifier
@@ -93,8 +92,6 @@ public class VerifyType {
         // Therefore, it can be safely treated as a value of any
         // other type that admits null, i.e., a reference type.
         if (type == Void.class)  return true;
-        // Locally known null-only class:
-        if (type == Empty.class)  return true;
         return false;
     }
 

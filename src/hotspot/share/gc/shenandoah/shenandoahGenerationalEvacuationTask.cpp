@@ -29,10 +29,9 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahPacer.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 class ShenandoahConcurrentEvacuator : public ObjectClosure {
 private:
@@ -127,9 +126,6 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
     if (r->is_cset()) {
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _heap->marked_object_iterate(r, &cl);
-      if (ShenandoahPacing) {
-        _heap->pacer()->report_evac(r->used() >> LogHeapWordSize);
-      }
     } else {
       maybe_promote_region(r);
     }

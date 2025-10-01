@@ -27,6 +27,7 @@
 #define SHARE_GC_G1_G1MONOTONICARENA_INLINE_HPP
 
 #include "gc/g1/g1MonotonicArena.hpp"
+
 #include "runtime/atomic.hpp"
 #include "utilities/globalCounter.inline.hpp"
 

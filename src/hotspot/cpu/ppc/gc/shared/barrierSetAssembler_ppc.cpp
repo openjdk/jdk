@@ -333,19 +333,28 @@ int SaveLiveRegisters::iterate_over_register_mask(IterationAction action, int of
       }
     } else if (vm_reg->is_ConditionRegister()) {
       // NOP. Conditions registers are covered by save_LR_CR
-    } else if (vm_reg->is_VectorSRegister()) {
+    } else if (vm_reg->is_VectorRegister()) {
       assert(SuperwordUseVSX, "or should not reach here");
-      VectorSRegister vs_reg = vm_reg->as_VectorSRegister();
+      VectorSRegister vs_reg = (vm_reg->as_VectorRegister()).to_vsr();
       if (vs_reg->encoding() >= VSR32->encoding() && vs_reg->encoding() <= VSR51->encoding()) {
-        reg_save_index += 2;
+        reg_save_index += (2 + (reg_save_index & 1)); // 2 slots + alignment if needed
 
         Register spill_addr = R0;
+        int spill_offset = offset - reg_save_index * BytesPerWord;
         if (action == ACTION_SAVE) {
-          _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
-          _masm->stxvd2x(vs_reg, spill_addr);
+          if (PowerArchitecturePPC64 >= 9) {
+            _masm->stxv(vs_reg, spill_offset, R1_SP);
+          } else {
+            _masm->addi(spill_addr, R1_SP, spill_offset);
+            _masm->stxvd2x(vs_reg, spill_addr);
+          }
         } else if (action == ACTION_RESTORE) {
-          _masm->addi(spill_addr, R1_SP, offset - reg_save_index * BytesPerWord);
-          _masm->lxvd2x(vs_reg, spill_addr);
+          if (PowerArchitecturePPC64 >= 9) {
+            _masm->lxv(vs_reg, spill_offset, R1_SP);
+          } else {
+            _masm->addi(spill_addr, R1_SP, spill_offset);
+            _masm->lxvd2x(vs_reg, spill_addr);
+          }
         } else {
           assert(action == ACTION_COUNT_ONLY, "Sanity");
         }

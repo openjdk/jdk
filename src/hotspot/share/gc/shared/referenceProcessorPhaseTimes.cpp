@@ -23,8 +23,8 @@
  */
 
 #include "gc/shared/gcTimer.hpp"
-#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
+#include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"

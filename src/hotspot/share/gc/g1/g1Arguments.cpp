@@ -71,6 +71,9 @@ void G1Arguments::initialize_alignments() {
 }
 
 size_t G1Arguments::conservative_max_heap_alignment() {
+  if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
+    return G1HeapRegion::max_ergonomics_size();
+  }
   return G1HeapRegion::max_region_size();
 }
 
@@ -193,8 +196,8 @@ void G1Arguments::initialize() {
   if (FLAG_IS_DEFAULT(GCTimeRatio) || GCTimeRatio == 0) {
     // In G1, we want the default GC overhead goal to be higher than
     // it is for PS, or the heap might be expanded too aggressively.
-    // We set it here to ~8%.
-    FLAG_SET_DEFAULT(GCTimeRatio, 12);
+    // We set it here to 4%.
+    FLAG_SET_DEFAULT(GCTimeRatio, 24);
   }
 
   // Below, we might need to calculate the pause time interval based on

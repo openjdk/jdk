@@ -83,7 +83,7 @@ static void hook_memory_allocation(const char* allocation, size_t alloc_size) {
       vm_exit_out_of_memory(alloc_size, OOM_MALLOC_ERROR, "AllocateHeap");
     }
   }
-  debug_only(add(alloc_size));
+  DEBUG_ONLY(add(alloc_size));
 }
 
 void JfrCHeapObj::on_memory_allocation(const void* allocation, size_t size) {
@@ -111,12 +111,12 @@ void* JfrCHeapObj::operator new [](size_t size, const std::nothrow_t&  nothrow_c
 }
 
 void JfrCHeapObj::operator delete(void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   CHeapObj<mtTracing>::operator delete(p);
 }
 
 void JfrCHeapObj::operator delete[](void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   CHeapObj<mtTracing>::operator delete[](p);
 }
 
@@ -127,7 +127,7 @@ char* JfrCHeapObj::realloc_array(char* old, size_t size) {
 }
 
 void JfrCHeapObj::free(void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   FreeHeap(p);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -668,14 +668,6 @@ public class SimpleFileServerTest {
     @Test
     public void testIllegalPath() throws Exception {
         var addr = LOOPBACK_ADDR;
-        {   // not absolute
-            Path p = Path.of(".");
-            assert Files.isDirectory(p);
-            assert Files.exists(p);
-            assert !p.isAbsolute();
-            var iae = expectThrows(IAE, () -> SimpleFileServer.createFileServer(addr, p, OutputLevel.INFO));
-            assertTrue(iae.getMessage().contains("is not absolute"));
-        }
         {   // not a directory
             Path p = Files.createFile(TEST_DIR.resolve("aFile"));
             assert !Files.isDirectory(p);

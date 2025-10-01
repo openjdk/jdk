@@ -59,17 +59,17 @@ class ConfigurationLock : public StackObj {
  private:
   // Semaphore used as lock
   static Semaphore _semaphore;
-  debug_only(static intx _locking_thread_id;)
+  DEBUG_ONLY(static intx _locking_thread_id;)
  public:
   ConfigurationLock() {
     _semaphore.wait();
-    debug_only(_locking_thread_id = os::current_thread_id());
+    DEBUG_ONLY(_locking_thread_id = os::current_thread_id());
   }
   ~ConfigurationLock() {
-    debug_only(_locking_thread_id = -1);
+    DEBUG_ONLY(_locking_thread_id = -1);
     _semaphore.signal();
   }
-  debug_only(static bool current_thread_has_lock();)
+  DEBUG_ONLY(static bool current_thread_has_lock();)
 };
 
 Semaphore ConfigurationLock::_semaphore(1);

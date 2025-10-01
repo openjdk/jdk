@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-
 #include "utilities/quickSort.hpp"
 
 ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* generation)
@@ -67,7 +66,7 @@ void ShenandoahYoungHeuristics::choose_young_collection_set(ShenandoahCollection
 
   auto heap = ShenandoahGenerationalHeap::heap();
 
-  size_t capacity = heap->young_generation()->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t garbage_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahIgnoreGarbageThreshold / 100;
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
@@ -121,6 +120,7 @@ bool ShenandoahYoungHeuristics::should_start_gc() {
       if (old_time_elapsed < ShenandoahMinimumOldTimeMs) {
         // Do not decline_trigger() when waiting for minimum quantum of Old-gen marking.  It is not at our discretion
         // to trigger at this time.
+        log_debug(gc)("Young heuristics declines to trigger because old_time_elapsed < ShenandoahMinimumOldTimeMs");
         return false;
       }
     }

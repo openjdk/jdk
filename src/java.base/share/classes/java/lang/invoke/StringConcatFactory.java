@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -35,6 +35,7 @@ import jdk.internal.misc.VM;
 import jdk.internal.util.ClassFileDumper;
 import jdk.internal.util.ReferenceKey;
 import jdk.internal.util.ReferencedKeyMap;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 
@@ -116,6 +117,7 @@ import static java.lang.invoke.MethodType.methodType;
  *
  * @since 9
  */
+@AOTSafeClassInitializer
 public final class StringConcatFactory {
     private static final int HIGH_ARITY_THRESHOLD;
     private static final int CACHE_THRESHOLD;
@@ -1258,7 +1260,7 @@ public final class StringConcatFactory {
 
             // 1 argument use built-in method
             if (args.parameterCount() == 1) {
-                Object concat1 = JLA.stringConcat1(constants);
+                Object concat1 = JLA.uncheckedStringConcat1(constants);
                 var handle = lookup.findVirtual(concat1.getClass(), METHOD_NAME, concatArgs);
                 return handle.bindTo(concat1);
             }

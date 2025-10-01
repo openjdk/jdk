@@ -320,9 +320,16 @@ void Reflection::array_set(jvalue* value, arrayOop a, int index, BasicType value
   }
 }
 
+
+// Conversion
+static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
+  assert(java_lang_Class::is_primitive(basic_type_mirror),
+    "just checking");
+  return java_lang_Class::primitive_type(basic_type_mirror);
+}
+
 static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror), "just checking");
-  BasicType type = java_lang_Class::primitive_type(basic_type_mirror);
+  BasicType type = basic_type_mirror_to_basic_type(basic_type_mirror);
   if (type == T_VOID) {
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
@@ -339,8 +346,11 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     THROW_MSG_NULL(vmSymbols::java_lang_NegativeArraySizeException(), err_msg("%d", length));
   }
   if (java_lang_Class::is_primitive(element_mirror)) {
-    Klass* tak = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
-    return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
+    BasicType type = basic_type_mirror_to_basic_type(element_mirror);
+    if (type == T_VOID) {
+      THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
+    }
+    return oopFactory::new_typeArray(type, length, CHECK_NULL);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
     if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
@@ -541,9 +551,9 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_from_name, module_to_name);
       } else {
-        oop jlm = module_to->module();
-        assert(jlm != nullptr, "Null jlm in module_to ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_to->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 160 + strlen(current_class_name) + 2*strlen(module_from_name) +
           strlen(new_class_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
@@ -568,9 +578,9 @@ char* Reflection::verify_class_access_msg(const Klass* current_class,
           current_class_name, module_from_name, new_class_name,
           module_to_name, module_to_name, package_name, module_from_name);
       } else {
-        oop jlm = module_from->module();
-        assert(jlm != nullptr, "Null jlm in module_from ModuleEntry");
-        intptr_t identity_hash = jlm->identity_hash();
+        oop module_oop = module_from->module_oop();
+        assert(module_oop != nullptr, "should have been initialized");
+        intptr_t identity_hash = module_oop->identity_hash();
         size_t len = 170 + strlen(current_class_name) + strlen(new_class_name) +
           2*strlen(module_to_name) + strlen(package_name) + 2*sizeof(uintx);
         msg = NEW_RESOURCE_ARRAY(char, len);
@@ -905,13 +915,6 @@ static methodHandle resolve_interface_call(InstanceKlass* klass,
                                        true,
                                        CHECK_(methodHandle()));
   return methodHandle(THREAD, info.selected_method());
-}
-
-// Conversion
-static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror) {
-  assert(java_lang_Class::is_primitive(basic_type_mirror),
-    "just checking");
-  return java_lang_Class::primitive_type(basic_type_mirror);
 }
 
 // Narrowing of basic types. Used to create correct jvalues for

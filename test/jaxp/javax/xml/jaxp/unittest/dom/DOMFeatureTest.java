@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,13 @@ package dom;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ProxySelector;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
@@ -40,10 +43,11 @@ import org.xml.sax.SAXException;
 
 /*
  * @test
- * @bug 8206132
- * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng dom.DOMFeatureTest
+ * @bug 8206132 8359337
  * @summary Tests DOM features.
+ * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
+ * @comment we use othervm because the test configures a system wide ProxySelector
+ * @run testng/othervm dom.DOMFeatureTest
  */
 public class DOMFeatureTest {
 
@@ -105,6 +109,13 @@ public class DOMFeatureTest {
             {true, XML3},
         };
     }
+
+    @BeforeClass
+    static void beforeClass() {
+        // disable proxy
+        ProxySelector.setDefault(ProxySelector.of(null));
+    }
+
     /**
      * Verifies the EntityExpansion feature.
      * @param caseNo the case number

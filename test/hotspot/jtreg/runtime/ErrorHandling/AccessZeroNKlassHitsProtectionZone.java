@@ -38,7 +38,7 @@
 /*
  * @test id=no_coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
- * @requires vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -64,7 +64,7 @@
 /*
  * @test id=coh_cds
  * @summary Test that dereferencing a Klass that is the result of a decode(0) crashes accessing the nKlass guard zone
- * @requires vm.bits == 64 & vm.debug == true & vm.flagless
+ * @requires vm.cds & vm.bits == 64 & vm.debug == true & vm.flagless
  * @requires os.family != "aix"
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -99,7 +99,6 @@ public class AccessZeroNKlassHitsProtectionZone {
         args.add("-Xlog:metaspace*");
         args.add("-Xlog:cds");
         if (COH) {
-            args.add("-XX:+UnlockExperimentalVMOptions");
             args.add("-XX:+UseCompactObjectHeaders");
         }
         if (CDS) {

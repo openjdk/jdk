@@ -24,6 +24,7 @@
 /* @test
    @bug 4096648
    @summary Make sure that isDirectory and lastModified work on "x:"
+   @requires (os.family == "windows")
  */
 
 import java.io.File;
@@ -32,7 +33,6 @@ import java.io.File;
 public class DriveOnly {
 
     public static void main(String[] args) throws Exception {
-        if (File.separatorChar != '\\') return;
         File f = new File("").getCanonicalFile();
         while (f.getParent() != null) f = f.getParentFile();
         String p = f.getPath().substring(0, 2);

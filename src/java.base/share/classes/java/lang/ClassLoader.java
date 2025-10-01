@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -52,6 +52,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.loader.BootLoader;
 import jdk.internal.loader.BuiltinClassLoader;
 import jdk.internal.loader.ClassLoaders;
@@ -1049,14 +1050,22 @@ public abstract class ClassLoader {
 
         protectionDomain = preDefineClass(name, protectionDomain);
         String source = defineClassSourceLocation(protectionDomain);
-        Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
-        postDefineClass(c, protectionDomain);
-        return c;
+
+        SharedSecrets.getJavaNioAccess().acquireSession(b);
+        try {
+            Class<?> c = defineClass2(this, name, b, b.position(), len, protectionDomain, source);
+            postDefineClass(c, protectionDomain);
+            return c;
+        } finally {
+            SharedSecrets.getJavaNioAccess().releaseSession(b);
+        }
     }
 
     static native Class<?> defineClass1(ClassLoader loader, String name, byte[] b, int off, int len,
                                         ProtectionDomain pd, String source);
 
+    // Warning: Before calling this method, the provided ByteBuffer must be guarded
+    //          via JavaNioAccess::(acquire|release)Session
     static native Class<?> defineClass2(ClassLoader loader, String name, java.nio.ByteBuffer b,
                                         int off, int len, ProtectionDomain pd,
                                         String source);
@@ -2565,22 +2574,38 @@ public abstract class ClassLoader {
      */
     private boolean trySetObjectField(String name, Object obj) {
         Unsafe unsafe = Unsafe.getUnsafe();
-        Class<?> k = ClassLoader.class;
-        long offset;
-        offset = unsafe.objectFieldOffset(k, name);
+        long offset = unsafe.objectFieldOffset(ClassLoader.class, name);
         return unsafe.compareAndSetReference(this, offset, null, obj);
     }
 
+    private void reinitObjectField(String name, Object obj) {
+        Unsafe unsafe = Unsafe.getUnsafe();
+        long offset = unsafe.objectFieldOffset(ClassLoader.class, name);
+
+        // Extra safety: check the types
+        Object current = unsafe.getReference(this, offset);
+        if (current.getClass() != obj.getClass()) {
+            throw new IllegalStateException("Wrong field type");
+        }
+
+        unsafe.putReference(this, offset, obj);
+    }
+
     /**
-     * Called by the VM, during -Xshare:dump
+     * Called only by the VM, during -Xshare:dump.
+     *
+     * @implNote This is done while the JVM is running in single-threaded mode,
+     * and at the very end of Java bytecode execution. We know that no more classes
+     * will be loaded and none of the fields modified by this method will be used again.
      */
     private void resetArchivedStates() {
         if (parallelLockMap != null) {
-            parallelLockMap.clear();
+            reinitObjectField("parallelLockMap", new ConcurrentHashMap<>());
         }
-        packages.clear();
-        package2certs.clear();
+        reinitObjectField("packages", new ConcurrentHashMap<>());
+        reinitObjectField("package2certs", new ConcurrentHashMap<>());
         classes.clear();
+        classes.trimToSize();
         classLoaderValueMap = null;
     }
 }

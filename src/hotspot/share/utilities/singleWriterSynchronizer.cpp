@@ -26,8 +26,8 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/singleWriterSynchronizer.hpp"
 
 SingleWriterSynchronizer::SingleWriterSynchronizer() :
   _enter(0),

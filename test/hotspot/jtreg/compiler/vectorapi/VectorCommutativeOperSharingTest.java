@@ -76,7 +76,7 @@ public class VectorCommutativeOperSharingTest {
                   IRNode.MUL_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
                   IRNode.MAX_VI, IRNode.VECTOR_SIZE_ANY, " 2 ",
                   IRNode.MIN_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
-        applyIfCPUFeature = {"avx", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing1(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -115,7 +115,7 @@ public class VectorCommutativeOperSharingTest {
     @IR(counts = {IRNode.XOR_VI, IRNode.VECTOR_SIZE_ANY, " 0 ",
                   IRNode.OR_VI, IRNode.VECTOR_SIZE_ANY, " 1 ",
                   IRNode.AND_VI, IRNode.VECTOR_SIZE_ANY, " 1 "},
-        applyIfCPUFeature = {"avx", "true"})
+        applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing2(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -147,7 +147,8 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx2", "true"})
+    @IR(counts = {IRNode.SATURATING_ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "},
+        applyIfCPUFeatureOr = {"avx2", "true", "rvv", "true"})
     public void testVectorIRSharing3(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -172,7 +173,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing4(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -197,7 +198,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing5(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -222,7 +223,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing6(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -247,7 +248,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing7(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -272,7 +273,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing8(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -297,7 +298,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing9(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -322,7 +323,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing10(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -347,7 +348,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing11(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -372,7 +373,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing12(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -397,7 +398,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing13(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -422,7 +423,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 2 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing14(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -447,7 +448,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing15(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -472,7 +473,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing16(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -497,7 +498,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing17(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -522,7 +523,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeature = {"avx", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
     public void testVectorIRSharing18(int index) {
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
         IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
@@ -547,7 +548,7 @@ public class VectorCommutativeOperSharingTest {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx512vl", "true", "sve", "true"})
+    @IR(counts = {IRNode.ADD_VI, IRNode.VECTOR_SIZE_ANY, " 3 "}, applyIfCPUFeatureOr = {"avx512vl", "true", "sve", "true", "rvv", "true"})
     public void testVectorIRSharing19(int index) {
         VectorMask<Integer> VMASK = VectorMask.fromLong(I_SPECIES, ((1 << 4) - 1));
         IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
@@ -571,6 +572,56 @@ public class VectorCommutativeOperSharingTest {
         for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
             boolean mask = VMASK.laneIsSet(i & (I_SPECIES.length() - 1));
             Verify.checkEQ(ir1[i], (mask ? ia[i] + ib[i] : ia[i]) + (mask ? ib[i] + ia[i] : ib[i]));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.UMAX_VI, IRNode.VECTOR_SIZE_ANY, " 1 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
+    public void testVectorIRSharing20(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // UMax ((UMax vec1, vec2), (UMax vec2, vec1))
+        vec1.lanewise(VectorOperators.UMAX, vec2)
+            .lanewise(VectorOperators.UMAX, vec2.lanewise(VectorOperators.UMAX, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing20")
+    public void testVectorIRSharingDriver20() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing20(i);
+        }
+        checkVectorIRSharing20();
+    }
+
+    public void checkVectorIRSharing20() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], VectorMath.maxUnsigned(ia[i], ib[i]));
+        }
+    }
+
+    @Test
+    @IR(counts = {IRNode.UMIN_VI, IRNode.VECTOR_SIZE_ANY, " 1 "}, applyIfCPUFeatureOr = {"avx", "true", "rvv", "true"})
+    public void testVectorIRSharing21(int index) {
+        IntVector vec1 = IntVector.fromArray(I_SPECIES, ia, index);
+        IntVector vec2 = IntVector.fromArray(I_SPECIES, ib, index);
+        // UMin ((UMin vec1, vec2), (UMin vec2, vec1))
+        vec1.lanewise(VectorOperators.UMIN, vec2)
+            .lanewise(VectorOperators.UMIN, vec2.lanewise(VectorOperators.UMIN, vec1))
+            .intoArray(ir1, index);
+    }
+
+    @Run(test = "testVectorIRSharing21")
+    public void testVectorIRSharingDriver21() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i += I_SPECIES.length()) {
+            testVectorIRSharing21(i);
+        }
+        checkVectorIRSharing21();
+    }
+
+    public void checkVectorIRSharing21() {
+        for (int i = 0; i < I_SPECIES.loopBound(LENGTH); i++) {
+            Verify.checkEQ(ir1[i], VectorMath.minUnsigned(ia[i], ib[i]));
         }
     }
 }

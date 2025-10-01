@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,6 +46,7 @@ public final class BufWriterImpl implements BufWriter {
     private final ConstantPoolBuilder constantPool;
     private final ClassFileImpl context;
     private LabelContext labelContext;
+    private boolean labelsMatch;
     private final ClassEntry thisClass;
     private final int majorVersion;
     byte[] elems;
@@ -76,9 +77,17 @@ public final class BufWriterImpl implements BufWriter {
         return labelContext;
     }
 
-    public void setLabelContext(LabelContext labelContext) {
+    public void setLabelContext(LabelContext labelContext, boolean labelsMatch) {
         this.labelContext = labelContext;
+        this.labelsMatch = labelsMatch;
     }
+
+    public boolean labelsMatch(LabelContext lc) {
+        return labelsMatch
+                && labelContext instanceof DirectCodeBuilder dcb
+                && dcb.original == lc;
+    }
+
     @Override
     public boolean canWriteDirect(ConstantPool other) {
         return constantPool.canWriteDirect(other);
@@ -267,9 +276,7 @@ public final class BufWriterImpl implements BufWriter {
         int strlen = str.length();
         int countNonZeroAscii = JLA.countNonZeroAscii(str);
         int utflen = utfLen(str, countNonZeroAscii);
-        if (utflen > 65535) {
-            throw new IllegalArgumentException("string too long");
-        }
+        Util.checkU2(utflen, "utf8 length");
         reserveSpace(utflen + 3);
 
         int offset = this.offset;
@@ -390,6 +397,7 @@ public final class BufWriterImpl implements BufWriter {
         writeU2(cpIndex(entry));
     }
 
+    // Null checks entry
     public void writeIndex(int bytecode, PoolEntry entry) {
         writeU1U2(bytecode, cpIndex(entry));
     }

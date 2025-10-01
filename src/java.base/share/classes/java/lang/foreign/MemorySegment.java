@@ -1120,9 +1120,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * If this segment is {@linkplain #isAccessibleBy(Thread) accessible} from a single
      * thread, calling read/write I/O operations on the resulting buffer might result in
-     * unspecified exceptions being thrown. Examples of such problematic operations are
-     * {@link java.nio.channels.AsynchronousSocketChannel#read(ByteBuffer)} and
-     * {@link java.nio.channels.AsynchronousSocketChannel#write(ByteBuffer)}.
+     * unspecified exceptions being thrown.
      * <p>
      * Finally, the resulting buffer's byte order is
      * {@link java.nio.ByteOrder#BIG_ENDIAN}; this can be changed using

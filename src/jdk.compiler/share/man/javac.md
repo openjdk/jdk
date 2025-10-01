@@ -325,8 +325,7 @@ file system locations may be directories, JAR files or JMOD files.
 :   Specifies the version of modules that are being compiled.
 
 <a id="option-nowarn">`-nowarn`</a>
-:   Disables warning messages. This option operates the same as the
-    `-Xlint:none` option.
+:   Generate only mandatory warnings.
 
 <a id="option-parameters">`-parameters`</a>
 :   Generates metadata for reflection on method parameters. Stores formal
@@ -562,12 +561,14 @@ file system locations may be directories, JAR files or JMOD files.
     warnings is recommended.
 
 <a id="option-Xlint-custom">`-Xlint:`\[`-`\]*key*(`,`\[`-`\]*key*)\*</a>
-:   Supplies warnings to enable or disable, separated by comma. Precede a key
-    by a hyphen (`-`) to disable the specified warning.
+:   Enables and/or disables warning categories using the one or more of the keys described
+    below separated by commas. The keys `all` and `none` enable or disable all categories
+    (respectively); other keys enable the corresponding category, or disable it if preceded
+    by a hyphen (`-`).
 
     Supported values for *key* are:
 
-    -   `all`: Enables all warnings.
+    -   `all`: Enables all warning categories.
 
     -   `auxiliaryclass`: Warns about an auxiliary class that is hidden in a
         source file, and is used from other files.
@@ -594,6 +595,9 @@ file system locations may be directories, JAR files or JMOD files.
         switch statement to the next.
 
     -   `finally`: Warns about `finally` clauses that do not terminate normally.
+
+    -   `identity`: Warns about use of a value-based class where an identity
+        class is expected
 
     -   `incubating`: Warns about the use of incubating modules.
 
@@ -645,7 +649,9 @@ file system locations may be directories, JAR files or JMOD files.
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
     -   `synchronization`: Warns about synchronization attempts on instances
-        of value-based classes.
+        of value-based classes. This key is a deprecated alias for `identity`,
+        which has the same uses and effects. Users are encouraged to use the
+        `identity` category for all future and existing uses of `synchronization`.
 
     -   `text-blocks`: Warns about inconsistent white space characters in text
         block indentation.
@@ -659,7 +665,7 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `varargs`: Warns about the potentially unsafe `vararg` methods.
 
-    -   `none`: Disables all warnings.
+    -   `none`: Disables all warning categories.
 
     With the exception of `all` and `none`, the keys can be used with
     the `@SuppressWarnings` annotation to suppress warnings in a part

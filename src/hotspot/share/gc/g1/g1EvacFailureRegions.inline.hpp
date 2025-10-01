@@ -25,8 +25,9 @@
 #ifndef SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 #define SHARE_GC_G1_G1EVACFAILUREREGIONS_INLINE_HPP
 
-#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.hpp"
+
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "runtime/atomic.hpp"
 

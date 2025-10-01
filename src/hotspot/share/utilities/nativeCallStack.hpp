@@ -27,8 +27,8 @@
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/resourceHash.hpp"
 
 /*
  * This class represents a native call path (does not include Java frame)
@@ -55,6 +55,7 @@
 class MemTracker;
 
 class NativeCallStack : public StackObj {
+  friend class VMTWithVMATreeTest;
 private:
   address       _stack[NMT_TrackingStackDepth];
   static const NativeCallStack _empty_stack;

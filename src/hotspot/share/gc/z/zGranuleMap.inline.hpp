@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,17 @@ template <typename T>
 inline void ZGranuleMap<T>::release_put(zoffset offset, size_t size, T value) {
   OrderAccess::release();
   put(offset, size, value);
+}
+
+template <typename T>
+inline const T* ZGranuleMap<T>::addr(zoffset offset) const {
+  const size_t index = index_for_offset(offset);
+  return _map + index;
+}
+
+template <typename T>
+inline T* ZGranuleMap<T>::addr(zoffset offset) {
+  return const_cast<T*>(const_cast<const ZGranuleMap<T>*>(this)->addr(offset));
 }
 
 template <typename T, bool Parallel>

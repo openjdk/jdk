@@ -29,6 +29,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.main.Option;
 import static com.sun.tools.javac.main.Option.*;
 
@@ -168,6 +169,70 @@ public class Options {
      */
     public boolean isUnset(Option option, String value) {
         return !isSet(option, value);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is enabled via a custom
+     * option flag of the form {@code -Xlint}, {@code -Xlint:all}, or {@code -Xlint:key}.
+     *
+     * <p>
+     * Note: It's possible the category was also disabled; this method does not check that.
+     *
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been enabled
+     */
+    public boolean isLintEnabled(LintCategory lc) {
+        return isLintExplicitlyEnabled(lc) ||
+            isSet(Option.XLINT_CUSTOM) ||
+            isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is disabled via a custom
+     * option flag of the form {@code -Xlint:none} or {@code -Xlint:-key}.
+     *
+     * <p>
+     * Note: It's possible the category was also enabled; this method does not check that.
+     *
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been disabled
+     */
+    public boolean isLintDisabled(LintCategory lc) {
+        return isLintExplicitlyDisabled(lc) || isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE);
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is explicitly enabled via a custom
+     * option flag of the form {@code -Xlint:key}.
+     *
+     * <p>
+     * Note: This does not check for option flags of the form {@code -Xlint} or {@code -Xlint:all}.
+     *
+     * <p>
+     * Note: It's possible the category was also disabled; this method does not check that.
+     *
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been explicitly enabled
+     */
+    public boolean isLintExplicitlyEnabled(LintCategory lc) {
+        return lc.optionList.stream().anyMatch(alias -> isSet(Option.XLINT_CUSTOM, alias));
+    }
+
+    /**
+     * Determine if a specific {@link LintCategory} is explicitly disabled via a custom
+     * option flag of the form {@code -Xlint:-key}.
+     *
+     * <p>
+     * Note: This does not check for an option flag of the form {@code -Xlint:none}.
+     *
+     * <p>
+     * Note: It's possible the category was also enabled; this method does not check that.
+     *
+     * @param lc the {@link LintCategory} in question
+     * @return true if {@code lc} has been explicitly disabled
+     */
+    public boolean isLintExplicitlyDisabled(LintCategory lc) {
+        return lc.optionList.stream().anyMatch(alias -> isSet(Option.XLINT_CUSTOM, "-" + alias));
     }
 
     public void put(String name, String value) {

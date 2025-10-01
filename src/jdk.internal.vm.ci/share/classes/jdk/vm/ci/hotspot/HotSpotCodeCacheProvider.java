@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
     }
 
     @Override
-    public InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault) {
+    public InstalledCode installCode(ResolvedJavaMethod method, CompiledCode compiledCode, InstalledCode installedCode, SpeculationLog log, boolean isDefault, boolean profileDeopt) {
         InstalledCode resultInstalledCode;
         if (installedCode != null) {
             throw new IllegalArgumentException("InstalledCode argument must be null");
@@ -131,7 +131,7 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         } else {
             hsCompiledNmethod = (HotSpotCompiledNmethod) hsCompiledCode;
             HotSpotResolvedJavaMethodImpl hsMethod = (HotSpotResolvedJavaMethodImpl) method;
-            HotSpotNmethod nmethod = new HotSpotNmethod(hsMethod, name, isDefault, hsCompiledNmethod.id);
+            HotSpotNmethod nmethod = new HotSpotNmethod(hsMethod, name, isDefault, profileDeopt, hsCompiledNmethod.id);
             nmethod.setSpeculationLog(speculationLog);
             resultInstalledCode = nmethod;
         }
@@ -154,14 +154,18 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         return logOrDump(resultInstalledCode, compiledCode);
     }
 
-    @Override
-    public void invalidateInstalledCode(InstalledCode installedCode) {
+    public void invalidateInstalledCode(InstalledCode installedCode, int invalidationReason) {
         if (installedCode instanceof HotSpotNmethod) {
             HotSpotNmethod nmethod = (HotSpotNmethod) installedCode;
-            nmethod.invalidate(true);
+            nmethod.invalidate(true, invalidationReason);
         } else {
             throw new IllegalArgumentException("Cannot invalidate a " + Objects.requireNonNull(installedCode).getClass().getName());
         }
+    }
+
+    @Override
+    public void invalidateInstalledCode(InstalledCode installedCode) {
+        invalidateInstalledCode(installedCode, jvmciInvalidationReason());
     }
 
     @Override
@@ -200,5 +204,9 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
      */
     public void resetCompilationStatistics() {
         runtime.getCompilerToVM().resetCompilationStatistics();
+    }
+
+    private static int jvmciInvalidationReason() {
+        return HotSpotJVMCIRuntime.runtime().config.getConstant("nmethod::InvalidationReason::JVMCI_INVALIDATE", Integer.class);
     }
 }

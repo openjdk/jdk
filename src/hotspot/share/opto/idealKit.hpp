@@ -26,8 +26,8 @@
 #define SHARE_OPTO_IDEALKIT_HPP
 
 #include "opto/addnode.hpp"
-#include "opto/cfgnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/graphKit.hpp"

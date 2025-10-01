@@ -27,7 +27,6 @@
 #include "code/nmethod.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/z/zAbort.inline.hpp"
@@ -389,25 +388,6 @@ void ZMark::follow_object(oop obj, bool finalizable) {
   }
 }
 
-static void try_deduplicate(ZMarkContext* context, oop obj) {
-  if (!StringDedup::is_enabled()) {
-    // Not enabled
-    return;
-  }
-
-  if (!java_lang_String::is_instance(obj)) {
-    // Not a String object
-    return;
-  }
-
-  if (java_lang_String::test_and_set_deduplication_requested(obj)) {
-    // Already requested deduplication
-    return;
-  }
-
-  // Request deduplication
-  context->string_dedup_requests()->add(obj);
-}
 
 void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
   // Decode flags
@@ -449,13 +429,7 @@ void ZMark::mark_and_follow(ZMarkContext* context, ZMarkStackEntry entry) {
     if (is_array(addr)) {
       follow_array_object(objArrayOop(to_oop(addr)), finalizable);
     } else {
-      const oop obj = to_oop(addr);
-      follow_object(obj, finalizable);
-
-      if (!finalizable) {
-        // Try deduplicate
-        try_deduplicate(context, obj);
-      }
+      follow_object(to_oop(addr), finalizable);
     }
   }
 }
@@ -558,13 +532,13 @@ bool ZMark::try_steal(ZMarkContext* context) {
   return try_steal_local(context) || try_steal_global(context);
 }
 
-class ZMarkFlushStacksClosure : public HandshakeClosure {
+class ZMarkFlushStacksHandshakeClosure : public HandshakeClosure {
 private:
   ZMark* const _mark;
   bool         _flushed;
 
 public:
-  ZMarkFlushStacksClosure(ZMark* mark)
+  ZMarkFlushStacksHandshakeClosure(ZMark* mark)
     : HandshakeClosure("ZMarkFlushStacks"),
       _mark(mark),
       _flushed(false) {}
@@ -604,10 +578,14 @@ public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkFlushOperation;
   }
+
+  virtual bool is_gc_operation() const {
+    return true;
+  }
 };
 
 bool ZMark::flush() {
-  ZMarkFlushStacksClosure cl(this);
+  ZMarkFlushStacksHandshakeClosure cl(this);
   VM_ZMarkFlushOperation vm_cl(&cl);
   Handshake::execute(&cl);
   VMThread::execute(&vm_cl);
@@ -795,7 +773,7 @@ public:
         ZNMethod::nmethod_patch_barriers(nm);
       }
 
-      _bs_nm->set_guard_value(nm, (int)untype(new_disarm_value_ptr));
+      _bs_nm->guard_with(nm, (int)untype(new_disarm_value_ptr));
 
       if (complete_disarm) {
         log_trace(gc, nmethod)("nmethod: " PTR_FORMAT " visited by young (complete) [" PTR_FORMAT " -> " PTR_FORMAT "]", p2i(nm), prev_color, untype(new_disarm_value_ptr));
@@ -978,7 +956,7 @@ bool ZMark::try_end() {
   }
 
   // Try end marking
-  ZMarkFlushStacksClosure cl(this);
+  ZMarkFlushStacksHandshakeClosure cl(this);
   Threads::non_java_threads_do(&cl);
 
   // Check if non-java threads have any pending marking

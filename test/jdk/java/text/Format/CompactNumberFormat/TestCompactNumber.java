@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 /*
  * @test
- * @bug 8177552 8217721 8222756 8295372 8306116 8319990 8338690
+ * @bug 8177552 8217721 8222756 8295372 8306116 8319990 8338690 8363972
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
  * @run testng/othervm TestCompactNumber
@@ -462,6 +462,8 @@ public class TestCompactNumber {
                 {FORMAT_SE_SHORT, "12345679,89\u00a0bn", 1.2345679890000001E19, Double.class},
                 {FORMAT_SE_SHORT, "\u2212999", -999L, Long.class},
                 {FORMAT_SE_SHORT, "\u22128\u00a0mn", -8000000L, Long.class},
+                // lenient parsing. Hyphen-minus should match the localized minus sign
+                {FORMAT_SE_SHORT, "-8\u00a0mn", -8000000L, Long.class},
                 {FORMAT_SE_SHORT, "\u22128\u00a0dt", -8000L, Long.class},
                 {FORMAT_SE_SHORT, "\u221212345679\u00a0bn", -1.2345679E19, Double.class},
                 {FORMAT_SE_SHORT, "\u221212345679,89\u00a0bn", -1.2345679890000001E19, Double.class},
@@ -503,8 +505,7 @@ public class TestCompactNumber {
             {FORMAT_EN_US_SHORT, "K12,347", null},
             // Invalid prefix for ja_JP
             {FORMAT_JA_JP_SHORT, "\u4E071", null},
-            // Localized minus sign should be used
-            {FORMAT_SE_SHORT, "-8\u00a0mn", null},};
+        };
     }
 
     @DataProvider(name = "invalidParse")

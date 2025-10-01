@@ -33,21 +33,12 @@
 
 inline bool nmethod::is_deopt_pc(address pc) { return is_deopt_entry(pc) || is_deopt_mh_entry(pc); }
 
-// When using JVMCI the address might be off by the size of a call instruction.
 inline bool nmethod::is_deopt_entry(address pc) {
-  return pc == deopt_handler_begin()
-#if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_handler_begin() + NativeCall::byte_size()))
-#endif
-    ;
+  return pc == deopt_handler_begin();
 }
 
 inline bool nmethod::is_deopt_mh_entry(address pc) {
-  return pc == deopt_mh_handler_begin()
-#if INCLUDE_JVMCI
-    || (is_compiled_by_jvmci() && pc == (deopt_mh_handler_begin() + NativeCall::byte_size()))
-#endif
-    ;
+  return pc == deopt_mh_handler_begin();
 }
 
 // class ExceptionCache methods

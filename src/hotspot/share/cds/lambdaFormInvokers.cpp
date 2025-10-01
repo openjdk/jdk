@@ -23,10 +23,10 @@
  */
 
 #include "cds/aotClassFilter.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
@@ -83,10 +83,10 @@ void LambdaFormInvokers::append(char* line) {
 class PrintLambdaFormMessage {
  public:
   PrintLambdaFormMessage() {
-    log_info(cds)("Regenerate MethodHandle Holder classes...");
+    log_info(aot)("Regenerate MethodHandle Holder classes...");
   }
   ~PrintLambdaFormMessage() {
-    log_info(cds)("Regenerate MethodHandle Holder classes...done");
+    log_info(aot)("Regenerate MethodHandle Holder classes...done");
   }
 };
 
@@ -114,7 +114,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   PrintLambdaFormMessage plm;
   if (_lambdaform_lines == nullptr || _lambdaform_lines->length() == 0) {
-    log_info(cds)("Nothing to regenerate for holder classes");
+    log_info(aot)("Nothing to regenerate for holder classes");
     return;
   }
 
@@ -150,12 +150,12 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   if (HAS_PENDING_EXCEPTION) {
     if (!PENDING_EXCEPTION->is_a(vmClasses::OutOfMemoryError_klass())) {
-      log_error(cds)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
+      log_error(aot)("%s: %s", PENDING_EXCEPTION->klass()->external_name(),
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       if (CDSConfig::is_dumping_static_archive()) {
-        log_error(cds)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
+        log_error(aot)("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
       } else {
-        log_error(cds)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
+        log_error(aot)("Failed to generate LambdaForm holder classes. Was the base archive generated with an outdated classlist?");
       }
       CLEAR_PENDING_EXCEPTION;
     }
@@ -179,12 +179,12 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
       TempNewSymbol class_name_sym = SymbolTable::new_symbol(class_name);
       Klass* klass = SystemDictionary::resolve_or_null(class_name_sym, THREAD);
       assert(klass != nullptr, "must already be loaded");
-      if (!klass->is_shared() && klass->shared_classpath_index() < 0) {
+      if (!klass->in_aot_cache() && klass->shared_classpath_index() < 0) {
         // Fake it, so that it will be included into the archive.
         klass->set_shared_classpath_index(0);
         // Set the "generated" bit, so it won't interfere with JVMTI.
         // See SystemDictionaryShared::find_builtin_class().
-        klass->set_is_generated_shared_class();
+        klass->set_is_aot_generated_class();
       }
     } else {
       int len = h_bytes->length();
@@ -219,14 +219,15 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
   result->add_to_hierarchy(THREAD);
 
   // new class not linked yet.
-  MetaspaceShared::try_link_class(THREAD, result);
+  AOTMetaspace::try_link_class(THREAD, result);
   assert(!HAS_PENDING_EXCEPTION, "Invariant");
 
-  result->set_is_generated_shared_class();
-  if (!klass->is_shared()) {
+  result->set_is_aot_generated_class();
+  if (!klass->in_aot_cache()) {
+    log_info(aot, lambda)("regenerate_class excluding klass %s %s", class_name, klass->name()->as_C_string());
     SystemDictionaryShared::set_excluded(InstanceKlass::cast(klass)); // exclude the existing class from dump
   }
-  log_info(cds, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
+  log_info(aot, lambda)("Regenerated class %s, old: " INTPTR_FORMAT " new: " INTPTR_FORMAT,
                  class_name, p2i(klass), p2i(result));
 }
 
@@ -256,7 +257,7 @@ void LambdaFormInvokers::dump_static_archive_invokers() {
       }
       assert(index == count, "Should match");
     }
-    log_debug(cds)("Total LF lines stored into %s: %d", CDSConfig::type_of_archive_being_written(), count);
+    log_debug(aot)("Total LF lines stored into %s: %d", CDSConfig::type_of_archive_being_written(), count);
   }
 }
 
@@ -268,7 +269,7 @@ void LambdaFormInvokers::read_static_archive_invokers() {
       char* str = line->adr_at(0);
       append(str);
     }
-    log_debug(cds)("Total LF lines read from %s: %d", CDSConfig::type_of_archive_being_loaded(), _static_archive_invokers->length());
+    log_debug(aot)("Total LF lines read from %s: %d", CDSConfig::type_of_archive_being_loaded(), _static_archive_invokers->length());
   }
 }
 

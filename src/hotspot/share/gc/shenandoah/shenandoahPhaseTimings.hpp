@@ -26,9 +26,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPHASETIMINGS_HPP
 
-#include "jfr/jfrEvents.hpp"
-#include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shared/workerDataArray.hpp"
+#include "gc/shenandoah/shenandoahNumberSeq.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 
 class ShenandoahCollectorPolicy;
@@ -197,8 +197,6 @@ class outputStream;
   f(full_gc_reconstruct_remembered_set,             "    Reconstruct Remembered Set")  \
   f(full_gc_heapdump_post,                          "  Post Heap Dump")                \
   f(full_gc_propagate_gc_state,                     "  Propagate GC State")            \
-                                                                                       \
-  f(pacing,                                         "Pacing")                          \
                                                                                        \
   f(heap_iteration_roots,                           "Heap Iteration")                  \
   SHENANDOAH_PAR_PHASE_DO(heap_iteration_roots_,    "  HI: ", f)                       \

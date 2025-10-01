@@ -24,20 +24,11 @@
  */
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-
-#include "shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 
-void ShenandoahController::pacing_notify_alloc(size_t words) {
-  assert(ShenandoahPacing, "should only call when pacing is enabled");
-  Atomic::add(&_allocs_seen, words, memory_order_relaxed);
-}
-
-size_t ShenandoahController::reset_allocs_seen() {
-  return Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
-}
 
 void ShenandoahController::update_gc_id() {
   Atomic::inc(&_gc_id);

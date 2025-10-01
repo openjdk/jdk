@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ src/jdk.jdi : jdk/src/jdk.jdi
 src/jdk.jdwp.agent : jdk/src/jdk.jdwp.agent
 src/jdk.jlink : jdk/src/jdk.jlink
 src/jdk.jshell : langtools/src/jdk.jshell
-src/jdk.jsobject : jdk/src/jdk.jsobject
 src/jdk.jstatd : jdk/src/jdk.jstatd
 src/jdk.localedata : jdk/src/jdk.localedata
 src/jdk.management : jdk/src/jdk.management

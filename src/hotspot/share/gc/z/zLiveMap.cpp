@@ -30,28 +30,24 @@
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/spinYield.hpp"
 
 static const ZStatCounter ZCounterMarkSeqNumResetContention("Contention", "Mark SeqNum Reset Contention", ZStatUnitOpsPerSecond);
 static const ZStatCounter ZCounterMarkSegmentResetContention("Contention", "Mark Segment Reset Contention", ZStatUnitOpsPerSecond);
 
-static size_t bitmap_size(uint32_t size, size_t NumSegments) {
-  // We need at least one bit per segment
-  return MAX2<size_t>(size, NumSegments) * 2;
-}
-
-ZLiveMap::ZLiveMap(uint32_t size)
-  : _seqnum(0),
+ZLiveMap::ZLiveMap(uint32_t object_max_count)
+  : _segment_size((object_max_count == 1 ? 1u : (object_max_count / NumSegments)) * BitsPerObject),
+    _segment_shift(log2i_exact(_segment_size)),
+    _seqnum(0),
     _live_objects(0),
     _live_bytes(0),
     _segment_live_bits(0),
     _segment_claim_bits(0),
-    _bitmap_size(bitmap_size(size, NumSegments)),
-    _bitmap(0),
-    _segment_shift(log2i_exact(segment_size())) {}
+    _bitmap(0) {}
 
-void ZLiveMap::allocate_bitmap() {
-  if (_bitmap.size() != _bitmap_size) {
-    _bitmap.initialize(_bitmap_size, false /* clear */);
+void ZLiveMap::initialize_bitmap() {
+  if (_bitmap.size() == 0) {
+    _bitmap.initialize(size_t(_segment_size) * size_t(NumSegments), false /* clear */);
   }
 }
 
@@ -60,33 +56,40 @@ void ZLiveMap::reset(ZGenerationId id) {
   const uint32_t seqnum_initializing = (uint32_t)-1;
   bool contention = false;
 
+  SpinYield yielder(0, 0, 1000);
+
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
   for (uint32_t seqnum = Atomic::load_acquire(&_seqnum);
        seqnum != generation->seqnum();
        seqnum = Atomic::load_acquire(&_seqnum)) {
-    if ((seqnum != seqnum_initializing) &&
-        (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum)) {
-      // Reset marking information
-      _live_bytes = 0;
-      _live_objects = 0;
 
-      // We lazily initialize the bitmap the first time the page is
-      // marked, i.e. a bit is about to be set for the first time.
-      allocate_bitmap();
+    if (seqnum != seqnum_initializing) {
+      // No one has claimed initialization of the livemap yet
+      if (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum) {
+        // This thread claimed the initialization
 
-      // Clear segment claimed/live bits
-      segment_live_bits().clear();
-      segment_claim_bits().clear();
+        // Reset marking information
+        _live_bytes = 0;
+        _live_objects = 0;
 
-      assert(_seqnum == seqnum_initializing, "Invalid");
+        // Clear segment claimed/live bits
+        segment_live_bits().clear();
+        segment_claim_bits().clear();
 
-      // Make sure the newly reset marking information is ordered
-      // before the update of the page seqnum, such that when the
-      // up-to-date seqnum is load acquired, the bit maps will not
-      // contain stale information.
-      Atomic::release_store(&_seqnum, generation->seqnum());
-      break;
+        // We lazily initialize the bitmap the first time the page is marked, i.e.
+        // a bit is about to be set for the first time.
+        initialize_bitmap();
+
+        assert(_seqnum == seqnum_initializing, "Invalid");
+
+        // Make sure the newly reset marking information is ordered
+        // before the update of the page seqnum, such that when the
+        // up-to-date seqnum is load acquired, the bit maps will not
+        // contain stale information.
+        Atomic::release_store(&_seqnum, generation->seqnum());
+        break;
+      }
     }
 
     // Mark reset contention
@@ -98,6 +101,9 @@ void ZLiveMap::reset(ZGenerationId id) {
       log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT,
                     p2i(Thread::current()), ZUtils::thread_name(), p2i(this));
     }
+
+    // "Yield" to allow the thread that's resetting the livemap to finish
+    yielder.wait();
   }
 }
 
@@ -125,7 +131,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
   // Segment claimed, clear it
   const BitMap::idx_t start_index = segment_start(segment);
   const BitMap::idx_t end_index   = segment_end(segment);
-  if (segment_size() / BitsPerWord >= 32) {
+  if (_segment_size / BitsPerWord >= 32) {
     _bitmap.clear_large_range(start_index, end_index);
   } else {
     _bitmap.clear_range(start_index, end_index);
@@ -134,14 +140,4 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
   // Set live bit
   const bool success = set_segment_live(segment);
   assert(success, "Should never fail");
-}
-
-void ZLiveMap::resize(uint32_t size) {
-  const size_t new_bitmap_size = bitmap_size(size, NumSegments);
-  _bitmap_size = new_bitmap_size;
-  _segment_shift = log2i_exact(segment_size());
-
-  if (_bitmap.size() != 0 && _bitmap.size() != new_bitmap_size) {
-    _bitmap.reinitialize(new_bitmap_size, false /* clear */);
-  }
 }

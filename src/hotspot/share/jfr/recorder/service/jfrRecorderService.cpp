@@ -22,14 +22,13 @@
  *
  */
 
-#include "jfrfiles/jfrEventClasses.hpp"
 #include "jfr/jni/jfrJavaSupport.hpp"
-#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/checkpoint/objectSampleCheckpoint.hpp"
+#include "jfr/leakprofiler/leakProfiler.hpp"
 #include "jfr/leakprofiler/sampling/objectSampler.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointManager.hpp"
 #include "jfr/recorder/checkpoint/jfrMetadataEvent.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/repository/jfrChunkRotation.hpp"
 #include "jfr/recorder/repository/jfrChunkWriter.hpp"
 #include "jfr/recorder/repository/jfrRepository.hpp"
@@ -43,8 +42,9 @@
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
-#include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
+#include "jfr/writers/jfrJavaEventWriter.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -367,13 +367,14 @@ static u4 flush_typeset(JfrCheckpointManager& checkpoint_manager, JfrChunkWriter
 class MetadataEvent : public StackObj {
  private:
   JfrChunkWriter& _cw;
+  size_t _elements;
  public:
-  MetadataEvent(JfrChunkWriter& cw) : _cw(cw) {}
+  MetadataEvent(JfrChunkWriter& cw) : _cw(cw), _elements(0) {}
   bool process() {
-    JfrMetadataEvent::write(_cw);
+    _elements = JfrMetadataEvent::write(_cw);
     return true;
   }
-  size_t elements() const { return 1; }
+  size_t elements() const { return _elements; }
 };
 
 typedef WriteContent<MetadataEvent> WriteMetadata;
@@ -484,13 +485,12 @@ void JfrRecorderService::invoke_safepoint_clear() {
 
 void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  _checkpoint_manager.begin_epoch_shift();
   _storage.clear();
   _checkpoint_manager.notify_threads();
   _chunkwriter.set_time_stamp();
   JfrDeprecationManager::on_safepoint_clear();
   JfrStackTraceRepository::clear();
-  _checkpoint_manager.end_epoch_shift();
+  _checkpoint_manager.shift_epoch();
 }
 
 void JfrRecorderService::post_safepoint_clear() {
@@ -593,14 +593,13 @@ void JfrRecorderService::invoke_safepoint_write() {
 
 void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  _checkpoint_manager.begin_epoch_shift();
   JfrStackTraceRepository::clear_leak_profiler();
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
   JfrDeprecationManager::on_safepoint_write();
   write_stacktrace(_stack_trace_repository, _chunkwriter, true);
-  _checkpoint_manager.end_epoch_shift();
+  _checkpoint_manager.shift_epoch();
 }
 
 void JfrRecorderService::post_safepoint_write() {
@@ -647,7 +646,7 @@ static void write_thread_local_buffer(JfrChunkWriter& chunkwriter, Thread* t) {
 
 size_t JfrRecorderService::flush() {
   size_t total_elements = flush_metadata(_chunkwriter);
-  total_elements = flush_storage(_storage, _chunkwriter);
+  total_elements += flush_storage(_storage, _chunkwriter);
   if (_string_pool.is_modified()) {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }

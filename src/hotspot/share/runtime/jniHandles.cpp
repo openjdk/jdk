@@ -342,9 +342,9 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(JavaThread* thread, AllocFailType
   block->_next = nullptr;
   block->_pop_frame_link = nullptr;
   // _last, _free_list & _allocate_before_rebuild initialized in allocate_handle
-  debug_only(block->_last = nullptr);
-  debug_only(block->_free_list = nullptr);
-  debug_only(block->_allocate_before_rebuild = -1);
+  DEBUG_ONLY(block->_last = nullptr);
+  DEBUG_ONLY(block->_free_list = nullptr);
+  DEBUG_ONLY(block->_allocate_before_rebuild = -1);
   return block;
 }
 

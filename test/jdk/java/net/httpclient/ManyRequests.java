@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8087112 8180044 8256459
+ * @key intermittent
  * @modules java.net.http
  *          java.logging
  *          jdk.httpserver
@@ -32,14 +33,10 @@
  * @compile ../../../com/sun/net/httpserver/LogFilter.java
  * @compile ../../../com/sun/net/httpserver/EchoHandler.java
  * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
- * @run main/othervm/timeout=40 -Djdk.tracePinnedThreads=full
- *                              -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
  * @summary Send a large number of requests asynchronously
  */
  // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests

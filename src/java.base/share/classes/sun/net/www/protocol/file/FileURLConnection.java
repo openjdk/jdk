@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.net.www.protocol.file;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.FileNameMap;
 import java.io.*;
@@ -45,6 +46,11 @@ public class FileURLConnection extends URLConnection {
     private static final String CONTENT_TYPE = "content-type";
     private static final String TEXT_PLAIN = "text/plain";
     private static final String LAST_MODIFIED = "last-modified";
+
+    // The feature of falling back to FTP for non-local file URLs is disabled
+    // by default and can be re-enabled by setting a system property
+    private static final boolean FTP_FALLBACK_ENABLED =
+            Boolean.getBoolean("jdk.net.file.ftpfallback");
 
     private final File file;
     private InputStream is;
@@ -204,6 +210,9 @@ public class FileURLConnection extends URLConnection {
     /* since getOutputStream isn't supported, only read permission is
      * relevant
      */
+    @Override
+    @Deprecated(since = "25", forRemoval = true)
+    @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         if (permission == null) {
             String decodedPath = ParseUtil.decode(url.getPath());
@@ -220,5 +229,18 @@ public class FileURLConnection extends URLConnection {
             }
         }
         return permission;
+    }
+
+    /**
+     * Throw {@link MalformedURLException} if the FTP fallback feature for non-local
+     * file URLs is not explicitly enabled via system property.
+     *
+     * @see #FTP_FALLBACK_ENABLED
+     * @throws MalformedURLException if FTP fallback is not enabled
+     */
+     static void requireFtpFallbackEnabled() throws MalformedURLException {
+        if (!FTP_FALLBACK_ENABLED) {
+            throw new MalformedURLException("Unsupported non-local file URL");
+        }
     }
 }

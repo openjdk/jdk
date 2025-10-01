@@ -688,7 +688,7 @@ BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
 
 }
 
-void BitMap::print_on_error(outputStream* st, const char* prefix) const {
+void BitMap::print_range_on(outputStream* st, const char* prefix) const {
   st->print_cr("%s[" PTR_FORMAT ", " PTR_FORMAT ")",
       prefix, p2i(map()), p2i((char*)map() + (size() >> LogBitsPerByte)));
 }

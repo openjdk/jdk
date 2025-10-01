@@ -174,7 +174,9 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
     break;
   case Interpreter::java_lang_math_fmaD:
   case Interpreter::java_lang_math_fmaF:
+  case Interpreter::java_lang_math_sinh:
   case Interpreter::java_lang_math_tanh:
+  case Interpreter::java_lang_math_cbrt:
     // TODO: Implement intrinsic
     break;
   default:
@@ -1467,11 +1469,11 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(R0_tos);
-  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_offset()));
+  __ str(R0_tos, Address(Rthread, JavaThread::vm_result_oop_offset()));
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, Rexception_pc, false, true, false);
   // restore exception
-  __ get_vm_result(Rexception_obj, Rtemp);
+  __ get_vm_result_oop(Rexception_obj, Rtemp);
 
   // In between activations - previous activation type unknown yet
   // compute continuation point - the continuation point expects

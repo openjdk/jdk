@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -41,7 +41,7 @@ import javax.xml.transform.TransformerException;
  * the expression executes, it calls ExtensionsTable#extFunction, and then
  * converts the result to the appropriate XObject.
  * @xsl.usage advanced
- * @LastModified: May 2022
+ * @LastModified: Apr 2025
  */
 public class FuncExtFunction extends Function
 {
@@ -186,12 +186,6 @@ public class FuncExtFunction extends Function
    */
   public XObject execute(XPathContext xctxt) throws TransformerException
   {
-    if (xctxt.isSecureProcessing())
-      throw new javax.xml.transform.TransformerException(
-        XPATHMessages.createXPATHMessage(
-          XPATHErrorResources.ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-          new Object[] {toString()}));
-
     XObject result;
     List<XObject> argVec = new ArrayList<>();
     int nArgs = m_argVec.size();

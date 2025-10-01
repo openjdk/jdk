@@ -1,7 +1,7 @@
 #!/bin/bash -f
 
 #
-# Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,6 @@ set -e
 # To allow total changes counting
 shopt -s lastpipe
 
-# Get an absolute path to this script, since that determines the top-level directory.
-this_script_dir=`dirname $0`
-this_script_dir=`cd $this_script_dir > /dev/null && pwd`
-
 # Temp area
 tmp=/tmp/`basename $0`.${USER}.$$
 rm -f -r ${tmp}
@@ -66,17 +62,22 @@ Help()
   echo "options:"
   echo "-c     Specifies the company. Set to Oracle by default."
   echo "-y     Specifies the copyright year. Set to current year by default."
+  echo "-b     Specifies the base reference for change set lookup."
   echo "-f     Updates the copyright for all change sets in a given year,"
-  echo "       as specified by -y."
+  echo "       as specified by -y. Overrides -b flag."
   echo "-h     Print this help."
   echo
 }
 
 full_year=false
+base_reference=master
 
 # Process options
-while getopts "c:fhy:" option; do
+while getopts "b:c:fhy:" option; do
   case $option in
+    b) # supplied base reference
+      base_reference=${OPTARG}
+      ;;
     c) # supplied company year
       company=${OPTARG}
       ;;
@@ -98,10 +99,16 @@ while getopts "c:fhy:" option; do
 done
 
 # VCS check
+git_installed=false
+which git > /dev/null && git_installed=true
+if [ "$git_installed" != "true" ]; then
+  echo "Error: This script requires git. Please install it."
+  exit 1
+fi
 git_found=false
-[ -d "${this_script_dir}/../../.git" ] && git_found=true
+git status &> /dev/null && git_found=true
 if [ "$git_found" != "true" ]; then
-  echo "Error: Please execute script from within make/scripts."
+  echo "Error: Please execute script from within a JDK git repository."
   exit 1
 else
   echo "Using Git version control system"
@@ -109,7 +116,7 @@ else
   if [ "$full_year" = "true" ]; then
     vcs_list_changesets=(git log --no-merges --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
   else
-    vcs_list_changesets=(git log --no-merges 'master..HEAD' --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
+    vcs_list_changesets=(git log --no-merges "${base_reference}..HEAD" --since="${year}-01-01T00:00:00Z" --until="${year}-12-31T23:59:59Z" --pretty=tformat:"%H")
   fi
   vcs_changeset_message=(git log -1 --pretty=tformat:"%B") # followed by ${changeset}
   vcs_changeset_files=(git diff-tree --no-commit-id --name-only -r) # followed by ${changeset}

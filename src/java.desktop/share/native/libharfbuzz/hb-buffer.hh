@@ -229,6 +229,8 @@ struct hb_buffer_t
   HB_INTERNAL void add (hb_codepoint_t  codepoint,
                         unsigned int    cluster);
   HB_INTERNAL void add_info (const hb_glyph_info_t &glyph_info);
+  HB_INTERNAL void add_info_and_pos (const hb_glyph_info_t &glyph_info,
+                                     const hb_glyph_position_t &glyph_pos);
 
   void reverse_range (unsigned start, unsigned end)
   {
@@ -409,6 +411,9 @@ struct hb_buffer_t
                          bool from_out_buffer = false)
   {
     end = hb_min (end, len);
+
+    if (unlikely (end - start > 255))
+      return;
 
     if (interior && !from_out_buffer && end - start < 2)
       return;

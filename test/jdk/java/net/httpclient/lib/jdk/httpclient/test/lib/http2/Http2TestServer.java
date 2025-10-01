@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
+
 import jdk.internal.net.http.frame.ErrorFrame;
 
 /**
@@ -64,24 +65,18 @@ public class Http2TestServer implements AutoCloseable {
     // request approver which takes the server connection key as the input
     private volatile Predicate<String> newRequestApprover;
 
-    private static ThreadFactory defaultThreadFac =
-        (Runnable r) -> {
-            Thread t = new Thread(r);
-            t.setName("Test-server-pool");
-            return t;
-        };
-
-
-    private static ExecutorService getDefaultExecutor() {
-        return Executors.newCachedThreadPool(defaultThreadFac);
+    private static ExecutorService createExecutor(String name) {
+        String threadNamePrefix = "%s-pool".formatted(name);
+        ThreadFactory threadFactory = Thread.ofPlatform().name(threadNamePrefix, 0).factory();
+        return Executors.newCachedThreadPool(threadFactory);
     }
 
     public Http2TestServer(String serverName, boolean secure, int port) throws Exception {
-        this(serverName, secure, port, getDefaultExecutor(), 50, null, null);
+        this(serverName, secure, port, null, 50, null, null);
     }
 
     public Http2TestServer(boolean secure, int port) throws Exception {
-        this(null, secure, port, getDefaultExecutor(), 50, null, null);
+        this(null, secure, port, null, 50, null, null);
     }
 
     public InetSocketAddress getAddress() {
@@ -197,7 +192,7 @@ public class Http2TestServer implements AutoCloseable {
             server = initPlaintext(port, backlog);
         }
         this.secure = secure;
-        this.exec = exec == null ? getDefaultExecutor() : exec;
+        this.exec = exec == null ? createExecutor(name) : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
         this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();

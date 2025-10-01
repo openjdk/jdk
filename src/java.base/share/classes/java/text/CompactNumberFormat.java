@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ import java.util.stream.Collectors;
  * a compact pattern. This special pattern can appear explicitly for any specific
  * range, or considered as a default pattern for an empty string.
  *
- * <h3>Negative Subpatterns</h3>
+ * <h3><a id="negative_subpatterns">Negative Subpatterns</a></h3>
  * A compact pattern contains a positive and negative subpattern
  * separated by a subpattern boundary character {@code ';'},
  * for example, {@code "0K;-0K"}. Each subpattern has a prefix,
@@ -159,7 +159,10 @@ import java.util.stream.Collectors;
  * the negative prefix and suffix. The number of minimum integer digits,
  * and other characteristics are all the same as the positive pattern.
  * That means that {@code "0K;-00K"} produces precisely the same behavior
- * as {@code "0K;-0K"}.
+ * as {@code "0K;-0K"}. In {@link NumberFormat##leniency lenient parsing}
+ * mode, loose matching of the minus sign pattern is enabled, following the
+ * LDML’s <a href="https://unicode.org/reports/tr35/#Loose_Matching">
+ * loose matching</a> specification.
  *
  * <h4>Escaping Special Characters</h4>
  * Many characters in a compact pattern are taken literally, they are matched
@@ -1585,6 +1588,9 @@ public final class CompactNumberFormat extends NumberFormat {
      *   and are not digits that occur within the numerical portion
      * </ul>
      * <p>
+     * When lenient, the minus sign in the {@link ##negative_subpatterns
+     * negative subpatterns} is loosely matched against lenient minus sign characters.
+     * <p>
      * The subclass returned depends on the value of
      * {@link #isParseBigDecimal}.
      * <ul>
@@ -1693,14 +1699,12 @@ public final class CompactNumberFormat extends NumberFormat {
         // Given text does not match the non empty valid compact prefixes
         // check with the default prefixes
         if (!gotPositive && !gotNegative) {
-            if (text.regionMatches(pos.index, defaultPosPrefix, 0,
-                    defaultPosPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultPosPrefix)) {
                 // Matches the default positive prefix
                 matchedPosPrefix = defaultPosPrefix;
                 gotPositive = true;
             }
-            if (text.regionMatches(pos.index, defaultNegPrefix, 0,
-                    defaultNegPrefix.length())) {
+            if (decimalFormat.matchAffix(text, position, defaultNegPrefix)) {
                 // Matches the default negative prefix
                 matchedNegPrefix = defaultNegPrefix;
                 gotNegative = true;
@@ -1924,7 +1928,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!affix.isEmpty() && !affix.equals(defaultAffix)) {
             // Look ahead only for the longer match than the previous match
             if (matchedAffix.length() < affix.length()) {
-                return text.regionMatches(position, affix, 0, affix.length());
+                return decimalFormat.matchAffix(text, position, affix);
             }
         }
         return false;
@@ -2026,8 +2030,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (!gotPos && !gotNeg) {
             String positiveSuffix = defaultDecimalFormat.getPositiveSuffix();
             String negativeSuffix = defaultDecimalFormat.getNegativeSuffix();
-            boolean containsPosSuffix = text.regionMatches(position,
-                    positiveSuffix, 0, positiveSuffix.length());
+            boolean containsPosSuffix = decimalFormat.matchAffix(text, position, positiveSuffix);
             boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
                     position + positiveSuffix.length();
             if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
@@ -2035,8 +2038,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
             }
-            boolean containsNegSuffix = text.regionMatches(position,
-                    negativeSuffix, 0, negativeSuffix.length());
+            boolean containsNegSuffix = decimalFormat.matchAffix(text, position, negativeSuffix);
             boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
                     position + negativeSuffix.length();
             if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
@@ -2169,14 +2171,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the maximum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of integer digits to be shown
-     * @see #getMaximumIntegerDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the maximum integer digits count is set to 309.
+     * @param newValue the maximum number of integer digits to be shown.
      */
     @Override
     public void setMaximumIntegerDigits(int newValue) {
@@ -2194,14 +2192,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the integer portion of a
-     * number.
-     * The maximum allowed integer range is 309, if the {@code newValue} &gt; 309,
-     * then the minimum integer digits count is set to 309. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of integer digits to be shown
-     * @see #getMinimumIntegerDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed integer range is 309, if the {@code newValue} &gt;
+     * 309, then the minimum integer digits count is set to 309.
+     * @param newValue the minimum number of integer digits to be shown.
      */
     @Override
     public void setMinimumIntegerDigits(int newValue) {
@@ -2219,14 +2213,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the minimum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the minimum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the minimum number of fraction digits to be shown
-     * @see #getMinimumFractionDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the minimum fraction digits count is set to 340.
+     * @param newValue the minimum number of fraction digits to be shown.
      */
     @Override
     public void setMinimumFractionDigits(int newValue) {
@@ -2245,14 +2235,10 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Sets the maximum number of digits allowed in the fraction portion of a
-     * number.
-     * The maximum allowed fraction range is 340, if the {@code newValue} &gt; 340,
-     * then the maximum fraction digits count is set to 340. Negative input
-     * values are replaced with 0.
-     *
-     * @param newValue the maximum number of fraction digits to be shown
-     * @see #getMaximumFractionDigits()
+     * {@inheritDoc NumberFormat}
+     * <p>The maximum allowed fraction range is 340, if the {@code newValue} &gt;
+     * 340, then the maximum fraction digits count is set to 340.
+     * @param newValue the maximum number of fraction digits to be shown.
      */
     @Override
     public void setMaximumFractionDigits(int newValue) {

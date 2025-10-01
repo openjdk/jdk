@@ -100,7 +100,7 @@ class PcDescCache {
   typedef PcDesc* PcDescPtr;
   volatile PcDescPtr _pc_descs[cache_size]; // last cache_size pc_descs found
  public:
-  PcDescCache() { debug_only(_pc_descs[0] = nullptr); }
+  PcDescCache() { DEBUG_ONLY(_pc_descs[0] = nullptr); }
   void    init_to(PcDesc* initial_pc_desc);
   PcDesc* find_pc_desc(int pc_offset, bool approximate);
   void    add_pc_desc(PcDesc* pc_desc);
@@ -237,7 +237,9 @@ class nmethod : public CodeBlob {
 
   uint16_t _oops_size;
 #if INCLUDE_JVMCI
-  uint16_t _jvmci_data_size;
+  // _metadata_size is not specific to JVMCI. In the non-JVMCI case, it can be derived as:
+  // _metadata_size = mutable_data_size - relocation_size
+  uint16_t _metadata_size;
 #endif
 
   // Offset in immutable data section
@@ -469,6 +471,82 @@ class nmethod : public CodeBlob {
   void oops_do_set_strong_done(nmethod* old_head);
 
 public:
+  // If you change anything in this enum please patch
+  // vmStructs_jvmci.cpp accordingly.
+  enum class InvalidationReason : s1 {
+    NOT_INVALIDATED = -1,
+    C1_CODEPATCH,
+    C1_DEOPTIMIZE,
+    C1_DEOPTIMIZE_FOR_PATCHING,
+    C1_PREDICATE_FAILED_TRAP,
+    CI_REPLAY,
+    UNLOADING,
+    UNLOADING_COLD,
+    JVMCI_INVALIDATE,
+    JVMCI_MATERIALIZE_VIRTUAL_OBJECT,
+    JVMCI_REPLACED_WITH_NEW_CODE,
+    JVMCI_REPROFILE,
+    MARKED_FOR_DEOPTIMIZATION,
+    MISSING_EXCEPTION_HANDLER,
+    NOT_USED,
+    OSR_INVALIDATION_BACK_BRANCH,
+    OSR_INVALIDATION_FOR_COMPILING_WITH_C1,
+    OSR_INVALIDATION_OF_LOWER_LEVEL,
+    SET_NATIVE_FUNCTION,
+    UNCOMMON_TRAP,
+    WHITEBOX_DEOPTIMIZATION,
+    ZOMBIE,
+    INVALIDATION_REASONS_COUNT
+  };
+
+
+  static const char* invalidation_reason_to_string(InvalidationReason invalidation_reason) {
+    switch (invalidation_reason) {
+      case InvalidationReason::C1_CODEPATCH:
+        return "C1 code patch";
+      case InvalidationReason::C1_DEOPTIMIZE:
+        return "C1 deoptimized";
+      case InvalidationReason::C1_DEOPTIMIZE_FOR_PATCHING:
+        return "C1 deoptimize for patching";
+      case InvalidationReason::C1_PREDICATE_FAILED_TRAP:
+        return "C1 predicate failed trap";
+      case InvalidationReason::CI_REPLAY:
+        return "CI replay";
+      case InvalidationReason::JVMCI_INVALIDATE:
+        return "JVMCI invalidate";
+      case InvalidationReason::JVMCI_MATERIALIZE_VIRTUAL_OBJECT:
+        return "JVMCI materialize virtual object";
+      case InvalidationReason::JVMCI_REPLACED_WITH_NEW_CODE:
+        return "JVMCI replaced with new code";
+      case InvalidationReason::JVMCI_REPROFILE:
+        return "JVMCI reprofile";
+      case InvalidationReason::MARKED_FOR_DEOPTIMIZATION:
+        return "marked for deoptimization";
+      case InvalidationReason::MISSING_EXCEPTION_HANDLER:
+        return "missing exception handler";
+      case InvalidationReason::NOT_USED:
+        return "not used";
+      case InvalidationReason::OSR_INVALIDATION_BACK_BRANCH:
+        return "OSR invalidation back branch";
+      case InvalidationReason::OSR_INVALIDATION_FOR_COMPILING_WITH_C1:
+        return "OSR invalidation for compiling with C1";
+      case InvalidationReason::OSR_INVALIDATION_OF_LOWER_LEVEL:
+        return "OSR invalidation of lower level";
+      case InvalidationReason::SET_NATIVE_FUNCTION:
+        return "set native function";
+      case InvalidationReason::UNCOMMON_TRAP:
+        return "uncommon trap";
+      case InvalidationReason::WHITEBOX_DEOPTIMIZATION:
+        return "whitebox deoptimization";
+      case InvalidationReason::ZOMBIE:
+        return "zombie";
+      default: {
+        assert(false, "Unhandled reason");
+        return "Unknown";
+      }
+    }
+  }
+
   // create nmethod with entry_bci
   static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
@@ -537,8 +615,8 @@ public:
   // mutable data
   Metadata** metadata_begin     () const { return (Metadata**) (mutable_data_begin() + _relocation_size); }
 #if INCLUDE_JVMCI
-  Metadata** metadata_end       () const { return (Metadata**) (mutable_data_end() - _jvmci_data_size); }
-  address jvmci_data_begin      () const { return               mutable_data_end() - _jvmci_data_size; }
+  Metadata** metadata_end       () const { return (Metadata**) (mutable_data_begin() + _relocation_size + _metadata_size); }
+  address jvmci_data_begin      () const { return               mutable_data_begin() + _relocation_size + _metadata_size; }
   address jvmci_data_end        () const { return               mutable_data_end(); }
 #else
   Metadata** metadata_end       () const { return (Metadata**)  mutable_data_end(); }
@@ -631,8 +709,8 @@ public:
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant(const char* reason);
-  bool  make_not_used()    { return make_not_entrant("not used"); }
+  bool  make_not_entrant(InvalidationReason invalidation_reason);
+  bool  make_not_used() { return make_not_entrant(InvalidationReason::NOT_USED); }
 
   bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
   bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
@@ -835,10 +913,13 @@ public:
   JVMCINMethodData* jvmci_nmethod_data() const {
     return jvmci_data_size() == 0 ? nullptr : (JVMCINMethodData*) jvmci_data_begin();
   }
+
+  // Returns true if the runtime should NOT collect deoptimization profile for a JVMCI
+  // compiled method
+  bool jvmci_skip_profile_deopt() const;
 #endif
 
-  void oops_do(OopClosure* f) { oops_do(f, false); }
-  void oops_do(OopClosure* f, bool allow_dead);
+  void oops_do(OopClosure* f);
 
   // All-in-one claiming of nmethods: returns true if the caller successfully claimed that
   // nmethod.
@@ -945,7 +1026,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
-  void log_state_change(const char* reason) const;
+  void log_state_change(InvalidationReason invalidation_reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:
   void print_nmethod_labels(outputStream* stream, address block_begin, bool print_section_labels=true) const;

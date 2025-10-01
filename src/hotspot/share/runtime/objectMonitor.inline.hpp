@@ -52,11 +52,7 @@ inline int64_t ObjectMonitor::owner_id_from(oop vthread) {
 
 inline bool ObjectMonitor::is_entered(JavaThread* current) const {
   if (has_anonymous_owner()) {
-    if (LockingMode == LM_LIGHTWEIGHT) {
-      return current->lock_stack().contains(object());
-    } else {
-      return current->is_lock_owned((address)stack_locker());
-    }
+    return current->lock_stack().contains(object());
   } else {
     return has_owner(current);
   }
@@ -116,14 +112,6 @@ inline int64_t ObjectMonitor::owner_raw() const {
   return Atomic::load(&_owner);
 }
 
-inline BasicLock* ObjectMonitor::stack_locker() const {
-  return Atomic::load(&_stack_locker);
-}
-
-inline void ObjectMonitor::set_stack_locker(BasicLock* locker) {
-  Atomic::store(&_stack_locker, locker);
-}
-
 // Returns true if owner field == DEFLATER_MARKER and false otherwise.
 inline bool ObjectMonitor::owner_is_DEFLATER_MARKER() const {
   return owner_raw() == DEFLATER_MARKER;
@@ -148,6 +136,11 @@ inline void ObjectMonitor::set_recursions(size_t recursions) {
   assert(_recursions == 0, "must be");
   assert(has_owner(), "must be owned");
   _recursions = checked_cast<intx>(recursions);
+}
+
+inline void ObjectMonitor::increment_recursions(JavaThread* current) {
+  assert(has_owner(current), "must be the owner");
+  _recursions++;
 }
 
 // Clear _owner field; current value must match old_value.

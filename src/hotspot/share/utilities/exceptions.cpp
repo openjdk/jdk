@@ -32,14 +32,13 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
-#include "runtime/threadCritical.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/utf8.hpp"
@@ -115,15 +114,17 @@ bool Exceptions::special_exception(JavaThread* thread, const char* file, int lin
 #endif // ASSERT
 
   if (h_exception.is_null() && !thread->can_call_java()) {
-    ResourceMark rm(thread);
-    const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
-    log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
-                        "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
-                        "throwing pre-allocated exception: %s",
-                        MAX_LEN, exc_value, message ? ": " : "",
-                        MAX_LEN, message ? message : "",
-                        p2i(h_exception()), file, line, p2i(thread),
-                        Universe::vm_exception()->print_value_string());
+    if (log_is_enabled(Info, exceptions)) {
+      ResourceMark rm(thread);
+      const char* exc_value = h_name != nullptr ? h_name->as_C_string() : "null";
+      log_info(exceptions)("Thread cannot call Java so instead of throwing exception <%.*s%s%.*s> (" PTR_FORMAT ") \n"
+                           "at [%s, line %d]\nfor thread " PTR_FORMAT ",\n"
+                           "throwing pre-allocated exception: %s",
+                           MAX_LEN, exc_value, message ? ": " : "",
+                           MAX_LEN, message ? message : "",
+                           p2i(h_exception()), file, line, p2i(thread),
+                           Universe::vm_exception()->print_value_string());
+    }
     // We do not care what kind of exception we get for a thread which
     // is compiling.  We just install a dummy exception object
     thread->set_pending_exception(Universe::vm_exception(), file, line);
@@ -153,6 +154,9 @@ void Exceptions::_throw(JavaThread* thread, const char* file, int line, Handle h
                        message ? ": " : "",
                        MAX_LEN, message ? message : "",
                        p2i(h_exception()), file, line, p2i(thread));
+  if (log_is_enabled(Info, exceptions, stacktrace)) {
+    log_exception_stacktrace(h_exception);
+  }
 
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(h_exception, message);
@@ -540,6 +544,7 @@ inline void ExceptionMark::check_no_pending_exception() {
   if (_thread->has_pending_exception()) {
     oop exception = _thread->pending_exception();
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion
+    ResourceMark rm;
     exception->print();
     fatal("ExceptionMark constructor expects no pending exceptions");
   }
@@ -551,6 +556,7 @@ ExceptionMark::~ExceptionMark() {
     Handle exception(_thread, _thread->pending_exception());
     _thread->clear_pending_exception(); // Needed to avoid infinite recursion
     if (is_init_completed()) {
+      ResourceMark rm;
       exception->print();
       fatal("ExceptionMark destructor expects no pending exceptions");
     } else {
@@ -606,5 +612,44 @@ void Exceptions::log_exception(Handle exception, const char* message) {
     log_info(exceptions)("Exception <%.*s>\n thrown in %.*s",
                          MAX_LEN, exception->print_value_string(),
                          MAX_LEN, message);
+  }
+}
+
+// This is called from InterpreterRuntime::exception_handler_for_exception(), which is the only
+// easy way to be notified in the VM that an _athrow bytecode has been executed. (The alternative
+// would be to add hooks into the interpreter and compiler, for all platforms ...).
+//
+// Unfortunately, InterpreterRuntime::exception_handler_for_exception() is called for every level
+// of the Java stack when looking for an exception handler. To avoid excessive output,
+// we print the stack only when the bci points to an _athrow bytecode.
+//
+// NOTE: exceptions that are NOT thrown by _athrow are handled by Exceptions::special_exception()
+// and Exceptions::_throw()).
+void Exceptions::log_exception_stacktrace(Handle exception, methodHandle method, int bci) {
+  if (!method->is_native() && (Bytecodes::Code) *method->bcp_from(bci) == Bytecodes::_athrow) {
+    // TODO: try to find a way to avoid repeated stacktraces when an exception gets re-thrown
+    // by a finally block
+    log_exception_stacktrace(exception);
+  }
+}
+
+// This should be called only from a live Java thread.
+void Exceptions::log_exception_stacktrace(Handle exception) {
+  LogStreamHandle(Info, exceptions, stacktrace) st;
+  ResourceMark rm;
+  const char* detail_message = java_lang_Throwable::message_as_utf8(exception());
+  if (detail_message != nullptr) {
+    st.print_cr("Exception <%.*s: %.*s>",
+                MAX_LEN, exception->print_value_string(),
+                MAX_LEN, detail_message);
+  } else {
+    st.print_cr("Exception <%.*s>",
+                MAX_LEN, exception->print_value_string());
+  }
+  JavaThread* t = JavaThread::current();
+  if (t->has_last_Java_frame()) {
+    t->print_active_stack_on(&st);
+  } else {
+    st.print_cr("(Cannot print stracktrace)");
   }
 }

@@ -29,8 +29,8 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "runtime/registerMap.hpp"
+#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 
@@ -72,7 +72,7 @@ void NativeNMethodBarrier::verify() const {
 static NativeNMethodBarrier* native_nmethod_barrier(nmethod* nm) {
   address barrier_address = nm->code_begin() + nm->frame_complete_offset() - entry_barrier_bytes;
   NativeNMethodBarrier* barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);
-  debug_only(barrier->verify());
+  DEBUG_ONLY(barrier->verify());
   return barrier;
 }
 

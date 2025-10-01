@@ -57,6 +57,10 @@ size_t G1HeapRegion::max_region_size() {
   return G1HeapRegionBounds::max_size();
 }
 
+size_t G1HeapRegion::max_ergonomics_size() {
+  return G1HeapRegionBounds::max_ergonomics_size();
+}
+
 size_t G1HeapRegion::min_region_size_in_words() {
   return G1HeapRegionBounds::min_size() >> LogHeapWordSize;
 }
@@ -241,7 +245,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   _parsable_bottom(nullptr),
   _garbage_bytes(0),
   _incoming_refs(0),
-  _young_index_in_cset(-1),
+  _young_index_in_cset(InvalidCSetIndex),
   _surv_rate_group(nullptr),
   _age_index(G1SurvRateGroup::InvalidAgeIndex),
   _node_index(G1NUMA::UnknownNodeIndex),

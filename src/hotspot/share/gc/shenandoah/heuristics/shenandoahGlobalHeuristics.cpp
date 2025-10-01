@@ -25,10 +25,9 @@
 
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-
 #include "utilities/quickSort.hpp"
 
 ShenandoahGlobalHeuristics::ShenandoahGlobalHeuristics(ShenandoahGlobalGeneration* generation)
@@ -54,7 +53,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                                                               size_t cur_young_garbage) const {
   auto heap = ShenandoahGenerationalHeap::heap();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-  size_t capacity = heap->young_generation()->max_capacity();
+  size_t capacity = heap->soft_max_capacity();
   size_t garbage_threshold = region_size_bytes * ShenandoahGarbageThreshold / 100;
   size_t ignore_threshold = region_size_bytes * ShenandoahIgnoreGarbageThreshold / 100;
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();

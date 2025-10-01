@@ -25,10 +25,11 @@
 package jdk.jfr.internal;
 
 import java.lang.reflect.Modifier;
-
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.util.Bytecode;
 import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.tracing.PlatformTracer;
+
 /**
  * All upcalls from the JVM should go through this class.
  *
@@ -72,7 +73,8 @@ final class JVMUpcalls {
                 }
                 boolean jdkClass = Utils.isJDKClass(clazz);
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding instrumentation to event class " + clazz.getName() + " using retransform");
-                EventInstrumentation ei = new EventInstrumentation(clazz.getSuperclass(), oldBytes, traceId, jdkClass, false);
+                ClassInspector c = new ClassInspector(clazz.getSuperclass(), oldBytes, jdkClass);
+                EventInstrumentation ei = new EventInstrumentation(c, traceId, false);
                 byte[] bytes = ei.buildInstrumented();
                 Bytecode.log(clazz.getName(), bytes);
                 return bytes;
@@ -105,9 +107,9 @@ final class JVMUpcalls {
         }
         String eventName = "<Unknown>";
         try {
-            EventInstrumentation ei = new EventInstrumentation(superClass, oldBytes, traceId, bootClassLoader, true);
-            eventName = ei.getEventName();
-            if (!JVMSupport.shouldInstrument(bootClassLoader,  ei.getEventName())) {
+            ClassInspector c = new ClassInspector(superClass, oldBytes, bootClassLoader);
+            eventName = c.getEventName();
+            if (!JVMSupport.shouldInstrument(bootClassLoader,  c.getEventName())) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for " + eventName + " since container support is missing");
                 return oldBytes;
             }
@@ -118,14 +120,15 @@ final class JVMUpcalls {
                 // No need to generate bytecode if:
                 // 1) Event class is disabled, and there is not an external configuration that overrides.
                 // 2) Event class has @Registered(false)
-                if (!mr.isEnabled(ei.getEventName()) && !ei.isEnabled() || !ei.isRegistered()) {
+                if (!mr.isEnabled(c.getEventName()) && !c.isEnabled() || !c.isRegistered()) {
                     Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Skipping instrumentation for event type " + eventName + " since event was disabled on class load");
                     return oldBytes;
                 }
             }
-            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+            EventInstrumentation ei = new EventInstrumentation(c, traceId, true);
             byte[] bytes = ei.buildInstrumented();
-            Bytecode.log(ei.getClassName() + "(" + traceId + ")", bytes);
+            Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Adding " + (forceInstrumentation ? "forced " : "") + "instrumentation for event type " + eventName + " during initial class load");
+            Bytecode.log(c.getClassName() + "(" + traceId + ")", bytes);
             return bytes;
         } catch (Throwable t) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.WARN, "Unexpected error when adding instrumentation for event type " + eventName + ". " + t.getMessage());
@@ -156,5 +159,36 @@ final class JVMUpcalls {
         Thread thread = new Thread(systemThreadGroup, "JFR Recorder Thread");
         thread.setContextClassLoader(contextClassLoader);
         return thread;
+    }
+
+    /**
+     * Called by the JVM to update method tracing instrumentation.
+     * <p>
+     * @param module the module the class belongs to
+     * @param classLoader the class loader the class is being loaded for
+     * @param className the internal class name, i.e. java/lang/String.
+     * @param bytecode the bytecode to modify
+     * @param methodIds the method IDs
+     * @param names constant pool indices of method names
+     * @param signatures constant pool indices of method signatures
+     * @param modifications integer mask describing the modification
+     *
+     * @return the instrumented bytecode, or null if the class can't or shouldn't be modified.
+     */
+    public static byte[] onMethodTrace(Module module, ClassLoader classLoader, String className,
+                                       byte[] bytecode, long[] methodIds, String[] names, String[] signatures,
+                                       int[] modifications) {
+        return PlatformTracer.onMethodTrace(module, classLoader, className,
+                                            bytecode, methodIds, names, signatures,
+                                            modifications);
+    }
+
+    /**
+     * Called by the JVM to publish a class ID that can safely be used by the Method Timing event.
+     * <p>
+     * @param classId the methods to be published
+     */
+    public static void publishMethodTimersForClass(long classId) {
+        PlatformTracer.publishClass(classId);
     }
 }

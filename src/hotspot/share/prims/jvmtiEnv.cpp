@@ -22,10 +22,9 @@
  *
  */
 
-#include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/modules.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -199,7 +198,7 @@ JvmtiEnv::GetThreadLocalStorage(jthread thread, void** data_ptr) {
     MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, current_thread));
     ThreadInVMfromNative __tiv(current_thread);
     VM_ENTRY_BASE(jvmtiError, JvmtiEnv::GetThreadLocalStorage , current_thread)
-    debug_only(VMNativeEntryWrapper __vew;)
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)
 
     JvmtiVTMSTransitionDisabler disabler(thread);
     ThreadsListHandle tlh(current_thread);
@@ -675,7 +674,7 @@ JvmtiEnv::AddToBootstrapClassLoaderSearch(const char* segment) {
     // add the jar file to the bootclasspath
     log_info(class, load)("opened: %s", zip_entry->name());
 #if INCLUDE_CDS
-    ClassLoaderExt::append_boot_classpath(zip_entry);
+    ClassLoader::append_boot_classpath(zip_entry);
 #else
     ClassLoader::add_to_boot_append_entries(zip_entry);
 #endif
@@ -988,6 +987,10 @@ JvmtiEnv::SuspendThreadList(jint request_count, const jthread* request_list, jvm
         self_tobj = Handle(current, thread_oop);
         continue; // self suspend after all other suspends
       }
+      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+        java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+      }
       results[i] = suspend_thread(thread_oop, java_thread, /* single_suspend */ true);
     }
   }
@@ -1114,6 +1117,10 @@ JvmtiEnv::ResumeThreadList(jint request_count, const jthread* request_list, jvmt
         continue;
       }
     }
+    if (java_lang_VirtualThread::is_instance(thread_oop)) {
+      oop carrier_thread = java_lang_VirtualThread::carrier_thread(thread_oop);
+      java_thread = carrier_thread == nullptr ? nullptr : java_lang_Thread::thread(carrier_thread);
+    }
     results[i] = resume_thread(thread_oop, java_thread, /* single_resume */ true);
   }
   // per-thread resume results returned via results parameter
@@ -1212,7 +1219,7 @@ JvmtiEnv::StopThread(jthread thread, jobject exception) {
 // thread - NOT protected by ThreadsListHandle and NOT pre-checked
 jvmtiError
 JvmtiEnv::InterruptThread(jthread thread) {
-  JavaThread* current_thread  = JavaThread::current();
+  JavaThread* current_thread = JavaThread::current();
   HandleMark hm(current_thread);
 
   JvmtiVTMSTransitionDisabler disabler(thread);
@@ -1228,6 +1235,7 @@ JvmtiEnv::InterruptThread(jthread thread) {
   if (java_lang_VirtualThread::is_instance(thread_obj)) {
     // For virtual threads we have to call into Java to interrupt:
     Handle obj(current_thread, thread_obj);
+    JvmtiJavaUpcallMark jjum(current_thread); // hide JVMTI events for Java upcall
     JavaValue result(T_VOID);
     JavaCalls::call_virtual(&result,
                             obj,
@@ -1359,11 +1367,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return err;
   }
 
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *owned_monitor_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
-  }
-
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
@@ -1417,11 +1420,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *monitor_info_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
   }
 
   // growable array of jvmti monitors info on the C-heap
@@ -2759,8 +2757,10 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
   int result_length = ik->methods()->length();
   jmethodID* result_list = (jmethodID*)jvmtiMalloc(result_length * sizeof(jmethodID));
   int index;
-  bool jmethodids_found = true;
   int skipped = 0;  // skip overpass methods
+
+  // Make jmethodIDs for all non-overpass methods.
+  ik->make_methods_jmethod_ids();
 
   for (index = 0; index < result_length; index++) {
     Method* m = ik->methods()->at(index);
@@ -2774,20 +2774,8 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
       skipped++;
       continue;
     }
-    jmethodID id;
-    if (jmethodids_found) {
-      id = m->find_jmethod_id_or_null();
-      if (id == nullptr) {
-        // If we find an uninitialized value, make sure there is
-        // enough space for all the uninitialized values we might
-        // find.
-        ik->ensure_space_for_methodids(index);
-        jmethodids_found = false;
-        id = m->jmethod_id();
-      }
-    } else {
-      id = m->jmethod_id();
-    }
+    jmethodID id = m->find_jmethod_id_or_null();
+    assert(id != nullptr, "should be created above");
     result_list[result_index] = id;
   }
 

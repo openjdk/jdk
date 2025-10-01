@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.io.PrintStream;
 import java.io.Writer;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -159,10 +160,15 @@ class ConsoleIOContext extends IOContext {
             boolean allowExecTerminal = !OSUtils.IS_WINDOWS &&
                                         !OSUtils.IS_LINUX &&
                                         !OSUtils.IS_OSX;
-            terminal = TerminalBuilder.builder().exec(allowExecTerminal).inputStreamWrapper(in -> {
-                input.setInputStream(in);
-                return nonBlockingInput;
-            }).nativeSignals(false).build();
+            terminal = TerminalBuilder.builder()
+                                      .exec(allowExecTerminal)
+                                      .inputStreamWrapper(in -> {
+                                          input.setInputStream(in);
+                                          return nonBlockingInput;
+                                      })
+                                      .nativeSignals(false)
+                                      .encoding(System.getProperty("stdin.encoding"))
+                                      .build();
             useComplexDeprecationHighlight = !OSUtils.IS_WINDOWS;
         }
         this.allowIncompleteInputs = allowIncompleteInputs;
@@ -837,7 +843,7 @@ class ConsoleIOContext extends IOContext {
     public void beforeUserCode() {
         synchronized (this) {
             pendingBytes = null;
-            pendingLine = null;
+            pendingLineCharacters = null;
         }
         input.setState(State.BUFFER);
     }
@@ -968,35 +974,70 @@ class ConsoleIOContext extends IOContext {
         }
     }
 
-    private String pendingLine;
-    private int pendingLinePointer;
+    private static final Charset stdinCharset =
+            Charset.forName(System.getProperty("stdin.encoding"),
+                            Charset.defaultCharset());
+    private char[] pendingLineCharacters;
+    private int pendingLineCharactersPointer;
     private byte[] pendingBytes;
     private int pendingBytesPointer;
 
     @Override
     public synchronized int readUserInput() throws IOException {
         if (pendingBytes == null || pendingBytes.length <= pendingBytesPointer) {
-            char userChar = readUserInputChar();
-            pendingBytes = String.valueOf(userChar).getBytes();
+            int userCharInput = readUserInputChar();
+            if (userCharInput == (-1)) {
+                return -1;
+            }
+            char userChar = (char) userCharInput;
+            StringBuilder dataToConvert = new StringBuilder();
+            dataToConvert.append(userChar);
+            if (Character.isHighSurrogate(userChar)) {
+                //surrogates cannot be converted independently,
+                //read the low surrogate and append it to dataToConvert:
+                int lowSurrogateInput = readUserInputChar();
+                if (lowSurrogateInput == (-1)) {
+                    //end of input, ignore at this stage
+                } else if (Character.isLowSurrogate((char) lowSurrogateInput)) {
+                    dataToConvert.append((char) lowSurrogateInput);
+                } else {
+                    //if not the low surrogate, rollback the reading of the character:
+                    pendingLineCharactersPointer--;
+                }
+            }
+            pendingBytes = dataToConvert.toString().getBytes(stdinCharset);
             pendingBytesPointer = 0;
         }
         return pendingBytes[pendingBytesPointer++];
     }
 
     @Override
-    public synchronized char readUserInputChar() throws IOException {
-        while (pendingLine == null || pendingLine.length() <= pendingLinePointer) {
-            pendingLine = doReadUserLine("", null) + System.getProperty("line.separator");
-            pendingLinePointer = 0;
+    public synchronized int readUserInputChar() throws IOException {
+        if (pendingLineCharacters != null && pendingLineCharacters.length == 0) {
+            return -1;
         }
-        return pendingLine.charAt(pendingLinePointer++);
+        while (pendingLineCharacters == null || pendingLineCharacters.length <= pendingLineCharactersPointer) {
+            String readLine = doReadUserLine("", null);
+            if (readLine == null) {
+                pendingLineCharacters = new char[0];
+                return -1;
+            } else {
+                pendingLineCharacters = (readLine + System.getProperty("line.separator")).toCharArray();
+            }
+            pendingLineCharactersPointer = 0;
+        }
+        return pendingLineCharacters[pendingLineCharactersPointer++];
     }
 
     @Override
     public synchronized String readUserLine(String prompt) throws IOException {
         //TODO: correct behavior w.r.t. pre-read stuff?
-        if (pendingLine != null && pendingLine.length() > pendingLinePointer) {
-            return pendingLine.substring(pendingLinePointer);
+        if (pendingLineCharacters != null && pendingLineCharacters.length > pendingLineCharactersPointer) {
+            String result = new String(pendingLineCharacters,
+                                       pendingLineCharactersPointer,
+                                       pendingLineCharacters.length - pendingLineCharactersPointer);
+            pendingLineCharacters = null;
+            return result;
         }
         return doReadUserLine(prompt, null);
     }
@@ -1019,6 +1060,8 @@ class ConsoleIOContext extends IOContext {
             return in.readLine(prompt.replace("%", "%%"), mask);
         } catch (UserInterruptException ex) {
             throw new InterruptedIOException();
+        } catch (EndOfFileException ex) {
+            return null; // Signal that Ctrl+D or similar happened
         } finally {
             in.setParser(prevParser);
             in.setHistory(prevHistory);
@@ -1029,7 +1072,11 @@ class ConsoleIOContext extends IOContext {
 
     public char[] readPassword(String prompt) throws IOException {
         //TODO: correct behavior w.r.t. pre-read stuff?
-        return doReadUserLine(prompt, '\0').toCharArray();
+        String line = doReadUserLine(prompt, '\0');
+        if (line == null) {
+            return null;
+        }
+        return line.toCharArray();
     }
 
     @Override
@@ -1384,6 +1431,14 @@ class ConsoleIOContext extends IOContext {
         private TestTerminal(InputStream input, OutputStream output, Size size) throws Exception {
             super(input, output, "ansi", size, size);
         }
+
+        @Override
+        public Attributes enterRawMode() {
+            Attributes res = super.enterRawMode();
+            res.setControlChar(ControlChar.VEOF, 4);
+            return res;
+        }
+
     }
 
     private static final class CompletionState {

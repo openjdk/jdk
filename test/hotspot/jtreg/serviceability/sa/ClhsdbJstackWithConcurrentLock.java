@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8324066
  * @summary Test the clhsdb 'jstack -l' command for printing concurrent lock information
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm ClhsdbJstackWithConcurrentLock
  */
@@ -45,7 +46,7 @@ public class ClhsdbJstackWithConcurrentLock {
 
             theApp = new LingeredAppWithConcurrentLock();
             // Use a small heap so the scan is quick.
-            LingeredApp.startApp(theApp, "-Xmx4m");
+            LingeredApp.startApp(theApp, "-Xmx8m");
             System.out.println("Started LingeredApp with pid " + theApp.getPid());
 
             // Run the 'jstack -l' command to get the stack and have java.util.concurrent

@@ -30,15 +30,27 @@
 class nmethod;
 
 class ZBarrierSetNMethod : public BarrierSetNMethod {
+  enum : int {
+    not_entrant = 1 << 31, // armed sticky bit, see make_not_entrant
+  };
+
 protected:
   virtual bool nmethod_entry_barrier(nmethod* nm);
 
 public:
+  uintptr_t color(nmethod* nm);
+
   virtual ByteSize thread_disarmed_guard_value_offset() const;
   virtual int* disarmed_guard_value_address() const;
 
   virtual oop oop_load_no_keepalive(const nmethod* nm, int index);
   virtual oop oop_load_phantom(const nmethod* nm, int index);
+
+  virtual void make_not_entrant(nmethod* nm);
+  virtual bool is_not_entrant(nmethod* nm);
+  virtual void guard_with(nmethod* nm, int value);
+  virtual bool is_armed(nmethod* nm);
+  virtual void arm_all_nmethods() { ShouldNotCallThis(); }
 };
 
 #endif // SHARE_GC_Z_ZBARRIERSETNMETHOD_HPP

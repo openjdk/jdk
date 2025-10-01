@@ -28,6 +28,7 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
+#include "memory/arena.hpp"
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocLimit.hpp"
 #include "nmt/mallocSiteTable.hpp"
@@ -39,10 +40,10 @@
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
-#include "utilities/globalDefinitions.hpp"
 
 MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
@@ -61,10 +62,10 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
 }
 
 void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
-  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
+  // Use lock to make sure that mtChunks don't get deallocated while the
   // copy is going on, because their size is adjusted using this
   // buffer in make_adjustment().
-  ThreadCritical tc;
+  ChunkPoolLocker lock;
   s->_all_mallocs = _all_mallocs;
   size_t total_size = 0;
   size_t total_count = 0;
@@ -205,6 +206,12 @@ void* MallocTracker::record_free_block(void* memblock) {
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
 
   deaccount(header->free_info());
+
+  if (ZapCHeap) {
+    // To do this zapping, we need to know the block size.
+    // This is why we have to do it here, and not in os::free.
+    memset(memblock, freeBlockPad, header->size());
+  }
 
   header->mark_block_as_dead();
 

@@ -23,8 +23,6 @@
  * questions.
  */
 
-#include "kludge_c++11.h"
-
 #include <fstream>
 #include "PackageFile.h"
 #include "Log.h"

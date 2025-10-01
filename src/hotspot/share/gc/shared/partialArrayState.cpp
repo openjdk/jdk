@@ -32,6 +32,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+
 #include <new>
 
 PartialArrayState::PartialArrayState(oop src, oop dst,

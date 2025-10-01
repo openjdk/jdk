@@ -26,9 +26,9 @@
 #define SHARE_SERVICES_GCNOTIFIER_HPP
 
 #include "memory/allStatic.hpp"
+#include "services/memoryManager.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryService.hpp"
-#include "services/memoryManager.hpp"
 
 class GCNotificationRequest : public CHeapObj<mtInternal> {
   friend class GCNotifier;

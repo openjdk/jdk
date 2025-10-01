@@ -92,18 +92,9 @@ void MutableNUMASpace::ensure_parsability() {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
     if (s->top() < top()) { // For all spaces preceding the one containing top()
-      if (s->free_in_words() > 0) {
-        HeapWord* cur_top = s->top();
-        size_t words_left_to_fill = pointer_delta(s->end(), s->top());;
-        while (words_left_to_fill > 0) {
-          size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
-          assert(words_to_fill >= CollectedHeap::min_fill_size(),
-                 "Remaining size (%zu) is too small to fill (based on %zu and %zu)",
-                 words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
-          CollectedHeap::fill_with_object(cur_top, words_to_fill);
-          cur_top += words_to_fill;
-          words_left_to_fill -= words_to_fill;
-        }
+      size_t free_words = s->free_in_words();
+      if (free_words > 0) {
+        CollectedHeap::fill_with_objects(s->top(), free_words);
       }
     } else {
       return;
@@ -210,8 +201,6 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
     const size_t os_align = UseLargePages ? page_size() : os::vm_page_size();
     os::realign_memory((char*)aligned_region.start(), aligned_region.byte_size(), os_align);
     // Then we uncommit the pages in the range.
-    // The alignment_hint argument must be less than or equal to the small page
-    // size if not using large pages or else this function does nothing.
     os::disclaim_memory((char*)aligned_region.start(), aligned_region.byte_size());
     // And make them local/first-touch biased.
     os::numa_make_local((char*)aligned_region.start(), aligned_region.byte_size(), checked_cast<int>(lgrp_id));
@@ -421,10 +410,10 @@ void MutableNUMASpace::initialize(MemRegion mr,
     MutableSpace *s = ls->space();
     old_region = s->region();
 
-    size_t chunk_byte_size = 0, old_chunk_byte_size = 0;
+    size_t chunk_byte_size = 0;
     if (i < lgrp_spaces()->length() - 1) {
-      if (!UseAdaptiveNUMAChunkSizing                                ||
-          (UseAdaptiveNUMAChunkSizing && NUMAChunkResizeWeight == 0) ||
+      if (!UseAdaptiveNUMAChunkSizing ||
+           NUMAChunkResizeWeight == 0 ||
            samples_count() < AdaptiveSizePolicyReadyThreshold) {
         // No adaptation. Divide the space equally.
         chunk_byte_size = default_chunk_size();
@@ -498,7 +487,6 @@ void MutableNUMASpace::set_top(HeapWord* value) {
   for (int i = 0; i < lgrp_spaces()->length();) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
     MutableSpace *s = ls->space();
-    HeapWord *top = MAX2(align_down(s->top(), page_size()), s->bottom());
 
     if (s->contains(value)) {
       // Check if setting the chunk's top to a given value would create a hole less than
@@ -608,17 +596,20 @@ void MutableNUMASpace::print_short_on(outputStream* st) const {
   st->print(")");
 }
 
-void MutableNUMASpace::print_on(outputStream* st) const {
-  MutableSpace::print_on(st);
+void MutableNUMASpace::print_on(outputStream* st, const char* prefix) const {
+  MutableSpace::print_on(st, prefix);
+
+  StreamIndentor si(st, 1);
   for (int i = 0; i < lgrp_spaces()->length(); i++) {
     LGRPSpace *ls = lgrp_spaces()->at(i);
-    st->print("    lgrp %u", ls->lgrp_id());
-    ls->space()->print_on(st);
+    FormatBuffer<128> lgrp_message("lgrp %u ", ls->lgrp_id());
+    ls->space()->print_on(st, lgrp_message);
     if (NUMAStats) {
+      StreamIndentor si2(st, 1);
       for (int i = 0; i < lgrp_spaces()->length(); i++) {
         lgrp_spaces()->at(i)->accumulate_statistics(page_size());
       }
-      st->print("    local/remote/unbiased/uncommitted: %zuK/"
+      st->print("local/remote/unbiased/uncommitted: %zuK/"
                 "%zuK/%zuK/%zuK\n",
                 ls->space_stats()->_local_space / K,
                 ls->space_stats()->_remote_space / K,

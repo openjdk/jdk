@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,10 +91,7 @@ public enum KnownOIDs {
     ipsecEndSystem("1.3.6.1.5.5.7.3.5"),
     ipsecTunnel("1.3.6.1.5.5.7.3.6"),
     ipsecUser("1.3.6.1.5.5.7.3.7"),
-    KP_TimeStamping("1.3.6.1.5.5.7.3.8", "timeStamping") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    KP_TimeStamping("1.3.6.1.5.5.7.3.8", "timeStamping", false),
     OCSPSigning("1.3.6.1.5.5.7.3.9"),
     // access descriptors - PKIX.48.*
     OCSP("1.3.6.1.5.5.7.48.1"),
@@ -102,10 +99,7 @@ public enum KnownOIDs {
     OCSPNonceExt("1.3.6.1.5.5.7.48.1.2"),
     OCSPNoCheck("1.3.6.1.5.5.7.48.1.5"),
     caIssuers("1.3.6.1.5.5.7.48.2"),
-    AD_TimeStamping("1.3.6.1.5.5.7.48.3", "timeStamping") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    AD_TimeStamping("1.3.6.1.5.5.7.48.3", "timeStamping", false),
     caRepository("1.3.6.1.5.5.7.48.5", "caRepository"),
 
     // NIST --
@@ -152,8 +146,8 @@ public enum KnownOIDs {
     SHA3_256("2.16.840.1.101.3.4.2.8", "SHA3-256"),
     SHA3_384("2.16.840.1.101.3.4.2.9", "SHA3-384"),
     SHA3_512("2.16.840.1.101.3.4.2.10", "SHA3-512"),
-    SHAKE128("2.16.840.1.101.3.4.2.11"),
-    SHAKE256("2.16.840.1.101.3.4.2.12"),
+    SHAKE128_256("2.16.840.1.101.3.4.2.11", "SHAKE128-256", "SHAKE128"),
+    SHAKE256_512("2.16.840.1.101.3.4.2.12", "SHAKE256-512", "SHAKE256"),
     HmacSHA3_224("2.16.840.1.101.3.4.2.13", "HmacSHA3-224"),
     HmacSHA3_256("2.16.840.1.101.3.4.2.14", "HmacSHA3-256"),
     HmacSHA3_384("2.16.840.1.101.3.4.2.15", "HmacSHA3-384"),
@@ -189,10 +183,7 @@ public enum KnownOIDs {
 
     // RSASecurity
     // PKCS1 1.2.840.113549.1.1.*
-    PKCS1("1.2.840.113549.1.1", "RSA") { // RSA KeyPairGenerator and KeyFactory
-        @Override
-        boolean registerNames() { return false; }
-    },
+    PKCS1("1.2.840.113549.1.1", "RSA", false), // RSA KeyPairGenerator and KeyFactory
     RSA("1.2.840.113549.1.1.1"), // RSA encryption
 
     MD2withRSA("1.2.840.113549.1.1.2"),
@@ -322,10 +313,7 @@ public enum KnownOIDs {
     SpecifiedSHA2withECDSA("1.2.840.10045.4.3"),
 
     // X9.42 1.2.840.10046.2.*
-    X942_DH("1.2.840.10046.2.1", "DiffieHellman") { // unused by JDK providers
-        @Override
-        boolean registerNames() { return false; }
-    },
+    X942_DH("1.2.840.10046.2.1", "DiffieHellman", false), // unused by JDK providers
 
     // Teletrust 1.3.36.*
     brainpoolP160r1("1.3.36.3.3.2.8.1.1.1"),
@@ -375,34 +363,19 @@ public enum KnownOIDs {
     // OIW secsig 1.3.14.3.*
     OIW_DES_CBC("1.3.14.3.2.7", "DES/CBC", "DES"),
 
-    OIW_DSA("1.3.14.3.2.12", "DSA") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    OIW_DSA("1.3.14.3.2.12", "DSA", false),
 
-    OIW_JDK_SHA1withDSA("1.3.14.3.2.13", "SHA1withDSA") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    OIW_JDK_SHA1withDSA("1.3.14.3.2.13", "SHA1withDSA", false),
 
-    OIW_SHA1withRSA_Odd("1.3.14.3.2.15", "SHA1withRSA") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    OIW_SHA1withRSA_Odd("1.3.14.3.2.15", "SHA1withRSA", false),
 
     DESede("1.3.14.3.2.17", "DESede"),
 
     SHA_1("1.3.14.3.2.26", "SHA-1", "SHA", "SHA1"),
 
-    OIW_SHA1withDSA("1.3.14.3.2.27", "SHA1withDSA") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    OIW_SHA1withDSA("1.3.14.3.2.27", "SHA1withDSA", false),
 
-    OIW_SHA1withRSA("1.3.14.3.2.29", "SHA1withRSA") {
-        @Override
-        boolean registerNames() { return false; }
-    },
+    OIW_SHA1withRSA("1.3.14.3.2.29", "SHA1withRSA", false),
 
     // Thawte 1.3.101.*
     X25519("1.3.101.110"),
@@ -426,11 +399,9 @@ public enum KnownOIDs {
     // Consider removing them in future releases when their usage
     // have died out
 
-    ITUX509_RSA("2.5.8.1.1", "RSA") { // unused by JDK providers
-                                      // defined in X.509 for RSA keys
-        @Override                     // with modulus length as its parameter
-        boolean registerNames() { return false; }
-    },
+    ITUX509_RSA("2.5.8.1.1", "RSA", false), // unused by JDK providers
+                                            // defined in X.509 for RSA keys
+                                            // with modulus length as its parameter
 
     SkipIPAddress("1.3.6.1.4.1.42.2.11.2.1"),
     JAVASOFT_JDKKeyProtector("1.3.6.1.4.1.42.2.17.1.1"),
@@ -442,6 +413,7 @@ public enum KnownOIDs {
     private final String stdName;
     private final String oid;
     private final String[] aliases;
+    private final boolean registerNames;
 
     // find the matching enum using either name or oid string
     // return null if no match found
@@ -476,9 +448,8 @@ public enum KnownOIDs {
         } else if (debug != null) {
             debug.println(o.oid + " => " + o.name());
         }
-        // only register the stdName and aliases if o.registerNames()
-        // returns true
-        if (o.registerNames()) {
+        // only register the stdName and aliases if o.registerNames is true
+        if (o.registerNames) {
             String stdNameUpper = o.stdName.toUpperCase(Locale.ENGLISH);
             if (Objects.nonNull(name2enum.put(stdNameUpper, o))) {
                 throw new RuntimeException("ERROR: Duplicate " +
@@ -505,12 +476,21 @@ public enum KnownOIDs {
         this.oid = oid;
         this.stdName = name(); // defaults to enum name
         this.aliases = new String[0];
+        this.registerNames = true;
     }
 
     KnownOIDs(String oid, String stdName, String... aliases) {
         this.oid = oid;
         this.stdName = stdName;
         this.aliases = aliases;
+        this.registerNames = true;
+    }
+
+    KnownOIDs(String oid, String stdName, boolean registerNames) {
+        this.oid = oid;
+        this.stdName = stdName;
+        this.aliases = new String[0];
+        this.registerNames = registerNames;
     }
 
     // returns the oid string associated with this enum
@@ -526,9 +506,5 @@ public enum KnownOIDs {
     // return the internal aliases
     public String[] aliases() {
         return aliases;
-    }
-
-    boolean registerNames() {
-        return true;
     }
 }

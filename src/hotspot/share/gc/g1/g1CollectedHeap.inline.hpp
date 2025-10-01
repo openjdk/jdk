@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,6 +314,10 @@ inline void G1CollectedHeap::set_humongous_is_live(oop obj) {
 inline bool G1CollectedHeap::is_collection_set_candidate(const G1HeapRegion* r) const {
   const G1CollectionSetCandidates* candidates = collection_set()->candidates();
   return candidates->contains(r);
+}
+
+inline uint G1CollectedHeap::eden_target_length() const {
+  return _policy->young_list_target_length() - survivor_regions_count();
 }
 
 #endif // SHARE_GC_G1_G1COLLECTEDHEAP_INLINE_HPP

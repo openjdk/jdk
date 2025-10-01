@@ -41,6 +41,8 @@ class CDSConfig : public AllStatic {
   static bool _is_dumping_full_module_graph;
   static bool _is_using_full_module_graph;
   static bool _has_aot_linked_classes;
+  static bool _is_single_command_training;
+  static bool _has_temp_aot_config_file;
 
   const static char* _default_archive_path;
   const static char* _input_static_archive_path;
@@ -67,6 +69,7 @@ class CDSConfig : public AllStatic {
   static void check_aotmode_auto_or_on();
   static void check_aotmode_record();
   static void check_aotmode_create();
+  static void setup_compiler_args();
   static void check_unsupported_dumping_module_options();
 
   // Called after Arguments::apply_ergo() has started
@@ -103,6 +106,7 @@ public:
 
   // input archive(s)
   static bool is_using_archive()                             NOT_CDS_RETURN_(false);
+  static bool is_using_only_default_archive()                NOT_CDS_RETURN_(false);
 
   // static_archive
   static bool is_dumping_static_archive()                    { return CDS_ONLY(_is_dumping_static_archive) NOT_CDS(false); }
@@ -139,6 +143,9 @@ public:
 
   // Misc CDS features
   static bool allow_only_single_java_thread()                NOT_CDS_RETURN_(false);
+
+  static bool is_single_command_training()                   { return CDS_ONLY(_is_single_command_training) NOT_CDS(false); }
+  static bool has_temp_aot_config_file()                     { return CDS_ONLY(_has_temp_aot_config_file) NOT_CDS(false); }
 
   // This is *Legacy* optimization for lambdas before JEP 483. May be removed in the future.
   static bool is_dumping_lambdas_in_legacy_mode()            NOT_CDS_RETURN_(false);
@@ -180,6 +187,13 @@ public:
   static bool is_using_full_module_graph()                   NOT_CDS_JAVA_HEAP_RETURN_(false);
   static void stop_dumping_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
   static void stop_using_full_module_graph(const char* reason = nullptr) NOT_CDS_JAVA_HEAP_RETURN;
+
+  // --- AOT code
+
+  static bool is_dumping_aot_code()                          NOT_CDS_RETURN_(false);
+  static void disable_dumping_aot_code()                     NOT_CDS_RETURN;
+  static void enable_dumping_aot_code()                      NOT_CDS_RETURN;
+  static bool is_dumping_adapters()                          NOT_CDS_RETURN_(false);
 
   // Some CDS functions assume that they are called only within a single-threaded context. I.e.,
   // they are called from:

@@ -24,38 +24,44 @@
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 
 /*
  * The epoch generation is the range [1-32767].
  *
- * When the epoch value is stored in a thread object,
+ * When the epoch value is stored in a vthread object,
  * the most significant bit of the u2 is used to denote
  * thread exclusion, i.e  1 << 15 == 32768 denotes exclusion.
 */
 u2 JfrTraceIdEpoch::_generation = 0;
 JfrSignal JfrTraceIdEpoch::_tag_state;
+bool JfrTraceIdEpoch::_method_tracer_state = false;
 bool JfrTraceIdEpoch::_epoch_state = false;
-bool JfrTraceIdEpoch::_synchronizing = false;
 
 static constexpr const u2 epoch_generation_overflow = excluded_bit;
 
-void JfrTraceIdEpoch::begin_epoch_shift() {
+void JfrTraceIdEpoch::shift_epoch() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  _synchronizing = true;
-  OrderAccess::fence();
-}
-
-void JfrTraceIdEpoch::end_epoch_shift() {
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(_synchronizing, "invariant");
   _epoch_state = !_epoch_state;
-  ++_generation;
-  if (epoch_generation_overflow == _generation) {
+  if (++_generation == epoch_generation_overflow) {
     _generation = 1;
   }
   assert(_generation != 0, "invariant");
   assert(_generation < epoch_generation_overflow, "invariant");
-  OrderAccess::storestore();
-  _synchronizing = false;
+}
+
+void JfrTraceIdEpoch::set_method_tracer_tag_state() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  Atomic::release_store(&_method_tracer_state, true);
+}
+
+void JfrTraceIdEpoch::reset_method_tracer_tag_state() {
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  Atomic::release_store(&_method_tracer_state, false);
+}
+
+bool JfrTraceIdEpoch::has_method_tracer_changed_tag_state() {
+  return Atomic::load_acquire(&_method_tracer_state);
 }

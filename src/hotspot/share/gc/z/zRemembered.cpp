@@ -392,69 +392,71 @@ struct ZRemsetTableEntry {
   ZForwarding* _forwarding;
 };
 
-class ZRemsetTableIterator {
-private:
-  ZRemembered* const            _remembered;
-  ZPageTable* const             _page_table;
-  const ZForwardingTable* const _old_forwarding_table;
-  volatile BitMap::idx_t        _claimed;
-
-public:
-  ZRemsetTableIterator(ZRemembered* remembered)
-    : _remembered(remembered),
-      _page_table(remembered->_page_table),
-      _old_forwarding_table(remembered->_old_forwarding_table),
-      _claimed(0) {}
+ZRemsetTableIterator::ZRemsetTableIterator(ZRemembered* remembered, bool previous)
+  : _remembered(remembered),
+    _bm(previous
+        ? _remembered->_found_old.previous_bitmap()
+        : _remembered->_found_old.current_bitmap()),
+    _page_table(remembered->_page_table),
+    _old_forwarding_table(remembered->_old_forwarding_table),
+    _claimed(0) {}
 
   // This iterator uses the "found old" optimization.
-  bool next(ZRemsetTableEntry* entry_addr)  {
-    BitMap* const bm = _remembered->_found_old.previous_bitmap();
+bool ZRemsetTableIterator::next(ZRemsetTableEntry* entry_addr) {
+  BitMap::idx_t prev = Atomic::load(&_claimed);
 
-    BitMap::idx_t prev = Atomic::load(&_claimed);
-
-    for (;;) {
-      if (prev == bm->size()) {
-        return false;
-      }
-
-      const BitMap::idx_t page_index = bm->find_first_set_bit(_claimed);
-      if (page_index == bm->size()) {
-        Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
-        return false;
-      }
-
-      const BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
-      if (res != prev) {
-        // Someone else claimed
-        prev = res;
-        continue;
-      }
-
-      // Found bit - look around for page or forwarding to scan
-
-      ZForwarding* forwarding = nullptr;
-      if (ZGeneration::old()->is_phase_relocate()) {
-        forwarding = _old_forwarding_table->at(page_index);
-      }
-
-      ZPage* page = _page_table->at(page_index);
-      if (page != nullptr && !page->is_old()) {
-        page = nullptr;
-      }
-
-      if (page == nullptr && forwarding == nullptr) {
-        // Nothing to scan
-        continue;
-      }
-
-      // Found old page or old forwarding
-      entry_addr->_forwarding = forwarding;
-      entry_addr->_page = page;
-
-      return true;
+  for (;;) {
+    if (prev == _bm->size()) {
+      return false;
     }
+
+    const BitMap::idx_t page_index = _bm->find_first_set_bit(_claimed);
+    if (page_index == _bm->size()) {
+      Atomic::cmpxchg(&_claimed, prev, page_index, memory_order_relaxed);
+      return false;
+    }
+
+    const BitMap::idx_t res = Atomic::cmpxchg(&_claimed, prev, page_index + 1, memory_order_relaxed);
+    if (res != prev) {
+      // Someone else claimed
+      prev = res;
+      continue;
+    }
+
+    // Found bit - look around for page or forwarding to scan
+
+    ZForwarding* forwarding = nullptr;
+    if (ZGeneration::old()->is_phase_relocate()) {
+      forwarding = _old_forwarding_table->at(page_index);
+    }
+
+    ZPage* page = _page_table->at(page_index);
+    if (page != nullptr && !page->is_old()) {
+      page = nullptr;
+    }
+
+    if (page == nullptr && forwarding == nullptr) {
+      // Nothing to scan
+      continue;
+    }
+
+    // Found old page or old forwarding
+    entry_addr->_forwarding = forwarding;
+    entry_addr->_page = page;
+
+    return true;
   }
-};
+}
+
+void ZRemembered::remap_current(ZRemsetTableIterator* iter) {
+  for (ZRemsetTableEntry entry; iter->next(&entry);) {
+    assert(entry._forwarding == nullptr, "Shouldn't be looking for forwardings");
+    assert(entry._page != nullptr, "Must have found a page");
+    assert(entry._page->is_old(), "Should only have found old pages");
+
+    entry._page->oops_do_current_remembered(ZBarrier::load_barrier_on_oop_field);
+  }
+}
 
 // This task scans the remembered set and follows pointers when possible.
 // Interleaving remembered set scanning with marking makes the marking times
@@ -470,14 +472,12 @@ public:
     : ZRestartableTask("ZRememberedScanMarkFollowTask"),
       _remembered(remembered),
       _mark(mark),
-      _remset_table_iterator(remembered)  {
+      _remset_table_iterator(remembered, true /* previous */) {
     _mark->prepare_work();
     _remembered->_page_allocator->enable_safe_destroy();
-    _remembered->_page_allocator->enable_safe_recycle();
   }
 
   ~ZRememberedScanMarkFollowTask() {
-    _remembered->_page_allocator->disable_safe_recycle();
     _remembered->_page_allocator->disable_safe_destroy();
     _mark->finish_work();
     // We are done scanning the set of old pages.
