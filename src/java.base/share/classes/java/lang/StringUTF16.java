@@ -512,8 +512,8 @@ final class StringUTF16 {
         assert olast <= length(other);
 
         for (int k1 = toffset, k2 = ooffset; k1 < tlast && k2 < olast; k1++, k2++) {
-            int cp1 = (int)getChar(value, k1);
-            int cp2 = (int)getChar(other, k2);
+            int cp1 = getChar(value, k1);
+            int cp2 = getChar(other, k2);
 
             if (cp1 == cp2 || compareCodePointCI(cp1, cp2) == 0) {
                 continue;
@@ -539,7 +539,7 @@ final class StringUTF16 {
         return tlen - olen;
     }
 
-    // Case insensitive comparison of two code points
+    // Case in-sensitive comparison of two code points
     private static int compareCodePointCI(int cp1, int cp2) {
         // try converting both characters to uppercase.
         // If the results match, then the comparison scan should
@@ -965,7 +965,7 @@ final class StringUTF16 {
 
         // Now check if there are any characters that need to be changed, or are surrogate
         for (first = 0 ; first < len; first++) {
-            int cp = (int)getChar(value, first);
+            int cp = getChar(value, first);
             if (Character.isSurrogate((char)cp)) {
                 hasSurr = true;
                 break;
@@ -988,7 +988,7 @@ final class StringUTF16 {
         }
         int bits = 0;
         for (int i = first; i < len; i++) {
-            int cp = (int)getChar(value, i);
+            int cp = getChar(value, i);
             if (cp == '\u03A3' ||                       // GREEK CAPITAL LETTER SIGMA
                 Character.isSurrogate((char)cp)) {
                 return toLowerCaseEx(str, value, result, i, locale, false);
@@ -1003,7 +1003,7 @@ final class StringUTF16 {
             bits |= cp;
             putChar(result, i, cp);
         }
-        if (bits < 0 || bits > 0xff) {
+        if (bits > 0xff) {
             return new String(result, UTF16);
         } else {
             return newString(result, 0, len);
@@ -1069,7 +1069,7 @@ final class StringUTF16 {
 
         // Now check if there are any characters that need to be changed, or are surrogate
         for (first = 0 ; first < len; first++) {
-            int cp = (int)getChar(value, first);
+            int cp = getChar(value, first);
             if (Character.isSurrogate((char)cp)) {
                 hasSurr = true;
                 break;
@@ -1093,7 +1093,7 @@ final class StringUTF16 {
         }
         int bits = 0;
         for (int i = first; i < len; i++) {
-            int cp = (int)getChar(value, i);
+            int cp = getChar(value, i);
             if (Character.isSurrogate((char)cp)) {
                 return toUpperCaseEx(str, value, result, i, locale, false);
             }
@@ -1104,7 +1104,7 @@ final class StringUTF16 {
             bits |= cp;
             putChar(result, i, cp);
         }
-        if (bits < 0 || bits > 0xff) {
+        if (bits > 0xff) {
             return new String(result, UTF16);
         } else {
             return newString(result, 0, len);
@@ -1193,8 +1193,7 @@ final class StringUTF16 {
     }
 
     static int lastIndexOfNonWhitespace(byte[] value) {
-        int length = value.length >>> 1;
-        int right = length;
+        int right = value.length >>> 1;
         while (0 < right) {
             int codepoint = codePointBefore(value, right);
             if (codepoint != ' ' && codepoint != '\t' && !Character.isWhitespace(codepoint)) {
@@ -1322,12 +1321,6 @@ final class StringUTF16 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    private static void putChars(byte[] val, int index, char[] str, int off, int end) {
-        while (off < end) {
-            putChar(val, index++, str[off++]);
-        }
-    }
-
     public static String newString(byte[] val, int index, int len) {
         if (len == 0) {
             return "";
@@ -1394,7 +1387,7 @@ final class StringUTF16 {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() { return fence - index; }
 
         @Override
         public int characteristics() {
@@ -1479,7 +1472,7 @@ final class StringUTF16 {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() { return fence - index; }
 
         @Override
         public int characteristics() {

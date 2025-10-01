@@ -62,18 +62,6 @@ final class StringLatin1 {
         return value.length;
     }
 
-    static int codePointAt(byte[] value, int index, int end) {
-        return value[index] & 0xff;
-    }
-
-    static int codePointBefore(byte[] value, int index) {
-        return value[index - 1] & 0xff;
-    }
-
-    static int codePointCount(byte[] value, int beginIndex, int endIndex) {
-        return endIndex - beginIndex;
-    }
-
     static char[] toChars(byte[] value) {
         char[] dst = new char[value.length];
         inflate(value, 0, dst, 0, value.length);
@@ -376,7 +364,7 @@ final class StringLatin1 {
         return new String(result, LATIN1);
     }
 
-    // case insensitive
+    // case in-sensitive
     static boolean regionMatchesCI(byte[] value, int toffset,
                                           byte[] other, int ooffset, int len) {
         int last = toffset + len;
@@ -587,8 +575,7 @@ final class StringLatin1 {
     }
 
     static int lastIndexOfNonWhitespace(byte[] value) {
-        int length = value.length;
-        int right = length;
+        int right = value.length;
         while (0 < right) {
             char ch = getChar(value, right - 1);
             if (ch != ' ' && ch != '\t' && !CharacterDataLatin1.instance.isWhitespace(ch)) {
@@ -807,7 +794,7 @@ final class StringLatin1 {
         }
 
         @Override
-        public long estimateSize() { return (long)(fence - index); }
+        public long estimateSize() { return fence - index; }
 
         @Override
         public int characteristics() {
