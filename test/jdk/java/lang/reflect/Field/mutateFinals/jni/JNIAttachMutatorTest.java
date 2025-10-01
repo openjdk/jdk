@@ -55,7 +55,8 @@ class JNIAttachMutatorTest {
     }
 
     /**
-     * public final fields, public classes, packages exported to all modules.
+     * Final final mutation allowed. All final fields are public, in public classes,
+     * and in packages exported to all modules.
      */
     @ParameterizedTest
     @ValueSource(strings = {
@@ -63,7 +64,7 @@ class JNIAttachMutatorTest {
             "p.C1",                    // named module
     })
     void testAllowed(String cn) throws Exception {
-        test(cn, false, "--enable-final-field-mutation=ALL-UNNAMED");
+        test(cn, false);
     }
 
     /**
@@ -81,7 +82,7 @@ class JNIAttachMutatorTest {
             "q.C"                       // public class, public final field, package not exported
     })
     void testDenied(String cn) throws Exception {
-        test(cn, true, "--enable-final-field-mutation=ALL-UNNAMED");
+        test(cn, true);
     }
 
     /**
@@ -89,9 +90,15 @@ class JNIAttachMutatorTest {
      */
     @Test
     void testQualifiedExports() throws Exception {
-        test("q.C", true, "--enable-final-field-mutation=ALL-UNNAMED", "--add-exports", "m/q=ALL-UNNAMED");
+        test("q.C", true, "--add-exports", "m/q=ALL-UNNAMED");
     }
 
+    /**
+     * Launches JNIAttachMutator to test a JNI attached thread mutating a final field.
+     * @param className the class with the field final
+     * @param expectIAE if IllegalAccessException is expected
+     * @param extraOps additional VM options
+     */
     private void test(String className, boolean expectIAE, String... extraOps) throws Exception {
         Stream<String> s1 = Stream.of(extraOps);
         Stream<String> s2 = Stream.of(
@@ -102,6 +109,7 @@ class JNIAttachMutatorTest {
                 "--add-opens", "m/p=ALL-UNNAMED",    // allow setAccessible
                 "--add-opens", "m/q=ALL-UNNAMED",
                 "--enable-native-access=ALL-UNNAMED",
+                "--enable-final-field-mutation=ALL-UNNAMED",
                 "--illegal-final-field-mutation=deny",
                 "JNIAttachMutator",
                 className,
