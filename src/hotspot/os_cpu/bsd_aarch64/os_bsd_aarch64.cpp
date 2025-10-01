@@ -558,16 +558,17 @@ int os::extra_bang_size_in_bytes() {
 }
 
 #ifdef MACOS_AARCH64
-static THREAD_LOCAL bool os_bsd_jit_exec_enabled;
+THREAD_LOCAL bool os::_jit_exec_enabled;
+
 // This is a wrapper around the standard library function
 // pthread_jit_write_protect_np(3). We keep track of the state of
 // per-thread write protection on the MAP_JIT region in the
-// thread-local variable os_bsd_jit_exec_enabled.
+// thread-local variable os::_jit_exec_enabled
 void os::current_thread_enable_wx(WXMode mode) {
   bool exec_enabled = mode != WXWrite;
-  if (exec_enabled != os_bsd_jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == WXWrite)) {
+  if (exec_enabled != _jit_exec_enabled NOT_PRODUCT( || DefaultWXWriteMode == WXWrite)) {
     permit_forbidden_function::pthread_jit_write_protect_np(exec_enabled);
-    os_bsd_jit_exec_enabled = exec_enabled;
+    _jit_exec_enabled = exec_enabled;
   }
 }
 
@@ -585,7 +586,7 @@ bool Thread::wx_enable_write() {
 
 // A wrapper around wx_enable_write() for when the current thread is
 // not known.
-void os::thread_wx_enable_write() {
+void os::thread_wx_enable_write_impl() {
   if (!StressWXHealing) {
     Thread::current()->wx_enable_write();
   }

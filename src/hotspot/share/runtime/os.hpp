@@ -1093,7 +1093,19 @@ class os: AllStatic {
   // Enables write or execute access to writeable and executable pages.
   static void current_thread_enable_wx(WXMode mode);
   // Macos-AArch64 only.
-  static void thread_wx_enable_write();
+  static void thread_wx_enable_write_impl();
+
+  // Short circuit write enabling if it's already enabled. This
+  // function is executed many times, so it makes sense to inline a
+  // small part of it.
+private:
+  static THREAD_LOCAL bool _jit_exec_enabled;
+public:
+  static void thread_wx_enable_write() {
+    if (__builtin_expect(_jit_exec_enabled, false)) {
+      thread_wx_enable_write_impl();
+    }
+  }
 #endif // __APPLE__ && AARCH64
 
  protected:
