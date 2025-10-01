@@ -168,8 +168,8 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
       // allocation out of unfragmented memory.  Unfragmented memory does not need to account for loss of free.
       if (live_data_for_evacuation > unfragmented_available) {
         // There is no room to evacuate this region or any that come after it in within the candidates array.
-        log_info(gc, ergo)("Not enough unfragmented memory (%zu) to hold evacuees (%zu) from region: (%zu)",
-          unfragmented_available, live_data_for_evacuation, r->index());
+        log_debug(gc, cset)("Not enough unfragmented memory (%zu) to hold evacuees (%zu) from region: (%zu)",
+                            unfragmented_available, live_data_for_evacuation, r->index());
         break;
       } else {
         unfragmented_available -= live_data_for_evacuation;
@@ -188,8 +188,8 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
       }
       if (evacuation_need > unfragmented_available) {
         // There is no room to evacuate this region or any that come after it in within the candidates array.
-        log_info(gc, ergo)("Not enough memory (%zu) to hold evacuees (%zu) from region: (%zu)",
-          unfragmented_available, live_data_for_evacuation, r->index());
+        log_debug(gc, cset)("Not enough memory (%zu) to hold evacuees (%zu) from region: (%zu)",
+                            unfragmented_available, live_data_for_evacuation, r->index());
         break;
       } else {
         unfragmented_available -= evacuation_need;
