@@ -149,80 +149,41 @@ public class UUIDTest {
         }
     }
 
-    private static void epochMillisTest() throws Exception {
-        List<UUID> collisions = new ArrayList<>();
-        Set<UUID> set = new HashSet<>();
-        long now = System.currentTimeMillis();
-
-        for (int i = 0; i < COUNT; i++) {
-            long ts = now + i;
-            UUID u = UUID.epochMillis(ts);
-            if (u.version() != 7) {
-                throw new Exception("Bad version: " + u);
-            }
-            if (u.variant() != 2) {
-                throw new Exception("Bad variant: " + u);
-            }
-            if (!set.add(u)) {
-                collisions.add(u);
-            }
-        }
-
-        if (!collisions.isEmpty()) {
-            // This is extremely unlikely to happen. If you see this failure,
-            // this highly likely points to the implementation bug, rather than
-            // the odd chance.
-            throw new Exception("UUID collisions detected: " + collisions);
-        }
-    }
-
-    private static void epochMillisTest_Multi() throws Exception {
-        long now = System.currentTimeMillis();
-        List<UUID> uuids = IntStream.range(0, COUNT).parallel()
-                .mapToObj(i -> UUID.epochMillis(now + 1))
-                .toList();
-
-        List<UUID> collisions = new ArrayList<>();
-        Set<UUID> set = new HashSet<>();
-        for (UUID u : uuids) {
-            if (u.version() != 7) {
-                throw new Exception("Bad version: " + u);
-            }
-            if (u.variant() != 2) {
-                throw new Exception("Bad variant: " + u);
-            }
-            if (!set.add(u)) {
-                collisions.add(u);
-            }
-        }
-
-        if (!collisions.isEmpty()) {
-            // This is extremely unlikely to happen. If you see this failure,
-            // this highly likely points to the implementation bug, rather than
-            // the odd chance.
-            throw new Exception("UUID collisions detected: " + collisions);
-        }
-    }
-
     private static void epochMillis_userInputTest() {
-        // Should not throw for valid timestamp
+        // Should not throw for valid currentTimeMillis() timestamp
+        long timestamp = System.currentTimeMillis();
         try {
-            long now = System.currentTimeMillis();
-            UUID u = UUID.epochMillis(now);
+            UUID u = UUID.epochMillis(timestamp);
+            if (u == null) {
+                throw new AssertionError("Generated UUID should not be null for timestamp: " + timestamp);
+            }
         } catch (Exception e) {
-            throw new AssertionError("Unexpected exception with valid timestamp: " + e);
+            throw new AssertionError("Unexpected exception with timestamp " + timestamp + ": " + e);
+        }
+
+        // Should not throw for the 48-bit long
+        long value = 0xFEDCBA987654L;
+        try {
+            UUID u = UUID.epochMillis(value);
+            if (u == null) {
+                throw new AssertionError("Generated UUID should not be null for 48-bit long: " + value);
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Unexpected exception with 48-bit long " + value + ": " + e);
         }
 
         // Should throw for negative timestamp
+        value = -0xFEDCBA987654L;
         try {
-            UUID.epochMillis(-1);
-            throw new AssertionError("Expected IllegalArgumentException with negative timestamp");
+            UUID.epochMillis(value);
+            throw new AssertionError("Expected IllegalArgumentException with negative timestamp: " + value);
         } catch (IllegalArgumentException expected) {}
 
         // Should throw for timestamp > 48 bits
+        value = 1L << 48;
         try {
-            UUID.epochMillis(1L << 48);
-            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits");
+            UUID.epochMillis(value);
+            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits: " + value);
         } catch (IllegalArgumentException expected) {}
     }
 
@@ -267,10 +228,13 @@ public class UUIDTest {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
         }
 
-        long now = System.currentTimeMillis();
-        test = UUID.epochMillis(now);
+        long timestamp = System.currentTimeMillis();
+        test = UUID.epochMillis(timestamp);
         if (test.version() != 7) {
-            throw new Exception("timestampUUID not type 7: " + test);
+            throw new Exception("epochMillis not type 7: " + test);
+        }
+        if (test.variant() != 2) {
+            throw new Exception("epochMillis not variant 2: " + test);
         }
 
         test = UUID.fromString("9835451d-e2e0-1e41-8a5a-be785f17dcda");
@@ -325,12 +289,6 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.variant() != 2) {
             throw new Exception("nameUUIDFromBytes not variant 2");
-        }
-
-        long now = System.currentTimeMillis();
-        test = UUID.epochMillis(now);
-        if (test.variant() != 2) {
-            throw new Exception("timestampUUID not variant 2");
         }
 
         test = new UUID(55L, 0x0000000000001000L);

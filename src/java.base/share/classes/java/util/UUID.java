@@ -61,15 +61,14 @@ import jdk.internal.util.ByteArrayLittleEndian;
  * {@code UUID}.  The bit layout described above is valid only for a {@code
  * UUID} with a variant value of 2, which indicates the Leach-Salz variant.
  *
+ * <p> See <a href="https://www.rfc-editor.org/rfc/rfc9562.html">
+ * <i>RFC 9562: Universally Unique Identifiers (UUIDs)</i></a> for the complete specification,
+ * including algorithms used to create {@code UUID}s.
+ *
  * <p> There are eight defined types of UUIDs, each identified by a version number:
  * time-based (version 1), DCE security (version 2), name-based with MD5 (version 3),
  * randomly generated (version 4), name-based with SHA-1 (version 5), reordered time-based (version 6),
  * Unix epoch time-based (version 7), and custom-defined layout (version 8).
- *
- * <p> For more information including algorithms used to create {@code UUID}s,
- * see <a href="http://www.ietf.org/rfc/rfc4122.txt"> <i>RFC&nbsp;4122: A
- * Universally Unique IDentifier (UUID) URN Namespace</i></a>, section 4.2
- * &quot;Algorithms for Creating a Time-Based UUID&quot;.
  *
  * @spec https://www.rfc-editor.org/rfc/rfc9562.html
  *      RFC 9562 Universally Unique IDentifiers (UUIDs)
@@ -182,32 +181,40 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     }
 
     /**
-     * Static factory to create a version 7 (time-based) {@code UUID} with a user-supplied
-     * Unix timestamp in milliseconds.
+     * Creates a {@code UUIDv7} {@code UUID} from the given Unix Epoch timestamp.
      *
-     * The {@code UUID} embeds the provided Unix Epoch timestamp in milliseconds into
-     * the first 6 bytes, sets the version and variant bits as per the specification,
-     * and fills the remaining bytes with random data from a cryptographically strong
+     * The returned {@code UUID} will have the given {@code timestamp} in
+     * the first 6 bytes, followed by the version and variant bits representing {@code UUIDv7},
+     * and the remaining bytes will contain random data from a cryptographically strong
      * pseudo-random number generator.
      *
-     * @apiNote The timestamp must be a Unix Epoch timestamp in milliseconds in order
-     * to be compliant with <a href="https://datatracker.ietf.org/doc/html/rfc9562">RFC 9562</a>.
+     * @apiNote {@code UUIDv7} values are created by allocating a Unix timestamp in milliseconds
+     * in the most significant 48 bits and filling the remaining 74 bits, excluding the required
+     * version and variant bits, with random bits. As such, this method rejects {@code timestamp}
+     * values that do not fit into 48 bits.
+     * <p>
+     * Monotonicity (each subsequent value being greater than the last) is a primary characteristic
+     * of {@code UUIDv7} values. This is due to the {@code timestamp} value being part of the {@code UUID}.
+     * Callers of this method that wish to generate monotonic {@code UUIDv7} values are expected to
+     * ensure that the given {@code timestamp} value is monotonic.
      *
-     * @param timestamp
-     *        A Unix epoch timestamp in milliseconds which must fit in to 48 bits
      *
-     * @return a {@code UUID} generated using the provided timestamp
+     * @param timestamp the number of milliseconds since midnight 1 Jan 1970 UTC,
+     *                 leap seconds excluded.
      *
-     * @throws IllegalArgumentException if the timestamp is negative or exceeds 48 bits
+     * @return a {@code UUID} constructed using the given {@code timestamp}
+     *
+     * @throws IllegalArgumentException if the timestamp is negative or greater than {@code 281474976710655L}
      *
      * @spec https://www.rfc-editor.org/rfc/rfc9562.html
      *       RFC 9562 Universally Unique IDentifiers (UUIDs)
      *
      * @since 26
-     * */
+     *
+     */
     public static UUID epochMillis(long timestamp) {
         if ((timestamp >> 48) != 0) {
-            throw new IllegalArgumentException("Timestamp must be an unsigned 48-bit Unix Epoch time in milliseconds.");
+            throw new IllegalArgumentException("Supplied timestamp: " + timestamp + "does not fit within 48 bits");
         }
 
         SecureRandom ng = Holder.numberGenerator;
