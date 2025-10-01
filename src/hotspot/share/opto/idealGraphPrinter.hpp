@@ -31,6 +31,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/xmlstream.hpp"
 
+
 #ifndef PRODUCT
 
 class Compile;
@@ -42,10 +43,13 @@ class Node;
 class InlineTree;
 class ciMethod;
 class JVMState;
+class LRG;
+class PrintProperties;
 
 class IdealGraphPrinter : public CHeapObj<mtCompiler> {
- private:
+  friend class PrintProperties;
 
+private:
   static const char *INDENT;
   static const char *TOP_ELEMENT;
   static const char *GROUP_ELEMENT;
@@ -115,12 +119,6 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   Compile *C;
   double _max_freq;
   bool _append;
-  struct IdealGraphPrintRecord {
-    bool _cond;
-    const char *_name;
-    const char *_svalue = nullptr;
-    int _ivalue = -1;
-  };
 
   // Walk the native stack and print relevant C2 frames as IGV properties (if
   // graph_name == nullptr) or the graph name based on the highest C2 frame (if
@@ -144,7 +142,6 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print_attr(const char *name, intptr_t val);
   void print_prop(const char *name, const char *val);
   void print_prop(const char *name, int val);
-  void print_prop_record(const IdealGraphPrintRecord rec[], int size);
   void tail(const char *name);
   void head(const char *name);
   void text(const char *s);
@@ -170,6 +167,20 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes, const frame* fr = nullptr);
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
+};
+
+class PrintProperties
+{
+private:
+  IdealGraphPrinter *_printer;
+
+public:
+  PrintProperties(IdealGraphPrinter *printer) : _printer(printer) {}
+  void print_node_properties(Node *node, Compile *C);
+  void print_lrg_properties(const LRG &lrg, const char *buffer);
+  void print_property(int flag, const char *name);
+  void print_property(int flag, const char *name, const char *val);
+  void print_property(int flag, const char *name, int val);
 };
 
 #endif

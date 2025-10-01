@@ -256,19 +256,6 @@ void IdealGraphPrinter::print_prop(const char *name, const char *val) {
   tail(PROPERTY_ELEMENT);
 }
 
-void IdealGraphPrinter::print_prop_record(const IdealGraphPrintRecord rec[], int size) {
-  for ( int i = 0; i < size; i++ ) {
-    if (rec[i]._cond != 0) {
-      if (rec[i]._svalue != nullptr) {
-        print_prop(rec[i]._name, rec[i]._svalue);
-      }
-      else {
-        print_prop(rec[i]._name, rec[i]._ivalue);
-      }
-    }
-  }
-}
-
 void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree) {
   begin_head(METHOD_ELEMENT);
 
@@ -519,45 +506,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop("jvms", buffer);
     }
 
-    const jushort flags = node->flags();
-    const IdealGraphPrintRecord rec[] = {
-        {((flags & Node::Flag_is_Copy) != 0), "is_copy", "true"},
-        {((flags & Node::Flag_rematerialize) != 0), "rematerialize", "true"},
-        {((flags & Node::Flag_needs_anti_dependence_check) != 0), "needs_anti_dependence_check", "true"},
-        {((flags & Node::Flag_is_macro) != 0), "is_macro", "true"},
-        {((flags & Node::Flag_is_Con) != 0), "is_con", "true"},
-        {((flags & Node::Flag_is_cisc_alternate) != 0), "is_cisc_alternate", "true"},
-        {((flags & Node::Flag_is_dead_loop_safe) != 0), "is_dead_loop_safe", "true"},
-        {((flags & Node::Flag_may_be_short_branch) != 0), "may_be_short_branch","true"},
-        {((flags & Node::Flag_has_call) != 0), "has_call", "true"},
-        {((flags & Node::Flag_has_swapped_edges) != 0), "has_swapped_edges", "true"}
-      };
-    print_prop_record(rec,(sizeof(rec)/sizeof(IdealGraphPrintRecord)));
-
-    if (C->matcher() != nullptr) {
-      if (C->matcher()->is_shared(node)) {
-        print_prop("is_shared", "true");
-      } else {
-        print_prop("is_shared", "false");
-      }
-      if (C->matcher()->is_dontcare(node)) {
-        print_prop("is_dontcare", "true");
-      } else {
-        print_prop("is_dontcare", "false");
-      }
-      Node* old = C->matcher()->find_old_node(node);
-      if (old != nullptr) {
-        print_prop("old_node_idx", old->_idx);
-      }
-    }
-
-    if (node->is_Proj()) {
-      print_prop("con", (int)node->as_Proj()->_con);
-    }
-
-    if (node->is_Mach()) {
-      print_prop("idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
-    }
+    PrintProperties print_node(this);
+    print_node.print_node_properties(node, C);
 
     if (node->is_CountedLoop()) {
       print_loop_kind(node->as_CountedLoop());
@@ -1078,36 +1028,10 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
       buffer[0] = 0;
       stringStream lrg_mask_stream(buffer, sizeof(buffer) - 1);
       lrg.mask().dump(&lrg_mask_stream);
-      IdealGraphPrintRecord rec[] = {
-          {1, "mask", buffer},
-          {1, "mask_size", nullptr, lrg.mask_size()},
-          {((lrg._degree_valid != 0)), "degree", nullptr, lrg.degree()},
-          {1, "num_regs", nullptr, lrg.num_regs()},
-          {1, "reg_pressure", nullptr, lrg.reg_pressure()},
-          {1, "cost", nullptr, (int) lrg._cost},
-          {1, "area", nullptr, (int) lrg._area},
-          {1, "score", nullptr, (int) lrg.score()},
-          {(lrg._risk_bias != 0), "risk_bias", nullptr, (int) lrg._risk_bias},
-          {(lrg._copy_bias != 0), "copy_bias", nullptr, (int) lrg._copy_bias},
-          {lrg.is_singledef(), "is_singledef", TRUE_VALUE},
-          {lrg.is_multidef(), "is_multidef", TRUE_VALUE},
-          {(lrg._is_oop != 0), "is_oop", TRUE_VALUE},
-          {(lrg._is_float != 0), "is_float", TRUE_VALUE},
-          {(lrg._is_vector != 0), "is_vector", TRUE_VALUE},
-          {(lrg._is_predicate != 0), "is_predicate", TRUE_VALUE},
-          {(lrg._is_scalable != 0), "is_scalable", TRUE_VALUE},
-          {(lrg._was_spilled1 != 0), "was_spilled1", TRUE_VALUE},
-          {(lrg._was_spilled2 != 0), "was_spilled2", TRUE_VALUE},
-          {(lrg._direct_conflict != 0), "direct_conflict", TRUE_VALUE},
-          {(lrg._fat_proj != 0), "fat_proj", TRUE_VALUE},
-          {(lrg._was_lo != 0), "_was_lo", TRUE_VALUE},
-          {(lrg._has_copy != 0), "has_copy", TRUE_VALUE},
-          {(lrg._at_risk != 0), "at_risk", TRUE_VALUE},
-          {(lrg._must_spill != 0), "must_spill", TRUE_VALUE},
-          {(lrg._is_bound != 0), "is_bound", TRUE_VALUE},
-          {lrg._msize_valid && lrg._degree_valid && lrg.lo_degree(), "trivial", TRUE_VALUE}
-        };
-      print_prop_record(rec, (sizeof(rec)/sizeof(IdealGraphPrintRecord)));
+
+      PrintProperties print_node(this);
+      print_node.print_lrg_properties(lrg, buffer);
+
       tail(PROPERTIES_ELEMENT);
       tail(LIVE_RANGE_ELEMENT);
     }
@@ -1178,6 +1102,78 @@ void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
     }
   }
 }
+
+void PrintProperties::print_node_properties(Node* node, Compile* C){
+  const jushort flags = node->flags();
+  print_property((flags & Node::Flag_is_Copy), "is_copy");
+  print_property((flags & Node::Flag_rematerialize), "rematerialize");
+  print_property((flags & Node::Flag_needs_anti_dependence_check), "needs_anti_dependence_check");
+  print_property((flags & Node::Flag_is_macro), "is_macro");
+  print_property((flags & Node::Flag_is_Con), "is_con");
+  print_property((flags & Node::Flag_is_cisc_alternate), "is_cisc_alternate");
+  print_property((flags & Node::Flag_is_dead_loop_safe), "is_dead_loop_safe");
+  print_property((flags & Node::Flag_may_be_short_branch), "may_be_short_branch");
+  print_property((flags & Node::Flag_has_call), "has_call");
+  print_property((flags & Node::Flag_has_swapped_edges), "has_swapped_edges");
+  if (C->matcher() != nullptr) {
+    print_property(C->matcher()->is_shared(node),"is_shared");
+    print_property(!(C->matcher()->is_shared(node)), "is_shared", IdealGraphPrinter::FALSE_VALUE);
+    print_property(C->matcher()->is_dontcare(node), "is_dontcare");
+    print_property(!(C->matcher()->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
+    print_property((C->matcher()->find_old_node(node) != nullptr), "old_node_idx", C->matcher()->find_old_node(node)->_idx);
+  }
+  print_property(node->is_Proj(), "con", (int)node->as_Proj()->_con);
+  print_property(node->is_Mach(), "idealOpcode", (const char *)NodeClassNames[node->as_Mach()->ideal_Opcode()]);
+}
+
+void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
+  print_property(true, "mask", buffer);
+  print_property(true, "mask_size", lrg.mask_size());
+  print_property(lrg._degree_valid, "degree", lrg.degree());
+  print_property(true, "num_regs", lrg.num_regs());
+  print_property(true, "reg_pressure", lrg.reg_pressure());
+  print_property(true, "cost", lrg._cost);
+  print_property(true, "area", lrg._area);
+  print_property(true, "score", lrg.score());
+  print_property((lrg._risk_bias != 0), "risk_bias", lrg._risk_bias);
+  print_property((lrg._copy_bias != 0), "copy_bias", lrg._copy_bias);
+  print_property(lrg.is_singledef(), "is_singledef");
+  print_property(lrg.is_multidef(), "is_multidef");
+  print_property(lrg._is_oop, "is_oop");
+  print_property(lrg._is_float, "is_float");
+  print_property(lrg._is_vector, "is_vector");
+  print_property(lrg._is_predicate, "is_predicate");
+  print_property(lrg._is_scalable, "is_scalable");
+  print_property(lrg._was_spilled1, "was_spilled1");
+  print_property(lrg._was_spilled2, "was_spilled2");
+  print_property(lrg._direct_conflict, "direct_conflict");
+  print_property(lrg._fat_proj, "fat_proj");
+  print_property(lrg._was_lo, "_was_lo");
+  print_property(lrg._has_copy, "has_copy");
+  print_property(lrg._at_risk, "at_risk");
+  print_property(lrg._must_spill, "must_spill");
+  print_property(lrg._is_bound, "is_bound");
+  print_property((lrg._msize_valid && lrg._degree_valid && lrg.lo_degree()), "trivial");
+}
+
+void PrintProperties::print_property(int flag, const char* name) {
+  if (flag) {
+    _printer->print_prop(name, IdealGraphPrinter::TRUE_VALUE);
+  }
+}
+
+void PrintProperties::print_property(int flag, const char* name, const char* val) {
+  if (flag) {
+    _printer->print_prop(name, val);
+  }
+}
+
+void PrintProperties::print_property(int flag, const char* name, int val) {
+  if (flag) {
+    _printer->print_prop(name, val);
+  }
+}
+
 
 extern const char *NodeClassNames[];
 
