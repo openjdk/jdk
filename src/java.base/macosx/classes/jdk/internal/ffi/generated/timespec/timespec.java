@@ -41,6 +41,7 @@ import static java.lang.foreign.ValueLayout.*;
  * }
  * }
  */
+@SuppressWarnings("restricted")
 public class timespec {
 
     timespec() {

@@ -30,6 +30,7 @@ package jdk.internal.ffi.generated.kqueue;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 
+@SuppressWarnings("restricted")
 public class kqueue_h extends kqueue_h$shared {
 
     kqueue_h() {

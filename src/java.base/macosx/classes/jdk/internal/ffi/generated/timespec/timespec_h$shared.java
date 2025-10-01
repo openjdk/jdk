@@ -34,6 +34,7 @@ import java.util.stream.*;
 
 import static java.lang.foreign.ValueLayout.*;
 
+@SuppressWarnings("restricted")
 public class timespec_h$shared {
 
     timespec_h$shared() {

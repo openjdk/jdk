@@ -30,6 +30,7 @@ package jdk.internal.ffi.generated.errno;
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 
+@SuppressWarnings("restricted")
 public class errno_h extends errno_h$shared {
 
     errno_h() {

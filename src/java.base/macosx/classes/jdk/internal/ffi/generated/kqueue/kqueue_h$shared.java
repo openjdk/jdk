@@ -34,6 +34,7 @@ import java.util.stream.*;
 
 import static java.lang.foreign.ValueLayout.*;
 
+@SuppressWarnings("restricted")
 public class kqueue_h$shared {
 
     kqueue_h$shared() {
