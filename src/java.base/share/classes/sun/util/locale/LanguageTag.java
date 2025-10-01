@@ -108,9 +108,9 @@ public record LanguageTag(String language,
         var errorMsg = new StringBuilder();
 
         // Check if the tag is a legacy tag
-        var modern = legacyToModern(LocaleUtils.toLowerString(languageTag));
-        // If legacy use modern mapping, otherwise use the tag as is
-        itr = new StringTokenIterator(Objects.requireNonNullElse(modern, languageTag), SEP);
+        var pref = legacyToPreferred(LocaleUtils.toLowerString(languageTag));
+        // If legacy use preferred mapping, otherwise use the tag as is
+        itr = new StringTokenIterator(Objects.requireNonNullElse(pref, languageTag), SEP);
 
         String language = parseLanguage(itr, pp);
         List<String> extlangs;
@@ -332,7 +332,7 @@ public record LanguageTag(String language,
         String[] subtags = tag.split(SEP);
 
         // Legacy tags
-        if (legacyToModern(tag.toLowerCase(Locale.ROOT)) != null) {
+        if (legacyToPreferred(tag.toLowerCase(Locale.ROOT)) != null) {
             // Fold the legacy tag
             for (int i = 0; i < subtags.length ; i++) {
                 // 2 ALPHA Region subtag(s) are upper, all other subtags are lower
@@ -505,12 +505,12 @@ public record LanguageTag(String language,
     }
 
     /*
-     * Converts a legacy tag to its modern mapping if it exists, otherwise null.
+     * Converts a legacy tag to its preferred mapping if it exists, otherwise null.
      * The keys are mapped and stored as lower case. (Folded on demand).
      * See http://www.ietf.org/rfc/rfc5646.txt Section 2.1 and 2.2.8 for the
      * full syntax and case accurate legacy tags.
      */
-    private static String legacyToModern(String tag) {
+    private static String legacyToPreferred(String tag) {
         if (tag.length() > 11 || tag.length() < 5) {
             return null;
         }
