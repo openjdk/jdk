@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,26 +193,6 @@ public class MulticastSocket extends DatagramSocket {
      * on this {@code MulticastSocket} in order to control the
      * scope of the multicasts.
      *
-     * <p>The ttl is an <b>unsigned</b> 8-bit quantity, and so <B>must</B> be
-     * in the range {@code 0 <= ttl <= 0xFF }.
-     *
-     * @param      ttl the time-to-live
-     * @throws     IOException if an I/O exception occurs
-     *             while setting the default time-to-live value, or the socket is closed.
-     * @deprecated use the {@link #setTimeToLive(int)} method instead, which uses
-     *             <b>int</b> instead of <b>byte</b> as the type for ttl.
-     * @see #getTTL()
-     */
-    @Deprecated(forRemoval = true, since = "1.2")
-    public void setTTL(byte ttl) throws IOException {
-        delegate().setTTL(ttl);
-    }
-
-    /**
-     * Set the default time-to-live for multicast packets sent out
-     * on this {@code MulticastSocket} in order to control the
-     * scope of the multicasts.
-     *
      * <P> The ttl <B>must</B> be in the range {@code  0 <= ttl <=
      * 255} or an {@code IllegalArgumentException} will be thrown.
      * Multicast packets sent with a TTL of {@code 0} are not transmitted
@@ -235,22 +215,6 @@ public class MulticastSocket extends DatagramSocket {
      */
     public void setTimeToLive(int ttl) throws IOException {
         delegate().setTimeToLive(ttl);
-    }
-
-    /**
-     * Get the default time-to-live for multicast packets sent out on
-     * the socket.
-     *
-     * @throws    IOException if an I/O exception occurs
-     *            while getting the default time-to-live value, or the socket is closed.
-     * @return the default time-to-live value
-     * @deprecated use the {@link #getTimeToLive()} method instead,
-     * which returns an <b>int</b> instead of a <b>byte</b>.
-     * @see #setTTL(byte)
-     */
-    @Deprecated(forRemoval = true, since = "1.2")
-    public byte getTTL() throws IOException {
-        return delegate().getTTL();
     }
 
     /**
@@ -465,48 +429,5 @@ public class MulticastSocket extends DatagramSocket {
     @Deprecated(since="14")
     public boolean getLoopbackMode() throws SocketException {
         return delegate().getLoopbackMode();
-    }
-
-    /**
-     * Sends a datagram packet to the destination, with a TTL (time-to-live)
-     * other than the default for the socket.  This method
-     * need only be used in instances where a particular TTL is desired;
-     * otherwise it is preferable to set a TTL once on the socket, and
-     * use that default TTL for all packets.  This method does <B>not
-     * </B> alter the default TTL for the socket. Its behavior may be
-     * affected by {@code setInterface}.
-     *
-     * @param p is the packet to be sent. The packet should contain
-     * the destination multicast ip address and the data to be sent.
-     * One does not need to be the member of the group to send
-     * packets to a destination multicast address.
-     * @param ttl optional time to live for multicast packet.
-     * default ttl is 1.
-     *
-     * @throws     IOException  if an I/O error occurs, or the socket is closed.
-     * @throws     PortUnreachableException may be thrown if the socket is connected
-     *             to a currently unreachable destination. Note, there is no
-     *             guarantee that the exception will be thrown.
-     * @throws     IllegalArgumentException if the socket is connected,
-     *             and connected address and packet address differ, or
-     *             if the socket is not connected and the packet address
-     *             is not set or if its port is out of range.
-     *
-     *
-     * @deprecated Use the following code or its equivalent instead:
-     *  <pre>{@code   ......
-     *  int ttl = mcastSocket.getOption(StandardSocketOptions.IP_MULTICAST_TTL);
-     *  mcastSocket.setOption(StandardSocketOptions.IP_MULTICAST_TTL, newttl);
-     *  mcastSocket.send(p);
-     *  mcastSocket.setOption(StandardSocketOptions.IP_MULTICAST_TTL, ttl);
-     *  ......}</pre>
-     *
-     * @see DatagramSocket#send
-     * @see DatagramSocket#receive
-     */
-    @Deprecated(forRemoval = true, since = "1.4")
-    public void send(DatagramPacket p, byte ttl)
-        throws IOException {
-        delegate().send(p, ttl);
     }
 }

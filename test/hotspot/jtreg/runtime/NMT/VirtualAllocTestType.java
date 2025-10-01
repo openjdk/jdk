@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,12 +61,27 @@ public class VirtualAllocTestType {
       addr2 = wb.NMTReserveMemory(reserveSize);
       info = "reserve 2: addr2=" + addr2;
 
-      // If the second mapping happens to be adjacent to the first mapping, reserve another mapping and release the second mapping; for
-      // this test, we want to see two disjunct mappings.
-      if (addr2 == addr1 + reserveSize) {
+      // For this test, we want to see two disjunct mappings.
+      if ((addr2 == addr1 + reserveSize) || (addr2 == addr1 - reserveSize)) {
+        //               <---r1---><---r2--->...<---tmp--->
+        // <---tmp--->...<---r1---><---r2--->
+        //
+        // Reserve a new region and find whether r1 or r2 to be released.
         long tmp = wb.NMTReserveMemory(reserveSize);
-        wb.NMTReleaseMemory(addr2, reserveSize);
-        addr2 = tmp;
+        long r1 = addr1 < addr2 ? addr1 : addr2;
+        long r2 = addr1 > addr2 ? addr1 : addr2;
+        long tmp_end = tmp + reserveSize;
+        long r1_end = r1 + reserveSize;
+        long r2_end = r2 + reserveSize;
+        if (tmp >= r2_end) {
+          wb.NMTReleaseMemory(r2, reserveSize);
+          addr1 = r1;
+          addr2 = tmp;
+        } else if (tmp_end <= r1) {
+          wb.NMTReleaseMemory(r1, reserveSize);
+          addr1 = tmp;
+          addr2 = r2;
+        }
       }
 
       output = NMTTestUtils.startJcmdVMNativeMemoryDetail();

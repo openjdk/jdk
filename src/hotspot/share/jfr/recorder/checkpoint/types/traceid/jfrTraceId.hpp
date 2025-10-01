@@ -30,6 +30,7 @@
 #include "memory/allStatic.hpp"
 
 class ClassLoaderData;
+class InstanceKlass;
 class Klass;
 class Method;
 class ModuleEntry;
@@ -86,7 +87,6 @@ class JfrTraceId : public AllStatic {
 
   // through load barrier
   static traceid load(const Klass* klass);
-  static traceid load_previous_epoch(const Klass* klass);
   static traceid load(jclass jc, bool raw = false);
   static traceid load(const Method* method);
   static traceid load(const Klass* klass, const Method* method);
@@ -146,10 +146,8 @@ class JfrTraceId : public AllStatic {
   static void set_sticky_bit(const Method* method);
   static void clear_sticky_bit(const Klass* k);
   static void clear_sticky_bit(const Method* method);
-  static bool has_timing_bit(const Klass* k);
-  static void set_timing_bit(const Klass* k);
-  static void clear_timing_bit(const Klass* k);
-
+  static bool has_timing_bit(const InstanceKlass* scratch_klass);
+  static void set_timing_bit(const InstanceKlass* scratch_klass);
 };
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_HPP

@@ -63,7 +63,7 @@ public:
   } while (false)
 
 TEST_VM_F(LockStackTest, is_recursive) {
-  if (LockingMode != LM_LIGHTWEIGHT || !VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
     return;
   }
 
@@ -130,7 +130,7 @@ TEST_VM_F(LockStackTest, is_recursive) {
 }
 
 TEST_VM_F(LockStackTest, try_recursive_enter) {
-  if (LockingMode != LM_LIGHTWEIGHT || !VM_Version::supports_recursive_lightweight_locking()) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
     return;
   }
 
@@ -197,10 +197,6 @@ TEST_VM_F(LockStackTest, try_recursive_enter) {
 }
 
 TEST_VM_F(LockStackTest, contains) {
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    return;
-  }
-
   const bool test_recursive = VM_Version::supports_recursive_lightweight_locking();
 
   JavaThread* THREAD = JavaThread::current();
@@ -263,10 +259,6 @@ TEST_VM_F(LockStackTest, contains) {
 }
 
 TEST_VM_F(LockStackTest, remove) {
-  if (LockingMode != LM_LIGHTWEIGHT) {
-    return;
-  }
-
   const bool test_recursive = VM_Version::supports_recursive_lightweight_locking();
 
   JavaThread* THREAD = JavaThread::current();

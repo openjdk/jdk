@@ -38,8 +38,9 @@
 #include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
-#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stackOverflow.hpp"
+#include "runtime/stackWatermarkSet.hpp"
+#include "runtime/suspendResumeManager.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threadIdentifier.hpp"
@@ -52,7 +53,7 @@
 #include "utilities/ticks.hpp"
 #endif
 
-class AsyncExceptionHandshake;
+class AsyncExceptionHandshakeClosure;
 class DeoptResourceMark;
 class InternalOOMEMark;
 class JNIHandleBlock;
@@ -181,13 +182,13 @@ class JavaThread: public Thread {
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
-    // Use Atomic::load() to prevent data race between concurrent modification and
+    // Use AtomicAccess::load() to prevent data race between concurrent modification and
     // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
     // Especially, reloading pointer from thread after null check must be prevented.
-    return Atomic::load(&_current_pending_monitor);
+    return AtomicAccess::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
-    Atomic::store(&_current_pending_monitor, monitor);
+    AtomicAccess::store(&_current_pending_monitor, monitor);
   }
   void set_current_pending_monitor_is_from_java(bool from_java) {
     _current_pending_monitor_is_from_java = from_java;
@@ -197,10 +198,10 @@ class JavaThread: public Thread {
   }
   ObjectMonitor* current_waiting_monitor() {
     // See the comment in current_pending_monitor() above.
-    return Atomic::load(&_current_waiting_monitor);
+    return AtomicAccess::load(&_current_waiting_monitor);
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    Atomic::store(&_current_waiting_monitor, monitor);
+    AtomicAccess::store(&_current_waiting_monitor, monitor);
   }
 
   // JNI handle support
@@ -232,13 +233,13 @@ class JavaThread: public Thread {
 
   // Asynchronous exception support
  private:
-  friend class InstallAsyncExceptionHandshake;
-  friend class AsyncExceptionHandshake;
+  friend class InstallAsyncExceptionHandshakeClosure;
+  friend class AsyncExceptionHandshakeClosure;
   friend class HandshakeState;
 
   void handle_async_exception(oop java_throwable);
  public:
-  void install_async_exception(AsyncExceptionHandshake* aec = nullptr);
+  void install_async_exception(AsyncExceptionHandshakeClosure* aec = nullptr);
   bool has_async_exception_condition();
   inline void set_pending_unsafe_access_error();
   static void send_async_exception(JavaThread* jt, oop java_throwable);
@@ -694,9 +695,13 @@ private:
 
   // Suspend/resume support for JavaThread
   // higher-level suspension/resume logic called by the public APIs
+private:
+  SuspendResumeManager _suspend_resume_manager;
+public:
   bool java_suspend(bool register_vthread_SR);
   bool java_resume(bool register_vthread_SR);
-  bool is_suspended()     { return _handshake.is_suspended(); }
+  bool is_suspended()     { return _suspend_resume_manager.is_suspended(); }
+  SuspendResumeManager* suspend_resume_manager() { return &_suspend_resume_manager; }
 
   // Check for async exception in addition to safepoint.
   static void check_special_condition_for_native_trans(JavaThread *thread);
@@ -710,7 +715,7 @@ private:
   inline bool clear_carrier_thread_suspended();
 
   bool is_carrier_thread_suspended() const {
-    return Atomic::load(&_carrier_thread_suspended);
+    return AtomicAccess::load(&_carrier_thread_suspended);
   }
 
   bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
@@ -722,8 +727,8 @@ private:
   bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
   void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
 
-  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
-  void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
+  bool VTMS_transition_mark() const              { return AtomicAccess::load(&_VTMS_transition_mark); }
+  void set_VTMS_transition_mark(bool val)        { AtomicAccess::store(&_VTMS_transition_mark, val); }
 
   // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
   // - is in a VTMS transition (_is_in_VTMS_transition)
@@ -749,9 +754,6 @@ private:
   bool has_special_runtime_exit_condition() {
     return (_suspend_flags & _obj_deopt) != 0;
   }
-
-  // Stack-locking support (not for LM_LIGHTWEIGHT)
-  bool is_lock_owned(address adr) const;
 
   // Accessors for vframe array top
   // The linked list of vframe arrays are sorted on sp. This means when we
@@ -941,7 +943,7 @@ private:
   }
 
   // Atomic version; invoked by a thread other than the owning thread.
-  bool in_critical_atomic() { return Atomic::load(&_jni_active_critical) > 0; }
+  bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the
@@ -1159,7 +1161,7 @@ private:
   // Used by the interpreter in fullspeed mode for frame pop, method
   // entry, method exit and single stepping support. This field is
   // only set to non-zero at a safepoint or using a direct handshake
-  // (see EnterInterpOnlyModeClosure).
+  // (see EnterInterpOnlyModeHandshakeClosure).
   // It can be set to zero asynchronously to this threads execution (i.e., without
   // safepoint/handshake or a lock) so we have to be very careful.
   // Accesses by other threads are synchronized using JvmtiThreadState_lock though.

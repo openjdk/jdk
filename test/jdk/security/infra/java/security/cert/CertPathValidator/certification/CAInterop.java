@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,50 +417,6 @@
  */
 
 /*
- * @test id=affirmtrustcommercialca
- * @bug 8040012
- * @summary Interoperability tests with AffirmTrust Commercial CA
- * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop affirmtrustcommercialca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop affirmtrustcommercialca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop affirmtrustcommercialca CRL
- */
-
-/*
- * @test id=affirmtrustnetworkingca
- * @bug 8040012
- * @summary Interoperability tests with AffirmTrust Networking CA
- * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop affirmtrustnetworkingca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop affirmtrustnetworkingca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop affirmtrustnetworkingca CRL
- */
-
-/*
- * @test id=affirmtrustpremiumca
- * @bug 8040012
- * @summary Interoperability tests with AffirmTrust Premium CA
- * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop affirmtrustpremiumca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop affirmtrustpremiumca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop affirmtrustpremiumca CRL
- */
-
-/*
- * @test id=affirmtrustpremiumeccca
- * @bug 8040012
- * @summary Interoperability tests with AffirmTrust Premium ECC CA
- * @library /test/lib
- * @build jtreg.SkippedException ValidatePathWithURL CAInterop
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop affirmtrustpremiumeccca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop affirmtrustpremiumeccca OCSP
- * @run main/othervm/manual -Djava.security.debug=certpath CAInterop affirmtrustpremiumeccca CRL
- */
-
-/*
  * @test id=teliarootcav2
  * @bug 8317373
  * @summary Interoperability tests with Telia Root CA V2
@@ -555,6 +511,36 @@
  * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop ssltlsrootrsa2022 DEFAULT
  * @run main/othervm/manual -Djava.security.debug=certpath,ocsp -Dcom.sun.security.ocsp.useget=false CAInterop ssltlsrootrsa2022 DEFAULT
  * @run main/othervm/manual -Djava.security.debug=certpath CAInterop ssltlsrootrsa2022 CRL
+ */
+
+/*
+ * @test id=sectigotlsrootr46
+ * @bug 8359170
+ * @summary Interoperability tests with Sectigo Public Server Authentication
+ * Root R46
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * sectigotlsrootr46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop sectigotlsrootr46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * sectigotlsrootr46 CRL
+ */
+
+/*
+ * @test id=sectigotlsroote46
+ * @bug 8359170
+ * @summary Interoperability tests with Sectigo Public Server Authentication
+ * Root E46
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp CAInterop
+ * sectigotlsroote46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath,ocsp
+ * -Dcom.sun.security.ocsp.useget=false CAInterop sectigotlsroote46 OCSP
+ * @run main/othervm/manual -Djava.security.debug=certpath CAInterop
+ * sectigotlsroote46 CRL
  */
 
 /**
@@ -696,20 +682,6 @@ public class CAInterop {
                     new CATestURLs("https://valid.servicesca.dhimyotis.com",
                             "https://revoked.servicesca.dhimyotis.com");
 
-            // These are listed at https://www.affirmtrust.com/resources/
-            case "affirmtrustcommercialca" ->
-                    new CATestURLs("https://validcommercial.affirmtrust.com",
-                            "https://revokedcommercial.affirmtrust.com");
-            case "affirmtrustnetworkingca" ->
-                    new CATestURLs("https://validnetworking.affirmtrust.com",
-                            "https://revokednetworking.affirmtrust.com");
-            case "affirmtrustpremiumca" ->
-                    new CATestURLs("https://validpremium.affirmtrust.com",
-                            "https://revokedpremium.affirmtrust.com");
-            case "affirmtrustpremiumeccca" ->
-                    new CATestURLs("https://validpremiumecc.affirmtrust.com",
-                            "https://revokedpremiumecc.affirmtrust.com");
-
             case "teliarootcav2" ->
                     new CATestURLs("https://juolukka.cover.telia.fi:10600",
                             "https://juolukka.cover.telia.fi:10601");
@@ -741,6 +713,13 @@ public class CAInterop {
             case "ssltlsrootrsa2022" ->
                     new CATestURLs("https://test-root-2022-rsa.ssl.com",
                             "https://revoked-root-2022-rsa.ssl.com");
+
+            case "sectigotlsrootr46" ->
+                    new CATestURLs("https://sectigopublicserverauthenticationrootr46-ev.sectigo.com",
+                            "https://sectigopublicserverauthenticationrootr46-ev.sectigo.com:444");
+            case "sectigotlsroote46" ->
+                    new CATestURLs("https://sectigopublicserverauthenticationroote46-ev.sectigo.com",
+                            "https://sectigopublicserverauthenticationroote46-ev.sectigo.com:444");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

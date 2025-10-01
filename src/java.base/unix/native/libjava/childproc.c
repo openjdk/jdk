@@ -52,57 +52,80 @@ closeSafely(int fd)
     return (fd == -1) ? 0 : close(fd);
 }
 
+int
+markCloseOnExec(int fd)
+{
+    const int flags = fcntl(fd, F_GETFD);
+    if (flags < 0) {
+        return -1;
+    }
+    if ((flags & FD_CLOEXEC) == 0) {
+        if (fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
+#if !defined(_AIX)
+  /* The /proc file system on AIX does not contain open system files
+   * like /dev/random. Therefore we use a different approach and do
+   * not need isAsciiDigit() or FD_DIR */
 static int
 isAsciiDigit(char c)
 {
   return c >= '0' && c <= '9';
 }
 
-#if defined(_AIX)
-  /* AIX does not understand '/proc/self' - it requires the real process ID */
-  #define FD_DIR aix_fd_dir
-#elif defined(_ALLBSD_SOURCE)
-  #define FD_DIR "/dev/fd"
-#else
-  #define FD_DIR "/proc/self/fd"
+  #if defined(_ALLBSD_SOURCE)
+    #define FD_DIR "/dev/fd"
+  #else
+    #define FD_DIR "/proc/self/fd"
+  #endif
 #endif
 
 static int
-closeDescriptors(void)
+markDescriptorsCloseOnExec(void)
 {
+#if defined(_AIX)
+    /* On AIX, we cannot rely on proc file system iteration to find all open files. Since
+     * iteration over all possible file descriptors, and subsequently closing them, can
+     * take a very long time, we use a bulk close via `ioctl` that is available on AIX.
+     * Since we hard-close, we need to make sure to keep the fail pipe file descriptor
+     * alive until the exec call. Therefore we mark the fail pipe fd with close on exec
+     * like the other OSes do, but then proceed to hard-close file descriptors beyond that.
+     */
+    if (fcntl(FAIL_FILENO + 1, F_CLOSEM, 0) == -1 ||
+        (markCloseOnExec(FAIL_FILENO) == -1 && errno != EBADF)) {
+        return -1;
+    }
+#else
     DIR *dp;
     struct dirent *dirp;
-    int from_fd = FAIL_FILENO + 1;
-
-    /* We're trying to close all file descriptors, but opendir() might
-     * itself be implemented using a file descriptor, and we certainly
-     * don't want to close that while it's in use.  We assume that if
-     * opendir() is implemented using a file descriptor, then it uses
-     * the lowest numbered file descriptor, just like open().  So we
-     * close a couple explicitly.  */
-
-    close(from_fd);          /* for possible use by opendir() */
-    close(from_fd + 1);      /* another one for good luck */
-
-#if defined(_AIX)
-    /* AIX does not understand '/proc/self' - it requires the real process ID */
-    char aix_fd_dir[32];     /* the pid has at most 19 digits */
-    snprintf(aix_fd_dir, 32, "/proc/%d/fd", getpid());
-#endif
+    /* This function marks all file descriptors beyond stderr as CLOEXEC.
+     * That includes the file descriptor used for the fail pipe: we want that
+     * one to stay open up until the execve, but it should be closed with the
+     * execve. */
+    const int fd_from = STDERR_FILENO + 1;
 
     if ((dp = opendir(FD_DIR)) == NULL)
-        return 0;
+        return -1;
 
     while ((dirp = readdir(dp)) != NULL) {
         int fd;
         if (isAsciiDigit(dirp->d_name[0]) &&
-            (fd = strtol(dirp->d_name, NULL, 10)) >= from_fd + 2)
-            close(fd);
+            (fd = strtol(dirp->d_name, NULL, 10)) >= fd_from) {
+            if (markCloseOnExec(fd) == -1) {
+                closedir(dp);
+                return -1;
+            }
+        }
     }
 
     closedir(dp);
+#endif
 
-    return 1;
+    return 0;
 }
 
 static int
@@ -359,7 +382,7 @@ childProcess(void *arg)
     jtregSimulateCrash(0, 6);
 #endif
     /* Close the parent sides of the pipes.
-       Closing pipe fds here is redundant, since closeDescriptors()
+       Closing pipe fds here is redundant, since markDescriptorsCloseOnExec()
        would do it anyways, but a little paranoia is a good thing. */
     if ((closeSafely(p->in[1])   == -1) ||
         (closeSafely(p->out[0])  == -1) ||
@@ -393,12 +416,16 @@ childProcess(void *arg)
     /* We moved the fail pipe fd */
     fail_pipe_fd = FAIL_FILENO;
 
+    /* For AIX: The code in markDescriptorsCloseOnExec() relies on the current
+     * semantic of this function. When this point here is reached only the
+     * FDs 0,1,2 and 3 are further used until the exec() or the exit(-1). */
+
     /* close everything */
-    if (closeDescriptors() == 0) { /* failed,  close the old way */
+    if (markDescriptorsCloseOnExec() == -1) { /* failed,  close the old way */
         int max_fd = (int)sysconf(_SC_OPEN_MAX);
         int fd;
-        for (fd = FAIL_FILENO + 1; fd < max_fd; fd++)
-            if (close(fd) == -1 && errno != EBADF)
+        for (fd = STDERR_FILENO + 1; fd < max_fd; fd++)
+            if (markCloseOnExec(fd) == -1 && errno != EBADF)
                 goto WhyCantJohnnyExec;
     }
 
@@ -413,8 +440,10 @@ childProcess(void *arg)
         sigprocmask(SIG_SETMASK, &unblock_signals, NULL);
     }
 
-    if (fcntl(FAIL_FILENO, F_SETFD, FD_CLOEXEC) == -1)
+    // Children should be started with default signal disposition for SIGPIPE
+    if (signal(SIGPIPE, SIG_DFL) == SIG_ERR) {
         goto WhyCantJohnnyExec;
+    }
 
     JDK_execvpe(p->mode, p->argv[0], p->argv, p->envv);
 

@@ -149,6 +149,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(package) \
   LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
@@ -216,6 +217,7 @@ class outputStream;
   LOG_TAG(valuebasedclasses) \
   LOG_TAG(verification) \
   LOG_TAG(verify) \
+  LOG_TAG(vmatree) \
   LOG_TAG(vmmutex) \
   LOG_TAG(vmoperation) \
   LOG_TAG(vmthread) \

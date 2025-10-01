@@ -28,7 +28,7 @@ package sun.lwawt.macosx;
 import java.awt.Dimension;
 import java.awt.peer.SystemTrayPeer;
 
-public class CSystemTray implements SystemTrayPeer {
+public final class CSystemTray implements SystemTrayPeer {
 
     CSystemTray(){
     }

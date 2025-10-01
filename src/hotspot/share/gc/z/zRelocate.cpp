@@ -25,7 +25,6 @@
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/z/zAbort.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrier.inline.hpp"
 #include "gc/z/zCollectedHeap.hpp"
 #include "gc/z/zForwarding.inline.hpp"
@@ -33,8 +32,10 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zIndexDistributor.inline.hpp"
 #include "gc/z/zIterator.inline.hpp"
+#include "gc/z/zNUMA.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
 #include "gc/z/zPage.inline.hpp"
-#include "gc/z/zPageAge.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zRelocate.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRootsIterator.hpp"
@@ -43,10 +44,11 @@
 #include "gc/z/zStringDedup.inline.hpp"
 #include "gc/z/zTask.hpp"
 #include "gc/z/zUncoloredRoot.inline.hpp"
+#include "gc/z/zValue.inline.hpp"
 #include "gc/z/zVerify.hpp"
 #include "gc/z/zWorkers.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 
 static const ZStatCriticalPhase ZCriticalPhaseRelocationStall("Relocation Stall");
@@ -62,16 +64,16 @@ ZRelocateQueue::ZRelocateQueue()
     _needs_attention(0) {}
 
 bool ZRelocateQueue::needs_attention() const {
-  return Atomic::load(&_needs_attention) != 0;
+  return AtomicAccess::load(&_needs_attention) != 0;
 }
 
 void ZRelocateQueue::inc_needs_attention() {
-  const int needs_attention = Atomic::add(&_needs_attention, 1);
+  const int needs_attention = AtomicAccess::add(&_needs_attention, 1);
   assert(needs_attention == 1 || needs_attention == 2, "Invalid state");
 }
 
 void ZRelocateQueue::dec_needs_attention() {
-  const int needs_attention = Atomic::sub(&_needs_attention, 1);
+  const int needs_attention = AtomicAccess::sub(&_needs_attention, 1);
   assert(needs_attention == 0 || needs_attention == 1, "Invalid state");
 }
 
@@ -81,12 +83,12 @@ void ZRelocateQueue::activate(uint nworkers) {
 }
 
 void ZRelocateQueue::deactivate() {
-  Atomic::store(&_is_active, false);
+  AtomicAccess::store(&_is_active, false);
   clear();
 }
 
 bool ZRelocateQueue::is_active() const {
-  return Atomic::load(&_is_active);
+  return AtomicAccess::load(&_is_active);
 }
 
 void ZRelocateQueue::join(uint nworkers) {
@@ -304,9 +306,38 @@ void ZRelocateQueue::desynchronize() {
   _lock.notify_all();
 }
 
+ZRelocationTargets::ZRelocationTargets()
+  : _targets() {}
+
+ZPage* ZRelocationTargets::get(uint32_t partition_id, ZPageAge age) {
+  return _targets.get(partition_id)[untype(age) - 1];
+}
+
+void ZRelocationTargets::set(uint32_t partition_id, ZPageAge age, ZPage* page) {
+  _targets.get(partition_id)[untype(age) - 1] = page;
+}
+
+template <typename Function>
+void ZRelocationTargets::apply_and_clear_targets(Function function) {
+  ZPerNUMAIterator<TargetArray> iter(&_targets);
+  for (TargetArray* targets; iter.next(&targets);) {
+    for (size_t i = 0; i < ZNumRelocationAges; i++) {
+      // Apply function
+      function((*targets)[i]);
+
+      // Clear target
+      (*targets)[i] = nullptr;
+    }
+  }
+}
+
 ZRelocate::ZRelocate(ZGeneration* generation)
   : _generation(generation),
-    _queue() {}
+    _queue(),
+    _iters(),
+    _small_targets(),
+    _medium_targets(),
+    _shared_medium_targets() {}
 
 ZWorkers* ZRelocate::workers() const {
   return _generation->workers();
@@ -325,10 +356,9 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
 
   // Allocate object
   const size_t size = ZUtils::object_size(from_addr);
+  const ZPageAge to_age = forwarding->to_age();
 
-  ZAllocatorForRelocation* allocator = ZAllocator::relocation(forwarding->to_age());
-
-  const zaddress to_addr = allocator->alloc_object(size);
+  const zaddress to_addr = ZHeap::heap()->alloc_object_for_relocation(size, to_age);
 
   if (is_null(to_addr)) {
     // Allocation failed
@@ -343,7 +373,7 @@ static zaddress relocate_object_inner(ZForwarding* forwarding, zaddress from_add
 
   if (to_addr_final != to_addr) {
     // Already relocated, try undo allocation
-    allocator->undo_alloc_object(to_addr, size);
+    ZHeap::heap()->undo_alloc_object_for_relocation(to_addr, size);
   }
 
   return to_addr_final;
@@ -385,18 +415,23 @@ zaddress ZRelocate::forward_object(ZForwarding* forwarding, zaddress_unsafe from
   return to_addr;
 }
 
-static ZPage* alloc_page(ZAllocatorForRelocation* allocator, ZPageType type, size_t size) {
+static ZPage* alloc_page(ZForwarding* forwarding) {
   if (ZStressRelocateInPlace) {
     // Simulate failure to allocate a new page. This will
     // cause the page being relocated to be relocated in-place.
     return nullptr;
   }
 
+  const ZPageType type = forwarding->type();
+  const size_t size = forwarding->size();
+  const ZPageAge age = forwarding->to_age();
+  const uint32_t preferred_partition = forwarding->partition_id();
+
   ZAllocationFlags flags;
   flags.set_non_blocking();
   flags.set_gc_relocation();
 
-  return allocator->alloc_page_for_relocation(type, size, flags);
+  return ZHeap::heap()->alloc_page(type, size, flags, age, preferred_partition);
 }
 
 static void retire_target_page(ZGeneration* generation, ZPage* page) {
@@ -426,10 +461,9 @@ public:
       _in_place_count(0) {}
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
-    ZAllocatorForRelocation* const allocator = ZAllocator::relocation(forwarding->to_age());
-    ZPage* const page = alloc_page(allocator, forwarding->type(), forwarding->size());
+    ZPage* const page = alloc_page(forwarding);
     if (page == nullptr) {
-      Atomic::inc(&_in_place_count);
+      AtomicAccess::inc(&_in_place_count);
     }
 
     if (target != nullptr) {
@@ -440,7 +474,7 @@ public:
     return page;
   }
 
-  void share_target_page(ZPage* page) {
+  void share_target_page(ZPage* page, uint32_t partition_id) {
     // Does nothing
   }
 
@@ -465,34 +499,26 @@ public:
 
 class ZRelocateMediumAllocator {
 private:
-  ZGeneration* const _generation;
-  ZConditionLock     _lock;
-  ZPage*             _shared[ZAllocator::_relocation_allocators];
-  bool               _in_place;
-  volatile size_t    _in_place_count;
+  ZGeneration* const  _generation;
+  ZConditionLock      _lock;
+  ZRelocationTargets* _shared_targets;
+  bool                _in_place;
+  volatile size_t     _in_place_count;
 
 public:
-  ZRelocateMediumAllocator(ZGeneration* generation)
+  ZRelocateMediumAllocator(ZGeneration* generation, ZRelocationTargets* shared_targets)
     : _generation(generation),
       _lock(),
-      _shared(),
+      _shared_targets(shared_targets),
       _in_place(false),
       _in_place_count(0) {}
 
   ~ZRelocateMediumAllocator() {
-    for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
-      if (_shared[i] != nullptr) {
-        retire_target_page(_generation, _shared[i]);
+    _shared_targets->apply_and_clear_targets([&](ZPage* page) {
+      if (page != nullptr) {
+        retire_target_page(_generation, page);
       }
-    }
-  }
-
-  ZPage* shared(ZPageAge age) {
-    return _shared[untype(age - 1)];
-  }
-
-  void set_shared(ZPageAge age, ZPage* page) {
-    _shared[untype(age - 1)] = page;
+    });
   }
 
   ZPage* alloc_and_retire_target_page(ZForwarding* forwarding, ZPage* target) {
@@ -508,12 +534,12 @@ public:
     // current target page if another thread shared a page, or allocated
     // a new page.
     const ZPageAge to_age = forwarding->to_age();
-    if (shared(to_age) == target) {
-      ZAllocatorForRelocation* const allocator = ZAllocator::relocation(forwarding->to_age());
-      ZPage* const to_page = alloc_page(allocator, forwarding->type(), forwarding->size());
-      set_shared(to_age, to_page);
+    const uint32_t partition_id = forwarding->partition_id();
+    if (_shared_targets->get(partition_id, to_age) == target) {
+      ZPage* const to_page = alloc_page(forwarding);
+      _shared_targets->set(partition_id, to_age, to_page);
       if (to_page == nullptr) {
-        Atomic::inc(&_in_place_count);
+        AtomicAccess::inc(&_in_place_count);
         _in_place = true;
       }
 
@@ -523,18 +549,18 @@ public:
       }
     }
 
-    return shared(to_age);
+    return _shared_targets->get(partition_id, to_age);
   }
 
-  void share_target_page(ZPage* page) {
+  void share_target_page(ZPage* page, uint32_t partition_id) {
     const ZPageAge age = page->age();
 
     ZLocker<ZConditionLock> locker(&_lock);
     assert(_in_place, "Invalid state");
-    assert(shared(age) == nullptr, "Invalid state");
+    assert(_shared_targets->get(partition_id, age) == nullptr, "Invalid state");
     assert(page != nullptr, "Invalid page");
 
-    set_shared(age, page);
+    _shared_targets->set(partition_id, age, page);
     _in_place = false;
 
     _lock.notify_all();
@@ -562,20 +588,11 @@ class ZRelocateWork : public StackObj {
 private:
   Allocator* const    _allocator;
   ZForwarding*        _forwarding;
-  ZPage*              _target[ZAllocator::_relocation_allocators];
+  ZRelocationTargets* _targets;
   ZGeneration* const  _generation;
   size_t              _other_promoted;
   size_t              _other_compacted;
   ZStringDedupContext _string_dedup_context;
-
-
-  ZPage* target(ZPageAge age) {
-    return _target[untype(age - 1)];
-  }
-
-  void set_target(ZPageAge age, ZPage* page) {
-    _target[untype(age - 1)] = page;
-  }
 
   size_t object_alignment() const {
     return (size_t)1 << _forwarding->object_alignment_shift();
@@ -590,11 +607,11 @@ private:
     }
   }
 
-  zaddress try_relocate_object_inner(zaddress from_addr) {
+  zaddress try_relocate_object_inner(zaddress from_addr, uint32_t partition_id) {
     ZForwardingCursor cursor;
 
     const size_t size = ZUtils::object_size(from_addr);
-    ZPage* const to_page = target(_forwarding->to_age());
+    ZPage* const to_page = _targets->get(partition_id, _forwarding->to_age());
 
     // Lookup forwarding
     {
@@ -653,7 +670,6 @@ private:
     // Uses _relaxed version to handle that in-place relocation resets _top
     assert(ZHeap::heap()->is_in_page_relaxed(from_page, from_addr), "Must be");
     assert(to_page->is_in(to_addr), "Must be");
-
 
     // Read the size from the to-object, since the from-object
     // could have been overwritten during in-place relocation.
@@ -724,7 +740,7 @@ private:
   }
 
   static void update_remset_promoted_filter_and_remap_per_field(volatile zpointer* p) {
-    const zpointer ptr = Atomic::load(p);
+    const zpointer ptr = AtomicAccess::load(p);
 
     assert(ZPointer::is_old_load_good(ptr), "Should be at least old load good: " PTR_FORMAT, untype(ptr));
 
@@ -805,8 +821,8 @@ private:
     }
   }
 
-  bool try_relocate_object(zaddress from_addr) {
-    const zaddress to_addr = try_relocate_object_inner(from_addr);
+  bool try_relocate_object(zaddress from_addr, uint32_t partition_id) {
+    const zaddress to_addr = try_relocate_object_inner(from_addr, partition_id);
 
     if (is_null(to_addr)) {
       return false;
@@ -887,13 +903,18 @@ private:
     const zaddress addr = to_zaddress(obj);
     assert(ZHeap::heap()->is_object_live(addr), "Should be live");
 
-    while (!try_relocate_object(addr)) {
-      // Allocate a new target page, or if that fails, use the page being
-      // relocated as the new target, which will cause it to be relocated
-      // in-place.
-      const ZPageAge to_age = _forwarding->to_age();
-      ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target(to_age));
-      set_target(to_age, to_page);
+    const ZPageAge to_age = _forwarding->to_age();
+    const uint32_t partition_id = _forwarding->partition_id();
+
+    while (!try_relocate_object(addr, partition_id)) {
+      // Failed to relocate object, try to allocate a new target page,
+      // or if that fails, use the page being relocated as the new target,
+      // which will cause it to be relocated in-place.
+      ZPage* const target_page = _targets->get(partition_id, to_age);
+      ZPage* to_page = _allocator->alloc_and_retire_target_page(_forwarding, target_page);
+      _targets->set(partition_id, to_age, to_page);
+
+      // We got a new page, retry relocation
       if (to_page != nullptr) {
         continue;
       }
@@ -902,23 +923,24 @@ private:
       // the page, or its forwarding table, until it has been released
       // (relocation completed).
       to_page = start_in_place_relocation(ZAddress::offset(addr));
-      set_target(to_age, to_page);
+      _targets->set(partition_id, to_age, to_page);
     }
   }
 
 public:
-  ZRelocateWork(Allocator* allocator, ZGeneration* generation)
+  ZRelocateWork(Allocator* allocator, ZRelocationTargets* targets, ZGeneration* generation)
     : _allocator(allocator),
       _forwarding(nullptr),
-      _target(),
+      _targets(targets),
       _generation(generation),
       _other_promoted(0),
       _other_compacted(0) {}
 
   ~ZRelocateWork() {
-    for (uint i = 0; i < ZAllocator::_relocation_allocators; ++i) {
-      _allocator->free_target_page(_target[i]);
-    }
+    _targets->apply_and_clear_targets([&](ZPage* page) {
+        _allocator->free_target_page(page);
+    });
+
     // Report statistics on-behalf of non-worker threads
     _generation->increase_promoted(_other_promoted);
     _generation->increase_compacted(_other_compacted);
@@ -1011,8 +1033,9 @@ public:
       page->log_msg(" (relocate page done in-place)");
 
       // Different pages when promoting
-      ZPage* const target_page = target(_forwarding->to_age());
-      _allocator->share_target_page(target_page);
+      const uint32_t target_partition = _forwarding->partition_id();
+      ZPage* const target_page = _targets->get(target_partition, _forwarding->to_age());
+      _allocator->share_target_page(target_page, target_partition);
 
     } else {
       // Wait for all other threads to call release_page
@@ -1056,31 +1079,63 @@ public:
 
 class ZRelocateTask : public ZRestartableTask {
 private:
-  ZRelocationSetParallelIterator _iter;
-  ZGeneration* const             _generation;
-  ZRelocateQueue* const          _queue;
-  ZRelocateSmallAllocator        _small_allocator;
-  ZRelocateMediumAllocator       _medium_allocator;
+  ZGeneration* const                        _generation;
+  ZRelocateQueue* const                     _queue;
+  ZPerNUMA<ZRelocationSetParallelIterator>* _iters;
+  ZPerWorker<ZRelocationTargets>*           _small_targets;
+  ZPerWorker<ZRelocationTargets>*           _medium_targets;
+  ZRelocateSmallAllocator                   _small_allocator;
+  ZRelocateMediumAllocator                  _medium_allocator;
+  const size_t                              _total_forwardings;
+  volatile size_t                           _numa_local_forwardings;
 
 public:
-  ZRelocateTask(ZRelocationSet* relocation_set, ZRelocateQueue* queue)
+  ZRelocateTask(ZRelocationSet* relocation_set,
+                ZRelocateQueue* queue,
+                ZPerNUMA<ZRelocationSetParallelIterator>* iters,
+                ZPerWorker<ZRelocationTargets>* small_targets,
+                ZPerWorker<ZRelocationTargets>* medium_targets,
+                ZRelocationTargets* shared_medium_targets)
     : ZRestartableTask("ZRelocateTask"),
-      _iter(relocation_set),
       _generation(relocation_set->generation()),
       _queue(queue),
+      _iters(iters),
+      _small_targets(small_targets),
+      _medium_targets(medium_targets),
       _small_allocator(_generation),
-      _medium_allocator(_generation) {}
+      _medium_allocator(_generation, shared_medium_targets),
+      _total_forwardings(relocation_set->nforwardings()),
+      _numa_local_forwardings(0) {
+
+    for (uint32_t i = 0; i < ZNUMA::count(); i++) {
+      ZRelocationSetParallelIterator* const iter = _iters->addr(i);
+
+      // Destruct the iterator from the previous GC-cycle, which is a temporary
+      // iterator if this is the first GC-cycle.
+      iter->~ZRelocationSetParallelIterator();
+
+      // In-place construct the iterator with the current relocation set
+      ::new (iter) ZRelocationSetParallelIterator(relocation_set);
+    }
+  }
 
   ~ZRelocateTask() {
     _generation->stat_relocation()->at_relocate_end(_small_allocator.in_place_count(), _medium_allocator.in_place_count());
 
     // Signal that we're not using the queue anymore. Used mostly for asserts.
     _queue->deactivate();
+
+    if (ZNUMA::is_enabled()) {
+      log_debug(gc, reloc, numa)("Forwardings relocated NUMA-locally: %zu / %zu (%.0f%%)",
+                                 _numa_local_forwardings, _total_forwardings, percent_of(_numa_local_forwardings, _total_forwardings));
+    }
   }
 
   virtual void work() {
-    ZRelocateWork<ZRelocateSmallAllocator> small(&_small_allocator, _generation);
-    ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _generation);
+    ZRelocateWork<ZRelocateSmallAllocator> small(&_small_allocator, _small_targets->addr(), _generation);
+    ZRelocateWork<ZRelocateMediumAllocator> medium(&_medium_allocator, _medium_targets->addr(), _generation);
+    const uint32_t num_nodes = ZNUMA::count();
+    uint32_t numa_local_forwardings_worker = 0;
 
     const auto do_forwarding = [&](ZForwarding* forwarding) {
       ZPage* const page = forwarding->page();
@@ -1106,12 +1161,29 @@ public:
       }
     };
 
+    const auto check_numa_local = [&](ZForwarding* forwarding, uint32_t numa_id) {
+      return forwarding->partition_id() == numa_id;
+    };
+
     const auto do_forwarding_one_from_iter = [&]() {
       ZForwarding* forwarding;
+      const uint32_t start_node = ZNUMA::id();
+      uint32_t current_node = start_node;
 
-      if (_iter.next(&forwarding)) {
-        claim_and_do_forwarding(forwarding);
-        return true;
+      for (uint32_t i = 0; i < num_nodes; i++) {
+        if (_iters->get(current_node).next_if(&forwarding, check_numa_local, current_node)) {
+          claim_and_do_forwarding(forwarding);
+
+          if (current_node == start_node) {
+            // Track if this forwarding was relocated on the local NUMA node
+            numa_local_forwardings_worker++;
+          }
+
+          return true;
+        }
+
+        // Check next node.
+        current_node = (current_node + 1) % num_nodes;
       }
 
       return false;
@@ -1137,6 +1209,10 @@ public:
       }
     }
 
+    if (ZNUMA::is_enabled()) {
+      AtomicAccess::add(&_numa_local_forwardings, numa_local_forwardings_worker, memory_order_relaxed);
+    }
+
     _queue->leave();
   }
 
@@ -1146,7 +1222,7 @@ public:
 };
 
 static void remap_and_maybe_add_remset(volatile zpointer* p) {
-  const zpointer ptr = Atomic::load(p);
+  const zpointer ptr = AtomicAccess::load(p);
 
   if (ZPointer::is_store_good(ptr)) {
     // Already has a remset entry
@@ -1217,7 +1293,7 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
   }
 
   {
-    ZRelocateTask relocate_task(relocation_set, &_queue);
+    ZRelocateTask relocate_task(relocation_set, &_queue, &_iters, &_small_targets, &_medium_targets, &_shared_medium_targets);
     workers()->run(&relocate_task);
   }
 

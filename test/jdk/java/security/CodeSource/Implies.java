@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,12 @@
 
 /*
  * @test
- * @bug 4866847 7152564 7155693
+ * @bug 4866847 7152564 7155693 8356557
  * @summary various CodeSource.implies tests
  */
 
 import java.security.CodeSource;
+import java.net.InetAddress;
 import java.net.URL;
 
 public class Implies {
@@ -46,6 +47,40 @@ public class Implies {
         thisURL = new URL("http", "localhost", 80, "dir/-");
         thatURL = new URL("HTTP", "localhost", "dir/file");
         // port check should match default port of thatURL
+        testImplies(thisURL, thatURL, true);
+
+        thisURL = new URL("http", "204.160.241.0", "file");
+        thatURL = new URL("http", "localhost", "file");
+        // ip address should not imply localhost's IP address
+        testImplies(thisURL, thatURL, false);
+
+        thisURL = new URL("http", "204.160.241.0", "file");
+        thatURL = new URL("http", "*.example.com", "file");
+        // ip address should not imply wildcarded host
+        testImplies(thisURL, thatURL, false);
+
+        InetAddress ia = InetAddress.getLocalHost();
+        thisURL = new URL("http", ia.getHostAddress(), "file");
+        thatURL = new URL("http", ia.getHostName(), "file");
+        // ip address should imply host name with same ip address
+        testImplies(thisURL, thatURL, true);
+
+        thisURL = new URL("http", "*.example.com", "file");
+        thatURL = new URL("http", "*.foo.example.com", "file");
+        // wildcarded host name should imply wildcarded host name ending with
+        // same canonical host name
+        testImplies(thisURL, thatURL, true);
+
+        thisURL = new URL("http", "example.com", "file");
+        thatURL = new URL("http", "*.foo.example.com", "file");
+        // host name should not imply wildcarded host name ending with same
+        // canonical host name
+        testImplies(thisURL, thatURL, false);
+
+        thisURL = new URL("http", "*.example.com", "file");
+        thatURL = new URL("http", "foo.example.com", "file");
+        // wildcarded host name should imply host name ending with same
+        // canonical host name
         testImplies(thisURL, thatURL, true);
 
         System.out.println("test passed");

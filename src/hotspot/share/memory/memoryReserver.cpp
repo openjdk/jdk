@@ -22,7 +22,6 @@
  *
  */
 
-#include "jvm.h"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
 #include "oops/compressedOops.hpp"
@@ -65,11 +64,9 @@ static void log_on_large_pages_failure(char* req_addr, size_t bytes) {
     // Compressed oops logging.
     log_debug(gc, heap, coops)("Reserve regular memory without large pages");
     // JVM style warning that we did not succeed in using large pages.
-    char msg[128];
-    jio_snprintf(msg, sizeof(msg), "Failed to reserve and commit memory using large pages. "
-                                   "req_addr: " PTR_FORMAT " bytes: %zu",
-                                   req_addr, bytes);
-    warning("%s", msg);
+    warning("Failed to reserve and commit memory using large pages. "
+            "req_addr: " PTR_FORMAT " bytes: %zu",
+            p2i(req_addr), bytes);
   }
 }
 
@@ -113,12 +110,13 @@ static char* reserve_memory_inner(char* requested_address,
 ReservedSpace MemoryReserver::reserve_memory(char* requested_address,
                                              size_t size,
                                              size_t alignment,
+                                             size_t page_size,
                                              bool exec,
                                              MemTag mem_tag) {
   char* base = reserve_memory_inner(requested_address, size, alignment, exec, mem_tag);
 
   if (base != nullptr) {
-    return ReservedSpace(base, size, alignment, os::vm_page_size(), exec, false /* special */);
+    return ReservedSpace(base, size, alignment, page_size, exec, false /* special */);
   }
 
   // Failed
@@ -191,7 +189,7 @@ ReservedSpace MemoryReserver::reserve(char* requested_address,
   }
 
   // == Case 3 ==
-  return reserve_memory(requested_address, size, alignment, executable, mem_tag);
+  return reserve_memory(requested_address, size, alignment, page_size, executable, mem_tag);
 }
 
 ReservedSpace MemoryReserver::reserve(char* requested_address,

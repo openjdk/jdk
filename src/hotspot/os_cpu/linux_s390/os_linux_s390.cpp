@@ -257,15 +257,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
-      // Handle signal from NativeJump::patch_verified_entry().
-      if (sig == SIGILL && nativeInstruction_at(pc)->is_sigill_not_entrant()) {
-        if (TraceTraps) {
-          tty->print_cr("trap: not_entrant (SIGILL)");
-        }
-        stub = SharedRuntime::get_handle_wrong_method_stub();
-      }
-
-      else if (sig == SIGSEGV &&
+      if (sig == SIGSEGV &&
                SafepointMechanism::is_poll_address((address)info->si_addr)) {
         if (TraceTraps) {
           tty->print_cr("trap: safepoint_poll at " INTPTR_FORMAT " (SIGSEGV)", p2i(pc));

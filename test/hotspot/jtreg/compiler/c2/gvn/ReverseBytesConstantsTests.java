@@ -34,9 +34,10 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8353551
+ * @bug 8353551 8359678
  * @summary Test that ReverseBytes operations constant-fold.
  * @library /test/lib /
+ * @compile ReverseBytesConstantsHelper.jasm
  * @run driver compiler.c2.gvn.ReverseBytesConstantsTests
  */
 public class ReverseBytesConstantsTests {
@@ -51,14 +52,14 @@ public class ReverseBytesConstantsTests {
     private static final int C_INT = GEN_INT.next();
 
     public static void main(String[] args) {
-        TestFramework.run();
+        TestFramework.runWithFlags("-XX:CompileCommand=inline,compiler.c2.gvn.ReverseBytesConstantsHelper::*");
     }
 
     @Run(test = {
-        "testI1", "testI2", "testI3",
-        "testL1", "testL2", "testL3",
-        "testS1", "testS2", "testS3",
-        "testUS1", "testUS2", "testUS3",
+        "testI1", "testI2", "testI3", "testI4",
+        "testL1", "testL2", "testL3", "testL4",
+        "testS1", "testS2", "testS3", "testS4",
+        "testUS1", "testUS2", "testUS3", "testUS4",
     })
     public void runMethod() {
         assertResultI();
@@ -172,6 +173,18 @@ public class ReverseBytesConstantsTests {
     }
 
     @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_S, IRNode.CALL})
+    public short testS5() {
+        return ReverseBytesConstantsHelper.reverseBytesShort(C_INT);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_S, IRNode.CALL})
+    public short testS6() {
+        return ReverseBytesConstantsHelper.reverseBytesShort(C_CHAR);
+    }
+
+    @Test
     @IR(failOn = {IRNode.REVERSE_BYTES_US})
     public char testUS1() {
         return Character.reverseBytes((char) 0x0201);
@@ -193,6 +206,18 @@ public class ReverseBytesConstantsTests {
     @IR(failOn = {IRNode.REVERSE_BYTES_US})
     public char testUS4() {
         return Character.reverseBytes(C_CHAR);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_US, IRNode.CALL})
+    public char testUS5() {
+        return ReverseBytesConstantsHelper.reverseBytesChar(C_INT);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.REVERSE_BYTES_US, IRNode.CALL})
+    public char testUS6() {
+        return ReverseBytesConstantsHelper.reverseBytesChar(C_SHORT);
     }
 
 }

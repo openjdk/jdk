@@ -333,7 +333,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
 
     private static native void enterFullScreenExclusive(long window);
     private static native void exitFullScreenExclusive(long window);
-    private static native boolean initXrandrExtension();
+    private static native boolean initXrandrExtension(boolean useOldConfigDisplayMode);
     private static native DisplayMode getCurrentDisplayMode(int screen);
     private static native void enumDisplayModes(int screen,
                                                 ArrayList<DisplayMode> modes);
@@ -350,10 +350,11 @@ public final class X11GraphicsDevice extends GraphicsDevice
      */
     private static synchronized boolean isXrandrExtensionSupported() {
         if (xrandrExtSupported == null) {
-            xrandrExtSupported =
-                Boolean.valueOf(initXrandrExtension());
+            boolean useOldConfigDisplayMode =
+                    Boolean.getBoolean("awt.x11useOldConfigDisplayMode");
+            xrandrExtSupported = initXrandrExtension(useOldConfigDisplayMode);
         }
-        return xrandrExtSupported.booleanValue();
+        return xrandrExtSupported;
     }
 
     @Override

@@ -41,8 +41,9 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
@@ -597,49 +598,56 @@ public final class TKit {
         return file;
     }
 
-    static void waitForFileCreated(Path fileToWaitFor,
-            long timeoutSeconds) throws IOException {
+    public static void waitForFileCreated(Path fileToWaitFor,
+            Duration timeout, Duration afterCreatedTimeout) throws IOException {
+        waitForFileCreated(fileToWaitFor, timeout);
+        // Wait after the file has been created to ensure it is fully written.
+        ThrowingConsumer.<Duration>toConsumer(Thread::sleep).accept(afterCreatedTimeout);
+    }
+
+    private static void waitForFileCreated(Path fileToWaitFor, Duration timeout) throws IOException {
 
         trace(String.format("Wait for file [%s] to be available",
                                                 fileToWaitFor.toAbsolutePath()));
 
-        WatchService ws = FileSystems.getDefault().newWatchService();
+        try (var ws = FileSystems.getDefault().newWatchService()) {
 
-        Path watchDirectory = fileToWaitFor.toAbsolutePath().getParent();
-        watchDirectory.register(ws, ENTRY_CREATE, ENTRY_MODIFY);
+            Path watchDirectory = fileToWaitFor.toAbsolutePath().getParent();
+            watchDirectory.register(ws, ENTRY_CREATE, ENTRY_MODIFY);
 
-        long waitUntil = System.currentTimeMillis() + timeoutSeconds * 1000;
-        for (;;) {
-            long timeout = waitUntil - System.currentTimeMillis();
-            assertTrue(timeout > 0, String.format(
-                    "Check timeout value %d is positive", timeout));
+            var waitUntil = Instant.now().plus(timeout);
+            for (;;) {
+                var remainderTimeout = Instant.now().until(waitUntil);
+                assertTrue(remainderTimeout.isPositive(), String.format(
+                        "Check timeout value %dms is positive", remainderTimeout.toMillis()));
 
-            WatchKey key = ThrowingSupplier.toSupplier(() -> ws.poll(timeout,
-                    TimeUnit.MILLISECONDS)).get();
-            if (key == null) {
-                if (fileToWaitFor.toFile().exists()) {
-                    trace(String.format(
-                            "File [%s] is available after poll timeout expired",
-                            fileToWaitFor));
-                    return;
+                WatchKey key = ThrowingSupplier.toSupplier(() -> {
+                    return ws.poll(remainderTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                }).get();
+                if (key == null) {
+                    if (Files.exists(fileToWaitFor)) {
+                        trace(String.format(
+                                "File [%s] is available after poll timeout expired",
+                                fileToWaitFor));
+                        return;
+                    }
+                    assertUnexpected(String.format("Timeout %dms expired", remainderTimeout.toMillis()));
                 }
-                assertUnexpected(String.format("Timeout expired", timeout));
-            }
 
-            for (WatchEvent<?> event : key.pollEvents()) {
-                if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
-                    continue;
+                for (WatchEvent<?> event : key.pollEvents()) {
+                    if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+                        continue;
+                    }
+                    Path contextPath = (Path) event.context();
+                    if (Files.exists(fileToWaitFor) && Files.isSameFile(watchDirectory.resolve(contextPath), fileToWaitFor)) {
+                        trace(String.format("File [%s] is available", fileToWaitFor));
+                        return;
+                    }
                 }
-                Path contextPath = (Path) event.context();
-                if (Files.isSameFile(watchDirectory.resolve(contextPath),
-                        fileToWaitFor)) {
-                    trace(String.format("File [%s] is available", fileToWaitFor));
-                    return;
-                }
-            }
 
-            if (!key.reset()) {
-                assertUnexpected("Watch key invalidated");
+                if (!key.reset()) {
+                    assertUnexpected("Watch key invalidated");
+                }
             }
         }
     }

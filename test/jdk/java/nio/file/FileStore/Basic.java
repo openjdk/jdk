@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4313887 6873621 6979526 7006126 7020517 8264400
+ * @bug 4313887 6873621 6979526 7006126 7020517 8264400 8360887
  * @summary Unit test for java.nio.file.FileStore
  * @key intermittent
  * @library .. /test/lib
@@ -67,6 +67,16 @@ public class Basic {
         }
     }
 
+    static <V extends FileAttributeView> void testFileAttributes(Path file,
+                                                                 Class<V> viewClass,
+                                                                 String viewName) throws IOException {
+        FileStore store = Files.getFileStore(file);
+        boolean supported = store.supportsFileAttributeView(viewClass);
+        assertTrue(store.supportsFileAttributeView(viewName) == supported);
+        boolean haveView = Files.getFileAttributeView(file, viewClass) != null;
+        assertTrue(haveView == supported);
+    }
+
     static void doTests(Path dir) throws IOException {
         /**
          * Test: Directory should be on FileStore that is writable
@@ -97,15 +107,11 @@ public class Basic {
          * Test: File and FileStore attributes
          */
         assertTrue(store1.supportsFileAttributeView("basic"));
-        assertTrue(store1.supportsFileAttributeView(BasicFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("posix") ==
-            store1.supportsFileAttributeView(PosixFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("dos") ==
-            store1.supportsFileAttributeView(DosFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("acl") ==
-            store1.supportsFileAttributeView(AclFileAttributeView.class));
-        assertTrue(store1.supportsFileAttributeView("user") ==
-            store1.supportsFileAttributeView(UserDefinedFileAttributeView.class));
+        testFileAttributes(dir, BasicFileAttributeView.class, "basic");
+        testFileAttributes(dir, PosixFileAttributeView.class, "posix");
+        testFileAttributes(dir, DosFileAttributeView.class, "dos");
+        testFileAttributes(dir, AclFileAttributeView.class, "acl");
+        testFileAttributes(dir, UserDefinedFileAttributeView.class, "user");
 
         /**
          * Test: Space atributes

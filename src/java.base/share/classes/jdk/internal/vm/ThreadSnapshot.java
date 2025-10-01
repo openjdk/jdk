@@ -44,6 +44,8 @@ class ThreadSnapshot {
     // an object the thread is blocked/waiting on, converted to ThreadBlocker by ThreadSnapshot.of()
     private int blockerTypeOrdinal;
     private Object blockerObject;
+    // the owner of the blockerObject when the object is park blocker and is AbstractOwnableSynchronizer
+    private Thread parkBlockerOwner;
 
     // set by ThreadSnapshot.of()
     private ThreadBlocker blocker;
@@ -52,12 +54,14 @@ class ThreadSnapshot {
 
     /**
      * Take a snapshot of a Thread to get all information about the thread.
+     * Return null if a ThreadSnapshot is not created, for example if the
+     * thread has terminated.
      * @throws UnsupportedOperationException if not supported by VM
      */
     static ThreadSnapshot of(Thread thread) {
         ThreadSnapshot snapshot = create(thread);
         if (snapshot == null) {
-            throw new UnsupportedOperationException();
+            return null; // thread terminated
         }
         if (snapshot.stackTrace == null) {
             snapshot.stackTrace = EMPTY_STACK;
@@ -68,8 +72,11 @@ class ThreadSnapshot {
             snapshot.locks = EMPTY_LOCKS;
         }
         if (snapshot.blockerObject != null) {
-            snapshot.blocker = new ThreadBlocker(snapshot.blockerTypeOrdinal, snapshot.blockerObject);
+            snapshot.blocker = new ThreadBlocker(snapshot.blockerTypeOrdinal,
+                                                 snapshot.blockerObject,
+                                                 snapshot.parkBlockerOwner);
             snapshot.blockerObject = null; // release
+            snapshot.parkBlockerOwner = null;
         }
         return snapshot;
     }
@@ -100,6 +107,13 @@ class ThreadSnapshot {
      */
     Object parkBlocker() {
         return getBlocker(BlockerLockType.PARK_BLOCKER);
+    }
+
+    /**
+     * Returns the owner of the parkBlocker if the parkBlocker is an AbstractOwnableSynchronizer.
+     */
+    Thread parkBlockerOwner() {
+        return (blocker != null && blocker.type == BlockerLockType.PARK_BLOCKER) ? blocker.owner : null;
     }
 
     /**
@@ -209,11 +223,11 @@ class ThreadSnapshot {
         }
     }
 
-    private record ThreadBlocker(BlockerLockType type, Object obj) {
+    private record ThreadBlocker(BlockerLockType type, Object obj, Thread owner) {
         private static final BlockerLockType[] lockTypeValues = BlockerLockType.values(); // cache
 
-        ThreadBlocker(int typeOrdinal, Object obj) {
-            this(lockTypeValues[typeOrdinal], obj);
+        ThreadBlocker(int typeOrdinal, Object obj, Thread owner) {
+            this(lockTypeValues[typeOrdinal], obj, owner);
         }
     }
 

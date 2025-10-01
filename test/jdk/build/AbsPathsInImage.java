@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.util.zip.ZipInputStream;
  * @bug 8226346
  * @summary Check all output files for absolute path fragments
  * @requires !vm.debug
+ * @comment ASAN keeps the 'unwanted' paths in the binaries because of its build options
+ * @requires !vm.asan
  * @run main/othervm -Xmx900m AbsPathsInImage
  */
 public class AbsPathsInImage {

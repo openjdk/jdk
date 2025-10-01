@@ -132,7 +132,7 @@ public class RequiresIdentityTest extends TestRunner {
 
             List<String> expected = List.of(
                 "public class WeakHashMap<@jdk.internal.RequiresIdentity K, V> extends java.util.AbstractMap<K,V> implements java.util.Map<K,V> {",
-                "  public V put(@jdk.internal.RequiresIdentity sealed K key,"
+                "  public V put(@jdk.internal.RequiresIdentity K key,"
             );
             if (!expected.equals(printed)) {
                 throw new AssertionError("Expected: " + expected +
@@ -154,7 +154,7 @@ public class RequiresIdentityTest extends TestRunner {
 
             List<String> expected = List.of(
                 "public class WeakHashMap<K, V> extends java.util.AbstractMap<K,V> implements java.util.Map<K,V> {",
-                "  public V put(sealed K arg0,"
+                "  public V put(K arg0,"
             );
             if (!expected.equals(printed)) {
                 throw new AssertionError("Expected: " + expected +

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,8 +25,6 @@
  */
 
 package jdk.internal.math;
-
-import java.io.IOException;
 
 import static java.lang.Double.*;
 import static java.lang.Long.*;
@@ -66,44 +64,72 @@ public final class DoubleToDecimal extends ToDecimal {
      * This is discussed in section 10 of [1].
      */
 
-    /* The precision in bits */
     static final int P = PRECISION;
 
-    /* Exponent width in bits */
-    private static final int W = (Double.SIZE - 1) - (P - 1);
+    /* Exponent width in bits. */
+    static final int W = (Double.SIZE - 1) - (P - 1);
 
-    /* Minimum value of the exponent: -(2^(W-1)) - P + 3 */
+    /* Minimum value of the exponent: -(2^(W-1)) - P + 3. */
     static final int Q_MIN = (-1 << (W - 1)) - P + 3;
 
-    /* Maximum value of the exponent: 2^(W-1) - P */
+    /* Maximum value of the exponent: 2^(W-1) - P. */
     static final int Q_MAX = (1 << (W - 1)) - P;
 
-    /* 10^(E_MIN - 1) <= MIN_VALUE < 10^E_MIN */
+    /* Minimum value of the significand of a normal value: 2^(P-1). */
+    static final long C_MIN = 1L << (P - 1);
+
+    /* Maximum value of the significand of a normal value: 2^P - 1. */
+    static final long C_MAX = (1L << P) - 1;
+
+    /* E_MIN = max{e : 10^(e-1) <= MIN_VALUE}. */
     static final int E_MIN = -323;
 
-    /* 10^(E_MAX - 1) <= MAX_VALUE < 10^E_MAX */
+    /* E_MAX = max{e : 10^(e-1) <= MAX_VALUE}. */
     static final int E_MAX = 309;
 
-    /* Threshold to detect tiny values, as in section 8.2.1 of [1] */
-    static final long C_TINY = 3;
+    /*
+     * Let THR_Z = ulp(0.0) / 2 = MIN_VALUE / 2 = 2^(Q_MIN-1).
+     * THR_Z is the zero threshold.
+     * Real x rounds to 0 by roundTiesToEven iff |x| <= THR_Z.
+     *
+     * E_THR_Z = max{e : 10^e <= THR_Z}.
+     */
+    static final int E_THR_Z = -324;
 
-    /* The minimum and maximum k, as in section 8 of [1] */
+    /*
+     * Let THR_I = MAX_VALUE + ulp(MAX_VALUE) / 2 = (2 C_MAX + 1) 2^(Q_MAX-1).
+     * THR_I is the infinity threshold.
+     * Real x rounds to infinity by roundTiesToEven iff |x| >= THR_I.
+     *
+     * E_THR_I = min{e : THR_I <= 10^(e-1)}.
+     */
+    static final int E_THR_I = 310;
+
+    /* K_MIN = max{k : 10^k <= 2^Q_MIN}. */
     static final int K_MIN = -324;
+
+    /* K_MAX = max{k : 10^k <= 2^Q_MAX}. */
     static final int K_MAX = 292;
 
-    /* H is as in section 8.1 of [1] */
+    /*
+     * Threshold to detect tiny values, as in section 8.2.1 of [1].
+     *      C_TINY = ceil(2^(-Q_MIN) 10^(K_MIN+1))
+     */
+    static final long C_TINY = 3;
+
+    /*
+     * H is as in section 8.1 of [1].
+     *      H = max{e : 10^(e-2) <= 2^P}
+     */
     static final int H = 17;
 
-    /* Minimum value of the significand of a normal value: 2^(P-1) */
-    private static final long C_MIN = 1L << (P - 1);
-
-    /* Mask to extract the biased exponent */
+    /* Mask to extract the biased exponent. */
     private static final int BQ_MASK = (1 << W) - 1;
 
-    /* Mask to extract the fraction bits */
+    /* Mask to extract the fraction bits. */
     private static final long T_MASK = (1L << (P - 1)) - 1;
 
-    /* Used in rop() */
+    /* Used in rop(). */
     private static final long MASK_63 = (1L << 63) - 1;
 
     /*
@@ -169,7 +195,6 @@ public final class DoubleToDecimal extends ToDecimal {
      * @param str the String byte array to append to
      * @param index the index into str
      * @param v the {@code double} whose rendering is into str.
-     * @throws IOException If an I/O error occurs
      */
     public int putDecimal(byte[] str, int index, double v) {
         assert 0 <= index && index <= length(str) - MAX_CHARS : "Trusted caller missed bounds check";
@@ -221,7 +246,7 @@ public final class DoubleToDecimal extends ToDecimal {
                 if (0 < mq & mq < P) {
                     long f = c >> mq;
                     if (f << mq == c) {
-                        return toChars(str, index, f, 0, fd) - start;
+                        return toChars(str, index, f, 0, fd, true, false) - start;
                     }
                 }
                 return toDecimal(str, index, -mq, c, 0, fd) - start;
@@ -280,8 +305,8 @@ public final class DoubleToDecimal extends ToDecimal {
         int h = q + flog2pow10(-k) + 2;
 
         /* g1 and g0 are as in section 9.8.3 of [1], so g = g1 2^63 + g0 */
-        long g1 = g1(k);
-        long g0 = g0(k);
+        long g1 = g1(-k);
+        long g0 = g0(-k);
 
         long vb = rop(g1, g0, cb << h);
         long vbl = rop(g1, g0, cbl << h);
@@ -299,13 +324,17 @@ public final class DoubleToDecimal extends ToDecimal {
              * upin    iff    u' = sp10 10^k in Rv
              * wpin    iff    w' = tp10 10^k in Rv
              * See section 9.3 of [1].
+             *
+             * Also,
+             * d_v = v      iff     4 sp10 = vb
              */
             long sp10 = 10 * multiplyHigh(s, 115_292_150_460_684_698L << 4);
             long tp10 = sp10 + 10;
             boolean upin = vbl + out <= sp10 << 2;
             boolean wpin = (tp10 << 2) + out <= vbr;
             if (upin != wpin) {
-                return toChars(str, index, upin ? sp10 : tp10, k, fd);
+                /* Exactly one of u' or w' lies in Rv */
+                return toChars(str, index, upin ? sp10 : tp10, k, fd, sp10 << 2 == vb, wpin);
             }
         }
 
@@ -314,20 +343,24 @@ public final class DoubleToDecimal extends ToDecimal {
          * uin    iff    u = s 10^k in Rv
          * win    iff    w = t 10^k in Rv
          * See section 9.3 of [1].
+         *
+         * Also,
+         * d_v = v      iff     4 s = vb
          */
         long t = s + 1;
         boolean uin = vbl + out <= s << 2;
         boolean win = (t << 2) + out <= vbr;
         if (uin != win) {
             /* Exactly one of u or w lies in Rv */
-            return toChars(str, index, uin ? s : t, k + dk, fd);
+            return toChars(str, index, uin ? s : t, k + dk, fd, s << 2 == vb, win);
         }
         /*
          * Both u and w lie in Rv: determine the one closest to v.
          * See section 9.3 of [1].
          */
         long cmp = vb - (s + t << 1);
-        return toChars(str, index, cmp < 0 || cmp == 0 && (s & 0x1) == 0 ? s : t, k + dk, fd);
+        boolean away = cmp > 0 || cmp == 0 && (s & 0x1) != 0;
+        return toChars(str, index, away ? t : s, k + dk, fd, s << 2 == vb, away);
     }
 
     /*
@@ -346,7 +379,8 @@ public final class DoubleToDecimal extends ToDecimal {
     /*
      * Formats the decimal f 10^e.
      */
-    private int toChars(byte[] str, int index, long f, int e, FormattedFPDecimal fd) {
+    private int toChars(byte[] str, int index, long f, int e,
+                        FormattedFPDecimal fd, boolean exact, boolean away) {
         /*
          * For details not discussed here see section 10 of [1].
          *
@@ -358,7 +392,7 @@ public final class DoubleToDecimal extends ToDecimal {
             len += 1;
         }
         if (fd != null) {
-            fd.set(f, e, len);
+            fd.set(f, e, len, exact, away);
             return index;
         }
 

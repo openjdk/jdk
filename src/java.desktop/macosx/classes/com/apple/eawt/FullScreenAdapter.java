@@ -41,8 +41,12 @@ import com.apple.eawt.event.FullScreenEvent;
  * @since Java for Mac OS X 10.7 Update 1
  */
 public abstract class FullScreenAdapter implements FullScreenListener {
+        @Override
         public void windowEnteringFullScreen(final FullScreenEvent e) {}
+        @Override
         public void windowEnteredFullScreen(final FullScreenEvent e) {}
+        @Override
         public void windowExitingFullScreen(final FullScreenEvent e) {}
+        @Override
         public void windowExitedFullScreen(final FullScreenEvent e) {}
 }
