@@ -591,7 +591,7 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_ob
 
 // The range is inclusive
 size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first_object_index, int last_object_index, JavaThread* thread) {
-  GrowableArrayCHeap<int, mtClassShared>* lazy_object_indices = nullptr;
+  GrowableArrayCHeap<int, mtClassShared> lazy_object_indices(0);
   size_t materialized_words = 0;
 
   for (int i = first_object_index; i <= last_object_index; ++i) {
@@ -606,22 +606,19 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
       set_heap_object_for_object_index(i, heap_object);
     } else {
       // Lazy loading has already initialized the object; we must not mutate it
-      if (lazy_object_indices == nullptr) {
-        lazy_object_indices = new GrowableArrayCHeap<int, mtClassShared>();
-      }
-      lazy_object_indices->append(i);
+      lazy_object_indices.append(i);
     }
   }
 
-  if (lazy_object_indices == nullptr) {
+  if (lazy_object_indices.is_empty()) {
     // Normal case; no sprinkled lazy objects in the root subgraph
     initialize_range(first_object_index, last_object_index, thread);
   } else {
     // The user lazy initialized some objects that are already initialized; we have to initialize around them
     // to make sure they are not mutated.
     int previous_object_index = first_object_index - 1; // Exclusive start of initialization slice
-    for (int i = 0; i < lazy_object_indices->length(); ++i) {
-      int lazy_object_index = lazy_object_indices->at(i);
+    for (int i = 0; i < lazy_object_indices.length(); ++i) {
+      int lazy_object_index = lazy_object_indices.at(i);
       int slice_start_object_index = previous_object_index;
       int slice_end_object_index = lazy_object_index;
 
@@ -635,7 +632,6 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
     if (last_object_index - previous_object_index > 0) {
       initialize_range(previous_object_index + 1, last_object_index, thread);
     }
-    delete lazy_object_indices;
   }
 
   return materialized_words;
