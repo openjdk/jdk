@@ -758,7 +758,7 @@ Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
   if (cpool->cache() == nullptr)  return nullptr;  // nothing to load yet
   if (!(which >= 0 && which < cpool->resolved_method_entries_length())) {
     // FIXME: should be an assert
-    log_debug(class, resolve)("bad bsm %d in:", which); cpool->print();
+    log_debug(class, resolve)("bad BSM %d in:", which); cpool->print();
     return nullptr;
   }
   return cpool->cache()->method_if_resolved(which);
@@ -2300,7 +2300,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
   assert(is_constantPool(), "must be constantPool");
   st->print("constant pool [%d]", length());
   if (has_preresolution()) st->print("/preresolution");
-  if (!bsm_entries().is_empty())  st->print("/bsms[%d]", bsm_entries().bootstrap_methods()->length());
+  if (!bsm_entries().is_empty())  st->print("/BSMs[%d]", bsm_entries().bootstrap_methods()->length());
   print_address_on(st);
   if (pool_holder() != nullptr) {
     st->print(" for ");
@@ -2355,7 +2355,7 @@ void BSMAttributeEntries::copy_into(InsertionIterator& iter, int num_entries) co
 BSMAttributeEntries::InsertionIterator
 BSMAttributeEntries::start_extension(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS) {
   InsertionIterator iter = start_extension(other.number_of_entries(), other.array_length(),
-                                            loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
+                                           loader_data, CHECK_(BSMAttributeEntries::InsertionIterator()));
   return iter;
 }
 
