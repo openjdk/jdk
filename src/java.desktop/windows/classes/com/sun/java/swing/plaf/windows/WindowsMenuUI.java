@@ -51,8 +51,8 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
  * Windows rendition of the component.
  */
 public final class WindowsMenuUI extends BasicMenuUI {
-    protected Integer menuBarHeight;
-    protected boolean hotTrackingOn;
+    private Integer menuBarHeight;
+    private boolean hotTrackingOn;
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
@@ -62,6 +62,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
                 return menuItem;
             }
 
+            @Override
             public State getState(JMenuItem menu) {
                 State state = menu.isEnabled() ? State.NORMAL
                         : State.DISABLED;

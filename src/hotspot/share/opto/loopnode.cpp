@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
@@ -746,7 +747,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
 #ifndef PRODUCT
   if (bt == T_LONG) {
-    Atomic::inc(&_long_loop_candidates);
+    AtomicAccess::inc(&_long_loop_candidates);
   }
 #endif
 
@@ -1050,11 +1051,13 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
       }
     }
 
-    // We only want to use the auto-vectorization check as a trap once per bci. And
-    // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
-    // we do a custom check here.
-    if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
-      add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+    if (UseAutoVectorizationPredicate) {
+      // We only want to use the auto-vectorization check as a trap once per bci. And
+      // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
+      // we do a custom check here.
+      if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
+        add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+      }
     }
 
     add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
@@ -1062,7 +1065,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
 #ifndef PRODUCT
   if (bt == T_LONG) {
-    Atomic::inc(&_long_loop_nests);
+    AtomicAccess::inc(&_long_loop_nests);
   }
 #endif
 
@@ -2713,7 +2716,7 @@ IdealLoopTree* CountedLoopConverter::convert() {
 
 #ifndef PRODUCT
   if (_head->as_Loop()->is_loop_nest_inner_loop() && _iv_bt == T_LONG) {
-    Atomic::inc(&_long_loop_counted_loops);
+    AtomicAccess::inc(&_long_loop_counted_loops);
   }
 #endif
 
@@ -4777,6 +4780,9 @@ void IdealLoopTree::dump_head() {
     if (predicates.loop_predicate_block()->is_non_empty()) {
       tty->print(" predicated");
     }
+  }
+  if (UseAutoVectorizationPredicate && predicates.auto_vectorization_check_block()->is_non_empty()) {
+    tty->print(" auto_vectorization_check_predicate");
   }
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();

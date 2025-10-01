@@ -223,6 +223,16 @@ public final class Float16
     public static final int BYTES = SIZE / Byte.SIZE;
 
     /**
+     * The overflow threshold (for round to nearest) is MAX_VALUE + 1/2 ulp.
+     */
+    private static final double OVERFLOW_THRESH = 0x1.ffcp15 + 0x0.002p15;
+
+    /**
+     * The underflow threshold (for round to nearest) is MIN_VALUE * 0.5.
+     */
+    private static final double UNDERFLOW_THRESH = 0x1.0p-24d * 0.5d;
+
+    /**
      * Returns a string representation of the {@code Float16}
      * argument.
      *
@@ -340,51 +350,51 @@ public final class Float16
     * @param  d a {@code double}
     */
     public static Float16 valueOf(double d) {
-        long doppel = Double.doubleToRawLongBits(d);
-
-        short sign_bit = (short)((doppel & 0x8000_0000_0000_0000L) >> 48);
-
         if (Double.isNaN(d)) {
             // Have existing float code handle any attempts to
             // preserve NaN bits.
             return valueOf((float)d);
         }
 
+        long doppel = Double.doubleToRawLongBits(d);
+        short sign_bit = (short)((doppel & 0x8000_0000_0000_0000L) >> (64 - 16));
         double abs_d = Math.abs(d);
 
-        // The overflow threshold is binary16 MAX_VALUE + 1/2 ulp
-        if (abs_d >= (0x1.ffcp15 + 0x0.002p15) ) {
+        if (abs_d >= OVERFLOW_THRESH) {
              // correctly signed infinity
             return new Float16((short)(sign_bit | 0x7c00));
         }
 
-        // Smallest magnitude nonzero representable binary16 value
-        // is equal to 0x1.0p-24; half-way and smaller rounds to zero.
-        if (abs_d <= 0x1.0p-24d * 0.5d) { // Covers double zeros and subnormals.
-            return new Float16(sign_bit); // Positive or negative zero
+        if (abs_d <= UNDERFLOW_THRESH) { // Covers double zeros and subnormals.
+            // positive or negative zero
+            return new Float16(sign_bit);
         }
 
         // Dealing with finite values in exponent range of binary16
         // (when rounding is done, could still round up)
         int exp = Math.getExponent(d);
-        assert -25 <= exp && exp <= 15;
+        assert
+            (MIN_EXPONENT - PRECISION) <= exp &&
+            exp <= MAX_EXPONENT;
 
-        // For binary16 subnormals, beside forcing exp to -15, retain
-        // the difference expdelta = E_min - exp.  This is the excess
-        // shift value, in addition to 42, to be used in the
+        // For target format subnormals, beside forcing exp to
+        // MIN_EXPONENT-1, retain the difference expdelta = E_min -
+        // exp.  This is the excess shift value, in addition to the
+        // difference in precision bits, to be used in the
         // computations below.  Further the (hidden) msb with value 1
         // in d must be involved as well.
         int expdelta = 0;
         long msb = 0x0000_0000_0000_0000L;
-        if (exp < -14) {
-            expdelta = -14 - exp; // FIXME?
-            exp = -15;
-            msb = 0x0010_0000_0000_0000L; // should be 0x0020_... ?
+        if (exp < MIN_EXPONENT) {
+            expdelta = MIN_EXPONENT - exp;
+            exp = MIN_EXPONENT - 1;
+            msb = 0x0010_0000_0000_0000L;
         }
         long f_signif_bits = doppel & 0x000f_ffff_ffff_ffffL | msb;
 
+        int PRECISION_DIFF = Double.PRECISION - PRECISION; // 42
         // Significand bits as if using rounding to zero (truncation).
-        short signif_bits = (short)(f_signif_bits >> (42 + expdelta));
+        short signif_bits = (short)(f_signif_bits >> (PRECISION_DIFF + expdelta));
 
         // For round to nearest even, determining whether or not to
         // round up (in magnitude) is a function of the least
@@ -399,9 +409,9 @@ public final class Float16
         // 1    1     1
         // See "Computer Arithmetic Algorithms," Koren, Table 4.9
 
-        long lsb    = f_signif_bits & (1L << 42 + expdelta);
-        long round  = f_signif_bits & (1L << 41 + expdelta);
-        long sticky = f_signif_bits & ((1L << 41 + expdelta) - 1);
+        long lsb    = f_signif_bits &  (1L << (PRECISION_DIFF      + expdelta));
+        long round  = f_signif_bits &  (1L << (PRECISION_DIFF - 1) + expdelta);
+        long sticky = f_signif_bits & ((1L << (PRECISION_DIFF - 1) + expdelta) - 1);
 
         if (round != 0 && ((lsb | sticky) != 0 )) {
             signif_bits++;
@@ -412,7 +422,9 @@ public final class Float16
         // to implement a carry out from rounding the significand.
         assert (0xf800 & signif_bits) == 0x0;
 
-        return new Float16((short)(sign_bit | ( ((exp + 15) << 10) + signif_bits ) ));
+        // Exponent bias adjust in the representation is equal to MAX_EXPONENT.
+        return new Float16((short)(sign_bit |
+                                   ( ((exp + MAX_EXPONENT) << (PRECISION - 1)) + signif_bits ) ));
     }
 
     /**
@@ -890,7 +902,9 @@ public final class Float16
      * is {@code true} if and only if the argument is not
      * {@code null} and is a {@code Float16} object that
      * represents a {@code Float16} that has the same value as the
-     * {@code double} represented by this object.
+     * {@code Float16} represented by this object.
+     * {@linkplain Double##repEquivalence Representation
+     * equivalence} is used to compare the {@code Float16} values.
      *
      * @jls 15.21.1 Numerical Equality Operators == and !=
      */
@@ -967,6 +981,11 @@ public final class Float16
      *      to be greater than negative zero.
      * </ul>
      *
+     * @apiNote
+     * For a discussion of differences between the total order of this
+     * method compared to the total order defined by the IEEE 754
+     * standard, see the note in {@link Double#compareTo(Double)}.
+     *
      * @param   anotherFloat16   the {@code Float16} to be compared.
      * @return  the value {@code 0} if {@code anotherFloat16} is
      *          numerically equal to this {@code Float16}; a value
@@ -987,6 +1006,13 @@ public final class Float16
 
     /**
      * Compares the two specified {@code Float16} values.
+     *
+     * @apiNote
+     * One idiom to implement {@linkplain Double##repEquivalence
+     * representation equivalence} on {@code Float16} values is
+     * {@snippet lang="java" :
+     * Float16.compare(a, b) == 0
+     * }
      *
      * @param   f1        the first {@code Float16} to compare
      * @param   f2        the second {@code Float16} to compare

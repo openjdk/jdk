@@ -2248,41 +2248,80 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
 #define __ masm.
   VectorRegister dst = stub.data<0>();
   VectorRegister src = stub.data<1>();
-  VectorRegister tmp = stub.data<2>();
+  VectorRegister vtmp = stub.data<2>();
+  assert_different_registers(dst, src, vtmp);
+
   __ bind(stub.entry());
 
+  // Active elements (NaNs) are marked in v0 mask register.
   // mul is already set to mf2 in float_to_float16_v.
 
-  // preserve the payloads of non-canonical NaNs.
-  __ vnsra_wi(dst, src, 13, Assembler::v0_t);
+  //  Float (32 bits)
+  //    Bit:     31        30 to 23          22 to 0
+  //          +---+------------------+-----------------------------+
+  //          | S |     Exponent     |      Mantissa (Fraction)    |
+  //          +---+------------------+-----------------------------+
+  //          1 bit       8 bits                  23 bits
+  //
+  //  Float (16 bits)
+  //    Bit:    15        14 to 10         9 to 0
+  //          +---+----------------+------------------+
+  //          | S |    Exponent    |     Mantissa     |
+  //          +---+----------------+------------------+
+  //          1 bit      5 bits          10 bits
+  const int fp_sign_bits = 1;
+  const int fp32_bits = 32;
+  const int fp32_mantissa_2nd_part_bits = 9;
+  const int fp32_mantissa_3rd_part_bits = 4;
+  const int fp16_exponent_bits = 5;
+  const int fp16_mantissa_bits = 10;
 
-  // preserve the sign bit.
-  __ vnsra_wi(tmp, src, 26, Assembler::v0_t);
-  __ vsll_vi(tmp, tmp, 10, Assembler::v0_t);
-  __ mv(t0, 0x3ff);
-  __ vor_vx(tmp, tmp, t0, Assembler::v0_t);
+  // preserve the sign bit and exponent, clear mantissa.
+  __ vnsra_wi(dst, src, fp32_bits - fp_sign_bits - fp16_exponent_bits, Assembler::v0_t);
+  __ vsll_vi(dst, dst, fp16_mantissa_bits, Assembler::v0_t);
 
-  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
-  __ vand_vv(dst, dst, tmp, Assembler::v0_t);
+  // Preserve high order bit of float NaN in the
+  // binary16 result NaN (tenth bit); OR in remaining
+  // bits into lower 9 bits of binary 16 significand.
+  //   | (doppel & 0x007f_e000) >> 13 // 10 bits
+  //   | (doppel & 0x0000_1ff0) >> 4  //  9 bits
+  //   | (doppel & 0x0000_000f));     //  4 bits
+  //
+  // Check j.l.Float.floatToFloat16 for more information.
+  // 10 bits
+  __ vnsrl_wi(vtmp, src, fp32_mantissa_2nd_part_bits + fp32_mantissa_3rd_part_bits, Assembler::v0_t);
+  __ mv(t0, 0x3ff); // retain first part of mantissa in a float 32
+  __ vand_vx(vtmp, vtmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
+  // 9 bits
+  __ vnsrl_wi(vtmp, src, fp32_mantissa_3rd_part_bits, Assembler::v0_t);
+  __ mv(t0, 0x1ff); // retain second part of mantissa in a float 32
+  __ vand_vx(vtmp, vtmp, t0, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
+  // 4 bits
+  // Narrow shift is necessary to move data from 32 bits element to 16 bits element in vector register.
+  __ vnsrl_wi(vtmp, src, 0, Assembler::v0_t);
+  __ vand_vi(vtmp, vtmp, 0xf, Assembler::v0_t);
+  __ vor_vv(dst, dst, vtmp, Assembler::v0_t);
 
   __ j(stub.continuation());
 #undef __
 }
 
 // j.l.Float.float16ToFloat
-void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp,
-                                           Register tmp, uint vector_length) {
+void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src,
+                                           VectorRegister vtmp, Register tmp, uint vector_length) {
   assert_different_registers(dst, src, vtmp);
 
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister>
-              (dst, src, vtmp, 28, float_to_float16_v_slow_path);
+              (dst, src, vtmp, 56, float_to_float16_v_slow_path);
 
   // On riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
 
   vsetvli_helper(BasicType::T_FLOAT, vector_length, Assembler::m1);
 
   // check whether there is a NaN.
-  // replace v_fclass with vmseq_vv as performance optimization.
+  // replace v_fclass with vmfne_vv as performance optimization.
   vmfne_vv(v0, src, src);
   vcpop_m(t0, v0);
 
