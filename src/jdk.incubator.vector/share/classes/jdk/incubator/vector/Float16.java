@@ -752,8 +752,9 @@ public final class Float16
      * @see Double#isInfinite(double)
      */
     public static boolean isInfinite(Float16 f16) {
-        return ((float16ToRawShortBits(f16) ^ float16ToRawShortBits(POSITIVE_INFINITY)) &
-                (EXP_BIT_MASK | SIGNIF_BIT_MASK)) == 0;
+        final short bits = float16ToRawShortBits(f16);
+        // An infinite value has all ones in its exponent and a zero significand
+        return ((bits & EXP_BIT_MASK) == EXP_BIT_MASK && (bits & SIGNIF_BIT_MASK) == 0);
     }
 
     /**
