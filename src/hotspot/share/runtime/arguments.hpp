@@ -342,9 +342,9 @@ class Arguments : AllStatic {
   }
 
   static void describe_range_error(ArgsRange errcode);
-  static ArgsRange check_memory_size(size_t size, size_t min_size, size_t max_size);
-  static ArgsRange parse_memory_size(const char* s, size_t* arg,
-                                     size_t min_size, size_t max_size = max_uintx);
+  static ArgsRange check_memory_size(julong size, julong min_size, julong max_size);
+  static ArgsRange parse_memory_size(const char* s, julong* long_arg,
+                                     julong min_size, julong max_size = max_uintx);
 
   // methods to build strings from individual args
   static void build_jvm_args(const char* arg);

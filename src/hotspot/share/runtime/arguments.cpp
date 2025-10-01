@@ -766,7 +766,7 @@ bool Arguments::atojulong(const char *s, julong* result) {
   return parse_integer(s, result);
 }
 
-Arguments::ArgsRange Arguments::check_memory_size(size_t size, size_t min_size, size_t max_size) {
+Arguments::ArgsRange Arguments::check_memory_size(julong size, julong min_size, julong max_size) {
   if (size < min_size) return arg_too_small;
   if (size > max_size) return arg_too_big;
   return arg_in_range;
@@ -1506,7 +1506,7 @@ size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
 void Arguments::set_heap_size() {
-  size_t phys_mem;
+  julong phys_mem;
 
   // If the user specified one of these options, they
   // want specific memory sizing so do not limit memory
@@ -1520,34 +1520,34 @@ void Arguments::set_heap_size() {
                            !FLAG_IS_DEFAULT(MaxRAM));
   if (override_coop_limit) {
     if (FLAG_IS_DEFAULT(MaxRAM)) {
-      phys_mem = os::physical_memory();
+      phys_mem = static_cast<julong>(os::physical_memory());
       FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
     } else {
-      phys_mem = (size_t)MaxRAM;
+      phys_mem = (julong)MaxRAM;
     }
   } else {
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (size_t)MaxRAM)
-                                       : (size_t)MaxRAM;
+    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(static_cast<julong>(os::physical_memory()), (julong)MaxRAM)
+                                       : (julong)MaxRAM;
   }
 
   // If the maximum heap size has not been set with -Xmx,
   // then set it as fraction of the size of physical memory,
   // respecting the maximum and minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    size_t reasonable_max = (size_t)(((double)phys_mem * MaxRAMPercentage) / 100);
-    const size_t reasonable_min = (size_t)(((double)phys_mem * MinRAMPercentage) / 100);
+    julong reasonable_max = (julong)(((double)phys_mem * MaxRAMPercentage) / 100);
+    const julong reasonable_min = (julong)(((double)phys_mem * MinRAMPercentage) / 100);
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
       reasonable_max = reasonable_min;
     } else {
       // Not-small physical memory, so require a heap at least
       // as large as MaxHeapSize
-      reasonable_max = MAX2(reasonable_max, MaxHeapSize);
+      reasonable_max = MAX2(reasonable_max, (julong)MaxHeapSize);
     }
 
     if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
       // Limit the heap size to ErgoHeapSizeLimit
-      reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
+      reasonable_max = MIN2(reasonable_max, (julong)ErgoHeapSizeLimit);
     }
 
     reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
@@ -1557,9 +1557,9 @@ void Arguments::set_heap_size() {
       // so be sure that the maximum size is consistent.  Done
       // after call to limit_heap_by_allocatable_memory because that
       // method might reduce the allocation size.
-      reasonable_max = MAX2(reasonable_max, InitialHeapSize);
+      reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
     } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
-      reasonable_max = MAX2(reasonable_max, MinHeapSize);
+      reasonable_max = MAX2(reasonable_max, (julong)MinHeapSize);
     }
 
 #ifdef _LP64
@@ -1579,7 +1579,7 @@ void Arguments::set_heap_size() {
     }
     if (UseCompressedOops) {
       // Limit the heap size to the maximum possible when using compressed oops
-      size_t max_coop_heap = max_heap_for_compressed_oops();
+      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
 
       if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
         // Heap should be above HeapBaseMinAddress to get zero based compressed oops
@@ -1596,7 +1596,7 @@ void Arguments::set_heap_size() {
           aot_log_info(aot)("UseCompressedOops disabled due to"
             " max heap %zu > compressed oop heap %zu. "
             "Please check the setting of MaxRAMPercentage %5.2f."
-            , reasonable_max, max_coop_heap, MaxRAMPercentage);
+            ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
@@ -1605,33 +1605,33 @@ void Arguments::set_heap_size() {
     }
 #endif // _LP64
 
-    log_trace(gc, heap)("  Maximum heap size %zu", reasonable_max);
-    FLAG_SET_ERGO(MaxHeapSize, reasonable_max);
+    log_trace(gc, heap)("  Maximum heap size %zu", (size_t) reasonable_max);
+    FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);
   }
 
   // If the minimum or initial heap_size have not been set or requested to be set
   // ergonomically, set them accordingly.
   if (InitialHeapSize == 0 || MinHeapSize == 0) {
-    size_t reasonable_minimum = OldSize + NewSize;
+    julong reasonable_minimum = (julong)(OldSize + NewSize);
 
-    reasonable_minimum = MIN2(reasonable_minimum, MaxHeapSize);
+    reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
 
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      size_t reasonable_initial = (size_t)(((double)phys_mem * InitialRAMPercentage) / 100);
+      julong reasonable_initial = (julong)(((double)phys_mem * InitialRAMPercentage) / 100);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
-      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
-      reasonable_initial = MIN2(reasonable_initial, MaxHeapSize);
+      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
+      reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
 
-      FLAG_SET_ERGO(InitialHeapSize, reasonable_initial);
+      FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
       log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
     }
     // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (MinHeapSize == 0) {
-      FLAG_SET_ERGO(MinHeapSize, MIN2(reasonable_minimum, InitialHeapSize));
+      FLAG_SET_ERGO(MinHeapSize, MIN2((size_t)reasonable_minimum, InitialHeapSize));
       log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
     }
   }
@@ -1645,12 +1645,13 @@ jint Arguments::set_aggressive_heap_flags() {
   // initHeapSize is needed since _initial_heap_size is 4 bytes on a 32 bit
   // VM, but we may not be able to represent the total physical memory
   // available (like having 8gb of memory on a box but using a 32bit VM).
-  // Thus, we need to make sure we're using size_t for intermediate
+  // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
-  size_t initHeapSize;
-  size_t total_memory = os::physical_memory();
+  julong initHeapSize;
+  size_t phys_mem = os::physical_memory();
+  julong total_memory = static_cast<julong>(phys_mem);
 
-  if (total_memory < 256 * M) {
+  if (total_memory < (julong) 256 * M) {
     jio_fprintf(defaultStream::error_stream(),
             "You need at least 256mb of memory to use -XX:+AggressiveHeap\n");
     vm_exit(1);
@@ -1661,7 +1662,8 @@ jint Arguments::set_aggressive_heap_flags() {
   // when using ISM).  This is the maximum; because adaptive sizing
   // is turned on below, the actual space used may be smaller.
 
-  initHeapSize = MIN2(total_memory / 2, total_memory - 160 * M);
+  initHeapSize = MIN2(total_memory / (julong) 2,
+          total_memory - (julong) 160 * M);
 
   initHeapSize = limit_heap_by_allocatable_memory(initHeapSize);
 
@@ -1678,7 +1680,8 @@ jint Arguments::set_aggressive_heap_flags() {
   }
   if (FLAG_IS_DEFAULT(NewSize)) {
     // Make the young generation 3/8ths of the total heap.
-    if (FLAG_SET_CMDLINE(NewSize, (MaxHeapSize / 8) * 3) != JVMFlag::SUCCESS) {
+    if (FLAG_SET_CMDLINE(NewSize,
+            ((julong) MaxHeapSize / (julong) 8) * (julong) 3) != JVMFlag::SUCCESS) {
       return JNI_EINVAL;
     }
     if (FLAG_SET_CMDLINE(MaxNewSize, NewSize) != JVMFlag::SUCCESS) {
@@ -1940,11 +1943,11 @@ bool Arguments::create_numbered_module_property(const char* prop_base_name, cons
 }
 
 Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
-                                                  size_t* arg,
-                                                  size_t min_size,
-                                                  size_t max_size) {
-  if (!parse_integer(s, arg)) return arg_unreadable;
-  return check_memory_size(*arg, min_size, max_size);
+                                                  julong* long_arg,
+                                                  julong min_size,
+                                                  julong max_size) {
+  if (!parse_integer(s, long_arg)) return arg_unreadable;
+  return check_memory_size(*long_arg, min_size, max_size);
 }
 
 jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
@@ -2074,20 +2077,20 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   // size doesn't change the max value, which makes the conversions
   // back and forth between Xss value and ThreadStackSize value easier.
   // The values have also been chosen to fit inside a 32-bit signed type.
-  const size_t min_ThreadStackSize = 0;
-  const size_t max_ThreadStackSize = 1 * M;
+  const julong min_ThreadStackSize = 0;
+  const julong max_ThreadStackSize = 1 * M;
 
   // Make sure the above values match the range set in globals.hpp
   const JVMTypedFlagLimit<intx>* limit = JVMFlagLimit::get_range_at(FLAG_MEMBER_ENUM(ThreadStackSize))->cast<intx>();
-  assert(min_ThreadStackSize == static_cast<size_t>(limit->min()), "must be");
-  assert(max_ThreadStackSize == static_cast<size_t>(limit->max()), "must be");
+  assert(min_ThreadStackSize == static_cast<julong>(limit->min()), "must be");
+  assert(max_ThreadStackSize == static_cast<julong>(limit->max()), "must be");
 
-  const size_t min_size = min_ThreadStackSize * K;
-  const size_t max_size = max_ThreadStackSize * K;
+  const julong min_size = min_ThreadStackSize * K;
+  const julong max_size = max_ThreadStackSize * K;
 
   assert(is_aligned(max_size, os::vm_page_size()), "Implementation assumption");
 
-  size_t size = 0;
+  julong size = 0;
   ArgsRange errcode = parse_memory_size(tail, &size, min_size, max_size);
   if (errcode != arg_in_range) {
     bool silent = (option == nullptr); // Allow testing to silence error messages
@@ -2100,20 +2103,20 @@ jint Arguments::parse_xss(const JavaVMOption* option, const char* tail, intx* ou
   }
 
   // Internally track ThreadStackSize in units of 1024 bytes.
-  const size_t size_aligned = align_up(size, K);
+  const julong size_aligned = align_up(size, K);
   assert(size <= size_aligned,
-         "Overflow: %zu %zu",
+         "Overflow: " JULONG_FORMAT " " JULONG_FORMAT,
          size, size_aligned);
 
-  const size_t size_in_K = size_aligned / K;
-  assert(size_in_K < (size_t)max_intx,
-         "size_in_K doesn't fit in the type of ThreadStackSize: %zu",
+  const julong size_in_K = size_aligned / K;
+  assert(size_in_K < (julong)max_intx,
+         "size_in_K doesn't fit in the type of ThreadStackSize: " JULONG_FORMAT,
          size_in_K);
 
   // Check that code expanding ThreadStackSize to a page aligned number of bytes won't overflow.
-  const size_t max_expanded = align_up(size_in_K * K, os::vm_page_size());
+  const julong max_expanded = align_up(size_in_K * K, os::vm_page_size());
   assert(max_expanded < max_uintx && max_expanded >= size_in_K,
-         "Expansion overflowed: %zu %zu",
+         "Expansion overflowed: " JULONG_FORMAT " " JULONG_FORMAT,
          max_expanded, size_in_K);
 
   *out_ThreadStackSize = (intx)size_in_K;
@@ -2347,7 +2350,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       }
     // -Xmn for compatibility with other JVM vendors
     } else if (match_option(option, "-Xmn", &tail)) {
-      size_t long_initial_young_size = 0;
+      julong long_initial_young_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_initial_young_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -2355,15 +2358,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(MaxNewSize, long_initial_young_size) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(MaxNewSize, (size_t)long_initial_young_size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(NewSize, long_initial_young_size) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(NewSize, (size_t)long_initial_young_size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -Xms
     } else if (match_option(option, "-Xms", &tail)) {
-      size_t size = 0;
+      julong size = 0;
       // an initial heap size of 0 means automatically determine
       ArgsRange errcode = parse_memory_size(tail, &size, 0);
       if (errcode != arg_in_range) {
@@ -2372,15 +2375,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(MinHeapSize, size) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(MinHeapSize, (size_t)size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(InitialHeapSize, size) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(InitialHeapSize, (size_t)size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -Xmx
     } else if (match_option(option, "-Xmx", &tail) || match_option(option, "-XX:MaxHeapSize=", &tail)) {
-      size_t long_max_heap_size = 0;
+      julong long_max_heap_size = 0;
       ArgsRange errcode = parse_memory_size(tail, &long_max_heap_size, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
@@ -2388,7 +2391,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
         describe_range_error(errcode);
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(MaxHeapSize, long_max_heap_size) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(MaxHeapSize, (size_t)long_max_heap_size) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
     // Xmaxf
@@ -2455,7 +2458,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       }
     } else if (match_option(option, "-Xmaxjitcodesize", &tail) ||
                match_option(option, "-XX:ReservedCodeCacheSize=", &tail)) {
-      size_t long_ReservedCodeCacheSize = 0;
+      julong long_ReservedCodeCacheSize = 0;
 
       ArgsRange errcode = parse_memory_size(tail, &long_ReservedCodeCacheSize, 1);
       if (errcode != arg_in_range) {
@@ -2463,7 +2466,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
                     "Invalid maximum code cache size: %s.\n", option->optionString);
         return JNI_EINVAL;
       }
-      if (FLAG_SET_CMDLINE(ReservedCodeCacheSize, long_ReservedCodeCacheSize) != JVMFlag::SUCCESS) {
+      if (FLAG_SET_CMDLINE(ReservedCodeCacheSize, (size_t)long_ReservedCodeCacheSize) != JVMFlag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -green
