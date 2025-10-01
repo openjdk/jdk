@@ -21,6 +21,8 @@
  * questions.
  */
 
+#include <inttypes.h>
+
 #include "jvmti.h"
 #include "jni.h"
 #include "jvmti_common.hpp"
@@ -51,7 +53,7 @@ cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   deallocate(jvmti,jni, m_name);
 
 
-  LOG("The location = %ld\n", location);
+  LOG("The location is %" PRId64 "\n", (int64_t)location);
   if (location != 0) {
     fatal(jni, "The method's location should be 0 for jni call.");
   }
@@ -85,7 +87,7 @@ cbFieldModification(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID meth
   }
   deallocate(jvmti,jni, m_name);
 
-  LOG("The location = %ld\n", location);
+  LOG("The location is %" PRId64 "\n", (int64_t)location);
   if (location != 0) {
     fatal(jni, "The method's location should be 0 for jni call.");
   }
@@ -161,7 +163,7 @@ Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(JNIEnv *jni, jobject sel
   check_jvmti_error(err, "SetEventNotificationMode");
 
   const char* name_str = jni->GetStringUTFChars(jname, nullptr);
-  printf("The field %s\n", name_str);
+  LOG("The field %s\n", name_str);
   if (strcmp(name_str, "accessFieldValue") != 0) {
     fatal(jni, "The field value is incorrect.");
   }
