@@ -631,7 +631,7 @@ const TypeInteger* ConstraintCastNode::widen_type(const PhaseGVN* phase, const T
   // mis-transformations that may happen due to these nodes being pinned at the wrong control
   // nodes.
   if (VerifyConstraintCasts > 1) {
-    return res;
+    return this_type;
   }
 
   const TypeInteger* in_type = phase->type(in(1))->isa_integer(bt);
