@@ -156,7 +156,7 @@ private:
 
   static OopHandle _roots;
 
-  static oop allocate_object(oopDesc* archive_object, markWord mark, size_t size, JavaThread* thread);
+  static oop allocate_object(oopDesc* archive_object, markWord mark, size_t size, TRAPS);
   static int object_index_for_root_index(int root_index);
   static int highest_object_index_for_root_index(int root_index);
   static size_t buffer_offset_for_object_index(int object_index);
@@ -189,31 +189,31 @@ private:
   static void log_statistics();
 
   class TracingObjectLoader {
-    static oop materialize_object(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
-    static oop materialize_object_inner(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
+    static oop materialize_object(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
+    static oop materialize_object_inner(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
     static void copy_object(int object_index,
                             oopDesc* archive_object,
                             oop heap_object,
                             size_t size,
                             Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack);
-    static void drain_stack(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
-    static oop materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
+    static void drain_stack(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
+    static oop materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
 
     static void wait_for_iterator();
 
   public:
-    static oop materialize_object_transitive(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
-    static oop root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread);
+    static oop materialize_object_transitive(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
+    static oop root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
   };
 
   class IterativeObjectLoader {
     static void copy_object(oopDesc* archive_object, oop heap_object, size_t size);
-    static void initialize_range(int first_object_index, int last_object_index, JavaThread* thread);
-    static size_t materialize_range(int first_object_index, int last_object_index, JavaThread* thread);
+    static void initialize_range(int first_object_index, int last_object_index, TRAPS);
+    static size_t materialize_range(int first_object_index, int last_object_index, TRAPS);
 
   public:
     static bool has_more();
-    static void materialize_next_batch(JavaThread* thread);
+    static void materialize_next_batch(TRAPS);
   };
 
   static void install_root(int root_index, oop heap_object);

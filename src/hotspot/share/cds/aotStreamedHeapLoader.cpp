@@ -46,6 +46,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/bitMap.inline.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
@@ -179,25 +180,25 @@ static size_t archive_object_size(oopDesc* archive_object) {
   }
 }
 
-oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mark, size_t size, JavaThread* thread) {
+oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mark, size_t size, TRAPS) {
   assert(!archive_object->is_stackChunk(), "no such objects are archived");
 
   oop heap_object;
 
   Klass* klass = archive_object->klass();
   if (klass->is_mirror_instance_klass()) {
-    heap_object = Universe::heap()->class_allocate(klass, size, thread);
+    heap_object = Universe::heap()->class_allocate(klass, size, CHECK_NULL);
   } else if (archive_object->is_instance()) {
-    heap_object = Universe::heap()->obj_allocate(archive_object->klass(), size, thread);
+    heap_object = Universe::heap()->obj_allocate(archive_object->klass(), size, CHECK_NULL);
   } else if (archive_object->is_typeArray()) {
     int len = archive_array_length(archive_object);
     BasicType elem_type = static_cast<ArrayKlass*>(archive_object->klass())->element_type();
-    heap_object = oopFactory::new_typeArray_nozero(elem_type, len, thread);
+    heap_object = oopFactory::new_typeArray_nozero(elem_type, len, CHECK_NULL);
   } else {
     assert(archive_object->is_objArray(), "must be");
     int len = archive_array_length(archive_object);
     Klass* elem_klass = static_cast<ObjArrayKlass*>(archive_object->klass())->element_klass();
-    heap_object = oopFactory::new_objArray(elem_klass, len, thread);
+    heap_object = oopFactory::new_objArray(elem_klass, len, CHECK_NULL);
   }
 
   heap_object->set_mark(mark);
@@ -420,14 +421,14 @@ void AOTStreamedHeapLoader::TracingObjectLoader::copy_object(int object_index,
   }
 }
 
-oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
+oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   // Allocate object
   oopDesc* archive_object = archive_object_for_object_index(object_index);
   size_t size = archive_object_size(archive_object);
   markWord mark = archive_object->mark();
   bool string_intern = mark.is_marked();
   mark = mark.set_unmarked();
-  oop heap_object = allocate_object(archive_object, mark, size, thread);
+  oop heap_object = allocate_object(archive_object, mark, size, CHECK_NULL);
 
   // Install forwarding
   set_heap_object_for_object_index(object_index, heap_object);
@@ -441,7 +442,7 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
     // and link it to the string table.
     int value_object_index = object_index + 1;
     heap_object = nullptr; // Materializing the value array might invalidate this oop.
-    oop value_heap_object = materialize_object(value_object_index, dfs_stack, thread);
+    oop value_heap_object = materialize_object(value_object_index, dfs_stack, CHECK_NULL);
 
     heap_object = heap_object_for_object_index(object_index);
     if (_allow_gc) {
@@ -452,14 +453,14 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
     }
 
     // Replace string with interned string
-    heap_object = StringTable::intern(heap_object, thread);
+    heap_object = StringTable::intern(heap_object, CHECK_NULL);
     replace_heap_object_for_object_index(object_index, heap_object);
   }
 
   return heap_object;
 }
 
-oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
+oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   oop heap_object = heap_object_for_object_index(object_index);
 
   if (object_index <= _previous_batch_last_object_index) {
@@ -483,14 +484,14 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object(int object_in
     return heap_object;
   }
 
-  return materialize_object_inner(object_index, dfs_stack, thread);
+  return materialize_object_inner(object_index, dfs_stack, THREAD);
 }
 
-void AOTStreamedHeapLoader::TracingObjectLoader::drain_stack(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
+void AOTStreamedHeapLoader::TracingObjectLoader::drain_stack(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   while (!dfs_stack.is_empty()) {
     AOTHeapTraversalEntry entry = dfs_stack.pop();
     int pointee_object_index = entry._pointee_object_index;
-    oop pointee_heap_object = materialize_object(pointee_object_index, dfs_stack, thread);
+    oop pointee_heap_object = materialize_object(pointee_object_index, dfs_stack, CHECK);
     oop heap_object = heap_object_for_object_index(entry._base_object_index);
     if (_allow_gc) {
       heap_object->obj_field_put(entry._heap_field_offset_bytes, pointee_heap_object);
@@ -500,25 +501,26 @@ void AOTStreamedHeapLoader::TracingObjectLoader::drain_stack(Stack<AOTHeapTraver
   }
 }
 
-oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_transitive(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
+oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_transitive(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   assert_locked_or_safepoint(AOTHeapLoading_lock);
   while (_waiting_for_iterator) {
     wait_for_iterator();
   }
 
-  Handle result(thread, materialize_object(object_index, dfs_stack, thread));
-  drain_stack(dfs_stack, thread);
+  Handle result(THREAD, materialize_object(object_index, dfs_stack, THREAD));
+  (void)(CHECK_NULL);
+  drain_stack(dfs_stack, CHECK_NULL);
 
   return result();
 }
 
-oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
+oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   int root_object_index = object_index_for_root_index(root_index);
 
-  return materialize_object_transitive(root_object_index, dfs_stack, thread);
+  return materialize_object_transitive(root_object_index, dfs_stack, THREAD);
 }
 
-oop AOTStreamedHeapLoader::TracingObjectLoader::root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, JavaThread* thread) {
+oop AOTStreamedHeapLoader::TracingObjectLoader::root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   // Get the materialized roots array
   oop roots_obj = NativeAccess<>::oop_load(_roots_heap);
   objArrayOop roots = (objArrayOop)roots_obj;
@@ -528,7 +530,7 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::root(int root_index, Stack<AOTHe
 
   if (root == nullptr) {
     // If not, materialize the root
-    root = materialize_root(root_index, dfs_stack, thread);
+    root = materialize_root(root_index, dfs_stack, CHECK_NULL);
     install_root(root_index, root);
   }
 
@@ -560,7 +562,7 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::copy_object(oopDesc* archive_
 }
 
 // The range is inclusive
-void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_object_index, int last_object_index, JavaThread* thread) {
+void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_object_index, int last_object_index, TRAPS) {
   bool last_object_was_interned_string = false;
 
   for (int i = first_object_index; i <= last_object_index; ++i) {
@@ -577,7 +579,7 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_ob
       oop string_object = heap_object_for_object_index(string_object_index);
 
       // Replace string with interned string
-      string_object = StringTable::intern(string_object, thread);
+      string_object = StringTable::intern(string_object, CHECK);
       replace_heap_object_for_object_index(string_object_index, string_object);
 
       last_object_was_interned_string = false;
@@ -590,7 +592,7 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_ob
 }
 
 // The range is inclusive
-size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first_object_index, int last_object_index, JavaThread* thread) {
+size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first_object_index, int last_object_index, TRAPS) {
   GrowableArrayCHeap<int, mtClassShared> lazy_object_indices(0);
   size_t materialized_words = 0;
 
@@ -602,7 +604,7 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
     oop heap_object = heap_object_for_object_index(i);
     if (heap_object == nullptr) {
       // The normal case; no lazy loading have loaded the object yet
-      heap_object = allocate_object(archive_object, mark, size, thread);
+      heap_object = allocate_object(archive_object, mark, size, CHECK_0);
       set_heap_object_for_object_index(i, heap_object);
     } else {
       // Lazy loading has already initialized the object; we must not mutate it
@@ -612,7 +614,7 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
 
   if (lazy_object_indices.is_empty()) {
     // Normal case; no sprinkled lazy objects in the root subgraph
-    initialize_range(first_object_index, last_object_index, thread);
+    initialize_range(first_object_index, last_object_index, CHECK_0);
   } else {
     // The user lazy initialized some objects that are already initialized; we have to initialize around them
     // to make sure they are not mutated.
@@ -623,14 +625,14 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
       int slice_end_object_index = lazy_object_index;
 
       if (slice_end_object_index - slice_start_object_index > 1) { // Both markers are exclusive
-        initialize_range(slice_start_object_index + 1, slice_end_object_index - 1, thread);
+        initialize_range(slice_start_object_index + 1, slice_end_object_index - 1, CHECK_0);
       }
       oop heap_object = heap_object_for_object_index(lazy_object_index);
       previous_object_index = lazy_object_index;
     }
     // Process tail range
     if (last_object_index - previous_object_index > 0) {
-      initialize_range(previous_object_index + 1, last_object_index, thread);
+      initialize_range(previous_object_index + 1, last_object_index, CHECK_0);
     }
   }
 
@@ -641,7 +643,7 @@ bool AOTStreamedHeapLoader::IterativeObjectLoader::has_more() {
   return _current_root_index < _num_roots;
 }
 
-void AOTStreamedHeapLoader::IterativeObjectLoader::materialize_next_batch(JavaThread* thread) {
+void AOTStreamedHeapLoader::IterativeObjectLoader::materialize_next_batch(TRAPS) {
   assert(has_more(), "only materialize if there is something to materialize");
 
   int min_batch_objects = 128;
@@ -678,7 +680,7 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::materialize_next_batch(JavaTh
     size_t allocated_words;
     {
       MutexUnlocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
-      allocated_words = materialize_range(first_object_index, highest_object_index, thread);
+      allocated_words = materialize_range(first_object_index, highest_object_index, CHECK);
     }
     _allocated_words += allocated_words;
     _previous_batch_last_object_index = _current_batch_last_object_index;
@@ -700,7 +702,8 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::materialize_next_batch(JavaTh
 
 bool AOTStreamedHeapLoader::materialize_early() {
   jlong start = os::javaTimeNanos();
-  JavaThread* thread = JavaThread::current();
+  // We cannot handle any exception when materializing roots. Exits the VM.
+  EXCEPTION_MARK
 
   // Only help with early materialization from the AOT thread if the heap archive can be allocated
   // without the need for a GC. Otherwise, do lazy loading until GC is enabled later in the bootstrapping.
@@ -719,7 +722,7 @@ bool AOTStreamedHeapLoader::materialize_early() {
       break;
     }
 
-    IterativeObjectLoader::materialize_next_batch(thread);
+    IterativeObjectLoader::materialize_next_batch(CHECK_false);
   }
 
   _early_materialization_time_ns = os::javaTimeNanos() - start;
@@ -733,10 +736,12 @@ void AOTStreamedHeapLoader::materialize_late() {
   jlong start = os::javaTimeNanos();
 
   // Continue materializing with GC allowed
-  JavaThread* thread = JavaThread::current();
+
+  // We cannot handle any exception when materializing roots. Exits the VM.
+  EXCEPTION_MARK
 
   while (IterativeObjectLoader::has_more()) {
-    IterativeObjectLoader::materialize_next_batch(thread);
+    IterativeObjectLoader::materialize_next_batch(CHECK);
   }
 
   _late_materialization_time_ns = os::javaTimeNanos() - start;
@@ -929,7 +934,7 @@ void account_lazy_materialization_time_ns(jlong time, const char* description, i
 
 // Initialize an empty array of AOT heap roots; materialize them lazily
 void AOTStreamedHeapLoader::initialize() {
-  JavaThread* thread = JavaThread::current();
+  EXCEPTION_MARK
 
   FileMapInfo::current_info()->map_bitmap_region();
 
@@ -954,10 +959,7 @@ void AOTStreamedHeapLoader::initialize() {
   // We can't retire a TLAB until the filler klass is set; set it to the archived object klass.
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 
-  objArrayOop roots = oopFactory::new_objectArray(_num_roots, thread);
-  if (roots == nullptr) {
-    fatal("Not enough memory available to initialize JVM");
-  }
+  objArrayOop roots = oopFactory::new_objectArray(_num_roots, CHECK);
   _roots_heap = Universe::vm_global()->allocate();
   NativeAccess<>::oop_store(_roots_heap, roots);
 
@@ -985,7 +987,7 @@ void AOTStreamedHeapLoader::initialize() {
 
   if (AOTEagerlyLoadObjects) {
     // Objects are laid out in DFS order; DFS traverse the roots by linearly walking all objects
-    HandleMark hm(thread);
+    HandleMark hm(THREAD);
     // Early materialization with a budget before GC is allowed
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
     bool finished_before_gc_allowed = materialize_early();
@@ -999,9 +1001,10 @@ void AOTStreamedHeapLoader::initialize() {
 
 oop AOTStreamedHeapLoader::materialize_root(int root_index) {
   jlong start = os::javaTimeNanos();
-  JavaThread* thread = JavaThread::current();
+  // We cannot handle any exception when materializing a root. Exits the VM.
+  EXCEPTION_MARK
   Stack<AOTHeapTraversalEntry, mtClassShared> dfs_stack;
-  HandleMark hm(thread);
+  HandleMark hm(THREAD);
 
   oop result;
   {
@@ -1011,7 +1014,7 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
       objArrayOop roots = objArrayOop((oop)NativeAccess<>::oop_load(_roots_heap));
       result = roots->obj_at(root_index);
     } else {
-      result = TracingObjectLoader::root(root_index, dfs_stack, thread);
+      result = TracingObjectLoader::root(root_index, dfs_stack, CHECK_NULL);
     }
   }
 
