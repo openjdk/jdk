@@ -124,7 +124,7 @@ public:
   }
 
   // How many u2s are required to store a BSM entry with argc arguments?
-  static size_t u2s_required (u2 argc) {
+  static int u2s_required (u2 argc) {
     return 1 /* index */ + 1  /* argc */ + argc /* argv */;
   }
 };

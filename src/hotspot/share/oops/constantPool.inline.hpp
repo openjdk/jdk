@@ -90,7 +90,7 @@ inline oop ConstantPool::resolved_reference_from_method(int index) const {
 
 inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 bsmi, u2 argc) {
   if (_cur_offset + 1 > insert_into->offsets()->length() ||
-      _cur_array + (int)BSMAttributeEntry::u2s_required(argc) > insert_into->bootstrap_methods()->length()) {
+      _cur_array + BSMAttributeEntry::u2s_required(argc) > insert_into->bootstrap_methods()->length()) {
     return nullptr;
   }
   insert_into->_offsets->at_put(_cur_offset, _cur_array);
