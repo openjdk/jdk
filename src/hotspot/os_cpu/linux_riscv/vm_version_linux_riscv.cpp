@@ -100,21 +100,21 @@
 #endif
 
 uint32_t VM_Version::cpu_vector_length() {
-  assert(ext_V.enabled(), "should not call this");
+  assert(ext_v.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
 void VM_Version::setup_cpu_available_features() {
 
-  assert(ext_I.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
-  assert(ext_M.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
-  assert(ext_A.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
-  assert(ext_F.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
-  assert(ext_D.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
-  assert(ext_C.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
-  assert(ext_Q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
-  assert(ext_H.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
-  assert(ext_V.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
+  assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
+  assert(ext_m.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
+  assert(ext_a.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
+  assert(ext_f.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
+  assert(ext_d.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
+  assert(ext_c.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
+  assert(ext_q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
+  assert(ext_h.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
+  assert(ext_v.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
 
   if (!RiscvHwprobe::probe_features()) {
     os_aux_features();
@@ -263,15 +263,15 @@ char* VM_Version::os_uarch_additional_features() {
     mode = VM_MBARE;
   }
   fclose(f);
-  satp_mode.enable_feature(mode);
+  non_ext_SATP.enable_feature(mode);
   return ret;
 }
 
 void VM_Version::vendor_features() {
-  if (!mvendorid.enabled()) {
+  if (!non_ext_VendorId.enabled()) {
     return;
   }
-  switch (mvendorid.value()) {
+  switch (non_ext_VendorId.value()) {
     case RIVOS:
     rivos_features();
     break;
@@ -303,12 +303,12 @@ void VM_Version::rivos_features() {
 
   ext_Zvfh.enable_feature();
 
-  unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
-  satp_mode.enable_feature(VM_SV48);
+  non_ext_UnalignedScalar.enable_feature(MISALIGNED_SCALAR_FAST);
+  non_ext_SATP.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.
   // I.e. march.value() and mimplid.value()
-  if (mimpid.value() > 0x100) {
+  if (non_ext_ImpId.value() > 0x100) {
     ext_Zacas.enable_feature();
     ext_Zihintpause.enable_feature();
   }
