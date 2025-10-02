@@ -47,14 +47,14 @@ protected:
   class DependencyType {
   public:
     DependencyType(bool depends_on_test, bool narrows_type, const char* desc)
-      : _depends_only_on_test(depends_on_test),
+      : _floating(depends_on_test),
         _narrows_type(narrows_type),
         _desc(desc) {
     }
     NONCOPYABLE(DependencyType);
 
-    bool depends_only_on_test() const {
-      return _depends_only_on_test;
+    bool floating() const {
+      return _floating;
     }
 
     bool narrows_type() const {
@@ -65,15 +65,15 @@ protected:
     }
 
     uint hash() const {
-      return (_depends_only_on_test ? 1 : 0) + (_narrows_type ? 2 : 0);
+      return (_floating ? 1 : 0) + (_narrows_type ? 2 : 0);
     }
 
     bool cmp(const DependencyType& other) const {
-      return _depends_only_on_test == other._depends_only_on_test && _narrows_type == other._narrows_type;
+      return _floating == other._floating && _narrows_type == other._narrows_type;
     }
 
     const DependencyType& widen_type_dependency() const {
-      if (_depends_only_on_test) {
+      if (_floating) {
         return FloatingNonNarrowingDependency;
       }
       return NonFloatingNonNarrowingDependency;
@@ -87,19 +87,29 @@ protected:
     }
 
   private:
-    const bool _depends_only_on_test; // Does this Cast depends on its control input or is it pinned?
+    const bool _floating; // Does this Cast depends on its control input or is it pinned?
     const bool _narrows_type; // Does this Cast narrows the type i.e. if input type is narrower can it be removed?
     const char* _desc;
   };
 
 public:
 
+  // All the possible combinations of floating/narrowing. Example use cases for each:
+  // FloatingNarrowingDependency is used for range checks: the range check CastII is dependent on the range check and if
+  // its input's type is narrower than the type of the range check, it's safe to be removed.
+  // NonFloatingNonNarrowingDependency is used when a floating node is sunk out of loop: we don't want the cast that
+  // forces the node to be out of loop to be removed in any case
+  // NonFloatingNarrowingDependency is used when an array access is no longer dependent on a single range check (range
+  // check smearing for instance)
+  // FloatingNonNarrowingDependency is used after loop opts when Cast nodes' types are widen so Casts that only differ
+  // by slightly different types can common. Given the type carried by the Cast is no longer accurate, removing a Cast
+  // because its input has a narrower type causes the dependency carried by the Cast to be lost
   static const DependencyType FloatingNarrowingDependency;
   static const DependencyType FloatingNonNarrowingDependency;
   static const DependencyType NonFloatingNarrowingDependency;
   static const DependencyType NonFloatingNonNarrowingDependency;
 
-  protected:
+protected:
   const DependencyType& _dependency;
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const;
@@ -133,7 +143,7 @@ public:
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
   bool carry_dependency() const { return !_dependency.cmp(FloatingNarrowingDependency); }
-  virtual bool depends_only_on_test() const { return _dependency.depends_only_on_test(); }
+  virtual bool depends_only_on_test() const { return _dependency.floating(); }
   const DependencyType& dependency() const { return _dependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
   static Node* make_cast_for_basic_type(Node* c, Node* n, const Type* t, const DependencyType& dependency, BasicType bt);
