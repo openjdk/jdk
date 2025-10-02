@@ -2602,10 +2602,7 @@ void AdapterHandlerLibrary::initialize() {
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
   uint id = (uint)AtomicAccess::add((int*)&_id_counter, 1);
-  if (id == 0) {
-    // id_counter overflow
-    return nullptr;
-  }
+  guarantee(id > 0, "id_counter overflow");
   return AdapterHandlerEntry::allocate(id, fingerprint);
 }
 
