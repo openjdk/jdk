@@ -388,6 +388,11 @@ final class Renderer {
                     });
                 });
             }
+            case NamesToListToken ntlt -> {
+                List<Name> list = listNames(ntlt.predicate());
+                NestingToken nt = ntlt.getNestingToken(list);
+                renderNestingToken(nt, () -> {});
+            }
             case LetToken(String key, String value) -> {
                 addHashtagReplacement(key, value);
             }

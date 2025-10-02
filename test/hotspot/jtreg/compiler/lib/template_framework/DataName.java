@@ -273,7 +273,12 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             return list.stream().map(n -> (DataName)n).toList();
         }
 
-        // TODO: consider refactoring with toList Token, and then doing the for-each inside the function?
+        // TODO: same for structural
+        // TODO: make sure we have enough tests
+        public Token toList(Function<List<DataName>, NestingToken> function) {
+            return new NamesToListToken(predicate(), function);
+        }
+
         public Token forEach(Function<DataName, NestingToken> function) {
             return new NameForEachToken<DataName>(predicate(), null, null, function);
         }
