@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -668,7 +667,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public static void useToolProviderByDefault(ToolProvider jpackageToolProvider) {
-        defaultToolProvider = Optional.of(jpackageToolProvider);
+        defaultToolProvider.set(Optional.of(jpackageToolProvider));
     }
 
     public static void useToolProviderByDefault() {
@@ -676,7 +675,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public static void useExecutableByDefault() {
-        defaultToolProvider = Optional.empty();
+        defaultToolProvider.set(Optional.empty());
     }
 
     public JPackageCommand useToolProvider(boolean v) {
@@ -785,7 +784,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     }
 
     public boolean isWithToolProvider() {
-        return Optional.ofNullable(withToolProvider).orElseGet(defaultToolProvider::isPresent);
+        return Optional.ofNullable(withToolProvider).orElseGet(() -> {
+            return defaultToolProvider.get().isPresent();
+        });
     }
 
     public JPackageCommand executePrerequisiteActions() {
@@ -801,7 +802,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 .addArguments(args);
 
         if (isWithToolProvider()) {
-            exec.setToolProvider(defaultToolProvider.orElseGet(JavaTool.JPACKAGE::asToolProvider));
+            exec.setToolProvider(defaultToolProvider.get().orElseGet(JavaTool.JPACKAGE::asToolProvider));
         } else {
             exec.setExecutable(JavaTool.JPACKAGE);
             if (TKit.isWindows()) {
@@ -1233,10 +1234,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     private void assertFileInAppImage(Path filename, Path expectedPath) {
         if (expectedPath != null) {
-            if (expectedPath.isAbsolute()) {
-                throw new IllegalArgumentException();
-            }
-            if (!expectedPath.getFileName().equals(filename.getFileName())) {
+            if (expectedPath.isAbsolute() || !expectedPath.getFileName().equals(filename.getFileName())) {
                 throw new IllegalArgumentException();
             }
         }
@@ -1322,7 +1320,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             addArguments("--runtime-image", DEFAULT_RUNTIME_IMAGE);
         }
 
-        if (!hasArgument("--verbose") && TKit.VERBOSE_JPACKAGE && !ignoreDefaultVerbose) {
+        if (!hasArgument("--verbose") && TKit.verboseJPackage() && !ignoreDefaultVerbose) {
             addArgument("--verbose");
         }
 
@@ -1346,11 +1344,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         final var typesSet = Stream.of(types).collect(Collectors.toSet());
         if (!hasArgument("--type")) {
             if (!isImagePackageType()) {
-                if (TKit.isLinux() && typesSet.equals(PackageType.LINUX)) {
-                    return;
-                }
-
-                if (TKit.isWindows() && typesSet.equals(PackageType.WINDOWS)) {
+                if ((TKit.isLinux() && typesSet.equals(PackageType.LINUX)) || (TKit.isWindows() && typesSet.equals(PackageType.WINDOWS))) {
                     return;
                 }
 
@@ -1500,29 +1494,21 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
     private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
     private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
-    private static Optional<ToolProvider> defaultToolProvider = Optional.empty();
-
-    private static final Map<String, PackageType> PACKAGE_TYPES = Functional.identity(
-            () -> {
-                Map<String, PackageType> reply = new HashMap<>();
-                for (PackageType type : PackageType.values()) {
-                    reply.put(type.getType(), type);
-                }
-                return reply;
-            }).get();
-
-    public static final Path DEFAULT_RUNTIME_IMAGE = Functional.identity(() -> {
-        // Set the property to the path of run-time image to speed up
-        // building app images and platform bundles by avoiding running jlink
-        // The value of the property will be automativcally appended to
-        // jpackage command line if the command line doesn't have
-        // `--runtime-image` parameter set.
-        String val = TKit.getConfigProperty("runtime-image");
-        if (val != null) {
-            return Path.of(val);
+    private static InheritableThreadLocal<Optional<ToolProvider>> defaultToolProvider = new InheritableThreadLocal<>() {
+        @Override
+        protected Optional<ToolProvider> initialValue() {
+            return Optional.empty();
         }
-        return null;
-    }).get();
+    };
+
+    private static final Map<String, PackageType> PACKAGE_TYPES = Stream.of(PackageType.values()).collect(toMap(PackageType::getType, x -> x));
+
+    // Set the property to the path of run-time image to speed up
+    // building app images and platform bundles by avoiding running jlink.
+    // The value of the property will be automatically appended to
+    // jpackage command line if the command line doesn't have
+    // `--runtime-image` parameter set.
+    public static final Path DEFAULT_RUNTIME_IMAGE = Optional.ofNullable(TKit.getConfigProperty("runtime-image")).map(Path::of).orElse(null);
 
     // [HH:mm:ss.SSS]
     private static final Pattern TIMESTAMP_REGEXP = Pattern.compile(
