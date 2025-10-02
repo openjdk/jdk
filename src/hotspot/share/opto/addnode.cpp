@@ -428,26 +428,26 @@ Node* AddNode::Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt) 
   // We need to make sure that the current AddNode is not part of a MulNode that has already been optimized to a
   // power-of-2 addition (e.g., 3 * a => (a << 2) + a). Without this check, GVN would keep trying to optimize the same
   // node and can't progress. For example, 3 * a => (a << 2) + a => 3 * a => (a << 2) + a => ...
-  if (find_power_of_two_addition_pattern(this, bt).valid) {
+  if (Multiplication::find_power_of_two_addition_pattern(this, bt).is_valid()) {
     return nullptr;
   }
 
   Node* lhs = in(1);
   Node* rhs = in(2);
 
-  Multiplication mul = find_collapsible_addition_patterns(lhs, rhs, bt);
+  Multiplication mul = Multiplication::find_collapsible_addition_patterns(lhs, rhs, bt);
   if (!mul.is_valid_with(rhs)) {
     // Swap lhs and rhs then try again
-    mul = find_collapsible_addition_patterns(rhs, lhs, bt);
+    mul = Multiplication::find_collapsible_addition_patterns(rhs, lhs, bt);
     if (!mul.is_valid_with(lhs)) {
       return nullptr;
     }
   }
 
   Node* con = (bt == T_INT)
-              ? (Node*) phase->intcon(java_add((jint) mul.multiplier, (jint) 1)) // Overflow at max_jint
-              : (Node*) phase->longcon(java_add((jlong) mul.multiplier, (jlong) 1));
-  return MulNode::make(con, mul.variable, bt);
+              ? static_cast<Node *>(phase->intcon(java_add(static_cast<jint>(mul.multiplier()), 1))) // Overflow at max_jint
+              : static_cast<Node *>(phase->longcon(java_add(mul.multiplier(), static_cast<jlong>(1))));
+  return MulNode::make(con, mul.variable(), bt);
 }
 
 // Find a pattern of collapsable additions that can be converted to a multiplication.
@@ -456,7 +456,7 @@ Node* AddNode::Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt) 
 //     - (2) Simple lshift:         LHS = a << CON
 //     - (3) Simple multiplication: LHS = CON * a
 //     - (4) Power-of-two addition: LHS = (a << CON1) + (a << CON2)
-AddNode::Multiplication AddNode::find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt) {
+AddNode::Multiplication AddNode::Multiplication::find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt) {
   // (1) Simple addition pattern (e.g., lhs = a + a)
   Multiplication mul = find_simple_addition_pattern(a, bt);
   if (mul.is_valid_with(pattern)) {
@@ -484,40 +484,40 @@ AddNode::Multiplication AddNode::find_collapsible_addition_patterns(const Node* 
   }
 
   // We've tried everything.
-  return Multiplication::make_invalid();
+  return make_invalid();
 }
 
 // Try to match `n = a + a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = 2`.
 // The method matches `n` for pattern: a + a.
-AddNode::Multiplication AddNode::find_simple_addition_pattern(const Node* n, BasicType bt) {
+AddNode::Multiplication AddNode::Multiplication::find_simple_addition_pattern(const Node* n, BasicType bt) {
   if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
-    return Multiplication{true, n->in(1), 2};
+    return {n->in(1), 2};
   }
 
-  return Multiplication::make_invalid();
+  return make_invalid();
 }
 
 // Try to match `n = a << CON`. On success, return a struct with `.valid = true`, `variable = a`, and
 // `multiplier = 1 << CON`.
 // Match `n` for pattern: a << CON.
 // Note that the power-of-2 multiplication optimization could potentially convert a MulNode to this pattern.
-AddNode::Multiplication AddNode::find_simple_lshift_pattern(const Node* n, BasicType bt) {
+AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(const Node* n, BasicType bt) {
   // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
   if (n->Opcode() == Op_LShift(bt) && n->in(2)->is_Con()) {
     Node* con = n->in(2);
     if (!con->is_top()) {
-      return Multiplication{true, n->in(1), java_shift_left(1, con->get_int(), bt)};
+      return {n->in(1), java_shift_left(1, con->get_int(), bt)};
     }
   }
 
-  return Multiplication::make_invalid();
+  return make_invalid();
 }
 
 // Try to match `n = CON * a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = CON`.
 // Match `n` for patterns:
 //     - (1) CON * a
 //     - (2) a * CON
-AddNode::Multiplication AddNode::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
+AddNode::Multiplication AddNode::Multiplication::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
   // This optimization technically only produces MulNode(CON, a), but we might as match MulNode(a, CON), too.
   if (n->Opcode() == Op_Mul(bt) && (n->in(1)->is_Con() || n->in(2)->is_Con())) {
     // Pattern (1)
@@ -531,11 +531,11 @@ AddNode::Multiplication AddNode::find_simple_multiplication_pattern(const Node* 
     }
 
     if (!con->is_top()) {
-      return Multiplication{true, base, con->get_integer_as_long(bt)};
+      return {base, con->get_integer_as_long(bt)};
     }
   }
 
-  return Multiplication::make_invalid();
+  return make_invalid();
 }
 
 // Try to match `n = (a << CON1) + (a << CON2)`. On success, return a struct with `.valid = true`, `variable = a`, and
@@ -546,24 +546,27 @@ AddNode::Multiplication AddNode::find_simple_multiplication_pattern(const Node* 
 //     - (3) a + (a << CON)
 //     - (4) a + a
 // Note that one or both of the term of the addition could simply be `a` (i.e., a << 0) as in pattern (4).
-AddNode::Multiplication AddNode::find_power_of_two_addition_pattern(const Node* n, BasicType bt) {
+AddNode::Multiplication AddNode::Multiplication::find_power_of_two_addition_pattern(const Node* n, BasicType bt) {
   if (n->Opcode() == Op_Add(bt) && n->in(1) != n->in(2)) {
-    Multiplication lhs = find_simple_lshift_pattern(n->in(1), bt);
-    Multiplication rhs = find_simple_lshift_pattern(n->in(2), bt);
+    const Multiplication lhs = find_simple_lshift_pattern(n->in(1), bt);
+    const Multiplication rhs = find_simple_lshift_pattern(n->in(2), bt);
 
     // Pattern (1)
-    if (lhs.valid && rhs.valid && lhs.variable == rhs.variable) {
-      return Multiplication{true, lhs.variable, java_add(lhs.multiplier, rhs.multiplier)};
+    {
+      const Multiplication res = lhs.add(rhs);
+      if (res.is_valid()) {
+        return res;
+      }
     }
 
     // Pattern (2)
-    if (lhs.valid && lhs.variable == n->in(2)) {
-      return Multiplication{true, lhs.variable, java_add(lhs.multiplier, (jlong) 1)};
+    if (lhs.is_valid_with(n->in(2))) {
+      return {lhs.variable(), java_add(lhs.multiplier(), static_cast<jlong>(1))};
     }
 
     // Pattern (3)
-    if (rhs.valid && rhs.variable == n->in(1)) {
-      return Multiplication{true, rhs.variable, java_add(rhs.multiplier, (jlong) 1)};
+    if (rhs.is_valid_with(n->in(1))) {
+      return {rhs.variable(), java_add(rhs.multiplier(), static_cast<jlong>(1))};
     }
 
     // Pattern (4), which is equivalent to a simple addition pattern

@@ -43,25 +43,48 @@ typedef const Pair<Node*, jint> ConstAddOperands;
 class AddNode : public Node {
   virtual uint hash() const;
 
-  struct Multiplication {
-    bool valid = false;
-    Node* variable = nullptr;
-    jlong multiplier = 0;
+  class Multiplication {
+    bool _is_valid = false;
+
+    Node* _variable = nullptr;
+    jlong _multiplier = 0;
+
+  private:
+    Multiplication() {}
+
+  public:
+    Multiplication(Node* variable, jlong multiplier) :
+          _is_valid(true),
+          _variable(variable),
+          _multiplier(multiplier) {}
 
     static Multiplication make_invalid() {
-      return Multiplication{false, nullptr, 0};
+      static Multiplication invalid = Multiplication();
+      return invalid;
     }
 
+    static Multiplication find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt);
+    static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
+    static Multiplication find_simple_lshift_pattern(const Node* n, BasicType bt);
+    static Multiplication find_simple_multiplication_pattern(const Node* n, BasicType bt);
+    static Multiplication find_power_of_two_addition_pattern(const Node* n, BasicType bt);
+
+    Multiplication add(const Multiplication rhs) const {
+      if (is_valid_with(rhs.variable()) && rhs.is_valid_with(variable())) {
+        return {variable(), java_add(multiplier(), rhs.multiplier())};
+      }
+
+      return make_invalid();
+    }
+
+    bool is_valid() const { return _is_valid; }
     bool is_valid_with(const Node* variable) const {
-      return valid && this->variable == variable;
+      return _is_valid && this->_variable == variable;
     }
-  };
 
-  static Multiplication find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt);
-  static Multiplication find_simple_addition_pattern(const Node* n, BasicType bt);
-  static Multiplication find_simple_lshift_pattern(const Node* n, BasicType bt);
-  static Multiplication find_simple_multiplication_pattern(const Node* n, BasicType bt);
-  static Multiplication find_power_of_two_addition_pattern(const Node* n, BasicType bt);
+    Node* variable() const { return _variable; }
+    jlong multiplier() const { return _multiplier; }
+  };
 
  public:
   AddNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
