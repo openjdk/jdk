@@ -289,9 +289,14 @@ bool ShenandoahAdaptiveHeuristics::should_start_gc() {
   double avg_alloc_rate2 = shenandoah_alloc_rate.upper_bound(_margin_of_error_sd);
   double predicted_rate = shenandoah_alloc_rate.predict_next();
 
-  log_debug(gc, alloc, sampling)(
-    "allocation rate: " PROPERFMT "/s, new allocation rate: " PROPERFMT "/s, predicted: " PROPERFMT "/s",
-        PROPERFMTARGS(avg_alloc_rate), PROPERFMTARGS(avg_alloc_rate2), PROPERFMTARGS(predicted_rate));
+  TruncatedSeq* old_sampling = _allocation_rate.rate();
+  log_debug(gc, alloc, sampling)( "old allocation sample: predict: " PROPERFMT " avg: " PROPERFMT "/s (+/-" PROPERFMT"), davg: " PROPERFMT "/s (+/-" PROPERFMT ")",
+    PROPERFMTARGS(old_sampling->predict_next()), PROPERFMTARGS(old_sampling->avg()), PROPERFMTARGS(old_sampling->sd()), PROPERFMTARGS(old_sampling->davg()), PROPERFMTARGS(old_sampling->dsd()));
+
+  const TruncatedSeq& new_sampling = shenandoah_alloc_rate.rate();
+  log_debug(gc, alloc, sampling)( "old allocation sample: predict: " PROPERFMT " avg: " PROPERFMT "/s (+/-" PROPERFMT"), davg: " PROPERFMT "/s (+/-" PROPERFMT ")",
+    PROPERFMTARGS(new_sampling.predict_next()), PROPERFMTARGS(new_sampling.avg()), PROPERFMTARGS(new_sampling.sd()), PROPERFMTARGS(new_sampling.davg()), PROPERFMTARGS(new_sampling.dsd()));
+
   if (avg_cycle_time * predicted_rate > allocation_headroom) {
     log_trigger("Predicted allocation rate (" PROPERFMT "/s) would exhaust headroom (" PROPERFMT ") before expected GC time (%.2f ms)",
       PROPERFMTARGS(predicted_rate), PROPERFMTARGS(allocation_headroom), avg_cycle_time * 1000);

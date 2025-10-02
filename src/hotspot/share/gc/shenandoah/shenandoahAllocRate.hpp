@@ -54,20 +54,27 @@ private:
   TruncatedSeq _sampled_times;
   TruncatedSeq _sampled_bytes;
   TruncatedSeq _sampled_rates;
+  size_t _minimum_sample_size;
 
 public:
-  explicit ShenandoahAllocRate()
+  explicit ShenandoahAllocRate(size_t minimum_sample_size = MINIMUM_SAMPLE_SIZE)
     : _allocated_bytes_since_last_sample(0)
     , _sample_lock(Mutex::nosafepoint - 2, "ShenandoahAllocSample_lock", true)
     , _last_sample_time(0)
     , _sampled_times(100)
     , _sampled_bytes(100)
-    , _sampled_rates(100) {
+    , _sampled_rates(100)
+    , _minimum_sample_size(minimum_sample_size) {
+  }
+
+  void set_minimum_sample_size(const size_t minimum_sample_size) {
+    _minimum_sample_size = minimum_sample_size;
   }
 
   void allocated(const size_t allocated_bytes) {
     size_t unsampled = AtomicAccess::add(&_allocated_bytes_since_last_sample, allocated_bytes);
-    if (unsampled < MINIMUM_SAMPLE_SIZE) {
+    if (unsampled < _minimum_sample_size) {
+      // Not enough to sample yet
       return;
     }
 
@@ -77,7 +84,7 @@ public:
     }
 
     unsampled = AtomicAccess::load(&_allocated_bytes_since_last_sample);
-    if (unsampled < MINIMUM_SAMPLE_SIZE) {
+    if (unsampled < _minimum_sample_size) {
       // Another thread has sampled and reset the allocated bytes under the lock
       _sample_lock.unlock();
       return;
@@ -109,6 +116,10 @@ public:
     _sampled_rates.add(bytes_per_second);
 
     _sample_lock.unlock();
+  }
+
+  const TruncatedSeq& rate() const {
+    return _sampled_rates;
   }
 
   double average() const {

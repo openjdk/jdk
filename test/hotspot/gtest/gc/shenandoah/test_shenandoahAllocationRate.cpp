@@ -55,20 +55,20 @@ jlong ShenandoahMockClock::Counter = 0;
 
 
 TEST_VM(ShenandoahAllocationRateTest, ignore_too_small_sample) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate;
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
   rate.allocated(512);
   EXPECT_EQ(rate.average(), 0);
 }
 
 TEST_VM(ShenandoahAllocationRateTest, ignore_too_small_elapsed_time) {
-  ShenandoahAllocRate<ShenandoahSlowClock> rate;
+  ShenandoahAllocRate<ShenandoahSlowClock> rate(1024);
   rate.allocated(2048);
   rate.allocated(2048);
   EXPECT_EQ(rate.average(), 2048);
 }
 
 TEST_VM(ShenandoahAllocationRateTest, ten_second_average) {
-  ShenandoahAllocRate<ShenandoahMockClock> rate;
+  ShenandoahAllocRate<ShenandoahMockClock> rate(1024);
   rate.allocated(2048); // t = 0
   rate.allocated(2048); // t = 10
   EXPECT_EQ(rate.average(), 409.6);

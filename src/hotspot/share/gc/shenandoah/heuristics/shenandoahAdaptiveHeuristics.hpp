@@ -42,6 +42,9 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
 
   double upper_bound(double sds) const;
   bool is_spiking(double rate, double threshold) const;
+  TruncatedSeq* rate() {
+    return &_rate;
+  }
 
  private:
 

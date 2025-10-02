@@ -201,7 +201,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  _soft_max_size = SoftMaxHeapSize;
+  set_soft_max_capacity(SoftMaxHeapSize);
 
   _committed = _initial_size;
 
@@ -802,6 +802,7 @@ void ShenandoahHeap::set_soft_max_capacity(size_t v) {
          "Should be in bounds: %zu <= %zu <= %zu",
          min_capacity(), v, max_capacity());
   AtomicAccess::store(&_soft_max_size, v);
+  _alloc_rate.set_minimum_sample_size(_soft_max_size / 128);
 }
 
 size_t ShenandoahHeap::min_capacity() const {
