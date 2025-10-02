@@ -539,7 +539,7 @@ final class StringUTF16 {
         return tlen - olen;
     }
 
-    // Case in-sensitive comparison of two code points
+    // Case insensitive comparison of two code points
     private static int compareCodePointCI(int cp1, int cp2) {
         // try converting both characters to uppercase.
         // If the results match, then the comparison scan should

@@ -364,7 +364,7 @@ final class StringLatin1 {
         return new String(result, LATIN1);
     }
 
-    // case in-sensitive
+    // case insensitive
     static boolean regionMatchesCI(byte[] value, int toffset,
                                           byte[] other, int ooffset, int len) {
         int last = toffset + len;
