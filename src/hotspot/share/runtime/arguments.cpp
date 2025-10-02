@@ -1510,7 +1510,7 @@ static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 void Arguments::set_heap_size() {
   uint64_t physical_memory;
 
-  // Check if the user has configured any limit on the amount of RAM that we may use.
+  // Check if the user has configured any limit on the amount of RAM we may use.
   bool ram_limit_set = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
                        !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
@@ -1530,8 +1530,7 @@ void Arguments::set_heap_size() {
   } else {
     // If the user did not specify any limit, choose the lowest of the available
     // physical memory and MaxRAM. MaxRAM is typically set to 128GB on 64-bit
-    // architecture, so this essentially limits the ergonomic heap sizing to
-    // 128GB.
+    // architecture.
     physical_memory = MIN2(os::physical_memory(), MaxRAM);
   }
 
@@ -1539,11 +1538,11 @@ void Arguments::set_heap_size() {
   // fraction of the size of physical memory, respecting the maximum and
   // minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    uint64_t min = (uint64_t)(((double)physical_memory * MinRAMPercentage) / 100);
-    uint64_t max = (uint64_t)(((double)physical_memory * MaxRAMPercentage) / 100);
+    uint64_t min_memory = (uint64_t)(((double)physical_memory * MinRAMPercentage) / 100);
+    uint64_t max_memory = (uint64_t)(((double)physical_memory * MaxRAMPercentage) / 100);
 
-    const size_t reasonable_min = limit_by_size_t_max(min);
-    size_t reasonable_max = limit_by_size_t_max(max);
+    const size_t reasonable_min = limit_by_size_t_max(min_memory);
+    size_t reasonable_max = limit_by_size_t_max(max_memory);
 
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
@@ -1598,10 +1597,9 @@ void Arguments::set_heap_size() {
         max_coop_heap -= HeapBaseMinAddress;
       }
 
-      // If user specified flags prioritizing os physical
-      // memory limits, then disable compressed oops if
-      // limits exceed max_coop_heap and UseCompressedOops
-      // was not specified.
+      // If the user has configured any limit on the amount of RAM we may use,
+      // then disable compressed oops if the calculated max exceeds max_coop_heap
+      // and UseCompressedOops was not specified.
       if (reasonable_max > max_coop_heap) {
         if (FLAG_IS_ERGO(UseCompressedOops) && ram_limit_set) {
           aot_log_info(aot)("UseCompressedOops disabled due to "
@@ -1628,8 +1626,8 @@ void Arguments::set_heap_size() {
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      uint64_t initial = (uint64_t)(((double)physical_memory * InitialRAMPercentage) / 100);
-      size_t reasonable_initial = limit_by_size_t_max(initial);
+      uint64_t initial_memory = (uint64_t)(((double)physical_memory * InitialRAMPercentage) / 100);
+      size_t reasonable_initial = limit_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
