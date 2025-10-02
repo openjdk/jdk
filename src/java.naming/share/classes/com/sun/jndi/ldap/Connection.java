@@ -685,6 +685,9 @@ public final class Connection implements Runnable {
                 } finally {
 
                     flushAndCloseOutputStream();
+                    // 8313657 socket is not closed until GC is run
+                    // due to the bug 8362268, the closure of the resource is moved to LdapClient.java
+                    //closeOpenedSocket(sock);
                     tryUnpauseReader();
 
                     if (!notifyParent) {

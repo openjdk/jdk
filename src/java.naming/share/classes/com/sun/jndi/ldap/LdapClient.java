@@ -480,6 +480,7 @@ public final class LdapClient implements PooledConnection {
     }
 
     // 8313657 socket is not closed until GC is run
+    // it caused the bug 8362268, hence moved here
     private void closeOpenedResource() {
         try {
             if (conn != null) {

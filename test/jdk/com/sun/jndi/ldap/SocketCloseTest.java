@@ -27,11 +27,7 @@ import javax.naming.directory.InitialDirContext;
 import javax.net.SocketFactory;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Hashtable;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -110,33 +106,6 @@ public class SocketCloseTest {
         public Socket createSocket(InetAddress address, int port,
                                    InetAddress localAddress, int localPort) {
             return customSocket;
-        }
-    }
-
-    private static class LdapInputStream extends InputStream {
-        private ByteArrayInputStream bos;
-
-        public LdapInputStream() {
-        }
-
-        @Override
-        public int read() throws IOException {
-            bos = new ByteArrayInputStream(BIND_RESPONSE);
-            return bos.read();
-        }
-    }
-
-    private static class LdapOutputStream extends OutputStream {
-
-        @Override
-        public void write(int b) throws IOException {
-            System.out.println("output stream writing");
-        }
-
-        @Override
-        public void flush() throws IOException {
-            System.out.println(BAD_FLUSH);
-            throw new IOException(BAD_FLUSH);
         }
     }
 
