@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import static jdk.incubator.vector.Float16Consts.SIGN_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.EXP_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.SIGNIF_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.MAG_BIT_MASK;
 
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
@@ -396,7 +397,7 @@ public final class Float16
         }
         long f_signif_bits = doppel & 0x000f_ffff_ffff_ffffL | msb;
 
-        int PRECISION_DIFF = Double.PRECISION - PRECISION; // 42
+        final int PRECISION_DIFF = Double.PRECISION - PRECISION; // 42
         // Significand bits as if using rounding to zero (truncation).
         short signif_bits = (short)(f_signif_bits >> (PRECISION_DIFF + expdelta));
 
@@ -774,7 +775,7 @@ public final class Float16
      * @see Double#isFinite(double)
      */
     public static boolean isFinite(Float16 f16) {
-        return (float16ToRawShortBits(f16) & (EXP_BIT_MASK | SIGNIF_BIT_MASK)) <=
+        return (float16ToRawShortBits(f16) & MAG_BIT_MASK) <=
             float16ToRawShortBits(MAX_VALUE);
      }
 
@@ -1093,7 +1094,7 @@ public final class Float16
      * 2) performing the operation in the wider format
      * 3) converting the result from 2) to the narrower format
      *
-     * For example, this property hold between the formats used for the
+     * For example, this property holds between the formats used for the
      * float and double types. Therefore, the following is a valid
      * implementation of a float addition:
      *
@@ -1477,7 +1478,7 @@ public final class Float16
         // operation. Therefore, in this case do _not_ use the float
         // unary minus as an implementation as that is not guaranteed
         // to flip the sign bit of a NaN.
-        return shortBitsToFloat16((short)(f16.value ^ (short)0x0000_8000));
+        return shortBitsToFloat16((short)(f16.value ^ SIGN_BIT_MASK));
     }
 
     /**
@@ -1495,7 +1496,7 @@ public final class Float16
     public static Float16 abs(Float16 f16) {
         // Zero out sign bit. Per IEE 754-2019 section 5.5.1, abs is a
         // bit-level operation and not a logical operation.
-        return shortBitsToFloat16((short)(f16.value & (short)0x0000_7FFF));
+        return shortBitsToFloat16((short)(f16.value & MAG_BIT_MASK));
     }
 
     /**
