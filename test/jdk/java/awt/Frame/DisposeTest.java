@@ -39,7 +39,6 @@ import java.io.IOException;
  * @bug 4127271
  * @summary Tests that disposing of a Frame with MenuBar removes all traces
  *          of the Frame from the screen.
- * @run main/othervm -Dsun.java2d.uiScale=1 DisposeTest
  */
 
 public class DisposeTest {
