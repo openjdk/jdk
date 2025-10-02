@@ -168,7 +168,6 @@ public class TestTemplate {
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
         expectRendererException(() -> $("name"),                          "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
-        expectRendererException(() -> setFuelCost(1.0f),                  "A Template method such as");
         expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");
         expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
         expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
@@ -1074,7 +1073,7 @@ public class TestTemplate {
 
             "hashtagScope:\n",
             setFuelCost(64.0f),
-            scope(
+            hashtagScope(
                 readFuelTemplate.asToken(),
                 setFuelCost(128.0f),
                 readFuelTemplate.asToken()
@@ -1082,18 +1081,40 @@ public class TestTemplate {
             readFuelTemplate.asToken(),
 
             "setFuelCostScope:\n",
-            setFuelCost(64.0f),
+            setFuelCost(256.0f),
             setFuelCostScope(
                 readFuelTemplate.asToken(),
-                setFuelCost(128.0f),
+                setFuelCost(512.0f),
                 readFuelTemplate.asToken()
             ),
             readFuelTemplate.asToken()
         ));
 
-        String code = template.render(200.0f);
+        String code = template.render(1000.0f);
         String expected =
             """
+            {1000.0f}
+            <990.0f>
+            scope:
+            <999.0f>
+            <998.0f>
+            <999.0f>
+            flat:
+            <996.0f>
+            <992.0f>
+            <992.0f>
+            nameScope:
+            <984.0f>
+            <968.0f>
+            <968.0f>
+            hashtagScope:
+            <936.0f>
+            <872.0f>
+            <872.0f>
+            setFuelCostScope:
+            <744.0f>
+            <488.0f>
+            <744.0f>
             """;
         checkEQ(code, expected);
     }

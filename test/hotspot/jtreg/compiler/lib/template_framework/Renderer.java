@@ -114,7 +114,7 @@ final class Renderer {
 
     static Renderer getCurrent() {
         if (renderer == null) {
-            throw new RendererException("A Template method such as '$', 'let', etc. was called outside a template rendering.");
+            throw new RendererException("A Template method such as '$', 'fuel', etc. was called outside a template rendering.");
         }
         return renderer;
     }
@@ -246,10 +246,12 @@ final class Renderer {
 
         // We need to be able to define local hashtag replacements, but still
         // see the outer ones. We also need to have the same id for dollar
-        // replacement as the outer frame.
+        // replacement as the outer frame. And we need to be able to allow
+        // local setFuelCost definitions.
         TemplateFrame innerTemplateFrame = null;
-        if (nt.nestedHashtagsAreLocal()) {
-            innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame);
+        if (nt.nestedHashtagsAreLocal() || nt.nestedSetFuelCostAreLocal()) {
+            innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
+                                                              !nt.nestedSetFuelCostAreLocal());
             currentTemplateFrame = innerTemplateFrame;
         }
 
@@ -259,7 +261,7 @@ final class Renderer {
         // Now render the nested code.
         renderTokenList(nt.tokens);
 
-        if (nt.nestedHashtagsAreLocal()) {
+        if (nt.nestedHashtagsAreLocal() || nt.nestedSetFuelCostAreLocal()) {
             if (currentTemplateFrame != innerTemplateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
             }
