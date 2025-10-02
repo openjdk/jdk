@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8364991
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8364991 8366968
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2273,6 +2273,57 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Test.java:4:16: compiler.err.not.exhaustive",
+               "1 error");
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamond(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+
+                   sealed interface Base permits Special, Value {}
+
+                   non-sealed interface Value extends Base {}
+
+                   sealed interface Special extends Base permits SpecialValue {}
+
+                   non-sealed interface SpecialValue extends Value, Special {}
+
+                   static int demo(final Base base) {
+                       return switch (base) {
+                           case Value value -> 0;
+                       };
+
+                   }
+
+               }
+               """);
+    }
+
+    @Test //JDK-8366968
+    public void testNonAbstract(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+                   sealed interface I permits Base, C3 { }
+                   sealed class Base implements I permits C1, C2 { }
+                   final class C1 extends Base { }
+                   final class C2 extends Base { }
+                   final class C3 implements I { }
+
+                   void method1(I i) {
+                       switch (i) {
+                           case C1 _ -> {}
+                           case C2 _ -> {}
+                           case C3 _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Demo.java:9:9: compiler.err.not.exhaustive.statement",
                "1 error");
     }
 
