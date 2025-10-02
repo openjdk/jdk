@@ -63,7 +63,7 @@ TOOL_GENERATECURRENCYDATA = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_
 TOOL_TZDB = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.tzdb.TzdbZoneRulesCompiler
 
-TOOL_BLOCKED_CERTS = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
+TOOL_BLOCKED_CERTS = $(JAVA_SMALL) -Xlog:disable -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     --add-exports java.base/sun.security.util=ALL-UNNAMED \
     build.tools.blockedcertsconverter.BlockedCertsConverter
 
