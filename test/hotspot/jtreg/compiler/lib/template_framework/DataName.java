@@ -235,15 +235,17 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
         }
 
         /**
-         * Counts the number of {@link DataName}s in the filtered set.
+         * Counts the number of {@link DataName}s in the filtered set, making the count
+         * available to an inner scope.
          *
-         * @return The number of {@link DataName}s in the filtered set.
+         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         *                 the count.
+         * @return a token that represents the counting and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: remove or modify?
-        public int count() {
-            return Renderer.getCurrent().countNames(predicate());
+        public Token count(Function<Integer, NestingToken> function) {
+            return new NameCountToken(predicate(), function);
         }
 
         /**

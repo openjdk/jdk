@@ -177,11 +177,6 @@ final class Renderer {
     }
 
     // TODO: remove?
-    int countNames(NameSet.Predicate predicate) {
-        return currentCodeFrame.countNames(predicate);
-    }
-
-    // TODO: remove?
     boolean hasAnyNames(NameSet.Predicate predicate) {
         return currentCodeFrame.hasAnyNames(predicate);
     }
@@ -386,6 +381,11 @@ final class Renderer {
             case NamesToListToken ntlt -> {
                 List<Name> list = currentCodeFrame.listNames(ntlt.predicate());
                 NestingToken nt = ntlt.getNestingToken(list);
+                renderNestingToken(nt, () -> {});
+            }
+            case NameCountToken nct -> {
+                int count = currentCodeFrame.countNames(nct.predicate());
+                NestingToken nt = nct.getNestingToken(count);
                 renderNestingToken(nt, () -> {});
             }
             case LetToken(String key, String value) -> {

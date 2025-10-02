@@ -1167,7 +1167,7 @@ public class TestTemplate {
             "[",
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).hasAny(),
             ", ",
-            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(c -> scope(c)),
             ", names: {",
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).toList(list -> scope(
                 String.join(", ", list.stream().map(DataName::name).toList())
@@ -1238,7 +1238,7 @@ public class TestTemplate {
             "  #mutability: [",
             dataNames(mutability).exactOf(myInt).hasAny(),
             ", ",
-            dataNames(mutability).exactOf(myInt).count(),
+            dataNames(mutability).exactOf(myInt).count(c -> scope(c)),
             ", names: {",
             dataNames(mutability).exactOf(myInt).toList(list -> scope(
                 String.join(", ", list.stream().map(DataName::name).toList())
@@ -1385,7 +1385,7 @@ public class TestTemplate {
             "  #mutability: [",
             dataNames(mutability).exactOf(myInt).hasAny(),
             ", ",
-            dataNames(mutability).exactOf(myInt).count(),
+            dataNames(mutability).exactOf(myInt).count(c -> scope(c)),
             ", names: {",
             dataNames(mutability).exactOf(myInt).toList(list -> scope(
                 String.join(", ", list.stream().map(DataName::name).toList())
@@ -1463,7 +1463,7 @@ public class TestTemplate {
             "  exact: ",
             dataNames(MUTABLE).exactOf(type).hasAny(),
             ", ",
-            dataNames(MUTABLE).exactOf(type).count(),
+            dataNames(MUTABLE).exactOf(type).count(c -> scope(c)),
             ", {",
             dataNames(MUTABLE).exactOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(DataName::name).toList())
@@ -1472,7 +1472,7 @@ public class TestTemplate {
             "  subtype: ",
             dataNames(MUTABLE).subtypeOf(type).hasAny(),
             ", ",
-            dataNames(MUTABLE).subtypeOf(type).count(),
+            dataNames(MUTABLE).subtypeOf(type).count(c -> scope(c)),
             ", {",
             dataNames(MUTABLE).subtypeOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(DataName::name).toList())
@@ -1482,7 +1482,7 @@ public class TestTemplate {
             "  supertype: ",
             dataNames(MUTABLE).supertypeOf(type).hasAny(),
             ", ",
-            dataNames(MUTABLE).supertypeOf(type).count(),
+            dataNames(MUTABLE).supertypeOf(type).count(c -> scope(c)),
             ", {",
             dataNames(MUTABLE).supertypeOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(DataName::name).toList())
@@ -1773,7 +1773,7 @@ public class TestTemplate {
             "  exact: ",
             structuralNames().exactOf(type).hasAny(),
             ", ",
-            structuralNames().exactOf(type).count(),
+            structuralNames().exactOf(type).count(c -> scope(c)),
             ", {",
             structuralNames().exactOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(StructuralName::name).toList())
@@ -1782,7 +1782,7 @@ public class TestTemplate {
             "  subtype: ",
             structuralNames().subtypeOf(type).hasAny(),
             ", ",
-            structuralNames().subtypeOf(type).count(),
+            structuralNames().subtypeOf(type).count(c -> scope(c)),
             ", {",
             structuralNames().subtypeOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(StructuralName::name).toList())
@@ -1791,7 +1791,7 @@ public class TestTemplate {
             "  supertype: ",
             structuralNames().supertypeOf(type).hasAny(),
             ", ",
-            structuralNames().supertypeOf(type).count(),
+            structuralNames().supertypeOf(type).count(c -> scope(c)),
             ", {",
             structuralNames().supertypeOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(StructuralName::name).toList())
@@ -1953,7 +1953,7 @@ public class TestTemplate {
             "[#type: ",
             structuralNames().exactOf(type).hasAny(),
             ", ",
-            structuralNames().exactOf(type).count(),
+            structuralNames().exactOf(type).count(c -> scope(c)),
             ", names: {",
             structuralNames().exactOf(type).toList(list -> scope(
                 String.join(", ", list.stream().map(StructuralName::name).toList())
