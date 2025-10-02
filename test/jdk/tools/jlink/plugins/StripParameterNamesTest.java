@@ -216,36 +216,6 @@ public class StripParameterNamesTest {
         assertHasParameterNames(imageDir, hasParameter);
     }
 
-    @ParameterizedTest
-    @FieldSource("testJmods")
-    public void testStripParameterNames(Jmod jmod) throws Exception {
-        var imageDir = Paths.get("img");
-        buildImage(jmod.moduleDir(), imageDir,
-                "--strip-debug", "--strip-java-debug-attributes=+parameter-names")
-            .assertSuccess();
-        assertHasParameterNames(imageDir, false);
-    }
-
-    @Test
-    public void testWithoutNative() throws Exception {
-        var imageDir = Paths.get("img");
-        var jmod = testJmods.get(0);
-        buildImage(jmod.moduleDir(), imageDir,
-                "--strip-java-debug-attributes=+parameter-names")
-            .assertSuccess();
-        assertHasParameterNames(imageDir, false);
-    }
-
-    @Test
-    public void testAlternativeFormOfArgument() throws Exception {
-        var imageDir = Paths.get("img");
-        var jmod = testJmods.get(0);
-        buildImage(jmod.moduleDir(), imageDir,
-                "--strip-debug", "--strip-java-debug-attributes", "+parameter-names")
-            .assertSuccess();
-        assertHasParameterNames(imageDir, false);
-    }
-
     @Test
     public void testWithoutStripParameterName() throws Exception {
         var imageDir = Paths.get("img");
@@ -254,14 +224,5 @@ public class StripParameterNamesTest {
                 "--strip-debug", "--strip-java-debug-attributes")
             .assertSuccess();
         assertHasParameterNames(imageDir, jmod.withParameterNames());
-    }
-
-    @Test
-    public void testInvalidArgument() throws Exception {
-        var imageDir = Paths.get("img");
-        var jmod = testJmods.get(0);
-        buildImage(jmod.moduleDir(), imageDir,
-                "--strip-debug", "--strip-java-debug-attributes=+parameter_names")
-            .assertFailure("Illegal argument: \"+parameter_names\"");
     }
 }

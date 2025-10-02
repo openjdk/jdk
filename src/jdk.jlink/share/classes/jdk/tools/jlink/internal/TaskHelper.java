@@ -91,7 +91,6 @@ public final class TaskHelper {
         }
 
         final boolean hasArg;
-        final boolean isArgumentOptional;
         final Processing<T> processing;
         final boolean hidden;
         final String name;
@@ -100,7 +99,6 @@ public final class TaskHelper {
         final boolean terminalOption;
 
         public Option(boolean hasArg,
-                      boolean isArgumentOptional,
                       Processing<T> processing,
                       boolean hidden,
                       String name,
@@ -116,7 +114,6 @@ public final class TaskHelper {
             }
 
             this.hasArg = hasArg;
-            this.isArgumentOptional = isArgumentOptional;
             this.processing = processing;
             this.hidden = hidden;
             this.name = name;
@@ -131,31 +128,27 @@ public final class TaskHelper {
                       String shortname,
                       boolean isTerminal)
         {
-            this(hasArg, false, processing, hidden, name, shortname, "", isTerminal);
+            this(hasArg, processing, hidden, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, boolean isTerminal) {
-            this(hasArg, false, processing, false, name, shortname, "", isTerminal);
+            this(hasArg, processing, false, name, shortname, "", isTerminal);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname, String shortname2) {
-            this(hasArg, false, processing, false, name, shortname, shortname2, false);
+            this(hasArg, processing, false, name, shortname, shortname2, false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name, String shortname) {
-            this(hasArg, false, processing, false, name, shortname, "", false);
+            this(hasArg, processing, false, name, shortname, "", false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, boolean hidden, String name) {
-            this(hasArg, false, processing, hidden, name, "", "", false);
+            this(hasArg, processing, hidden, name, "", "", false);
         }
 
         public Option(boolean hasArg, Processing<T> processing, String name) {
             this(hasArg, processing, false, name, "", false);
-        }
-
-        public boolean isArgumentOptional() {
-            return isArgumentOptional;
         }
 
         public boolean isHidden() {
@@ -214,12 +207,6 @@ public final class TaskHelper {
         public PluginOption(boolean hasArg, Processing<PluginsHelper> processing,
                             boolean hidden, String name, String shortname) {
             super(hasArg, processing, hidden, name, shortname, false);
-        }
-
-        public PluginOption(boolean hasArg, boolean isArgumentOptional,
-                            Processing<PluginsHelper> processing,
-                            boolean hidden, String name) {
-            super(hasArg, isArgumentOptional, processing, hidden, name, "", "", false);
         }
 
         public PluginOption(boolean hasArg, Processing<PluginsHelper> processing,
@@ -315,7 +302,7 @@ public final class TaskHelper {
             optionsSeen.add(option);
 
             PluginOption plugOption
-                    = new PluginOption(plugin.hasArguments(), plugin.isArgumentOptional(),
+                    = new PluginOption(plugin.hasArguments(),
                             (task, opt, arg) -> {
                                 if (!Utils.isFunctional(plugin)) {
                                     throw newBadArgs("err.provider.not.functional",
@@ -455,8 +442,8 @@ public final class TaskHelper {
                 }
 
                 if (!Utils.isDisabled(plugin)) {
-                    if (plugin instanceof DefaultStripDebugPlugin) {
-                        defaultStripDebugPlugin = (DefaultStripDebugPlugin) plugin;
+                    if (plugin instanceof DefaultStripDebugPlugin p) {
+                        defaultStripDebugPlugin = p;
                     }
 
                     // make sure that --strip-debug and --strip-native-debug-symbols
@@ -570,7 +557,7 @@ public final class TaskHelper {
                             potentiallyGnuOption = true;
                             param = args[++i];
                         }
-                        if (!opt.isArgumentOptional() && (param == null || param.isEmpty())) {
+                        if (param == null || param.isEmpty()) {
                             throw new BadArgs("err.missing.arg", name).showUsage(true);
                         }
                         if (potentiallyGnuOption && param.length() >= 2 &&
