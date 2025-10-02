@@ -5383,7 +5383,19 @@ static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Nod
         continue;
       }
       if (in->is_CFG()) {
+        if (in->is_Call()) {
+          // The return value of a call is only available if the call did not result in an exception
+          Node* control_proj_use = in->as_Call()->proj_out(TypeFunc::Control)->unique_out();
+          if (control_proj_use->is_Catch()) {
+            Node* fall_through = control_proj_use->as_Catch()->proj_out(CatchProjNode::fall_through_index);
+            candidates.push(fall_through);
+            continue;
+          }
+        }
+
         if (in->is_Multi()) {
+          // We got here by following data inputs so we should only have one control use
+          // (no IfNode, etc)
           candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
         } else {
           candidates.push(in);
