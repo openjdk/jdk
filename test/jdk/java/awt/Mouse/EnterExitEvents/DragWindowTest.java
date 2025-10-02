@@ -51,8 +51,10 @@ public class DragWindowTest {
     private static volatile int dragWindowMouseEnteredCount = 0;
     private static volatile int buttonMouseEnteredCount = 0;
     private static volatile int labelMouseReleasedCount = 0;
+
     private static volatile Point pointToClick;
     private static volatile Point pointToDrag;
+
     private static MyDragWindow dragWindow;
     private static JLabel label;
     private static JButton button;
