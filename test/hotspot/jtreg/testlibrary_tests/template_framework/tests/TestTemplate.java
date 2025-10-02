@@ -1165,7 +1165,7 @@ public class TestTemplate {
 
         var template1 = Template.make(() -> scope(
             "[",
-            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).hasAny(),
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).hasAny(h -> scope(h)),
             ", ",
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(c -> scope(c)),
             ", names: {",
@@ -1236,7 +1236,7 @@ public class TestTemplate {
 
         var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> scope(
             "  #mutability: [",
-            dataNames(mutability).exactOf(myInt).hasAny(),
+            dataNames(mutability).exactOf(myInt).hasAny(h -> scope(h)),
             ", ",
             dataNames(mutability).exactOf(myInt).count(c -> scope(c)),
             ", names: {",
@@ -1383,7 +1383,7 @@ public class TestTemplate {
 
         var template0 = Template.make("type", "mutability", (DataName.Type type, DataName.Mutability mutability) -> scope(
             "  #mutability: [",
-            dataNames(mutability).exactOf(myInt).hasAny(),
+            dataNames(mutability).exactOf(myInt).hasAny(h -> scope(h)),
             ", ",
             dataNames(mutability).exactOf(myInt).count(c -> scope(c)),
             ", names: {",
@@ -1461,7 +1461,7 @@ public class TestTemplate {
         var template1 = Template.make("type", (DataName.Type type) -> scope(
             "[#type:\n",
             "  exact: ",
-            dataNames(MUTABLE).exactOf(type).hasAny(),
+            dataNames(MUTABLE).exactOf(type).hasAny(h -> scope(h)),
             ", ",
             dataNames(MUTABLE).exactOf(type).count(c -> scope(c)),
             ", {",
@@ -1470,7 +1470,7 @@ public class TestTemplate {
             )),
             "}\n",
             "  subtype: ",
-            dataNames(MUTABLE).subtypeOf(type).hasAny(),
+            dataNames(MUTABLE).subtypeOf(type).hasAny(h -> scope(h)),
             ", ",
             dataNames(MUTABLE).subtypeOf(type).count(c -> scope(c)),
             ", {",
@@ -1480,7 +1480,7 @@ public class TestTemplate {
 
             "}\n",
             "  supertype: ",
-            dataNames(MUTABLE).supertypeOf(type).hasAny(),
+            dataNames(MUTABLE).supertypeOf(type).hasAny(h -> scope(h)),
             ", ",
             dataNames(MUTABLE).supertypeOf(type).count(c -> scope(c)),
             ", {",
@@ -1771,7 +1771,7 @@ public class TestTemplate {
         var template1 = Template.make("type", (StructuralName.Type type) -> scope(
             "[#type:\n",
             "  exact: ",
-            structuralNames().exactOf(type).hasAny(),
+            structuralNames().exactOf(type).hasAny(h -> scope(h)),
             ", ",
             structuralNames().exactOf(type).count(c -> scope(c)),
             ", {",
@@ -1780,7 +1780,7 @@ public class TestTemplate {
             )),
             "}\n",
             "  subtype: ",
-            structuralNames().subtypeOf(type).hasAny(),
+            structuralNames().subtypeOf(type).hasAny(h -> scope(h)),
             ", ",
             structuralNames().subtypeOf(type).count(c -> scope(c)),
             ", {",
@@ -1789,7 +1789,7 @@ public class TestTemplate {
             )),
             "}\n",
             "  supertype: ",
-            structuralNames().supertypeOf(type).hasAny(),
+            structuralNames().supertypeOf(type).hasAny(h -> scope(h)),
             ", ",
             structuralNames().supertypeOf(type).count(c -> scope(c)),
             ", {",
@@ -1951,7 +1951,7 @@ public class TestTemplate {
 
         var template1 = Template.make("type", (StructuralName.Type type) -> scope(
             "[#type: ",
-            structuralNames().exactOf(type).hasAny(),
+            structuralNames().exactOf(type).hasAny(h -> scope(h)),
             ", ",
             structuralNames().exactOf(type).count(c -> scope(c)),
             ", names: {",

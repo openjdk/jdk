@@ -222,17 +222,18 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
         }
 
         /**
-         * Checks if there are any {@link StructuralName}s in the filtered set.
+         * Checks if there are any {@link StructuralName}s in the filtered set, making the resulting boolean
+         * available to an inner scope.
          *
-         * @return Returns {@code true} iff there is at least one {@link StructuralName} in the filtered set.
+         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         *                 the boolean indicating iff there are any {@link StructuralName}s in the filtered set.
+         * @return a token that represents the checking and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: remove or modify?
-        public boolean hasAny() {
-            return Renderer.getCurrent().hasAnyNames(predicate());
+        public Token hasAny(Function<Boolean, NestingToken> function) {
+            return new NameHasAnyToken(predicate(), function);
         }
-
         /**
          * Collects all {@link StructuralName}s in the filtered set, making the collected list
          * available to an inner scope.

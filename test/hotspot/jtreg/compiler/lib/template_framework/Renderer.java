@@ -388,6 +388,11 @@ final class Renderer {
                 NestingToken nt = nct.getNestingToken(count);
                 renderNestingToken(nt, () -> {});
             }
+            case NameHasAnyToken nhat -> {
+                boolean hasAny = currentCodeFrame.hasAnyNames(nhat.predicate());
+                NestingToken nt = nhat.getNestingToken(hasAny);
+                renderNestingToken(nt, () -> {});
+            }
             case LetToken(String key, String value) -> {
                 addHashtagReplacement(key, value);
             }
