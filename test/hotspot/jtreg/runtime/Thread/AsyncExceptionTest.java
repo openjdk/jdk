@@ -78,8 +78,8 @@ public class AsyncExceptionTest extends Thread {
     }
 
     public void internalRun1() {
-        started = true;
         try {
+            started = true;
             while (!receivedThreadDeathinInternal2) {
               internalRun2();
             }
