@@ -2602,7 +2602,7 @@ void AdapterHandlerLibrary::initialize() {
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
   uint id = (uint)AtomicAccess::add((int*)&_id_counter, 1);
-  guarantee(id > 0, "id_counter overflow");
+  assert(id > 0, "we can never overflow because AOT cache cannot contain more than 2^32 methods");
   return AdapterHandlerEntry::allocate(id, fingerprint);
 }
 

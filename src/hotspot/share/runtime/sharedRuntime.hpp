@@ -684,9 +684,9 @@ class AdapterHandlerEntry : public MetaspaceObj {
   static const int ENTRIES_COUNT = 4;
 
  private:
-  uint _id;
   AdapterFingerPrint* _fingerprint;
   AdapterBlob* _adapter_blob;
+  uint _id;
   bool _linked;
 
   static const char *_entry_names[];
@@ -699,9 +699,9 @@ class AdapterHandlerEntry : public MetaspaceObj {
 #endif
 
   AdapterHandlerEntry(int id, AdapterFingerPrint* fingerprint) :
-    _id(id),
     _fingerprint(fingerprint),
     _adapter_blob(nullptr),
+    _id(id),
     _linked(false)
 #ifdef ASSERT
     , _saved_code(nullptr),
