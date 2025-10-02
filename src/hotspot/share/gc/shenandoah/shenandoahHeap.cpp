@@ -2603,7 +2603,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     size_t allocation_runway =
       gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
-  
+
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
     // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular
     // regions in place when many of these regular regions have an abundant amount of available memory within them.
