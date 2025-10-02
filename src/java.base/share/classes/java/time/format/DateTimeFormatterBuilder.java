@@ -2476,7 +2476,11 @@ public final class DateTimeFormatterBuilder {
          *
          * @param context  the context to format using, not null
          * @param buf  the buffer to append to, not null
-         * @param optional  whether this printer is optional, true if formatting is optional
+         * @param optional  whether the enclosing formatter is optional.
+         *                  If true and this formatter is nested in an optional formatter
+         *                  and the data is not available, then no error is returned and
+         *                  nothing is appended to the buffer. If false and the data is not available
+         *                  then an exception is thrown or false is returned as appropriate.
          * @return false if unable to query the value from the date-time, true otherwise
          * @throws DateTimeException if the date-time cannot be printed successfully
          */
