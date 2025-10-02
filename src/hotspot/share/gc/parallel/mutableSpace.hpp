@@ -62,7 +62,7 @@ class MutableSpace: public CHeapObj<mtGC> {
   MemRegion last_setup_region() const      { return _last_setup_region; }
 
 protected:
-  size_t page_size() const                           { return _page_size;         }
+  size_t page_size() const                 { return _page_size;         }
 
 public:
   virtual ~MutableSpace() = default;

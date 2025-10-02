@@ -41,7 +41,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   // ReservedSpace passed to initialize() must be aligned to this value.
   const size_t _alignment;
 
-  // OS page size used. If using transparent large pages, it's the desired large page-size.
+  // OS page size used. If using Transparent Huge Pages, it's the desired large page-size.
   const size_t _page_size;
 
   // Reserved area
