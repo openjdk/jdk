@@ -291,14 +291,14 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
 
     if (copy == nullptr) {
       // If we failed to allocate in LAB, we'll try a shared allocation.
-      if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
+      if (!is_promotion || !has_plab || (size > PLAB::max_size())) {
         ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen, is_promotion);
         copy = allocate_memory(req);
         alloc_from_lab = false;
         if (is_promotion && copy != nullptr) {
           log_debug(gc, plab)("Made a shared promotion of size: %zu, actual PLAB size for thread: %zu, min PLAB: %zu, max PLAB: %zu",
-            size * HeapWordSize, ShenandoahThreadLocalData::get_plab_actual_size(thread) * HeapWordSize,
-            PLAB::min_size() * HeapWordSize, plab_max_size() * HeapWordSize);
+                              size * HeapWordSize, ShenandoahThreadLocalData::get_plab_actual_size(thread) * HeapWordSize,
+                              PLAB::min_size() * HeapWordSize, plab_max_size() * HeapWordSize);
         }
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
@@ -1109,9 +1109,9 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
     entry_global_coalesce_and_fill();
   }
 
-  log_info(gc, cset)("Concurrent cycle complete, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
-                     old_generation()->get_promoted_expended(), old_generation()->get_promotion_failed_count(),
-                     old_generation()->get_promotion_failed_words() * HeapWordSize);
+  log_info(gc, cset)("Concurrent cycle complete, promotions reserved: %zu, promotions expended: %zu, failed count: %zu, failed bytes: %zu",
+                     old_generation()->get_promoted_reserve(), old_generation()->get_promoted_expended(),
+                     old_generation()->get_promotion_failed_count(), old_generation()->get_promotion_failed_words() * HeapWordSize);
 
   TransferResult result;
   {

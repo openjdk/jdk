@@ -352,10 +352,6 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   const size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
 
-  const ShenandoahAgeCensus* census = ShenandoahGenerationalHeap::cast(heap)->age_census();
-  log_debug(gc, cset)("Old gen reserved for anticipated promotions: %zu, total tenurable population: %zu",
-                      consumed_by_advance_promotion, census->get_tenurable_bytes());
-
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
   // of old evacuation failure.
@@ -404,7 +400,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     // Leave old_evac_reserve as previously configured
   } else if (old_evacuated_committed < old_evacuation_reserve) {
     // This happens if the old-gen collection consumes less than full budget.
-    log_info(gc, ergo)("Shrinking old evac reserve to match old_evac_commited: %zu", old_evacuated_committed);
+    log_debug(gc, cset)("Shrinking old evac reserve to match old_evac_commited: %zu", old_evacuated_committed);
     old_evacuation_reserve = old_evacuated_committed;
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
   }
@@ -427,7 +423,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
   const size_t unaffiliated_old_regions = old_generation->free_unaffiliated_regions();
   const size_t unaffiliated_old = unaffiliated_old_regions * region_size_bytes;
   assert(old_available >= unaffiliated_old, "Unaffiliated old is a subset of old available");
-  log_info(gc, ergo)("excess_old is: %zu, unaffiliated_old_regions is: %zu", excess_old, unaffiliated_old_regions);
+  log_debug(gc, cset)("excess_old is: %zu, unaffiliated_old_regions is: %zu", excess_old, unaffiliated_old_regions);
 
   // Make sure old_evac_committed is unaffiliated
   if (old_consumed > 0) {
@@ -463,7 +459,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     assert(excess_old >= regions_to_xfer * region_size_bytes,
            "Cannot transfer (%zu, %zu) more than excess old (%zu)",
            regions_to_xfer, region_size_bytes, excess_old);
-    log_debug(gc, cset)("Giving away %zu old regions (old_available, %zu, old_evac: %zu, unaffiliated_old: %zu)",
+    log_debug(gc, ergo)("Giving away %zu old regions (old_available, %zu, old_evac: %zu, unaffiliated_old: %zu)",
                         regions_to_xfer, old_available, old_evacuated_committed, unaffiliated_old);
     bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     excess_old -= regions_to_xfer * region_size_bytes;
@@ -471,12 +467,6 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
 
-  // Add in the excess_old memory to hold unanticipated promotions, if any.  If there are more unanticipated
-  // promotions than fit in reserved memory, they will be deferred until a future GC pass.
-  const size_t total_promotion_reserve = old_consumed + excess_old;
-  log_info(gc, ergo)("Not changing promotion reserve from %zu to %zu (old excess: %zu)",
-                     old_generation->get_promoted_reserve(), total_promotion_reserve, excess_old);
-  // old_generation->set_promoted_reserve(total_promotion_reserve);
   old_generation->reset_promoted_expended();
 }
 
