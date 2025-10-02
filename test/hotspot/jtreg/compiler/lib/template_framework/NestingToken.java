@@ -35,11 +35,13 @@ t* A Template generates a {@link NestingToken}, which is a list of {@link Token}
 public sealed abstract class NestingToken implements Token permits NestingToken.Scope,
                                                                    NestingToken.Flat,
                                                                    NestingToken.NameScope,
-                                                                   NestingToken.HashtagScope {
+                                                                   NestingToken.HashtagScope,
+                                                                   NestingToken.SetFuelCostScope {
 
     List<Token> tokens;
     abstract boolean nestedNamesAreLocal();
     abstract boolean nestedHashtagsAreLocal();
+    abstract boolean nestedSetFuelCostAreLocal();
 
     private NestingToken(List<Token> tokens) {
         this.tokens = tokens;
@@ -49,23 +51,34 @@ public sealed abstract class NestingToken implements Token permits NestingToken.
         Scope(List<Token> tokens) { super(tokens); }
         boolean nestedNamesAreLocal() { return true; }
         boolean nestedHashtagsAreLocal() { return true; }
+        boolean nestedSetFuelCostAreLocal() { return true; }
     }
 
     static final class Flat extends NestingToken implements Token {
         Flat(List<Token> tokens) { super(tokens); }
         boolean nestedNamesAreLocal() { return false; }
         boolean nestedHashtagsAreLocal() { return false; }
+        boolean nestedSetFuelCostAreLocal() { return false; }
     }
 
     static final class NameScope extends NestingToken implements Token {
         NameScope(List<Token> tokens) { super(tokens); }
         boolean nestedNamesAreLocal() { return true; }
         boolean nestedHashtagsAreLocal() { return false; }
+        boolean nestedSetFuelCostAreLocal() { return false; }
     }
 
     static final class HashtagScope extends NestingToken implements Token {
         HashtagScope(List<Token> tokens) { super(tokens); }
         boolean nestedNamesAreLocal() { return false; }
         boolean nestedHashtagsAreLocal() { return true; }
+        boolean nestedSetFuelCostAreLocal() { return false; }
+    }
+
+    static final class SetFuelCostScope extends NestingToken implements Token {
+        SetFuelCostScope(List<Token> tokens) { super(tokens); }
+        boolean nestedNamesAreLocal() { return false; }
+        boolean nestedHashtagsAreLocal() { return false; }
+        boolean nestedSetFuelCostAreLocal() { return true; }
     }
 }

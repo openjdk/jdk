@@ -614,6 +614,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The {@link NestingToken.Scope} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
+    // TODO: fix documentation, examples. hashtag, names, setFuel
     static NestingToken.Scope scope(Object... tokens) {
         return new NestingToken.Scope(TokenParser.parse(tokens));
     }
@@ -631,6 +632,11 @@ public sealed interface Template permits Template.ZeroArgs,
     // TODO: document
     static NestingToken hashtagScope(Object... tokens) {
         return new NestingToken.HashtagScope(TokenParser.parse(tokens));
+    }
+
+    // TODO: document
+    static NestingToken setFuelCostScope(Object... tokens) {
+        return new NestingToken.SetFuelCostScope(TokenParser.parse(tokens));
     }
 
     /**

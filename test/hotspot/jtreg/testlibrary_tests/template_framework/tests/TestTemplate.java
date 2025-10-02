@@ -48,6 +48,7 @@ import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.flat;
 import static compiler.lib.template_framework.Template.nameScope;
 import static compiler.lib.template_framework.Template.hashtagScope;
+import static compiler.lib.template_framework.Template.setFuelCostScope;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.fuel;
@@ -1074,6 +1075,15 @@ public class TestTemplate {
             "hashtagScope:\n",
             setFuelCost(64.0f),
             scope(
+                readFuelTemplate.asToken(),
+                setFuelCost(128.0f),
+                readFuelTemplate.asToken()
+            ),
+            readFuelTemplate.asToken(),
+
+            "setFuelCostScope:\n",
+            setFuelCost(64.0f),
+            setFuelCostScope(
                 readFuelTemplate.asToken(),
                 setFuelCost(128.0f),
                 readFuelTemplate.asToken()
