@@ -357,8 +357,6 @@ final class Renderer {
                 currentCodeFrame.addName(name);
             }
             case NestingToken nt -> {
-                // TODO: test all variants!
-                // TODO: "nest"
                 renderNestingToken(nt, () -> {});
             }
             case NameSampleToken nst -> {
@@ -382,11 +380,9 @@ final class Renderer {
                     NestingToken nt = nfet.getNestingToken(n);
                     renderNestingToken(nt, () -> {
                         if (nfet.name() != null) {
-                            // TODO: assert that nestedHashtagsAreLocal
                             addHashtagReplacement(nfet.name(), n.name());
                         }
                         if (nfet.type() != null) {
-                            // TODO: assert that nestedHashtagsAreLocal
                             addHashtagReplacement(nfet.type(), n.type());
                         }
                     });
