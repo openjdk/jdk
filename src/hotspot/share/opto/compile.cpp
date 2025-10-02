@@ -5453,7 +5453,7 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
                               Node* parm6) const {
   Node* str_node = gvn->transform(new ConPNode(TypeRawPtr::make(((address) str))));
   const TypeFunc* type = OptoRuntime::debug_print_Type(parm0, parm1, parm2, parm3, parm4, parm5, parm6);
-  Node *call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
+  Node* call = new CallLeafNode(type, call_addr, "debug_print", TypeRawPtr::BOTTOM);
 
   // find the most suitable control input
   Unique_Node_List worklist, candidates;
