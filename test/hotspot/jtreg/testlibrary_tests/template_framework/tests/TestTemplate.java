@@ -242,6 +242,7 @@ public class TestTemplate {
         expectRendererException(() -> testFailingScope4(), "Duplicate hashtag replacement for #x. previous: a, new: b");
         expectRendererException(() -> testFailingScope5(), "Duplicate name:");
         expectRendererException(() -> testFailingScope6(), "Duplicate name:");
+        expectRendererException(() -> testFailingScope7(), "Duplicate name:");
     }
 
     public static void testSingleLine() {
@@ -1814,7 +1815,7 @@ public class TestTemplate {
                 let("v4", "d"),
                 "int #v4 = x + 4;\n"
             )),
-            // Using "hashtagScope", is is available.
+            // Using "setFuelCostScope", is is available.
             dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> setFuelCostScope(
                 addDataName("e", dn.type(), MUTABLE),
                 let("v5", "e"),
@@ -2519,7 +2520,20 @@ public class TestTemplate {
             "close scope.\n",
             let("q", "QQQ2"),
             "q: #q.\n",
+            listDataNames.asToken(),
+            // A "setFuelCostScope" nesting behaves the same as "flat", as we are not useing fuel here.
+            "open setFuelCostScope:\n",
+            setFuelCostScope(
+                "$setFuelCostScope\n",
+                let("r", "RRR"),
+                "r: #r.\n",
+                addDataName("vr", myInt, MUTABLE),
+                listDataNames.asToken()
+            ),
+            "close setFuelCostScope.\n",
+            "r: #r.\n",
             listDataNames.asToken()
+
         ));
 
         String code = template.render("XXX");
@@ -2569,6 +2583,13 @@ public class TestTemplate {
             close scope.
             q: QQQ2.
             dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; }
+            open setFuelCostScope:
+            setFuelCostScope_1
+            r: RRR.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; vr int; }
+            close setFuelCostScope.
+            r: RRR.
+            dataNames: {vx int; vy int; vz int; v_a int; v_b int; v_c int; vr int; }
             """;
         checkEQ(code, expected);
     }
@@ -3128,6 +3149,17 @@ public class TestTemplate {
             addStructuralName("a", myStructuralTypeA),
             addStructuralName("b", myStructuralTypeA),
             structuralNames().exactOf(myStructuralTypeA).forEach(sn -> hashtagScope(
+                addStructuralName("x", myStructuralTypeA) // leads to duplicate name
+            ))
+        ));
+        String code = template.render();
+    }
+
+    public static void testFailingScope7() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> setFuelCostScope(
                 addStructuralName("x", myStructuralTypeA) // leads to duplicate name
             ))
         ));
