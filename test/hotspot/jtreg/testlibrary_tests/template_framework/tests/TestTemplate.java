@@ -2028,29 +2028,52 @@ public class TestTemplate {
                 addStructuralName("scope_garbage1", myStructuralTypeA)
             )),
             structuralNames().exactOf(myStructuralTypeA).forEach(sn -> nameScope(
-                let("name2", sn.name()),
-                "sn2: #name2.\n",
+                // We cannot use "let" here (at least not easily), otherwise we get
+                // a duplicate hashtag replacement. It would probably be better style
+                // to use a "let", but we are just checking that "nameScope" works
+                // for reuse of names.
+                "sn2: ",  sn.name(), ".\n",
+                // But for testing, we still do a "let", just with different key.
+                // (This is probably bad practice, we just do this for testing)
+                let("name2_" + sn.name(), sn.name()),
                 addStructuralName("scope_garbage2", myStructuralTypeA)
             )),
             structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
-                let("name3", sn.name()),
-                "sn3: #name3.\n",
-                addStructuralName("x", myStructuralTypeA)
+                // Same issue with hashtags as with "nameScope".
+                "sn3: ",  sn.name(), ".\n",
+                let("name3_" + sn.name(), sn.name()),
+                // Using the same name for each would lead to duplicates,
+                // so we have to modify the name here.
+                addStructuralName("x_" + sn.name(), myStructuralTypeA)
             )),
-            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> nameScope(
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> hashtagScope(
                 let("name4", sn.name()),
                 "sn4: #name4.\n",
-                addStructuralName("y", myStructuralTypeA)
+                // Same issue with duplicate names as with "flat".
+                addStructuralName("y_" + sn.name(), myStructuralTypeA)
+                // TODO: check we have negative tests for these here!
             )),
-            "sn3: #name3.\n", // hashtag escaped
-            "sn4: #name4.\n", // hashtag escaped
+            "sn2: #name2_a #name2_b.\n", // hashtags escaped
+            "sn3: #name3_a #name3_b.\n", // hashtags escaped
             let("name1", "shouldBeOK1"), // hashtag did not escape
-            let("name2", "shouldBeOk2")  // hashtag did not escape
+            let("name4", "shouldBeOk4")  // hashtag did not escape
         ));
 
         String code = template.render();
         String expected =
             """
+            sn1: a.
+            sn1: b.
+            sn2: a.
+            sn2: b.
+            sn3: a.
+            sn3: b.
+            sn4: a.
+            sn4: b.
+            sn4: x_a.
+            sn4: x_b.
+            sn2: a b.
+            sn3: a b.
             """;
         checkEQ(code, expected);
     }
