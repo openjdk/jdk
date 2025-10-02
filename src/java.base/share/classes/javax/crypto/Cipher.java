@@ -286,7 +286,8 @@ public class Cipher {
         this.lock = new Object();
     }
 
-    private static final String SHA512TRUNCATED = "SHA512/2";
+    // for special handling SHA-512/224, SHA-512/256, SHA512/224, SHA512/256
+    private static final String SHA512TRUNCATED = "512/2";
 
     // Parse the specified cipher transformation for algorithm and the
     // optional mode and padding. If the transformation contains only
@@ -305,42 +306,67 @@ public class Cipher {
          * 2) feedback component (e.g., CFB) - optional
          * 3) padding component (e.g., PKCS5Padding) - optional
          */
+        int endIdx = transformation.indexOf('/');
+        if (endIdx == -1) { // done, algo only
+            String algo = transformation.trim();
+            if (algo.isEmpty()) {
+                throw new NoSuchAlgorithmException(
+                        "Invalid transformation: algorithm not specified");
+            }
+            return new String[] { algo };
+        }
 
-        // check if the transformation contains algorithms with "/" in their
-        // name which can cause the parsing logic to go wrong
-        int sha512Idx = transformation.toUpperCase(Locale.ENGLISH)
-                .indexOf(SHA512TRUNCATED);
-        int startIdx = (sha512Idx == -1 ? 0 :
-                sha512Idx + SHA512TRUNCATED.length());
-        int endIdx = transformation.indexOf('/', startIdx);
-
-        boolean algorithmOnly = (endIdx == -1);
-        String algo = (algorithmOnly ? transformation.trim() :
+        // check the presence of special algorithms with "/" in the name, e.g.
+        // truncated SHA512, which can cause the parsing logic to go wrong
+        int sha512Idx = transformation.indexOf(SHA512TRUNCATED);
+        int sha512SlashIdx = (sha512Idx != -1 ? sha512Idx + 3 : -2);
+        // check for the known algorithm slash
+        while (endIdx == sha512SlashIdx) {
+            endIdx = transformation.indexOf('/', sha512SlashIdx + 1);
+            sha512Idx = transformation.indexOf(SHA512TRUNCATED, sha512SlashIdx +
+                    SHA512TRUNCATED.length());
+            sha512SlashIdx = (sha512Idx != -1 ? sha512Idx + 3 : -2);
+        }
+        String algo = (endIdx == -1 ? transformation.trim() :
                 transformation.substring(0, endIdx).trim());
         if (algo.isEmpty()) {
-            throw new NoSuchAlgorithmException("Invalid transformation: " +
-                                   "algorithm not specified-"
-                                   + transformation);
+            throw new NoSuchAlgorithmException(
+                    "Invalid transformation: algorithm not specified");
         }
-        if (algorithmOnly) { // done
+        if (endIdx == -1) { // done, algo only
             return new String[] { algo };
-        } else {
-            // continue parsing mode and padding
-            startIdx = endIdx+1;
+        } else { // continue parsing for mode and padding
+            int startIdx = endIdx + 1;
             endIdx = transformation.indexOf('/', startIdx);
-            if (endIdx == -1) {
-                throw new NoSuchAlgorithmException("Invalid transformation"
-                            + " format:" + transformation);
+            if (endIdx != -1) {
+                // no truncated SHA in mode
+                String mode = transformation.substring(startIdx,
+                        endIdx).trim();
+                if (mode.isEmpty()) {
+                    throw new NoSuchAlgorithmException(
+                            "Invalid transformation: missing mode");
+                }
+                startIdx = endIdx + 1;
+                endIdx = transformation.indexOf('/', startIdx);
+                // check for the known algorithm slash
+                while (endIdx == sha512SlashIdx) {
+                    endIdx = transformation.indexOf('/', sha512SlashIdx + 1);
+                    sha512Idx = transformation.indexOf(SHA512TRUNCATED,
+                            sha512SlashIdx + SHA512TRUNCATED.length());
+                    sha512SlashIdx = (sha512Idx != -1 ? sha512Idx + 3 : -2);
+                }
+                // should have no more slash now
+                if (endIdx == -1) {
+                    String padding = transformation.substring(startIdx).trim();
+                    if (padding.isEmpty()) {
+                        throw new NoSuchAlgorithmException(
+                                "Invalid transformation: missing padding");
+                    }
+                    return new String[] { algo, mode, padding };
+                }
             }
-            String mode = transformation.substring(startIdx, endIdx).trim();
-            String padding = transformation.substring(endIdx+1).trim();
-            // ensure mode and padding are specified
-            if (mode.isEmpty() || padding.isEmpty()) {
-                throw new NoSuchAlgorithmException("Invalid transformation: " +
-                                   "missing mode and/or padding-"
-                                   + transformation);
-            }
-            return new String[] { algo, mode, padding };
+            throw new NoSuchAlgorithmException(
+                    "Invalid transformation format: " + transformation);
         }
     }
 
