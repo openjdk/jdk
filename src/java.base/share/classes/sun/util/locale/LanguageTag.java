@@ -342,7 +342,7 @@ public record LanguageTag(String language,
                     bldr.append(LocaleUtils.toLowerString(subtags[i])).append(SEP);
                 }
             }
-            bldr.deleteCharAt(bldr.length() - 1); // Remove trailing '-'
+            bldr.setLength(bldr.length() - 1); // Remove trailing '-'
             return bldr.toString();
         }
         // Non-legacy tags
@@ -511,7 +511,7 @@ public record LanguageTag(String language,
      * full syntax and case accurate legacy tags.
      */
     private static String legacyToPreferred(String tag) {
-        if (tag.length() > 11 || tag.length() < 5) {
+        if (tag.length() < 5) {
             return null;
         }
         return switch (tag) {
