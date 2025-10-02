@@ -74,6 +74,7 @@ public class GCHelper {
     public static final String gcPSMarkSweep = "PSMarkSweep";
     public static final String gcParallelOld = "ParallelOld";
     public static final String pauseLevelEvent = "GCPhasePauseLevel";
+    public static final String gcShenandoah = "Shenandoah";
 
     private static final List<String> g1HeapRegionTypes;
     private static final List<String> shenandoahHeapRegionStates;
