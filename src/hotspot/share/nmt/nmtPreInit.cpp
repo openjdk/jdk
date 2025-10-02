@@ -29,6 +29,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/xmlstream.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
@@ -138,6 +139,32 @@ void NMTPreInitAllocationTable::print_state(outputStream* st) const {
             sum_bytes, longest_chain);
 }
 
+// print a string describing the current state
+void NMTPreInitAllocationTable::print_state_xml(xmlStream* xs) const {
+  // Collect some statistics and print them
+  int num_entries = 0;
+  int num_primary_entries = 0;
+  int longest_chain = 0;
+  size_t sum_bytes = 0;
+  for (int i = 0; i < table_size; i++) {
+    int chain_len = 0;
+    for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
+      chain_len++;
+      sum_bytes += a->size;
+    }
+    if (chain_len > 0) {
+      num_primary_entries++;
+    }
+    num_entries += chain_len;
+    longest_chain = MAX2(chain_len, longest_chain);
+  }
+  XmlElem("totalEntries", "%d", num_entries);
+  XmlElem("primaryEntries", "%d", num_primary_entries);
+  XmlElem("emptyEntries", "%d", table_size - num_primary_entries);
+  XmlElem("sumBytes", "%zu", sum_bytes);
+  XmlElem("longestChainLength", "%d", longest_chain);
+}
+
 #ifdef ASSERT
 void NMTPreInitAllocationTable::print_map(outputStream* st) const {
   for (int i = 0; i < table_size; i++) {
@@ -240,4 +267,13 @@ void NMTPreInit::print_state(outputStream* st) {
   }
   st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
                _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
+}
+
+void NMTPreInit::print_state_xml(xmlStream* xs) {
+  if (_table != nullptr) {
+    _table->print_state_xml(xs);
+  }
+  XmlElem("preInitMallocCount", "%u", _num_mallocs_pre);
+  XmlElem("preInitReallocCount", "%u", _num_reallocs_pre);
+  XmlElem("preInitFreeCount", "%u", _num_frees_pre);
 }

@@ -41,34 +41,31 @@ public class JcmdScaleDetailXml {
 
     public static String[] getCommmand(String pid, String scale, File xmlFile) throws Exception {
       return new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail", "scale=" + scale,
-                            "xmlformat", "file=" + xmlFile.getAbsolutePath()};
+                            "format=xml"};
     }
 
     public static NMTXmlUtils runAndCreateXmlReport(String scale, String xmlFilename) throws Exception {
       ProcessBuilder pb = new ProcessBuilder();
       String pid = Long.toString(ProcessTools.getProcessId());
       File xmlFile = File.createTempFile(xmlFilename, ".xml");
-      pb.command(getCommmand(pid, scale, xmlFile));
-      pb.start().waitFor();
+      pb.redirectOutput(xmlFile)
+        .command(getCommmand(pid, scale, xmlFile))
+        .start().waitFor();
       return new NMTXmlUtils(xmlFile);
     }
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = new ProcessBuilder();
-        String pid = Long.toString(ProcessTools.getProcessId());
-        NMTXmlUtils nmtXml;
-
-        nmtXml = runAndCreateXmlReport("KB", "nmt_detail_KB_");
-        nmtXml.shouldBeReportType("Detail");
-        nmtXml.shouldBeScale("KB");
+        NMTXmlUtils nmtXml =  runAndCreateXmlReport("KB", "nmt_detail_KB_");
+        nmtXml.shouldBeReportType("Detail")
+              .shouldBeScale("KB");
 
 
         nmtXml = runAndCreateXmlReport("MB", "nmt_detail_MB_");
-        nmtXml.shouldBeReportType("Detail");
-        nmtXml.shouldBeScale("MB");
+        nmtXml.shouldBeReportType("Detail")
+              .shouldBeScale("MB");
 
         nmtXml = runAndCreateXmlReport("GB", "nmt_detail_GB_");
-        nmtXml.shouldBeReportType("Detail");
-        nmtXml.shouldBeScale("GB");
+        nmtXml.shouldBeReportType("Detail")
+              .shouldBeScale("GB");
     }
 }

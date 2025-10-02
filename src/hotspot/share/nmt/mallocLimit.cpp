@@ -30,6 +30,7 @@
 #include "runtime/java.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/xmlstream.hpp"
 #include "utilities/parseInteger.hpp"
 
 MallocLimitSet MallocLimitHandler::_limits;
@@ -158,6 +159,23 @@ void MallocLimitSet::print_on(outputStream* st) const {
   }
 }
 
+void MallocLimitSet::print_on_xml(xmlStream* xs) const {
+  if (_glob.sz > 0) {
+    XmlParent("globalLimit");
+    XmlElem("amount", "%zu", _glob.sz);
+    XmlElem("name", "%s", mode_to_name(_glob.mode));
+  } else {
+    XmlParent("memTagLimit");
+    for (int i = 0; i < mt_number_of_tags; i++) {
+      if (_mtag[i].sz > 0) {
+        XmlElem("memTag", "%s", NMTUtil::tag_to_enum_name(NMTUtil::index_to_tag(i)));
+        XmlElem("amount", "%zu", _mtag[i].sz);
+        XmlElem("modeName", "%s", mode_to_name(_mtag[i].mode));
+      }
+    }
+  }
+}
+
 bool MallocLimitSet::parse_malloclimit_option(const char* v, const char** err) {
 
 #define BAIL_UNLESS(condition, errormessage) if (!(condition)) { *err = errormessage; return false; }
@@ -226,5 +244,14 @@ void MallocLimitHandler::print_on(outputStream* st) {
     _limits.print_on(st);
   } else {
     st->print_cr("MallocLimit: unset");
+  }
+}
+
+void MallocLimitHandler::print_on_xml(xmlStream* xs) {
+  if (have_limit()) {
+    XmlParent("mallocLimits")
+    _limits.print_on_xml(xs);
+  } else {
+    XmlElem("mallocLimit", "unset");
   }
 }

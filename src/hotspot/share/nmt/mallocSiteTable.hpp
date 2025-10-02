@@ -168,6 +168,7 @@ class MallocSiteTable : AllStatic {
   static bool walk_malloc_site(MallocSiteWalker* walker);
 
   static void print_tuning_statistics(outputStream* st);
+  static void print_tuning_statistics_xml(xmlStream* st);
 
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MemTag mem_tag);

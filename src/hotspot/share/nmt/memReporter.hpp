@@ -280,8 +280,7 @@ class XmlMemSummaryReporter : public StackObj {
  public:
   static const size_t default_scale = K;
   // This constructor is for normal reporting from a recent baseline.
-  XmlMemSummaryReporter(MemBaseline& baseline, fileStream* output,
-    size_t scale = default_scale);
+  XmlMemSummaryReporter(MemBaseline& baseline, outputStream* output, size_t scale = default_scale);
 
   inline xmlStream* xml_output() const { return _xml_output; }
 
@@ -349,7 +348,7 @@ class XmlMemDetailReporter : public XmlMemSummaryReporter {
   MemBaseline&   _baseline;
   NativeCallStackPrinter _stackprinter;
  public:
-  XmlMemDetailReporter(MemBaseline& baseline, fileStream* output, size_t scale = default_scale) :
+  XmlMemDetailReporter(MemBaseline& baseline, outputStream* output, size_t scale = default_scale) :
     XmlMemSummaryReporter(baseline, output, scale),
      _baseline(baseline), _stackprinter((outputStream*)_xml_output) { }
 
@@ -387,7 +386,7 @@ class XmlMemSummaryDiffReporter : public XmlMemSummaryReporter {
  public:
   static const size_t default_scale = K;
   XmlMemSummaryDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    fileStream* output, size_t scale = default_scale) : XmlMemSummaryReporter(early_baseline, output) ,
+    outputStream* output, size_t scale = default_scale) : XmlMemSummaryReporter(early_baseline, output) ,
     _early_baseline(early_baseline), _current_baseline(current_baseline) {
     assert(early_baseline.baseline_type()   != MemBaseline::Not_baselined, "Not baselined");
     assert(current_baseline.baseline_type() != MemBaseline::Not_baselined, "Not baselined");
@@ -423,7 +422,7 @@ class XmlMemDetailDiffReporter : public XmlMemSummaryDiffReporter {
   NativeCallStackPrinter _stackprinter;
  public:
   XmlMemDetailDiffReporter(MemBaseline& early_baseline, MemBaseline& current_baseline,
-    fileStream* output, size_t scale = default_scale) :
+    outputStream* output, size_t scale = default_scale) :
     XmlMemSummaryDiffReporter(early_baseline, current_baseline, output, scale),
     _stackprinter((outputStream*)xml_output()) { }
 

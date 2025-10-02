@@ -21,40 +21,50 @@
  * questions.
  */
 
- /*
- * @test
- * @summary Check class counters in summary report
+/*
+ * @test id=summary
+ * @summary Test the NMT scale parameter
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -Xbootclasspath/a:. -XX:NativeMemoryTracking=summary JcmdSummaryXml
+ * @run main/othervm -XX:NativeMemoryTracking=summary JcmdStatisticsXml summary
  */
+
+ /*
+ * @test id=detail
+ * @summary Test the NMT scale parameter
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @run main/othervm -XX:NativeMemoryTracking=detail JcmdStatisticsXml detail
+ */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.File;
 
-import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolFinder;
 
-public class JcmdSummaryXml {
+public class JcmdStatisticsXml {
 
-    public static void main(String args[]) throws Exception {
+    public static void main(String[] args) throws Exception {
         ProcessBuilder pb = new ProcessBuilder();
+        File xmlFile = File.createTempFile("nmt_statistics_", ".xml");
         String pid = Long.toString(ProcessTools.getProcessId());
-        File xmlFile = File.createTempFile("nmt_summary_", ".xml");
-
-        pb.redirectOutput(xmlFile);
-        // Run 'jcmd <pid> VM.native_memory baseline=true'
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"),
+        pb.redirectOutput(xmlFile)
+          .command(new String[] { JDKToolFinder.getJDKTool("jcmd"),
                                   pid,
                                   "VM.native_memory",
-                                  "summary",
-                                  "format=xml"});
-        pb.start().waitFor();
+                                  "statistics=true",
+                                  "format=xml"})
+          .start()
+          .waitFor();
 
         NMTXmlUtils xmlAnalyzer = new NMTXmlUtils(xmlFile);
-        xmlAnalyzer.shouldBeReportType("Summary")
-                   .shouldExistClasses()
-                   .shouldExistInstanceClasses()
-                   .shouldExistArrayClasses();
+        xmlAnalyzer.shouldBeReportType("statistics")
+                   .shouldExistGeneralStatistics();
+        if (args.length == 1 && args[0].equals("detail")) {
+          xmlAnalyzer.shouldExistDetailStatistics();
+        }
     }
 }

@@ -955,48 +955,12 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
   )
   out->cr();
 }
-class XmlElemHelper {
- private:
-  const char* _node;
-
- protected:
-  xmlStream* xs;
-
- public:
-  XmlElemHelper(xmlStream* st, const char* node): _node(node), xs(st) {
-    xs->head("%s", _node);
-  }
-  ~XmlElemHelper() {
-    xs->tail(_node);
-  }
-};
-
-class XmlElemStack : public XmlElemHelper {
- public:
-  XmlElemStack(xmlStream* st, const char* text) : XmlElemHelper(st, text) {
-    st->print_raw("<![CDATA[");
-  }
-  ~XmlElemStack() {
-    xs->print_raw("]]>");
-  }
-};
 
 #define XmlParentElement(txt) XmlElemHelper _not_used(xml_output(), txt)
 #define XmlStackElement XmlElemStack __not_used(xml_output(), "stack")
+#define XmlElementWithText(ename, txt, ...) XmlElementWithTextXS(xs, ename, txt, ##__VA_ARGS__)
 
-// Put all the <elem>text</elem> in one line
-#define XmlElementWithText(ename, txt, ...)   \
-    xs->write("<", 1);                        \
-    xs->text()->print("%s", ename);           \
-    xs->write(">", 1);                        \
-    xs->text()->print(txt, ##__VA_ARGS__);    \
-    xs->write("</", 2);                       \
-    xs->text()->print("%s", ename);           \
-    xs->write(">\n", 2);
-
-
-
-XmlMemSummaryReporter::XmlMemSummaryReporter(MemBaseline& baseline, fileStream* output, size_t scale) :
+XmlMemSummaryReporter::XmlMemSummaryReporter(MemBaseline& baseline, outputStream* output, size_t scale) :
  _malloc_snapshot(baseline.malloc_memory_snapshot()),
  _vm_snapshot(baseline.virtual_memory_snapshot()),
  _instance_class_count(baseline.instance_class_count()),

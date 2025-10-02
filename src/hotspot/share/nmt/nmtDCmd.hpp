@@ -42,7 +42,7 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<bool>  _detail_diff;
   DCmdArgument<bool>  _statistics;
   DCmdArgument<char*> _scale;
-  DCmdArgument<bool>  _xml_output;
+  DCmdArgument<char*>  _output_format;
   DCmdArgument<char*> _xml_file_name;
 
  public:

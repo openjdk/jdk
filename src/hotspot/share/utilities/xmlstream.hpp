@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,44 @@ class xmlStream : public outputStream {
    */
 
 };
+
+class XmlElemHelper : public CHeapObjBase {
+ private:
+  const char* _node;
+
+ protected:
+  xmlStream* xs;
+
+ public:
+  XmlElemHelper(xmlStream* st, const char* node): _node(node), xs(st) {
+    xs->head("%s", _node);
+  }
+  ~XmlElemHelper() {
+    xs->tail(_node);
+  }
+};
+
+class XmlElemStack : public XmlElemHelper {
+ public:
+  XmlElemStack(xmlStream* st, const char* text) : XmlElemHelper(st, text) {
+    st->print_raw("<![CDATA[");
+  }
+  ~XmlElemStack() {
+    xs->print_raw("]]>");
+  }
+};
+// Put all the <elem>text</elem> in one line
+#define XmlElementWithTextXS(xs, ename, txt, ...)   \
+    xs->write("<", 1);                              \
+    xs->text()->print("%s", ename);                 \
+    xs->write(">", 1);                              \
+    xs->text()->print(txt, ##__VA_ARGS__);          \
+    xs->write("</", 2);                             \
+    xs->text()->print("%s", ename);                 \
+    xs->write(">\n", 2);
+
+#define XmlParent(txt) XmlElemHelper __not_used(xs, txt);
+#define XmlElem(txt, ...) XmlElementWithTextXS(xs, txt, ##__VA_ARGS__)
 
 // Standard log file, null if no logging is happening.
 extern xmlStream* xtty;

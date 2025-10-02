@@ -27,6 +27,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
+#include "utilities/xmlstream.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;
@@ -247,6 +248,61 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
     st->print_cr("\t%d: %d", i, stack_depth_distribution[i]);
   }
   st->cr();
+}
+
+void MallocSiteTable::print_tuning_statistics_xml(xmlStream* xs) {
+  // Total number of allocation sites, include empty sites
+  int total_entries = 0;
+  // Number of allocation sites that have all memory freed
+  int empty_entries = 0;
+  // Number of captured call stack distribution
+  int stack_depth_distribution[NMT_TrackingStackDepth + 1] = { 0 };
+  // Chain lengths
+  uint16_t lengths[table_size] = { 0 };
+  // Unused buckets
+  int unused_buckets = 0;
+
+  for (int i = 0; i < table_size; i ++) {
+    int this_chain_length = 0;
+    const MallocSiteHashtableEntry* head = _table[i];
+    if (head == nullptr) {
+      unused_buckets ++;
+    }
+    while (head != nullptr) {
+      total_entries ++;
+      this_chain_length ++;
+      if (head->size() == 0) {
+        empty_entries ++;
+      }
+      const int callstack_depth = head->peek()->call_stack()->frames();
+      assert(callstack_depth >= 0 && callstack_depth <= NMT_TrackingStackDepth,
+             "Sanity (%d)", callstack_depth);
+      stack_depth_distribution[callstack_depth] ++;
+      head = head->next();
+    }
+    lengths[i] = (uint16_t)MIN2(this_chain_length, USHRT_MAX);
+  }
+  XmlElem("totalEntries", "%d", total_entries);
+  XmlElem("emptyEntries", "%d", empty_entries);
+  XmlElem("emptyEntriesPercentage", "%2.2f", ((float)empty_entries * 100) / (float)total_entries);
+
+
+  qsort(lengths, table_size, sizeof(uint16_t), qsort_helper);
+
+  {
+    XmlParent("bucketChainLengthDistribution");
+    XmlElem("unused", "%d", unused_buckets);
+    XmlElem("longest", "%d", lengths[table_size - 1]);
+    XmlElem("median", "%d", lengths[table_size / 2]);
+  }
+
+  {
+    XmlParent("callStackDepthDistribution");
+    for (int i = 0; i <= NMT_TrackingStackDepth; i ++) {
+      XmlElem("depth", "%d", i);
+      XmlElem("count", "%d", stack_depth_distribution[i]);
+    }
+  }
 }
 
 bool MallocSiteHashtableEntry::atomic_insert(MallocSiteHashtableEntry* entry) {

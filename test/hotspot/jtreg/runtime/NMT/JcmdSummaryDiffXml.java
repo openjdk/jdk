@@ -47,13 +47,14 @@ public class JcmdSummaryDiffXml {
 
     public static String[] getCommmand(String pid, File xmlFile) throws Exception {
       return new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary.diff", "scale=KB",
-                            "xmlformat", "file=" + xmlFile.getAbsolutePath()};
+                            "format=xml"};
     }
 
     public static NMTXmlUtils runAndCreateXmlReport(String xmlFilename) throws Exception {
       ProcessBuilder pb = new ProcessBuilder();
       String pid = Long.toString(ProcessTools.getProcessId());
       File xmlFile = File.createTempFile(xmlFilename, ".xml");
+      pb.redirectOutput(xmlFile);
       pb.command(getCommmand(pid, xmlFile));
       pb.start().waitFor();
       return new NMTXmlUtils(xmlFile);
@@ -78,25 +79,25 @@ public class JcmdSummaryDiffXml {
 
         addr = wb.NMTReserveMemory(reserveSize);
         nmtXml = runAndCreateXmlReport("nmt_summary_diff_1_");
-        nmtXml.shouldBeReportType("Summary Diff");
-        nmtXml.shouldBeReservedCurrentOfTest("256");
-        nmtXml.shouldBeReservedDiffOfTest("+256");
-        nmtXml.shouldBeCommittedCurrentOfTest("0");
+        nmtXml.shouldBeReportType("Summary Diff")
+              .shouldBeReservedCurrentOfTest("256")
+              .shouldBeReservedDiffOfTest("+256")
+              .shouldBeCommittedCurrentOfTest("0");
 
         wb.NMTCommitMemory(addr, commitSize);
         nmtXml = runAndCreateXmlReport("nmt_summary_diff_2_");
-        nmtXml.shouldBeReportType("Summary Diff");
-        nmtXml.shouldBeCommittedCurrentOfTest("128");
-        nmtXml.shouldBeCommittedDiffOfTest("+128");
+        nmtXml.shouldBeReportType("Summary Diff")
+              .shouldBeCommittedCurrentOfTest("128")
+              .shouldBeCommittedDiffOfTest("+128");
 
         wb.NMTUncommitMemory(addr, commitSize);
         nmtXml = runAndCreateXmlReport("nmt_summary_diff_3_");
-        nmtXml.shouldBeReportType("Summary Diff");
-        nmtXml.shouldBeCommittedCurrentOfTest("0");
+        nmtXml.shouldBeReportType("Summary Diff")
+              .shouldBeCommittedCurrentOfTest("0");
 
         wb.NMTReleaseMemory(addr, reserveSize);
         nmtXml = runAndCreateXmlReport("nmt_summary_diff_4_");
-        nmtXml.shouldBeReportType("Summary Diff");
-        nmtXml.shouldNotExistTestTag();
+        nmtXml.shouldBeReportType("Summary Diff")
+              .shouldNotExistTestTag();
     }
 }

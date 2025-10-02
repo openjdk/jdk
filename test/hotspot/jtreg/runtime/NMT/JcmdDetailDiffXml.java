@@ -35,6 +35,8 @@
 import java.io.File;
 
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.JDKToolFinder;
 
 import jdk.test.whitebox.WhiteBox;
 
@@ -44,7 +46,18 @@ public class JcmdDetailDiffXml {
 
     public static NMTXmlUtils runAndCreateXmlReport(String xmlFilename) throws Exception {
       File xmlFile = File.createTempFile(xmlFilename, ".xml");
-      NMTTestUtils.startJcmdVMNativeMemory("detail.diff", "scale=KB", "xmlformat", "file=" + xmlFile.getAbsolutePath());
+      ProcessBuilder pb = new ProcessBuilder();
+      String pid = Long.toString(ProcessTools.getProcessId());
+
+      pb.redirectOutput(xmlFile)
+        .command(new String[] { JDKToolFinder.getJDKTool("jcmd"),
+                                pid,
+                                "VM.native_memory",
+                                "detail.diff",
+                                "scale=KB",
+                                "format=xml"})
+        .start()
+        .waitFor();
       return new NMTXmlUtils(xmlFile);
     }
 
@@ -62,29 +75,29 @@ public class JcmdDetailDiffXml {
 
         addr = wb.NMTReserveMemory(reserveSize);
         nmtXml = runAndCreateXmlReport("nmt_detail_diff_1_");
-        nmtXml.shouldBeReportType("Detail Diff");
-        nmtXml.shouldBeReservedCurrentOfTest("256");
-        nmtXml.shouldBeReservedDiffOfTest("+256");
-        nmtXml.shouldBeCommittedCurrentOfTest("0");
+        nmtXml.shouldBeReportType("Detail Diff")
+              .shouldBeReservedCurrentOfTest("256")
+              .shouldBeReservedDiffOfTest("+256")
+              .shouldBeCommittedCurrentOfTest("0");
 
         wb.NMTCommitMemory(addr, commitSize);
         nmtXml = runAndCreateXmlReport("nmt_detail_diff_2_");
-        nmtXml.shouldBeReportType("Detail Diff");
-        nmtXml.shouldBeReservedCurrentOfTest("256");
-        nmtXml.shouldBeReservedDiffOfTest("+256");
-        nmtXml.shouldBeCommittedCurrentOfTest("128");
-        nmtXml.shouldBeCommittedDiffOfTest("+128");
+        nmtXml.shouldBeReportType("Detail Diff")
+              .shouldBeReservedCurrentOfTest("256")
+              .shouldBeReservedDiffOfTest("+256")
+              .shouldBeCommittedCurrentOfTest("128")
+              .shouldBeCommittedDiffOfTest("+128");
 
         wb.NMTUncommitMemory(addr, commitSize);
         nmtXml = runAndCreateXmlReport("nmt_detail_diff_3_");
-        nmtXml.shouldBeReportType("Detail Diff");
-        nmtXml.shouldBeReservedCurrentOfTest("256");
-        nmtXml.shouldBeReservedDiffOfTest("+256");
-        nmtXml.shouldBeCommittedCurrentOfTest("0");
+        nmtXml.shouldBeReportType("Detail Diff")
+              .shouldBeReservedCurrentOfTest("256")
+              .shouldBeReservedDiffOfTest("+256")
+              .shouldBeCommittedCurrentOfTest("0");
 
         wb.NMTReleaseMemory(addr, reserveSize);
-        nmtXml.shouldBeReportType("Detail Diff");
         nmtXml = runAndCreateXmlReport("nmt_detail_diff_4_");
-        nmtXml.shouldNotExistTestTag();
+        nmtXml.shouldBeReportType("Detail Diff")
+              .shouldNotExistTestTag();
     }
 }

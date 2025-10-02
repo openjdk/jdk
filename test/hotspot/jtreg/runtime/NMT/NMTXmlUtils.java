@@ -21,7 +21,17 @@
  * questions.
  */
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +44,7 @@ import org.w3c.dom.Document;
 public class NMTXmlUtils {
 
     private static final String RESERVED_CURRENT_OF_TEST_SEARCH =
+        // get reservedCurrent of Test tag
         "/nativeMemoryTracking/memoryTag[name[text() = 'Test']]/vmDiff/reservedCurrent/text()";
     private static final String RESERVED_DIFF_OF_TEST_SEARCH =
         "/nativeMemoryTracking/memoryTag[name[text() = 'Test']]/vmDiff/reservedDiff/text()";
@@ -53,72 +64,140 @@ public class NMTXmlUtils {
         "/nativeMemoryTracking/memoryTags/memoryTag/instanceClasses/text()";
     private static final String ARRAY_CLASSES_COUNT_SEARCH =
         "/nativeMemoryTracking/memoryTags/memoryTag/arrayClasses/text()";
+    private static final String GENERAL_STATISTICS_PREINIT_STATE_SEARCH =
+        "/nativeMemoryTracking/state/preinitState";
+    private static final String GENERAL_STATISTICS_MALLOC_LIMIT_SEARCH =
+        "/nativeMemoryTracking/state/mallocLimit";
+    private static final String DETAIL_STATISTICS_TABLE_SIZE_SEARCH =
+        "/nativeMemoryTracking/state/tableSize";
+    private static final String DETAIL_STATISTICS_STACK_DEPTH_SEARCH =
+        "/nativeMemoryTracking/state/stackDepth";
+    private static final String DETAIL_STATISTICS_SITE_TABLE_SEARCH =
+        "/nativeMemoryTracking/state/siteTable";
 
     private Document doc;
 
+    private static void dropNonXMLParts(File inputXmlFile) throws IOException {
+        String fileName = inputXmlFile.getAbsolutePath();
+        Path originalPath = Paths.get(fileName);
+        Path tempPath = Paths.get(fileName + ".tmp");
+
+
+        // This flag is used to skip the first line we read
+        boolean firstLineSkipped = false;
+
+        BufferedReader reader = new BufferedReader(new FileReader(inputXmlFile));
+        PrintWriter writer = new PrintWriter(new FileWriter(tempPath.toFile()));
+
+        String currentLine;
+
+        // Read the file line by line
+        while ((currentLine = reader.readLine()) != null) {
+            if (!firstLineSkipped) {
+                // Skip the first line and set the flag
+                firstLineSkipped = true;
+                continue; // Skip writing the line
+            }
+
+            // Write all subsequent lines to the temporary file
+            writer.println(currentLine);
+        }
+        reader.close();
+        writer.close();
+        Files.move(tempPath, originalPath, StandardCopyOption.REPLACE_EXISTING);
+        System.out.println("✅ Successfully removed the first line from " + fileName);
+    }
+
     public NMTXmlUtils(File xmlFile) throws Exception {
+        NMTXmlUtils.dropNonXMLParts(xmlFile);
         doc =  DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xmlFile);
     }
 
-    public void shouldHaveValue(String xpathSearch, String expectedValue) throws Exception {
+    public NMTXmlUtils shouldHaveValue(String xpathSearch, String expectedValue) throws Exception {
         XPath xpath = XPathFactory.newInstance().newXPath();
 
         String value = (String)xpath.compile(xpathSearch).evaluate(doc, XPathConstants.STRING);
         if (!value.equals(expectedValue)) {
           throw new RuntimeException("Mismatch for " + xpathSearch + " expected " + expectedValue + " got " + value);
         }
+        return this;
     }
 
-    public void shouldExist(String xpathSearch) throws Exception {
+    public NMTXmlUtils shouldExist(String xpathSearch) throws Exception {
         XPath xpath = XPathFactory.newInstance().newXPath();
 
         String value = (String)xpath.compile(xpathSearch).evaluate(doc, XPathConstants.STRING);
         if (value.isEmpty()) {
           throw new RuntimeException("No value for " + xpathSearch);
         }
+        return this;
     }
 
-    public void shouldNotExist(String xpathSearch) throws Exception {
+    public NMTXmlUtils shouldNotExist(String xpathSearch) throws Exception {
         shouldHaveValue(xpathSearch, "");
+        return this;
     }
 
-    public void shouldBeReservedCurrentOfTest(String value) throws Exception {
+    public NMTXmlUtils shouldBeReservedCurrentOfTest(String value) throws Exception {
         shouldHaveValue(RESERVED_CURRENT_OF_TEST_SEARCH, value);
+        return this;
     }
 
-    public void shouldBeReservedDiffOfTest(String value) throws Exception {
+    public NMTXmlUtils shouldBeReservedDiffOfTest(String value) throws Exception {
         shouldHaveValue(RESERVED_DIFF_OF_TEST_SEARCH, value);
+        return this;
     }
 
-    public void shouldBeCommittedCurrentOfTest(String value) throws Exception {
+    public NMTXmlUtils shouldBeCommittedCurrentOfTest(String value) throws Exception {
         shouldHaveValue(COMMITTED_CURRENT_OF_TEST_SEARCH, value);
+        return this;
     }
 
-    public void shouldBeCommittedDiffOfTest(String value) throws Exception {
+    public NMTXmlUtils shouldBeCommittedDiffOfTest(String value) throws Exception {
         shouldHaveValue(COMMITTED_DIFF_OF_TEST_SEARCH, value);
+        return this;
     }
 
-    public void shouldNotExistTestTag() throws Exception {
+    public NMTXmlUtils shouldNotExistTestTag() throws Exception {
         shouldNotExist(TEST_TAG_SEARCH);
+        return this;
     }
 
-    public void shouldBeReportType(String reportType) throws Exception {
+    public NMTXmlUtils shouldBeReportType(String reportType) throws Exception {
         shouldHaveValue(REPORT_TYPE_SEARCH, reportType);
+        return this;
     }
 
-    public void shouldBeScale(String scale) throws Exception {
+    public NMTXmlUtils shouldBeScale(String scale) throws Exception {
         shouldHaveValue(SCALE_ATTR_SEARCH, scale);
+        return this;
     }
 
-    public void shouldExistClasses() throws Exception {
+    public NMTXmlUtils shouldExistClasses() throws Exception {
         shouldExist(CLASSES_COUNT_SEARCH);
+        return this;
     }
 
-    public void shouldExistInstanceClasses() throws Exception {
+    public NMTXmlUtils shouldExistInstanceClasses() throws Exception {
         shouldExist(INSTANCE_CLASSES_COUNT_SEARCH);
+        return this;
     }
 
-    public void shouldExistArrayClasses() throws Exception {
-      shouldExist(ARRAY_CLASSES_COUNT_SEARCH);
+    public NMTXmlUtils shouldExistArrayClasses() throws Exception {
+        shouldExist(ARRAY_CLASSES_COUNT_SEARCH);
+        return this;
+    }
+
+    public NMTXmlUtils shouldExistGeneralStatistics() throws Exception {
+        shouldExist(GENERAL_STATISTICS_PREINIT_STATE_SEARCH);
+        shouldExist(GENERAL_STATISTICS_MALLOC_LIMIT_SEARCH);
+        return this;
+    }
+
+    public NMTXmlUtils shouldExistDetailStatistics() throws Exception {
+        shouldExist(DETAIL_STATISTICS_TABLE_SIZE_SEARCH);
+        shouldExist(DETAIL_STATISTICS_STACK_DEPTH_SEARCH);
+        shouldExist(DETAIL_STATISTICS_SITE_TABLE_SEARCH);
+        return this;
     }
 }

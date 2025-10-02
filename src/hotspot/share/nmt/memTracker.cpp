@@ -42,6 +42,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/deferredStatic.hpp"
+#include "utilities/xmlstream.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _WINDOWS
@@ -164,4 +165,32 @@ void MemTracker::tuning_statistics(outputStream* out) {
   NMTPreInit::print_state(out);
   MallocLimitHandler::print_on(out);
   out->cr();
+}
+
+void MemTracker::tuning_statistics_xml(outputStream* out) {
+  xmlStream _xs(out);
+  xmlStream* xs = &_xs;
+  assert (!xs->inside_attrs(), "output stream is not ready for XML nodes");
+  XmlParent("nativeMemoryTracking");
+  XmlElem("report", "statistics");
+  {
+    XmlParent("state");
+    XmlElem("level", "%s", NMTUtil::tracking_level_to_string(_tracking_level));
+    if (_tracking_level == NMT_detail) {
+      XmlElem("tableSize", "%d", MallocSiteTable::hash_buckets());
+      XmlElem("stackDepth", "%d", NMT_TrackingStackDepth);
+      {
+        XmlParent("siteTable");
+        MallocSiteTable::print_tuning_statistics_xml(xs);
+      }
+    }
+    {
+      XmlParent("preinitState");
+      NMTPreInit::print_state_xml(xs);
+    }
+    {
+      XmlParent("mallocLimit");
+      MallocLimitHandler::print_on_xml(xs);
+    }
+  }
 }
