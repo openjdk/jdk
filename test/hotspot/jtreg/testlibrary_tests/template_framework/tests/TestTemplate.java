@@ -1464,21 +1464,28 @@ public class TestTemplate {
             ", ",
             dataNames(MUTABLE).exactOf(type).count(),
             ", {",
-            String.join(", ", dataNames(MUTABLE).exactOf(type).toList().stream().map(DataName::name).toList()),
+            dataNames(MUTABLE).exactOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(DataName::name).toList())
+            )),
             "}\n",
             "  subtype: ",
             dataNames(MUTABLE).subtypeOf(type).hasAny(),
             ", ",
             dataNames(MUTABLE).subtypeOf(type).count(),
             ", {",
-            String.join(", ", dataNames(MUTABLE).subtypeOf(type).toList().stream().map(DataName::name).toList()),
+            dataNames(MUTABLE).subtypeOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(DataName::name).toList())
+            )),
+
             "}\n",
             "  supertype: ",
             dataNames(MUTABLE).supertypeOf(type).hasAny(),
             ", ",
             dataNames(MUTABLE).supertypeOf(type).count(),
             ", {",
-            String.join(", ", dataNames(MUTABLE).supertypeOf(type).toList().stream().map(DataName::name).toList()),
+            dataNames(MUTABLE).supertypeOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(DataName::name).toList())
+            )),
             "}\n",
             "]\n"
         ));
@@ -1767,21 +1774,27 @@ public class TestTemplate {
             ", ",
             structuralNames().exactOf(type).count(),
             ", {",
-            String.join(", ", structuralNames().exactOf(type).toList().stream().map(StructuralName::name).toList()),
+            structuralNames().exactOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
             "}\n",
             "  subtype: ",
             structuralNames().subtypeOf(type).hasAny(),
             ", ",
             structuralNames().subtypeOf(type).count(),
             ", {",
-            String.join(", ", structuralNames().subtypeOf(type).toList().stream().map(StructuralName::name).toList()),
+            structuralNames().subtypeOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
             "}\n",
             "  supertype: ",
             structuralNames().supertypeOf(type).hasAny(),
             ", ",
             structuralNames().supertypeOf(type).count(),
             ", {",
-            String.join(", ", structuralNames().supertypeOf(type).toList().stream().map(StructuralName::name).toList()),
+            structuralNames().supertypeOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
             "}\n",
             "]\n"
         ));
@@ -1941,7 +1954,9 @@ public class TestTemplate {
             ", ",
             structuralNames().exactOf(type).count(),
             ", names: {",
-            String.join(", ", structuralNames().exactOf(type).toList().stream().map(StructuralName::name).toList()),
+            structuralNames().exactOf(type).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
             "}]\n"
         ));
 

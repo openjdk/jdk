@@ -186,11 +186,6 @@ final class Renderer {
         return currentCodeFrame.hasAnyNames(predicate);
     }
 
-    // TODO: remove?
-    List<Name> listNames(NameSet.Predicate predicate) {
-        return currentCodeFrame.listNames(predicate);
-    }
-
     /**
      * Formats values to {@link String} with the goal of using them in Java code.
      * By default, we use the overrides of {@link Object#toString}.
@@ -375,7 +370,7 @@ final class Renderer {
                 });
             }
             case NameForEachToken nfet -> {
-                List<Name> list = listNames(nfet.predicate());
+                List<Name> list = currentCodeFrame.listNames(nfet.predicate());
                 list.stream().forEach(n -> {
                     NestingToken nt = nfet.getNestingToken(n);
                     renderNestingToken(nt, () -> {
@@ -389,7 +384,7 @@ final class Renderer {
                 });
             }
             case NamesToListToken ntlt -> {
-                List<Name> list = listNames(ntlt.predicate());
+                List<Name> list = currentCodeFrame.listNames(ntlt.predicate());
                 NestingToken nt = ntlt.getNestingToken(list);
                 renderNestingToken(nt, () -> {});
             }

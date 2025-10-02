@@ -265,15 +265,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: remove or modify? -> what if we want to sample but without opening
-        //       an inner scope that would make new data names local?
-        //       We could also do a kind of "map".
-        public List<DataName> toList() {
-            List<Name> list = Renderer.getCurrent().listNames(predicate());
-            return list.stream().map(n -> (DataName)n).toList();
-        }
-
-        // TODO: same for structural
+        // TODO: adjust documentation
         // TODO: make sure we have enough tests
         public Token toList(Function<List<DataName>, NestingToken> function) {
             return new NamesToListToken(predicate(), function);
