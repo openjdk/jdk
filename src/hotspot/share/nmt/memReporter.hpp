@@ -32,6 +32,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/xmlstream.hpp"
 
 /*
  * Base class that provides helpers
