@@ -2180,8 +2180,16 @@ public class TestTemplate {
                 // Same issue with duplicate names as with "flat".
                 addStructuralName("y_" + sn.name(), myStructuralTypeA)
             )),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> setFuelCostScope(
+                // Same issue with hashtags as with "nameScope".
+                "sn5: ",  sn.name(), ".\n",
+                let("name5_" + sn.name(), sn.name()),
+                // Same issue with duplicate names as with "flat".
+                addStructuralName("z_" + sn.name(), myStructuralTypeA)
+            )),
             "sn2: #name2_a #name2_b.\n", // hashtags escaped
             "sn3: #name3_a #name3_b.\n", // hashtags escaped
+            "sn5: #name5_a #name5_b #name5_x_a #name5_x_b.\n", // hashtags escaped
             let("name1", "shouldBeOK1"), // hashtag did not escape
             let("name4", "shouldBeOk4")  // hashtag did not escape
         ));
@@ -2199,8 +2207,17 @@ public class TestTemplate {
             sn4: b.
             sn4: x_a.
             sn4: x_b.
+            sn5: a.
+            sn5: b.
+            sn5: x_a.
+            sn5: x_b.
+            sn5: y_a.
+            sn5: y_b.
+            sn5: y_x_a.
+            sn5: y_x_b.
             sn2: a b.
             sn3: a b.
+            sn5: a b x_a x_b.
             """;
         checkEQ(code, expected);
     }
