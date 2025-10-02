@@ -2314,7 +2314,7 @@ public class Exhaustiveness extends TestRunner {
                    final class C2 extends Base { }
                    final class C3 implements I { }
 
-                   void method1(I i) {                  
+                   void method1(I i) {
                        switch (i) {
                            case C1 _ -> {}
                            case C2 _ -> {}
