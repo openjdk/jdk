@@ -1168,7 +1168,9 @@ public class TestTemplate {
             ", ",
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).count(),
             ", names: {",
-            String.join(", ", dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).toList().stream().map(DataName::name).toList()),
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).toList(list -> scope(
+                String.join(", ", list.stream().map(DataName::name).toList())
+            )),
             "}]\n"
         ));
 
@@ -1237,7 +1239,9 @@ public class TestTemplate {
             ", ",
             dataNames(mutability).exactOf(myInt).count(),
             ", names: {",
-            String.join(", ", dataNames(mutability).exactOf(myInt).toList().stream().map(DataName::name).toList()),
+            dataNames(mutability).exactOf(myInt).toList(list -> scope(
+                String.join(", ", list.stream().map(DataName::name).toList())
+            )),
             "}]\n"
         ));
 
@@ -1382,7 +1386,9 @@ public class TestTemplate {
             ", ",
             dataNames(mutability).exactOf(myInt).count(),
             ", names: {",
-            String.join(", ", dataNames(mutability).exactOf(myInt).toList().stream().map(DataName::name).toList()),
+            dataNames(mutability).exactOf(myInt).toList(list -> scope(
+                String.join(", ", list.stream().map(DataName::name).toList())
+            )),
             "}]\n"
         ));
 
