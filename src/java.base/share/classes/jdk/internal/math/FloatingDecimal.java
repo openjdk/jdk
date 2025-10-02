@@ -125,14 +125,15 @@ public class FloatingDecimal {
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO = new BinaryToASCIIBuffer(false, new byte[]{'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO = new BinaryToASCIIBuffer(true,  new byte[]{'0'});
+    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO =
+            new BinaryToASCIIBuffer(new byte[] {'0'});
+    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO =
+            new BinaryToASCIIBuffer(new byte[] {'0'});
 
     /**
      * A buffered implementation of {@link BinaryToASCIIConverter}.
      */
     static class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
-        private boolean isNegative;
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
@@ -162,8 +163,7 @@ public class FloatingDecimal {
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIBuffer(boolean isNegative, byte[] digits){
-            this.isNegative = isNegative;
+        BinaryToASCIIBuffer(byte[] digits){
             this.decExponent  = 0;
             this.digits = digits;
             this.firstDigitIndex = 0;
@@ -191,10 +191,6 @@ public class FloatingDecimal {
             return exactDecimalConversion;
         }
 
-        private void setSign(boolean isNegative) {
-            this.isNegative = isNegative;
-        }
-
         /**
          * This is the easy subcase --
          * all the significant bits, after scaling, are held in lvalue.
@@ -210,7 +206,8 @@ public class FloatingDecimal {
          * and besides want to treat trailing 0s specially. If Long.toString
          * changes, we should re-evaluate this strategy!
          */
-        private void developLongDigits( int decExponent, long lvalue, int insignificantDigits ){
+        private void developLongDigits( long lvalue, int insignificantDigits ){
+            int decExponent = 0;
             if ( insignificantDigits != 0 ){
                 // Discard non-significant low-order bits, while rounding,
                 // up to insignificant value.
@@ -319,7 +316,7 @@ public class FloatingDecimal {
                         } else {
                             fractBits >>>= (EXP_SHIFT-binExp) ;
                         }
-                        developLongDigits( 0, fractBits, insignificant );
+                        developLongDigits( fractBits, insignificant );
                         return;
                     }
                     //
@@ -413,7 +410,7 @@ public class FloatingDecimal {
             // 26 Sept 96 is not that day.
             // So we use a symmetric test.
             //
-            int ndigit = 0;
+            int ndigit;
             boolean low, high;
             long lowDigitDifference;
             int  q;
@@ -1759,7 +1756,6 @@ public class FloatingDecimal {
         }
         binExp -= DoubleConsts.EXP_BIAS;
         BinaryToASCIIBuffer buf = getBinaryToASCIIBuffer();
-        buf.setSign(isNegative);
         // call the routine that actually does all the hard work.
         buf.dtoa(binExp, fractBits, nSignificantBits);
         return buf;
