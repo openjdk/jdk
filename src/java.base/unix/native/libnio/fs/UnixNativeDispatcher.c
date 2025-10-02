@@ -343,22 +343,21 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* system calls that might not be available at run time */
 
-#if defined(_ALLBSD_SOURCE)
-    my_openat_func = (openat_func*) openat;
-    my_fstatat_func = (fstatat_func*) fstatat;
-#else
-    // Make sure we link to the 64-bit version of the functions
-    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
-    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
-#endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
 #if defined(_AIX)
     // Make sure we link to the 64-bit version of the function
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "open64at");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "stat64at");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
 #elif defined(_ALLBSD_SOURCE)
+    my_openat_func = (openat_func*) openat;
+    my_fstatat_func = (fstatat_func*) fstatat;
     my_fdopendir_func = (fdopendir_func*) fdopendir;
 #else
+    // Make sure we link to the 64-bit version of the functions
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
 #endif
 
@@ -742,7 +741,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     }
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT jint JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd,
     jlong pathAddress, jint flag, jobject attrs)
 {
@@ -762,23 +761,23 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
         RESTARTABLE(statx_wrapper((int)dfd, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
+            return 0;
         } else {
-            throwUnixException(env, errno);
+            return errno;
         }
-        // statx was available, so return now
-        return;
     }
 #endif
 
     if (my_fstatat_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
-        return;
+        return ENOTSUP;
     }
     RESTARTABLE((*my_fstatat_func)((int)dfd, path, &buf, (int)flag), err);
-    if (err == -1) {
-        throwUnixException(env, errno);
-    } else {
+    if (err == 0) {
         copy_stat_attributes(env, &buf, attrs);
+        return 0;
+    } else {
+        return errno;
     }
 }
 

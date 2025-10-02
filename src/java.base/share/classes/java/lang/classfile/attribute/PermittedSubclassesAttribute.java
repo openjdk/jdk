@@ -77,6 +77,8 @@ public sealed interface PermittedSubclassesAttribute
      * {@return a {@code PermittedSubclasses} attribute}
      *
      * @param permittedSubclasses the permitted subclasses or subinterfaces
+     * @throws IllegalArgumentException if the number of permitted subclasses
+     *         or subinterfaces exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static PermittedSubclassesAttribute of(List<ClassEntry> permittedSubclasses) {
         return new UnboundAttribute.UnboundPermittedSubclassesAttribute(permittedSubclasses);
@@ -86,6 +88,8 @@ public sealed interface PermittedSubclassesAttribute
      * {@return a {@code PermittedSubclasses} attribute}
      *
      * @param permittedSubclasses the permitted subclasses or subinterfaces
+     * @throws IllegalArgumentException if the number of permitted subclasses
+     *         or subinterfaces exceeds the limit of {@link java.lang.classfile##u2 u2}
      */
     static PermittedSubclassesAttribute of(ClassEntry... permittedSubclasses) {
         return of(List.of(permittedSubclasses));
@@ -95,7 +99,9 @@ public sealed interface PermittedSubclassesAttribute
      * {@return a {@code PermittedSubclasses} attribute}
      *
      * @param permittedSubclasses the permitted subclasses or subinterfaces
-     * @throws IllegalArgumentException if any of {@code permittedSubclasses} is primitive
+     * @throws IllegalArgumentException if any of {@code permittedSubclasses} is primitive,
+     *         or if the number of permitted subclasses or subinterfaces exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static PermittedSubclassesAttribute ofSymbols(List<ClassDesc> permittedSubclasses) {
         return of(Util.entryList(permittedSubclasses));
@@ -105,7 +111,9 @@ public sealed interface PermittedSubclassesAttribute
      * {@return a {@code PermittedSubclasses} attribute}
      *
      * @param permittedSubclasses the permitted subclasses or subinterfaces
-     * @throws IllegalArgumentException if any of {@code permittedSubclasses} is primitive
+     * @throws IllegalArgumentException if any of {@code permittedSubclasses} is primitive,
+     *         or if the number of permitted subclasses or subinterfaces exceeds
+     *         the limit of {@link java.lang.classfile##u2 u2}
      */
     static PermittedSubclassesAttribute ofSymbols(ClassDesc... permittedSubclasses) {
         // List version does defensive copy

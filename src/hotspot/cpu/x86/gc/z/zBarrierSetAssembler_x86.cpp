@@ -1410,10 +1410,8 @@ void ZBarrierSetAssembler::patch_barriers() {
   }
 }
 
-
 #undef __
 #define __ masm->
-
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored

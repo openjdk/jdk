@@ -29,7 +29,6 @@
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "logging/log.hpp"
 #include "memory/classLoaderMetaspace.hpp"
@@ -60,11 +59,6 @@ void VM_Heap_Sync_Operation::doit_epilogue() {
 void VM_Verify::doit() {
   Universe::heap()->prepare_for_verify();
   Universe::verify();
-}
-
-VM_GC_Operation::~VM_GC_Operation() {
-  CollectedHeap* ch = Universe::heap();
-  ch->soft_ref_policy()->set_all_soft_refs_clear(false);
 }
 
 const char* VM_GC_Operation::cause() const {
@@ -117,7 +111,7 @@ bool VM_GC_Operation::doit_prologue() {
   VM_Heap_Sync_Operation::doit_prologue();
 
   // Check invocations
-  if (skip_operation()) {
+  if (skip_operation() || Universe::is_shutting_down()) {
     // skip collection
     Heap_lock->unlock();
     if (should_use_gclocker()) {

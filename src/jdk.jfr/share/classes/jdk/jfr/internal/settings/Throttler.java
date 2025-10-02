@@ -55,8 +55,6 @@ public final class Throttler {
     private boolean disabled;
     private boolean update = true;
 
-    public Throttler(PlatformEventType t) {
-    }
     // Not synchronized in fast path, but uses volatile reads.
     public boolean sample(long ticks) {
         if (disabled) {

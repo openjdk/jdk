@@ -2309,16 +2309,18 @@ Node* GraphKit::record_profiled_receiver_for_speculation(Node* n) {
       if (!data->as_BitData()->null_seen()) {
         ptr_kind = ProfileNeverNull;
       } else {
-        assert(data->is_ReceiverTypeData(), "bad profile data type");
-        ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
-        uint i = 0;
-        for (; i < call->row_limit(); i++) {
-          ciKlass* receiver = call->receiver(i);
-          if (receiver != nullptr) {
-            break;
+        if (TypeProfileCasts) {
+          assert(data->is_ReceiverTypeData(), "bad profile data type");
+          ciReceiverTypeData* call = (ciReceiverTypeData*)data->as_ReceiverTypeData();
+          uint i = 0;
+          for (; i < call->row_limit(); i++) {
+            ciKlass* receiver = call->receiver(i);
+            if (receiver != nullptr) {
+              break;
+            }
           }
+          ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
         }
-        ptr_kind = (i == call->row_limit()) ? ProfileAlwaysNull : ProfileMaybeNull;
       }
     }
   }
@@ -4074,7 +4076,9 @@ void GraphKit::add_parse_predicates(int nargs) {
       add_parse_predicate(Deoptimization::Reason_profile_predicate, nargs);
     }
   }
-  add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
+  if (UseAutoVectorizationPredicate) {
+    add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, nargs);
+  }
   // Loop Limit Check Predicate should be near the loop.
   add_parse_predicate(Deoptimization::Reason_loop_limit_check, nargs);
 }
