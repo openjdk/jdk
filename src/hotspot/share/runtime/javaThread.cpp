@@ -122,7 +122,7 @@ size_t      JavaThread::_stack_size_at_create = 0;
   #define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
   #define DTRACE_THREAD_PROBE(probe, javathread)                           \
-    {                                                                      \
+    if (javathread != AOTThread::aot_thread()) {                           \
       ResourceMark rm(this);                                               \
       int len = 0;                                                         \
       const char* name = (javathread)->name();                             \
