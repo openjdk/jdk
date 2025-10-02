@@ -148,7 +148,7 @@ final public class PBKDF2Parameters {
      * each time this method is called.
      */
     public byte[] getSalt() {
-        return this.salt.clone();
+        return this.salt;
     }
 
     /**

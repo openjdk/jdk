@@ -63,9 +63,6 @@ import sun.security.util.*;
  */
 final public class PBMAC1Parameters {
 
-    // the PBMAC1 algorithm name
-    private String pbmac1AlgorithmName = null;
-
     private byte[] salt = null;
 
     // Iteration count
@@ -82,13 +79,13 @@ final public class PBMAC1Parameters {
     private int keyLength = -1;
 
     protected void Init(AlgorithmParameterSpec paramSpec)
-        throws InvalidParameterSpecException {
-        if (!(paramSpec instanceof PBEParameterSpec)) {
+            throws InvalidParameterSpecException {
+        if (!(paramSpec instanceof PBEParameterSpec pbeParamSpec)) {
             throw new InvalidParameterSpecException
                     ("Inappropriate parameter specification");
         }
-        salt = ((PBEParameterSpec)paramSpec).getSalt().clone();
-        iCount = ((PBEParameterSpec)paramSpec).getIterationCount();
+        salt = pbeParamSpec.getSalt().clone();
+        iCount = pbeParamSpec.getIterationCount();
     }
 
     public void Init(byte[] encoded) throws IOException {
@@ -131,9 +128,6 @@ final public class PBMAC1Parameters {
             throw new IOException("PBMAC1 parameter parsing "
                     + "error: missing keyLength field");
         }
-
-        pbmac1AlgorithmName = "PBMAC1With" + this.prfAlgo + "And"
-                + this.hmacAlgo;
     }
 
     protected void Init(byte[] encoded, String decodingMethod)
@@ -173,16 +167,8 @@ final public class PBMAC1Parameters {
         return out.toByteArray();
     }
 
-    protected byte[] getEncoded(String encodingMethod)
-        throws IOException {
+    protected byte[] getEncoded(String encodingMethod) throws IOException {
         return getEncoded();
-    }
-
-    /*
-     * Returns a formatted string describing the parameters.
-     */
-    public String engineToString() {
-        return pbmac1AlgorithmName;
     }
 
     public String getPrf() {

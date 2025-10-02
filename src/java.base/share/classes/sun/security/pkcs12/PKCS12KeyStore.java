@@ -37,7 +37,6 @@ import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.*;
 import javax.crypto.Cipher;
-import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
@@ -174,7 +173,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private int certPbeIterationCount = -1;
     private String macAlgorithm = null;
     private int macIterationCount = -1;
-    private boolean newKeystore;
 
     // the source of randomness
     private SecureRandom random;
@@ -1245,7 +1243,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         // -- MAC
         if (macAlgorithm == null) {
-            newKeystore = true;
             macAlgorithm = defaultMacAlgorithm();
         }
         if (macIterationCount < 0) {
@@ -1253,7 +1250,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
         if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
             byte[] macData = MacData.calculateMac(password, authenticatedSafe,
-                   newKeystore, macAlgorithm, macIterationCount, getSalt());
+                    macAlgorithm, macIterationCount, getSalt());
             pfx.write(macData);
         }
         // write PFX to output stream
@@ -2082,12 +2079,11 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                 "MAC iteration count too large: " + ic);
                     }
 
-                    macAlgorithm = macData.getMacAlgorithm();
                     macIterationCount = ic;
                     PBEParameterSpec params = new PBEParameterSpec(salt, ic);
                     RetryWithZero.run(pass -> {
-                        macData.processMacData(params, macData, pass,
-                                authSafeData, macAlgorithm);
+                        macData.processMacData(params, pass, authSafeData,
+                                macData.getMacAlgorithm());
                         return (Void) null;
                     }, password);
                 } catch (Exception e) {
