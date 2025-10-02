@@ -2277,7 +2277,7 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test //JDK-8366968
-    public void testNonSealed(Path base) throws Exception {
+    public void testNonSealedDiamond(Path base) throws Exception {
         doTest(base,
                new String[0],
                """
@@ -2300,6 +2300,31 @@ public class Exhaustiveness extends TestRunner {
 
                }
                """);
+    }
+
+    @Test //JDK-8366968
+    public void testNonAbstract(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+                   sealed interface I permits Base, C3 { }
+                   sealed class Base implements I permits C1, C2 { }
+                   final class C1 extends Base { }
+                   final class C2 extends Base { }
+                   final class C3 implements I { }
+
+                   void method1(I i) {                  
+                       switch (i) {
+                           case C1 _ -> {}
+                           case C2 _ -> {}
+                           case C3 _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Demo.java:9:9: compiler.err.not.exhaustive.statement",
+               "1 error");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {

@@ -244,7 +244,7 @@ public class ExhaustivenessComputer {
                                                                                      types.erasure(bpOther.type)))
                                                      .collect(Collectors.toSet());
                                 } else {
-                                    currentSubTypes = Set.of(bpOther.type.tsym);
+                                    currentSubTypes = Set.of();
                                 }
 
                                 PERMITTED: for (Iterator<Symbol> it = filteredPermitted.iterator(); it.hasNext();) {
