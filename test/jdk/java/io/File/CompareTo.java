@@ -27,6 +27,7 @@
  * @library .. /test/lib
  * @build jdk.test.lib.Platform
  * @run main CompareTo
+ * @run main/othervm -Djdk.io.File.legacyEquals=true CompareTo
  */
 
 import java.io.File;
@@ -49,9 +50,13 @@ public class CompareTo {
         boolean shouldBeEqual= smallDotlessI.equals(latinCapitalI);
         if (!shouldBeEqual)
             throw new Exception("Small dotless \"i\" does not equal \"I\"");
+
+        boolean legacyEquals = Boolean.getBoolean("jdk.io.File.legacyEquals");
         boolean shouldNotBeEqual = largeDotfullI.equals(latinCapitalI);
-        if (shouldNotBeEqual)
+        if (shouldNotBeEqual && !legacyEquals)
             throw new Exception("Large dotted \"I\" equals \"I\"");
+        else if (!shouldNotBeEqual && legacyEquals)
+            throw new Exception("Large dotted \"I\" does not equal \"I\"");
     }
 
     private static void testUnix() throws Exception {

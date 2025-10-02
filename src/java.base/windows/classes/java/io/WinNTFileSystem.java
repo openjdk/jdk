@@ -44,6 +44,9 @@ final class WinNTFileSystem extends FileSystem {
     private static final boolean ALLOW_DELETE_READ_ONLY_FILES =
         Boolean.getBoolean("jdk.io.File.allowDeleteReadOnlyFiles");
 
+    private static final boolean LEGACY_EQUALS =
+        Boolean.getBoolean("jdk.io.File.legacyEquals");
+
     private final char slash;
     private final char altSlash;
     private final char semicolon;
@@ -635,6 +638,11 @@ final class WinNTFileSystem extends FileSystem {
 
     @Override
     public int compare(File f1, File f2) {
+        // Use legacy pathname comparison if property is set
+        if (LEGACY_EQUALS)
+            return f1.getPath().compareToIgnoreCase(f2.getPath());
+
+        // Compare pathname strings as in sun.nio.fs.WindowsPath.compareTo
         String s1 = f1.getPath();
         String s2 = f2.getPath();
         int n1 = s1.length();
