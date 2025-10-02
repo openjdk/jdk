@@ -231,6 +231,10 @@ public class TestTemplate {
         expectRendererException(() -> testFailingAddNameDuplication8(), "Duplicate name:");
         expectRendererException(() -> testFailingScope1(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
         expectRendererException(() -> testFailingScope2(), "Duplicate hashtag replacement for #x. previous: x1, new: x2");
+        expectRendererException(() -> testFailingScope3(), "Duplicate hashtag replacement for #x. previous: a, new: b");
+        expectRendererException(() -> testFailingScope4(), "Duplicate hashtag replacement for #x. previous: a, new: b");
+        expectRendererException(() -> testFailingScope5(), "Duplicate name:");
+        expectRendererException(() -> testFailingScope6(), "Duplicate name:");
     }
 
     public static void testSingleLine() {
@@ -2051,7 +2055,6 @@ public class TestTemplate {
                 "sn4: #name4.\n",
                 // Same issue with duplicate names as with "flat".
                 addStructuralName("y_" + sn.name(), myStructuralTypeA)
-                // TODO: check we have negative tests for these here!
             )),
             "sn2: #name2_a #name2_b.\n", // hashtags escaped
             "sn3: #name3_a #name3_b.\n", // hashtags escaped
@@ -2765,6 +2768,50 @@ public class TestTemplate {
                 let("x", "x1") // escapes
             ),
             let("x", "x2") // second definition
+        ));
+        String code = template.render();
+    }
+
+    public static void testFailingScope3() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
+                let("x", sn.name()) // leads to duplicate hashtag
+            ))
+        ));
+        String code = template.render();
+    }
+
+    public static void testFailingScope4() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> nameScope(
+                let("x", sn.name()) // leads to duplicate hashtag
+            ))
+        ));
+        String code = template.render();
+    }
+
+    public static void testFailingScope5() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
+                addStructuralName("x", myStructuralTypeA) // leads to duplicate name
+            ))
+        ));
+        String code = template.render();
+    }
+
+    public static void testFailingScope6() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> hashtagScope(
+                addStructuralName("x", myStructuralTypeA) // leads to duplicate name
+            ))
         ));
         String code = template.render();
     }
