@@ -72,8 +72,6 @@ class JfrSamplerThread : public NonJavaThread {
   void disenroll();
   void set_java_period(int64_t period_millis);
   void set_native_period(int64_t period_millis);
-  bool sample_java_thread(JavaThread* jt);
-  bool sample_native_thread(JavaThread* jt);
 
  protected:
   void run();
@@ -250,10 +248,10 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
     }
     bool success;
     if (JAVA_SAMPLE == type) {
-      success = sample_java_thread(current);
+      success = JfrThreadSampler::sample_java_thread(current, nullptr, nullptr);
     } else {
       assert(type == NATIVE_SAMPLE, "invariant");
-      success = sample_native_thread(current);
+      success = JfrThreadSampler::sample_native_thread(current, nullptr, nullptr);
     }
     if (success) {
       num_samples++;
@@ -275,9 +273,13 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
 class OSThreadSampler : public SuspendedThreadTask {
  private:
   JfrSampleResult _result;
+  SampleCallback _callback;
+  void*          _data;
+
  public:
-  OSThreadSampler(JavaThread* jt) : SuspendedThreadTask(jt),
-                                    _result(THREAD_SUSPENSION_ERROR) {}
+  OSThreadSampler(JavaThread* jt, SampleCallback callback, void* data) :
+    SuspendedThreadTask(jt), _result(THREAD_SUSPENSION_ERROR),
+    _callback(callback), _data(data) {}
   void request_sample() { run(); }
   JfrSampleResult result() const { return _result; }
 
@@ -287,7 +289,7 @@ class OSThreadSampler : public SuspendedThreadTask {
     if (jt->thread_state() == _thread_in_Java) {
       JfrThreadLocal* const tl = jt->jfr_thread_local();
       if (tl->sample_state() == NO_SAMPLE) {
-        _result = JfrSampleRequestBuilder::build_java_sample_request(context.ucontext(), tl, jt);
+        _result = JfrSampleRequestBuilder::build_java_sample_request(context.ucontext(), tl, jt, _callback, _data);
       }
     }
   }
@@ -295,12 +297,12 @@ class OSThreadSampler : public SuspendedThreadTask {
 
 // Sampling a thread in state _thread_in_Java
 // involves a platform-specific thread suspend and CPU context retrieval.
-bool JfrSamplerThread::sample_java_thread(JavaThread* jt) {
+bool JfrThreadSampler::sample_java_thread(JavaThread* jt, SampleCallback callback, void* data) {
   if (jt->thread_state() != _thread_in_Java) {
     return false;
   }
 
-  OSThreadSampler sampler(jt);
+  OSThreadSampler sampler(jt, callback, data);
   sampler.request_sample();
 
   if (sampler.result() != SAMPLE_JAVA) {
@@ -326,8 +328,8 @@ static JfrSamplerThread* _sampler_thread = nullptr;
 // We can sample a JavaThread running in state _thread_in_native
 // without thread suspension and CPU context retrieval,
 // if we carefully order the loads of the thread state.
-bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
-  if (jt->thread_state() != _thread_in_native) {
+bool JfrThreadSampler::sample_native_thread(JavaThread* jt, SampleCallback callback, void* data) {
+  if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_blocked) {
     return false;
   }
 
@@ -358,7 +360,7 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
     return false;
   }
 
-  if (jt->thread_state() != _thread_in_native) {
+  if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_blocked) {
     assert_lock_strong(Threads_lock);
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
@@ -371,8 +373,17 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
     return false;
   }
 
-  return JfrThreadSampling::process_native_sample_request(tl, jt, _sampler_thread);
+  return JfrThreadSampling::process_native_sample_request(tl, jt, Thread::current(), callback, data);
 }
+
+
+bool JfrThreadSampler::sample_thread(JavaThread* jt, SampleCallback callback, void* data) {
+  if (!sample_native_thread(jt, callback, data)) {
+    return sample_java_thread(jt, callback, data);
+  }
+  return true;
+}
+
 
 void JfrSamplerThread::set_java_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");

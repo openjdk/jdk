@@ -40,7 +40,6 @@ import java.lang.annotation.Target;
  * If an event doesn't have the annotation, then by default the event is
  * a synchronous event.
  * <p>
- * <p>
  * Delivering asynchronous event is not guaranteed, for the reasons:
  * <ul>
  * <li>If target thread is a virtual thread, the event won't be emitted</li>

@@ -25,6 +25,7 @@
 #ifndef SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLING_HPP
 
+#include "jfr/periodic/sampling/jfrSampleRequest.hpp"
 #include "memory/allocation.hpp"
 
 class JavaThread;
@@ -32,10 +33,10 @@ class JfrThreadLocal;
 class Thread;
 
 class JfrThreadSampling : AllStatic {
-  friend class JfrSamplerThread;
+  friend class JfrThreadSampler;
   friend class JfrCPUSamplerThread;
  private:
-  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread);
+  static bool process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread, SampleCallback callback, void* data);
   static void process_cpu_time_request(JavaThread* jt, JfrThreadLocal* tl, Thread* current, bool lock);
  public:
   static void process_sample_request(JavaThread* jt);

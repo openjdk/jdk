@@ -26,11 +26,14 @@
 #define SHARE_JFR_PERIODIC_SAMPLING_JFRSAMPLEREQUEST_HPP
 
 #include "jfr/utilities/jfrTime.hpp"
+#include "jfr/utilities/jfrTypes.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/growableArray.hpp"
 
 class JavaThread;
 class JfrThreadLocal;
+
+typedef void (*SampleCallback)(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, void* data);
 
 enum JfrSampleResult {
   THREAD_SUSPENSION_ERROR,
@@ -60,18 +63,24 @@ struct JfrSampleRequest {
   void* _sample_pc;
   void* _sample_bcp;
   JfrTicks _sample_ticks;
+  void* _data;
+  SampleCallback _callback;
 
-  JfrSampleRequest() :
+  JfrSampleRequest(void* data = nullptr, SampleCallback func = nullptr) :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
-    _sample_ticks() {}
+    _sample_ticks(),
+    _data(data),
+    _callback(func){}
 
   JfrSampleRequest(const JfrTicks& ticks) :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
-    _sample_ticks(ticks) {}
+    _sample_ticks(ticks),
+    _data(nullptr),
+    _callback(nullptr) {}
 };
 
 typedef GrowableArrayCHeap<JfrSampleRequest, mtTracing> JfrSampleRequestQueue;
@@ -80,7 +89,9 @@ class JfrSampleRequestBuilder : AllStatic {
  public:
   static JfrSampleResult build_java_sample_request(const void* ucontext,
                                                    JfrThreadLocal* tl,
-                                                   JavaThread* jt);
+                                                   JavaThread* jt,
+                                                   SampleCallback callback,
+                                                   void* data);
   static void build_cpu_time_sample_request(JfrSampleRequest &request,
                                             void* ucontext,
                                             JavaThread* jt,

@@ -27,6 +27,7 @@
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/exceptions.hpp"
 
 JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
@@ -105,7 +106,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"nanosNow", (char*)"()J", (void*)jfr_nanos_now,
       (char*)"isProduct", (char*)"()Z", (void*)jfr_is_product,
       (char*)"setMethodTraceFilters", (char*)"([Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[I)[J", (void*)jfr_set_method_trace_filters,
-      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids
+      (char*)"drainStaleMethodTracerIds", (char*)"()[J", (void*)jfr_drain_stale_method_tracer_ids,
+      (char*)"sendAsyncEvent", (char*)"(Ljava/lang/Thread;JZZZ[B)V", (void*)jfr_send_asysnc_event
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);
@@ -113,6 +115,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       JavaThread* jt = JavaThread::thread_from_jni_environment(env);
       assert(jt != nullptr, "invariant");
       assert(jt->thread_state() == _thread_in_native, "invariant");
+      MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
       ThreadInVMfromNative transition(jt);
       log_error(jfr, system)("RegisterNatives for JVM class failed!");
     }

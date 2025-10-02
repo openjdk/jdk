@@ -47,6 +47,7 @@
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
+#include "jfr/support/jfrAsyncEvent.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
@@ -460,4 +461,8 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass jvm))
   return JfrMethodTracer::drain_stale_class_ids(thread);
+JVM_END
+
+JVM_ENTRY_NO_ENV(void, jfr_send_asysnc_event(JNIEnv* env, jclass jvm, jobject target, jlong eventId, jboolean hasDuration, jboolean hasEventThread, jboolean hasStackTrace, jbyteArray payload))
+  JfrAsyncEvent::send_async_event(target, eventId, hasDuration, hasEventThread, hasStackTrace, payload, thread);
 JVM_END

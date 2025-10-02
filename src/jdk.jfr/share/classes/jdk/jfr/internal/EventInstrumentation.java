@@ -515,16 +515,16 @@ public final class EventInstrumentation {
         invokevirtual(blockCodeBuilder, eventClassDesc, METHOD_EVENT_SHOULD_COMMIT);
         blockCodeBuilder.ifeq(end);
 
-        // Asynchronous event
+        // Asynchronous event check
         Label syncEvent = blockCodeBuilder.newLabel();
-        Label blockend = blockCodeBuilder.newLabel();
+        Label done_update = blockCodeBuilder.newLabel();
         if (!this.inspector.isSynchronousEvent()) {
             // load target thread
             blockCodeBuilder.aload(0);
             getfield(blockCodeBuilder, eventClassDesc, inspector.getTargetThread());
             blockCodeBuilder.astore(3);
 
-            // if targetThread == null
+            // if targetThread == null, treat it as synchronous event
             blockCodeBuilder.aload(3);
             blockCodeBuilder.aconst_null();
             blockCodeBuilder.if_acmpeq(syncEvent);
@@ -539,20 +539,37 @@ public final class EventInstrumentation {
             invokestatic(blockCodeBuilder, TYPE_THREAD, METHOD_CURRENT_THREAD);
             invokevirtual(blockCodeBuilder, TYPE_THREAD, METHOD_THREAD_EQUALS);
             blockCodeBuilder.ifne(syncEvent);
-            updateAsyncInstanceCommit(blockCodeBuilder, excluded, blockend);
+            // update asynchronous event
+            updateAsyncInstanceCommit(blockCodeBuilder, excluded, done_update);
         }
 
+        // update synchronous event
         blockCodeBuilder.labelBinding(syncEvent);
         updateSyncInstanceCommit(blockCodeBuilder, excluded, end);
-        blockCodeBuilder.labelBinding(blockend);
+        blockCodeBuilder.labelBinding(done_update);
     }
 
     private void updateAsyncInstanceCommit(BlockCodeBuilder blockCodeBuilder, Label excluded, Label end) {
-
-        System.out.println("Creating async event: " + this.inspector.getEventName());
-
         getAsyncEventWriter(blockCodeBuilder);
         // stack: [EW]
+        if (this.inspector.hasDuration()) {
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_HAS_DURATION.method());
+        }
+        // stack: [EW]
+        if (this.inspector.hasEventThread()) {
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_HAS_EVENT_THREAD.method());
+        }
+        // stack: [EW]
+        if (this.inspector.hasStackTrace()) {
+            blockCodeBuilder.dup();
+            // stack: [EW] [EW]
+            invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_HAS_STACKTRACE.method());
+        }
+
         blockCodeBuilder.dup();
         // stack: [EW] [EW]
         getEventConfiguration(blockCodeBuilder);

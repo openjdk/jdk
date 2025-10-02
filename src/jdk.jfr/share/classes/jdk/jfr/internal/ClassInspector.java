@@ -445,9 +445,5 @@ final class ClassInspector {
                 }
             }
         }
-
-        if (isAsyncEvent && (!hasEventThread() || !hasStackTrace())) {
-            throw new IllegalArgumentException("Asynchronous event requires to have event thread and stack trace");
-        }
     }
 }

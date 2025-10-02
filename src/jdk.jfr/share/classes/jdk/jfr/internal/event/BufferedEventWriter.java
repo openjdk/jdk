@@ -1,6 +1,5 @@
 package jdk.jfr.internal.event;
 
-import jdk.jfr.internal.Bits;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.StringPool;
@@ -15,9 +14,12 @@ public class BufferedEventWriter {
     private DataOutputStream writer = new DataOutputStream(buffer);
 
     private PlatformEventType eventType;
-    private long eventId;
 
+    private long eventId;
     private Thread targetThread;
+    private boolean hasDuration;
+    private boolean hasEventThread;
+    private boolean hasStackTrace;
 
     private BufferedEventWriter() {
     }
@@ -40,9 +42,21 @@ public class BufferedEventWriter {
         this.targetThread = t;
     }
 
-    public boolean endEvent() {
-        byte[] content = buffer.toByteArray();
+    public void putHasDuration() {
+        this.hasDuration = true;
+    }
 
+    public void putHasEventThread() {
+        this.hasEventThread = true;
+    }
+
+    public void putHasStackTrace() {
+        this.hasStackTrace = true;
+    }
+
+    public boolean endEvent() {
+        byte[] payload = buffer.toByteArray();
+        JVM.sendAsyncEvent(targetThread, eventId, hasDuration, hasEventThread, hasStackTrace, payload);
         return true;
     }
 
