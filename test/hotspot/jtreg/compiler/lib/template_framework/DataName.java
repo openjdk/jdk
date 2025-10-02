@@ -259,14 +259,15 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
         }
 
         /**
-         * Collects all {@link DataName}s in the filtered set.
+         * Collects all {@link DataName}s in the filtered set, making the collected list
+         * available to an inner scope.
          *
+         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         *                 the list of {@link DataName}.
          * @return A {@link List} of all {@link DataName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        // TODO: adjust documentation
-        // TODO: make sure we have enough tests
         public Token toList(Function<List<DataName>, NestingToken> function) {
             return new NamesToListToken(predicate(), function);
         }
