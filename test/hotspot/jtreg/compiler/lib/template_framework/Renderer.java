@@ -176,11 +176,6 @@ final class Renderer {
         currentTemplateFrame.setFuelCost(fuelCost);
     }
 
-    // TODO: remove?
-    boolean hasAnyNames(NameSet.Predicate predicate) {
-        return currentCodeFrame.hasAnyNames(predicate);
-    }
-
     /**
      * Formats values to {@link String} with the goal of using them in Java code.
      * By default, we use the overrides of {@link Object#toString}.
