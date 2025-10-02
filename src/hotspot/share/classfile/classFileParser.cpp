@@ -4684,8 +4684,8 @@ const char* ClassFileParser::skip_over_field_signature(const char* signature,
         const char* const p = skip_over_field_name(signature, true, length);
         assert(p == nullptr || p > signature, "must parse one character at least");
         // The next character better be a semicolon
-        if (p != nullptr                                 && // Parse of field name succeeded.
-            p - signature < static_cast<int>(length)     && // There is at least one character left to parse.
+        if (p != nullptr                             && // Parse of field name succeeded.
+            p - signature < static_cast<int>(length) && // There is at least one character left to parse.
             p[0] == JVM_SIGNATURE_ENDCLASS) {
           return p + 1;
         }
