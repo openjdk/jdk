@@ -30,6 +30,7 @@
  * @run junit CommandLineTest
  */
 
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -117,7 +118,7 @@ class CommandLineTest {
     }
 
     /**
-     * Test warn on first mutation of a final.
+     * Test warn on first mutation or unreflect of a final field.
      */
     @Test
     void testWarn() throws Exception {
@@ -135,19 +136,25 @@ class CommandLineTest {
             .shouldContain(WARNING_LINE4)
             .shouldHaveExitValue(0);
 
-        // should be only one warning
-        test("testFieldSetInt+testUnreflectSetter", "--illegal-final-field-mutation=warn")
-            .shouldContain(WARNING_LINE1)
+        // should be one warning only, for Field.set
+        var output = test("testFieldSetInt+testUnreflectSetter", "--illegal-final-field-mutation=warn")
             .shouldContain(WARNING_MUTATED)
             .shouldNotContain(WARNING_UNREFLECTED)
-            .shouldHaveExitValue(0);
+            .shouldHaveExitValue(0)
+            .getOutput();
+        assertEquals(1, countStrings(output, WARNING_LINE1));
+        assertEquals(1, countStrings(output, WARNING_LINE3));
+        assertEquals(1, countStrings(output, WARNING_LINE4));
 
-        // should be only one warning
-        test("testUnreflectSetter+testFieldSetInt", "--illegal-final-field-mutation=warn")
-            .shouldContain(WARNING_LINE1)
+        // should be one warning only, for Lookup.unreflectSetter
+        output = test("testUnreflectSetter+testFieldSetInt", "--illegal-final-field-mutation=warn")
             .shouldNotContain(WARNING_MUTATED)
             .shouldContain(WARNING_UNREFLECTED)
-            .shouldHaveExitValue(0);
+            .shouldHaveExitValue(0)
+            .getOutput();
+        assertEquals(1, countStrings(output, WARNING_LINE1));
+        assertEquals(1, countStrings(output, WARNING_LINE3));
+        assertEquals(1, countStrings(output, WARNING_LINE4));
     }
 
     /**
@@ -164,12 +171,12 @@ class CommandLineTest {
             .shouldHaveExitValue(0);
 
         test("testUnreflectSetter+testFieldSetInt", "--illegal-final-field-mutation=debug")
-                .shouldContain("Final field value in class " + HELPER)
-                .shouldContain(WARNING_UNREFLECTED)
-                .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
-                .shouldContain(WARNING_MUTATED)
-                .shouldContain("java.lang.reflect.Field.setInt")
-                .shouldHaveExitValue(0);
+            .shouldContain("Final field value in class " + HELPER)
+            .shouldContain(WARNING_UNREFLECTED)
+            .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
+            .shouldContain(WARNING_MUTATED)
+            .shouldContain("java.lang.reflect.Field.setInt")
+            .shouldHaveExitValue(0);
     }
 
     /**
@@ -244,5 +251,12 @@ class CommandLineTest {
                 .outputTo(System.err)
                 .errorTo(System.err);
         return outputAnalyzer;
+    }
+
+    /**
+     * Counts the number of substrings in the given input string.
+     */
+    private int countStrings(String input, String substring) {
+        return input.split(Pattern.quote(substring)).length - 1;
     }
 }
