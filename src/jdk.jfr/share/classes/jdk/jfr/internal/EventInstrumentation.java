@@ -588,23 +588,8 @@ public final class EventInstrumentation {
         invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_TARGET_THREAD.method());
 
         // stack: [EW]
-        int fieldIndex = 0;
-        blockCodeBuilder.dup();
-        // stack: [EW] [EW]
-        blockCodeBuilder.lload(1);
-        // stack: [EW] [EW] [long]
-        invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
-        fieldIndex++;
-        // stack: [EW]
-        if (inspector.hasDuration()) {
-            // write duration
-            blockCodeBuilder.dup();
-            // stack: [EW] [EW]
-            getDuration(blockCodeBuilder);
-            // stack: [EW] [EW] [long]
-            invokevirtual(blockCodeBuilder, TYPE_BUFFERED_EVENT_WRITER, EventWriterMethod.PUT_LONG.method());
-            fieldIndex++;
-        }
+        int fieldIndex = this.inspector.getExplicitFieldIndex();
+
         // stack: [EW]
         List<FieldDesc> fieldDescs = inspector.getFields();
         while (fieldIndex < fieldDescs.size()) {

@@ -22,16 +22,15 @@
  *
  */
 
-#include "oops/oop.hpp"
-#include "oops/typeArrayOop.hpp"
-#include "runtime/jniHandles.inline.hpp"
-#include "runtime/os.hpp"
-
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
 #include "jfr/support/jfrAsyncEvent.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
+#include "oops/oop.hpp"
+#include "oops/typeArrayOop.hpp"
+#include "runtime/jniHandles.inline.hpp"
+#include "runtime/os.hpp"
 
 JfrAsyncEvent::JfrAsyncEvent(long event_id, bool has_duration, bool has_event_thread, bool has_stack_trace, typeArrayOop payloadOop) :
   _event_id(event_id), _has_duration(has_duration), _has_event_thread(has_event_thread), _has_has_stack_trace(has_stack_trace) {
@@ -61,9 +60,6 @@ void JfrAsyncEvent::async_event_callback(const JfrTicks& start_time, const JfrTi
       write_sized_event(buffer, thread, start_time, end_time, tid, sid, event, true);
     }
   }
-
-  printf("Ya!\n");
-
   // Delivered, done!
   delete event;
 }
@@ -92,8 +88,7 @@ bool JfrAsyncEvent::write_sized_event(JfrBuffer* buffer,
     if (event->has_stack_trace()) {
       writer.write(sid);
     }
-    // Payload.
-
+    // Write payload
     writer.write_bytes((void*)event->payload(), size_t(event->payload_size()));
     return writer.end_event_write(large_size) > 0;
 }
@@ -107,10 +102,7 @@ void JfrAsyncEvent::send_async_event(jobject target,
                                      TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
-  printf("JfrAsyncEvent::handle_async_event\n");
-
   typeArrayOop payloadOop = typeArrayOop(JNIHandles::resolve(payload));
-
   oop target_obj = JNIHandles::resolve(target);
   JavaThread* thread = java_lang_Thread::thread(target_obj);
 

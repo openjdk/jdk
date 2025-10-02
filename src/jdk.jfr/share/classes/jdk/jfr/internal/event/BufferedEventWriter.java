@@ -77,29 +77,17 @@ public class BufferedEventWriter {
     }
 
     public void putChar(char v) {
-        try {
-            writer.writeChar(v);
-        } catch (IOException e) {
-            // Should never happen
-        }
+        putLong(v);
     }
 
-
     public void putShort(short v) {
-        try {
-            writer.writeShort(v);
-        } catch (IOException e) {
-            // Should never happen
-        }
+        putLong(v & 0xFFFF);
     }
 
     public void putInt(int v) {
-        try {
-            writer.write(v);
-        } catch (IOException e) {
-            // Should never happen
-        }
+        putLong(v & 0x00000000ffffffffL);
     }
+
     public void putFloat(float i) {
         try {
             writer.writeFloat(i);
@@ -109,61 +97,6 @@ public class BufferedEventWriter {
     }
 
     public void putLong(long v) {
-        try {
-            writer.writeLong(v);
-        } catch (IOException e) {
-            // Should never happen
-        }
-    }
-
-    public void putDouble(double i) {
-        try {
-            writer.writeDouble(i);
-        } catch (IOException e) {
-            // Should never happen
-        }
-    }
-
-    public void putString(String s) {
-        if (s == null) {
-            putByte(StringParser.Encoding.NULL.byteValue());
-            return;
-        }
-        int length = s.length();
-        if (length == 0) {
-            putByte(StringParser.Encoding.EMPTY_STRING.byteValue());
-            return;
-        }
-        if (length > StringPool.MIN_LIMIT && length < StringPool.MAX_LIMIT) {
-            long l = StringPool.addString(s, Thread.currentThread().isVirtual());
-            if (l > 0) {
-                putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
-                putLong(l);
-                return;
-            }
-        }
-        putStringValue(s);
-        return;
-    }
-
-    private void putStringValue(String s) {
-        int length = s.length();
-        putByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1 byte
-        putUncheckedInt(length); // max 5 bytes
-        for (int i = 0; i < length; i++) {
-            putUncheckedChar(s.charAt(i)); // max 3 bytes
-        }
-    }
-
-    private void putUncheckedInt(int v) {
-        putUncheckedLong(v & 0x00000000ffffffffL);
-    }
-
-    private void putUncheckedChar(char v) {
-        putUncheckedLong(v);
-    }
-
-    private void putUncheckedLong(long v) {
         if ((v & ~0x7FL) == 0L) {
             putByte((byte) v); // 0-6
             return;
@@ -215,6 +148,44 @@ public class BufferedEventWriter {
         putByte((byte) (v >>> 7)); // 56-63, last byte as is.
     }
 
+    public void putDouble(double i) {
+        try {
+            writer.writeDouble(i);
+        } catch (IOException e) {
+            // Should never happen
+        }
+    }
+
+    public void putString(String s) {
+        if (s == null) {
+            putByte(StringParser.Encoding.NULL.byteValue());
+            return;
+        }
+        int length = s.length();
+        if (length == 0) {
+            putByte(StringParser.Encoding.EMPTY_STRING.byteValue());
+            return;
+        }
+        if (length > StringPool.MIN_LIMIT && length < StringPool.MAX_LIMIT) {
+            long l = StringPool.addString(s, Thread.currentThread().isVirtual());
+            if (l > 0) {
+                putByte(StringParser.Encoding.CONSTANT_POOL.byteValue());
+                putLong(l);
+                return;
+            }
+        }
+        putStringValue(s);
+        return;
+    }
+
+    private void putStringValue(String s) {
+        int length = s.length();
+        putByte(StringParser.Encoding.CHAR_ARRAY.byteValue()); // 1 byte
+        putInt(length); // max 5 bytes
+        for (int i = 0; i < length; i++) {
+            putChar(s.charAt(i)); // max 3 bytes
+        }
+    }
 
     public void putThread(Thread athread) {
         if (athread == null) {

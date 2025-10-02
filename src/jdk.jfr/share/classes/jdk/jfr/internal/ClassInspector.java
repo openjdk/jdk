@@ -82,6 +82,7 @@ final class ClassInspector {
 
     // The target thread for an asynchronous event
     private FieldDesc targetThread;
+    private int explicitFieldIndex;
 
     ClassInspector(Class<?> superClass, byte[] bytes, boolean isJDK) {
         this.superClass = superClass;
@@ -170,14 +171,12 @@ final class ClassInspector {
         String result = annotationValue(ANNOTATION_EVENT_MODE, String.class, EventMode.SYNCHRONOUS);
 
         if (result != null) {
-            System.out.println("Class: " + className + " EventMode = " + result);
             return EventMode.SYNCHRONOUS.equals(result);
         }
 
         if (superClass != null) {
             EventMode t = superClass.getAnnotation(EventMode.class);
             if (t != null && (result = t.value()) != null) {
-                System.out.println("Class: " + className + " SUper EventMode = " + result);
                 return EventMode.SYNCHRONOUS.equals(result);
             }
         }
@@ -397,6 +396,10 @@ final class ClassInspector {
         }
     }
 
+    int getExplicitFieldIndex() {
+        return explicitFieldIndex;
+    }
+
     void buildFields() {
         Set<String> foundFields = new HashSet<>();
         boolean isAsyncEvent = !isSynchronousEvent();
@@ -412,6 +415,7 @@ final class ClassInspector {
             fieldDescs.add(ImplicitFields.FIELD_DURATION);
         }
 
+        explicitFieldIndex = fieldDescs.size();
         int targetThreadCount = 0;
         for (FieldModel field : classModel.fields()) {
             if (!foundFields.contains(field.fieldName().stringValue()) && isValidField(field.flags().flagsMask(), field.fieldTypeSymbol())) {
@@ -419,16 +423,10 @@ final class ClassInspector {
                 if (isAsyncEvent && isTargetThread(field)) {
                     targetThread = fd;
                     targetThreadCount++;
-                } else {
-                    fieldDescs.add(fd);
-                    foundFields.add(field.fieldName().stringValue());
                 }
+                fieldDescs.add(fd);
+                foundFields.add(field.fieldName().stringValue());
             }
-        }
-        if (isAsyncEvent && targetThreadCount != 1) {
-            String errMsg = (targetThreadCount < 1) ? "Asynchronous event has no target thread" :
-                                                      "Asynchronous event has more than 1 target thread";
-            throw new IllegalArgumentException(errMsg);
         }
 
         for (Class<?> c = superClass; jdk.internal.event.Event.class != c; c = c.getSuperclass()) {
@@ -444,6 +442,12 @@ final class ClassInspector {
                     }
                 }
             }
+        }
+
+        if (isAsyncEvent && targetThreadCount != 1) {
+            String errMsg = (targetThreadCount < 1) ? "Asynchronous event has no target thread" :
+                    "Asynchronous event has more than 1 target thread";
+            throw new IllegalArgumentException(errMsg);
         }
     }
 }
