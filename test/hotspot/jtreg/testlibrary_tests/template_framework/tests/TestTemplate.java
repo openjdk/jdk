@@ -2246,8 +2246,14 @@ public class TestTemplate {
                 "list4: #name4.\n",
                 addStructuralName("y", myStructuralTypeA)
             )),
+            structuralNames().exactOf(myStructuralTypeA).toList(list -> setFuelCostScope(
+                let("name5", list.size()),
+                "list5: #name5.\n",
+                addStructuralName("z", myStructuralTypeA)
+            )),
             "list2: #name2.\n", // hashtag escaped
             "list3: #name3.\n", // hashtag escaped
+            "list5: #name5.\n", // hashtag escaped
             let("name1", "shouldBeOk4"),  // hashtag did not escape
             let("name4", "shouldBeOk4"),  // hashtag did not escape
             structuralNames().exactOf(myStructuralTypeA).forEach("name", "type", sn -> scope(
@@ -2262,12 +2268,15 @@ public class TestTemplate {
             list2: 2.
             list3: 2.
             list4: 3.
+            list5: 4.
             list2: 2.
             list3: 2.
+            list5: 4.
             available: a StructuralA.
             available: b StructuralA.
             available: x StructuralA.
             available: y StructuralA.
+            available: z StructuralA.
             """;
         checkEQ(code, expected);
     }
@@ -2296,8 +2305,14 @@ public class TestTemplate {
                 "list4: #name4.\n",
                 addStructuralName("y", myStructuralTypeA)
             )),
+            structuralNames().exactOf(myStructuralTypeA).count(c -> setFuelCostScope(
+                let("name5", c),
+                "list5: #name5.\n",
+                addStructuralName("z", myStructuralTypeA)
+            )),
             "list2: #name2.\n", // hashtag escaped
             "list3: #name3.\n", // hashtag escaped
+            "list5: #name5.\n", // hashtag escaped
             let("name1", "shouldBeOk4"),  // hashtag did not escape
             let("name4", "shouldBeOk4"),  // hashtag did not escape
             structuralNames().exactOf(myStructuralTypeA).forEach("name", "type", sn -> scope(
@@ -2312,12 +2327,15 @@ public class TestTemplate {
             list2: 2.
             list3: 2.
             list4: 3.
+            list5: 4.
             list2: 2.
             list3: 2.
+            list5: 4.
             available: a StructuralA.
             available: b StructuralA.
             available: x StructuralA.
             available: y StructuralA.
+            available: z StructuralA.
             """;
         checkEQ(code, expected);
     }
@@ -2346,8 +2364,14 @@ public class TestTemplate {
                 "list4: #name4.\n",
                 addStructuralName("y", myStructuralTypeA)
             )),
+            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> setFuelCostScope(
+                let("name5", h),
+                "list5: #name5.\n",
+                addStructuralName("z", myStructuralTypeA)
+            )),
             "list2: #name2.\n", // hashtag escaped
             "list3: #name3.\n", // hashtag escaped
+            "list5: #name5.\n", // hashtag escaped
             let("name1", "shouldBeOk4"),  // hashtag did not escape
             let("name4", "shouldBeOk4"),  // hashtag did not escape
             structuralNames().exactOf(myStructuralTypeA).forEach("name", "type", sn -> scope(
@@ -2362,12 +2386,15 @@ public class TestTemplate {
             list2: true.
             list3: true.
             list4: true.
+            list5: true.
             list2: true.
             list3: true.
+            list5: true.
             available: a StructuralA.
             available: b StructuralA.
             available: x StructuralA.
             available: y StructuralA.
+            available: z StructuralA.
             """;
         checkEQ(code, expected);
     }
