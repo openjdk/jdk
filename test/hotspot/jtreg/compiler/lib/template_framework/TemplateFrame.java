@@ -49,21 +49,26 @@ class TemplateFrame {
     private final Map<String, String> hashtagReplacements = new HashMap<>();
     final float fuel;
     private float fuelCost;
+    private final boolean isTransparentForHashtag;
     private final boolean isTransparentForFuel;
 
     public static TemplateFrame makeBase(int id, float fuel) {
-        return new TemplateFrame(null, false, id, fuel, 0.0f, false);
+        return new TemplateFrame(null, false, id, fuel, 0.0f, false, false);
     }
 
     public static TemplateFrame make(TemplateFrame parent, int id) {
-        return new TemplateFrame(parent, false, id, parent.fuel - parent.fuelCost, Template.DEFAULT_FUEL_COST, false);
+        float fuel = parent.fuel - parent.fuelCost;
+        return new TemplateFrame(parent, false, id, fuel, Template.DEFAULT_FUEL_COST, false, false);
     }
 
     // TODO: test scope fuel cost!
-    public static TemplateFrame makeInnerScope(TemplateFrame parent, boolean isTransparentForFuel) {
+    public static TemplateFrame makeInnerScope(TemplateFrame parent,
+                                               boolean isTransparentForHashtag,
+                                               boolean isTransparentForFuel) {
         // We keep the id of the parent, so that we have the same dollar replacements.
         // And we subtract no fuel, but forward the cost.
-        return new TemplateFrame(parent, true, parent.id, parent.fuel, parent.fuelCost, isTransparentForFuel);
+        return new TemplateFrame(parent, true, parent.id, parent.fuel, parent.fuelCost,
+                                 isTransparentForHashtag, isTransparentForFuel);
     }
 
     private TemplateFrame(TemplateFrame parent,
@@ -71,12 +76,14 @@ class TemplateFrame {
                           int id,
                           float fuel,
                           float fuelCost,
+                          boolean isTransparentForHashtag,
                           boolean isTransparentForFuel) {
         this.parent = parent;
         this.isInnerScope = isInnerScope;
         this.id = id;
         this.fuel = fuel;
         this.fuelCost = fuelCost;
+        this.isTransparentForHashtag = isTransparentForHashtag;
         this.isTransparentForFuel = isTransparentForFuel;
     }
 
@@ -102,7 +109,11 @@ class TemplateFrame {
             throw new RendererException("Duplicate hashtag replacement for #" + key + ". " +
                                         "previous: " + previous + ", new: " + value);
         }
-        hashtagReplacements.put(key, value);
+        if (isTransparentForHashtag) {
+            parent.addHashtagReplacement(key, value);
+        } else {
+            hashtagReplacements.put(key, value);
+        }
     }
 
     String getHashtagReplacement(String key) {

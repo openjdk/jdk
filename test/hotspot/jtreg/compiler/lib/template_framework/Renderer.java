@@ -251,6 +251,7 @@ final class Renderer {
         TemplateFrame innerTemplateFrame = null;
         if (nt.nestedHashtagsAreLocal() || nt.nestedSetFuelCostAreLocal()) {
             innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
+                                                              !nt.nestedHashtagsAreLocal(),
                                                               !nt.nestedSetFuelCostAreLocal());
             currentTemplateFrame = innerTemplateFrame;
         }

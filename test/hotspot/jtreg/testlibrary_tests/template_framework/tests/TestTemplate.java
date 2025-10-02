@@ -212,6 +212,9 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> hashtagScope(null),              "Unexpected tokens: null");
         expectIllegalArgumentException(() -> hashtagScope("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> hashtagScope(new Hook("Hook1")), "Unexpected token:");
+        expectIllegalArgumentException(() -> setFuelCostScope(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> setFuelCostScope("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> setFuelCostScope(new Hook("Hook1")), "Unexpected token:");
         Hook hook1 = new Hook("Hook1");
         expectIllegalArgumentException(() -> hook1.anchor(null),      "Unexpected tokens: null");
         expectIllegalArgumentException(() -> hook1.anchor("x", null), "Unexpected token: null");
@@ -1811,12 +1814,19 @@ public class TestTemplate {
                 let("v4", "d"),
                 "int #v4 = x + 4;\n"
             )),
+            // Using "hashtagScope", is is available.
+            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> setFuelCostScope(
+                addDataName("e", dn.type(), MUTABLE),
+                let("v5", "e"),
+                "int #v5 = x + 5;\n"
+            )),
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).forEach("name", "type", dn -> scope(
                 "available: #name #type.\n"
             )),
             // Check that hashtags escape correctly too.
             "hashtag v2: #v2.\n",
             "hashtag v3: #v3.\n",
+            "hashtag v5: #v5.\n",
             let("v1", "aaa"),
             let("v4", "ddd")
         ));
@@ -1829,11 +1839,14 @@ public class TestTemplate {
             int b = x + 2;
             int c = x + 3;
             int d = x + 4;
+            int e = x + 5;
             available: x int.
             available: b int.
             available: d int.
+            available: e int.
             hashtag v2: b.
             hashtag v3: c.
+            hashtag v5: e.
             """;
         checkEQ(code, expected);
     }
