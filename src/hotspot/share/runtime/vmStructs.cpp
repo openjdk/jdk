@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -59,11 +58,8 @@
 #include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
-#include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.hpp"
-#include "oops/instanceMirrorKlass.hpp"
 #include "oops/instanceOop.hpp"
-#include "oops/instanceStackChunkKlass.hpp"
 #include "oops/klass.hpp"
 #include "oops/klassVtable.hpp"
 #include "oops/markWord.hpp"
@@ -85,7 +81,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
-#include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"

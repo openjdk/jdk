@@ -90,7 +90,6 @@ class ExceptionCache : public CHeapObj<mtCode> {
 
 // cache pc descs found in earlier inquiries
 class PcDescCache {
-  friend class VMStructs;
  private:
   enum { cache_size = 4 };
   // The array elements MUST be volatile! Several threads may modify
