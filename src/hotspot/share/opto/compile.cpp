@@ -5513,7 +5513,9 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
         if (igvn != nullptr) {
           igvn->replace_input_of(use, j, call_control_proj);
         } else {
+          gvn->hash_delete(use);
           use->set_req(j, call_control_proj);
+          gvn->hash_insert(use);
         }
       }
     }
