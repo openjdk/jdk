@@ -226,9 +226,6 @@ class nmethod : public CodeBlob {
   // All deoptee's will resume execution at this location described by
   // this offset.
   int _deopt_handler_offset;
-  // All deoptee's at a MethodHandle call site will resume execution
-  // at this location described by this offset.
-  int _deopt_mh_handler_offset;
   // Offset (from insts_end) of the unwind handler if it exists
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
@@ -267,7 +264,6 @@ class nmethod : public CodeBlob {
 
   // set during construction
   uint8_t _has_unsafe_access:1,        // May fault due to unsafe access.
-          _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
           _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
@@ -606,7 +602,6 @@ public:
   address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
   address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
-  address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const { return (oop*)    data_begin(); }
   oop*    oops_end              () const { return (oop*)    data_end(); }
@@ -745,9 +740,6 @@ public:
   bool  has_scoped_access() const                 { return _has_scoped_access; }
   void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
 
-  bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
-  void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
-
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
 
@@ -818,12 +810,9 @@ public:
   ExceptionCache* exception_cache_entry_for_exception(Handle exception);
 
 
-  // MethodHandle
-  bool is_method_handle_return(address return_pc);
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
-  inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
