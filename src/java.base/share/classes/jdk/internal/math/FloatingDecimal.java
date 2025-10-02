@@ -27,7 +27,6 @@ package jdk.internal.math;
 
 import jdk.internal.vm.annotation.Stable;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -967,7 +966,6 @@ public class FloatingDecimal {
      * Further, it is assumed that d_1 > 0.
      */
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        private static final BigInteger MASK = BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE);
         private final boolean isNegative;
         private final int e;
         private final byte[] d;
@@ -1113,6 +1111,164 @@ public class FloatingDecimal {
         }
 
         private double highPrecisionDoubleValue(long f) {
+            f *= MathUtils.pow10(MathUtils.N - n);
+            int ep = e - MathUtils.N;
+            /*
+             * As N = 19, we now have
+             *      x = f 10^ep
+             *      2^59 < 10^(N-1) ≤ f < 10^N < 2^64
+             *
+             * Rather than rounding x directly, which requires full precision
+             * arithmetic, approximate x as follows (see comments in MathUtils).
+             * Let integers g and r such that
+             *      (g - 1) 2^r ≤ 10^ep < g 2^r
+             * and split g into g1 and g0
+             *      g = g1 2^63 + g0
+             * where
+             *      2^62 < g1 + 1 < 2^63, 0 < g0 < 2^63
+             * We have
+             *      g - 1 = g1 2^63 + g0 - 1 ≥ g1 2^63
+             *      g = g1 2^63 + g0 < g1 2^63 + 2^63 = (g1 + 1) 2^63
+             * Let
+             *      pl = f (g - 1)          ph = f g
+             *      nl = f g1               nh = f (g1 + 1)
+             * These lead to
+             *      nl 2^(r+63) ≤ pl 2^r ≤ x < ph 2^r < nh 2^(r+63)
+             * There are 2 intervals containing x, in increasing size
+             *      [pl 2^r, ph 2^r]
+             *      [nl 2^(r+63), nh 2^(r+63)]
+             * We see that if the boundaries of the 1st interval round to the
+             * same double v, then so does x, and we just return v.
+             * The same holds for the 2nd interval.
+             * We also see that the 2nd interval is about 2^63 times wider
+             * than the 1st.
+             * The chances that the boundaries round to the same double are
+             * therefore highest for the 1st interval and lowest for the 2nd.
+             * On the other hand, the amount of computations increases going
+             * from the 2nd to the 1st.
+             * Indeed, the 1st requires 64 x 128 bit products, the 2nd just
+             * 64 x 64 products.
+             * Hence, we first attempt with the 2nd interval, and fail over to
+             * the 1st when the former boundaries don't round to the same double.
+             * Measurements show that the failure rate on the outcomes of
+             * Double.toString() on uniformly distributed double bit patterns
+             * is around 0.04%, so this is a worthwhile attempt.
+             *
+             * We further have
+             *      2^121 = 2^59 2^62 < nl < nh < 2^64 2^63 = 2^127
+             * Thus, both nl and nh are well inside the normal double range,
+             * and have bit lengths in the interval [122, 127], so each of them
+             * fits in two longs.
+             * We split nl and nh into the lower 64 bits and the higher bits.
+             *      nl1 = unsignedMultiplyHigh(f, g1)
+             *      nl0 = f * g1  (long arithmetic)
+             *      nh1 = unsignedMultiplyHigh(f, g1 + 1)
+             *      nh0 = f * (g1 + 1)  (long arithmetic)
+             * hence
+             *      nl = nl1 2^64 + nl0     2^57 ≤ nl1 < 2^63
+             *      nh = nh1 2^64 + nh0     2^57 ≤ nh1 < 2^63
+             * Let bl and bh be the bitlength of nl1 and nh1, resp.
+             * As nh = nl + f, either bh = bl + 1, or much more commonly, bh = bl.
+             * Both bl and bh lie in the interval [122 - 64, 127 - 64] = [58, 63].
+             * All of nl, nh, nl1, and nh1 are in the double normal range.
+             *
+             * Instead of rounding the boundaries nl 2^(r+63) and nh 2^(r+63)
+             * directly, first round nl and nh to obtain doubles wl and wh, resp.
+             * If wl = wh, there's a good chance that v = scalb(wl, r + 63) holds.
+             * Indeed, when x ≥ MIN_NORMAL then it can be (tediously) shown that
+             * v = scalb(wl, r + 63) holds, even when rounding overflows.
+             * When x < MIN_NORMAL, though, by just returning scalb(wl, r + 63)
+             * we face the risk of double-rounding, so we need corrective
+             * actions to avoid a (slightly) incorrect outcomes.
+             *
+             * Let Q_NORM = Q_MIN + (P - 1) = -1022, so MIN_NORMAL = 2^Q_NORM.
+             * We have
+             *      x ≥ nl1 2^(r+127) ≥ 2^(bl-1) 2^(r+127) = 2^(bl+r+126)
+             *      x < (nh1 + 1) 2^(r+127) ≤ 2^bh 2^(r+127) = 2^(bh+r+127)
+             * Thus, when bl + r > Q_NORM - 127 then certainly x ≥ MIN_NORMAL,
+             * and when bh + r ≤ Q_NORM - 127 then x < MIN_NORMAL for sure.
+             * Finally, when bl + r ≤ Q_NORM - 127 < bh + r we see that bh ≠ bl,
+             * so bh = bl + 1 must hold instead.
+             * But we fail over to full precision in such case.
+             *
+             * Let's first discuss the case bl + r > Q_NORM - 127, which as seen
+             * above implies x ≥ MIN_NORMAL.
+             * To round nl we need its most significant P bits, the rounding bit
+             * immediately to the right, and an indication of whether there are
+             * "1" bits following the rounding bit.
+             * Since bl ≥ 58, the P = 53 bits, the rounding bit, and space
+             * for the sticky bit are all located in nl1.
+             *
+             * When nl0 = 0, the indication of whether there are "1" bits to the
+             * right of the rounding bit is already contained in nl1 alone.
+             * Rounding nl to wl is the same as rounding nl1 to ul and then
+             * multiplying this by 2^64.
+             * The same holds for nh, wh, nh1, and uh.
+             * Hence, when ul = uh we have wl = wh, thus v = scalb(ul, r + 127).
+             *
+             * When nl1 ≠ 0, there are indeed "1" bits to the right of the
+             * rounding bit.
+             * We force the rightmost bit of nl1 to 1, obtaining nl1'.
+             * Then, again, rounding nl to wl is the same as rounding nl1' to ul
+             * and multiplying this by 2^64.
+             * Analogously for nh, wh, nh1, and uh.
+             * Again, when ul = uh we have wl = wh, thus v = scalb(ul, r + 127).
+             *
+             * Now assume bh + r ≤ Q_NORM - 127, which entails x < MIN_NORMAL.
+             * We need to tweak nl1 to nl1' and nh1 to nh1' so that rounding
+             * them to ul and uh ensures v = scalb(ul, r + 127) in case ul = uh.
+             * Then we can return v as above.
+             */
+            long g1 = MathUtils.g1(ep);
+            long nl1 = Math.unsignedMultiplyHigh(f, g1);
+            long nl0 = f * g1;
+            long nh1 = Math.unsignedMultiplyHigh(f, g1 + 1);
+            long nh0 = f * (g1 + 1);
+
+            int qnorm = Q_NORM[BINARY_64_IX];
+            int rp = MathUtils.flog2pow10(ep) + 2;  // r + 127
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
+            if (bl + rp > qnorm) {  // x is certainly normal
+                double ul = nl1 | (nl0 != 0 ? 1 : 0);
+                double uh = nh1 | (nh0 != 0 ? 1 : 0);
+                if (ul == uh) {
+                    double v = Math.scalb(ul, rp);
+                    return isNegative ? -v : v;
+                }
+            } else {
+                int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
+                if (bh + rp <= qnorm) {  // x is certainly subnormal
+                    int sh = Q_MIN[BINARY_64_IX] - rp;  // shift distance
+                    long sbMask = -1L >>> 1 - sh;
+
+                    long nl1p = nl1 >>> sh;
+                    long rb = nl1 >>> sh - 1;
+                    long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
+                    long corr = rb & (sb | nl1p) & 0b1;
+                    double ul = nl1p + corr;
+
+                    long nh1p = nh1 >>> sh;
+                    rb = nh1 >>> sh - 1;
+                    sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
+                    corr = rb & (sb | nh1p) & 0b1;
+                    double uh = nh1p + corr;
+
+                    if (ul == uh) {
+                        double v = Math.scalb(ul, rp + sh);
+                        return isNegative ? -v : v;
+                    }
+                }
+            }
+
+            /*
+             * If the doubles are different, or when we cannot determine for sure
+             * if x is normal or subnormal, land here.
+             * We could attempt to compute and round pl and ph.
+             * It would be quite rare to encounter such cases, though,
+             * and the code gets messy fast.
+             * Instead, we fail over to the full precision product f 10^e
+             * using big integer arithmetic.
+             */
             return fullPrecisionDoubleValue();
         }
 
@@ -2285,6 +2441,16 @@ public class FloatingDecimal {
             DoubleToDecimal.Q_MIN,
 //            -16_494,
 //            -262_378,
+    };
+
+    /* Minimum exponent in the c 2^q representation. */
+    @Stable
+    private static final int[] Q_NORM = {
+            -14,  // Float16ToDecimal.Q_MIN + Float16ToDecimal.P - 1,
+            FloatToDecimal.Q_MIN + FloatToDecimal.P - 1,
+            DoubleToDecimal.Q_MIN + DoubleToDecimal.P - 1,
+//            -16_494,  // TODO adjust
+//            -262_378,  // TODO adjust
     };
 
     /* Minimum exponent in the m 2^qp representation. */
