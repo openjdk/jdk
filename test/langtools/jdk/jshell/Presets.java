@@ -39,7 +39,7 @@ public class Presets {
                                  "2(jdi:timeout(" + TEST_TIMEOUT + "))," +
                                  "3(local)";
         TEST_STANDARD_EXECUTION = "failover:0(jdi:hostname(" + loopback + "))," +
-                                  "1(jdi:launch(true))" +
+                                  "1(jdi:launch(true))," +
                                   "2(jdi:timeout(" + TEST_TIMEOUT + "))";
         TEST_JDI_EXECUTION = "jdi:timeout(" + TEST_TIMEOUT + ")";
     }
