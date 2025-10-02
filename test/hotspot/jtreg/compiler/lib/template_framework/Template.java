@@ -761,8 +761,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return A token for convenient use in {@link Template#scope}.
      */
     static Token setFuelCost(float fuelCost) {
-        Renderer.getCurrent().setFuelCost(fuelCost);
-        return new NothingToken();
+        return new SetFuelCostToken(fuelCost);
     }
 
     /**

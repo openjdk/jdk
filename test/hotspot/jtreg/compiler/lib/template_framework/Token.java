@@ -47,4 +47,4 @@ public sealed interface Token permits StringToken,
                                       NestingToken.Flat,
                                       NestingToken.NameScope,
                                       NestingToken.HashtagScope,
-                                      NothingToken {}
+                                      SetFuelCostToken {}

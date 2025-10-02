@@ -23,4 +23,5 @@
 
 package compiler.lib.template_framework;
 
-record NothingToken() implements Token {}
+// TODO: documentation
+record SetFuelCostToken(float fuelCost) implements Token {}

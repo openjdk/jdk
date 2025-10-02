@@ -141,6 +141,7 @@ public class TestTemplate {
         testRecursion();
         testFuel();
         testFuelCustom();
+        testFuelAndScopes();
         testDataNames0a();
         testDataNames0b();
         testDataNames0c();
@@ -1028,6 +1029,61 @@ public class TestTemplate {
             ] 2 12.0f
             ] 3 15.0f
             } 20.0f
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testFuelAndScopes() {
+        var readFuelTemplate = Template.make(() -> scope(
+            let("f", fuel()),
+            "<#f>\n"
+        ));
+
+        var template = Template.make(() -> scope(
+            let("f", fuel()),
+            "{#f}\n",
+            readFuelTemplate.asToken(),
+
+            "scope:\n",
+            setFuelCost(1.0f),
+            scope(
+                readFuelTemplate.asToken(),
+                setFuelCost(2.0f),
+                readFuelTemplate.asToken()
+            ),
+            readFuelTemplate.asToken(),
+
+            "flat:\n",
+            setFuelCost(4.0f),
+            flat(
+                readFuelTemplate.asToken(),
+                setFuelCost(8.0f),
+                readFuelTemplate.asToken()
+            ),
+            readFuelTemplate.asToken(),
+
+            "nameScope:\n",
+            setFuelCost(16.0f),
+            nameScope(
+                readFuelTemplate.asToken(),
+                setFuelCost(32.0f),
+                readFuelTemplate.asToken()
+            ),
+            readFuelTemplate.asToken(),
+
+            "hashtagScope:\n",
+            setFuelCost(64.0f),
+            scope(
+                readFuelTemplate.asToken(),
+                setFuelCost(128.0f),
+                readFuelTemplate.asToken()
+            ),
+            readFuelTemplate.asToken()
+        ));
+
+        String code = template.render(200.0f);
+        String expected =
+            """
             """;
         checkEQ(code, expected);
     }

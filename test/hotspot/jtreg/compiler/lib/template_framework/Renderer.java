@@ -172,10 +172,6 @@ final class Renderer {
         return currentTemplateFrame.fuel;
     }
 
-    void setFuelCost(float fuelCost) {
-        currentTemplateFrame.setFuelCost(fuelCost);
-    }
-
     /**
      * Formats values to {@link String} with the goal of using them in Java code.
      * By default, we use the overrides of {@link Object#toString}.
@@ -283,9 +279,6 @@ final class Renderer {
             case StringToken(String s) -> {
                 renderStringWithDollarAndHashtagReplacements(s);
             }
-            case NothingToken() -> {
-                // Nothing.
-            }
             case HookAnchorToken(Hook hook, List<Token> tokens) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
@@ -387,6 +380,9 @@ final class Renderer {
                 boolean hasAny = currentCodeFrame.hasAnyNames(nhat.predicate());
                 NestingToken nt = nhat.getNestingToken(hasAny);
                 renderNestingToken(nt, () -> {});
+            }
+            case SetFuelCostToken(float fuelCost) -> {
+                currentTemplateFrame.setFuelCost(fuelCost);
             }
             case LetToken(String key, String value) -> {
                 addHashtagReplacement(key, value);
