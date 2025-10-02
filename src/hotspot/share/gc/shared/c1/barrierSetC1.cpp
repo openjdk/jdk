@@ -39,12 +39,13 @@
 #endif
 
 // Return true iff an access to bt is single-copy atomic.
+
+// The JMM requires atomicity for all accesses to fields of primitive
+// types other than double and long. In practice, HotSpot assumes that
+// on all all processors, accesses to memory operands of wordSize and
+// smaller are atomic.
 static bool access_is_atomic(BasicType bt) {
-#ifdef CPU_MULTI_COPY_ATOMIC
   return type2aelembytes(bt) <= wordSize;
-#else
-  return false;
-#endif
 }
 
 LIR_Opr BarrierSetC1::resolve_address(LIRAccess& access, bool resolve_in_register) {
@@ -149,7 +150,7 @@ LIR_Opr BarrierSetC1::atomic_add_at(LIRAccess& access, LIRItem& value) {
 void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   DecoratorSet decorators = access.decorators();
   bool is_volatile = (decorators & MO_SEQ_CST) != 0;
-  bool is_atomic = is_volatile || (AlwaysAtomicAccesses && ! access_is_atomic(value->type()));
+  bool needs_atomic = is_volatile || (AlwaysAtomicAccesses && !access_is_atomic(value->type()));
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   LIRGenerator* gen = access.gen();
@@ -163,7 +164,7 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   }
 
   LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
-  if (is_atomic && !needs_patching) {
+  if (needs_atomic && !needs_patching) {
     gen->volatile_field_store(value, access.resolved_addr()->as_address_ptr(), access.access_emit_info());
   } else {
     __ store(value, access.resolved_addr()->as_address_ptr(), access.access_emit_info(), patch_code);
@@ -178,7 +179,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   LIRGenerator *gen = access.gen();
   DecoratorSet decorators = access.decorators();
   bool is_volatile = (decorators & MO_SEQ_CST) != 0;
-  bool is_atomic = is_volatile || (AlwaysAtomicAccesses && ! access_is_atomic(result->type()));
+  bool needs_atomic = is_volatile || (AlwaysAtomicAccesses && !access_is_atomic(result->type()));
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
@@ -190,7 +191,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   LIR_PatchCode patch_code = needs_patching ? lir_patch_normal : lir_patch_none;
   if (in_native) {
     __ move_wide(access.resolved_addr()->as_address_ptr(), result);
-  } else if (is_atomic && !needs_patching) {
+  } else if (needs_atomic && !needs_patching) {
     gen->volatile_field_load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info());
   } else {
     __ load(access.resolved_addr()->as_address_ptr(), result, access.access_emit_info(), patch_code);
