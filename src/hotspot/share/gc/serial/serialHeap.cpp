@@ -779,7 +779,7 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  _young_gen->gc_epilogue(full);
+  _young_gen->gc_epilogue();
   _old_gen->gc_epilogue();
 
   if (_is_heap_almost_full) {

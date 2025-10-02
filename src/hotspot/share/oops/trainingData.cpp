@@ -328,7 +328,9 @@ void CompileTrainingData::notice_jit_observation(ciEnv* env, ciBaseObject* what)
         // This JIT task is (probably) requesting that ik be initialized,
         // so add him to my _init_deps list.
         TrainingDataLocker l;
-        add_init_dep(ktd);
+        if (l.can_add()) {
+          add_init_dep(ktd);
+        }
       }
     }
   }
@@ -618,7 +620,7 @@ void CompileTrainingData::verify(bool verify_dep_counter) {
   for (int i = 0; i < init_dep_count(); i++) {
     KlassTrainingData* ktd = init_dep(i);
     if (ktd->has_holder() && ktd->holder()->defined_by_other_loaders()) {
-      LogStreamHandle(Warning, training) log;
+      LogStreamHandle(Info, training) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         log.print("CTD "); print_value_on(&log);

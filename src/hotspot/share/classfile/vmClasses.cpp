@@ -113,7 +113,7 @@ void vmClasses::resolve_until(vmClassID limit_id, vmClassID &start_id, TRAPS) {
 }
 
 void vmClasses::resolve_all(TRAPS) {
-  assert(!Object_klass_loaded(), "well-known classes should only be initialized once");
+  assert(!Object_klass_is_loaded(), "well-known classes should only be initialized once");
 
   // Create the ModuleEntry for java.base.  This call needs to be done here,
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.

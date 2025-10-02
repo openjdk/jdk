@@ -90,7 +90,6 @@ class ExceptionCache : public CHeapObj<mtCode> {
 
 // cache pc descs found in earlier inquiries
 class PcDescCache {
-  friend class VMStructs;
  private:
   enum { cache_size = 4 };
   // The array elements MUST be volatile! Several threads may modify
@@ -1078,6 +1077,15 @@ public:
   };
 
   static const Vptr _vpntr;
+};
+
+struct NMethodMarkingScope : StackObj {
+  NMethodMarkingScope() {
+    nmethod::oops_do_marking_prologue();
+  }
+  ~NMethodMarkingScope() {
+    nmethod::oops_do_marking_epilogue();
+  }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP
