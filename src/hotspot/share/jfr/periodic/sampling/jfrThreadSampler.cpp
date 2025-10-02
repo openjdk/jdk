@@ -378,12 +378,27 @@ bool JfrThreadSampler::sample_native_thread(JavaThread* jt, SampleCallback callb
 
 
 bool JfrThreadSampler::sample_thread(JavaThread* jt, SampleCallback callback, void* data) {
-  if (!sample_native_thread(jt, callback, data)) {
-    return sample_java_thread(jt, callback, data);
-  }
-  return true;
-}
+  static int MAX_RETRY_COUNT = 3;
 
+  JavaThreadState jts;
+  bool processed = false;
+  int retry_count = 0;
+
+  while (!processed && retry_count <= MAX_RETRY_COUNT) {
+    jts = jt->thread_state();
+    if (jts == _thread_in_native || jts == _thread_blocked) {
+       processed = sample_native_thread(jt, callback, data);
+    } else if (jts == _thread_in_Java) {
+      processed = sample_java_thread(jt, callback, data);
+    } else {
+      // Thread in transition, let's wait a bit
+      os::naked_yield();
+      retry_count++;
+    }
+  }
+
+  return processed;
+}
 
 void JfrSamplerThread::set_java_period(int64_t period_millis) {
   assert(period_millis >= 0, "invariant");

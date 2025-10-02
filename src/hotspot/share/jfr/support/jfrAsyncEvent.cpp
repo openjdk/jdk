@@ -24,6 +24,7 @@
 
 #include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampler.hpp"
+#include "jfr/recorder/storage/jfrBuffer.hpp"
 #include "jfr/support/jfrAsyncEvent.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
@@ -31,6 +32,7 @@
 #include "oops/typeArrayOop.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
+#include "runtime/threadSMR.hpp"
 
 JfrAsyncEvent::JfrAsyncEvent(long event_id, bool has_duration, bool has_event_thread, bool has_stack_trace, typeArrayOop payloadOop) :
   _event_id(event_id), _has_duration(has_duration), _has_event_thread(has_event_thread), _has_has_stack_trace(has_stack_trace) {
@@ -102,12 +104,19 @@ void JfrAsyncEvent::send_async_event(jobject target,
                                      TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
+  // Make sure target thread is valid
+  ThreadsListHandle tlh;
+  JavaThread* jt = nullptr;
+  bool is_alive = tlh.cv_internal_thread_to_JavaThread(target, &jt, nullptr);
+  if (!is_alive) {
+    return;
+  }
+
   typeArrayOop payloadOop = typeArrayOop(JNIHandles::resolve(payload));
   oop target_obj = JNIHandles::resolve(target);
-  JavaThread* thread = java_lang_Thread::thread(target_obj);
 
   JfrAsyncEvent* event = new JfrAsyncEvent(event_id, has_duration, has_event_thread, has_event_thread, payloadOop);
-  if (!JfrThreadSampler::sample_thread(thread, async_event_callback, (void*)event)) {
+  if (!JfrThreadSampler::sample_thread(jt, async_event_callback, (void*)event)) {
     // fail to deliver the event, discard it
     delete event;
   }
