@@ -1066,10 +1066,9 @@ public class FloatingDecimal {
             long nh1 = Math.unsignedMultiplyHigh(f, g1 + 1);
             long nh0 = f * (g1 + 1);
 
-            int qnorm = Q_NORM[BINARY_64_IX];
             int rp = MathUtils.flog2pow10(ep) + 2;  // r + 127
             int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
-            if (bl + rp > qnorm) {  // x is certainly normal
+            if (bl + rp > Q_NORM[BINARY_64_IX]) {  // x is certainly normal
                 double ul = nl1 | (nl0 != 0 ? 1 : 0);
                 double uh = nh1 | (nh0 != 0 ? 1 : 0);
                 if (ul == uh) {
@@ -1078,7 +1077,7 @@ public class FloatingDecimal {
                 }
             } else {
                 int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
-                if (bh + rp <= qnorm) {  // x is certainly subnormal
+                if (bh + rp <= Q_NORM[BINARY_64_IX]) {  // x is certainly subnormal
                     int sh = Q_MIN[BINARY_64_IX] - rp;  // shift distance
                     long sbMask = -1L >>> 1 - sh;
 
@@ -1103,7 +1102,7 @@ public class FloatingDecimal {
 
             /*
              * If the doubles are different, or when we cannot determine for sure
-             * if x is normal or subnormal, land here.
+             * if x is normal or subnormal, we land here.
              * We could attempt to compute and round pl and ph.
              * It would be quite rare to encounter such cases, though,
              * and the code gets messy fast.
@@ -2267,8 +2266,8 @@ public class FloatingDecimal {
     @Stable
     private static final int[] P = {
             11,
-            FloatToDecimal.P,
-            DoubleToDecimal.P,
+            FloatToDecimal.P,  // 24
+            DoubleToDecimal.P,  // 53
             // 113,
             // 237,
     };
@@ -2277,47 +2276,47 @@ public class FloatingDecimal {
     @Stable
     private static final int[] Q_MIN = {
             -24,  // Float16ToDecimal.Q_MIN,
-            FloatToDecimal.Q_MIN,
-            DoubleToDecimal.Q_MIN,
+            FloatToDecimal.Q_MIN,  // -149
+            DoubleToDecimal.Q_MIN,  // -1_074
 //            -16_494,
 //            -262_378,
-    };
-
-    /* Minimum exponent in the c 2^q representation. */
-    @Stable
-    private static final int[] Q_NORM = {
-            -14,  // Float16ToDecimal.Q_MIN + Float16ToDecimal.P - 1,
-            FloatToDecimal.Q_MIN + FloatToDecimal.P - 1,
-            DoubleToDecimal.Q_MIN + DoubleToDecimal.P - 1,
-//            -16_494,  // TODO adjust
-//            -262_378,  // TODO adjust
     };
 
     /* Minimum exponent in the m 2^qp representation. */
     @Stable
     private static final int[] QP_MIN = {
-            Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],
-            FloatToDecimal.Q_MIN + FloatToDecimal.P,
-            DoubleToDecimal.Q_MIN + DoubleToDecimal.P,
-//            Q_MIN[BINARY_128_IX] + P[BINARY_128_IX],
-//            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],
+            Q_MIN[BINARY_16_IX] + P[BINARY_16_IX],  // -13
+            Q_MIN[BINARY_32_IX] + P[BINARY_32_IX],  // -125
+            Q_MIN[BINARY_64_IX] + P[BINARY_64_IX],  // -1_021
+//            Q_MIN[BINARY_128_IX] + P[BINARY_128_IX],  // -16_381
+//            Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],  // -262_141
+    };
+
+    /* Exponent of MIN_NORMAL in the c 2^q representation. */
+    @Stable
+    private static final int[] Q_NORM = {
+            QP_MIN[BINARY_16_IX] - 1,  // -14
+            QP_MIN[BINARY_32_IX] - 1,  // -126
+            QP_MIN[BINARY_64_IX] - 1,  // -1_022
+//            QP_MIN[BINARY_128_IX] - 1,  // -16_382
+//            QP_MIN[BINARY_256_IX] - 1,  // -262_142
     };
 
     /* Maximum exponent in the m 2^qp representation. */
     @Stable
     private static final int[] QP_MAX = {
-            3 - QP_MIN[BINARY_16_IX],
-            FloatToDecimal.Q_MAX + FloatToDecimal.P,
-            DoubleToDecimal.Q_MAX + DoubleToDecimal.P,
-//            3 - QP_MIN[BINARY_128_IX],
-//            3 - QP_MIN[BINARY_256_IX],
+            3 - QP_MIN[BINARY_16_IX],  // 16
+            3 - QP_MIN[BINARY_32_IX],  // 128
+            3 - QP_MIN[BINARY_64_IX],  // 1_024
+//            3 - QP_MIN[BINARY_128_IX],  // 16_384
+//            3 - QP_MIN[BINARY_256_IX],  // 262_144
     };
 
     @Stable
     private static final int[] E_THR_Z = {
             -8,
-            FloatToDecimal.E_THR_Z,
-            DoubleToDecimal.E_THR_Z,
+            FloatToDecimal.E_THR_Z,  // -46
+            DoubleToDecimal.E_THR_Z,  // -324
             // -4_966,
             // -78_985,
     };
@@ -2325,8 +2324,8 @@ public class FloatingDecimal {
     @Stable
     private static final int[] E_THR_I = {
             6,
-            FloatToDecimal.E_THR_I,
-            DoubleToDecimal.E_THR_I,
+            FloatToDecimal.E_THR_I,  // 40
+            DoubleToDecimal.E_THR_I,  // 310
             // 4_934,
             // 78_915,
     };
@@ -2337,11 +2336,11 @@ public class FloatingDecimal {
      */
     @Stable
     private static final int[] HEX_COUNT = {
-            P[BINARY_16_IX] / 4 + 2,
-            P[BINARY_32_IX] / 4 + 2,
-            P[BINARY_64_IX] / 4 + 2,
-//            P[BINARY_128_IX] / 4 + 2,
-//            P[BINARY_256_IX] / 4 + 2,
+            P[BINARY_16_IX] / 4 + 2,  // 4
+            P[BINARY_32_IX] / 4 + 2,  // 8
+            P[BINARY_64_IX] / 4 + 2,  // 15
+//            P[BINARY_128_IX] / 4 + 2,  // 30
+//            P[BINARY_256_IX] / 4 + 2,  // 61
     };
 
 }
