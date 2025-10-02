@@ -33,7 +33,6 @@ import java.net.http.HttpTimeoutException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
@@ -124,7 +123,9 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
                     LOGGER.log("Obtaining the response");
                     responseFuture.get();
                 });
-                assertInstanceOf(HttpTimeoutException.class, exception.getCause());
+                if (!(exception.getCause() instanceof HttpTimeoutException)) {
+                    throw new AssertionError("was expecting a cause of type `HttpTimeoutException`", exception);
+                }
             });
         }
     }

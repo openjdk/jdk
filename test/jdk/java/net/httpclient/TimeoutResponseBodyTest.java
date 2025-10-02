@@ -35,7 +35,6 @@ import java.net.http.HttpTimeoutException;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -157,7 +156,9 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                         fail("Unexpected read byte: " + readByte);
                     }
                 });
-        assertInstanceOf(HttpTimeoutException.class, exception.getCause());
+        if (!(exception.getCause() instanceof HttpTimeoutException)) {
+            throw new AssertionError("was expecting a cause of type `HttpTimeoutException`", exception);
+        }
     }
 
     /**
@@ -229,7 +230,9 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
                         fail("Should not have reached here! (i=%s)".formatted(i));
                     }
                 });
-        assertInstanceOf(HttpTimeoutException.class, exception.getCause());
+        if (!(exception.getCause() instanceof HttpTimeoutException)) {
+            throw new AssertionError("was expecting a cause of type `HttpTimeoutException`", exception);
+        }
     }
 
 }
