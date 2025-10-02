@@ -71,7 +71,7 @@ static char* create_standard_memory(size_t size) {
 
   // commit memory
   if (!os::commit_memory(mapAddress, size, !ExecMem)) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("Could not commit PerfData memory\n");
     }
     os::release_memory(mapAddress, size);
@@ -297,7 +297,7 @@ static DIR *open_directory_secure(const char* dirname) {
   RESTARTABLE(::open(dirname, O_RDONLY|O_NOFOLLOW), result);
   if (result == OS_ERR) {
     // Directory doesn't exist or is a symlink, so there is nothing to cleanup.
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       if (errno == ELOOP) {
         warning("directory %s is a symlink and is not secure\n", dirname);
       } else {
@@ -371,7 +371,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
   // handle errors, otherwise shared memory files will be created in cwd.
   result = fchdir(fd);
   if (result == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("could not change to directory %s", dirname);
     }
     if (*saved_cwd_fd != -1) {
@@ -411,14 +411,14 @@ static bool is_file_secure(int fd, const char *filename) {
   // Determine if the file is secure.
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("fstat failed on %s: %s\n", filename, os::strerror(errno));
     }
     return false;
   }
   if (statbuf.st_nlink > 1) {
     // A file with multiple links is not expected.
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("file %s has multiple links\n", filename);
     }
     return false;
@@ -447,7 +447,7 @@ static char* get_user_name(uid_t uid) {
   int result = getpwuid_r(uid, &pwent, pwbuf, (size_t)bufsize, &p);
 
   if (result != 0 || p == nullptr || p->pw_name == nullptr || *(p->pw_name) == '\0') {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       if (result != 0) {
         warning("Could not retrieve passwd entry: %s\n",
                 os::strerror(result));
@@ -680,7 +680,7 @@ static void remove_file(const char* path) {
   // maliciously planted, the directory's presence won't hurt anything.
   //
   RESTARTABLE(::unlink(path), result);
-  if (PrintMiscellaneous && Verbose && result == OS_ERR) {
+  if (((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) && result == OS_ERR) {
     if (errno != ENOENT) {
       warning("Could not unlink shared memory backing"
               " store file %s : %s\n", path, os::strerror(errno));
@@ -822,7 +822,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       //
       if (!is_directory_secure(dirname)) {
         // directory is not secure
-        if (PrintMiscellaneous && Verbose) {
+        if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
           warning("%s directory is insecure\n", dirname);
         }
         return false;
@@ -832,7 +832,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       // we encountered some other failure while attempting
       // to create the directory
       //
-      if (PrintMiscellaneous && Verbose) {
+      if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
         warning("could not create directory %s: %s\n",
                 dirname, os::strerror(errno));
       }
@@ -872,7 +872,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   int fd;
   RESTARTABLE(os::open(filename, O_RDWR|O_CREAT|O_NOFOLLOW, S_IRUSR|S_IWUSR), fd);
   if (fd == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       if (errno == ELOOP) {
         warning("file %s is a symlink and is not secure\n", filename);
       } else {
@@ -924,7 +924,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   // truncate the file to get rid of any existing data
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
   if (result == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("could not truncate shared memory file: %s\n", os::strerror(errno));
     }
     ::close(fd);
@@ -933,7 +933,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   // set the file size
   RESTARTABLE(::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("could not set shared memory file size: %s\n", os::strerror(errno));
     }
     ::close(fd);
@@ -1057,7 +1057,7 @@ static char* mmap_create_shared(size_t size) {
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("mmap failed -  %s\n", os::strerror(errno));
     }
     remove_file(filename);
@@ -1135,7 +1135,7 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("fstat failed: %s\n", os::strerror(errno));
     }
     THROW_MSG_0(vmSymbols::java_io_IOException(),
@@ -1212,7 +1212,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("mmap failed: %s\n", os::strerror(errno));
     }
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
@@ -1248,7 +1248,7 @@ void PerfMemory::create_memory_region(size_t size) {
       // creation of the shared memory region failed, attempt
       // to create a contiguous, non-shared memory region instead.
       //
-      if (PrintMiscellaneous && Verbose) {
+      if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
         warning("Reverting to non-shared PerfMemory region.\n");
       }
       FLAG_SET_ERGO(PerfDisableSharedMem, true);
