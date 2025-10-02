@@ -532,10 +532,9 @@ class MultiExchange<T> implements Cancelable {
     }
 
     private CompletableFuture<Response> responseAsyncImpl(final boolean applyReqFilters) {
-        if (currentreq.timeout().isPresent()
-                // Avoid introducing a timer if an active one already exists.
-                // Consider retried and/or forwarded requests.
-                && responseTimerEvent == null) {
+        if (currentreq.timeout().isPresent()) {
+            // Retried/Forwarded requests should reset the timer, if present
+            cancelTimer();
             responseTimerEvent = ResponseTimerEvent.of(this);
             client.registerTimer(responseTimerEvent);
         }
