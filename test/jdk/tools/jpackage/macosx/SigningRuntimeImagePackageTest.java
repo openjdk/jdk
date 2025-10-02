@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import base.SigningBase;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
@@ -96,7 +98,7 @@ public class SigningRuntimeImagePackageTest {
 
     private static Path createInputRuntimeBundle(int certIndex) throws IOException {
 
-        final var runtimeImage = MacHelper.createInputRuntimeImage();
+        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
@@ -155,7 +157,7 @@ public class SigningRuntimeImagePackageTest {
                     if (useJDKBundle) {
                         inputRuntime[0] = createInputRuntimeBundle(jdkBundleCert.value());
                     } else {
-                        inputRuntime[0] = createInputRuntimeImage();
+                        inputRuntime[0] = JPackageCommand.createInputRuntimeImage();
                     }
                 })
                 .addInitializer(cmd -> {

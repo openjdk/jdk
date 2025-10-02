@@ -34,6 +34,7 @@
  * @build jdk.jpackage.test.*
  * @build CustomInfoPListTest
  * @requires (os.family == "mac")
+ * @requires (jpackage.test.SQETest == null)
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CustomInfoPListTest
  */
@@ -41,6 +42,7 @@
 import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageType;
 
 import java.io.IOException;
@@ -48,83 +50,169 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import javax.xml.stream.XMLOutputFactory;
 
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Annotations.Parameter;
+
+import jdk.jpackage.internal.util.XmlUtils;
+import jdk.jpackage.internal.util.PListReader;
 
 import static jdk.jpackage.internal.util.PListWriter.writePList;
 import static jdk.jpackage.internal.util.PListWriter.writeDict;
 import static jdk.jpackage.internal.util.PListWriter.writeString;
 import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 public class CustomInfoPListTest {
 
-    private static final String BUNDLE_NAME_APP = "CustomAppName";
-    private static final String BUNDLE_NAME_EMBEDDED_RUNTIME = "CustomEmbeddedRuntimeName";
-    private static final String BUNDLE_NAME_RUNTIME = "CustomRuntimeName";
+    private static final String APP_PLIST_KEY = "CustomAppPList";
+    private static final String EMBEDDED_RUNTIME_PLIST_KEY = "CustomEmbeddedRuntimePList";
+    private static final String RUNTIME_PLIST_KEY = "CustomRuntimePList";
 
-    // We do not need full Info.plist for testing
-    private static String getInfoPListXML(String bundleName) {
-        return toSupplier(() -> {
-            var buf = new StringWriter();
-            var xml = XMLOutputFactory.newInstance().createXMLStreamWriter(buf);
-            writePList(xml, toXmlConsumer(() -> {
-                writeDict(xml, toXmlConsumer(() -> {
-                    writeString(xml, "CFBundleName", bundleName);
-                    writeString(xml, "CFBundleIdentifier", "CustomInfoPListTest");
-                    writeString(xml, "CFBundleVersion", "1.0");
-                }));
-            }));
-            xml.flush();
-            xml.close();
-            return buf.toString();
-        }).get();
+    private static final Map<String, String> appKeyValue = new HashMap<>();
+    private static final Map<String, String> embeddedRuntimeKeyValue = new HashMap<>();
+    private static final Map<String, String> runtimeKeyValue = new HashMap<>();
+
+    static {
+        appKeyValue.put("CFBundleExecutable", "AppCustomInfoPListTest");
+        appKeyValue.put("CFBundleIconFile", "AppCustomInfoPListTest.icns");
+        appKeyValue.put("CFBundleIdentifier", "Hello");
+        appKeyValue.put("CFBundleName", "AppCustomInfoPListTest");
+        appKeyValue.put("CFBundleShortVersionString", "1.0");
+        appKeyValue.put("LSApplicationCategoryType", "public.app-category.utilities");
+        appKeyValue.put("CFBundleVersion", "1.0");
+        appKeyValue.put("NSHumanReadableCopyright", JPackageStringBundle.MAIN.cannedFormattedString(
+                "param.copyright.default", new Date()).getValue());
+        appKeyValue.put("UTTypeIdentifier", "Hello.foo");
+        appKeyValue.put("UTTypeDescription", "bar");
+
+        embeddedRuntimeKeyValue.put("CFBundleIdentifier", "Hello");
+        embeddedRuntimeKeyValue.put("CFBundleName", "AppCustomInfoPListTest");
+        embeddedRuntimeKeyValue.put("CFBundleShortVersionString", "1.0");
+        embeddedRuntimeKeyValue.put("CFBundleVersion", "1.0");
+
+        runtimeKeyValue.put("CFBundleIdentifier", "foo");
+        runtimeKeyValue.put("CFBundleName", "foo");
+        runtimeKeyValue.put("CFBundleShortVersionString", "1.0");
+        runtimeKeyValue.put("CFBundleVersion", "1.0");
     }
 
-    private static String getResourceDirWithCustomInfoPList(
-                String bundleName, boolean includeRuntimePList) {
-        final Path resources = TKit.createTempDirectory("resources");
+    // We do not need full and valid Info.plist for testing
+    private static void createInfoPListFile(String key, Path plistFile) {
         try {
-            Files.writeString(resources.resolve("Info.plist"),
-                    getInfoPListXML(bundleName));
-            if (includeRuntimePList) {
-                Files.writeString(resources.resolve("Runtime-Info.plist"),
-                        getInfoPListXML(BUNDLE_NAME_EMBEDDED_RUNTIME));
-            }
+            XmlUtils.createXml(plistFile, xml -> {
+                writePList(xml, toXmlConsumer(() -> {
+                    writeDict(xml, toXmlConsumer(() -> {
+                        writeString(xml, "CustomInfoPListTestKey", key);
+                        if (key.equals(APP_PLIST_KEY)) {
+                            // Application
+                            writeString(xml, "CFBundleExecutable", "DEPLOY_LAUNCHER_NAME");
+                            writeString(xml, "CFBundleIconFile", "DEPLOY_ICON_FILE");
+                            writeString(xml, "CFBundleIdentifier", "DEPLOY_BUNDLE_IDENTIFIER");
+                            writeString(xml, "CFBundleName", "DEPLOY_BUNDLE_NAME");
+                            writeString(xml, "CFBundleShortVersionString", "DEPLOY_BUNDLE_SHORT_VERSION");
+                            writeString(xml, "LSApplicationCategoryType", "DEPLOY_APP_CATEGORY");
+                            writeString(xml, "CFBundleVersion", "DEPLOY_BUNDLE_CFBUNDLE_VERSION");
+                            writeString(xml, "NSHumanReadableCopyright", "DEPLOY_BUNDLE_COPYRIGHT");
+                            writeString(xml, "CustomInfoPListFA", "DEPLOY_FILE_ASSOCIATIONS");
+                        } else if (key.equals(EMBEDDED_RUNTIME_PLIST_KEY) || key.equals(RUNTIME_PLIST_KEY)) {
+                            // Embedded runtime and runtime
+                            writeString(xml, "CFBundleIdentifier", "CF_BUNDLE_IDENTIFIER");
+                            writeString(xml, "CFBundleName", "CF_BUNDLE_NAME");
+                            writeString(xml, "CFBundleShortVersionString", "CF_BUNDLE_SHORT_VERSION_STRING");
+                            writeString(xml, "CFBundleVersion", "CF_BUNDLE_VERSION");
+                        }
+                    }));
+                }));
+            });
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+    }
 
+    private static String getResourceDirWithCustomInfoPList(
+                String key, boolean includeMainPList, boolean includeRuntimePList) {
+        final Path resources = TKit.createTempDirectory("resources");
+        if (includeMainPList) {
+            createInfoPListFile(key, resources.resolve("Info.plist"));
+        }
+        if (includeRuntimePList) {
+            createInfoPListFile(EMBEDDED_RUNTIME_PLIST_KEY, resources.resolve("Runtime-Info.plist"));
+        }
         return resources.toString();
     }
 
+    private static void validateInfoPListFileKey(PListReader plistFile, Optional<String> key) {
+        if (key.isPresent()) {
+            TKit.assertEquals(key.get(), plistFile.queryValue("CustomInfoPListTestKey"), String.format(
+                    "Check value of %s plist key", "CustomInfoPListTestKey"));
+        } else {
+            boolean exceptionThrown = false;
+            try {
+                plistFile.queryValue("CustomInfoPListTestKey");
+            } catch (NoSuchElementException ex) {
+                exceptionThrown = true;
+            }
+            TKit.assertTrue(exceptionThrown, "NoSuchElementException exception not thrown");
+        }
+    }
+
+    private static void validateInfoPList(PListReader plistFile, Map<String, String> values) {
+        values.forEach((key, value) -> {
+            TKit.assertEquals(value, plistFile.queryValue(key), String.format(
+                    "Check value of %s plist key", key));
+        });
+    }
+
     @Test
-    public void testApp() {
+    @Parameter({"TRUE", "FALSE"})
+    @Parameter({"FALSE", "TRUE"})
+    @Parameter({"TRUE", "TRUE"})
+    public void testApp(boolean includeMainPList, boolean includeRuntimePList) {
+        final Path propFile = TKit.workDir().resolve("fa.properties");
+        TKit.createPropertiesFile(propFile, Map.of(
+                "mime-type", "application/x-jpackage-foo",
+                "extension", "foo",
+                "description", "bar"
+            ));
+
         JPackageCommand cmd = JPackageCommand.helloAppImage()
                 .addArguments("--resource-dir",
-                        getResourceDirWithCustomInfoPList(BUNDLE_NAME_APP, true));
+                        getResourceDirWithCustomInfoPList(APP_PLIST_KEY,
+                                includeMainPList, includeRuntimePList))
+                .addArguments("--file-associations", propFile);
 
         cmd.executeAndAssertHelloAppImageCreated();
 
         var appPList = MacHelper.readPListFromAppImage(cmd.outputBundle());
-        TKit.assertEquals(BUNDLE_NAME_APP, appPList.queryValue("CFBundleName"), String.format(
-                "Check value of %s plist key", "CFBundleName"));
+        if (includeMainPList) {
+            validateInfoPListFileKey(appPList, Optional.of(APP_PLIST_KEY));
+            validateInfoPList(appPList, appKeyValue);
+        } else {
+            validateInfoPListFileKey(appPList, Optional.empty());
+        }
 
         var runtimePList = MacHelper.readPListFromEmbeddedRuntime(cmd.outputBundle());
-        TKit.assertEquals(BUNDLE_NAME_EMBEDDED_RUNTIME, runtimePList.queryValue("CFBundleName"), String.format(
-                "Check value of %s plist key", "CFBundleName"));
+        if (includeRuntimePList) {
+            validateInfoPListFileKey(runtimePList, Optional.of(EMBEDDED_RUNTIME_PLIST_KEY));
+            validateInfoPList(runtimePList, embeddedRuntimeKeyValue);
+        } else {
+            validateInfoPListFileKey(runtimePList, Optional.empty());
+        }
     }
 
     @Test
     public void testRuntime() throws IOException {
-        final var runtimeImage = MacHelper.createInputRuntimeImage();
+        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
-
-        final var unpackadeRuntimeBundleDir = runtimeBundleWorkDir.resolve("unpacked");
 
         var cmd = new JPackageCommand()
                 .useToolProvider(true)
@@ -134,16 +222,16 @@ public class CustomInfoPListTest {
                 .setArgumentValue("--name", "foo")
                 .addArguments("--runtime-image", runtimeImage)
                 .addArguments("--resource-dir",
-                    getResourceDirWithCustomInfoPList(BUNDLE_NAME_RUNTIME, false))
+                    getResourceDirWithCustomInfoPList(RUNTIME_PLIST_KEY, true, false))
                 .addArguments("--dest", runtimeBundleWorkDir);
 
         cmd.execute();
 
         MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            if (dmgImage.endsWith(cmd.name() + ".jdk")) {
+            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
                 var runtimePList = MacHelper.readPListFromAppImage(dmgImage);
-                TKit.assertEquals(BUNDLE_NAME_RUNTIME, runtimePList.queryValue("CFBundleName"),
-                        String.format("Check value of %s plist key", "CFBundleName"));
+                validateInfoPListFileKey(runtimePList, Optional.of(RUNTIME_PLIST_KEY));
+                validateInfoPList(runtimePList, runtimeKeyValue);
             }
         });
     }

@@ -114,7 +114,7 @@ public class RuntimePackageTest {
     }
 
     private static PackageTest init() {
-        return init(RuntimePackageTest::createInputRuntimeImage);
+        return init(JPackageCommand::createInputRuntimeImage);
     }
 
     private static PackageTest init(ThrowingSupplier<Path> createRuntime) {
@@ -173,32 +173,9 @@ public class RuntimePackageTest {
         return path;
     }
 
-    private static Path createInputRuntimeImage() throws IOException {
-
-        final Path runtimeImageDir;
-
-        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
-            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-        } else {
-            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
-
-            new Executor().setToolProvider(JavaTool.JLINK)
-                    .dumpOutput()
-                    .addArguments(
-                            "--output", runtimeImageDir.toString(),
-                            "--add-modules", "java.desktop",
-                            "--strip-debug",
-                            "--no-header-files",
-                            "--no-man-pages")
-                    .execute();
-        }
-
-        return runtimeImageDir;
-    }
-
     private static Path createInputRuntimeBundle() throws IOException {
 
-        final var runtimeImage = createInputRuntimeImage();
+        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
