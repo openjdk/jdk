@@ -88,17 +88,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
     return false;
   }
 
-  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
-  // promotions and old-gen evacuations.  Re-sort the candidate regions in order to first evacuate regions that have
-  // the smallest amount of live data.  These are easiest to evacuate with least effort.  Doing these first allows
-  // us to more quickly replenish free memory with empty regions.
-  for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
-    ShenandoahHeapRegion* r = _region_data[i].get_region();
-    _region_data[i].update_livedata(r->get_live_data_bytes());
-  }
-  QuickSort::sort<RegionData>(_region_data + _next_old_collection_candidate, unprocessed_old_collection_candidates(),
-                              compare_by_live);
-
+  sort_candidates_by_live();
   _first_pinned_candidate = NOT_FOUND;
 
   uint included_old_regions = 0;
@@ -323,7 +313,16 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
   _next_old_collection_candidate = write_index + 1;
 }
 
-void ShenandoahOldHeuristics::recalibrate_old_collection_candidates_live_memory() {
+void ShenandoahOldHeuristics::sort_candidates_by_live() {
+  // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first, so we sort by live-data.
+  // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
+  // old-gen, we want to pack these underutilized regions together so we can have more unaffiliated (unfragmented) free regions
+  // in old-gen.  Overwrite _live_bytes_in_unprocessed_candidates with most current data.
+
+  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
+  // promotions and old-gen evacuations.  Re-sort the candidate regions in order to first evacuate regions that have
+  // the smallest amount of live data.  These are easiest to evacuate with least effort.  Doing these first allows
+  // us to more quickly replenish free memory with empty regions.
   size_t total_live_data = 0;
   for (uint i = _next_old_collection_candidate; i < _last_old_collection_candidate; i++) {
     ShenandoahHeapRegion* r = _region_data[i].get_region();
@@ -395,12 +394,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
 
   _old_generation->set_live_bytes_after_last_mark(live_data);
 
-  // Unlike young, we are more interested in efficiently packing OLD-gen than in reclaiming garbage first.  We sort by live-data.
-  // Some regular regions may have been promoted in place with no garbage but also with very little live data.  When we "compact"
-  // old-gen, we want to pack these underutilized regions together so we can have more unaffiliated (unfragmented) free regions
-  // in old-gen.
-
-  QuickSort::sort<RegionData>(candidates, cand_idx, compare_by_live);
+  _next_old_collection_candidate = 0;
+  _last_old_collection_candidate = (uint)cand_idx;
+  sort_candidates_by_live();
 
   const size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
 
@@ -411,7 +407,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   const size_t live_threshold = region_size_bytes - garbage_threshold;
 
   _last_old_region = (uint)cand_idx;
-  _last_old_collection_candidate = (uint)cand_idx;
   _next_old_collection_candidate = 0;
 
   size_t unfragmented = 0;

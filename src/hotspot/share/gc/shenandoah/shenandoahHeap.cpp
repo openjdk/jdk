@@ -2557,8 +2557,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
     ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
     ShenandoahOldHeuristics* old_heuristics = old_gen->heuristics();
-
-    old_heuristics->recalibrate_old_collection_candidates_live_memory();
+    old_heuristics->sort_candidates_by_live();
     size_t allocation_runway = gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
     gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
 

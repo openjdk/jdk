@@ -131,12 +131,9 @@ public:
   // Return true iff the collection set is primed with at least one old-gen region.
   bool prime_collection_set(ShenandoahCollectionSet* set);
 
-  // Between consecutive mixed-evacuation cycles, the live data within each candidate region may change due to
-  // promotions and old-gen evacuations.  Recompute live data in candidates and re--sort the candidate regions in
-  // order to first evacuate regions that have the smallest amount of live data.  These are easiest to evacuate
-  // with least effort.  Doing these first allows us to more quickly replenish free memory with entirely empty regions.
-  // Call this during final mark before adjusting the old-evacuation ratio.
-  void recalibrate_old_collection_candidates_live_memory();
+  // Sort candidates between _next_old_collection_candidate (inclusive) and _last_old_collection_candidate (exclusive)
+  // by live data, updating _live_bytes_in_unprocessed_candidates to represent the amount of data remaining to be evacuated.
+  void sort_candidates_by_live();
 
   // How many old-collection candidates have not yet been processed?
   uint unprocessed_old_collection_candidates() const;
