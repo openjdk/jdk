@@ -565,6 +565,26 @@ final class ServerHello {
                     clientHello);
             shc.serverHelloRandom = shm.serverRandom;
 
+            // Key Encapsulation Mechanism (KEM):
+            //  The decapsulator (the client) publishes a public key, and the
+            //  encapsulator (the server) uses it to generate:
+            //  - the shared secret
+            //  - the encapsulation (ciphertext), which is sent back to the client.
+            //
+            // Traditional Key Agreement (KA):
+            //  Both peers perform similar operations: generate a public key,
+            //  send it, and compute a shared secret upon receiving the peer's
+            //  public key.
+            //
+            // In JSSE, the server usually generates its key share and then
+            // derives the secret after receiving the client's share (KA).
+            // However, this is changed for KEM: the server (as encapsulator)
+            // must perform both actions — derive the secret and generate the
+            // encapsulated message at the same time during SHKeyShareProducer.
+            // The derived shared secret must be stored in a KEMSenderPossession
+            // so it can be retrieved for handshake traffic secret derivation
+            // later.
+
             // Produce extensions for ServerHello handshake message.
             SSLExtension[] serverHelloExtensions =
                     shc.sslConfig.getEnabledExtensions(
@@ -590,9 +610,27 @@ final class ServerHello {
                         "Not negotiated key shares");
             }
 
-            SSLKeyDerivation handshakeKD = ke.createKeyDerivation(shc);
-            SecretKey handshakeSecret = handshakeKD.deriveKey(
-                    "TlsHandshakeSecret");
+            SecretKey handshakeSecret = null;
+
+            // For KEM, the shared secret has already been generated and
+            // stored in the server’s possession (KEMSenderPossession)
+            // during encapsulation in SHKeyShareProducer.
+            //
+            // Only one key share is selected by the server, so at most one
+            // possession will contain the pre-derived shared secret.
+            for (var pos : shc.handshakePossessions) {
+                if (pos instanceof KEMKeyExchange.KEMSenderPossession xp
+                        && xp.getKey() != null) {
+                    handshakeSecret = xp.getKey();
+                    break;
+                }
+            }
+
+            if (handshakeSecret == null) {
+                SSLKeyDerivation handshakeKD = ke.createKeyDerivation(shc);
+                handshakeSecret = handshakeKD.deriveKey(
+                        "TlsHandshakeSecret");
+            }
 
             SSLTrafficKeyDerivation kdg =
                 SSLTrafficKeyDerivation.valueOf(shc.negotiatedProtocol);

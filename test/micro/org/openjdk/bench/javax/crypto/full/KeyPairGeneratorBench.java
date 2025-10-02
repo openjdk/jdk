@@ -22,13 +22,16 @@
  */
 package org.openjdk.bench.javax.crypto.full;
 
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 
 public class KeyPairGeneratorBench extends CryptoBase {
 
@@ -47,6 +50,15 @@ public class KeyPairGeneratorBench extends CryptoBase {
                                 : KeyPairGenerator.getInstance(algorithm, prov);
         if (keyLength > 0) { // not all key pair generators allow the use of key length
             generator.initialize(keyLength);
+        }
+    }
+
+    protected static Provider getInternalJce() {
+        try {
+            Class<?> dhClazz = Class.forName("com.sun.crypto.provider.DH");
+            return (Provider) (dhClazz.getField("PROVIDER").get(null));
+        } catch (ReflectiveOperationException exc) {
+            throw new RuntimeException(exc);
         }
     }
 
@@ -118,4 +130,22 @@ public class KeyPairGeneratorBench extends CryptoBase {
         private int keyLength;
     }
 
+    @Fork(value = 5, jvmArgs = {"-XX:+AlwaysPreTouch", "--add-opens", "java.base/com.sun.crypto.provider=ALL-UNNAMED"})
+    public static class Hybrid extends KeyPairGeneratorBench {
+        @Setup
+        public void init() {
+            try {
+                prov = getInternalJce();
+                super.setup();
+            } catch (GeneralSecurityException gse) {
+                throw new RuntimeException(gse);
+            }
+        }
+
+        @Param({"X25519MLKEM768", "SecP256r1MLKEM768", "SecP384r1MLKEM1024"})
+        private String algorithm;
+
+        @Param({"0"})       // Hybrid KPGs don't need key lengths
+        private int keyLength;
+    }
 }
