@@ -34,6 +34,7 @@ import java.math.BigInteger;
 import static jdk.incubator.vector.Float16Consts.SIGN_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.EXP_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.SIGNIF_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.MAG_BIT_MASK;
 
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
@@ -145,6 +146,10 @@ public final class Float16
      * @see Double#NaN
      */
     public static final Float16 NaN = valueOf(Float.NaN);
+
+    private static final Float16 ZERO = valueOf(0);
+
+    private static final Float16 ONE  = valueOf(1);
 
     /**
      * A constant holding the largest positive finite value of type
@@ -392,7 +397,7 @@ public final class Float16
         }
         long f_signif_bits = doppel & 0x000f_ffff_ffff_ffffL | msb;
 
-        int PRECISION_DIFF = Double.PRECISION - PRECISION; // 42
+        final int PRECISION_DIFF = Double.PRECISION - PRECISION; // 42
         // Significand bits as if using rounding to zero (truncation).
         short signif_bits = (short)(f_signif_bits >> (PRECISION_DIFF + expdelta));
 
@@ -612,7 +617,7 @@ public final class Float16
          * Float16}.
          */
         private static final Float16[] FLOAT16_10_POW = {
-            Float16.valueOf(1), Float16.valueOf(10), Float16.valueOf(100),
+            Float16.ONE, Float16.valueOf(10), Float16.valueOf(100),
             Float16.valueOf(1_000), Float16.valueOf(10_000)
         };
 
@@ -649,14 +654,14 @@ public final class Float16
 
         private static Float16 fullFloat16Value(BigDecimal bd) {
             if (BigDecimal.ZERO.compareTo(bd) == 0) {
-                return Float16.valueOf(0);
+                return ZERO;
             }
             BigInteger w = bd.unscaledValue().abs();
             int scale = bd.scale();
             long qb = w.bitLength() - (long) Math.ceil(scale * L);
             Float16 signum = Float16.valueOf(bd.signum());
             if (qb < Q_MIN_F16 - 2) {  // qb < -26
-                return Float16.multiply(signum, Float16.valueOf(0));
+                return Float16.multiply(signum, ZERO);
             }
             if (qb > Q_MAX_F16 + P_F16 + 1) {  // qb > 17
                 return Float16.multiply(signum, Float16.POSITIVE_INFINITY);
@@ -729,7 +734,7 @@ public final class Float16
     public static boolean isNaN(Float16 f16) {
         final short bits = float16ToRawShortBits(f16);
         // A NaN value has all ones in its exponent and a non-zero significand
-        return ((bits & 0x7c00) == 0x7c00 && (bits & 0x03ff) != 0);
+        return ((bits & EXP_BIT_MASK) == EXP_BIT_MASK && (bits & SIGNIF_BIT_MASK) != 0);
     }
 
     /**
@@ -748,8 +753,9 @@ public final class Float16
      * @see Double#isInfinite(double)
      */
     public static boolean isInfinite(Float16 f16) {
-        return ((float16ToRawShortBits(f16) ^
-                 float16ToRawShortBits(POSITIVE_INFINITY)) & 0x7fff) == 0;
+        final short bits = float16ToRawShortBits(f16);
+        // An infinite value has all ones in its exponent and a zero significand
+        return ((bits & EXP_BIT_MASK) == EXP_BIT_MASK && (bits & SIGNIF_BIT_MASK) == 0);
     }
 
     /**
@@ -769,7 +775,7 @@ public final class Float16
      * @see Double#isFinite(double)
      */
     public static boolean isFinite(Float16 f16) {
-        return (float16ToRawShortBits(f16) & (short)0x0000_7FFF) <=
+        return (float16ToRawShortBits(f16) & MAG_BIT_MASK) <=
             float16ToRawShortBits(MAX_VALUE);
      }
 
@@ -1088,7 +1094,7 @@ public final class Float16
      * 2) performing the operation in the wider format
      * 3) converting the result from 2) to the narrower format
      *
-     * For example, this property hold between the formats used for the
+     * For example, this property holds between the formats used for the
      * float and double types. Therefore, the following is a valid
      * implementation of a float addition:
      *
@@ -1472,7 +1478,7 @@ public final class Float16
         // operation. Therefore, in this case do _not_ use the float
         // unary minus as an implementation as that is not guaranteed
         // to flip the sign bit of a NaN.
-        return shortBitsToFloat16((short)(f16.value ^ (short)0x0000_8000));
+        return shortBitsToFloat16((short)(f16.value ^ SIGN_BIT_MASK));
     }
 
     /**
@@ -1490,7 +1496,7 @@ public final class Float16
     public static Float16 abs(Float16 f16) {
         // Zero out sign bit. Per IEE 754-2019 section 5.5.1, abs is a
         // bit-level operation and not a logical operation.
-        return shortBitsToFloat16((short)(f16.value & (short)0x0000_7FFF));
+        return shortBitsToFloat16((short)(f16.value & MAG_BIT_MASK));
     }
 
     /**
@@ -1563,7 +1569,7 @@ public final class Float16
             assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT;
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
             // Let float -> float16 conversion handle encoding issues.
-            yield scalb(valueOf(1), exp - (PRECISION - 1));
+            yield scalb(ONE, exp - (PRECISION - 1));
         }
         };
     }
@@ -1685,7 +1691,7 @@ public final class Float16
                 Float16Consts.SIGNIFICAND_WIDTH + 1;
 
         // Make sure scaling factor is in a reasonable range
-        scaleFactor = Math.max(Math.min(scaleFactor, MAX_SCALE), -MAX_SCALE);
+        scaleFactor = Math.clamp(scaleFactor, -MAX_SCALE, MAX_SCALE);
 
         int DoubleConsts_EXP_BIAS = 1023;
         /*
@@ -1743,7 +1749,7 @@ public final class Float16
      * @see Math#signum(double)
      */
     public static Float16 signum(Float16 f) {
-        return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(valueOf(1), f);
+        return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(ONE, f);
     }
 
     // TODO: Temporary location for this functionality while Float16
