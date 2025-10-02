@@ -156,6 +156,8 @@ public class TestTemplate {
         testStructuralNames2();
         testStructuralNames3();
         testStructuralNames4();
+        testStructuralNames5();
+        testStructuralNames6();
         testListArgument();
         testNestedScopes1();
         testNestedScopes2();
@@ -2153,6 +2155,105 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
+    public static void testStructuralNames5() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).count(c -> scope(
+                let("name1", c),
+                "list1: #name1.\n",
+                addStructuralName("scope_garbage1", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).count(c -> nameScope(
+                let("name2", c),
+                "list2: #name2.\n",
+                addStructuralName("scope_garbage2", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).count(c -> flat(
+                let("name3", c),
+                "list3: #name3.\n",
+                addStructuralName("x", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).count(c -> hashtagScope(
+                let("name4", c),
+                "list4: #name4.\n",
+                addStructuralName("y", myStructuralTypeA)
+            )),
+            "list2: #name2.\n", // hashtag escaped
+            "list3: #name3.\n", // hashtag escaped
+            let("name1", "shouldBeOk4"),  // hashtag did not escape
+            let("name4", "shouldBeOk4"),  // hashtag did not escape
+            structuralNames().exactOf(myStructuralTypeA).forEach("name", "type", sn -> scope(
+                "available: #name #type.\n"
+            ))
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            list1: 2.
+            list2: 2.
+            list3: 2.
+            list4: 3.
+            list2: 2.
+            list3: 2.
+            available: a StructuralA.
+            available: b StructuralA.
+            available: x StructuralA.
+            available: y StructuralA.
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testStructuralNames6() {
+        var template = Template.make(() -> scope(
+            addStructuralName("a", myStructuralTypeA),
+            addStructuralName("b", myStructuralTypeA),
+            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> scope(
+                let("name1", h),
+                "list1: #name1.\n",
+                addStructuralName("scope_garbage1", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> nameScope(
+                let("name2", h),
+                "list2: #name2.\n",
+                addStructuralName("scope_garbage2", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> flat(
+                let("name3", h),
+                "list3: #name3.\n",
+                addStructuralName("x", myStructuralTypeA)
+            )),
+            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> hashtagScope(
+                let("name4", h),
+                "list4: #name4.\n",
+                addStructuralName("y", myStructuralTypeA)
+            )),
+            "list2: #name2.\n", // hashtag escaped
+            "list3: #name3.\n", // hashtag escaped
+            let("name1", "shouldBeOk4"),  // hashtag did not escape
+            let("name4", "shouldBeOk4"),  // hashtag did not escape
+            structuralNames().exactOf(myStructuralTypeA).forEach("name", "type", sn -> scope(
+                "available: #name #type.\n"
+            ))
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            list1: true.
+            list2: true.
+            list3: true.
+            list4: true.
+            list2: true.
+            list3: true.
+            available: a StructuralA.
+            available: b StructuralA.
+            available: x StructuralA.
+            available: y StructuralA.
+            """;
+        checkEQ(code, expected);
+    }
 
     record MyItem(DataName.Type type, String op) {}
 
