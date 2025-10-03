@@ -731,7 +731,7 @@ final class StringUTF16 {
 
     // srcCoder == UTF16 && tgtCoder == UTF16
     static int lastIndexOf(byte[] src, int srcCount,
-                                  byte[] tgt, int tgtCount, int fromIndex) {
+                           byte[] tgt, int tgtCount, int fromIndex) {
         assert fromIndex >= 0;
         assert tgtCount > 0;
         assert tgtCount <= length(tgt);
@@ -830,8 +830,8 @@ final class StringUTF16 {
     }
 
     static String replace(byte[] value, int valLen, boolean valLat1,
-                                 byte[] targ, int targLen, boolean targLat1,
-                                 byte[] repl, int replLen, boolean replLat1)
+                          byte[] targ, int targLen, boolean targLat1,
+                          byte[] repl, int replLen, boolean replLat1)
     {
         assert targLen > 0;
         assert !valLat1 || !targLat1 || !replLat1;
@@ -945,13 +945,13 @@ final class StringUTF16 {
     }
 
     static boolean regionMatchesCI(byte[] value, int toffset,
-                                          byte[] other, int ooffset, int len) {
+                                   byte[] other, int ooffset, int len) {
         return compareToCIImpl(value, toffset, len, other, ooffset, len) == 0;
     }
 
     static boolean regionMatchesCI_Latin1(byte[] value, int toffset,
-                                                 byte[] other, int ooffset,
-                                                 int len) {
+                                          byte[] other, int ooffset,
+                                          int len) {
         return StringLatin1.regionMatchesCI_UTF16(other, ooffset, value, toffset, len);
     }
 

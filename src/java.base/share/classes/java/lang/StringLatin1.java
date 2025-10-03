@@ -237,7 +237,7 @@ final class StringLatin1 {
     }
 
     static int lastIndexOf(byte[] src, int srcCount,
-                                  byte[] tgt, int tgtCount, int fromIndex) {
+                           byte[] tgt, int tgtCount, int fromIndex) {
         int min = tgtCount - 1;
         int i = min + fromIndex;
         int strLastIndex = tgtCount - 1;
@@ -315,7 +315,7 @@ final class StringLatin1 {
     }
 
     static String replace(byte[] value, int valLen, byte[] targ,
-                                 int targLen, byte[] repl, int replLen)
+                          int targLen, byte[] repl, int replLen)
     {
         assert targLen > 0;
         int i, j, p = 0;
@@ -366,7 +366,7 @@ final class StringLatin1 {
 
     // case insensitive
     static boolean regionMatchesCI(byte[] value, int toffset,
-                                          byte[] other, int ooffset, int len) {
+                                   byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
             byte b1 = value[toffset++];
@@ -380,7 +380,7 @@ final class StringLatin1 {
     }
 
     static boolean regionMatchesCI_UTF16(byte[] value, int toffset,
-                                                byte[] other, int ooffset, int len) {
+                                         byte[] other, int ooffset, int len) {
         int last = toffset + len;
         while (toffset < last) {
             char c1 = (char)(value[toffset++] & 0xff);
