@@ -25,6 +25,7 @@
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
+
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/loopnode.hpp"
@@ -32,6 +33,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "opto/vectornode.hpp"
 #include "utilities/checkedCast.hpp"
 
 const ConstraintCastNode::DependencyType ConstraintCastNode::DependencyType::FloatingNarrowing(true, true, "floating narrowing dependency"); // not pinned, narrows type
@@ -138,7 +140,9 @@ Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           if (!use->is_CFG() && !visited.test_set(use->_idx)) {
             if (use->is_Mem()) {
               if (use->in(MemNode::Address) != node) {
-                assert(use->in(MemNode::ValueIn) == node, "");
+                assert((use->is_Store() && use->in(MemNode::ValueIn) == node) ||
+                  (use->is_StoreVectorMasked() && use->in(StoreVectorMaskedNode::Mask) == node) ||
+                  (use->is_LoadVectorMasked() && use->in(LoadNode::Address+1) == node), "");
                 continue;
               }
               if (!use->depends_only_on_test()) {
