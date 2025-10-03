@@ -354,8 +354,6 @@ class Compile : public Phase {
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
-  // JSR 292
-  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
   bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
@@ -526,6 +524,12 @@ public:
   void*                 _indexSet_free_block_list; // free list of IndexSet bit blocks
   int                   _interpreter_frame_size;
 
+  // Holds dynamically allocated extensions of short-lived register masks. Such
+  // extensions are potentially quite large and need tight resource marks which
+  // may conflict with other allocations in the default resource area.
+  // Therefore, we use a dedicated resource area for register masks.
+  ResourceArea          _regmask_arena;
+
   PhaseOutput*          _output;
 
  public:
@@ -659,10 +663,6 @@ public:
 #endif
   bool              has_irreducible_loop() const { return _has_irreducible_loop; }
   void          set_has_irreducible_loop(bool z) { _has_irreducible_loop = z; }
-
-  // JSR 292
-  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   Ticks _latest_stage_start_counter;
 
@@ -1113,6 +1113,7 @@ public:
   Matcher*          matcher()                   { return _matcher; }
   PhaseRegAlloc*    regalloc()                  { return _regalloc; }
   RegMask&          FIRST_STACK_mask()          { return _FIRST_STACK_mask; }
+  ResourceArea*     regmask_arena()             { return &_regmask_arena; }
   Arena*            indexSet_arena()            { return _indexSet_arena; }
   void*             indexSet_free_block_list()  { return _indexSet_free_block_list; }
   DebugInformationRecorder* debug_info()        { return env()->debug_info(); }

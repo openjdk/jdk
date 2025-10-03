@@ -99,6 +99,8 @@ void ArchDesc::buildMachRegisterNumbers(FILE *fp_hpp) {
 
   fprintf(fp_hpp, "\n// Size of register-mask in ints\n");
   fprintf(fp_hpp, "#define RM_SIZE_IN_INTS %d\n", RegisterForm::RegMask_Size());
+  fprintf(fp_hpp, "// Minimum size of register-mask in ints\n");
+  fprintf(fp_hpp, "#define RM_SIZE_IN_INTS_MIN %d\n", RegisterForm::words_for_regs());
   fprintf(fp_hpp, "// Unroll factor for loops over the data in a RegMask\n");
   fprintf(fp_hpp, "#define FORALL_BODY ");
   int len = RegisterForm::RegMask_Size();
@@ -757,20 +759,15 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
 
   if (_pipeline->_maxcycleused <= 32) {
     fprintf(fp_hpp, "protected:\n");
-    fprintf(fp_hpp, "  %s _mask;\n\n", _pipeline->_maxcycleused <= 32 ? "uint" : "uint64_t" );
+    fprintf(fp_hpp, "  uint32_t _mask;\n\n");
     fprintf(fp_hpp, "public:\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask() : _mask(0) {}\n\n");
-    if (_pipeline->_maxcycleused <= 32)
-      fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint mask) : _mask(mask) {}\n\n");
-    else {
-      fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint mask1, uint mask2) : _mask((((uint64_t)mask1) << 32) | mask2) {}\n\n");
-      fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint64_t mask) : _mask(mask) {}\n\n");
-    }
+    fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(uint32_t mask) : _mask(mask) {}\n\n");
     fprintf(fp_hpp, "  bool overlaps(const Pipeline_Use_Cycle_Mask &in2) const {\n");
     fprintf(fp_hpp, "    return ((_mask & in2._mask) != 0);\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator<<=(int n) {\n");
-    fprintf(fp_hpp, "    _mask <<= n;\n");
+    fprintf(fp_hpp, "    _mask <<= (n < 32) ? n : 31;\n");
     fprintf(fp_hpp, "    return *this;\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  void Or(const Pipeline_Use_Cycle_Mask &in2) {\n");
@@ -783,7 +780,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "protected:\n");
     uint masklen = (_pipeline->_maxcycleused + 31) >> 5;
     uint l;
-    fprintf(fp_hpp, "  uint ");
+    fprintf(fp_hpp, "  uint32_t ");
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "_mask%d%s", l, l < masklen ? ", " : ";\n\n");
     fprintf(fp_hpp, "public:\n");
@@ -792,7 +789,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
       fprintf(fp_hpp, "_mask%d(0)%s", l, l < masklen ? ", " : " {}\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask(");
     for (l = 1; l <= masklen; l++)
-      fprintf(fp_hpp, "uint mask%d%s", l, l < masklen ? ", " : ") : ");
+      fprintf(fp_hpp, "uint32_t mask%d%s", l, l < masklen ? ", " : ") : ");
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "_mask%d(mask%d)%s", l, l, l < masklen ? ", " : " {}\n\n");
 
@@ -803,10 +800,10 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "    return out;\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  bool overlaps(const Pipeline_Use_Cycle_Mask &in2) const {\n");
-    fprintf(fp_hpp, "    return (");
+    fprintf(fp_hpp, "    return ");
     for (l = 1; l <= masklen; l++)
       fprintf(fp_hpp, "((_mask%d & in2._mask%d) != 0)%s", l, l, l < masklen ? " || " : "");
-    fprintf(fp_hpp, ") ? true : false;\n");
+    fprintf(fp_hpp, ";\n");
     fprintf(fp_hpp, "  }\n\n");
     fprintf(fp_hpp, "  Pipeline_Use_Cycle_Mask& operator<<=(int n) {\n");
     fprintf(fp_hpp, "    if (n >= 32)\n");
@@ -817,10 +814,10 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
     fprintf(fp_hpp, "      } while ((n -= 32) >= 32);\n\n");
     fprintf(fp_hpp, "    if (n > 0) {\n");
     fprintf(fp_hpp, "      uint m = 32 - n;\n");
-    fprintf(fp_hpp, "      uint mask = (1 << n) - 1;\n");
-    fprintf(fp_hpp, "      uint temp%d = mask & (_mask%d >> m); _mask%d <<= n;\n", 2, 1, 1);
+    fprintf(fp_hpp, "      uint32_t mask = (1 << n) - 1;\n");
+    fprintf(fp_hpp, "      uint32_t temp%d = mask & (_mask%d >> m); _mask%d <<= n;\n", 2, 1, 1);
     for (l = 2; l < masklen; l++) {
-      fprintf(fp_hpp, "      uint temp%d = mask & (_mask%d >> m); _mask%d <<= n; _mask%d |= temp%d;\n", l+1, l, l, l, l);
+      fprintf(fp_hpp, "      uint32_t temp%d = mask & (_mask%d >> m); _mask%d <<= n; _mask%d |= temp%d;\n", l+1, l, l, l, l);
     }
     fprintf(fp_hpp, "      _mask%d <<= n; _mask%d |= temp%d;\n", masklen, masklen, masklen);
     fprintf(fp_hpp, "    }\n");
@@ -870,8 +867,7 @@ void ArchDesc::declare_pipe_classes(FILE *fp_hpp) {
   fprintf(fp_hpp, "  }\n\n");
   fprintf(fp_hpp, "  void step(uint cycles) {\n");
   fprintf(fp_hpp, "    _used = 0;\n");
-  fprintf(fp_hpp, "    uint max_shift = 8 * sizeof(_mask) - 1;\n");
-  fprintf(fp_hpp, "    _mask <<= (cycles < max_shift) ? cycles : max_shift;\n");
+  fprintf(fp_hpp, "    _mask <<= cycles;\n");
   fprintf(fp_hpp, "  }\n\n");
   fprintf(fp_hpp, "  friend class Pipeline_Use;\n");
   fprintf(fp_hpp, "};\n\n");
