@@ -38,8 +38,8 @@ import java.util.Random;
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption
  *      compiler.arraycopy.TestArrayCopyConjoint
- * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+StressGCM -XX:VerifyConstraintCasts=2
- *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=32 -XX:+UnlockDiagnosticVMOption
+ * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+StressGCM -XX:VerifyConstraintCasts=2
+ *      -XX:UseAVX=3 -XX:ArrayOperationPartialInlineSize=32 -XX:MaxVectorSize=32
  *      compiler.arraycopy.TestArrayCopyConjoint
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:UseAVX=3 -XX:+UnlockDiagnosticVMOptions -XX:ArrayOperationPartialInlineSize=32 -XX:+UnlockDiagnosticVMOptions -XX:MaxVectorSize=64
