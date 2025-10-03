@@ -25,6 +25,7 @@ package jdk.jfr.tool;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
@@ -265,6 +266,7 @@ public class TestPrintContextual {
     }
 
     private static void span(int depth) {
+        awaitUniqueTimestamp();
         SpanEvent span = new SpanEvent();
         span.name = "span";
         span.spanId = depth;
@@ -275,6 +277,17 @@ public class TestPrintContextual {
         }
         span(depth - 1);
         span.commit();
+    }
+
+    private static void awaitUniqueTimestamp() {
+        Instant timestamp = Instant.now();
+        while (timestamp.equals(Instant.now())) {
+            try {
+                Thread.sleep(1);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
     }
 
     // Tests that context values are only inhjected into events in the same thread.
