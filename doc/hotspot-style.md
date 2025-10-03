@@ -413,12 +413,12 @@ support for more recent Standards must of course stick with the
 original C++98/03 subset.)
 
 This section describes that subset.  Features from the C++98/03
-language may be used unless explicitly excluded here.  Features from
-C++11, C++14, and C++17 may be explicitly permitted or explicitly excluded,
+language may be used unless explicitly forbidden here.  Features from
+C++11, C++14, and C++17 may be explicitly permitted or explicitly forbidden,
 and discussed accordingly here.  There is a third category, undecided
 features, about which HotSpot developers have not yet reached a
 consensus, or perhaps have not discussed at all.  Use of these
-features is also excluded.
+features is also forbidden.
 
 (The use of some features may not be immediately obvious and may slip
 in anyway, since the compiler will accept them.  The code review
@@ -427,7 +427,7 @@ process is the main defense against this.)
 Some features are discussed in their own subsection, typically to provide
 more extensive discussion or rationale for limitations.  Features that
 don't have their own subsection are listed in omnibus feature sections
-for permitted, excluded, and undecided features.
+for permitted, forbidden, and undecided features.
 
 Lists of new features for C++11, C++14, and C++17, along with links to their
 descriptions, can be found in the online documentation for some of the
@@ -579,8 +579,8 @@ just to remove the need for namespace qualification.  Requiring qualification
 makes it easy to distinguish between references to external libraries and code
 that is part of HotSpot.
 
-As with language features, standard library facilities are either permitted,
-explicitly excluded, or undecided (and so implicitly excluded).
+As with language features, Standard Library facilities are either permitted,
+explicitly forbidden, or undecided (and so implicitly forbidden).
 
 Most HotSpot code should not directly `#include` C++ Standard Library headers.
 HotSpot provides a set of wrapper headers for the Standard Library headers
@@ -1578,9 +1578,9 @@ single-argument form are permitted.
 * Allow `typename` in template template parameter
 ([n4051](http://wg21.link/n4051)) &mdash; template template parameters are
 barely used (if at all) in HotSpot, but there's no reason to artificially
-disallow this syntactic regularization in any such uses.
+forbid this syntactic regularization in any such uses.
 
-## Excluded Features
+## Forbidden Features
 
 ### Structured Bindings
 
@@ -1630,7 +1630,7 @@ initialization for classes with base classes
 aggregate classes, preferring explicit constructors even for very simple
 classes.
 
-### Additional Excluded Features
+### Additional Forbidden Features
 
 * `<algorithm>`, `<iterator>`, `<numeric>`<br>
 Not useful without standard containers or similar classes in HotSpot.
