@@ -259,8 +259,6 @@ private:
   volatile size_t _live_data;
   volatile size_t _critical_pins;
 
-  size_t _mixed_candidate_garbage_words;
-
   HeapWord* volatile _update_watermark;
 
   uint _age;
