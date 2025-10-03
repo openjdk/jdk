@@ -119,21 +119,20 @@ void ParallelArguments::initialize_heap_flags_and_sizes() {
   initialize_heap_flags_and_sizes_one_pass();
 
   if (!UseLargePages) {
+    ParallelScavengeHeap::set_desired_page_size(os::vm_page_size());
     return;
   }
 
   // If using large-page, need to update SpaceAlignment so that spaces are page-size aligned.
   const size_t min_pages = 4; // 1 for eden + 1 for each survivor + 1 for old
   const size_t page_sz = os::page_size_for_region_aligned(MinHeapSize, min_pages);
+  ParallelScavengeHeap::set_desired_page_size(page_sz);
 
   if (page_sz == os::vm_page_size()) {
     log_warning(gc, heap)("MinHeapSize (%zu) must be large enough for 4 * page-size; Disabling UseLargePages for heap", MinHeapSize);
     return;
   }
-  // Using largepage
-  // Can a page size be something else than a power of two?
-  assert(is_power_of_2((intptr_t)page_sz), "must be a power of 2");
-  ParallelScavengeHeap::set_desired_page_size(page_sz);
+
   // Space is largepage-aligned.
   size_t new_alignment = page_sz;
   if (new_alignment != SpaceAlignment) {

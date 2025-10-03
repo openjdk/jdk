@@ -66,10 +66,8 @@ size_t ParallelScavengeHeap::_desired_page_size = 0;
 jint ParallelScavengeHeap::initialize() {
   const size_t reserved_heap_size = ParallelArguments::heap_reserved_size_bytes();
 
-  size_t desired_page_size = (_desired_page_size == 0)
-                           ? os::vm_page_size()
-                           : _desired_page_size;
-  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, desired_page_size);
+  assert(_desired_page_size != 0, "Should be initialized");
+  ReservedHeapSpace heap_rs = Universe::reserve_heap(reserved_heap_size, HeapAlignment, _desired_page_size);
   // Adjust SpaceAlignment based on actually used large page size.
   if (UseLargePages) {
     SpaceAlignment = MAX2(heap_rs.page_size(), default_space_alignment());
