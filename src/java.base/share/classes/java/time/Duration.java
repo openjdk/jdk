@@ -139,31 +139,32 @@ public final class Duration
      */
     public static final Duration ZERO = new Duration(0, 0);
     /**
-     * Constant for the most negative supported duration.
+     * The minimum supported {@code Duration}, which is {@link Long#MIN_VALUE}
+     * seconds.
      *
-     * @apiNote This and {@link Duration#MAX} constants are {@code Duration}
-     * edge values. They are intended to be used in comparisons with other
-     * durations or testing.
+     * @apiNote This constant represents the smallest possible instance of
+     * {@code Duration}. Since {@code Duration} is directed, the smallest
+     * possible duration is negative.
      *
-     * They should never be added to or subtracted from an {@linkplain Instant
-     * instant}, as doing so will cause overflow. Extreme care should be taken
-     * when performing {@code Duration} arithmetic on them, such as adding
-     * them to or subtracting them from another duration.
+     * The constant is intended to be used as a sentinel value or in tests.
+     * Care should be taken when performing arithmetic on {@code MIN} as there
+     * is a high risk that {@link ArithmeticException} or {@link DateTimeException}
+     * will be thrown.
      *
      * @since 26
      */
     public static final Duration MIN = new Duration(Long.MIN_VALUE, 0);
     /**
-     * Constant for the most positive supported duration.
+     * The maximum supported {@code Duration}, which is {@link Long#MAX_VALUE}
+     * seconds and {@code 999,999,999} nanoseconds.
      *
-     * @apiNote This and {@link Duration#MIN} constants are {@code Duration}
-     * edge values. They are intended to be used in comparisons with other
-     * durations or for testing.
+     * @apiNote This constant represents the largest possible instance of
+     * {@code Duration}.
      *
-     * They should never be added to or subtracted from an {@linkplain Instant
-     * instant}, as doing so will cause overflow. Extreme care should be taken
-     * when performing {@code Duration} arithmetic on them, such as adding
-     * them to or subtracting them from another duration.
+     * The constant is intended to be used as a sentinel value or in tests.
+     * Care should be taken when performing arithmetic on {@code MAX} as there
+     * is a high risk that {@link ArithmeticException} or {@link DateTimeException}
+     * will be thrown.
      *
      * @since 26
      */
