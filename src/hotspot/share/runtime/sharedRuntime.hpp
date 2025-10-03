@@ -686,6 +686,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
  private:
   AdapterFingerPrint* _fingerprint;
   AdapterBlob* _adapter_blob;
+  uint _id;
   bool _linked;
 
   static const char *_entry_names[];
@@ -697,9 +698,10 @@ class AdapterHandlerEntry : public MetaspaceObj {
   int            _saved_code_length;
 #endif
 
-  AdapterHandlerEntry(AdapterFingerPrint* fingerprint) :
+  AdapterHandlerEntry(int id, AdapterFingerPrint* fingerprint) :
     _fingerprint(fingerprint),
     _adapter_blob(nullptr),
+    _id(id),
     _linked(false)
 #ifdef ASSERT
     , _saved_code(nullptr),
@@ -720,8 +722,8 @@ class AdapterHandlerEntry : public MetaspaceObj {
   }
 
  public:
-  static AdapterHandlerEntry* allocate(AdapterFingerPrint* fingerprint) {
-    return new(0) AdapterHandlerEntry(fingerprint);
+  static AdapterHandlerEntry* allocate(uint id, AdapterFingerPrint* fingerprint) {
+    return new(0) AdapterHandlerEntry(id, fingerprint);
   }
 
   static void deallocate(AdapterHandlerEntry *handler) {
@@ -772,6 +774,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   AdapterBlob* adapter_blob() const { return _adapter_blob; }
   bool is_linked() const { return _linked; }
 
+  uint id() const { return _id; }
   AdapterFingerPrint* fingerprint() const { return _fingerprint; }
 
 #ifdef ASSERT
@@ -798,6 +801,7 @@ class ArchivedAdapterTable;
 class AdapterHandlerLibrary: public AllStatic {
   friend class SharedRuntime;
  private:
+  static volatile uint _id_counter; // counter for generating unique adapter ids, range = [1,UINT_MAX]
   static BufferBlob* _buffer; // the temporary code buffer in CodeCache
   static AdapterHandlerEntry* _no_arg_handler;
   static AdapterHandlerEntry* _int_arg_handler;
@@ -837,8 +841,8 @@ class AdapterHandlerLibrary: public AllStatic {
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);
   static bool contains(const CodeBlob* b);
-  static const char* name(AdapterFingerPrint* fingerprint);
-  static uint32_t id(AdapterFingerPrint* fingerprint);
+  static const char* name(AdapterHandlerEntry* handler);
+  static uint32_t id(AdapterHandlerEntry* handler);
 #ifndef PRODUCT
   static void print_statistics();
 #endif // PRODUCT

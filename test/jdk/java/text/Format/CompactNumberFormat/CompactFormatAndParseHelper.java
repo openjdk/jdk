@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,15 @@
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CompactFormatAndParseHelper {
 
     static void testFormat(NumberFormat cnf, Object number,
             String expected) {
         String result = cnf.format(number);
-        assertEquals(result, expected, "Incorrect formatting of the number '"
+        assertEquals(expected, result, "Incorrect formatting of the number '"
                 + number + "'");
     }
 
@@ -46,11 +47,11 @@ class CompactFormatAndParseHelper {
         }
 
         if (returnType != null) {
-            assertEquals(number.getClass(), returnType,
+            assertEquals(returnType, number.getClass(),
                     "Incorrect return type for string '" + parseString + "'");
         }
 
-        assertEquals(number, expected, "Incorrect parsing of the string '"
+        assertEquals(expected, number, "Incorrect parsing of the string '"
                 + parseString + "'");
     }
 }
