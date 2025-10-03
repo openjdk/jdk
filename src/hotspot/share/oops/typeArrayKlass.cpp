@@ -50,7 +50,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
 
   ClassLoaderData* null_loader_data = ClassLoaderData::the_null_class_loader_data();
 
-  TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
+  TypeArrayKlass* ak = TypeArrayKlass::allocate_klass(null_loader_data, type, sym, CHECK_NULL);
 
   // Call complete_create_array_klass after all instance variables have been initialized.
   complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
@@ -65,7 +65,7 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
   return ak;
 }
 
-TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
+TypeArrayKlass* TypeArrayKlass::allocate_klass(ClassLoaderData* loader_data, BasicType type, Symbol* name, TRAPS) {
   assert(TypeArrayKlass::header_size() <= InstanceKlass::header_size(),
       "array klasses must be same size as InstanceKlass");
 
@@ -101,7 +101,7 @@ oop TypeArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
   // For typeArrays this is only called for the last dimension
   assert(rank == 1, "just checking");
   int length = *last_size;
-  return allocate(length, THREAD);
+  return allocate_instance(length, THREAD);
 }
 
 

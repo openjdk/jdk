@@ -25,12 +25,13 @@
 #ifndef SHARE_UTILITIES_RBTREE_INLINE_HPP
 #define SHARE_UTILITIES_RBTREE_INLINE_HPP
 
+#include "utilities/rbTree.hpp"
+
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/rbTree.hpp"
 
 inline void IntrusiveRBNode::replace_child(IntrusiveRBNode* old_child, IntrusiveRBNode* new_child) {
   if (_left == old_child) {
@@ -84,7 +85,7 @@ inline IntrusiveRBNode* IntrusiveRBNode::rotate_right() {
 
 inline const IntrusiveRBNode* IntrusiveRBNode::prev() const {
   const IntrusiveRBNode* node = this;
-  if (_left != nullptr) { // right subtree exists
+  if (_left != nullptr) { // left subtree exists
     node = _left;
     while (node->_right != nullptr) {
       node = node->_right;
@@ -122,10 +123,12 @@ inline IntrusiveRBNode* IntrusiveRBNode::next() {
   return const_cast<IntrusiveRBNode*>(static_cast<const IntrusiveRBNode*>(this)->next());
 }
 
-template <typename NodeType, typename NodeVerifier>
+template <typename NodeType, typename NODE_VERIFIER, typename USER_VERIFIER>
 inline void IntrusiveRBNode::verify(
     size_t& num_nodes, size_t& black_nodes_until_leaf, size_t& shortest_leaf_path, size_t& longest_leaf_path,
-    size_t& tree_depth, bool expect_visited, NodeVerifier verifier) const {
+    size_t& tree_depth, bool expect_visited, NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const {
+  bool extra_verifier_result = extra_verifier(static_cast<const NodeType*>(this));
+  assert(extra_verifier_result, "user provided verifier failed");
   assert(expect_visited != _visited, "node already visited");
   DEBUG_ONLY(_visited = !_visited);
 
@@ -142,7 +145,7 @@ inline void IntrusiveRBNode::verify(
     assert(is_black() || _left->is_black(), "2 red nodes in a row");
     assert(_left->parent() == this, "pointer mismatch");
     _left->verify<NodeType>(num_nodes, num_black_nodes_left, shortest_leaf_path_left,
-                  longest_leaf_path_left, tree_depth_left, expect_visited, verifier);
+                  longest_leaf_path_left, tree_depth_left, expect_visited, verifier, extra_verifier);
   }
 
   size_t num_black_nodes_right = 0;
@@ -158,7 +161,7 @@ inline void IntrusiveRBNode::verify(
     assert(is_black() || _left->is_black(), "2 red nodes in a row");
     assert(_right->parent() == this, "pointer mismatch");
     _right->verify<NodeType>(num_nodes, num_black_nodes_right, shortest_leaf_path_right,
-                   longest_leaf_path_right, tree_depth_right, expect_visited, verifier);
+                   longest_leaf_path_right, tree_depth_right, expect_visited, verifier, extra_verifier);
   }
 
   shortest_leaf_path = MAX2(longest_leaf_path_left, longest_leaf_path_right);
@@ -189,13 +192,13 @@ AbstractRBTree<K, NodeType, COMPARATOR>::cursor(const K& key, const NodeType* hi
   IntrusiveRBNode* const* insert_location = &_root;
 
   if (hint_node != nullptr) {
-    const int hint_cmp = cmp(key, hint_node);
+    const RBTreeOrdering hint_cmp = cmp(key, hint_node);
     while (hint_node->parent() != nullptr) {
-      const int parent_cmp = cmp(key, (NodeType*)hint_node->parent());
+      const RBTreeOrdering parent_cmp = cmp(key, (NodeType*)hint_node->parent());
       // Move up until the parent would put us on the other side of the key.
       // Meaning we are in the correct subtree.
-      if ((parent_cmp <= 0 && hint_cmp < 0) ||
-          (parent_cmp >= 0 && hint_cmp > 0)) {
+      if ((parent_cmp != RBTreeOrdering::GT && hint_cmp == RBTreeOrdering::LT) ||
+          (parent_cmp != RBTreeOrdering::LT    && hint_cmp == RBTreeOrdering::GT)) {
         hint_node = (NodeType*)hint_node->parent();
       } else {
         break;
@@ -211,14 +214,14 @@ AbstractRBTree<K, NodeType, COMPARATOR>::cursor(const K& key, const NodeType* hi
 
   while (*insert_location != nullptr) {
     NodeType* curr = (NodeType*)*insert_location;
-    const int key_cmp_k = cmp(key, curr);
+    const RBTreeOrdering key_cmp_k = cmp(key, curr);
 
-    if (key_cmp_k == 0) {
+    if (key_cmp_k == RBTreeOrdering::EQ) {
       break;
     }
 
     parent = *insert_location;
-    if (key_cmp_k < 0) {
+    if (key_cmp_k == RBTreeOrdering::LT) {
       insert_location = &curr->_left;
     } else {
       insert_location = &curr->_right;
@@ -550,19 +553,19 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::replace_at_cursor(NodeType*
   new_node->_parent = old_node->_parent;
 
   if (new_node->is_left_child()) {
-    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->parent())), "new node not < parent");
+    assert(less_than(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->parent())), "new node not < parent");
   } else if (new_node->is_right_child()) {
-    assert(cmp(static_cast<const NodeType*>(new_node->parent()), static_cast<const NodeType*>(new_node)), "new node not > parent");
+    assert(less_than(static_cast<const NodeType*>(new_node->parent()), static_cast<const NodeType*>(new_node)), "new node not > parent");
   }
 
   new_node->_left = old_node->_left;
   new_node->_right = old_node->_right;
   if (new_node->_left != nullptr) {
-    assert(cmp(static_cast<const NodeType*>(new_node->_left), static_cast<const NodeType*>(new_node)), "left child not < new node");
+    assert(less_than(static_cast<const NodeType*>(new_node->_left), static_cast<const NodeType*>(new_node)), "left child not < new node");
     new_node->_left->set_parent(new_node);
   }
   if (new_node->_right != nullptr) {
-    assert(cmp(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->_right)), "right child not > new node");
+    assert(less_than(static_cast<const NodeType*>(new_node), static_cast<const NodeType*>(new_node->_right)), "right child not > new node");
     new_node->_right->set_parent(new_node);
   }
 
@@ -598,7 +601,21 @@ template <typename F>
 inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) const {
   const NodeType* node = leftmost();
   while (node != nullptr) {
-    f(node);
+    if (!f(node)) {
+      return;
+    }
+    node = node->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename F>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_in_order(F f) {
+  NodeType* node = leftmost();
+  while (node != nullptr) {
+    if (!f(node)) {
+      return;
+    }
     node = node->next();
   }
 }
@@ -617,14 +634,37 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const 
   const NodeType* end = next(cursor_end).node();
 
   while (start != end) {
-    f(start);
+    if (!f(start)) {
+      return;
+    }
     start = start->next();
   }
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
-template <typename NodeVerifier>
-inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NodeVerifier verifier) const {
+template <typename F>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::visit_range_in_order(const K& from, const K& to, F f) {
+  assert_key_leq(from, to);
+  if (_root == nullptr) {
+    return;
+  }
+
+  Cursor cursor_start = cursor(from);
+  Cursor cursor_end = cursor(to);
+  NodeType* start = cursor_start.found() ? cursor_start.node() : next(cursor_start).node();
+  NodeType* end = next(cursor_end).node();
+
+  while (start != end) {
+    if (!f(start)) {
+      return;
+    }
+    start = start->next();
+  }
+}
+
+template <typename K, typename NodeType, typename COMPARATOR>
+template <typename NODE_VERIFIER, typename USER_VERIFIER>
+inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NODE_VERIFIER verifier, const USER_VERIFIER& extra_verifier) const {
   if (_root == nullptr) {
     assert(_num_nodes == 0, "rbtree has %zu nodes but no root", _num_nodes);
     return;
@@ -641,7 +681,7 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NodeVerifier ve
   bool expected_visited = DEBUG_ONLY(_expected_visited) NOT_DEBUG(false);
 
   _root->verify<NodeType>(num_nodes, black_depth, shortest_leaf_path, longest_leaf_path,
-                tree_depth, expected_visited, verifier);
+                tree_depth, expected_visited, verifier, extra_verifier);
 
   const unsigned int maximum_depth = log2i(size() + 1) * 2;
 
@@ -655,21 +695,21 @@ inline void AbstractRBTree<K, NodeType, COMPARATOR>::verify_self(NodeVerifier ve
 }
 
 template <typename T,
-          ENABLE_IF(std::is_integral<T>::value),
-          ENABLE_IF(std::is_signed<T>::value)>
+          ENABLE_IF(std::is_integral_v<T>),
+          ENABLE_IF(std::is_signed_v<T>)>
 void print_T(outputStream* st, T x) {
   st->print(INT64_FORMAT, (int64_t)x);
 }
 
 template <typename T,
-          ENABLE_IF(std::is_integral<T>::value),
-          ENABLE_IF(std::is_unsigned<T>::value)>
+          ENABLE_IF(std::is_integral_v<T>),
+          ENABLE_IF(std::is_unsigned_v<T>)>
 void print_T(outputStream* st, T x) {
   st->print(UINT64_FORMAT, (uint64_t)x);
 }
 
 template <typename T,
-          ENABLE_IF(std::is_pointer<T>::value)>
+          ENABLE_IF(std::is_pointer_v<T>)>
 void print_T(outputStream* st, T x) {
   st->print(PTR_FORMAT, p2i(x));
 }
@@ -693,22 +733,73 @@ inline void RBNode<K, V>::print_on(outputStream* st, int depth) const {
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
-void AbstractRBTree<K, NodeType, COMPARATOR>::print_node_on(outputStream* st, int depth, const NodeType* n) const {
-  n->print_on(st, depth);
+template <typename PRINTER>
+void AbstractRBTree<K, NodeType, COMPARATOR>::print_node_on(outputStream* st, int depth, const NodeType* n, const PRINTER& node_printer) const {
+  node_printer(st, n, depth);
   depth++;
-  if (n->_right != nullptr) {
-    print_node_on(st, depth, (NodeType*)n->_right);
-  }
   if (n->_left != nullptr) {
-    print_node_on(st, depth, (NodeType*)n->_left);
+    print_node_on(st, depth, (NodeType*)n->_left, node_printer);
+  }
+  if (n->_right != nullptr) {
+    print_node_on(st, depth, (NodeType*)n->_right, node_printer);
   }
 }
 
 template <typename K, typename NodeType, typename COMPARATOR>
-void AbstractRBTree<K, NodeType, COMPARATOR>::print_on(outputStream* st) const {
+template <typename PRINTER>
+void AbstractRBTree<K, NodeType, COMPARATOR>::print_on(outputStream* st, const PRINTER& node_printer) const {
   if (_root != nullptr) {
-    print_node_on(st, 0, (NodeType*)_root);
+    print_node_on(st, 0, (NodeType*)_root, node_printer);
   }
+}
+
+template<typename K, typename V, typename COMPARATOR, typename ALLOCATOR>
+bool RBTree<K, V, COMPARATOR, ALLOCATOR>::copy_into(RBTree& other) const {
+  assert(other.size() == 0, "You can only copy into an empty RBTree");
+  assert(std::is_copy_constructible<K>::value, "Key type must be copy-constructible when copying a RBTree");
+  assert(std::is_copy_constructible<V>::value, "Value type must be copy-constructible when copying a RBTree");
+  enum class Dir { Left, Right };
+  struct node_pair { const IntrusiveRBNode* current; IntrusiveRBNode* other_parent; Dir dir; };
+  struct stack {
+    node_pair s[64];
+    int idx = 0;
+    stack() : idx(0) {}
+    node_pair pop() { idx--; return s[idx]; };
+    void push(node_pair n) { s[idx] = n; idx++; };
+    bool is_empty() { return idx == 0; };
+  };
+
+  stack visit_stack;
+  if (this->_root == nullptr)  {
+    return true;
+  }
+  RBNode<K, V>* root = static_cast<RBNode<K, V>*>(this->_root);
+  other._root = other.allocate_node(root->key(), root->val());
+  if (other._root == nullptr) return false;
+
+  visit_stack.push({this->_root->_left, other._root, Dir::Left});
+  visit_stack.push({this->_root->_right, other._root, Dir::Right});
+  while (!visit_stack.is_empty()) {
+    node_pair n = visit_stack.pop();
+    const RBNode<K, V>* current = static_cast<const RBNode<K, V>*>(n.current);
+    if (current == nullptr) continue;
+    RBNode<K, V>* new_node = other.allocate_node(current->key(), current->val());
+    if (new_node == nullptr) {
+      return false;
+    }
+    if (n.dir == Dir::Left) {
+      n.other_parent->_left = new_node;
+    } else {
+      n.other_parent->_right = new_node;
+    }
+    new_node->set_parent(n.other_parent);
+    new_node->_parent |= n.current->_parent & 0x1;
+    visit_stack.push({n.current->_left, new_node, Dir::Left});
+    visit_stack.push({n.current->_right, new_node, Dir::Right});
+  }
+  other._num_nodes = this->_num_nodes;
+  DEBUG_ONLY(other._expected_visited = this->_expected_visited);
+  return true;
 }
 
 #endif // SHARE_UTILITIES_RBTREE_INLINE_HPP

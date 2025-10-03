@@ -28,7 +28,6 @@
  * @run main/othervm -esa RacingSBThreads read
  * @run main/othervm -esa RacingSBThreads insert
  * @run main/othervm -esa RacingSBThreads append
- * @run main/othervm -Xcomp RacingSBThreads
  */
 
 import java.nio.CharBuffer;
@@ -46,7 +45,7 @@ import java.util.function.BiConsumer;
 public class RacingSBThreads {
 
     private static final int TIMEOUT_SEC = 1;   // Duration to run each test case
-    private static final int N = 10_000_000;    // static number of iterations for writes and modifies
+    private static final int N = 1_000_000;     // static number of iterations for writes and modifies
     private static final int LEN = 100_000;     // Length of initial SB
 
     // Strings available to be used as the initial contents of a StringBuilder

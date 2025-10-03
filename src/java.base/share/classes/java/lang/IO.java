@@ -32,13 +32,15 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
+import jdk.internal.util.StaticProperty;
+
 /**
  * A collection of static methods that provide convenient access to {@link System#in}
  * and {@link System#out} for line-oriented input and output.
  * <p>
  * The {@link #readln()} and {@link #readln(String)} methods decode bytes read from
  * {@code System.in} into characters. The charset used for decoding is specified by the
- * {@link System#getProperties stdin.encoding} property. If this property is not present,
+ * {@link System##stdin.encoding stdin.encoding} property. If this property is not present,
  * or if the charset it names cannot be loaded, then UTF-8 is used instead. Decoding
  * always replaces malformed and unmappable byte sequences with the charset's default
  * replacement string.
@@ -187,7 +189,7 @@ public final class IO {
      */
     static synchronized BufferedReader reader() {
         if (br == null) {
-            String enc = System.getProperty("stdin.encoding", "");
+            String enc = StaticProperty.stdinEncoding();
             Charset cs = Charset.forName(enc, StandardCharsets.UTF_8);
             br = new BufferedReader(new InputStreamReader(System.in, cs));
         }

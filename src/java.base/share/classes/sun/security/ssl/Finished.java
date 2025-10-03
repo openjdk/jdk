@@ -745,6 +745,12 @@ final class Finished {
                         "Failure to derive application secrets", gse);
             }
 
+            // Calculate/save the exporter_master_secret.  It uses
+            // the same handshakeHash as the client/server app traffic.
+            SecretKey exporterSecret = kd.deriveKey(
+                    "TlsExporterMasterSecret");
+            chc.handshakeSession.setExporterMasterSecret(exporterSecret);
+
             // The resumption master secret is stored in the session so
             // it can be used after the handshake is completed.
             SSLSecretDerivation sd = ((SSLSecretDerivation) kd).forContext(chc);
@@ -840,6 +846,16 @@ final class Finished {
 
                 // update the context for the following key derivation
                 shc.handshakeKeyDerivation = secretKD;
+                if (shc.sslConfig.isQuic) {
+                    QuicTLSEngineImpl engine =
+                            (QuicTLSEngineImpl) shc.conContext.transport;
+                    try {
+                        engine.deriveOneRTTKeys();
+                    } catch (IOException e) {
+                        throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                "Failure to derive application secrets", e);
+                    }
+                }
             } catch (GeneralSecurityException gse) {
                 throw shc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
@@ -893,6 +909,14 @@ final class Finished {
 
         private void onConsumeFinished(ClientHandshakeContext chc,
                 ByteBuffer message) throws IOException {
+            // Ensure that the Finished message has not been sent w/o
+            // an EncryptedExtensions preceding
+            if (chc.handshakeConsumers.containsKey(
+                    SSLHandshake.ENCRYPTED_EXTENSIONS.id)) {
+                throw chc.conContext.fatal(Alert.UNEXPECTED_MESSAGE,
+                                           "Unexpected Finished handshake message");
+            }
+
             // Make sure that any expected CertificateVerify message
             // has been received and processed.
             if (!chc.isResumption) {
@@ -996,6 +1020,16 @@ final class Finished {
 
                 // update the context for the following key derivation
                 chc.handshakeKeyDerivation = secretKD;
+                if (chc.sslConfig.isQuic) {
+                    QuicTLSEngineImpl engine =
+                            (QuicTLSEngineImpl) chc.conContext.transport;
+                    try {
+                        engine.deriveOneRTTKeys();
+                    } catch (IOException e) {
+                        throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
+                                "Failure to derive application secrets", e);
+                    }
+                }
             } catch (GeneralSecurityException gse) {
                 throw chc.conContext.fatal(Alert.INTERNAL_ERROR,
                         "Failure to derive application secrets", gse);
@@ -1098,6 +1132,12 @@ final class Finished {
 
                 shc.baseReadSecret = readSecret;
                 shc.conContext.inputRecord.changeReadCiphers(readCipher);
+
+                // Calculate/save the exporter_master_secret.  It uses
+                // the same handshakeHash as the client/server app traffic.
+                SecretKey exporterSecret = kd.deriveKey(
+                        "TlsExporterMasterSecret");
+                shc.handshakeSession.setExporterMasterSecret(exporterSecret);
 
                 // The resumption master secret is stored in the session so
                 // it can be used after the handshake is completed.

@@ -27,11 +27,6 @@ package java.beans;
 
 import com.sun.beans.finder.ClassFinder;
 
-import java.applet.Applet;
-import java.applet.AppletContext;
-import java.applet.AppletStub;
-import java.applet.AudioClip;
-
 import java.awt.Image;
 
 import java.beans.beancontext.BeanContext;
@@ -82,7 +77,7 @@ public class Beans {
      */
 
     public static Object instantiate(ClassLoader cls, String beanName) throws IOException, ClassNotFoundException {
-        return Beans.instantiate(cls, beanName, null, null);
+        return Beans.instantiate(cls, beanName, null);
     }
 
     /**
@@ -108,73 +103,6 @@ public class Beans {
     @SuppressWarnings("removal")
     public static Object instantiate(ClassLoader cls, String beanName,
                                      BeanContext beanContext)
-            throws IOException, ClassNotFoundException {
-        return Beans.instantiate(cls, beanName, beanContext, null);
-    }
-
-    /**
-     * Instantiate a bean.
-     * <p>
-     * The bean is created based on a name relative to a class-loader.
-     * This name should be a dot-separated name such as "a.b.c".
-     * <p>
-     * In Beans 1.0 the given name can indicate either a serialized object
-     * or a class.  Other mechanisms may be added in the future.  In
-     * beans 1.0 we first try to treat the beanName as a serialized object
-     * name then as a class name.
-     * <p>
-     * When using the beanName as a serialized object name we convert the
-     * given beanName to a resource pathname and add a trailing ".ser" suffix.
-     * We then try to load a serialized object from that resource.
-     * <p>
-     * For example, given a beanName of "x.y", Beans.instantiate would first
-     * try to read a serialized object from the resource "x/y.ser" and if
-     * that failed it would try to load the class "x.y" and create an
-     * instance of that class.
-     * <p>
-     * If the bean is a subtype of java.applet.Applet, then it is given
-     * some special initialization.  First, it is supplied with a default
-     * AppletStub and AppletContext.  Second, if it was instantiated from
-     * a classname the applet's "init" method is called.  (If the bean was
-     * deserialized this step is skipped.)
-     * <p>
-     * Note that for beans which are applets, it is the caller's responsibility
-     * to call "start" on the applet.  For correct behaviour, this should be done
-     * after the applet has been added into a visible AWT container.
-     * <p>
-     * Note that applets created via beans.instantiate run in a slightly
-     * different environment than applets running inside browsers.  In
-     * particular, bean applets have no access to "parameters", so they may
-     * wish to provide property get/set methods to set parameter values.  We
-     * advise bean-applet developers to test their bean-applets against both
-     * the JDK appletviewer (for a reference browser environment) and the
-     * BDK BeanBox (for a reference bean container).
-     *
-     * @return a JavaBean
-     * @param     cls         the class-loader from which we should create
-     *                        the bean.  If this is null, then the system
-     *                        class-loader is used.
-     * @param     beanName    the name of the bean within the class-loader.
-     *                        For example "sun.beanbox.foobah"
-     * @param     beanContext The BeanContext in which to nest the new bean
-     * @param     initializer The AppletInitializer for the new bean
-     *
-     * @throws ClassNotFoundException if the class of a serialized
-     *              object could not be found.
-     * @throws IOException if an I/O error occurs.
-     * @since 1.2
-     *
-     * @deprecated It is recommended to use
-     * {@link #instantiate(ClassLoader, String, BeanContext)},
-     * because the Applet API is deprecated. See the
-     * <a href="../../java/applet/package-summary.html"> java.applet package
-     * documentation</a> for further information.
-     */
-    @Deprecated(since = "9", forRemoval = true)
-    @SuppressWarnings("removal")
-    public static Object instantiate(ClassLoader cls, String beanName,
-                                     BeanContext beanContext,
-                                     AppletInitializer initializer)
             throws IOException, ClassNotFoundException {
 
         InputStream ins;
@@ -249,101 +177,7 @@ public class Beans {
         }
 
         if (result != null) {
-
-            // Ok, if the result is an applet initialize it.
-
-            AppletStub stub = null;
-
-            if (result instanceof Applet) {
-                Applet  applet      = (Applet) result;
-                boolean needDummies = initializer == null;
-
-                if (needDummies) {
-
-                    // Figure our the codebase and docbase URLs.  We do this
-                    // by locating the URL for a known resource, and then
-                    // massaging the URL.
-
-                    // First find the "resource name" corresponding to the bean
-                    // itself.  So a serialized bean "a.b.c" would imply a
-                    // resource name of "a/b/c.ser" and a classname of "x.y"
-                    // would imply a resource name of "x/y.class".
-
-                    final String resourceName;
-
-                    if (serialized) {
-                        // Serialized bean
-                        resourceName = beanName.replace('.','/').concat(".ser");
-                    } else {
-                        // Regular class
-                        resourceName = beanName.replace('.','/').concat(".class");
-                    }
-
-                    URL objectUrl = null;
-                    URL codeBase  = null;
-                    URL docBase   = null;
-
-                    // Now get the URL corresponding to the resource name.
-                    if (cls == null) {
-                        objectUrl = ClassLoader.getSystemResource(resourceName);
-                    } else
-                        objectUrl = cls.getResource(resourceName);
-
-                    // If we found a URL, we try to locate the docbase by taking
-                    // of the final path name component, and the code base by taking
-                    // of the complete resourceName.
-                    // So if we had a resourceName of "a/b/c.class" and we got an
-                    // objectURL of "file://bert/classes/a/b/c.class" then we would
-                    // want to set the codebase to "file://bert/classes/" and the
-                    // docbase to "file://bert/classes/a/b/"
-
-                    if (objectUrl != null) {
-                        String s = objectUrl.toExternalForm();
-
-                        if (s.endsWith(resourceName)) {
-                            int ix   = s.length() - resourceName.length();
-                            codeBase = newURL(s.substring(0,ix));
-                            docBase  = codeBase;
-
-                            ix = s.lastIndexOf('/');
-
-                            if (ix >= 0) {
-                                docBase = newURL(s.substring(0,ix+1));
-                            }
-                        }
-                    }
-
-                    // Setup a default context and stub.
-                    BeansAppletContext context = new BeansAppletContext(applet);
-
-                    stub = (AppletStub)new BeansAppletStub(applet, context, codeBase, docBase);
-                    applet.setStub(stub);
-                } else {
-                    initializer.initialize(applet, beanContext);
-                }
-
-                // now, if there is a BeanContext, add the bean, if applicable.
-
-                if (beanContext != null) {
-                    unsafeBeanContextAdd(beanContext, result);
-                }
-
-                // If it was deserialized then it was already init-ed.
-                // Otherwise we need to initialize it.
-
-                if (!serialized) {
-                    // We need to set a reasonable initial size, as many
-                    // applets are unhappy if they are started without
-                    // having been explicitly sized.
-                    applet.setSize(100,100);
-                    applet.init();
-                }
-
-                if (needDummies) {
-                  ((BeansAppletStub)stub).active = true;
-                } else initializer.activate(applet);
-
-            } else if (beanContext != null) unsafeBeanContextAdd(beanContext, result);
+           if (beanContext != null) unsafeBeanContextAdd(beanContext, result);
         }
 
         return result;
@@ -480,140 +314,5 @@ class ObjectInputStreamWithLoader extends ObjectInputStream
 
         String cname = classDesc.getName();
         return ClassFinder.resolveClass(cname, this.loader);
-    }
-}
-
-/**
- * Package private support class.  This provides a default AppletContext
- * for beans which are applets.
- */
-@Deprecated(since = "9", forRemoval = true)
-@SuppressWarnings("removal")
-class BeansAppletContext implements AppletContext {
-    Applet target;
-    Hashtable<URL,Object> imageCache = new Hashtable<>();
-
-    BeansAppletContext(Applet target) {
-        this.target = target;
-    }
-
-    public AudioClip getAudioClip(URL url) {
-        // We don't currently support audio clips in the Beans.instantiate
-        // applet context, unless by some luck there exists a URL content
-        // class that can generate an AudioClip from the audio URL.
-        try {
-            return (AudioClip) url.getContent();
-        } catch (Exception ex) {
-            return null;
-        }
-    }
-
-    public synchronized Image getImage(URL url) {
-        Object o = imageCache.get(url);
-        if (o != null) {
-            return (Image)o;
-        }
-        try {
-            o = url.getContent();
-            if (o == null) {
-                return null;
-            }
-            if (o instanceof Image) {
-                imageCache.put(url, o);
-                return (Image) o;
-            }
-            // Otherwise it must be an ImageProducer.
-            Image img = target.createImage((java.awt.image.ImageProducer)o);
-            imageCache.put(url, img);
-            return img;
-
-        } catch (Exception ex) {
-            return null;
-        }
-    }
-
-    public Applet getApplet(String name) {
-        return null;
-    }
-
-    public Enumeration<Applet> getApplets() {
-        Vector<Applet> applets = new Vector<>();
-        applets.addElement(target);
-        return applets.elements();
-    }
-
-    public void showDocument(URL url) {
-        // We do nothing.
-    }
-
-    public void showDocument(URL url, String target) {
-        // We do nothing.
-    }
-
-    public void showStatus(String status) {
-        // We do nothing.
-    }
-
-    public void setStream(String key, InputStream stream)throws IOException{
-        // We do nothing.
-    }
-
-    public InputStream getStream(String key){
-        // We do nothing.
-        return null;
-    }
-
-    public Iterator<String> getStreamKeys(){
-        // We do nothing.
-        return null;
-    }
-}
-
-/**
- * Package private support class.  This provides an AppletStub
- * for beans which are applets.
- */
-@Deprecated(since = "9", forRemoval = true)
-@SuppressWarnings("removal")
-class BeansAppletStub implements AppletStub {
-    transient boolean active;
-    transient Applet target;
-    transient AppletContext context;
-    transient URL codeBase;
-    transient URL docBase;
-
-    BeansAppletStub(Applet target,
-                AppletContext context, URL codeBase,
-                                URL docBase) {
-        this.target = target;
-        this.context = context;
-        this.codeBase = codeBase;
-        this.docBase = docBase;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public URL getDocumentBase() {
-        // use the root directory of the applet's class-loader
-        return docBase;
-    }
-
-    public URL getCodeBase() {
-        // use the directory where we found the class or serialized object.
-        return codeBase;
-    }
-
-    public String getParameter(String name) {
-        return null;
-    }
-
-    public AppletContext getAppletContext() {
-        return context;
-    }
-
-    public void appletResize(int width, int height) {
-        // we do nothing.
     }
 }

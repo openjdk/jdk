@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,22 +369,25 @@ public class JSplitPane extends JComponent implements Accessible
      */
     @Override
     public void setComponentOrientation(ComponentOrientation orientation) {
+        ComponentOrientation curOrn = this.getComponentOrientation();
         super.setComponentOrientation(orientation);
-        Component leftComponent = this.getLeftComponent();
-        Component rightComponent = this.getRightComponent();
-        if (!this.getComponentOrientation().isLeftToRight()) {
-            if (rightComponent != null) {
-                setLeftComponent(rightComponent);
-            }
-            if (leftComponent != null) {
-                setRightComponent(leftComponent);
-            }
-        } else {
-            if (leftComponent != null) {
-                setLeftComponent(leftComponent);
-            }
-            if (rightComponent != null) {
-                setRightComponent(rightComponent);
+        if (!orientation.equals(curOrn)) {
+            Component leftComponent = this.getLeftComponent();
+            Component rightComponent = this.getRightComponent();
+            if (!this.getComponentOrientation().isLeftToRight()) {
+                if (rightComponent != null) {
+                    setLeftComponent(rightComponent);
+                }
+                if (leftComponent != null) {
+                    setRightComponent(leftComponent);
+                }
+            } else {
+                if (leftComponent != null) {
+                    setLeftComponent(leftComponent);
+                }
+                if (rightComponent != null) {
+                    setRightComponent(rightComponent);
+                }
             }
         }
     }

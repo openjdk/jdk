@@ -28,7 +28,7 @@
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -356,7 +356,7 @@ static void jdk_misc_signal_init() {
 
 void os::signal_notify(int sig) {
   if (sig_semaphore != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_semaphore->signal();
   } else {
     // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
@@ -369,7 +369,7 @@ static int check_pending_signals() {
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -1503,6 +1503,14 @@ bool PosixSignals::is_sig_ignored(int sig) {
   } else {
     return false;
   }
+}
+
+void* PosixSignals::get_signal_handler_for_signal(int sig) {
+  struct sigaction oact;
+  if (sigaction(sig, (struct sigaction*)nullptr, &oact) == -1) {
+    return nullptr;
+  }
+  return get_signal_handler(&oact);
 }
 
 static void signal_sets_init() {

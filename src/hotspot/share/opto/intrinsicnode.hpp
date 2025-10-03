@@ -25,9 +25,9 @@
 #ifndef SHARE_OPTO_INTRINSICNODE_HPP
 #define SHARE_OPTO_INTRINSICNODE_HPP
 
+#include "opto/connode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
-#include "opto/connode.hpp"
 
 
 //----------------------PartialSubtypeCheckNode--------------------------------
@@ -184,12 +184,12 @@ class VectorizedHashCodeNode: public Node {
 //------------------------------EncodeISOArray--------------------------------
 // encode char[] to byte[] in ISO_8859_1 or ASCII
 class EncodeISOArrayNode: public Node {
-  bool ascii;
+  bool _ascii;
  public:
   EncodeISOArrayNode(Node* control, Node* arymem, Node* s1, Node* s2, Node* c, bool ascii)
-    : Node(control, arymem, s1, s2, c), ascii(ascii) {}
+    : Node(control, arymem, s1, s2, c), _ascii(ascii) {}
 
-  bool is_ascii() { return ascii; }
+  bool is_ascii() { return _ascii; }
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
@@ -198,6 +198,11 @@ class EncodeISOArrayNode: public Node {
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual uint size_of() const { return sizeof(EncodeISOArrayNode); }
+  virtual uint hash() const { return Node::hash() + _ascii; }
+  virtual bool cmp(const Node& n) const {
+    return Node::cmp(n) && _ascii == ((EncodeISOArrayNode&)n).is_ascii();
+  }
 };
 
 //-------------------------------DigitNode----------------------------------------

@@ -185,7 +185,7 @@ public class RemotePrinterStatusRefresh extends WindowAdapter {
                     + "Step 3: Compare the list of printers in \"Before\" and "
                     +          "\"After\" lists.\n"
                     + "              Added printers are highlighted with "
-                    +               "green color, removed ones \u2014 with "
+                    +               "green color, removed ones with "
                     +               "red color.\n"
                     + "Step 4: Click Pass if the list of printers is correctly "
                     +          "updated.\n"

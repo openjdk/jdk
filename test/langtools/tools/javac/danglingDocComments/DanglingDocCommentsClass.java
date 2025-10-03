@@ -45,4 +45,13 @@ public /** Misplaced: after mods. */ class DanglingDocCommentsClass /** Misplace
         /** Good comment. */
         int i = 0;
     }
+
+    /** Dangling comment X */
+
+    /**
+     * The {@code @SuppressWarnings} annotation below retroactively
+     * silences the warning about "Dangling comment X".
+     */
+    @SuppressWarnings("dangling-doc-comments")
+    public void m5() { }
 }

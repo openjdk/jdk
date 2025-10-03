@@ -36,13 +36,13 @@
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
-#include "prims/jvmtiEventController.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiImpl.hpp"
@@ -59,15 +59,14 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/timerTrace.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/timerTrace.hpp"
 #include "runtime/vframe.hpp"
-#include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
-#include "utilities/objectBitSet.inline.hpp"
+#include "runtime/vmThread.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/objectBitSet.inline.hpp"
 
 typedef ObjectBitSet<mtServiceability> JVMTIBitSet;
 
@@ -430,8 +429,8 @@ int ClassFieldMap::interfaces_field_count(InstanceKlass* ik) {
   const Array<InstanceKlass*>* interfaces = ik->transitive_interfaces();
   int count = 0;
   for (int i = 0; i < interfaces->length(); i++) {
-    FilteredJavaFieldStream fld(interfaces->at(i));
-    count += fld.field_count();
+    count += interfaces->at(i)->java_fields_count();
+
   }
   return count;
 }
@@ -452,12 +451,11 @@ ClassFieldMap* ClassFieldMap::create_map_of_static_fields(Klass* k) {
   // Static fields of interfaces and superclasses are reported as references from the interfaces/superclasses.
   // Need to calculate start index of this class fields: number of fields in all interfaces and superclasses.
   int index = interfaces_field_count(ik);
-  for (InstanceKlass* super_klass = ik->java_super(); super_klass != nullptr; super_klass = super_klass->java_super()) {
-    FilteredJavaFieldStream super_fld(super_klass);
-    index += super_fld.field_count();
+  for (InstanceKlass* super_klass = ik->super(); super_klass != nullptr; super_klass = super_klass->super()) {
+    index += super_klass->java_fields_count();
   }
 
-  for (FilteredJavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
+  for (JavaFieldStream fld(ik); !fld.done(); fld.next(), index++) {
     // ignore instance fields
     if (!fld.access_flags().is_static()) {
       continue;
@@ -479,14 +477,13 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(oop obj) {
 
   // fields of the superclasses are reported first, so need to know total field number to calculate field indices
   int total_field_number = interfaces_field_count(ik);
-  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
-    FilteredJavaFieldStream fld(klass);
-    total_field_number += fld.field_count();
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
+    total_field_number += klass->java_fields_count();
   }
 
-  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->java_super()) {
-    FilteredJavaFieldStream fld(klass);
-    int start_index = total_field_number - fld.field_count();
+  for (InstanceKlass* klass = ik; klass != nullptr; klass = klass->super()) {
+    JavaFieldStream fld(klass);
+    int start_index = total_field_number - klass->java_fields_count();
     for (int index = 0; !fld.done(); fld.next(), index++) {
       // ignore static fields
       if (fld.access_flags().is_static()) {
@@ -944,6 +941,7 @@ class IterateOverHeapObjectClosure: public ObjectClosure {
 
 // invoked for each object in the heap
 void IterateOverHeapObjectClosure::do_object(oop o) {
+  assert(o != nullptr, "Heap iteration should never produce null!");
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
@@ -953,8 +951,8 @@ void IterateOverHeapObjectClosure::do_object(oop o) {
   }
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (o != nullptr && o->klass()->java_mirror() == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
+  if (o->klass()->java_mirror() == nullptr) {
+    log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(o),
                          o->klass()->external_name());
     return;
   }
@@ -1032,6 +1030,7 @@ class IterateThroughHeapObjectClosure: public ObjectClosure {
 
 // invoked for each object in the heap
 void IterateThroughHeapObjectClosure::do_object(oop obj) {
+  assert(obj != nullptr, "Heap iteration should never produce null!");
   // check if iteration has been halted
   if (is_iteration_aborted()) return;
 
@@ -1039,8 +1038,8 @@ void IterateThroughHeapObjectClosure::do_object(oop obj) {
   if (is_filtered_by_klass_filter(obj, klass())) return;
 
   // skip if object is a dormant shared object whose mirror hasn't been loaded
-  if (obj != nullptr &&   obj->klass()->java_mirror() == nullptr) {
-    log_debug(cds, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
+  if (obj->klass()->java_mirror() == nullptr) {
+    log_debug(aot, heap)("skipped dormant archived object " INTPTR_FORMAT " (%s)", p2i(obj),
                          obj->klass()->external_name());
     return;
   }
@@ -2596,10 +2595,10 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
     oop mirror = klass->java_mirror();
 
     // super (only if something more interesting than java.lang.Object)
-    InstanceKlass* java_super = ik->java_super();
-    if (java_super != nullptr && java_super != vmClasses::Object_klass()) {
-      oop super = java_super->java_mirror();
-      if (!CallbackInvoker::report_superclass_reference(mirror, super)) {
+    InstanceKlass* super_klass = ik->super();
+    if (super_klass != nullptr && super_klass != vmClasses::Object_klass()) {
+      oop super_oop = super_klass->java_mirror();
+      if (!CallbackInvoker::report_superclass_reference(mirror, super_oop)) {
         return false;
       }
     }
@@ -2778,7 +2777,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 
   // Preloaded classes and loader from the system dictionary
   blk.set_kind(JVMTI_HEAP_REFERENCE_SYSTEM_CLASS);
-  CLDToOopClosure cld_closure(&blk, false);
+  CLDToOopClosure cld_closure(&blk, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
   if (blk.stopped()) {
     return false;

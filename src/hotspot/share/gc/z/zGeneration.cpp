@@ -28,7 +28,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
 #include "gc/z/zBarrierSetNMethod.hpp"
@@ -41,6 +40,8 @@
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zMark.inline.hpp"
+#include "gc/z/zObjectAllocator.hpp"
+#include "gc/z/zPageAge.inline.hpp"
 #include "gc/z/zPageAllocator.hpp"
 #include "gc/z/zRelocationSet.inline.hpp"
 #include "gc/z/zRelocationSetSelector.inline.hpp"
@@ -55,7 +56,7 @@
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/safepoint.hpp"
@@ -286,7 +287,7 @@ size_t ZGeneration::freed() const {
 }
 
 void ZGeneration::increase_freed(size_t size) {
-  Atomic::add(&_freed, size, memory_order_relaxed);
+  AtomicAccess::add(&_freed, size, memory_order_relaxed);
 }
 
 size_t ZGeneration::promoted() const {
@@ -294,7 +295,7 @@ size_t ZGeneration::promoted() const {
 }
 
 void ZGeneration::increase_promoted(size_t size) {
-  Atomic::add(&_promoted, size, memory_order_relaxed);
+  AtomicAccess::add(&_promoted, size, memory_order_relaxed);
 }
 
 size_t ZGeneration::compacted() const {
@@ -302,7 +303,7 @@ size_t ZGeneration::compacted() const {
 }
 
 void ZGeneration::increase_compacted(size_t size) {
-  Atomic::add(&_compacted, size, memory_order_relaxed);
+  AtomicAccess::add(&_compacted, size, memory_order_relaxed);
 }
 
 ConcurrentGCTimer* ZGeneration::gc_timer() const {
@@ -439,6 +440,10 @@ public:
     // GC thread root traversal likely used OopMapCache a lot, which
     // might have created lots of old entries. Trigger the cleanup now.
     OopMapCache::try_trigger_cleanup();
+  }
+
+  virtual bool is_gc_operation() const {
+    return true;
   }
 
   bool success() const {
@@ -656,7 +661,6 @@ public:
   }
 };
 
-
 bool ZGenerationYoung::pause_mark_end() {
   return VM_ZMarkEndYoung().pause();
 }
@@ -697,14 +701,11 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   double young_life_expectancy_sum = 0.0;
   uint young_life_expectancy_samples = 0;
   uint last_populated_age = 0;
-  size_t last_populated_live = 0;
 
-  for (uint i = 0; i <= ZPageAgeMax; ++i) {
-    const ZPageAge age = static_cast<ZPageAge>(i);
+  for (ZPageAge age : ZPageAgeRangeAll) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
-      last_populated_age = i;
-      last_populated_live = young_live;
+      last_populated_age = untype(age);
       if (young_live_last > 0) {
         young_life_expectancy_sum += double(young_live) / double(young_live_last);
         young_life_expectancy_samples++;
@@ -718,7 +719,6 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
     return 0;
   }
 
-  const size_t young_used_at_mark_start = ZGeneration::young()->stat_heap()->used_generation_at_mark_start();
   const size_t young_garbage = ZGeneration::young()->stat_heap()->garbage_at_mark_end();
   const size_t young_allocated = ZGeneration::young()->stat_heap()->allocated_at_mark_end();
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
@@ -841,10 +841,7 @@ void ZGenerationYoung::mark_start() {
   ZHeap::heap()->reset_tlab_used();
 
   // Retire allocating pages
-  ZAllocator::eden()->retire_pages();
-  for (ZPageAge i = ZPageAge::survivor1; i <= ZPageAge::survivor14; i = static_cast<ZPageAge>(static_cast<uint>(i) + 1)) {
-    ZAllocator::relocation(i)->retire_pages();
-  }
+  ZHeap::heap()->retire_allocating_pages(ZPageAgeRangeYoung);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -946,6 +943,14 @@ void ZGenerationYoung::register_in_place_relocate_promoted(ZPage* page) {
 
 void ZGenerationYoung::register_with_remset(ZPage* page) {
   _remembered.register_found_old(page);
+}
+
+ZRemembered* ZGenerationYoung::remembered() {
+  return &_remembered;
+}
+
+void ZGenerationYoung::remap_current_remset(ZRemsetTableIterator* iter) {
+  _remembered.remap_current(iter);
 }
 
 ZGenerationTracer* ZGenerationYoung::jfr_tracer() {
@@ -1193,7 +1198,7 @@ void ZGenerationOld::mark_start() {
   flip_mark_start();
 
   // Retire allocating pages
-  ZAllocator::old()->retire_pages();
+  ZHeap::heap()->retire_allocating_pages(ZPageAgeRangeOld);
 
   // Reset allocated/reclaimed/used statistics
   reset_statistics();
@@ -1300,13 +1305,16 @@ class ZRendezvousGCThreads: public VM_Operation {
     return true;
   }
 
+  virtual bool is_gc_operation() const {
+    return true;
+  }
+
   void doit() {
     // Light weight "handshake" of the GC threads
     SuspendibleThreadSet::synchronize();
     SuspendibleThreadSet::desynchronize();
   };
 };
-
 
 void ZGenerationOld::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
@@ -1435,7 +1443,7 @@ typedef ClaimingCLDToOopClosure<ClassLoaderData::_claim_none> ZRemapCLDClosure;
 
 class ZRemapYoungRootsTask : public ZTask {
 private:
-  ZGenerationPagesParallelIterator _old_pages_parallel_iterator;
+  ZRemsetTableIterator             _remset_table_iterator;
 
   ZRootsIteratorAllColored         _roots_colored;
   ZRootsIteratorAllUncolored       _roots_uncolored;
@@ -1449,7 +1457,7 @@ private:
 public:
   ZRemapYoungRootsTask(ZPageTable* page_table, ZPageAllocator* page_allocator)
     : ZTask("ZRemapYoungRootsTask"),
-      _old_pages_parallel_iterator(page_table, ZGenerationId::old, page_allocator),
+      _remset_table_iterator(ZGeneration::young()->remembered(), false /* previous */),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
@@ -1472,11 +1480,8 @@ public:
 
     {
       ZStatTimerWorker timer(ZSubPhaseConcurrentRemapRememberedOld);
-      _old_pages_parallel_iterator.do_pages([&](ZPage* page) {
-        // Visit all object fields that potentially pointing into young generation
-        page->oops_do_current_remembered(ZBarrier::load_barrier_on_oop_field);
-        return true;
-      });
+      // Visit all object fields that potentially pointing into young generation
+      ZGeneration::young()->remap_current_remset(&_remset_table_iterator);
     }
   }
 };

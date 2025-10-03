@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -44,26 +46,48 @@ public enum JPackageUserScript {
     POST_MSI("post-msi");
 
     JPackageUserScript(String suffix) {
+        this.suffix = suffix + scriptFilenameExtension();
+    }
+
+    static String scriptFilenameExtension() {
         if (TKit.isWindows()) {
-            this.suffix = suffix + ".wsf";
+            return ".wsf";
         } else {
-            this.suffix = suffix + ".sh";
+            return ".sh";
         }
     }
 
     public enum WinGlobals {
         JS_SHELL("var shell = new ActiveXObject('WScript.Shell')"),
-        JS_FS("var fs = new ActiveXObject('Scripting.FileSystemObject')");
+        JS_FS("var fs = new ActiveXObject('Scripting.FileSystemObject')"),
+        JS_LIST_DIR_RECURSIVE(List.of(
+                "function listDir (dir, root) {",
+                "    o.WriteLine((root === undefined) ? dir.Path : dir.Path.substring(1 + root.Path.length))",
+                "    for(var e = new Enumerator(dir.Files); !e.atEnd(); e.moveNext()) {",
+                "        o.WriteLine((root === undefined) ? e.item().Path : e.item().Path.substring(1 + root.Path.length))",
+                "    }",
+                "    for(var e = new Enumerator(dir.SubFolders); !e.atEnd(); e.moveNext()) {",
+                "        listDir(e.item(), root)",
+                "    }",
+                "}"));
 
         WinGlobals(String expr) {
+            this(List.of(expr));
+        }
+
+        WinGlobals(List<String> expr) {
             this.expr = expr;
         }
 
-        public String expr() {
+        public List<String> expr() {
             return expr;
         }
 
-        private final String expr;
+        public void appendTo(Consumer<Collection<String>> acc) {
+            acc.accept(expr);
+        }
+
+        private final List<String> expr;
     }
 
     public void create(JPackageCommand cmd, List<String> script) {
@@ -193,8 +217,8 @@ public enum JPackageUserScript {
             final List<String> script = new ArrayList<>();
 
             if (TKit.isWindows()) {
-                script.add(WinGlobals.JS_SHELL.expr());
-                script.add(WinGlobals.JS_FS.expr());
+                script.addAll(WinGlobals.JS_SHELL.expr());
+                script.addAll(WinGlobals.JS_FS.expr());
             }
 
             script.addAll(envVarNames.stream().sorted().map(envVarName -> {
@@ -240,7 +264,7 @@ public enum JPackageUserScript {
         }
     }
 
-    private void create(Path scriptFilePath, List<String> script) {
+    static void create(Path scriptFilePath, List<String> script) {
         try {
             if (TKit.isWindows()) {
                 XmlUtils.createXml(scriptFilePath, xml -> {
@@ -255,14 +279,18 @@ public enum JPackageUserScript {
             } else {
                 Files.write(scriptFilePath, script);
             }
-            TKit.traceFileContents(scriptFilePath, String.format("[%s] script", name()));
+            TKit.traceFileContents(scriptFilePath, String.format("[%s] script", scriptFilePath.getFileName()));
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
     }
 
+    String scriptName(JPackageCommand cmd) {
+        return String.format("%s-%s", cmd.name(), suffix);
+    }
+
     private Path scriptPath(JPackageCommand cmd) {
-        return Path.of(cmd.getArgumentValue("--resource-dir"), String.format("%s-%s", cmd.name(), suffix));
+        return Path.of(cmd.getArgumentValue("--resource-dir"), scriptName(cmd));
     }
 
     private static PackageTest verifyPackagingDirectories(PackageTest test,
@@ -295,18 +323,11 @@ public enum JPackageUserScript {
 
             final List<String> script = new ArrayList<>();
             if (TKit.isWindows()) {
+                List.of(WinGlobals.JS_LIST_DIR_RECURSIVE, WinGlobals.JS_SHELL, WinGlobals.JS_FS).forEach(v -> {
+                    v.appendTo(script::addAll);
+                });
+
                 script.addAll(List.of(
-                        "function listDir (dir) {",
-                        "    o.WriteLine(dir.Path)",
-                        "    for(var e = new Enumerator(dir.Files); !e.atEnd(); e.moveNext()) {",
-                        "        o.WriteLine(e.item().Path)",
-                        "    }",
-                        "    for(var e = new Enumerator(dir.SubFolders); !e.atEnd(); e.moveNext()) {",
-                        "        listDir(e.item())",
-                        "    }",
-                        "}",
-                        WinGlobals.JS_FS.expr(),
-                        WinGlobals.JS_SHELL.expr(),
                         String.format("var o = fs.CreateTextFile('%s', true)", configDirContets.toString().replace('\\', '/')),
                         "var configDir = fs.GetFolder(fs.GetParentFolderName(WScript.ScriptFullName))",
                         "listDir(configDir)",

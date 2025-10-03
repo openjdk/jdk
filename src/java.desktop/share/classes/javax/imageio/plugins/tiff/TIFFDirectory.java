@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ package javax.imageio.plugins.tiff;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -268,9 +267,7 @@ public class TIFFDirectory implements Cloneable {
             throw new NullPointerException("tagSet == null");
         }
 
-        if(tagSets.contains(tagSet)) {
-            tagSets.remove(tagSet);
-        }
+        tagSets.remove(tagSet);
     }
 
     /**

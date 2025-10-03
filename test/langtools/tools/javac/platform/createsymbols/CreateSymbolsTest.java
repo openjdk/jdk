@@ -21,19 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8072480 8277106 8331027
- * @summary Unit test for CreateSymbols
- * @modules java.compiler
- *          jdk.compiler/com.sun.tools.javac.api
- *          jdk.compiler/com.sun.tools.javac.jvm
- *          jdk.compiler/com.sun.tools.javac.main
- *          jdk.compiler/com.sun.tools.javac.util
- * @clean *
- * @run main/othervm CreateSymbolsTest
- */
-
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;

@@ -41,7 +41,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * jpackagerTest keychain with always allowed access to this keychain for user
  * which runs test.
  * note:
- * "jpackage.openjdk.java.net" can be over-ridden by systerm property
+ * "jpackage.openjdk.java.net" can be over-ridden by system property
  * "jpackage.mac.signing.key.user.name", and
  * "jpackagerTest" can be over-ridden by system property
  * "jpackage.mac.signing.keychain"

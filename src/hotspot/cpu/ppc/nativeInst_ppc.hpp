@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -68,13 +68,6 @@ class NativeInstruction {
   int get_stop_type() {
     return MacroAssembler::tdi_get_si16(long_at(0), Assembler::traptoUnconditional, 0);
   }
-
-  // We use an illtrap for marking a method as not_entrant.
-  bool is_sigill_not_entrant() {
-    // Work around a C++ compiler bug which changes 'this'.
-    return NativeInstruction::is_sigill_not_entrant_at(addr_at(0));
-  }
-  static bool is_sigill_not_entrant_at(address addr);
 
 #ifdef COMPILER2
   // SIGTRAP-based implicit range checks
@@ -328,15 +321,7 @@ class NativeJump: public NativeInstruction {
     }
   }
 
-  // MT-safe insertion of native jump at verified method entry
-  static void patch_verified_entry(address entry, address verified_entry, address dest);
-
   void verify() NOT_DEBUG_RETURN;
-
-  static void check_verified_entry_alignment(address entry, address verified_entry) {
-    // We just patch one instruction on ppc64, so the jump doesn't have to
-    // be aligned. Nothing to do here.
-  }
 };
 
 // Instantiates a NativeJump object starting at the given instruction
@@ -477,7 +462,7 @@ class NativeMovRegMem: public NativeInstruction {
     return ((*hi_ptr) << 16) | ((*lo_ptr) & 0xFFFF);
   }
 
-  void set_offset(intptr_t x) {
+  void set_offset(intptr_t x, bool flush_icache = true) {
 #ifdef VM_LITTLE_ENDIAN
     short *hi_ptr = (short*)(addr_at(0));
     short *lo_ptr = (short*)(addr_at(4));
@@ -487,7 +472,9 @@ class NativeMovRegMem: public NativeInstruction {
 #endif
     *hi_ptr = x >> 16;
     *lo_ptr = x & 0xFFFF;
-    ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
+    if (flush_icache) {
+      ICache::ppc64_flush_icache_bytes(addr_at(0), NativeMovRegMem::instruction_size);
+    }
   }
 
   void add_offset_in_bytes(intptr_t radd_offset) {

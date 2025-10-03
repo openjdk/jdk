@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -177,14 +177,6 @@ class NativeJump : public NativeInstruction {
   void set_jump_destination(address dest) {
     ShouldNotCallThis();
   }
-
-  static void check_verified_entry_alignment(address entry,
-                                             address verified_entry) {
-  }
-
-  static void patch_verified_entry(address entry,
-                                   address verified_entry,
-                                   address dest);
 };
 
 inline NativeJump* nativeJump_at(address address) {

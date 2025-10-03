@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -399,6 +399,7 @@ static gboolean (*fp_g_str_has_prefix)(const gchar *str, const gchar *prefix);
 static gchar** (*fp_g_strsplit)(const gchar *string, const gchar *delimiter,
            gint max_tokens);
 static void (*fp_g_strfreev)(gchar **str_array);
+static gchar* (*fp_g_strconcat)(const gchar* string1, ...);
 
 
 static cairo_surface_t* (*fp_cairo_image_surface_create)(cairo_format_t format,
@@ -737,6 +738,8 @@ static GVariant *(*fp_g_variant_new_string)(const gchar *string);
 static GVariant *(*fp_g_variant_new_boolean)(gboolean value);
 
 static GVariant *(*fp_g_variant_new_uint32)(guint32 value);
+
+static gchar *(*fp_g_variant_print) (GVariant* value, gboolean type_annotate);
 
 static void (*fp_g_variant_get)(GVariant *value,
                                 const gchar *format_string,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,9 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 
 /**
  * @test
@@ -964,12 +967,14 @@ public class LargeHandshakeTest implements HttpServerAdapters {
     HttpTestServer http2Server;
     HttpTestServer https1Server;
     HttpTestServer https2Server;
+    HttpTestServer http3Server;
     DigestEchoServer.TunnelingProxy proxy;
 
     URI http1URI;
     URI https1URI;
     URI http2URI;
     URI https2URI;
+    URI http3URI;
     InetSocketAddress proxyAddress;
     ProxySelector proxySelector;
     HttpClient client;
@@ -988,8 +993,7 @@ public class LargeHandshakeTest implements HttpServerAdapters {
     }
 
     public HttpClient newHttpClient(ProxySelector ps) {
-        HttpClient.Builder builder = HttpClient
-                .newBuilder()
+        HttpClient.Builder builder = newClientBuilderForH3()
                 .sslContext(context)
                 .executor(clientexec)
                 .proxy(ps);
@@ -1027,6 +1031,12 @@ public class LargeHandshakeTest implements HttpServerAdapters {
             https2Server.addHandler(new HttpTestLargeHandler(), "/LargeHandshakeTest/https2/");
             https2Server.start();
             https2URI = new URI("https://" + https2Server.serverAuthority() + "/LargeHandshakeTest/https2/");
+
+            // HTTP/3
+            http3Server = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
+            http3Server.addHandler(new HttpTestLargeHandler(), "/LargeHandshakeTest/http3/");
+            http3Server.start();
+            http3URI = new URI("https://" + http3Server.serverAuthority() + "/LargeHandshakeTest/http3/");
 
             proxy = DigestEchoServer.createHttpsProxyTunnel(
                     DigestEchoServer.HttpAuthSchemeType.NONE);
@@ -1073,9 +1083,11 @@ public class LargeHandshakeTest implements HttpServerAdapters {
     }
 
     public void run(String... args) throws Exception {
-        List<URI> serverURIs = List.of(http1URI, http2URI, https1URI, https2URI);
+        List<URI> serverURIs = List.of(http3URI, http1URI, http2URI, https1URI, https2URI);
         for (int i = 0; i < 5; i++) {
             for (URI base : serverURIs) {
+                // skip HTTP/3 if proxy
+                if (base.getRawPath().contains("/http3/")) continue;
                 if (base.getScheme().equalsIgnoreCase("https")) {
                     URI proxy = i % 1 == 0 ? base.resolve(URI.create("proxy/foo?n=" + requestCounter.incrementAndGet()))
                             : base.resolve(URI.create("direct/foo?n=" + requestCounter.incrementAndGet()));
@@ -1090,10 +1102,19 @@ public class LargeHandshakeTest implements HttpServerAdapters {
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
     }
 
+    HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     public void test(URI uri) throws Exception {
         System.out.println("Testing with " + uri);
         pending.add(uri);
-        HttpRequest request = HttpRequest.newBuilder(uri).build();
+        HttpRequest request = newRequestBuilder(uri).build();
         CompletableFuture<HttpResponse<String>> resp =
                 client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                         .whenComplete((r, t) -> this.requestCompleted(request, r, t));
@@ -1111,11 +1132,13 @@ public class LargeHandshakeTest implements HttpServerAdapters {
     }
 
     public void tearDown() {
+        client.close();
         proxy = stop(proxy, DigestEchoServer.TunnelingProxy::stop);
         http1Server = stop(http1Server, HttpTestServer::stop);
         https1Server = stop(https1Server, HttpTestServer::stop);
         http2Server = stop(http2Server, HttpTestServer::stop);
         https2Server = stop(https2Server, HttpTestServer::stop);
+        http3Server = stop(http3Server, HttpTestServer::stop);
         client = null;
         try {
             executor.awaitTermination(2000, TimeUnit.MILLISECONDS);

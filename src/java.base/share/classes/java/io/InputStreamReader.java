@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,17 @@ import sun.nio.cs.StreamDecoder;
  *     BufferedReader in = new BufferedReader(new InputStreamReader(anInputStream));
  * }
  *
+ * <P>To read from {@link System#in}, use the system property value
+ * {@link System##stdin.encoding stdin.encoding} as the {@code Charset}:
+ *
+ * {@snippet lang=java :
+ *     new InputStreamReader(System.in, System.getProperty("stdin.encoding"));
+ * }
+ *
  * @see BufferedReader
  * @see InputStream
  * @see Charset
+ * @see System##stdin.encoding stdin.encoding
  *
  * @author      Mark Reinhold
  * @since       1.1
