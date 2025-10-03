@@ -318,10 +318,10 @@ public final class Float16
     * @param  value a {@code long} value.
     */
     public static Float16 valueOf(long value) {
-        if (value <= -65_520L) {  // -(Float16.MAX_VALUE + Float16.ulp(Float16.MAX_VALUE) / 2)
+        if (value <= -65_520L) {  // -(MAX_VALUE + ulp(MAX_VALUE) / 2)
             return NEGATIVE_INFINITY;
         } else {
-            if (value >= 65_520L) {  // Float16.MAX_VALUE + Float16.ulp(Float16.MAX_VALUE) / 2
+            if (value >= 65_520L) {  // MAX_VALUE + ulp(MAX_VALUE) / 2
                 return POSITIVE_INFINITY;
             }
             // Remaining range of long, the integers in approx. +/-
@@ -469,7 +469,7 @@ public final class Float16
         // characters rather than codepoints.
 
         if (trialResult == 0.0 // handles signed zeros
-            || Math.abs(trialResult) > (65504.0 + 32.0) || // Float.MAX_VALUE + ulp(MAX_VALUE),
+            || Math.abs(trialResult) > (65504.0 + 32.0) || // MAX_VALUE + ulp(MAX_VALUE),
                                                            // handles infinities too
             Double.isNaN(trialResult) ||
             noDoubleRoundingToFloat16(trialResult)) {
@@ -900,7 +900,7 @@ public final class Float16
      */
     public static int hashCode(Float16 value) {
         // Use bit-pattern of canonical NaN for hashing.
-        Float16 f16 = isNaN(value) ? Float16.NaN : value;
+        Float16 f16 = isNaN(value) ? NaN : value;
         return (int)float16ToRawShortBits(f16);
     }
 
@@ -947,7 +947,7 @@ public final class Float16
      */
     public static short float16ToShortBits(Float16 f16) {
         if (isNaN(f16)) {
-            return Float16.NaN.value;
+            return NaN.value;
         }
         return f16.value;
     }
@@ -1564,8 +1564,8 @@ public final class Float16
         int exp = getExponent(f16);
 
         return switch(exp) {
-        case MAX_EXPONENT + 1 -> abs(f16);          // NaN or infinity
-        case MIN_EXPONENT - 1 -> Float16.MIN_VALUE; // zero or subnormal
+        case MAX_EXPONENT + 1 -> abs(f16);  // NaN or infinity
+        case MIN_EXPONENT - 1 -> MIN_VALUE; // zero or subnormal
         default -> {
             assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT;
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
