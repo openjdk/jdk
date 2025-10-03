@@ -31,6 +31,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/xmlstream.hpp"
 #ifdef ASSERT
 #include "runtime/atomicAccess.hpp"
 #endif

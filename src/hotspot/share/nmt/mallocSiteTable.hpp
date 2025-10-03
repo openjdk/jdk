@@ -32,6 +32,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/xmlstream.hpp"
 
 // MallocSite represents a code path that eventually calls
 // os::malloc() to allocate memory

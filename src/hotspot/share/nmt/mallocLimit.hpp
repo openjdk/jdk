@@ -30,6 +30,7 @@
 #include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/xmlstream.hpp"
 
 enum class MallocLimitMode {
   trigger_fatal = 0,

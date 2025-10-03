@@ -36,6 +36,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/deferredStatic.hpp"
 #include "utilities/nativeCallStack.hpp"
+#include "utilities/xmlstream.hpp"
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail) ? \
                     NativeCallStack(0) : FAKE_CALLSTACK)

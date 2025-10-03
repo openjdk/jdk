@@ -29,7 +29,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/xmlstream.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use

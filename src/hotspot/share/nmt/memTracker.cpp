@@ -42,7 +42,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/deferredStatic.hpp"
-#include "utilities/xmlstream.hpp"
 #include "utilities/vmError.hpp"
 
 #ifdef _WINDOWS

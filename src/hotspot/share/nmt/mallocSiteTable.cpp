@@ -27,7 +27,6 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
-#include "utilities/xmlstream.hpp"
 
 // Malloc site hashtable buckets
 MallocSiteHashtableEntry**  MallocSiteTable::_table = nullptr;

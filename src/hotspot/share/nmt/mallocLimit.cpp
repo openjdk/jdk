@@ -30,7 +30,6 @@
 #include "runtime/java.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/xmlstream.hpp"
 #include "utilities/parseInteger.hpp"
 
 MallocLimitSet MallocLimitHandler::_limits;
