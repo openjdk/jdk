@@ -158,7 +158,7 @@ public class StandardValidatorTest {
         assertThrowsExactly(NullPointerException.class, () -> testee.test(null));
     }
 
-    private static Stream<Arguments> test_IS_NAME_VALID_valid()  {
+    private static Stream<Arguments> test_IS_NAME_VALID_valid() {
         List<String> data = new ArrayList<>();
         data.addAll(List.of(
                 "a",
