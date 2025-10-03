@@ -465,14 +465,6 @@ static int adjust_pcs_size(int pcs_size) {
   return nsize;
 }
 
-bool nmethod::is_method_handle_return(address return_pc) {
-  if (!has_method_handle_invokes())  return false;
-  PcDesc* pd = pc_desc_at(return_pc);
-  if (pd == nullptr)
-    return false;
-  return pd->is_method_handle_invoke();
-}
-
 // Returns a string version of the method state.
 const char* nmethod::state() const {
   int state = get_state();
@@ -1231,7 +1223,6 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _state                      = not_installed;
 
   _has_unsafe_access          = 0;
-  _has_method_handle_invokes  = 0;
   _has_wide_vectors           = 0;
   _has_monitors               = 0;
   _has_scoped_access          = 0;
@@ -1310,7 +1301,6 @@ nmethod::nmethod(
     // Native wrappers do not have deopt handlers. Make the values
     // something that will never match a pc like the nmethod vtable entry
     _deopt_handler_offset    = 0;
-    _deopt_mh_handler_offset = 0;
     _unwind_handler_offset   = 0;
 
     CHECKED_CAST(_oops_size, uint16_t, align_up(code_buffer->total_oop_size(), oopSize));
@@ -1458,11 +1448,6 @@ nmethod::nmethod(
       } else {
         _deopt_handler_offset    = -1;
       }
-      if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-        _deopt_mh_handler_offset = code_offset() + offsets->value(CodeOffsets::DeoptMH);
-      } else {
-        _deopt_mh_handler_offset = -1;
-      }
     } else
 #endif
     {
@@ -1472,11 +1457,6 @@ nmethod::nmethod(
 
       _exception_offset          = _stub_offset + offsets->value(CodeOffsets::Exceptions);
       _deopt_handler_offset      = _stub_offset + offsets->value(CodeOffsets::Deopt);
-      if (offsets->value(CodeOffsets::DeoptMH) != -1) {
-        _deopt_mh_handler_offset = _stub_offset + offsets->value(CodeOffsets::DeoptMH);
-      } else {
-        _deopt_mh_handler_offset = -1;
-      }
     }
     if (offsets->value(CodeOffsets::UnwindHandler) != -1) {
       // C1 generates UnwindHandler at the end of instructions section.
@@ -2693,15 +2673,6 @@ void nmethod::copy_scopes_pcs(PcDesc* pcs, int count) {
          "must end with a sentinel");
 #endif //ASSERT
 
-  // Search for MethodHandle invokes and tag the nmethod.
-  for (int i = 0; i < count; i++) {
-    if (pcs[i].is_method_handle_invoke()) {
-      set_has_method_handle_invokes(true);
-      break;
-    }
-  }
-  assert(has_method_handle_invokes() == (_deopt_mh_handler_offset != -1), "must have deopt mh handler");
-
   int size = count * sizeof(PcDesc);
   assert(scopes_pcs_size() >= size, "oob");
   memcpy(scopes_pcs_begin(), pcs, size);
@@ -3711,7 +3682,6 @@ const char* nmethod::nmethod_section_label(address pos) const {
   if (pos == code_begin())                                              label = "[Instructions begin]";
   if (pos == entry_point())                                             label = "[Entry Point]";
   if (pos == verified_entry_point())                                    label = "[Verified Entry Point]";
-  if (has_method_handle_invokes() && (pos == deopt_mh_handler_begin())) label = "[Deopt MH Handler Code]";
   if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
