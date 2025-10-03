@@ -402,16 +402,20 @@ public sealed interface StructuredTaskScope<T, R>
          * {@link #fork(Runnable) fork(Runnable)} then {@code null} is returned.
          *
          * <p> Code executing in the scope owner thread can use this method to get the
-         * result of a successful subtask only after it has {@linkplain #join() joined}.
+         * result of a successful subtask after it has {@linkplain #join() joined}.
          *
          * <p> Code executing in the {@code Joiner} {@link Joiner#onComplete(Subtask)
          * onComplete} method should test that the {@linkplain #state() subtask state} is
          * {@link State#SUCCESS SUCCESS} before using this method to get the result.
          *
+         * <p> This method may be invoked by any thread after the scope owner has joined.
+         * The only case where this method can be used to get the result before the scope
+         * owner has joined is when called from the {@code onComplete(Subtask)} method.
+         *
          * @return the possibly-null result
-         * @throws IllegalStateException if the subtask has not completed, did not complete
-         * successfully, or the current thread is the scope owner invoking this
-         * method before {@linkplain #join() joining}
+         * @throws IllegalStateException if the subtask has not completed or did not
+         * complete successfully, or this method if invoked outside the context of the
+         * {@code onComplete(Subtask)} method before the owner thread has joined
          * @see State#SUCCESS
          */
         T get();
@@ -424,15 +428,19 @@ public sealed interface StructuredTaskScope<T, R>
          * exception or error thrown by the {@link Runnable#run() run} method is returned.
          *
          * <p> Code executing in the scope owner thread can use this method to get the
-         * exception thrown by a failed subtask only after it has {@linkplain #join() joined}.
+         * exception thrown by a failed subtask after it has {@linkplain #join() joined}.
          *
          * <p> Code executing in a {@code Joiner} {@link Joiner#onComplete(Subtask)
          * onComplete} method should test that the {@linkplain #state() subtask state} is
          * {@link State#FAILED FAILED} before using this method to get the exception.
          *
-         * @throws IllegalStateException if the subtask has not completed, completed with
-         * a result, or the current thread is the scope owner invoking this method
-         * before {@linkplain #join() joining}
+         * <p> This method may be invoked by any thread after the scope owner has joined.
+         * The only case where this method can be used to get the exception before the scope
+         * owner has joined is when called from the {@code onComplete(Subtask)} method.
+         *
+         * @throws IllegalStateException if the subtask has not completed or completed
+         * with a result, or this method if invoked outside the context of the {@code
+         * onComplete(Subtask)} method before the owner thread has joined
          * @see State#FAILED
          */
         Throwable exception();

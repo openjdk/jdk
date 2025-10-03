@@ -1124,19 +1124,27 @@ class StructuredTaskScopeTest {
     void testSubtaskWhenSuccess(ThreadFactory factory) throws Exception {
         try (var scope = StructuredTaskScope.open(Joiner.<String>awaitAll(),
                 cf -> cf.withThreadFactory(factory))) {
-
             Subtask<String> subtask = scope.fork(() -> "foo");
 
-            // before join
+            // before join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
 
+            // before join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
+
             scope.join();
 
-            // after join
             assertEquals(Subtask.State.SUCCESS, subtask.state());
+
+            // after join, owner thread
             assertEquals("foo", subtask.get());
             assertThrows(IllegalStateException.class, subtask::exception);
+
+            // after join, another thread
+            assertEquals("foo", callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
         }
     }
 
@@ -1151,16 +1159,25 @@ class StructuredTaskScopeTest {
 
             Subtask<String> subtask = scope.fork(() -> { throw new FooException(); });
 
-            // before join
+            // before join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
 
+            // before join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
+
             scope.join();
 
-            // after join
             assertEquals(Subtask.State.FAILED, subtask.state());
+
+            // after join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertTrue(subtask.exception() instanceof FooException);
+
+            // after join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertTrue(callInOtherThread(subtask::exception) instanceof FooException);
         }
     }
 
@@ -1176,20 +1193,29 @@ class StructuredTaskScopeTest {
                 Thread.sleep(Duration.ofDays(1));
                 return null;
             });
-
-            // before join
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+
+            // before join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
+
+            // before join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
 
             // attempt join, join throws
             Thread.currentThread().interrupt();
             assertThrows(InterruptedException.class, scope::join);
 
-            // after join
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+
+            // after join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
+
+            // before join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
         }
     }
 
@@ -1205,17 +1231,25 @@ class StructuredTaskScopeTest {
 
             var subtask = scope.fork(() -> "foo");
 
-            // before join
-            assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+            // before join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
+
+            // before join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
 
             scope.join();
 
-            // after join
             assertEquals(Subtask.State.UNAVAILABLE, subtask.state());
+
+            // after join, owner thread
             assertThrows(IllegalStateException.class, subtask::get);
             assertThrows(IllegalStateException.class, subtask::exception);
+
+            // before join, another thread
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::get));
+            assertThrows(IllegalStateException.class, () -> callInOtherThread(subtask::exception));
         }
     }
 
@@ -1985,6 +2019,40 @@ class StructuredTaskScopeTest {
             interruptThreadAt(target, location);
             return null;
         });
+    }
+
+    /**
+     * Calls a result returning task from another thread.
+     */
+    private <V> V callInOtherThread(Callable<V> task) throws Exception {
+        var result = new AtomicReference<V>();
+        var exc = new AtomicReference<Exception>();
+        Thread thread = Thread.ofVirtual().start(() -> {
+            try {
+                result.set(task.call());
+            } catch (Exception e) {
+                exc.set(e);
+            }
+        });
+        boolean interrupted = false;
+        boolean terminated = false;
+        while (!terminated) {
+            try {
+                thread.join();
+                terminated = true;
+            } catch (InterruptedException e) {
+                interrupted = true;
+            }
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+        Exception e = exc.get();
+        if (e != null) {
+            throw e;
+        } else {
+            return result.get();
+        }
     }
 
     /**
