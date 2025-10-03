@@ -495,8 +495,9 @@ worthwhile, given the alternatives.
 ### Memory Allocation
 
 Do not use the standard global allocation and deallocation functions (global
-`operator new` and related functions).  Use of these functions by HotSpot code
-is disabled for some platforms.
+`operator new` and related functions), other than the non-allocating forms of
+those functions.  Use of these functions by HotSpot code is disabled for some
+platforms.
 
 Rationale: HotSpot often uses "resource" or "arena" allocation.  Even
 where heap allocation is used, the standard global functions are
@@ -635,12 +636,33 @@ to deal with. But only selected parts of the Standard Library are being
 permitted, and one of the selection criteria is maturity. Some of these
 facilities are among the most heavily tested and used C++ codes that exist.
 
-* Inconsistent naming conventions. HotSpot and the C++ Standard use
-different naming conventions. The coexistence of those different conventions
-might appear jarring and reduce readability. However, experience in some other
-code bases suggests this isn't a significant problem and can even be
-beneficial, as it makes HotSpot-specific facilities and Standard Library
-facilities easily distinguishable.
+* Inconsistent naming conventions. HotSpot and the C++ Standard use different
+naming conventions. The coexistence of those different conventions might
+appear jarring and reduce readability. However, experience in some other code
+bases suggests this isn't a significant problem, so long as Standard Library
+names are namespace-qualified. It is tempting to bring the Standard Library
+names into scope via a `using std;` directive. Doing so makes writing code
+using those names easier, since the qualifiers don't need to be included. But
+there are reasons not to do that.
+
+    * There is a risk of future name collisions. Additional Standard Library
+    headers may be included, adding to the list of names being used. Also,
+    future versions of the Standard Library may add currently unknown names to
+    the headers already being included.
+
+	* It may harm readability. Code where this is relevant is a mixture of the
+    local HotSpot naming conventions and the Standard Library's (or other
+    3rd-party library's) naming conventions. With only unqualified names, any
+    distinctions from the naming conventions for the different code sources
+    are lost. Instead one may end up with an undifferentiated mess, where it's
+    not obvious whether an identifier is from local code that is inconsistent
+    with HotSpot style (and there's a regretable amount of that for historical
+    reasons), or is following some other convention. Having the qualifiers
+    disambiguates that.
+
+    * It can be helpful to know, at a glance, whether the definition is in
+    HotSpot or elsewhere, for purposes of looking up the definition or
+    documentation.
 
 ### Type Deduction
 
