@@ -1380,6 +1380,9 @@ public:
   // during RCE, unrolling and aligning loops.
   void insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_new, bool peel_only );
 
+  // Find the last store in the body of an OuterStripMinedLoop when following memory uses
+  Node *find_last_store_in_outer_loop(Node* store, const IdealLoopTree* outer_loop);
+
   // Add post loop after the given loop.
   Node *insert_post_loop(IdealLoopTree* loop, Node_List& old_new,
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
