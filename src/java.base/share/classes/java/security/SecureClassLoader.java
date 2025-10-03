@@ -30,6 +30,8 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+import jdk.internal.event.ClassFileDefineEvent;
+
 /**
  * This class extends {@code ClassLoader} with additional support for defining
  * classes with an associated code source and permissions.
@@ -137,11 +139,16 @@ public class SecureClassLoader extends ClassLoader {
      *             a different set of certificates than this class, or if
      *             the class name begins with "java.".
      */
-    protected final Class<?> defineClass(String name,
-                                         byte[] b, int off, int len,
-                                         CodeSource cs)
-    {
-        return defineClass(name, b, off, len, getProtectionDomain(cs));
+    protected final Class<?> defineClass(String name, byte[] b, int off, int len, CodeSource cs) {
+        final var cls = defineClass(name, b, off, len, getProtectionDomain(cs));
+
+        final var evt = new ClassFileDefineEvent();
+
+        evt.definedClass = cls;
+        evt.path         = cs.getLocation().toExternalForm();
+        evt.commit();
+
+        return cls;
     }
 
     /**
@@ -170,10 +177,17 @@ public class SecureClassLoader extends ClassLoader {
      *
      * @since  1.5
      */
-    protected final Class<?> defineClass(String name, java.nio.ByteBuffer b,
-                                         CodeSource cs)
+    protected final Class<?> defineClass(String name, java.nio.ByteBuffer b, CodeSource cs)
     {
-        return defineClass(name, b, getProtectionDomain(cs));
+        final var cls = defineClass(name, b, getProtectionDomain(cs));
+
+        final var evt = new ClassFileDefineEvent();
+
+        evt.definedClass = cls;
+        evt.path         = cs.getLocation().toExternalForm();
+        evt.commit();
+
+        return cls;
     }
 
     /**

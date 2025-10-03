@@ -35,6 +35,7 @@ import jdk.internal.platform.Metrics;
 import jdk.jfr.Event;
 import jdk.jfr.events.ActiveRecordingEvent;
 import jdk.jfr.events.ActiveSettingEvent;
+import jdk.jfr.events.ClassFileDefineEvent;
 import jdk.jfr.events.ContainerCPUThrottlingEvent;
 import jdk.jfr.events.ContainerCPUUsageEvent;
 import jdk.jfr.events.ContainerConfigurationEvent;
@@ -56,6 +57,7 @@ public final class JDKEvents {
         ActiveRecordingEvent.class,
         // jdk.internal.event.* classes need their mirror
         // event class to be listed in the MirrorEvents class.
+        jdk.internal.event.ClassFileDefineEvent.class,
         jdk.internal.event.DeserializationEvent.class,
         jdk.internal.event.ErrorThrownEvent.class,
         jdk.internal.event.ExceptionStatisticsEvent.class,

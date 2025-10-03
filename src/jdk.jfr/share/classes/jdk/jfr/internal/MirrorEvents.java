@@ -27,6 +27,7 @@ package jdk.jfr.internal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import jdk.jfr.events.ClassFileDefineEvent;
 import jdk.jfr.events.DeserializationEvent;
 import jdk.jfr.events.ErrorThrownEvent;
 import jdk.jfr.events.ExceptionStatisticsEvent;
@@ -57,6 +58,7 @@ final class MirrorEvents {
 
     // Add mirror event mapping here. See MirrorEvent class for details.
     static {
+        register("jdk.internal.event.ClassFileDefineEvent", ClassFileDefineEvent.class);
         register("jdk.internal.event.DeserializationEvent", DeserializationEvent.class);
         register("jdk.internal.event.FileForceEvent", FileForceEvent.class);
         register("jdk.internal.event.FileReadEvent", FileReadEvent.class);
