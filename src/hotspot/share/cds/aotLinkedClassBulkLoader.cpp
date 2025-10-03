@@ -112,6 +112,36 @@ void AOTLinkedClassBulkLoader::preload_classes_in_table(Array<InstanceKlass*>* c
   }
 }
 
+// Some cached heap objects may hold references to methods in aot-linked
+// classes (via MemberName). We need to make sure all classes are
+// linked before executing any bytecode.
+void AOTLinkedClassBulkLoader::link_classes(JavaThread* current) {
+  link_classes_impl(current);
+  if (current->has_pending_exception()) {
+    exit_on_exception(current);
+  }
+}
+
+void AOTLinkedClassBulkLoader::link_classes_impl(TRAPS) {
+  precond(CDSConfig::is_using_aot_linked_classes());
+
+  AOTLinkedClassTable* table = AOTLinkedClassTable::get();
+
+  link_classes_in_table(table->boot1(), CHECK);
+  link_classes_in_table(table->boot2(), CHECK);
+  link_classes_in_table(table->platform(), CHECK);
+  link_classes_in_table(table->app(), CHECK);
+}
+
+void AOTLinkedClassBulkLoader::link_classes_in_table(Array<InstanceKlass*>* classes, TRAPS) {
+  if (classes != nullptr) {
+    for (int i = 0; i < classes->length(); i++) {
+      InstanceKlass* ik = classes->at(i);
+      ik->link_class(CHECK);
+    }
+  }
+}
+
 #ifdef ASSERT
 void AOTLinkedClassBulkLoader::validate_module_of_preloaded_classes() {
   oop javabase_module_oop = ModuleEntryTable::javabase_moduleEntry()->module_oop();
@@ -173,25 +203,21 @@ void AOTLinkedClassBulkLoader::validate_module(Klass* k, const char* category_na
 }
 #endif
 
-// Link all java.base classes in the AOTLinkedClassTable. Of those classes,
-// move the ones that have been AOT-initialized to the "initialized" state.
-void AOTLinkedClassBulkLoader::link_or_init_javabase_classes(JavaThread* current) {
-  link_or_init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), current);
+void AOTLinkedClassBulkLoader::init_javabase_classes(JavaThread* current) {
+  init_classes_for_loader(Handle(), AOTLinkedClassTable::get()->boot1(), current);
   if (current->has_pending_exception()) {
     exit_on_exception(current);
   }
 }
 
-// Do the same thing as link_or_init_javabase_classes(), but for the classes that are not
-// in the java.base module.
-void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes(JavaThread* current) {
-  link_or_init_non_javabase_classes_impl(current);
+void AOTLinkedClassBulkLoader::init_non_javabase_classes(JavaThread* current) {
+  init_non_javabase_classes_impl(current);
   if (current->has_pending_exception()) {
     exit_on_exception(current);
   }
 }
 
-void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes_impl(TRAPS) {
+void AOTLinkedClassBulkLoader::init_non_javabase_classes_impl(TRAPS) {
   assert(CDSConfig::is_using_aot_linked_classes(), "sanity");
 
   DEBUG_ONLY(validate_module_of_preloaded_classes());
@@ -208,9 +234,9 @@ void AOTLinkedClassBulkLoader::link_or_init_non_javabase_classes_impl(TRAPS) {
   assert(h_system_loader() != nullptr,   "must be");
 
   AOTLinkedClassTable* table = AOTLinkedClassTable::get();
-  link_or_init_classes_for_loader(Handle(), table->boot2(), CHECK);
-  link_or_init_classes_for_loader(h_platform_loader, table->platform(), CHECK);
-  link_or_init_classes_for_loader(h_system_loader, table->app(), CHECK);
+  init_classes_for_loader(Handle(), table->boot2(), CHECK);
+  init_classes_for_loader(h_platform_loader, table->platform(), CHECK);
+  init_classes_for_loader(h_system_loader, table->app(), CHECK);
 
   if (Universe::is_fully_initialized() && VerifyDuringStartup) {
     // Make sure we're still in a clean state.
@@ -242,8 +268,9 @@ void AOTLinkedClassBulkLoader::exit_on_exception(JavaThread* current) {
     log_error(aot)("Out of memory. Please run with a larger Java heap, current MaxHeapSize = "
                    "%zuM", MaxHeapSize/M);
   } else {
+    oop message = java_lang_Throwable::message(current->pending_exception());
     log_error(aot)("%s: %s", current->pending_exception()->klass()->external_name(),
-                   java_lang_String::as_utf8_string(java_lang_Throwable::message(current->pending_exception())));
+                   message == nullptr ? "(no message)" : java_lang_String::as_utf8_string(message));
   }
   vm_exit_during_initialization("Unexpected exception when loading aot-linked classes.");
 }
@@ -289,23 +316,13 @@ void AOTLinkedClassBulkLoader::initiate_loading(JavaThread* current, const char*
 // - classes that were AOT-initialized by AOTClassInitializer
 // - the classes of all objects that are reachable from the archived mirrors of
 //   the AOT-linked classes for <class_loader>.
-void AOTLinkedClassBulkLoader::link_or_init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
+void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS) {
   if (classes != nullptr) {
     for (int i = 0; i < classes->length(); i++) {
       InstanceKlass* ik = classes->at(i);
-      if (ik->class_loader_data() == nullptr) {
-        // This class is not yet loaded. We will initialize it in a later phase.
-        // For example, we have loaded only AOTLinkedClassCategory::BOOT1 classes
-        // but k is part of AOTLinkedClassCategory::BOOT2.
-        continue;
-      }
+      assert(ik->class_loader_data() != nullptr, "must be");
       if (ik->has_aot_initialized_mirror()) {
         ik->initialize_with_aot_initialized_mirror(CHECK);
-      } else {
-        // Some cached heap objects may hold references to methods in aot-linked
-        // classes (via MemberName). We need to make sure all classes are
-        // linked to allow such MemberNames to be invoked.
-        ik->link_class(CHECK);
       }
     }
   }
