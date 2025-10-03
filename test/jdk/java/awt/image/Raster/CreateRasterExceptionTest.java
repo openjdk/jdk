@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class CreateRasterExceptionTest {
     static int[] negBankIndices = new int[] { -1, 0};
     static int[] bandOffsets = new int[] { 0, 0};
     static int[] bandOffsets2 = new int[] { 0, 0, 0, 0};
+    static int[] bandMasks1 = new int[] { 0x0ff };
     static int[] zeroBandOffsets = new int[] {};
     static DataBuffer dBuffer = new DataBufferByte(15);
 
@@ -50,16 +51,28 @@ public class CreateRasterExceptionTest {
          throw new RuntimeException("No expected exception");
     }
 
-    /* Except a version starting with "17" or higher */
-    static void checkIsOldVersion(Throwable t) {
+    /**
+      * If running on a JDK of the targetVersion or later, throw
+      * a RuntimeException becuase the exception argument
+      * should not have occured. However it is expected on
+      * prior versions because that was the previous behaviour.
+      * @param targetVersion to check
+      * @param t the thrown exception to print
+      */
+    static void checkIsOldVersion(int targetVersion, Throwable t) {
         String version = System.getProperty("java.version");
         version = version.split("\\D")[0];
         int v = Integer.parseInt(version);
-        if (v >= 17) {
+        if (v >= targetVersion) {
             t.printStackTrace();
             throw new RuntimeException(
                            "Unexpected exception for version " + v);
         }
+    }
+
+    /* Except a version starting with "17" or higher */
+    static void checkIsOldVersion(Throwable t) {
+        checkIsOldVersion(17, t);
     }
 
     public static void main(String[] args) {
@@ -73,6 +86,10 @@ public class CreateRasterExceptionTest {
          interleavedRasterTests1();
          interleavedRasterTests2();
          interleavedRasterTests3();
+         packedRasterTests1();
+         packedRasterTests2();
+         packedRasterTests3();
+         packedRasterTests4();
          System.out.println();
          System.out.println(" ** Test Passed **");
     }
@@ -734,7 +751,7 @@ public class CreateRasterExceptionTest {
             /* @throws ArrayIndexOutOfBoundsException if
              * {@code bankIndices} is null
              */
-            Raster.createBandedRaster(DataBuffer.TYPE_INT, 1, 1, 0,
+            Raster.createBandedRaster(DataBuffer.TYPE_INT, 1, 1, 1,
                                       null, bandOffsets, null);
             noException();
         } catch (ArrayIndexOutOfBoundsException t) {
@@ -747,7 +764,7 @@ public class CreateRasterExceptionTest {
             /* @throws NullPointerException if {@code bandOffsets}
              * is null
              */
-            Raster.createBandedRaster(DataBuffer.TYPE_INT, 1, 1, 0,
+            Raster.createBandedRaster(DataBuffer.TYPE_INT, 1, 1, 1,
                                       bankIndices, null, null);
             noException();
         } catch (NullPointerException t) {
@@ -1046,6 +1063,25 @@ public class CreateRasterExceptionTest {
         }
 
         try {
+            /* @throws IllegalArgumentException if the data size
+             * needs to store all lines is greater than
+             * {@code Integer.MAX_VALUE}
+             */
+            Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                    1000, 1000,
+                    Integer.MAX_VALUE/2 , 1,
+                    bandOffsets, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println("Got expected exception for overflow");
+            System.out.println(t);
+        } catch (NegativeArraySizeException t) {
+            checkIsOldVersion(26, t);
+            System.out.println("Got expected exception for overflow");
+            System.out.println(t);
+        }
+
+        try {
             /* @throws RasterFormatException if computing either
              * {@code location.x + w} or
              * {@code location.y + h} results in integer overflow
@@ -1092,11 +1128,24 @@ public class CreateRasterExceptionTest {
         }
 
         try {
+            /* @throws IllegalArgumentException if (w * pixelStride)
+             * is greater than scanlineStride
+             */
+            Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
+                                  1, 1, 0, 1, bandOffsets, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for incorrect stride");
+            System.out.println(t);
+        }
+
+        try {
             /* @throws NullPointerException if {@code bandOffsets}
              * is null
              */
             Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
-                                  1, 1, 0, 1, null, null);
+                                  1, 1, 1, 1, null, null);
             noException();
         } catch (NullPointerException t) {
             System.out.println(
@@ -1243,8 +1292,382 @@ if (t != null) throw t;
             noException();
         } catch (RasterFormatException t) {
             System.out.println(
+                   "Got expected exception for bad databuffer banks");
+            System.out.println(t);
+        }
+    }
+
+    /*  createPackedRaster(int dataType,
+     *                     int w, int h,
+     *                     int[] bandMasks,
+     *                     Point location)
+     *
+     */
+     static void packedRasterTests1() {
+
+        System.out.println();
+        System.out.println("** packedRasterTests1");
+
+         try {
+             /* @throws IllegalArgumentException if {@code w} and {@code h}
+              *         are not both greater than 0
+              */
+             Raster.createPackedRaster(DataBuffer.TYPE_BYTE, 0, 0, bandMasks1, null);
+            noException();
+         } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for zero w / h");
+            System.out.println(t);
+         }
+
+         try {
+             /* @throws IllegalArgumentException if {@code w} * {@code h}
+              *         is greater than {@code Integer.MAX_VALUE}
+              */
+             Raster.createPackedRaster(DataBuffer.TYPE_BYTE,
+                                       Integer.MAX_VALUE/10, Integer.MAX_VALUE/10,
+                                       bandMasks1, null);
+            noException();
+         } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for overflow");
+            System.out.println(t);
+         }
+
+        try {
+            /* @throws RasterFormatException if computing either
+             * {@code location.x + w} or
+             * {@code location.y + h} results in integer overflow
+             */
+            Point pt = new Point(5, 1);
+            Raster.createPackedRaster(DataBuffer.TYPE_BYTE,
+                                      Integer.MAX_VALUE-2, 1,
+                                      bandMasks1, pt);
+            noException();
+        } catch (RasterFormatException t) {
+            System.out.println("Got expected exception for overflow");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws IllegalArgumentException if {@code dataType}
+             * is not one of the supported data types
+             */
+            Raster.createPackedRaster(1000, 1, 1, bandMasks1, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
                    "Got expected exception for bad databuffer type");
             System.out.println(t);
         }
+     }
+
+    /*  createPackedRaster(int dataType,
+     *                     int w, int h,
+     *                     int bands,
+     *                     int bitsPerBand,
+     *                     Point location)
+     */
+     static void packedRasterTests2() {
+
+        System.out.println();
+        System.out.println("** packedRasterTests2");
+
+         try {
+             /* @throws IllegalArgumentException if {@code w} and {@code h}
+              *         are not both greater than 0
+              */
+             Raster.createPackedRaster(DataBuffer.TYPE_BYTE, 0, 0, 1, 8, null);
+             noException();
+         } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for zero w / h");
+            System.out.println(t);
+         }
+
+         try {
+             /* @throws IllegalArgumentException if {@code w} * {@code h}
+              *         is greater than {@code Integer.MAX_VALUE}
+              */
+             Raster.createPackedRaster(DataBuffer.TYPE_BYTE,
+                                       Integer.MAX_VALUE/10, Integer.MAX_VALUE/10,
+                                       1, 8, null);
+             noException();
+         } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for overflow");
+            System.out.println(t);
+         }
+
+        try {
+            /* @throws RasterFormatException if computing either
+             * {@code location.x + w} or
+             * {@code location.y + h} results in integer overflow
+             */
+            Point pt = new Point(5, 1);
+            Raster.createPackedRaster(DataBuffer.TYPE_BYTE,
+                                      Integer.MAX_VALUE-2, 1,
+                                      1, 8, pt);
+            noException();
+        } catch (RasterFormatException t) {
+            System.out.println("Got expected exception for overflow");
+            System.out.println(t);
+        }
+
+        try {
+             /* @throws IllegalArgumentException if {@code bitsPerBand} or
+              *         {@code bands} is not greater than zero
+              */
+            Raster.createPackedRaster(DataBuffer.TYPE_BYTE, 1, 1,
+                                       0, 8, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for 0 bands");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws IllegalArgumentException if {@code bitsPerBand} or
+             *         {@code bands} is not greater than zero
+             */
+            Raster.createPackedRaster(DataBuffer.TYPE_BYTE, 1, 1,
+                                       8, 0, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for 0 bitsPerBand");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws IllegalArgumentException if the product of
+             *         {@code bitsPerBand} and {@code bands} is
+             *         greater than the number of bits held by
+             *         {@code dataType}
+             */
+            Raster.createPackedRaster(DataBuffer.TYPE_BYTE, 1, 1,
+                                       2, 8, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for bands per sample");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws IllegalArgumentException if {@code dataType}
+             * is not one of the supported data types
+             */
+            Raster.createPackedRaster(1000, 1, 1, 1, 8, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for bad databuffer type");
+            System.out.println(t);
+        }
+    }
+
+    /*  createPackedRaster(DataBuffer dataBuffer,
+     *                     int w, int h,
+     *                     int scanlineStride,
+     *                     int[] bandMasks,
+     *                     Point location)
+     */
+    static void packedRasterTests3() {
+
+        System.out.println();
+        System.out.println("** packedRasterTests3");
+
+        try {
+             /* @throws IllegalArgumentException if {@code w} and {@code h}
+              *         are not both greater than 0
+              */
+            Raster.createPackedRaster(dBuffer, 0, 1, 1, bandMasks1, null);
+           noException();
+        } catch (IllegalArgumentException t) {
+           System.out.println(
+                  "Got expected exception for zero w / h");
+           System.out.println(t);
+        }
+
+        try {
+            /* @throws IllegalArgumentException if {@code w} * {@code h}
+             *         is greater than {@code Integer.MAX_VALUE}
+             */
+            Raster.createPackedRaster(dBuffer,
+                                      Integer.MAX_VALUE/10, Integer.MAX_VALUE/10,
+                                      1, bandMasks1, null);
+           noException();
+        } catch (IllegalArgumentException t) {
+           System.out.println(
+                  "Got expected exception for overflow");
+           System.out.println(t);
+        }
+
+       try {
+           /* @throws RasterFormatException if computing either
+            * {@code location.x + w} or
+            * {@code location.y + h} results in integer overflow
+            */
+           Point pt = new Point(5, 1);
+           Raster.createPackedRaster(dBuffer,
+                                     Integer.MAX_VALUE-2, 1,
+                                     1, bandMasks1, pt);
+           noException();
+       } catch (RasterFormatException t) {
+           System.out.println("Got expected exception for overflow");
+           System.out.println(t);
+       }
+
+       try {
+            /* @throws NullPointerException if databuffer is null.
+             */
+            Raster.createPackedRaster(null,
+                                      1, 1,
+                                      1, bandMasks1, null);
+           noException();
+       } catch (NullPointerException t) {
+          System.out.println(
+                  "Got expected exception for null data buffer");
+           System.out.println(t);
+       }
+
+       try {
+            /* @throws RasterFormatException if {@code dataBuffer}
+             * has more than one bank.
+             */
+            DataBufferByte dbuffer2 = new DataBufferByte(20, 2);
+            Raster.createPackedRaster(dbuffer2, 1, 1, 1, bandMasks1, null);
+            noException();
+        } catch (RasterFormatException t) {
+            System.out.println(
+                   "Got expected exception for bad databuffer banks");
+            System.out.println(t);
+        }
+       try {
+            /* @throws IllegalArgumentException if {@code dataBuffer}
+             * is not one of the supported data types
+             */
+            DataBufferFloat dbFloat = new DataBufferFloat(20);
+            Raster.createPackedRaster(dbFloat, 1, 1, 1, bandMasks1, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for bad databuffer type");
+            System.out.println(t);
+        }
+   }
+
+    /* createPackedRaster(DataBuffer dataBuffer,
+     *               int w, int h,
+     *               int bitsPerPixel,
+     *               Point location)
+     */
+    static void packedRasterTests4() {
+
+        System.out.println();
+        System.out.println("** packedRasterTests4");
+
+        try {
+             /* @throws IllegalArgumentException if {@code w} and {@code h}
+              *         are not both greater than 0
+              */
+            Raster.createPackedRaster(dBuffer, 0, 1, 8, null);
+           noException();
+        } catch (IllegalArgumentException t) {
+           System.out.println(
+                  "Got expected exception for zero w / h");
+           System.out.println(t);
+        }
+
+        try {
+            /* @throws IllegalArgumentException if {@code w} * {@code h}
+             *         is greater than {@code Integer.MAX_VALUE}
+             */
+            Raster.createPackedRaster(dBuffer,
+                                      Integer.MAX_VALUE/10, Integer.MAX_VALUE/10,
+                                      8, null);
+           noException();
+        } catch (IllegalArgumentException t) {
+           System.out.println(
+                  "Got expected exception for overflow");
+           System.out.println(t);
+        }
+
+       try {
+           /* @throws RasterFormatException if computing either
+            * {@code location.x + w} or
+            * {@code location.y + h} results in integer overflow
+            */
+           Point pt = new Point(5, 1);
+           Raster.createPackedRaster(dBuffer,
+                                     Integer.MAX_VALUE-2, 1,
+                                     8, pt);
+           noException();
+       } catch (RasterFormatException t) {
+           System.out.println("Got expected exception for overflow");
+           System.out.println(t);
+       }
+
+       try {
+            /* @throws IllegalArgumentException if {@code dataBuffer}
+             * is not one of the supported data types
+             */
+            DataBufferFloat dbFloat = new DataBufferFloat(20);
+            Raster.createPackedRaster(dbFloat, 1, 1, 8, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for bad databuffer type");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws RasterFormatException if {@code dataBuffer}
+             * has more than one bank.
+             */
+            DataBufferByte dbb = new DataBufferByte(100, 2);
+            Raster.createPackedRaster(dbb, 1, 1, 8, null);
+            noException();
+        } catch (RasterFormatException t) {
+            System.out.println(
+                   "Got expected exception for bad databuffer banks");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws NullPointerException if databuffer is null.
+             */
+           Raster.createPackedRaster(null, 1, 1, 8, null);
+           noException();
+       } catch (NullPointerException t) {
+          System.out.println(
+                  "Got expected exception for null data buffer");
+           System.out.println(t);
+       }
+
+       int[] badbpp = { 0, 6, 16 };
+       for (int bpp : badbpp) {
+           try {
+               /* @throws RasterFormatException if {@code bitsPixel} is less than 1 or
+                * not a power of 2 or exceeds the {@code dataBuffer} element size.
+                */
+               System.out.println("Test bpp=" + bpp);
+               Raster.createPackedRaster(dBuffer, 1, 1, bpp, null);
+               noException();
+           } catch (RasterFormatException t) {
+              System.out.println(
+                      "Got expected exception for bitsPerPixel");
+               System.out.println(t);
+           } catch (ArithmeticException t) {
+               checkIsOldVersion(26, t);
+               if (bpp != 0) {
+                   throw new RuntimeException("Unexpected arithmetic exception");
+               }
+               System.out.println("Got expected arithmetic exception");
+               System.out.println(t);
+        }
+       }
     }
 }
