@@ -786,7 +786,8 @@ void AOTStreamedHeapLoader::cleanup() {
 }
 
 void AOTStreamedHeapLoader::log_statistics() {
-  const char* async_or_sync = AOTEagerlyLoadObjects ? "sync" : "async";
+  const bool is_async = CDSConfig::is_using_full_module_graph() && !AOTEagerlyLoadObjects;
+  const char* const async_or_sync = is_async ? "async" : "sync";
   log_info(aot, heap)("early object materialization time (%s): %zuus",
                       async_or_sync, _early_materialization_time_ns / 1000);
   log_info(aot, heap)("late object materialization time (%s): %zuus",
@@ -801,7 +802,7 @@ void AOTStreamedHeapLoader::log_statistics() {
   jlong sync_time = _final_materialization_time_ns + _accumulated_lazy_materialization_time_ns;
   jlong async_time = _early_materialization_time_ns + _late_materialization_time_ns + _cleanup_materialization_time_ns;
 
-  if (AOTEagerlyLoadObjects) {
+  if (!is_async) {
     sync_time += async_time;
     async_time = 0;
   }
@@ -812,7 +813,7 @@ void AOTStreamedHeapLoader::log_statistics() {
   log_info(aot, heap)("async materialization time: %zuus",
                       async_time / 1000);
 
-  size_t iterative_time = (size_t)(AOTEagerlyLoadObjects ? sync_time : async_time);
+  size_t iterative_time = (size_t)(is_async ? async_time : sync_time);
   size_t materialized_bytes = _allocated_words * HeapWordSize;
   log_info(aot, heap)("%s materialized %zuK (%zuM/s)", async_or_sync,
                       materialized_bytes / 1024, size_t(materialized_bytes * UCONST64(1'000'000'000) / M / iterative_time));
@@ -915,7 +916,9 @@ void AOTStreamedHeapLoader::finish_materialize_objects() {
       AOTHeapLoading_lock->wait();
     }
   } else {
-    assert(!AOTEagerlyLoadObjects && AOTThread::aot_thread() == nullptr, "When !is_using_full_module_graph() only trace the roots");
+    assert(!AOTEagerlyLoadObjects, "sanity");
+    assert(AOTThread::aot_thread() == nullptr, "sanity");
+    assert(_current_root_index == 0, "sanity");
     // Without the full module graph we have done only lazy tracing materialization.
     // Ensure all roots are processed here by triggering root loading on every root.
     for (int i = 0; i < _num_roots; ++i) {
@@ -982,6 +985,7 @@ void AOTStreamedHeapLoader::initialize() {
 
   if (!CDSConfig::is_using_full_module_graph()) {
     // When not using FMG, fall back to tracing materialization
+    FLAG_SET_ERGO(AOTEagerlyLoadObjects, false);
     return;
   }
 
