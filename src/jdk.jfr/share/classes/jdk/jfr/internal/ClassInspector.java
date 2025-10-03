@@ -38,6 +38,7 @@ import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.constant.ConstantDescs;
@@ -52,7 +53,7 @@ import jdk.jfr.Name;
 import jdk.jfr.Registered;
 import jdk.jfr.SettingControl;
 import jdk.jfr.SettingDefinition;
-import jdk.jfr.TargetThread;
+import jdk.jfr.Target;
 import jdk.jfr.Throttle;
 import jdk.jfr.internal.util.Bytecode;
 import jdk.jfr.internal.util.ImplicitFields;
@@ -69,7 +70,7 @@ final class ClassInspector {
     private static final ClassDesc ANNOTATION_EVENT_MODE = classDesc(EventMode.class);
     private static final ClassDesc ANNOTATION_REMOVE_FIELDS = classDesc(RemoveFields.class);
     private static final ClassDesc ANNOTATION_THROTTLE = classDesc(Throttle.class);
-    private static final ClassDesc ANNOTATION_TARGET_THREAD = classDesc(TargetThread.class);
+    private static final ClassDesc ANNOTATION_TARGET_THREAD = classDesc(Target.class);
     private static final String[] EMPTY_STRING_ARRAY = {};
 
     private final ClassModel classModel;
@@ -167,9 +168,21 @@ final class ClassInspector {
         return false;
     }
 
-    boolean isSynchronousEvent() {
-        String result = annotationValue(ANNOTATION_EVENT_MODE, String.class, EventMode.SYNCHRONOUS);
+    private boolean isThread(FieldDesc field) {
+        ClassDesc cd = field.type();
+        try {
+            Class<?> cls = cd.resolveConstantDesc(MethodHandles.publicLookup());
+            return Thread.class.isAssignableFrom(cls);
+        } catch (ReflectiveOperationException e) {
+            return false;
+        }
+    }
 
+    boolean isSynchronousEvent() {
+        if (isJDK) {
+            return true;
+        }
+        String result = annotationValue(ANNOTATION_EVENT_MODE, String.class, EventMode.SYNCHRONOUS);
         if (result != null) {
             return EventMode.SYNCHRONOUS.equals(result);
         }
@@ -421,6 +434,10 @@ final class ClassInspector {
             if (!foundFields.contains(field.fieldName().stringValue()) && isValidField(field.flags().flagsMask(), field.fieldTypeSymbol())) {
                 FieldDesc fd = FieldDesc.of(field.fieldTypeSymbol(), field.fieldName().stringValue());
                 if (isAsyncEvent && isTargetThread(field)) {
+                    if (!isThread(fd)) {
+                        throw new IllegalArgumentException(field.fieldName() + " is not a thread");
+                    }
+
                     targetThread = fd;
                     targetThreadCount++;
                 }
@@ -444,10 +461,12 @@ final class ClassInspector {
             }
         }
 
-        if (isAsyncEvent && targetThreadCount != 1) {
-            String errMsg = (targetThreadCount < 1) ? "Asynchronous event has no target thread" :
-                    "Asynchronous event has more than 1 target thread";
-            throw new IllegalArgumentException(errMsg);
-        }
+        if (isAsyncEvent) {
+            if (targetThreadCount != 1) {
+                String errMsg = (targetThreadCount < 1) ? "Asynchronous event has no target" :
+                        "Asynchronous event has more than 1 target";
+                throw new IllegalArgumentException(errMsg);
+            }
+       }
     }
 }

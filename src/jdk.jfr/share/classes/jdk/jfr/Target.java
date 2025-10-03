@@ -29,7 +29,6 @@ package jdk.jfr;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
  * Event annotation, determines if a thread is the target of the asynchronous event,
@@ -41,7 +40,7 @@ import java.lang.annotation.Target;
  *
  * @since 26
  */
-@Target({ ElementType.FIELD })
+@java.lang.annotation.Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TargetThread {
+public @interface Target {
 }
