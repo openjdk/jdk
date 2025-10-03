@@ -224,30 +224,6 @@ void AOTStreamedHeapLoader::TracingObjectLoader::wait_for_iterator() {
   }
 }
 
-class PushReferenceOopClosure : public BasicOopIterateClosure {
-private:
-  Stack<AOTHeapTraversalEntry, mtClassShared>& _dfs_stack;
-  oop _object;
-  int _object_index;
-
-public:
-  PushReferenceOopClosure(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, oop object, int object_index)
-    : _dfs_stack(dfs_stack),
-      _object(object),
-      _object_index(object_index) {}
-
-  virtual void do_oop(oop* p) { do_oop_work(p, (int)*(intptr_t*)p); }
-  virtual void do_oop(narrowOop* p) { do_oop_work(p, *(int*)p); }
-
-  template <typename T>
-  void do_oop_work(T* p, int object_index) {
-    if (object_index != 0) {
-      int field_offset = pointer_delta_as_int((address)p, cast_from_oop<address>(_object));
-      _dfs_stack.push({object_index, _object_index, field_offset});
-    }
-  }
-};
-
 // Link object after copying in-place
 template <typename LinkerT>
 class CopyConjointLinkingOopClosure : public BasicOopIterateClosure {
