@@ -117,6 +117,8 @@ OopStorage* ObjectMonitor::_oop_storage = nullptr;
 OopHandle ObjectMonitor::_vthread_list_head;
 ParkEvent* ObjectMonitor::_vthread_unparker_ParkEvent = nullptr;
 
+static const jlong MAX_RECHECK_INTERVAL = 1000;
+
 // -----------------------------------------------------------------------------
 // Theory of operations -- Monitors lists, thread residency, etc:
 //
@@ -995,8 +997,7 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
   // prevents this load from floating up previous store.
   // Note that we can have false positives where timed-park is not necessary.
   bool do_timed_parked = has_unmounted_vthreads();
-  static int MAX_RECHECK_INTERVAL = 1000;
-  int recheck_interval = 1;
+  jlong recheck_interval = 1;
 
   for (;;) {
 
@@ -1007,7 +1008,7 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
 
     // park self
     if (do_timed_parked) {
-      current->_ParkEvent->park((jlong) recheck_interval);
+      current->_ParkEvent->park(recheck_interval);
       // Increase the recheck_interval, but clamp the value.
       recheck_interval *= 8;
       if (recheck_interval > MAX_RECHECK_INTERVAL) {
@@ -1105,8 +1106,7 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
   // the notifier in notify_internal.
   // Note that we can have false positives where timed-park is not necessary.
   bool do_timed_parked = has_unmounted_vthreads();
-  static int MAX_RECHECK_INTERVAL = 1000;
-  int recheck_interval = 1;
+  jlong recheck_interval = 1;
 
   for (;;) {
     ObjectWaiter::TStates v = currentNode->TState;
@@ -1133,7 +1133,7 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
         ClearSuccOnSuspend csos(this);
         ThreadBlockInVMPreprocess<ClearSuccOnSuspend> tbivs(current, csos, true /* allow_suspend */);
         if (do_timed_parked) {
-          current->_ParkEvent->park((jlong) recheck_interval);
+          current->_ParkEvent->park(recheck_interval);
           // Increase the recheck_interval, but clamp the value.
           recheck_interval *= 8;
           if (recheck_interval > MAX_RECHECK_INTERVAL) {
