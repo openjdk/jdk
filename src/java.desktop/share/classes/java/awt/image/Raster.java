@@ -1051,9 +1051,6 @@ public class Raster {
      *         are not both greater than 0
      * @throws IllegalArgumentException if the product of {@code w}
      *         and {@code h} is greater than {@code Integer.MAX_VALUE}
-     * @throws IllegalArgumentException if computing either
-     *         {@code location.x + w} or
-     *         {@code location.y + h} results in integer overflow
      * @throws RasterFormatException if computing either
      *         {@code location.x + w} or
      *         {@code location.y + h} results in integer overflow
