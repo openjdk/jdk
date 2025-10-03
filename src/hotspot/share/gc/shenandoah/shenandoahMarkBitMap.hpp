@@ -126,12 +126,12 @@ private:
   template<bm_word_t flip, bool aligned_left>
   inline idx_t get_prev_bit_impl(idx_t l_index, idx_t r_index) const;
 
-  inline idx_t get_next_one_offset (idx_t l_index, idx_t r_index) const;
+  inline idx_t get_next_one_offset(idx_t l_index, idx_t r_index) const;
 
   // Search for last one in the range [l_index, r_index).  Return r_index if not found.
-  inline idx_t get_prev_one_offset (idx_t l_index, idx_t r_index) const;
+  inline idx_t get_prev_one_offset(idx_t l_index, idx_t r_index) const;
 
-  void clear_large_range (idx_t beg, idx_t end);
+  void clear_large_range(idx_t beg, idx_t end);
 
   // Verify bit is less than size().
   void verify_index(idx_t bit) const NOT_DEBUG_RETURN;
