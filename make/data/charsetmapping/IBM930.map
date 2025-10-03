@@ -25,13 +25,6 @@
 #      4260 <--> 2212
 #      426A <--> 00A6
 #
-#      Warning:
-#      "our old" implementation seems agree with above "new" mappings
-#      except the entries   4260 <-> 2212. To keep the "compatbility"
-#      with the "old" implementation, I changed the entries "temporarily"
-#      4260 <-> 2212
-#      4260 <-  ff0d
-#
 00	0000
 01	0001
 02	0002
@@ -407,8 +400,7 @@ FF	009F
 425D	FF09
 425E	FF1B
 425F	FFE2
-#4260	FF0D
-4260	2212
+4260	FF0D
 4261	FF0F
 426A	FFE4
 426B	FF0C
