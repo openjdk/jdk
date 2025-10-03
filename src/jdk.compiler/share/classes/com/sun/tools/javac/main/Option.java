@@ -563,6 +563,8 @@ public enum Option {
     // treat warnings as errors
     WERROR("-Werror", "opt.Werror", STANDARD, BASIC),
 
+    WERROR_CUSTOM("-Werror:", "opt.arg.Werror", "opt.Werror.custom", STANDARD, BASIC, ANYOF, getXLintChoices()),
+
     // prompt after each error
     // new Option("-prompt",                                        "opt.prompt"),
     PROMPT("-prompt", null, HIDDEN, BASIC),
@@ -1130,6 +1132,22 @@ public enum Option {
      */
     public Option getCustom() {
         return Option.valueOf(name() + "_CUSTOM");
+    }
+
+    /**
+     * Like {@link #getCustom} but also requires that the custom option supports lint categories.
+     *
+     * <p>
+     * In practice, that means {@code option} must be {@link Option#LINT} or {@link Option#WERROR}.
+     *
+     * @param option regular option
+     * @return corresponding lint custom option
+     * @throws IllegalArgumentException if no such option exists
+     */
+    public Option getLintCustom() {
+        if (this == XLINT || this == WERROR)
+            return getCustom();
+        throw new IllegalArgumentException();
     }
 
     public boolean isInBasicOptionGroup() {
