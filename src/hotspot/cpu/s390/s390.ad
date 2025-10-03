@@ -4111,8 +4111,8 @@ instruct stkP_to_regP(iRegP dst, stackSlotP src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  format %{ "LG      $dst,$src\t # stk reload ptr" %}
   size(Z_DISP3_SIZE);
+  format %{ "LG      $dst,$src\t # stk reload ptr" %}
   opcode(LG_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
   ins_pipe(pipe_class_dummy);
@@ -4965,6 +4965,7 @@ instruct decodeN(iRegP dst, iRegN src, flagsReg cr) %{
   predicate(CompressedOops::base() == nullptr || !ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
   format %{ "decodeN  $dst,$src\t # (decode cOop)" %}
   ins_encode %{  __ oop_decoder($dst$$Register, $src$$Register, true); %}
   ins_pipe(pipe_class_dummy);
@@ -4989,6 +4990,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
             (CompressedOops::base()== nullptr || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
   format %{ "decodeN  $dst,$src\t # (decode cOop NN)" %}
   ins_encode %{ __ oop_decoder($dst$$Register, $src$$Register, false); %}
   ins_pipe(pipe_class_dummy);
@@ -5012,6 +5014,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
+    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
     format %{ "decodeN  $dst = ($src == 0) ? nullptr : ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, true, $base$$Register,
@@ -5026,6 +5029,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
+    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
     format %{ "decodeN  $dst = ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, false, $base$$Register,
@@ -5040,6 +5044,7 @@ instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   predicate(CompressedOops::base() != nullptr && ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(6 * Z_DISP3_SIZE + 5 * Z_DISP2_SIZE);
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
@@ -11918,7 +11923,7 @@ instruct countTrailingZerosL(revenRegI dst, iRegL src, roddRegL tmp, flagsReg cr
   effect(TEMP_DEF dst, KILL tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
-  size(5 * Z_DISP2_SIZE + Z_DISP1_SIZE);
+  size(5 * Z_DISP2_SIZE + Z_DISP2_SIZE);
   format %{ "LCGR    $dst,$src  \t # preserve src\n\t"
             "NGR     $dst,$src  \t #\n\t"
             "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
