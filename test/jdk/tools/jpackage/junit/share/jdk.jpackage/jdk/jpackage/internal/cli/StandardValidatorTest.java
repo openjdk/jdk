@@ -173,7 +173,7 @@ public class StandardValidatorTest {
         return data.stream().map(Arguments::of);
     }
 
-    private static Stream<Arguments> test_IS_NAME_VALID_invalid()  {
+    private static Stream<Arguments> test_IS_NAME_VALID_invalid() {
         List<String> data = new ArrayList<>();
         data.addAll(List.of(
                 " ",
