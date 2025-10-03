@@ -283,6 +283,8 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param function The {@link Supplier} that creates the {@link NestingToken.Scope}.
      */
+    // TODO: consider allowing different nesting tokens, to allow escaping names. hashtags
+    // should be local, and setFuelCost as well.
     record ZeroArgs(Supplier<NestingToken.Scope> function) implements Template {
         NestingToken.Scope instantiate() {
             return function.get();
@@ -682,20 +684,25 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return A token that represents the hashtag replacement definition.
      */
     static Token let(String key, Object value) {
-        return new LetToken(key, Renderer.format(value));
+        return new LetToken(key, value, v -> flat());
     }
 
     /**
      * Define a hashtag replacement for {@code "#key"}, with a specific value, which is also captured
-     * by the provided {@code function} with type {@code <T>}.
+     * by the provided {@code function} with type {@code <T>}. While the argument of the lambda that
+     * captures the value is naturally bounded to the scope of the lambda, the hashtag replacement
+     * may be bound to the scope or escape it, depending on the choice of scope, see {@link scope}
+     * and {@link flat}.
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> let("b", a * 2, (Integer b) -> scope(
-     *     """
-     *     System.out.println("Use a and b with hashtag replacement: #a and #b");
-     *     """,
-     *     "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
+     * var template = Template.make("a", (Integer a) -> scope(
+     *     let("b", a * 2, (Integer b) -> scope(
+     *         """
+     *         System.out.println("Use a and b with hashtag replacement: #a and #b");
+     *         """,
+     *         "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
+     *     ))
      * )));
      * }
      *
@@ -703,13 +710,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code value}.
-     * @return A {@link NestingToken.Scope}.
-     * @throws RendererException if there is a duplicate hashtag {@code key}.
+     * @return A {@link Token} representing the hashtag replacement definition and inner scope.
      */
-    // TODO: refactor so we can use it inside the template?
-    static <T> NestingToken.Scope let(String key, T value, Function<T, NestingToken.Scope> function) {
-        Renderer.getCurrent().addHashtagReplacement(key, value);
-        return function.apply(value);
+    static <T> Token let(String key, T value, Function<T, NestingToken> function) {
+        return new LetToken(key, value, function);
     }
 
     /**

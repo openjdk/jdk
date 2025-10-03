@@ -387,8 +387,12 @@ final class Renderer {
             case SetFuelCostToken(float fuelCost) -> {
                 currentTemplateFrame.setFuelCost(fuelCost);
             }
-            case LetToken(String key, String value) -> {
-                addHashtagReplacement(key, value);
+            case LetToken lt -> {
+                NestingToken nt = lt.getNestingToken();
+                renderNestingToken(nt, () -> {
+                    addHashtagReplacement(lt.key(), lt.value());
+                });
+
             }
         }
     }

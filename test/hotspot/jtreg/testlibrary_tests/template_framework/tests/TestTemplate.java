@@ -751,11 +751,11 @@ public class TestTemplate {
             "}\n"
         ));
 
-        var template2 = Template.make("a", (Integer a) -> let("b", a * 10, b ->
-            scope(
+        var template2 = Template.make("a", (Integer a) -> scope(
+            let("b", a * 10, b -> scope(
                 let("c", b * 3),
                 "abc = #a #b #c\n"
-            )
+            ))
         ));
 
         var template3 = Template.make(() -> scope(
@@ -805,10 +805,10 @@ public class TestTemplate {
     public static void testLet2() {
         var template = Template.make(() -> scope(
             "outer {\n",
-            "x: #x\n", // TODO: should not happen!
             let("x", "x1", x -> scope(
                 "x: #x ", x, ".\n"
             )),
+            let("x", "x2"), // definition above is limited to its scope
             "x: #x\n",
             "} outer\n"
         ));
@@ -816,6 +816,10 @@ public class TestTemplate {
         String code = template.render();
         String expected =
             """
+            outer {
+            x: x1 x1.
+            x: x2
+            } outer
             """;
         checkEQ(code, expected);
     }
