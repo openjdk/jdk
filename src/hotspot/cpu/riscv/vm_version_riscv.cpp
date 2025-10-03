@@ -213,13 +213,8 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled() && FLAG_IS_DEFAULT(UseRVV)) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
+    // read vector length from vector CSR vlenb
+    _initial_vector_length = cpu_vector_length();
   }
 
   // Misc Intrinsics that could depend on RVV.
