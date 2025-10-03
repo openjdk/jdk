@@ -1054,6 +1054,9 @@ public class Raster {
      * @throws IllegalArgumentException if computing either
      *         {@code location.x + w} or
      *         {@code location.y + h} results in integer overflow
+     * @throws RasterFormatException if computing either
+     *         {@code location.x + w} or
+     *         {@code location.y + h} results in integer overflow
      * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types, which are
      *         {@code DataBuffer.TYPE_BYTE},
