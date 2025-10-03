@@ -1321,7 +1321,7 @@ final class StringUTF16 {
         return StreamSupport.stream(LinesSpliterator.spliterator(value), false);
     }
 
-    public static String newString(byte[] val, int index, int len) {
+    static String newString(byte[] val, int index, int len) {
         if (len == 0) {
             return "";
         }
