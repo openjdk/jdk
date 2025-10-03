@@ -464,5 +464,5 @@ JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jcla
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_send_asysnc_event(JNIEnv* env, jclass jvm, jobject target, jlong eventId, jboolean hasDuration, jboolean hasEventThread, jboolean hasStackTrace, jbyteArray payload))
-  JfrAsyncEvent::send_async_event(target, eventId, hasDuration, hasEventThread, hasStackTrace, payload, thread);
+  JfrAsyncEvent::send_async_event(target, eventId, hasDuration, hasEventThread, hasStackTrace, payload);
 JVM_END

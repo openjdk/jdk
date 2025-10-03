@@ -40,9 +40,8 @@ JfrAsyncEvent::JfrAsyncEvent(long event_id, bool has_duration, bool has_event_th
 
   _payload_size = payloadOop->length();
   _payload = (jbyte*)os::malloc(_payload_size, mtTracing);
-  for (int index = 0; index < _payload_size; index++) {
-    _payload[index] = payloadOop->byte_at(index);
-  }
+  jbyte* addr = payloadOop->byte_at_addr(0);
+  memcpy(_payload, addr, _payload_size);
 }
 
 JfrAsyncEvent::~JfrAsyncEvent() {
@@ -100,9 +99,8 @@ void JfrAsyncEvent::send_async_event(jobject target,
                                      jboolean has_duration,
                                      jboolean has_event_thread,
                                      jboolean has_stack_trace,
-                                     jbyteArray payload,
-                                     TRAPS) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
+                                     jbyteArray payload) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current()));
 
   // Make sure target thread is valid
   ThreadsListHandle tlh;
@@ -113,8 +111,6 @@ void JfrAsyncEvent::send_async_event(jobject target,
   }
 
   typeArrayOop payloadOop = typeArrayOop(JNIHandles::resolve(payload));
-  oop target_obj = JNIHandles::resolve(target);
-
   JfrAsyncEvent* event = new JfrAsyncEvent(event_id, has_duration, has_event_thread, has_event_thread, payloadOop);
   if (!JfrThreadSampler::sample_thread(jt, async_event_callback, (void*)event)) {
     // fail to deliver the event, discard it
