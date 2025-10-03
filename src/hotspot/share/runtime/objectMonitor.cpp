@@ -985,7 +985,7 @@ void ObjectMonitor::enter_internal(JavaThread* current) {
   // and in doing so avoid some transitions ...
 
   // If there are unmounted virtual threads ahead in the _entry_list we want
-  // to do a timed-park instead to alleviate some deadlocks cases where one
+  // to do a timed-park instead to alleviate some deadlock cases where one
   // of them is picked as the successor but cannot run due to having run out
   // of carriers. This can happen, for example, if this is a pinned virtual
   // thread currently loading or initializining a class, and all other carriers
@@ -1092,7 +1092,7 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
   assert_mark_word_consistency();
 
   // If there are unmounted virtual threads ahead in the _entry_list we want
-  // to do a timed-park instead to alleviate some deadlocks cases where one
+  // to do a timed-park instead to alleviate some deadlock cases where one
   // of them is picked as the successor but cannot run due to having run out
   // of carriers. This can happen, for example, if a mixed of unmounted and
   // pinned vthreads taking up all the carriers are waiting for a class to be
@@ -2069,7 +2069,7 @@ bool ObjectMonitor::notify_internal(JavaThread* current) {
       // Adding to _entry_list uses Atomic::cmpxchg() which already provides
       // a fence that prevents this load from floating up previous store.
       if (has_unmounted_vthreads()) {
-        // Wake up the thread to alleviate some deadlocks cases where the successor
+        // Wake up the thread to alleviate some deadlock cases where the successor
         // that will be picked up when this thread releases the monitor is an unmounted
         // virtual thread that cannot run due to having run out of carriers. Upon waking
         // up, the thread will call reenter_internal() which will use timed-park in case
