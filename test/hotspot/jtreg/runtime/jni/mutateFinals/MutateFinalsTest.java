@@ -34,11 +34,12 @@
 
 import java.lang.management.ManagementFactory;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assumptions.*;
@@ -52,11 +53,15 @@ class MutateFinalsTest {
 
     @BeforeAll
     static void init() {
+        assumeFalse(ManagementFactory.getRuntimeMXBean()
+                .getInputArguments()
+                .contains("-Xcheck:jni"), "Skip when running with -Xcheck:jni");
+
         javaLibraryPath = System.getProperty("java.library.path");
     }
 
     /**
-     * The names of the methods that use JNI to set final instance fields.
+     * The names of the test methods that use JNI to set final instance fields.
      */
     static Stream<String> mutateInstanceFieldMethods() {
         return Stream.of(
@@ -73,7 +78,7 @@ class MutateFinalsTest {
     }
 
     /**
-     * The names of the methods that use JNI to set final static fields.
+     * The names of the test methods that use JNI to set final static fields.
      */
     static Stream<String> mutateStaticFieldMethods() {
         return Stream.of(
@@ -90,23 +95,26 @@ class MutateFinalsTest {
     }
 
     /**
-     * The names of all methods that use JNI to set final fields.
+     * The names of all test methods that use JNI to set final fields.
      */
     static Stream<String> allMutationMethods() {
         return Stream.concat(mutateInstanceFieldMethods(), mutateStaticFieldMethods());
     }
 
     /**
-     * The names of two mutation methods. One uses JNI to set a final instance field.
-     * The other uses JNI to set a final static field.
+     * Returns the name of a test method that use JNI to set a final instance field.
      */
-    static Stream<String> twoMutationMethods() {
-        List<String> list1 = mutateInstanceFieldMethods().toList();
-        List<String> list2 = mutateStaticFieldMethods().toList();
-        var rand = new Random();
-        String instanceMethod = list1.get(rand.nextInt(list1.size()));
-        String staticMethod = list2.get(rand.nextInt(list2.size()));
-        return Stream.of(instanceMethod, staticMethod);
+    static String randomMutateInstanceFieldMethod() {
+        List<String> methods = mutateInstanceFieldMethods().toList();
+        return methods.get(ThreadLocalRandom.current().nextInt(methods.size()));
+    }
+
+    /**
+     * Returns the name of a test method that use JNI to set a final static field.
+     */
+    static String randomMutateStaticFieldMethod() {
+        List<String> methods = mutateStaticFieldMethods().toList();
+        return methods.get(ThreadLocalRandom.current().nextInt(methods.size()));
     }
 
     /**
@@ -115,31 +123,65 @@ class MutateFinalsTest {
     @ParameterizedTest
     @MethodSource("allMutationMethods")
     void testMutateFinal(String methodName) throws Exception {
-        assumeFalse(ManagementFactory.getRuntimeMXBean()
-                .getInputArguments()
-                .contains("-Xcheck:jni"), "Skip when running with -Xcheck:jni");
         MutateFinals.invoke(methodName);
     }
 
     /**
-     * Attempt to mutate final fields with JNI when running with -Xcheck:jni. The test
-     * launches a child VM with -Xcheck:jni and expects it to exit with a fatal error.
+     * Attempt to mutate a final instance field with JNI when running with -Xcheck:jni.
+     * The test launches a child VM with -Xcheck:jni and expects it to exit with a fatal
+     * error.
      *
-     * This test uses twoMutationMethods as the method source. This will test two JNI
-     * functions: one will attempt to mutate a final instance field, the other will
-     * attempt to mutate a final static field. This is preferrable than testing all JNI
-     * functions as it may be costly on some platforms/configurations to start a child VM
-     * and have it terminate with a fatal error.
+     * Note that this test only exercises one field mutation method as it may be costly
+     * on some platforms/configurations to start a child VM and have it terminate with a
+     * fatal error.
      */
-    @ParameterizedTest
-    @MethodSource("twoMutationMethods")
-    void testMutateFinalWithXCheckJni(String methodName) throws Exception {
-        test(methodName, "-Xcheck:jni")
+    @Test
+    void testMutateInstanceFinalWithXCheckJni() throws Exception {
+        test(randomMutateInstanceFieldMethod(), "-Xcheck:jni")
                 .shouldContain("FATAL ERROR in native method")
                 .shouldContain("attempting to mutate final")
                 .shouldNotHaveExitValue(0);
     }
 
+    /**
+     * Attempt to mutate a final static field with JNI when running with -Xcheck:jni. The
+     * test launches a child VM with -Xcheck:jni and expects it to exit with a fatal error.
+     */
+    @Test
+    void testMutateStaticFinalWithXCheckJni() throws Exception {
+        test(randomMutateStaticFieldMethod(), "-Xcheck:jni")
+                .shouldContain("FATAL ERROR in native method")
+                .shouldContain("attempting to mutate final")
+                .shouldNotHaveExitValue(0);
+    }
+
+    /**
+     * Mutate a final instance field with JNI and -Xlog, testing that output is logged.
+     */
+    @ParameterizedTest
+    @MethodSource("mutateInstanceFieldMethods")
+    void testMutateInstanceFinalWithLogging(String methodName) throws Exception {
+        String type = methodName.contains("Object") ? "Object" : "<Type>";
+        test(methodName, "-Xlog:jni=debug")
+                .shouldContain("[debug][jni] Set" + type + "Field mutated final instance field")
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Mutate a final static field with JNI and -Xlog, testing that output is logged.
+     */
+    @ParameterizedTest
+    @MethodSource("mutateStaticFieldMethods")
+    void testMutateStaticFinalWithLogging(String methodName) throws Exception {
+        String type = methodName.contains("Object") ? "Object" : "<Type>";
+        test(methodName, "-Xlog:jni=debug")
+                .shouldContain("[debug][jni] SetStatic" + type + "Field mutated final static field")
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Launches MutateFinals with the given method name as parameter, and the given VM options.
+     */
     private OutputAnalyzer test(String methodName, String... vmopts) throws Exception {
         Stream<String> s1 = Stream.of(
                 "-Djava.library.path=" + javaLibraryPath,
