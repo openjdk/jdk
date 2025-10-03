@@ -145,4 +145,14 @@ public:
   struct Test;                  // For private gtest access.
 };
 
+// Used by GC for calling Threads::possibly_parallel_oops_do.
+struct ThreadsClaimTokenScope : StackObj {
+  ThreadsClaimTokenScope() {
+    Threads::change_thread_claim_token();
+  }
+  ~ThreadsClaimTokenScope() {
+    Threads::assert_all_threads_claimed();
+  }
+};
+
 #endif // SHARE_RUNTIME_THREADS_HPP

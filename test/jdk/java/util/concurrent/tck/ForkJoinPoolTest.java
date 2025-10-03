@@ -31,9 +31,6 @@
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import static java.util.concurrent.TimeUnit.MILLISECONDS;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
-
 import java.security.PrivilegedAction;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -41,6 +38,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
@@ -51,12 +49,18 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.Future;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
+
+import static java.util.concurrent.TimeUnit.*;
 
 public class ForkJoinPoolTest extends JSR166TestCase {
     public static void main(String[] args) {
@@ -480,6 +484,57 @@ public class ForkJoinPoolTest extends JSR166TestCase {
             assertTrue(future.isDone());
             assertFalse(future.isCancelled());
         }
+    }
+
+    public void testCancellationExceptionInGet() throws Exception {
+        final ExecutorService e = new ForkJoinPool(1);
+        try (var cleaner = cleaner(e)) {
+            assertCancellationExceptionFrom(
+                e::submit,
+                f -> () -> f.get(1000, TimeUnit.SECONDS)
+            );
+            assertCancellationExceptionFrom(
+                e::submit,
+                f -> f::get
+            );
+            assertCancellationExceptionFrom(
+                c -> e.submit(() -> { try { c.call(); } catch (Exception ex) { throw new RuntimeException(ex); } }),
+                f -> () -> f.get(1000, TimeUnit.SECONDS)
+            );
+            assertCancellationExceptionFrom(
+                c -> e.submit(() -> { try { c.call(); } catch (Exception ex) { throw new RuntimeException(ex); } }),
+                f -> f::get
+            );
+        }
+    }
+
+    private void assertCancellationExceptionFrom(
+            Function<Callable<Void>, Future<?>> createTask,
+            Function<Future<?>, Callable<?>> getResult) throws Exception {
+        final var t = new AtomicReference<Thread>();
+        final var c = new CountDownLatch(1); // Only used to induce WAITING state (never counted down)
+        final var task = createTask.apply(() -> {
+            try {
+                t.set(Thread.currentThread());
+                c.await();
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();;
+            }
+            return null;
+        });
+        Thread taskThread;
+        while((taskThread = t.get()) == null || taskThread.getState() != Thread.State.WAITING) {
+            if (Thread.interrupted())
+                throw new InterruptedException();
+            Thread.onSpinWait();
+        }
+        task.cancel(true);
+        try {
+            getResult.apply(task).call();
+        } catch (CancellationException ce) {
+            return; // Success
+        }
+        shouldThrow();
     }
 
     /**

@@ -76,50 +76,95 @@ static uint& get_profile_ctr(int shift) {
 #endif // !PRODUCT
 
 void StubGenerator::generate_arraycopy_stubs() {
-  address entry;
-  address entry_jbyte_arraycopy;
-  address entry_jshort_arraycopy;
-  address entry_jint_arraycopy;
-  address entry_oop_arraycopy;
-  address entry_jlong_arraycopy;
-  address entry_checkcast_arraycopy;
+  // Some copy stubs publish a normal entry and then a 2nd 'fallback'
+  // entry immediately following their stack push. This can be used
+  // as a post-push branch target for compatible stubs when they
+  // identify a special case that can be handled by the fallback
+  // stub e.g a disjoint copy stub may be use as a special case
+  // fallback for its compatible conjoint copy stub.
+  //
+  // A no push entry is always returned in the following local and
+  // then published by assigning to the appropriate entry field in
+  // class StubRoutines. The entry value is then passed to the
+  // generator for the compatible stub. That means the entry must be
+  // listed when saving to/restoring from the AOT cache, ensuring
+  // that the inter-stub jumps are noted at AOT-cache save and
+  // relocated at AOT cache load.
+  address nopush_entry;
 
-  StubRoutines::_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(&entry);
-  StubRoutines::_jbyte_arraycopy           = generate_conjoint_byte_copy(entry, &entry_jbyte_arraycopy);
+  StubRoutines::_jbyte_disjoint_arraycopy  = generate_disjoint_byte_copy(&nopush_entry);
+  // disjoint nopush entry is needed by conjoint copy
+  StubRoutines::_jbyte_disjoint_arraycopy_nopush  = nopush_entry;
+  StubRoutines::_jbyte_arraycopy           = generate_conjoint_byte_copy(StubRoutines::_jbyte_disjoint_arraycopy_nopush, &nopush_entry);
+  // conjoint nopush entry is needed by generic/unsafe copy
+  StubRoutines::_jbyte_arraycopy_nopush    = nopush_entry;
 
-  StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(&entry);
-  StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(entry, &entry_jshort_arraycopy);
+  StubRoutines::_jshort_disjoint_arraycopy = generate_disjoint_short_copy(&nopush_entry);
+  // disjoint nopush entry is needed by conjoint copy
+  StubRoutines::_jshort_disjoint_arraycopy_nopush = nopush_entry;
+  StubRoutines::_jshort_arraycopy          = generate_conjoint_short_copy(StubRoutines::_jshort_disjoint_arraycopy_nopush, &nopush_entry);
+  // conjoint nopush entry is needed by generic/unsafe copy
+  StubRoutines::_jshort_arraycopy_nopush   = nopush_entry;
 
-  StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &entry);
-  StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(StubId::stubgen_jint_arraycopy_id, entry, &entry_jint_arraycopy);
+  StubRoutines::_jint_disjoint_arraycopy   = generate_disjoint_int_oop_copy(StubId::stubgen_jint_disjoint_arraycopy_id, &nopush_entry);
+  // disjoint nopush entry is needed by conjoint copy
+  StubRoutines::_jint_disjoint_arraycopy_nopush = nopush_entry;
+  StubRoutines::_jint_arraycopy            = generate_conjoint_int_oop_copy(StubId::stubgen_jint_arraycopy_id, StubRoutines::_jint_disjoint_arraycopy_nopush, &nopush_entry);
+  // conjoint nopush entry is needed by generic/unsafe copy
+  StubRoutines::_jint_arraycopy_nopush     = nopush_entry;
 
-  StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_jlong_disjoint_arraycopy_id, &entry);
-  StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_jlong_arraycopy_id, entry, &entry_jlong_arraycopy);
+  StubRoutines::_jlong_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_jlong_disjoint_arraycopy_id, &nopush_entry);
+  // disjoint nopush entry is needed by conjoint copy
+  StubRoutines::_jlong_disjoint_arraycopy_nopush  = nopush_entry;
+  StubRoutines::_jlong_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_jlong_arraycopy_id, StubRoutines::_jlong_disjoint_arraycopy_nopush, &nopush_entry);
+  // conjoint nopush entry is needed by generic/unsafe copy
+  StubRoutines::_jlong_arraycopy_nopush    = nopush_entry;
+
   if (UseCompressedOops) {
-    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &entry);
-    StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_id, entry, &entry_oop_arraycopy);
-    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_int_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_uninit_id, &entry);
-    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, entry, nullptr);
+    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_int_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_oop_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_oop_arraycopy           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_id, StubRoutines::_oop_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_oop_arraycopy_nopush    = nopush_entry;
+    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_int_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_uninit_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_oop_disjoint_arraycopy_uninit_nopush  = nopush_entry;
+    // note that we don't need a returned nopush entry because the
+    // generic/unsafe copy does not cater for uninit arrays.
+    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_int_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, StubRoutines::_oop_disjoint_arraycopy_uninit_nopush, nullptr);
   } else {
-    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &entry);
-    StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_id, entry, &entry_oop_arraycopy);
-    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_uninit_id, &entry);
-    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, entry, nullptr);
+    StubRoutines::_oop_disjoint_arraycopy  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_oop_disjoint_arraycopy_nopush  = nopush_entry;
+    StubRoutines::_oop_arraycopy           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_id, StubRoutines::_oop_disjoint_arraycopy_nopush, &nopush_entry);
+    // conjoint nopush entry is needed by generic/unsafe copy
+    StubRoutines::_oop_arraycopy_nopush    = nopush_entry;
+    StubRoutines::_oop_disjoint_arraycopy_uninit  = generate_disjoint_long_oop_copy(StubId::stubgen_oop_disjoint_arraycopy_uninit_id, &nopush_entry);
+    // disjoint nopush entry is needed by conjoint copy
+    StubRoutines::_oop_disjoint_arraycopy_uninit_nopush  = nopush_entry;
+    // note that we don't need a returned nopush entry because the
+    // generic/unsafe copy does not cater for uninit arrays.
+    StubRoutines::_oop_arraycopy_uninit           = generate_conjoint_long_oop_copy(StubId::stubgen_oop_arraycopy_uninit_id, StubRoutines::_oop_disjoint_arraycopy_uninit_nopush, nullptr);
   }
 
-  StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &entry_checkcast_arraycopy);
+  StubRoutines::_checkcast_arraycopy        = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_id, &nopush_entry);
+  // checkcast nopush entry is needed by generic copy
+  StubRoutines::_checkcast_arraycopy_nopush = nopush_entry;
+  // note that we don't need a returned nopush entry because the
+  // generic copy does not cater for uninit arrays.
   StubRoutines::_checkcast_arraycopy_uninit = generate_checkcast_copy(StubId::stubgen_checkcast_arraycopy_uninit_id, nullptr);
 
-  StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(entry_jbyte_arraycopy,
-                                                            entry_jshort_arraycopy,
-                                                            entry_jint_arraycopy,
-                                                            entry_jlong_arraycopy);
-  StubRoutines::_generic_arraycopy   = generate_generic_copy(entry_jbyte_arraycopy,
-                                                             entry_jshort_arraycopy,
-                                                             entry_jint_arraycopy,
-                                                             entry_oop_arraycopy,
-                                                             entry_jlong_arraycopy,
-                                                             entry_checkcast_arraycopy);
+  StubRoutines::_unsafe_arraycopy    = generate_unsafe_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                            StubRoutines::_jshort_arraycopy_nopush,
+                                                            StubRoutines::_jint_arraycopy_nopush,
+                                                            StubRoutines::_jlong_arraycopy_nopush);
+  StubRoutines::_generic_arraycopy   = generate_generic_copy(StubRoutines::_jbyte_arraycopy_nopush,
+                                                             StubRoutines::_jshort_arraycopy_nopush,
+                                                             StubRoutines::_jint_arraycopy_nopush,
+                                                             StubRoutines::_oop_arraycopy_nopush,
+                                                             StubRoutines::_jlong_arraycopy_nopush,
+                                                             StubRoutines::_checkcast_arraycopy_nopush);
 
   StubRoutines::_jbyte_fill = generate_fill(StubId::stubgen_jbyte_fill_id);
   StubRoutines::_jshort_fill = generate_fill(StubId::stubgen_jshort_fill_id);

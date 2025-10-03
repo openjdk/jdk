@@ -325,7 +325,6 @@ public:
 // RuntimeBlob: used for non-compiled method code (adapters, stubs, blobs)
 
 class RuntimeBlob : public CodeBlob {
-  friend class VMStructs;
  public:
 
   // Creation
@@ -405,7 +404,13 @@ class BufferBlob: public RuntimeBlob {
 
 class AdapterBlob: public BufferBlob {
 public:
-  static const int ENTRY_COUNT = 4;
+  enum Entry {
+    I2C,
+    C2I,
+    C2I_Unverified,
+    C2I_No_Clinit_Check,
+    ENTRY_COUNT
+  };
 private:
   AdapterBlob(int size, CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
   // _i2c_offset is always 0 so no need to store it
@@ -415,7 +420,10 @@ private:
 public:
   // Creation
   static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
-  void get_offsets(int entry_offset[ENTRY_COUNT]);
+  address i2c_entry() { return code_begin(); }
+  address c2i_entry() { return i2c_entry() + _c2i_offset; }
+  address c2i_unverified_entry() { return i2c_entry() + _c2i_unverified_offset; }
+  address c2i_no_clinit_check_entry() { return _c2i_no_clinit_check_offset == -1 ? nullptr : i2c_entry() + _c2i_no_clinit_check_offset; }
 };
 
 //---------------------------------------------------------------------------------------------------
@@ -625,7 +633,6 @@ class DeoptimizationBlob: public SingletonBlob {
 #ifdef COMPILER2
 
 class UncommonTrapBlob: public SingletonBlob {
-  friend class VMStructs;
  private:
   // Creation support
   UncommonTrapBlob(
@@ -649,7 +656,6 @@ class UncommonTrapBlob: public SingletonBlob {
 // ExceptionBlob: used for exception unwinding in compiled code (currently only used by Compiler 2)
 
 class ExceptionBlob: public SingletonBlob {
-  friend class VMStructs;
  private:
   // Creation support
   ExceptionBlob(
@@ -686,7 +692,6 @@ class ExceptionBlob: public SingletonBlob {
 // SafepointBlob: handles illegal_instruction exceptions during a safepoint
 
 class SafepointBlob: public SingletonBlob {
-  friend class VMStructs;
  private:
   // Creation support
   SafepointBlob(

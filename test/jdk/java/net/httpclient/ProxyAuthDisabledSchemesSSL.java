@@ -35,16 +35,29 @@
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=Basic,Digest
  *          -Djdk.http.auth.tunneling.disabledSchemes=Digest,Basic
- *          ProxyAuthDisabledSchemesSSL SSL
+ *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
+ *          -Djdk.internal.httpclient.debug=err
+ *          -Djdk.httpclient.HttpClient.log=headers
+ *          ProxyAuthDisabledSchemesSSL SSL SERVER307
+ * @run main/othervm/timeout=300
+ *          -Djdk.http.auth.proxying.disabledSchemes=Basic,Digest
+ *          -Djdk.http.auth.tunneling.disabledSchemes=Digest,Basic
+ *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
+ *          -Djdk.httpclient.HttpClient.log=headers
+ *          ProxyAuthDisabledSchemesSSL SSL SERVER PROXY
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=Basic
  *          -Djdk.http.auth.tunneling.disabledSchemes=Basic
  *          -Dtest.requiresHost=true
+ *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
+ *          -Djdk.httpclient.HttpClient.log=headers
  *          ProxyAuthDisabledSchemesSSL SSL PROXY
  * @run main/othervm/timeout=300
  *          -Djdk.http.auth.proxying.disabledSchemes=Digest
  *          -Djdk.http.auth.tunneling.disabledSchemes=Digest
  *          -Dtest.requiresHost=true
+ *          -Djdk.httpclient.http3.maxDirectConnectionTimeout=100
+ *          -Djdk.httpclient.HttpClient.log=headers
  *          ProxyAuthDisabledSchemesSSL SSL PROXY
  */
 

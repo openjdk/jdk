@@ -98,6 +98,10 @@ class AOTMapLogger : AllStatic {
   static void log_constant_pool_cache(ConstantPoolCache* cpc, address requested_addr,
                                       const char* type_name, int bytes, Thread* current);
   static void log_const_method(ConstMethod* cm, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name, int bytes,
+  Thread* current);
+  static void log_method_data(MethodData* md, address requested_addr, const char* type_name, int bytes,
+  Thread* current);
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);

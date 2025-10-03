@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,15 @@
  * @test
  * @bug 8028739
  * @summary javac generates incorrect descriptor for MethodHandle::invoke
- * @run testng MethodReferenceTestMethodHandle
+ * @run junit MethodReferenceTestMethodHandle
  */
 
 import java.lang.invoke.*;
 import java.util.*;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class MethodReferenceTestMethodHandle {
 
   MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -51,6 +50,7 @@ public class MethodReferenceTestMethodHandle {
       void apply(List st, int idx, Object v) throws Throwable;
   }
 
+    @Test
   public void testVirtual() throws Throwable {
 
       MethodType mt = MethodType.methodType(String.class, char.class, char.class);
@@ -69,6 +69,7 @@ public class MethodReferenceTestMethodHandle {
       assertEquals("oome otring to oearch", ((ReplaceItf) ms::invoke).apply("some string to search", 's', 'o'));
   }
 
+    @Test
   public void testStatic() throws Throwable {
       MethodType fmt = MethodType.methodType(String.class, String.class, (new Object[1]).getClass());
       MethodHandle fms = lookup.findStatic(String.class, "format", fmt);
@@ -83,6 +84,7 @@ public class MethodReferenceTestMethodHandle {
       assertEquals("Testing One 2 3 four", ff2.apply("Testing %s %d %x %s", "One", new Integer(2), 3, "four"));
   }
 
+    @Test
   public void testVoid() throws Throwable {
       MethodType pmt = MethodType.methodType(void.class, int.class, Object.class);
       MethodHandle pms = lookup.findVirtual(List.class, "add", pmt);

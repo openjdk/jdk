@@ -37,7 +37,6 @@ class ClassFileParser;
 // the list later?
 
 class InstanceClassLoaderKlass: public InstanceKlass {
-  friend class VMStructs;
   friend class InstanceKlass;
 public:
   static const KlassKind Kind = InstanceClassLoaderKlassKind;

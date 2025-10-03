@@ -949,9 +949,6 @@ public class TestResolvedJavaType extends TypeUniverse {
      * Replicates the semantics of jdk.internal.reflect.Reflection#fieldFilterMap.
      */
     private static boolean isHiddenFromReflection(ResolvedJavaField f) {
-        if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(ConstantPool.class)) && f.getName().equals("constantPoolOop")) {
-            return true;
-        }
         if (f.getDeclaringClass().equals(metaAccess.lookupJavaType(Class.class))) {
             String name = f.getName();
             return name.equals("classLoader") ||

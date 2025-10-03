@@ -170,7 +170,7 @@ public final class InstructionConst {
     public static final LocalVariableInstruction ISTORE_2 = new ISTORE(2);
 
     /**
-     * Get object via its opcode, for immutable instructions like branch instructions entries are set to null.
+     * Gets object via its opcode, for immutable instructions like branch instructions entries are set to null.
      */
     static final Instruction[] INSTRUCTIONS = new Instruction[256];
 

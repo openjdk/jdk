@@ -81,15 +81,28 @@ void SuspendResumeManager::set_suspended(bool is_suspend, bool register_vthread_
   AtomicAccess::store(&_suspended, is_suspend);
 }
 
+void SuspendResumeManager::set_suspended_current_thread(int64_t vthread_id, bool register_vthread_SR) {
+  assert(_target == JavaThread::current(), "should be current thread");
+#if INCLUDE_JVMTI
+  if (register_vthread_SR) {
+    assert(_target->is_vthread_mounted(), "sanity check");
+    JvmtiVTSuspender::register_vthread_suspend(vthread_id);
+  }
+#endif
+  AtomicAccess::store(&_suspended, true);
+}
+
 bool SuspendResumeManager::suspend(bool register_vthread_SR) {
   JVMTI_ONLY(assert(!_target->is_in_VTMS_transition(), "no suspend allowed in VTMS transition");)
   JavaThread* self = JavaThread::current();
   if (_target == self) {
     // If target is the current thread we can bypass the handshake machinery
-    // and just suspend directly
+    // and just suspend directly.
+    // The vthread() oop must only be accessed before state is set to _thread_blocked.
+    int64_t id = java_lang_Thread::thread_id(_target->vthread());
     ThreadBlockInVM tbivm(self);
     MutexLocker ml(_state_lock, Mutex::_no_safepoint_check_flag);
-    set_suspended(true, register_vthread_SR);
+    set_suspended_current_thread(id, register_vthread_SR);
     do_owner_suspend();
     return true;
   } else {

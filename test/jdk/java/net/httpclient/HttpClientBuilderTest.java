@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @bug 8209137 8326233
+ * @bug 8209137 8326233 8367112
  * @summary HttpClient[.Builder] API and behaviour checks
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
@@ -271,6 +271,20 @@ public class HttpClientBuilderTest {
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().sslParameters().getProtocols()[0].equals("C"));
         }
+        SSLParameters d = new SSLParameters();
+        d.setSignatureSchemes(new String[] { "C" });
+        builder.sslParameters(d);
+        d.setSignatureSchemes(new String[] { "D" });
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getSignatureSchemes()[0].equals("C"));
+        }
+        SSLParameters e = new SSLParameters();
+        e.setNamedGroups(new String[] { "C" });
+        builder.sslParameters(e);
+        e.setNamedGroups(new String[] { "D" });
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().sslParameters().getNamedGroups()[0].equals("C"));
+        }
         // test defaults for needClientAuth and wantClientAuth
         builder.sslParameters(new SSLParameters());
         try (var closer = closeable(builder)) {
@@ -343,6 +357,13 @@ public class HttpClientBuilderTest {
     @Test
     public void testVersion() {
         HttpClient.Builder builder = HttpClient.newBuilder();
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_2);
+        }
+        builder.version(Version.HTTP_3);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_3);
+        }
         builder.version(Version.HTTP_2);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().version() == Version.HTTP_2);
@@ -352,6 +373,10 @@ public class HttpClientBuilderTest {
             assertTrue(closer.build().version() == Version.HTTP_1_1);
         }
         assertThrows(NPE, () -> builder.version(null));
+        builder.version(Version.HTTP_3);
+        try (var closer = closeable(builder)) {
+            assertTrue(closer.build().version() == Version.HTTP_3);
+        }
         builder.version(Version.HTTP_2);
         try (var closer = closeable(builder)) {
             assertTrue(closer.build().version() == Version.HTTP_2);

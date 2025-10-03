@@ -25,8 +25,14 @@
  * @bug 8177552 8217721 8222756 8295372 8306116 8319990 8338690 8363972
  * @summary Checks the functioning of compact number format
  * @modules jdk.localedata
- * @run testng/othervm TestCompactNumber
+ * @run junit/othervm TestCompactNumber
  */
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.FieldPosition;
@@ -36,10 +42,11 @@ import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.Locale;
 import java.util.stream.Stream;
-import static org.testng.Assert.*;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCompactNumber {
 
     private static final NumberFormat FORMAT_DZ_LONG = NumberFormat
@@ -106,7 +113,6 @@ public class TestCompactNumber {
         FORMAT_PT_LONG_FD4.setMaximumFractionDigits(4);
     }
 
-    @DataProvider(name = "format")
     Object[][] compactFormatData() {
         return new Object[][]{
             // compact number format instance, number to format, formatted output
@@ -378,7 +384,6 @@ public class TestCompactNumber {
         };
     }
 
-    @DataProvider(name = "parse")
     Object[][] compactParseData() {
         return new Object[][]{
                 // compact number format instance, string to parse, parsed number, return type
@@ -491,7 +496,6 @@ public class TestCompactNumber {
         };
     }
 
-    @DataProvider(name = "exceptionParse")
     Object[][] exceptionParseData() {
         return new Object[][]{
             // compact number instance, string to parse, null (no o/p; must throw exception)
@@ -508,7 +512,6 @@ public class TestCompactNumber {
         };
     }
 
-    @DataProvider(name = "invalidParse")
     Object[][] invalidParseData() {
         return new Object[][]{
             // compact number instance, string to parse, parsed number
@@ -542,7 +545,6 @@ public class TestCompactNumber {
         };
     }
 
-    @DataProvider(name = "fieldPosition")
     Object[][] formatFieldPositionData() {
         return new Object[][]{
             //compact number instance, number to format, field, start position, end position, formatted string
@@ -588,7 +590,6 @@ public class TestCompactNumber {
             {FORMAT_SE_SHORT, new BigDecimal("-48982865901234567890.98"), NumberFormat.Field.INTEGER, 1, 9, "\u221248982866\u00a0bn"},};
     }
 
-    @DataProvider(name = "varParsePosition")
     Object[][] varParsePosition() {
         return new Object[][]{
                 // compact number instance, parse string, parsed number,
@@ -616,73 +617,82 @@ public class TestCompactNumber {
     }
 
     @Test
-    public void testInstanceCreation() {
+    void testInstanceCreation() {
         Stream.of(NumberFormat.getAvailableLocales()).forEach(l -> NumberFormat
                 .getCompactNumberInstance(l, NumberFormat.Style.SHORT).format(10000));
         Stream.of(NumberFormat.getAvailableLocales()).forEach(l -> NumberFormat
                 .getCompactNumberInstance(l, NumberFormat.Style.LONG).format(10000));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testFormatWithNullParam() {
-        FORMAT_EN_US_SHORT.format(null);
+    @Test
+    void testFormatWithNullParam() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            FORMAT_EN_US_SHORT.format(null);
+        });
     }
 
-    @Test(dataProvider = "format")
-    public void testFormat(NumberFormat cnf, Object number,
+    @ParameterizedTest
+    @MethodSource("compactFormatData")
+    void testFormat(NumberFormat cnf, Object number,
             String expected) {
         CompactFormatAndParseHelper.testFormat(cnf, number, expected);
     }
 
-    @Test(dataProvider = "parse")
-    public void testParse(NumberFormat cnf, String parseString,
+    @ParameterizedTest
+    @MethodSource("compactParseData")
+    void testParse(NumberFormat cnf, String parseString,
             Number expected, Class<? extends Number> returnType) throws ParseException {
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, returnType);
     }
 
-    @Test(dataProvider = "parse")
-    public void testParsePosition(NumberFormat cnf, String parseString,
+    @ParameterizedTest
+    @MethodSource("compactParseData")
+    void testParsePosition(NumberFormat cnf, String parseString,
             Number expected, Class<? extends Number> returnType) throws ParseException {
         ParsePosition pos = new ParsePosition(0);
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, pos, returnType);
-        assertEquals(pos.getIndex(), parseString.length());
-        assertEquals(pos.getErrorIndex(), -1);
+        assertEquals(parseString.length(), pos.getIndex());
+        assertEquals(-1, pos.getErrorIndex());
     }
 
-    @Test(dataProvider = "varParsePosition")
-    public void testVarParsePosition(NumberFormat cnf, String parseString,
+    @ParameterizedTest
+    @MethodSource("varParsePosition")
+    void testVarParsePosition(NumberFormat cnf, String parseString,
             Number expected, int startPosition, int indexPosition,
             int errPosition) throws ParseException {
         ParsePosition pos = new ParsePosition(startPosition);
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, pos, null);
-        assertEquals(pos.getIndex(), indexPosition);
-        assertEquals(pos.getErrorIndex(), errPosition);
+        assertEquals(indexPosition, pos.getIndex());
+        assertEquals(errPosition, pos.getErrorIndex());
     }
 
-    @Test(dataProvider = "exceptionParse", expectedExceptions = ParseException.class)
-    public void throwsParseException(NumberFormat cnf, String parseString,
+    @ParameterizedTest
+    @MethodSource("exceptionParseData")
+    void throwsParseException(NumberFormat cnf, String parseString,
+            Number expected) {
+        assertThrows(ParseException.class, () -> CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidParseData")
+    void testInvalidParse(NumberFormat cnf, String parseString,
             Number expected) throws ParseException {
         CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, null);
     }
 
-    @Test(dataProvider = "invalidParse")
-    public void testInvalidParse(NumberFormat cnf, String parseString,
-            Number expected) throws ParseException {
-        CompactFormatAndParseHelper.testParse(cnf, parseString, expected, null, null);
-    }
-
-    @Test(dataProvider = "fieldPosition")
-    public void testFormatWithFieldPosition(NumberFormat nf,
+    @ParameterizedTest
+    @MethodSource("formatFieldPositionData")
+    void testFormatWithFieldPosition(NumberFormat nf,
             Object number, Format.Field field, int posStartExpected,
             int posEndExpected, String expected) {
         FieldPosition pos = new FieldPosition(field);
         StringBuffer buf = new StringBuffer();
         StringBuffer result = nf.format(number, buf, pos);
-        assertEquals(result.toString(), expected, "Incorrect formatting of the number '"
+        assertEquals(expected, result.toString(), "Incorrect formatting of the number '"
                 + number + "'");
-        assertEquals(pos.getBeginIndex(), posStartExpected, "Incorrect start position"
+        assertEquals(posStartExpected, pos.getBeginIndex(), "Incorrect start position"
                 + " while formatting the number '" + number + "', for the field " + field);
-        assertEquals(pos.getEndIndex(), posEndExpected, "Incorrect end position"
+        assertEquals(posEndExpected, pos.getEndIndex(), "Incorrect end position"
                 + " while formatting the number '" + number + "', for the field " + field);
     }
 

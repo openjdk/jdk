@@ -48,27 +48,27 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
   }
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
-  assert_different_registers(hdr, obj, disp_hdr, temp, t0, t1);
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register basic_lock, Register temp, Label& slow_case) {
+  assert_different_registers(hdr, obj, basic_lock, temp, t0, t1);
   int null_check_offset = -1;
 
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  sd(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  sd(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
 
   null_check_offset = offset();
 
-  lightweight_lock(disp_hdr, obj, hdr, temp, t1, slow_case);
+  lightweight_lock(basic_lock, obj, hdr, temp, t1, slow_case);
 
   return null_check_offset;
 }
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
-  assert_different_registers(hdr, obj, disp_hdr, temp, t0, t1);
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic_lock, Register temp, Label& slow_case) {
+  assert_different_registers(hdr, obj, basic_lock, temp, t0, t1);
 
   // load object
-  ld(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
+  ld(obj, Address(basic_lock, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
   lightweight_unlock(obj, hdr, temp, t1, slow_case);

@@ -291,7 +291,7 @@ public final class MetadataRepository {
         }
     }
 
-    synchronized boolean isEnabled(String eventName) {
+    boolean isEnabled(String eventName) {
         return settingsManager.isEnabled(eventName);
     }
 

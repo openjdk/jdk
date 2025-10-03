@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,8 +29,8 @@ import com.sun.org.apache.bcel.internal.Const;
 /**
  * This class is derived from the abstract {@link Constant} and represents a reference to a float object.
  *
- * @see     Constant
- * @LastModified: Jun 2019
+ * @see Constant
+ * @LastModified: Sept 2025
  */
 public final class ConstantFloat extends Constant implements ConstantObject {
 

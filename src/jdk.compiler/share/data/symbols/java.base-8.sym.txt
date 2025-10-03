@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1711,6 +1711,7 @@ field name SHARADA descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 field name TAKRI descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 field name MIAO descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 field name ARABIC_MATHEMATICAL_ALPHABETIC_SYMBOLS descriptor Ljava/lang/Character$UnicodeBlock; flags 19
+field name CJK_UNIFIED_IDEOGRAPHS_EXTENSION_E descriptor Ljava/lang/Character$UnicodeBlock; flags 19
 method name of descriptor (C)Ljava/lang/Character$UnicodeBlock; flags 9
 method name of descriptor (I)Ljava/lang/Character$UnicodeBlock; flags 9
 method name forName descriptor (Ljava/lang/String;)Ljava/lang/Character$UnicodeBlock; flags 19
@@ -2078,7 +2079,7 @@ field name POSITIVE_INFINITY descriptor F constantValue Infinity flags 19
 field name NEGATIVE_INFINITY descriptor F constantValue -Infinity flags 19
 field name NaN descriptor F constantValue NaN flags 19
 field name MAX_VALUE descriptor F constantValue 3.4028235E38 flags 19
-field name MIN_NORMAL descriptor F constantValue 1.17549435E-38 flags 19
+field name MIN_NORMAL descriptor F constantValue 1.1754944E-38 flags 19
 field name MIN_VALUE descriptor F constantValue 1.4E-45 flags 19
 field name MAX_EXPONENT descriptor I constantValue 127 flags 19
 field name MIN_EXPONENT descriptor I constantValue -126 flags 19
@@ -3574,6 +3575,7 @@ method name get descriptor ()Ljava/lang/Object; flags 1 signature ()TT;
 method name clear descriptor ()V flags 1
 method name isEnqueued descriptor ()Z flags 1
 method name enqueue descriptor ()Z flags 1
+method name clone descriptor ()Ljava/lang/Object; thrownTypes java/lang/CloneNotSupportedException flags 4
 
 class name java/lang/ref/ReferenceQueue
 header extends java/lang/Object flags 21 signature <T:Ljava/lang/Object;>Ljava/lang/Object; classAnnotations @Ljdk/Profile+Annotation;(value=I1)

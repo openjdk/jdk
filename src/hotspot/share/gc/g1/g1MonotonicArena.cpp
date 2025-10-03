@@ -34,7 +34,7 @@ G1MonotonicArena::Segment::Segment(uint slot_size, uint num_slots, Segment* next
   _next(next),
   _next_allocate(0),
   _mem_tag(mem_tag) {
-  _bottom = ((char*) this) + header_size();
+  guarantee(is_aligned(this, SegmentPayloadMaxAlignment), "Make sure Segments are always created at correctly aligned memory");
 }
 
 G1MonotonicArena::Segment* G1MonotonicArena::Segment::create_segment(uint slot_size,

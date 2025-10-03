@@ -106,13 +106,6 @@ public class ConstantPool {
   // Internals only below this point
   //
 
-  static {
-      Reflection.registerFieldsToFilter(ConstantPool.class, Set.of("constantPoolOop"));
-  }
-
-  // HotSpot-internal constant pool object (set by the VM, name known to the VM)
-  private Object constantPoolOop;
-
   private native int      getSize0            ();
   private native Class<?> getClassAt0         (int index);
   private native Class<?> getClassAtIfLoaded0 (int index);

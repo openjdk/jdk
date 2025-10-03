@@ -26,14 +26,18 @@ import java.net.*;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
 
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import org.testng.annotations.AfterClass;
@@ -45,6 +49,12 @@ import javax.net.ssl.SSLContext;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ANY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.Http3DiscoveryMode.ALT_SVC;
+import static java.net.http.HttpOption.H3_DISCOVERY;
+import static org.testng.Assert.*;
 
 /*
  * @test
@@ -52,9 +62,9 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @summary AuthenticationFilter.Cache::remove may throw ConcurrentModificationException
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
- *        DigestEchoServer jdk.httpclient.test.lib.common.TestServerConfigurator
+ *        DigestEchoServer ReferenceTracker jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run testng/othervm -Dtest.requiresHost=true
- * -Djdk.httpclient.HttpClient.log=headers
+ * -Djdk.httpclient.HttpClient.log=requests,headers,errors,quic
  * -Djdk.internal.httpclient.debug=false
  * AuthFilterCacheTest
  */
@@ -63,7 +73,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
 
     static final String RESPONSE_BODY = "Hello World!";
     static final int REQUEST_COUNT = 5;
-    static final int URI_COUNT = 6;
+    static final int URI_COUNT = 8;
     static final CyclicBarrier barrier = new CyclicBarrier(REQUEST_COUNT * URI_COUNT);
     static final SSLContext context;
 
@@ -80,11 +90,15 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
     HttpTestServer http2Server;
     HttpTestServer https1Server;
     HttpTestServer https2Server;
+    HttpTestServer h3onlyServer;
+    HttpTestServer h3altSvcServer;
     DigestEchoServer.TunnelingProxy proxy;
     URI http1URI;
     URI https1URI;
     URI http2URI;
     URI https2URI;
+    URI h3onlyURI;
+    URI h3altSvcURI;
     InetSocketAddress proxyAddress;
     ProxySelector proxySelector;
     MyAuthenticator auth;
@@ -101,14 +115,15 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                         https1URI.resolve("proxy/orig/"),
                         http2URI.resolve("direct/orig/"),
                         https2URI.resolve("direct/orig/"),
-                        https2URI.resolve("proxy/orig/"))}
+                        https2URI.resolve("proxy/orig/"),
+                        h3onlyURI.resolve("direct/orig/"),
+                        h3altSvcURI.resolve("direct/orig/"))}
         };
         return uris;
     }
 
     public HttpClient newHttpClient(ProxySelector ps, Authenticator auth) {
-        HttpClient.Builder builder = HttpClient
-                .newBuilder()
+        HttpClient.Builder builder = newClientBuilderForH3()
                 .executor(virtualExecutor)
                 .sslContext(context)
                 .authenticator(auth)
@@ -154,11 +169,33 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             https2URI = new URI("https://" + https2Server.serverAuthority()
                     + "/AuthFilterCacheTest/https2/");
 
+            h3onlyServer = HttpTestServer.create(HTTP_3_URI_ONLY, SSLContext.getDefault());
+            h3onlyServer.addHandler(new TestHandler(), "/AuthFilterCacheTest/h3-only/");
+            h3onlyURI = new URI("https://" + h3onlyServer.serverAuthority()
+                    + "/AuthFilterCacheTest/h3-only/");
+            h3onlyServer.start();
+
+            h3altSvcServer = HttpTestServer.create(ANY, SSLContext.getDefault());
+            h3altSvcServer.addHandler(new TestHandler(), "/AuthFilterCacheTest/h3-alt-svc/");
+            h3altSvcServer.addHandler(new HttpHeadOrGetHandler(RESPONSE_BODY),
+                    "/AuthFilterCacheTest/h3-alt-svc/direct/head/");
+            h3altSvcURI = new URI("https://" + h3altSvcServer.serverAuthority()
+                    + "/AuthFilterCacheTest/h3-alt-svc/");
+            h3altSvcServer.start();
+
             proxy = DigestEchoServer.createHttpsProxyTunnel(
                     DigestEchoServer.HttpAuthSchemeType.NONE);
             proxyAddress = proxy.getProxyAddress();
             proxySelector = new HttpProxySelector(proxyAddress);
             client = newHttpClient(proxySelector, auth);
+
+            HttpRequest headRequest = HttpRequest.newBuilder(h3altSvcURI.resolve("direct/head/h2"))
+                    .HEAD()
+                    .version(HTTP_2).build();
+            System.out.println("Sending head request: " + headRequest);
+            var headResponse = client.send(headRequest, BodyHandlers.ofString());
+            assertEquals(headResponse.statusCode(), 200);
+            assertEquals(headResponse.version(), HTTP_2);
 
             System.out.println("Setup: done");
         } catch (Exception x) {
@@ -177,6 +214,8 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         https1Server = stop(https1Server, HttpTestServer::stop);
         http2Server = stop(http2Server, HttpTestServer::stop);
         https2Server = stop(https2Server, HttpTestServer::stop);
+        h3onlyServer = stop(h3onlyServer, HttpTestServer::stop);
+        h3altSvcServer = stop(h3altSvcServer, HttpTestServer::stop);
         client.close();
         virtualExecutor.close();
 
@@ -229,6 +268,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         @Override
         public void handle(HttpTestExchange t) throws IOException {
             var count = respCounter.incrementAndGet();
+            System.out.println("Server got request: " + t.getRequestURI());
             System.out.println("Responses handled: " + count);
             t.getRequestBody().readAllBytes();
 
@@ -237,15 +277,19 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
                     t.getResponseHeaders()
                             .addHeader("WWW-Authenticate", "Basic realm=\"Earth\"");
                     t.sendResponseHeaders(401, 0);
+                    System.out.println("Server sent 401 for " + t.getRequestURI());
                 } else {
                     byte[] resp = RESPONSE_BODY.getBytes(StandardCharsets.UTF_8);
                     t.sendResponseHeaders(200, resp.length);
+                    System.out.println("Server sent 200 for " + t.getRequestURI() + "; awaiting barrier");
                     try {
                         barrier.await();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         throw new IOException(e);
                     }
                     t.getResponseBody().write(resp);
+                    System.out.println("Server sent body for " + t.getRequestURI());
                 }
             }
             t.close();
@@ -255,23 +299,54 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
     void doClient(List<URI> uris) {
         assert uris.size() == URI_COUNT;
         barrier.reset();
-        System.out.println("Client opening connection to: " + uris.toString());
+        System.out.println("Client will connect " + REQUEST_COUNT + " times to: "
+                + uris.stream().map(URI::toString)
+                .collect(Collectors.joining("\n\t", "\n\t", "\n")));
 
         List<CompletableFuture<HttpResponse<String>>> cfs = new ArrayList<>();
 
+        int count = 0;
         for (int i = 0; i < REQUEST_COUNT; i++) {
             for (URI uri : uris) {
-                HttpRequest req = HttpRequest.newBuilder()
-                        .uri(uri)
-                        .build();
-                cfs.add(client.sendAsync(req, HttpResponse.BodyHandlers.ofString()));
+                String uriStr = uri.toString() + (++count);
+                var builder = HttpRequest.newBuilder()
+                        .uri(URI.create(uriStr));
+                var config = uriStr.contains("h3-only") ? HTTP_3_URI_ONLY
+                        : uriStr.contains("h3-alt-svc") ? ALT_SVC
+                        : null;
+                if (config != null) {
+                    builder = builder.setOption(H3_DISCOVERY, config).version(HTTP_3);
+                } else {
+                    builder = builder.version(HTTP_2);
+                }
+                HttpRequest req = builder.build();
+                System.out.printf("Sending request %s (version=%s, config=%s)%n",
+                        req, req.version(), config);
+                cfs.add(client.sendAsync(req, HttpResponse.BodyHandlers.ofString())
+                        .handleAsync((r, t) -> logResponse(req, r, t))
+                        .thenCompose(Function.identity()));
             }
         }
         CompletableFuture.allOf(cfs.toArray(new CompletableFuture[0])).join();
     }
 
+    CompletableFuture<HttpResponse<String>> logResponse(HttpRequest req,
+                                                        HttpResponse<String> resp,
+                                                        Throwable t) {
+        if (t != null) {
+            System.out.printf("Request failed: %s (version=%s, config=%s): %s%n",
+                    req, req.version(), req.getOption(H3_DISCOVERY).orElse(null), t);
+            t.printStackTrace(System.out);
+            return CompletableFuture.failedFuture(t);
+        } else {
+            System.out.printf("Request succeeded: %s (version=%s, config=%s): %s%n",
+                    req, req.version(), req.getOption(H3_DISCOVERY).orElse(null), resp);
+            return CompletableFuture.completedFuture(resp);
+        }
+    }
+
     static final class MyAuthenticator extends Authenticator {
-        private int count = 0;
+        private final AtomicInteger count = new AtomicInteger();
 
         MyAuthenticator() {
             super();
@@ -294,7 +369,7 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
             PasswordAuthentication passwordAuthentication;
             int count;
             synchronized (this) {
-                count = ++this.count;
+                count = this.count.incrementAndGet();
                 passwordAuthentication = super.requestPasswordAuthenticationInstance(
                         host, addr, port, protocol, prompt, scheme, url, reqType);
             }
@@ -304,13 +379,17 @@ public class AuthFilterCacheTest implements HttpServerAdapters {
         }
 
         public int getCount() {
-            return count;
+            return count.get();
         }
     }
 
     @Test(dataProvider = "uris")
     public void test(List<URI> uris) throws Exception {
-        System.out.println("Server listening at " + uris.toString());
+        System.out.println("Servers listening at "
+                + uris.stream().map(URI::toString)
+                .collect(Collectors.joining("\n\t", "\n\t", "\n")));
+        System.out.println("h3-alt-svc server listening for h3 at: "
+                + h3altSvcServer.getH3AltService().map(s -> s.getAddress()).orElse(null));
         doClient(uris);
     }
 }

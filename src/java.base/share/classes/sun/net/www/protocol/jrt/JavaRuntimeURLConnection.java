@@ -87,8 +87,8 @@ public class JavaRuntimeURLConnection extends URLConnection {
             if (module.isEmpty() || path == null) {
                 throw new IOException("cannot connect to jrt:/" + module);
             }
-            Node node = READER.findNode("/modules/" + module + "/" + path);
-            if (node == null || !node.isResource()) {
+            Node node = READER.findResourceNode(module, path);
+            if (node == null) {
                 throw new IOException(module + "/" + path + " not found");
             }
             this.resourceNode = node;

@@ -203,7 +203,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::drain_stacks_depth(bool totally_drain) {
+void PSPromotionManager::drain_stacks(bool totally_drain) {
   const uint threshold = totally_drain ? 0
                                        : _target_stack_size;
 

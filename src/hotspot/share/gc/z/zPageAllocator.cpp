@@ -1051,7 +1051,6 @@ void ZPartition::copy_physical_segments_from_partition(const ZVirtualMemory& at,
 
   ZPhysicalMemoryManager& manager = physical_memory_manager();
 
-
   // Copy segments
   manager.copy_physical_segments(to, at);
 }
@@ -1061,7 +1060,6 @@ void ZPartition::commit_increased_capacity(ZMemoryAllocation* allocation, const 
 
   const size_t already_committed = allocation->harvested();
 
-  const ZVirtualMemory already_committed_vmem = vmem.first_part(already_committed);
   const ZVirtualMemory to_be_committed_vmem = vmem.last_part(already_committed);
 
   // Try to commit the uncommitted physical memory
@@ -1423,7 +1421,6 @@ ZPage* ZPageAllocator::alloc_page(ZPageType type, size_t size, ZAllocationFlags 
   const ZPageAllocationStats stats = allocation.stats();
   const int num_harvested_vmems = stats._num_harvested_vmems;
   const size_t harvested = stats._total_harvested;
-  const size_t committed = stats._total_committed_capacity;
 
   if (harvested > 0) {
     ZStatInc(ZCounterMappedCacheHarvest, harvested);
@@ -1963,9 +1960,6 @@ void ZPageAllocator::cleanup_failed_commit_multi_partition(ZMultiPartitionAlloca
       // Nothing committed, nothing more to cleanup
       continue;
     }
-
-    // Remove the harvested part
-    const ZVirtualMemory non_harvest_vmem = partial_vmem.last_part(allocation->harvested());
 
     ZArray<ZVirtualMemory>* const partial_vmems = allocation->partial_vmems();
 

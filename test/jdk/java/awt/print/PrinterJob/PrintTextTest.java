@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6425068 7157659 8029204 8132890 8148334 8344637
+ * @bug 6425068 7156751 7157659 8029204 8132890 8148334 8344637
  * @key printer
  * @summary Confirm that text prints where we expect to the length we expect.
  * @library /java/awt/regtesthelpers

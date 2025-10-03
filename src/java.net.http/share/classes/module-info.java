@@ -75,6 +75,18 @@
  * <li><p><b>{@systemProperty jdk.httpclient.hpack.maxheadertablesize}</b> (default: 16384 or
  * 16 kB)<br> The HTTP/2 client maximum HPACK header table size in bytes.
  * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.qpack.decoderMaxTableCapacity}</b> (default: 0)
+ * <br> The HTTP/3 client maximum QPACK decoder dynamic header table size in bytes.
+ * <br> Setting this value to a positive number will allow HTTP/3 servers to add entries
+ * to the QPack decoder's dynamic table. When set to 0, servers are not permitted to add
+ * entries to the client's QPack encoder's dynamic table.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.qpack.encoderTableCapacityLimit}</b> (default: 4096,
+ * or 4 kB)
+ * <br> The HTTP/3 client maximum QPACK encoder dynamic header table size in bytes.
+ * <br> Setting this value to a positive number allows the HTTP/3 client's QPack encoder to
+ * add entries to the server's QPack decoder's dynamic table, if the server permits it.
+ * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.HttpClient.log}</b> (default: none)<br>
  * Enables high-level logging of various events through the {@linkplain java.lang.System.Logger
  * Platform Logging API}. The value contains a comma-separated list of any of the
@@ -88,6 +100,8 @@
  *   <li>ssl</li>
  *   <li>trace</li>
  *   <li>channel</li>
+ *   <li>http3</li>
+ *   <li>quic</li>
  * </ul><br>
  * You can append the frames item with a colon-separated list of any of the following items:
  * <ul>
@@ -96,20 +110,46 @@
  *   <li>window</li>
  *   <li>all</li>
  * </ul><br>
+ * You can append the quic item with a colon-separated list of any of the following items;
+ * packets are logged in an abridged form that only shows frames offset and length,
+ * but not content:
+ * <ul>
+ *   <li>ack: packets containing ack frames will be logged</li>
+ *   <li>cc: information on congestion control will be logged</li>
+ *   <li>control: packets containing quic controls (such as frames affecting
+ *                flow control, or frames opening or closing streams)
+ *                will be logged</li>
+ *   <li>crypto: packets containing crypto frames will be logged</li>
+ *   <li>data: packets containing stream frames will be logged</li>
+ *   <li>dbb: information on direct byte buffer usage will be logged</li>
+ *   <li>ping: packets containing ping frames will be logged</li>
+ *   <li>processed: information on flow control (processed bytes) will be logged</li>
+ *   <li>retransmit: information on packet loss and recovery will be logged</li>
+ *   <li>timer: information on send task scheduling will be logged</li>
+ *   <li>all</li>
+ * </ul><br>
  * Specifying an item adds it to the HTTP client's log. For example, if you specify the
  * following value, then the Platform Logging API logs all possible HTTP Client events:<br>
  * "errors,requests,headers,frames:control:data:window,ssl,trace,channel"<br>
  * Note that you can replace control:data:window with all. The name of the logger is
  * "jdk.httpclient.HttpClient", and all logging is at level INFO.
+ * To debug issues with the quic protocol a good starting point is to specify
+ * {@code quic:control:retransmit}.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout}</b> (default: 30)<br>
- * The number of seconds to keep idle HTTP connections alive in the keep alive cache. This
- * property applies to both HTTP/1.1 and HTTP/2. The value for HTTP/2 can be overridden
- * with the {@code jdk.httpclient.keepalive.timeout.h2 property}.
+ * The number of seconds to keep idle HTTP connections alive in the keep alive cache.
+ * By default this property applies to HTTP/1.1, HTTP/2 and HTTP/3.
+ * The value for HTTP/2 and HTTP/3 can be overridden with the
+ * {@code jdk.httpclient.keepalive.timeout.h2} and {@code jdk.httpclient.keepalive.timeout.h3}
+ * properties respectively. The value specified for HTTP/2 acts as default value for HTTP/3.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h2}</b> (default: see
  * below)<br>The number of seconds to keep idle HTTP/2 connections alive. If not set, then the
  * {@code jdk.httpclient.keepalive.timeout} setting is used.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.keepalive.timeout.h3}</b> (default: see
+ * below)<br>The number of seconds to keep idle HTTP/3 connections alive. If not set, then the
+ * {@code jdk.httpclient.keepalive.timeout.h2} setting is used.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxframesize}</b> (default: 16384 or 16kB)<br>
  * The HTTP/2 client maximum frame size in bytes. The server is not permitted to send a frame
@@ -117,10 +157,10 @@
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxLiteralWithIndexing}</b> (default: 512)<br>
  * The maximum number of header field lines (header name and value pairs) that a
- * client is willing to add to the HPack Decoder dynamic table during the decoding
+ * client is willing to add to the HPack or QPACK Decoder dynamic table during the decoding
  * of an entire header field section.
  * This is purely an implementation limit.
- * If a peer sends a field section with encoding that
+ * If a peer sends a field section or a set of QPACK instructions with encoding that
  * exceeds this limit a {@link java.net.ProtocolException ProtocolException} will be raised.
  * A value of zero or a negative value means no limit.
  * </li>
@@ -135,7 +175,7 @@
  * A value of zero or a negative value means no limit.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.maxstreams}</b> (default: 100)<br>
- * The maximum number of HTTP/2 push streams that the client will permit servers to open
+ * The maximum number of HTTP/2 or HTTP/3 push streams that the client will permit servers to open
  * simultaneously.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.receiveBufferSize}</b> (default: operating system
@@ -186,6 +226,61 @@
  * This applies to all versions of the protocol. A value of zero or a negative
  * value means no limit.
  * </li>
+ * </ul>
+ * <p>
+ * The following system properties can be used to configure some aspects of the
+ * <a href="https://www.rfc-editor.org/info/rfc9000">QUIC Protocol</a>
+ * implementation used for HTTP/3:
+ * <ul>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.receiveBufferSize}</b> (default: operating system
+ * default)<br>The QUIC {@linkplain java.nio.channels.DatagramChannel UDP client socket}
+ * {@linkplain java.net.StandardSocketOptions#SO_RCVBUF receive buffer size} in bytes.
+ * Values less than or equal to zero are ignored.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.sendBufferSize}</b> (default: operating system
+ * default)<br>The QUIC {@linkplain java.nio.channels.DatagramChannel UDP client socket}
+ * {@linkplain java.net.StandardSocketOptions#SO_SNDBUF send buffer size} in bytes.
+ * Values less than or equal to zero are ignored.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.defaultMTU}</b> (default: 1200 bytes)<br>
+ * The default Maximum Transmission Unit (MTU) size that will be used on quic connections.
+ * The default implementation of the HTTP/3 client does not implement Path MTU Detection,
+ * but will attempt to send 1-RTT packets up to the size defined by this property.
+ * Specifying a higher value may give better upload performance when the client and
+ * servers are located on the same machine, but is likely to result in irrecoverable
+ * packet loss if used over the network. Allowed values are in the range [1200, 65527].
+ * If an out-of-range value is specified, the minimum default value will be used.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxBytesInFlight}</b> (default:
+ * 16777216 bytes or 16MB)<br>
+ * This is the maximum number of unacknowledged bytes that the quic congestion
+ * controller allows to be in flight. When this amount is reached, no new
+ * data is sent until some of the packets in flight are acknowledged.
+ * <br>
+ * Allowed values are in the range [2^14, 2^24] (or [16kB, 16MB]).
+ * If an out-of-range value is specified, it will be clamped to the closest
+ * value in range.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxInitialData}</b> (default: 15728640
+ * bytes, or 15MB)<br>
+ * The initial flow control limit for quic connections in bytes. Valid values are in
+ * the range [0, 2^60]. The initial limit is also used to initialize the receive window
+ * size. If less than 16kB, the window size will be set to 16kB.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxStreamInitialData}</b> (default: 6291456
+ * bytes, or 6MB)<br>
+ * The initial flow control limit for quic streams in bytes. Valid values are in
+ * the range [0, 2^60]. The initial limit is also used to initialize the receive window
+ * size. If less than 16kB, the window size will be set to 16kB.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpclient.quic.maxInitialTimeout}</b> (default: 30
+ * seconds)<br>
+ * This is the maximum time, in seconds, during which the client will wait for a
+ * response from the server, and continue retransmitting the first Quic INITIAL packet,
+ * before raising a {@link java.net.ConnectException}. The first INITIAL packet received
+ * from the target server will disarm this timeout.
+ * </li>
+ *
  * </ul>
  * @moduleGraph
  * @since 11

@@ -25,13 +25,14 @@
 #include "runtime/atomicAccess.hpp"
 #include "unittest.hpp"
 
-// These tests of Atomic only verify functionality.  They don't verify atomicity.
+// These tests of AtomicAccess only verify functionality.  They don't verify
+// atomicity.
 
 template<typename T>
-struct AtomicAddTestSupport {
+struct AtomicAccessAddTestSupport {
   volatile T _test_value;
 
-  AtomicAddTestSupport() : _test_value{} {}
+  AtomicAccessAddTestSupport() : _test_value{} {}
 
   void test_add() {
     T zero = 0;
@@ -52,19 +53,19 @@ struct AtomicAddTestSupport {
   }
 };
 
-TEST_VM(AtomicAddTest, int32) {
-  using Support = AtomicAddTestSupport<int32_t>;
+TEST_VM(AtomicAccessAddTest, int32) {
+  using Support = AtomicAccessAddTestSupport<int32_t>;
   Support().test_add();
   Support().test_fetch_add();
 }
 
-TEST_VM(AtomicAddTest, int64) {
-  using Support = AtomicAddTestSupport<int64_t>;
+TEST_VM(AtomicAccessAddTest, int64) {
+  using Support = AtomicAccessAddTestSupport<int64_t>;
   Support().test_add();
   Support().test_fetch_add();
 }
 
-TEST_VM(AtomicAddTest, ptr) {
+TEST_VM(AtomicAccessAddTest, ptr) {
   uint _test_values[10] = {};
   uint* volatile _test_value{};
 
@@ -84,10 +85,10 @@ TEST_VM(AtomicAddTest, ptr) {
 };
 
 template<typename T>
-struct AtomicXchgTestSupport {
+struct AtomicAccessXchgTestSupport {
   volatile T _test_value;
 
-  AtomicXchgTestSupport() : _test_value{} {}
+  AtomicAccessXchgTestSupport() : _test_value{} {}
 
   void test() {
     T zero = 0;
@@ -99,21 +100,21 @@ struct AtomicXchgTestSupport {
   }
 };
 
-TEST_VM(AtomicXchgTest, int32) {
-  using Support = AtomicXchgTestSupport<int32_t>;
+TEST_VM(AtomicAccessXchgTest, int32) {
+  using Support = AtomicAccessXchgTestSupport<int32_t>;
   Support().test();
 }
 
-TEST_VM(AtomicXchgTest, int64) {
-  using Support = AtomicXchgTestSupport<int64_t>;
+TEST_VM(AtomicAccessXchgTest, int64) {
+  using Support = AtomicAccessXchgTestSupport<int64_t>;
   Support().test();
 }
 
 template<typename T>
-struct AtomicCmpxchgTestSupport {
+struct AtomicAccessCmpxchgTestSupport {
   volatile T _test_value;
 
-  AtomicCmpxchgTestSupport() : _test_value{} {}
+  AtomicAccessCmpxchgTestSupport() : _test_value{} {}
 
   void test() {
     T zero = 0;
@@ -129,25 +130,25 @@ struct AtomicCmpxchgTestSupport {
   }
 };
 
-TEST_VM(AtomicCmpxchgTest, int32) {
-  using Support = AtomicCmpxchgTestSupport<int32_t>;
+TEST_VM(AtomicAccessCmpxchgTest, int32) {
+  using Support = AtomicAccessCmpxchgTestSupport<int32_t>;
   Support().test();
 }
 
-TEST_VM(AtomicCmpxchgTest, int64) {
+TEST_VM(AtomicAccessCmpxchgTest, int64) {
   // Check if 64-bit atomics are available on the machine.
   if (!VM_Version::supports_cx8()) return;
 
-  using Support = AtomicCmpxchgTestSupport<int64_t>;
+  using Support = AtomicAccessCmpxchgTestSupport<int64_t>;
   Support().test();
 }
 
-struct AtomicCmpxchg1ByteStressSupport {
+struct AtomicAccessCmpxchg1ByteStressSupport {
   char _default_val;
   int  _base;
   char _array[7+32+7];
 
-  AtomicCmpxchg1ByteStressSupport() : _default_val(0x7a), _base(7), _array{} {}
+  AtomicAccessCmpxchg1ByteStressSupport() : _default_val(0x7a), _base(7), _array{} {}
 
   void validate(char val, char val2, int index) {
     for (int i = 0; i < 7; i++) {
@@ -182,16 +183,16 @@ struct AtomicCmpxchg1ByteStressSupport {
   }
 };
 
-TEST_VM(AtomicCmpxchg1Byte, stress) {
-  AtomicCmpxchg1ByteStressSupport support;
+TEST_VM(AtomicAccessCmpxchg1Byte, stress) {
+  AtomicAccessCmpxchg1ByteStressSupport support;
   support.test();
 }
 
 template<typename T>
-struct AtomicEnumTestSupport {
+struct AtomicAccessEnumTestSupport {
   volatile T _test_value;
 
-  AtomicEnumTestSupport() : _test_value{} {}
+  AtomicAccessEnumTestSupport() : _test_value{} {}
 
   void test_store_load(T value) {
     EXPECT_NE(value, AtomicAccess::load(&_test_value));
@@ -216,25 +217,25 @@ struct AtomicEnumTestSupport {
   }
 };
 
-namespace AtomicEnumTestUnscoped {       // Scope the enumerators.
+namespace AtomicAccessEnumTestUnscoped {       // Scope the enumerators.
   enum TestEnum { A, B, C };
 }
 
-TEST_VM(AtomicEnumTest, unscoped_enum) {
-  using namespace AtomicEnumTestUnscoped;
-  using Support = AtomicEnumTestSupport<TestEnum>;
+TEST_VM(AtomicAccessEnumTest, unscoped_enum) {
+  using namespace AtomicAccessEnumTestUnscoped;
+  using Support = AtomicAccessEnumTestSupport<TestEnum>;
 
   Support().test_store_load(B);
   Support().test_cmpxchg(B, C);
   Support().test_xchg(B, C);
 }
 
-enum class AtomicEnumTestScoped { A, B, C };
+enum class AtomicAccessEnumTestScoped { A, B, C };
 
-TEST_VM(AtomicEnumTest, scoped_enum) {
-  const AtomicEnumTestScoped B = AtomicEnumTestScoped::B;
-  const AtomicEnumTestScoped C = AtomicEnumTestScoped::C;
-  using Support = AtomicEnumTestSupport<AtomicEnumTestScoped>;
+TEST_VM(AtomicAccessEnumTest, scoped_enum) {
+  const AtomicAccessEnumTestScoped B = AtomicAccessEnumTestScoped::B;
+  const AtomicAccessEnumTestScoped C = AtomicAccessEnumTestScoped::C;
+  using Support = AtomicAccessEnumTestSupport<AtomicAccessEnumTestScoped>;
 
   Support().test_store_load(B);
   Support().test_cmpxchg(B, C);
@@ -242,14 +243,14 @@ TEST_VM(AtomicEnumTest, scoped_enum) {
 }
 
 template<typename T>
-struct AtomicBitopsTestSupport {
+struct AtomicAccessBitopsTestSupport {
   volatile T _test_value;
 
   // At least one byte differs between _old_value and _old_value op _change_value.
   static const T _old_value =    static_cast<T>(UCONST64(0x7f5300007f530044));
   static const T _change_value = static_cast<T>(UCONST64(0x3800530038005322));
 
-  AtomicBitopsTestSupport() : _test_value(0) {}
+  AtomicAccessBitopsTestSupport() : _test_value(0) {}
 
   void fetch_then_and() {
     AtomicAccess::store(&_test_value, _old_value);
@@ -320,31 +321,31 @@ struct AtomicBitopsTestSupport {
 };
 
 template<typename T>
-const T AtomicBitopsTestSupport<T>::_old_value;
+const T AtomicAccessBitopsTestSupport<T>::_old_value;
 
 template<typename T>
-const T AtomicBitopsTestSupport<T>::_change_value;
+const T AtomicAccessBitopsTestSupport<T>::_change_value;
 
-TEST_VM(AtomicBitopsTest, int8) {
-  AtomicBitopsTestSupport<int8_t>()();
+TEST_VM(AtomicAccessBitopsTest, int8) {
+  AtomicAccessBitopsTestSupport<int8_t>()();
 }
 
-TEST_VM(AtomicBitopsTest, uint8) {
-  AtomicBitopsTestSupport<uint8_t>()();
+TEST_VM(AtomicAccessBitopsTest, uint8) {
+  AtomicAccessBitopsTestSupport<uint8_t>()();
 }
 
-TEST_VM(AtomicBitopsTest, int32) {
-  AtomicBitopsTestSupport<int32_t>()();
+TEST_VM(AtomicAccessBitopsTest, int32) {
+  AtomicAccessBitopsTestSupport<int32_t>()();
 }
 
-TEST_VM(AtomicBitopsTest, uint32) {
-  AtomicBitopsTestSupport<uint32_t>()();
+TEST_VM(AtomicAccessBitopsTest, uint32) {
+  AtomicAccessBitopsTestSupport<uint32_t>()();
 }
 
-TEST_VM(AtomicBitopsTest, int64) {
-  AtomicBitopsTestSupport<int64_t>()();
+TEST_VM(AtomicAccessBitopsTest, int64) {
+  AtomicAccessBitopsTestSupport<int64_t>()();
 }
 
-TEST_VM(AtomicBitopsTest, uint64) {
-  AtomicBitopsTestSupport<uint64_t>()();
+TEST_VM(AtomicAccessBitopsTest, uint64) {
+  AtomicAccessBitopsTestSupport<uint64_t>()();
 }

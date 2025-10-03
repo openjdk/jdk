@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8349583
+ * @bug 8349583 8365820
  * @summary Add mechanism to disable signature schemes based on their TLS scope.
  *          This test only covers TLS 1.2.
  * @library /javax/net/ssl/templates
@@ -52,6 +52,17 @@ public class DisableSignatureSchemePerScopeTLS12 extends
     protected static final String DISABLED_CONSTRAINTS =
             HANDSHAKE_DISABLED_SIG + " usage HandShakesignature, "
             + CERTIFICATE_DISABLED_SIG + " usage certificateSignature";
+
+    // Signature schemes not supported in TLSv1.3 for the handshake
+    // regardless of jdk.tls.disabledAlgorithms configuration.
+    // In TLSv1.2 these are supported for both: handshake and certificate.
+    protected static final List<String> TLS13_CERT_ONLY = List.of(
+            "ecdsa_sha1",
+            "rsa_pkcs1_sha1",
+            "rsa_pkcs1_sha256",
+            "rsa_pkcs1_sha384",
+            "rsa_pkcs1_sha512"
+    );
 
     protected DisableSignatureSchemePerScopeTLS12() throws Exception {
         super();
@@ -120,13 +131,13 @@ public class DisableSignatureSchemePerScopeTLS12 extends
         assertTrue(sigAlgsCertSS.contains(HANDSHAKE_DISABLED_SIG),
                 "Signature Scheme " + HANDSHAKE_DISABLED_SIG
                 + " isn't present in ClientHello's"
-                + " signature_algorithms extension");
+                + " signature_algorithms_cert extension");
 
         // signature_algorithms_cert extension MUST NOT contain disabled
         // certificate signature scheme.
         assertFalse(sigAlgsCertSS.contains(CERTIFICATE_DISABLED_SIG),
                 "Signature Scheme " + CERTIFICATE_DISABLED_SIG
-                + " present in ClientHello's signature_algorithms extension");
+                + " present in ClientHello's signature_algorithms_cert extension");
     }
 
     protected void checkCertificateRequest() throws Exception {

@@ -73,7 +73,9 @@ public class ResolvedConstants {
     static boolean aotClassLinking;
     public static void main(String[] args) throws Exception {
         test(args, false);
-        test(args, true);
+        if (!args[0].equals("DYNAMIC")) {
+            test(args, true);
+        }
     }
 
     static void test(String[] args, boolean testMode) throws Exception {

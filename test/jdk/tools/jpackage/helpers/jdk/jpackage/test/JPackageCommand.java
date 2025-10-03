@@ -1085,7 +1085,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         MAIN_LAUNCHER_FILES(cmd -> {
             if (!cmd.isRuntime()) {
-                new LauncherVerifier(cmd).verify(cmd, LauncherVerifier.Action.VERIFY_INSTALLED);
+                new LauncherVerifier(cmd).verify(cmd,
+                        LauncherVerifier.Action.VERIFY_INSTALLED,
+                        LauncherVerifier.Action.VERIFY_MAC_ENTITLEMENTS);
             }
         }),
         MAIN_JAR_FILE(cmd -> {

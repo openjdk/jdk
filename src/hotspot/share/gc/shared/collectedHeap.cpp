@@ -276,7 +276,6 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
-  _soft_ref_policy(),
   _is_stw_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -386,6 +385,12 @@ MetaWord* CollectedHeap::satisfy_failed_metadata_allocation(ClassLoaderData* loa
     if (op.gc_succeeded()) {
       return op.result();
     }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
+
     loop_count++;
     if ((QueuedAllocationWarningCount > 0) &&
         (loop_count % QueuedAllocationWarningCount == 0)) {
@@ -602,6 +607,23 @@ void CollectedHeap::initialize_reserved_region(const ReservedHeapSpace& rs) {
 void CollectedHeap::post_initialize() {
   StringDedup::initialize();
   initialize_serviceability();
+}
+
+bool CollectedHeap::is_shutting_down() const {
+  return Universe::is_shutting_down();
+}
+
+void CollectedHeap::stall_for_vm_shutdown() {
+  assert(is_shutting_down(), "Precondition");
+  // Stall the thread (2 seconds) instead of an indefinite wait to avoid deadlock
+  // if the VM shutdown triggers a GC.
+  // The 2-seconds sleep is:
+  //   - long enough to keep daemon threads stalled, while the shutdown
+  //     sequence completes in the common case.
+  //   - short enough to avoid excessive stall time if the shutdown itself
+  //     triggers a GC.
+  JavaThread::current()->sleep(2 * MILLIUNITS);
+  log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
 }
 
 void CollectedHeap::before_exit() {

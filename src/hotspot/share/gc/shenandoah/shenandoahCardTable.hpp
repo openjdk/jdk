@@ -33,8 +33,6 @@
 #define ShenandoahMinCardSizeInBytes 128
 
 class ShenandoahCardTable: public CardTable {
-  friend class VMStructs;
-
 private:
   // We maintain two copies of the card table to facilitate concurrent remembered set scanning
   // and concurrent clearing of stale remembered set information.  During the init_mark safepoint,

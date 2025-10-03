@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZCOLLECTEDHEAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"

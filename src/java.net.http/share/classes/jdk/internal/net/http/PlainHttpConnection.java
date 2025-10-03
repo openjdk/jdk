@@ -266,78 +266,14 @@ class PlainHttpConnection extends HttpConnection {
         try {
             this.chan = SocketChannel.open();
             chan.configureBlocking(false);
-            if (debug.on()) {
-                int bufsize = getSoReceiveBufferSize();
-                debug.log("Initial receive buffer size is: %d", bufsize);
-                bufsize = getSoSendBufferSize();
-                debug.log("Initial send buffer size is: %d", bufsize);
-            }
-            if (trySetReceiveBufferSize(client.getReceiveBufferSize())) {
-                if (debug.on()) {
-                    int bufsize = getSoReceiveBufferSize();
-                    debug.log("Receive buffer size configured: %d", bufsize);
-                }
-            }
-            if (trySetSendBufferSize(client.getSendBufferSize())) {
-                if (debug.on()) {
-                    int bufsize = getSoSendBufferSize();
-                    debug.log("Send buffer size configured: %d", bufsize);
-                }
-            }
+            Utils.configureChannelBuffers(debug::log, chan,
+                    client.getReceiveBufferSize(), client.getSendBufferSize());
             chan.setOption(StandardSocketOptions.TCP_NODELAY, true);
             // wrap the channel in a Tube for async reading and writing
             tube = new SocketTube(client(), chan, Utils::getBuffer, label);
         } catch (IOException e) {
             throw new InternalError(e);
         }
-    }
-
-    private int getSoReceiveBufferSize() {
-        try {
-            return chan.getOption(StandardSocketOptions.SO_RCVBUF);
-        } catch (IOException x) {
-            if (debug.on())
-                debug.log("Failed to get initial receive buffer size on %s", chan);
-        }
-        return 0;
-    }
-
-    private int getSoSendBufferSize() {
-        try {
-            return chan.getOption(StandardSocketOptions.SO_SNDBUF);
-        } catch (IOException x) {
-            if (debug.on())
-                debug.log("Failed to get initial receive buffer size on %s", chan);
-        }
-        return 0;
-    }
-
-    private boolean trySetReceiveBufferSize(int bufsize) {
-        try {
-            if (bufsize > 0) {
-                chan.setOption(StandardSocketOptions.SO_RCVBUF, bufsize);
-                return true;
-            }
-        } catch (IOException x) {
-            if (debug.on())
-                debug.log("Failed to set receive buffer size to %d on %s",
-                          bufsize, chan);
-        }
-        return false;
-    }
-
-    private boolean trySetSendBufferSize(int bufsize) {
-        try {
-            if (bufsize > 0) {
-                chan.setOption(StandardSocketOptions.SO_SNDBUF, bufsize);
-                return true;
-            }
-        } catch (IOException x) {
-            if (debug.on())
-                debug.log("Failed to set send buffer size to %d on %s",
-                        bufsize, chan);
-        }
-        return false;
     }
 
     @Override

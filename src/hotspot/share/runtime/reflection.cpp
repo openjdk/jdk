@@ -1136,7 +1136,7 @@ oop Reflection::invoke_method(oop method_mirror, Handle receiver, objArrayHandle
     rtype = T_OBJECT;
   }
 
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(mirror);
   Method* m = klass->method_with_idnum(slot);
   if (m == nullptr) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");
@@ -1153,7 +1153,7 @@ oop Reflection::invoke_constructor(oop constructor_mirror, objArrayHandle args, 
   bool override          = java_lang_reflect_Constructor::override(constructor_mirror) != 0;
   objArrayHandle ptypes(THREAD, objArrayOop(java_lang_reflect_Constructor::parameter_types(constructor_mirror)));
 
-  InstanceKlass* klass = InstanceKlass::cast(java_lang_Class::as_Klass(mirror));
+  InstanceKlass* klass = java_lang_Class::as_InstanceKlass(mirror);
   Method* m = klass->method_with_idnum(slot);
   if (m == nullptr) {
     THROW_MSG_NULL(vmSymbols::java_lang_InternalError(), "invoke");

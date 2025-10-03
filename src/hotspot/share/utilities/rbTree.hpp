@@ -196,52 +196,43 @@ protected:
   DEBUG_ONLY(mutable bool _expected_visited);
 
 private:
-  template <typename CMP, typename RET, typename ARG1, typename ARG2, typename = void>
-  struct has_cmp_type : std::false_type {};
-  template <typename CMP, typename RET, typename ARG1, typename ARG2>
-  struct has_cmp_type<CMP, RET, ARG1, ARG2, decltype(static_cast<RET(*)(ARG1, ARG2)>(CMP::cmp), void())> : std::true_type {};
+  static constexpr bool HasKeyComparator =
+      std::is_invocable_r_v<RBTreeOrdering, decltype(&COMPARATOR::cmp), K, K>;
+
+  static constexpr bool HasNodeComparator =
+      std::is_invocable_r_v<RBTreeOrdering, decltype(&COMPARATOR::cmp), K, const NodeType*>;
+
+  // Due to a bug in older GCC versions with static templated constexpr data members (see GCC PR 71954),
+  // we have to express this trait through a struct instead of a constexpr variable directly.
+  template<typename, typename = void>
+  struct HasNodeVerifierImpl : std::false_type {};
 
   template <typename CMP>
-  static constexpr bool HasKeyComparator = has_cmp_type<CMP, RBTreeOrdering, K, K>::value;
+  struct HasNodeVerifierImpl<CMP, std::void_t<decltype(&CMP::less_than)>>
+      : std::bool_constant<std::is_invocable_r_v<bool, decltype(&CMP::less_than), const NodeType*, const NodeType*>> {};
 
-  template <typename CMP>
-  static constexpr bool HasNodeComparator = has_cmp_type<CMP, RBTreeOrdering, K, const NodeType*>::value;
+  static constexpr bool HasNodeVerifier = HasNodeVerifierImpl<COMPARATOR>::value;
 
-  template <typename CMP, typename RET, typename ARG1, typename ARG2, typename = void>
-  struct has_less_than_type : std::false_type {};
-  template <typename CMP, typename RET, typename ARG1, typename ARG2>
-  struct has_less_than_type<CMP, RET, ARG1, ARG2, decltype(static_cast<RET(*)(ARG1, ARG2)>(CMP::less), void())> : std::true_type {};
-
-  template <typename CMP>
-  static constexpr bool HasNodeVerifier = has_less_than_type<CMP, bool, const NodeType*, const NodeType*>::value;
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP> && !HasNodeComparator<CMP>)>
   RBTreeOrdering cmp(const K& a, const NodeType* b) const {
-    return COMPARATOR::cmp(a, b->key());
+    if constexpr (HasNodeComparator) {
+      return COMPARATOR::cmp(a, b);
+    } else if constexpr (HasKeyComparator) {
+      return COMPARATOR::cmp(a, b->key());
+    }
   }
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeComparator<CMP>)>
-  RBTreeOrdering cmp(const K& a, const NodeType* b) const {
-    return COMPARATOR::cmp(a, b);
-  }
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(!HasNodeVerifier<CMP>)>
   bool less_than(const NodeType* a, const NodeType* b) const {
-    return true;
+    if constexpr (HasNodeVerifier) {
+      return COMPARATOR::less_than(a, b);
+    } else {
+      return true;
+    }
   }
 
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasNodeVerifier<CMP>)>
-  bool less_than(const NodeType* a, const NodeType* b) const {
-    return COMPARATOR::less_than(a, b);
-  }
-
-  // Cannot assert if no key comparator exist.
-  template <typename CMP = COMPARATOR, ENABLE_IF(!HasKeyComparator<CMP>)>
-  void assert_key_leq(K a, K b) const {}
-
-  template <typename CMP = COMPARATOR, ENABLE_IF(HasKeyComparator<CMP>)>
   void assert_key_leq(K a, K b) const {
-    assert(COMPARATOR::cmp(a, b) != RBTreeOrdering::GT, "key a must be less or equal to key b");
+    if constexpr (HasKeyComparator) { // Cannot assert if no key comparator exist.
+      assert(COMPARATOR::cmp(a, b) != RBTreeOrdering::GT, "key a must be less or equal to key b");
+    }
   }
 
   // True if node is black (nil nodes count as black)
@@ -283,8 +274,7 @@ public:
 
   AbstractRBTree() : _num_nodes(0), _root(nullptr) DEBUG_ONLY(COMMA _expected_visited(false)) {
     static_assert(std::is_trivially_destructible<K>::value, "key type must be trivially destructable");
-    static_assert(HasKeyComparator<COMPARATOR> || HasNodeComparator<COMPARATOR>,
-                  "comparator must be of correct type");
+    static_assert(HasKeyComparator || HasNodeComparator, "comparator must be of correct type");
   }
 
   size_t size() const { return _num_nodes; }
@@ -428,6 +418,7 @@ public:
   template <typename F>
   void visit_in_order(F f);
 
+
   // Visit all RBNodes in ascending order whose keys are in range [from, to], calling f on each node.
   // If f returns `true` the iteration continues, otherwise it is stopped at the current node.
   template <typename F>
@@ -438,25 +429,19 @@ public:
 
   // Verifies that the tree is correct and holds rb-properties
   // If not using a key comparator (when using IntrusiveRBTree for example),
-  // A second `cmp` must exist in COMPARATOR (see top of file).
+  // a function `less_than` must exist in COMPARATOR (see top of file).
   // Accepts an optional callable `bool extra_verifier(const Node* n)`.
   // This should return true if the node is valid.
   // If provided, each node is also verified through this callable.
-  template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR, ENABLE_IF(HasNodeVerifier<CMP>)>
+  template <typename USER_VERIFIER = empty_verifier>
   void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const {
-    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::less_than(a, b);}, extra_verifier);
-  }
-
-  template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR,
-            ENABLE_IF(HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
-  void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const {
-    verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) == RBTreeOrdering::LT; }, extra_verifier);
-  }
-
-  template <typename USER_VERIFIER = empty_verifier, typename CMP = COMPARATOR,
-            ENABLE_IF(HasNodeComparator<CMP> && !HasKeyComparator<CMP> && !HasNodeVerifier<CMP>)>
-  void verify_self(const USER_VERIFIER& extra_verifier = USER_VERIFIER()) const {
-    verify_self([](const NodeType*, const NodeType*){ return true;}, extra_verifier);
+    if constexpr (HasNodeVerifier) {
+      verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::less_than(a, b);}, extra_verifier);
+    } else if constexpr (HasKeyComparator) {
+      verify_self([](const NodeType* a, const NodeType* b){ return COMPARATOR::cmp(a->key(), b->key()) == RBTreeOrdering::LT; }, extra_verifier);
+    } else {
+      verify_self([](const NodeType*, const NodeType*){ return true;}, extra_verifier);
+    }
   }
 
   // Accepts an optional printing callable `void node_printer(outputStream* st, const Node* n, int depth)`.
@@ -475,15 +460,10 @@ class RBTree : public AbstractRBTree<K, RBNode<K, V>, COMPARATOR> {
 
 public:
   RBTree() : BaseType(), _allocator() {}
+  NONCOPYABLE(RBTree);
   ~RBTree() { remove_all(); }
-  RBTree(const RBTree& other) : BaseType(), _allocator() {
-    assert(std::is_copy_constructible<V>(), "Value type must be copy-constructible");
-    other.visit_in_order([&](auto node) {
-      this->upsert(node->key(), node->val());
-      return true;
-    });
-  }
-  RBTree& operator=(const RBTree& other) = delete;
+
+  bool copy_into(RBTree& other) const;
 
   typedef typename BaseType::Cursor Cursor;
   using BaseType::cursor;

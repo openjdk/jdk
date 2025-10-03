@@ -107,6 +107,62 @@ AC_DEFUN([FLAGS_SETUP_NMFLAGS],
   AC_SUBST(NMFLAGS)
 ])
 
+# Check whether the compiler supports the Arm C Language Extensions (ACLE)
+# for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
+# ACLE and this flag are required to build the aarch64 SVE related functions
+# in libvectormath.
+AC_DEFUN([FLAGS_SETUP_SVE],
+[
+  AARCH64_SVE_AVAILABLE=false
+  # Apple Silicon does not support SVE; use macOS as a proxy for that check.
+  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+      # check the compiler and binutils support sve or not
+      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
+      AC_LANG_PUSH([C])
+      saved_cflags="$CFLAGS"
+      CFLAGS="$CFLAGS -march=armv8-a+sve $CFLAGS_WARNINGS_ARE_ERRORS ARG_ARGUMENT"
+      AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
+        [
+          #include <arm_sve.h>
+          svfloat64_t a() {}
+        ],
+        [
+          svint32_t r = svdup_n_s32(1)
+        ])],
+        [
+          AARCH64_SVE_AVAILABLE=true
+        ]
+      )
+      CFLAGS="$saved_cflags"
+      AC_LANG_POP([C])
+      AC_MSG_RESULT([$AARCH64_SVE_AVAILABLE])
+    fi
+  fi
+
+  UTIL_ARG_ENABLE(NAME: aarch64-sve, DEFAULT: auto,
+    RESULT: AARCH64_SVE_ENABLED,
+    DESC: [Use SVE when compiling libsleef],
+    AVAILABLE: $AARCH64_SVE_AVAILABLE)
+  SVE_CFLAGS=""
+  if test "x$AARCH64_SVE_ENABLED" = xtrue; then
+    SVE_CFLAGS="-march=armv8-a+sve"
+    # Switching the initialization mode with gcc from 'pattern' to 'zero'
+    # avoids the use of unsupported `__builtin_clear_padding` for variable
+    # length aggregates
+    if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
+      AC_MSG_CHECKING([Switching the initialization mode with gcc from pattern to zero])
+      INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
+        IF_TRUE: [
+          SVE_CFLAGS="${SVE_CFLAGS} $INIT_ZERO_FLAG"
+        ]
+      )
+    fi
+  fi
+  AC_SUBST(SVE_CFLAGS)
+])
+
 ################################################################################
 # platform independent
 AC_DEFUN([FLAGS_SETUP_ASFLAGS],

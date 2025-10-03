@@ -368,7 +368,6 @@ inline bool ZPage::was_remembered(volatile zpointer* p) {
   return _remembered_set.at_previous(l_offset);
 }
 
-
 inline zaddress_unsafe ZPage::find_base_unsafe(volatile zpointer* p) {
   if (is_large()) {
     return ZOffset::address_unsafe(start());

@@ -29,18 +29,31 @@ import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
 import java.security.Key;
+import java.security.spec.InvalidParameterSpecException;
+import java.security.spec.PSSParameterSpec;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import javax.net.ssl.*;
+
+import jdk.internal.net.quic.QuicTLSEngine;
 import sun.security.util.DisabledAlgorithmConstraints;
 import static sun.security.util.DisabledAlgorithmConstraints.*;
 
 /**
  * Algorithm constraints for disabled algorithms property
- *
+ * <p>
  * See the "jdk.certpath.disabledAlgorithms" specification in java.security
  * for the syntax of the disabled algorithm string.
  */
 final class SSLAlgorithmConstraints implements AlgorithmConstraints {
+
+    public enum SIGNATURE_CONSTRAINTS_MODE {
+        PEER,  // Check against peer supported signatures
+        LOCAL  // Check against local supported signatures
+    }
 
     private static final DisabledAlgorithmConstraints tlsDisabledAlgConstraints =
             new DisabledAlgorithmConstraints(PROPERTY_TLS_DISABLED_ALGS,
@@ -57,14 +70,15 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
 
     // the default algorithm constraints
     static final SSLAlgorithmConstraints DEFAULT =
-                        new SSLAlgorithmConstraints(null, true);
+            new SSLAlgorithmConstraints(null, true);
 
     // the default SSL only algorithm constraints
     static final SSLAlgorithmConstraints DEFAULT_SSL_ONLY =
-                        new SSLAlgorithmConstraints(null, false);
+            new SSLAlgorithmConstraints(null, false);
 
-    private SSLAlgorithmConstraints(AlgorithmConstraints userSpecifiedConstraints,
-                                    boolean enabledX509DisabledAlgConstraints) {
+    private SSLAlgorithmConstraints(
+            AlgorithmConstraints userSpecifiedConstraints,
+            boolean enabledX509DisabledAlgConstraints) {
         this(userSpecifiedConstraints, null, enabledX509DisabledAlgConstraints);
     }
 
@@ -81,10 +95,12 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * Returns a SSLAlgorithmConstraints instance that checks the provided
      * {@code userSpecifiedConstraints} in addition to standard checks.
      * Returns a singleton instance if parameter is null or DEFAULT.
+     *
      * @param userSpecifiedConstraints additional constraints to check
      * @return a SSLAlgorithmConstraints instance
      */
-    static SSLAlgorithmConstraints wrap(AlgorithmConstraints userSpecifiedConstraints) {
+    static SSLAlgorithmConstraints wrap(
+            AlgorithmConstraints userSpecifiedConstraints) {
         return wrap(userSpecifiedConstraints, true);
     }
 
@@ -102,23 +118,24 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * Returns a SSLAlgorithmConstraints instance that checks the constraints
      * configured for the given {@code socket} in addition to standard checks.
      * Returns a singleton instance if the constraints are null or DEFAULT.
+     *
      * @param socket socket with configured constraints
+     * @param mode SIGNATURE_CONSTRAINTS_MODE
      * @return a SSLAlgorithmConstraints instance
      */
-    static AlgorithmConstraints forSocket(SSLSocket socket,
-                                          boolean withDefaultCertPathConstraints) {
-        AlgorithmConstraints userSpecifiedConstraints =
-                getUserSpecifiedConstraints(socket);
-        return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
-    }
-
     static SSLAlgorithmConstraints forSocket(
             SSLSocket socket,
-            String[] supportedAlgorithms,
+            SIGNATURE_CONSTRAINTS_MODE mode,
             boolean withDefaultCertPathConstraints) {
+
+        if (socket == null) {
+            return wrap(null, withDefaultCertPathConstraints);
+        }
+
         return new SSLAlgorithmConstraints(
                 nullIfDefault(getUserSpecifiedConstraints(socket)),
-                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
+                new SupportedSignatureAlgorithmConstraints(
+                        socket.getHandshakeSession(), mode),
                 withDefaultCertPathConstraints);
     }
 
@@ -126,23 +143,51 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
      * Returns a SSLAlgorithmConstraints instance that checks the constraints
      * configured for the given {@code engine} in addition to standard checks.
      * Returns a singleton instance if the constraints are null or DEFAULT.
+     *
      * @param engine engine with configured constraints
+     * @param mode SIGNATURE_CONSTRAINTS_MODE
      * @return a SSLAlgorithmConstraints instance
      */
-    static AlgorithmConstraints forEngine(SSLEngine engine,
-                                          boolean withDefaultCertPathConstraints) {
-        AlgorithmConstraints userSpecifiedConstraints =
-                getUserSpecifiedConstraints(engine);
-        return wrap(userSpecifiedConstraints, withDefaultCertPathConstraints);
-    }
-
     static SSLAlgorithmConstraints forEngine(
             SSLEngine engine,
-            String[] supportedAlgorithms,
+            SIGNATURE_CONSTRAINTS_MODE mode,
             boolean withDefaultCertPathConstraints) {
+
+        if (engine == null) {
+            return wrap(null, withDefaultCertPathConstraints);
+        }
+
         return new SSLAlgorithmConstraints(
                 nullIfDefault(getUserSpecifiedConstraints(engine)),
-                new SupportedSignatureAlgorithmConstraints(supportedAlgorithms),
+                new SupportedSignatureAlgorithmConstraints(
+                        engine.getHandshakeSession(), mode),
+                withDefaultCertPathConstraints);
+    }
+
+    /**
+     * Returns an {@link AlgorithmConstraints} instance that uses the
+     * constraints configured for the given {@code engine} in addition
+     * to the platform configured constraints.
+     * <p>
+     * If the given {@code allowedAlgorithms} is non-null then the returned
+     * {@code AlgorithmConstraints} will only permit those allowed algorithms.
+     *
+     * @param engine QuicTLSEngine used to determine the constraints
+     * @param mode SIGNATURE_CONSTRAINTS_MODE
+     * @param withDefaultCertPathConstraints whether or not to apply the default certpath
+     *                                       algorithm constraints too
+     * @return a AlgorithmConstraints instance
+     */
+    static AlgorithmConstraints forQUIC(QuicTLSEngine engine,
+                                        SIGNATURE_CONSTRAINTS_MODE mode,
+                                        boolean withDefaultCertPathConstraints) {
+        if (engine == null) {
+            return wrap(null, withDefaultCertPathConstraints);
+        }
+
+        return new SSLAlgorithmConstraints(
+                nullIfDefault(getUserSpecifiedConstraints(engine)),
+                new SupportedSignatureAlgorithmConstraints(engine.getHandshakeSession(), mode),
                 withDefaultCertPathConstraints);
     }
 
@@ -159,7 +204,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             // Please check the instance before casting to use SSLEngineImpl.
             if (engine instanceof SSLEngineImpl) {
                 HandshakeContext hc =
-                        ((SSLEngineImpl)engine).conContext.handshakeContext;
+                        ((SSLEngineImpl) engine).conContext.handshakeContext;
                 if (hc != null) {
                     return hc.sslConfig.userSpecifiedAlgorithmConstraints;
                 }
@@ -179,7 +224,7 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             // Please check the instance before casting to use SSLSocketImpl.
             if (socket instanceof SSLSocketImpl) {
                 HandshakeContext hc =
-                        ((SSLSocketImpl)socket).conContext.handshakeContext;
+                        ((SSLSocketImpl) socket).conContext.handshakeContext;
                 if (hc != null) {
                     return hc.sslConfig.userSpecifiedAlgorithmConstraints;
                 }
@@ -188,6 +233,17 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
             return socket.getSSLParameters().getAlgorithmConstraints();
         }
 
+        return null;
+    }
+
+    private static AlgorithmConstraints getUserSpecifiedConstraints(
+            QuicTLSEngine quicEngine) {
+        if (quicEngine != null) {
+            if (quicEngine instanceof QuicTLSEngineImpl engineImpl) {
+                return engineImpl.getAlgorithmConstraints();
+            }
+            return quicEngine.getSSLParameters().getAlgorithmConstraints();
+        }
         return null;
     }
 
@@ -279,21 +335,65 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
     }
 
     private static class SupportedSignatureAlgorithmConstraints
-                                    implements AlgorithmConstraints {
-        // supported signature algorithms
-        private final String[] supportedAlgorithms;
+            implements AlgorithmConstraints {
 
-        SupportedSignatureAlgorithmConstraints(String[] supportedAlgorithms) {
-            if (supportedAlgorithms != null) {
-                this.supportedAlgorithms = supportedAlgorithms.clone();
-            } else {
-                this.supportedAlgorithms = null;
+        // Supported signature algorithms
+        private Set<String> supportedAlgorithms;
+        // Supported signature schemes
+        private List<SignatureScheme> supportedSignatureSchemes;
+        private boolean checksDisabled;
+
+        SupportedSignatureAlgorithmConstraints(
+                SSLSession session, SIGNATURE_CONSTRAINTS_MODE mode) {
+
+            if (mode == null
+                    || !(session instanceof ExtendedSSLSession extSession
+                    // "signature_algorithms_cert" TLS extension is only
+                    // available starting with TLSv1.2.
+                    && ProtocolVersion.useTLS12PlusSpec(
+                    extSession.getProtocol()))) {
+
+                checksDisabled = true;
+                return;
+            }
+
+            supportedAlgorithms = new TreeSet<>(
+                    String.CASE_INSENSITIVE_ORDER);
+
+            switch (mode) {
+                case SIGNATURE_CONSTRAINTS_MODE.PEER:
+                    supportedAlgorithms.addAll(Arrays.asList(extSession
+                            .getPeerSupportedSignatureAlgorithms()));
+                    break;
+                case SIGNATURE_CONSTRAINTS_MODE.LOCAL:
+                    supportedAlgorithms.addAll(Arrays.asList(extSession
+                            .getLocalSupportedSignatureAlgorithms()));
+            }
+
+            // Do additional SignatureSchemes checks for in-house
+            // ExtendedSSLSession implementation.
+            if (extSession instanceof SSLSessionImpl sslSessionImpl) {
+                switch (mode) {
+                    case SIGNATURE_CONSTRAINTS_MODE.PEER:
+                        supportedSignatureSchemes = new ArrayList<>(
+                                sslSessionImpl
+                                        .getPeerSupportedSignatureSchemes());
+                        break;
+                    case SIGNATURE_CONSTRAINTS_MODE.LOCAL:
+                        supportedSignatureSchemes = new ArrayList<>(
+                                sslSessionImpl
+                                        .getLocalSupportedSignatureSchemes());
+                }
             }
         }
 
         @Override
         public boolean permits(Set<CryptoPrimitive> primitives,
                 String algorithm, AlgorithmParameters parameters) {
+
+            if (checksDisabled) {
+                return true;
+            }
 
             if (algorithm == null || algorithm.isEmpty()) {
                 throw new IllegalArgumentException(
@@ -305,24 +405,11 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         "No cryptographic primitive specified");
             }
 
-            if (supportedAlgorithms == null ||
-                        supportedAlgorithms.length == 0) {
+            if (supportedAlgorithms == null || supportedAlgorithms.isEmpty()) {
                 return false;
             }
 
-            // trim the MGF part: <digest>with<encryption>and<mgf>
-            int position = algorithm.indexOf("and");
-            if (position > 0) {
-                algorithm = algorithm.substring(0, position);
-            }
-
-            for (String supportedAlgorithm : supportedAlgorithms) {
-                if (algorithm.equalsIgnoreCase(supportedAlgorithm)) {
-                    return true;
-                }
-            }
-
-            return false;
+            return supportedAlgorithms.contains(algorithm);
         }
 
         @Override
@@ -339,7 +426,41 @@ final class SSLAlgorithmConstraints implements AlgorithmConstraints {
                         "No algorithm name specified");
             }
 
-            return permits(primitives, algorithm, parameters);
+            return permits(primitives, algorithm, parameters)
+                    && checkRsaSsaPssParams(algorithm, key, parameters);
+        }
+
+        // Additional check for RSASSA-PSS signature algorithm parameters.
+        private boolean checkRsaSsaPssParams(
+                String algorithm, Key key, AlgorithmParameters parameters) {
+
+            if (supportedSignatureSchemes == null
+                    || key == null
+                    || parameters == null
+                    || !"RSASSA-PSS".equalsIgnoreCase(algorithm)) {
+                return true;
+            }
+
+            try {
+                String keyAlg = key.getAlgorithm();
+                String paramDigestAlg = parameters.getParameterSpec(
+                        PSSParameterSpec.class).getDigestAlgorithm();
+
+                return supportedSignatureSchemes.stream().anyMatch(ss ->
+                        ss.algorithm.equalsIgnoreCase(algorithm)
+                                && ss.keyAlgorithm.equalsIgnoreCase(keyAlg)
+                                && ((PSSParameterSpec) ss.signAlgParams.parameterSpec)
+                                .getDigestAlgorithm()
+                                .equalsIgnoreCase(paramDigestAlg));
+
+            } catch (InvalidParameterSpecException e) {
+                if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
+                    SSLLogger.warning("Invalid AlgorithmParameters: "
+                            + parameters + "; Error: " + e.getMessage());
+                }
+
+                return true;
+            }
         }
     }
 }

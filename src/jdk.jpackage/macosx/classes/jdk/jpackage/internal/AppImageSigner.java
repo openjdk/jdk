@@ -237,7 +237,7 @@ final class AppImageSigner {
 
             final var codesignExecutableFile = Codesign.build(signingCfg::toCodesignArgs).quiet(true).create().asConsumer();
             final var codesignFile = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).quiet(true).create().asConsumer();
-            final var codesignDir = Codesign.build(signingCfgWithoutEntitlements::toCodesignArgs).force(true).create().asConsumer();
+            final var codesignDir = Codesign.build(signingCfg::toCodesignArgs).force(true).create().asConsumer();
 
             return new Codesigners(codesignFile, codesignExecutableFile, codesignDir);
         }

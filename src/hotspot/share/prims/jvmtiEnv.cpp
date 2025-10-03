@@ -38,6 +38,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -68,7 +69,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threads.hpp"
@@ -2841,9 +2841,9 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
 
   InstanceKlass* ik = InstanceKlass::cast(k);
 
-  FilteredJavaFieldStream flds(ik);
+  JavaFieldStream flds(ik);
 
-  int result_count = flds.field_count();
+  int result_count = ik->java_fields_count();
 
   // Allocate the result and fill it in.
   jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));

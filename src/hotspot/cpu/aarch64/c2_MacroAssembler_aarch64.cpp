@@ -2771,3 +2771,90 @@ void C2_MacroAssembler::select_from_two_vectors(FloatRegister dst, FloatRegister
     select_from_two_vectors_neon(dst, src1, src2, dst, tmp, vector_length_in_bytes);
   }
 }
+
+// Vector expand implementation. Elements from the src vector are expanded into
+// the dst vector under the control of the vector mask.
+// Since there are no native instructions directly corresponding to expand before
+// SVE2p2, the following implementations mainly leverages the TBL instruction to
+// implement expand. To compute the index input for TBL, the prefix sum algorithm
+// (https://en.wikipedia.org/wiki/Prefix_sum) is used. The same algorithm is used
+// for NEON and SVE, but with different instructions where appropriate.
+
+// Vector expand implementation for NEON.
+//
+// An example of 128-bit Byte vector:
+//   Data direction: high <== low
+//   Input:
+//         src   = g  f  e  d  c  b  a  9  8  7  6  5  4  3  2  1
+//         mask  = 0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
+//   Expected result:
+//         dst   = 0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+void C2_MacroAssembler::vector_expand_neon(FloatRegister dst, FloatRegister src, FloatRegister mask,
+                                           FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                                           int vector_length_in_bytes) {
+  assert(vector_length_in_bytes <= 16, "the vector length in bytes for NEON must be <= 16");
+  assert_different_registers(dst, src, mask, tmp1, tmp2);
+  // Since the TBL instruction only supports byte table, we need to
+  // compute indices in byte type for all types.
+  SIMD_Arrangement size = vector_length_in_bytes == 16 ? T16B : T8B;
+  // tmp1 =  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+  dup(tmp1, size, zr);
+  // dst  =  0  0  1  1  0  0  1  1  0  0  1  1  0  0  1  1
+  negr(dst, size, mask);
+  // Calculate vector index for TBL with prefix sum algorithm.
+  // dst  =  8  8  8  7  6  6  6  5  4  4  4  3  2  2  2  1
+  for (int i = 1; i < vector_length_in_bytes; i <<= 1) {
+    ext(tmp2, size, tmp1, dst, vector_length_in_bytes - i);
+    addv(dst, size, tmp2, dst);
+  }
+  // tmp2 =  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1  0  0 -1 -1
+  orr(tmp2, size, mask, mask);
+  // tmp2 =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+  bsl(tmp2, size, dst, tmp1);
+  // tmp1 =  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1  1
+  movi(tmp1, size, 1);
+  // dst  = -1 -1  7  6 -1 -1  5  4 -1 -1  3  2 -1 -1  1  0
+  subv(dst, size, tmp2, tmp1);
+  // dst  =  0  0  8  7  0  0  6  5  0  0  4  3  0  0  2  1
+  tbl(dst, size, src, 1, dst);
+}
+
+// Vector expand implementation for SVE.
+//
+// An example of 128-bit Short vector:
+//   Data direction: high <== low
+//   Input:
+//         src   = gf ed cb a9 87 65 43 21
+//         pg    = 00 01 00 01 00 01 00 01
+//   Expected result:
+//         dst   = 00 87 00 65 00 43 00 21
+void C2_MacroAssembler::vector_expand_sve(FloatRegister dst, FloatRegister src, PRegister pg,
+                                          FloatRegister tmp1, FloatRegister tmp2, BasicType bt,
+                                          int vector_length_in_bytes) {
+  assert(UseSVE > 0, "expand implementation only for SVE");
+  assert_different_registers(dst, src, tmp1, tmp2);
+  SIMD_RegVariant size = elemType_to_regVariant(bt);
+
+  // tmp1 = 00 00 00 00 00 00 00 00
+  sve_dup(tmp1, size, 0);
+  sve_movprfx(tmp2, tmp1);
+  // tmp2 = 00 01 00 01 00 01 00 01
+  sve_cpy(tmp2, size, pg, 1, true);
+  // Calculate vector index for TBL with prefix sum algorithm.
+  // tmp2 = 04 04 03 03 02 02 01 01
+  for (int i = type2aelembytes(bt); i < vector_length_in_bytes; i <<= 1) {
+    sve_movprfx(dst, tmp1);
+    // The EXT instruction operates on the full-width sve register. The correct
+    // index calculation method is:
+    // vector_length_in_bytes - i + MaxVectorSize - vector_length_in_bytes =>
+    // MaxVectorSize - i.
+    sve_ext(dst, tmp2, MaxVectorSize - i);
+    sve_add(tmp2, size, dst, tmp2);
+  }
+  // dst  = 00 04 00 03 00 02 00 01
+  sve_sel(dst, size, pg, tmp2, tmp1);
+  // dst  = -1 03 -1 02 -1 01 -1 00
+  sve_sub(dst, size, 1);
+  // dst  = 00 87 00 65 00 43 00 21
+  sve_tbl(dst, size, src, dst);
+}

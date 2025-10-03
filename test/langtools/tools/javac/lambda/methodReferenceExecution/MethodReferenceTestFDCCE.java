@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,26 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng MethodReferenceTestFDCCE
+ * @run junit MethodReferenceTestFDCCE
  */
 
-import org.testng.annotations.Test;
 import java.lang.reflect.Array;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.Test;
 
 /**
  * Method references and raw types.
  * @author Robert Field
  */
 
-@Test
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class MethodReferenceTestFDCCE {
 
     static void assertCCE(Throwable t) {
-        assertEquals(t.getClass().getName(), "java.lang.ClassCastException");
+        assertEquals("java.lang.ClassCastException", t.getClass().getName());
     }
 
     interface Pred<T> { boolean accept(T x); }
@@ -79,18 +78,21 @@ public class MethodReferenceTestFDCCE {
         return 123;
     }
 
+    @Test
     public void testMethodReferenceFDPrim1() {
         Pred<Byte> p = MethodReferenceTestFDCCE::isMinor;
         Pred p2 = p;
         assertTrue(p2.accept((Byte)(byte)15));
     }
 
+    @Test
     public void testMethodReferenceFDPrim2() {
         Pred<Byte> p = MethodReferenceTestFDCCE::isMinor;
         Pred p2 = p;
         assertTrue(p2.accept((byte)15));
     }
 
+    @Test
     public void testMethodReferenceFDPrimICCE() {
         Pred<Byte> p = MethodReferenceTestFDCCE::isMinor;
         Pred p2 = p;
@@ -102,6 +104,7 @@ public class MethodReferenceTestFDCCE {
         }
     }
 
+    @Test
     public void testMethodReferenceFDPrimOCCE() {
         Pred<Byte> p = MethodReferenceTestFDCCE::isMinor;
         Pred p2 = p;
@@ -113,12 +116,14 @@ public class MethodReferenceTestFDCCE {
         }
     }
 
+    @Test
     public void testMethodReferenceFDRef() {
         Pred<B> p = MethodReferenceTestFDCCE::tst;
         Pred p2 = p;
         assertTrue(p2.accept(new B()));
     }
 
+    @Test
     public void testMethodReferenceFDRefCCE() {
         Pred<B> p = MethodReferenceTestFDCCE::tst;
         Pred p2 = p;
@@ -130,23 +135,27 @@ public class MethodReferenceTestFDCCE {
         }
     }
 
+    @Test
     public void testMethodReferenceFDPrimPrim() {
         Ps p = MethodReferenceTestFDCCE::isMinor;
         assertTrue(p.accept((byte)15));
     }
 
+    @Test
     public void testMethodReferenceFDPrimBoxed() {
         Ps p = MethodReferenceTestFDCCE::stst;
         assertTrue(p.accept((byte)15));
     }
 
+    @Test
     public void testMethodReferenceFDPrimRef() {
         Oo p = MethodReferenceTestFDCCE::otst;
-        assertEquals(p.too(15).getClass().getName(), "java.lang.Integer");
+        assertEquals("java.lang.Integer", p.too(15).getClass().getName());
     }
 
+    @Test
     public void testMethodReferenceFDRet1() {
         Reto<Short> p = MethodReferenceTestFDCCE::ritst;
-        assertEquals(p.m(), (Short)(short)123);
+        assertEquals((Short)(short)123, p.m());
     }
 }

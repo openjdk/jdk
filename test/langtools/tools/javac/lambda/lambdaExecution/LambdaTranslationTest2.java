@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,26 +25,26 @@
  * @test
  * @bug 8003639
  * @summary convert lambda testng tests to jtreg and add them
- * @run testng/othervm -Duser.language=en -Duser.country=US LambdaTranslationTest2
+ * @run junit/othervm -Duser.language=en -Duser.country=US LambdaTranslationTest2
  */
 
-import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 /**
  * LambdaTranslationTest2 -- end-to-end smoke tests for lambda evaluation
  */
 
-@Test
 public class LambdaTranslationTest2 {
 
     final String dummy = "dummy";
 
+    @Test
     public void testLambdas() {
         TPredicate<String> isEmpty = s -> s.isEmpty();
         assertTrue(isEmpty.test(""));
@@ -100,6 +100,7 @@ public class LambdaTranslationTest2 {
         String make();
     }
 
+    @Test
     public void testBridges() {
         Factory<String> of = () -> "y";
         Factory<?> ef = () -> "z";
@@ -112,6 +113,7 @@ public class LambdaTranslationTest2 {
         assertEquals("z", ((Factory) ef).make());
     }
 
+    @Test
     public void testBridgesImplicitSpecialization() {
         StringFactory sf = () -> "x";
 
@@ -121,6 +123,7 @@ public class LambdaTranslationTest2 {
         assertEquals("x", ((Factory) sf).make());
     }
 
+    @Test
     public void testBridgesExplicitSpecialization() {
         StringFactory2 sf = () -> "x";
 
@@ -130,6 +133,7 @@ public class LambdaTranslationTest2 {
         assertEquals("x", ((Factory) sf).make());
     }
 
+    @Test
     public void testSuperCapture() {
         class A {
             String make() { return "x"; }
@@ -201,6 +205,7 @@ public class LambdaTranslationTest2 {
         return String.format("f%f d%f", a0, a1);
     }
 
+    @Test
     public void testPrimitiveWidening() {
         WidenS ws1 = LambdaTranslationTest2::pwS1;
         assertEquals("b1 s2", ws1.m((byte) 1, (short) 2));
@@ -225,11 +230,13 @@ public class LambdaTranslationTest2 {
         return String.format("b%d s%d c%c i%d j%d z%b f%f d%f", a0, a1, a2, a3, a4, a5, a6, a7);
     }
 
+    @Test
     public void testUnboxing() {
         Unbox u = LambdaTranslationTest2::pu;
         assertEquals("b1 s2 cA i4 j5 ztrue f6.000000 d7.000000", u.m((byte)1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0));
     }
 
+    @Test
     public void testBoxing() {
         Box b = LambdaTranslationTest2::pb;
         assertEquals("b1 s2 cA i4 j5 ztrue f6.000000 d7.000000", b.m((byte) 1, (short) 2, 'A', 4, 5L, true, 6.0f, 7.0));
@@ -239,6 +246,7 @@ public class LambdaTranslationTest2 {
         return ((String) o).equals("foo");
     }
 
+    @Test
     public void testArgCastingAdaptation() {
         TPredicate<String> p = LambdaTranslationTest2::cc;
         assertTrue(p.test("foo"));
@@ -247,12 +255,14 @@ public class LambdaTranslationTest2 {
 
     interface SonOfPredicate<T> extends TPredicate<T> { }
 
+    @Test
     public void testExtendsSAM() {
         SonOfPredicate<String> p = s -> s.isEmpty();
         assertTrue(p.test(""));
         assertTrue(!p.test("foo"));
     }
 
+    @Test
     public void testConstructorRef() {
         Factory<List<String>> lf = ArrayList<String>::new;
         List<String> list = lf.make();
@@ -266,6 +276,7 @@ public class LambdaTranslationTest2 {
         return "private";
     }
 
+    @Test
     public void testPrivateMethodRef() {
         Factory<String> sf = LambdaTranslationTest2::privateMethod;
         assertEquals("private", sf.make());
@@ -275,6 +286,7 @@ public class LambdaTranslationTest2 {
         String make();
     }
 
+    @Test
     public void testPrivateIntf() {
         PrivateIntf p = () -> "foo";
         assertEquals("foo", p.make());
@@ -284,11 +296,12 @@ public class LambdaTranslationTest2 {
         public T op(T a, T b);
     }
 
+    @Test
     public void testBoxToObject() {
         Op<Integer> maxer = Math::max;
         for (int i=-100000; i < 100000; i += 100)
             for (int j=-100000; j < 100000; j += 99) {
-                assertEquals((int) maxer.op(i,j), Math.max(i,j));
+                assertEquals(Math.max(i,j), (int) maxer.op(i,j));
             }
     }
 
@@ -296,6 +309,7 @@ public class LambdaTranslationTest2 {
         return "protected";
     }
 
+    @Test
     public void testProtectedMethodRef() {
         Factory<String> sf = LambdaTranslationTest2::protectedMethod;
         assertEquals("protected", sf.make());
@@ -331,6 +345,7 @@ public class LambdaTranslationTest2 {
         }
     }
 
+    @Test
     public void testInnerClassMethodRef() {
         Factory<String> fs = new Inner1()::m1;
         assertEquals("Inner1.m1()", fs.make());

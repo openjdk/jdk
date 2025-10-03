@@ -166,10 +166,6 @@ public:
     data(thread)->_evacuation_stats->end_evacuation(bytes, from, to);
   }
 
-  static void record_age(Thread* thread, size_t bytes, uint age) {
-    data(thread)->_evacuation_stats->record_age(bytes, age);
-  }
-
   static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
     return data(thread)->_evacuation_stats;
   }

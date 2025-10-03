@@ -40,10 +40,12 @@ import com.sun.org.apache.bcel.internal.util.Args;
  */
 public class LocalVariableTable extends Attribute implements Iterable<LocalVariable> {
 
+    private static final LocalVariable[] EMPTY_ARRAY = {};
+
     private LocalVariable[] localVariableTable; // variables
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param nameIndex Index in constant pool
      * @param length Content length in bytes
@@ -68,7 +70,7 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
      */
     public LocalVariableTable(final int nameIndex, final int length, final LocalVariable[] localVariableTable, final ConstantPool constantPool) {
         super(Const.ATTR_LOCAL_VARIABLE_TABLE, nameIndex, length, constantPool);
-        this.localVariableTable = localVariableTable != null ? localVariableTable : LocalVariable.EMPTY_ARRAY;
+        this.localVariableTable = localVariableTable != null ? localVariableTable : EMPTY_ARRAY;
         Args.requireU2(this.localVariableTable.length, "localVariableTable.length");
     }
 
@@ -167,7 +169,7 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     public final int getTableLength() {
-        return localVariableTable == null ? 0 : localVariableTable.length;
+        return localVariableTable.length;
     }
 
     @Override
@@ -176,7 +178,7 @@ public class LocalVariableTable extends Attribute implements Iterable<LocalVaria
     }
 
     public final void setLocalVariableTable(final LocalVariable[] localVariableTable) {
-        this.localVariableTable = localVariableTable;
+        this.localVariableTable = localVariableTable != null ? localVariableTable : EMPTY_ARRAY;
     }
 
     /**

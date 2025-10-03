@@ -23,6 +23,7 @@
 
 package jdk.test.lib.security;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
@@ -49,42 +50,40 @@ public class OpensslArtifactFetcher {
      *
      * @return openssl binary path of the current version
      * @throws SkippedException if a valid version of OpenSSL cannot be found
+     *         or if OpenSSL is not available on the target platform
      */
     public static String getOpensslPath() {
         String path = getOpensslFromSystemProp(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
+            System.out.println("Using OpenSSL from system property.");
             return path;
         }
+
         path = getDefaultSystemOpensslPath(OPENSSL_BUNDLE_VERSION);
         if (path != null) {
+            System.out.println("Using OpenSSL from system.");
             return path;
         }
+
         if (Platform.isX64()) {
             if (Platform.isLinux()) {
-                path = fetchOpenssl(LINUX_X64.class);
+                return fetchOpenssl(LINUX_X64.class);
             } else if (Platform.isOSX()) {
-                path = fetchOpenssl(MACOSX_X64.class);
+                return fetchOpenssl(MACOSX_X64.class);
             } else if (Platform.isWindows()) {
-                path = fetchOpenssl(WINDOWS_X64.class);
+                return fetchOpenssl(WINDOWS_X64.class);
             }
         } else if (Platform.isAArch64()) {
             if (Platform.isLinux()) {
-                path = fetchOpenssl(LINUX_AARCH64.class);
+                return fetchOpenssl(LINUX_AARCH64.class);
             }
             if (Platform.isOSX()) {
-                path = fetchOpenssl(MACOSX_AARCH64.class);
+                return fetchOpenssl(MACOSX_AARCH64.class);
             }
         }
 
-        if (!verifyOpensslVersion(path, OPENSSL_BUNDLE_VERSION)) {
-            String exMsg = "Can't find the version: "
-                    + OpensslArtifactFetcher.getTestOpensslBundleVersion()
-                    + " of openssl binary on this machine, please install"
-                    + " and set openssl path with property 'test.openssl.path'";
-            throw new SkippedException(exMsg);
-        } else {
-            return path;
-        }
+        throw new SkippedException(String.format("No OpenSSL %s found for %s/%s",
+                OPENSSL_BUNDLE_VERSION, Platform.getOsName(), Platform.getOsArch()));
     }
 
     private static String getOpensslFromSystemProp(String version) {
@@ -120,9 +119,13 @@ public class OpensslArtifactFetcher {
     }
 
     private static String fetchOpenssl(Class<?> clazz) {
-        return ArtifactResolver.fetchOne(clazz)
-                .resolve("openssl", "bin", "openssl")
-                .toString();
+        try {
+            return ArtifactResolver.fetchOne(clazz)
+                    .resolve("openssl", "bin", "openssl")
+                    .toString();
+        } catch (IOException exc) {
+            throw new SkippedException("Could not find openssl", exc);
+        }
     }
 
     // retrieve the provider directory path from <OPENSSL_HOME>/bin/openssl

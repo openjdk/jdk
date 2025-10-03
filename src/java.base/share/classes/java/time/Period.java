@@ -765,7 +765,7 @@ public final class Period
      * <p>
      * This instance is immutable and unaffected by this method call.
      *
-     * @param daysToSubtract  the months to subtract, positive or negative
+     * @param daysToSubtract  the days to subtract, positive or negative
      * @return a {@code Period} based on this period with the specified days subtracted, not null
      * @throws ArithmeticException if numeric overflow occurs
      */

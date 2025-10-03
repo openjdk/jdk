@@ -479,7 +479,6 @@ private:
 // pointers are updated based on their base pointers new value and an offset.
 #if COMPILER2_OR_JVMCI
 class DerivedPointerTable : public AllStatic {
-  friend class VMStructs;
  private:
   class Entry;
   static bool _active;                                           // do not record pointers for verify pass etc.

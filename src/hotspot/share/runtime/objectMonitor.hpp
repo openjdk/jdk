@@ -32,6 +32,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
@@ -72,20 +73,19 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 
-  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
   void set_bad_pointers() {
 #ifdef ASSERT
-    this->_prev  = badObjectWaiterPtr;
-    this->_next  = badObjectWaiterPtr;
+    this->_prev  = (ObjectWaiter*) badAddressVal;
+    this->_next  = (ObjectWaiter*) badAddressVal;
     this->TState = ObjectWaiter::TS_RUN;
 #endif
   }
   ObjectWaiter* next() {
-    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    assert (_next != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _next;
   }
   ObjectWaiter* prev() {
-    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    assert (_prev != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _prev;
   }
 };

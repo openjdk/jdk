@@ -29,6 +29,7 @@
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtUsage.hpp"
 #include "nmt/threadStackTracker.hpp"
+#include "runtime/mutexLocker.hpp"
 
 // Enabled all options for snapshot.
 const NMTUsageOptions NMTUsage::OptionsAll = { true, true, true };
@@ -47,7 +48,9 @@ void NMTUsage::walk_thread_stacks() {
   // much memory had been committed if they are backed by virtual memory. This
   // needs to happen before we take the snapshot of the virtual memory since it
   // will update this information.
+  MemTracker::NmtVirtualMemoryLocker locker;
   VirtualMemoryTracker::Instance::snapshot_thread_stacks();
+
 }
 
 void NMTUsage::update_malloc_usage() {

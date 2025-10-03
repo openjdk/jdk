@@ -151,8 +151,8 @@ size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
   return AtomicAccess::load(&_bytes_allocated_since_gc_start);
 }
 
-void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  AtomicAccess::store(&_bytes_allocated_since_gc_start, (size_t)0);
+void ShenandoahGeneration::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
+  AtomicAccess::store(&_bytes_allocated_since_gc_start, initial_bytes_allocated);
 }
 
 void ShenandoahGeneration::increase_allocated(size_t bytes) {
@@ -535,6 +535,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
 
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
 
+  const size_t pip_used_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage) / 100;
+
   size_t old_consumed = 0;
   size_t promo_potential = 0;
   size_t candidates = 0;
@@ -557,10 +559,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       continue;
     }
     if (heap->is_tenurable(r)) {
-      if ((r->garbage() < old_garbage_threshold)) {
-        // This tenure-worthy region has too little garbage, so we do not want to expend the copying effort to
-        // reclaim the garbage; instead this region may be eligible for promotion-in-place to the
-        // old generation.
+      if ((r->garbage() < old_garbage_threshold) && (r->used() > pip_used_threshold)) {
+        // We prefer to promote this region in place because is has a small amount of garbage and a large usage.
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
         if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top) {
@@ -586,7 +586,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
 
         // During evacuation, we exclude from promotion regions for which age > tenure threshold, garbage < garbage-threshold,
-        //  and get_top_before_promote() != tams
+        //  used > pip_used_threshold, and get_top_before_promote() != tams
       } else {
         // Record this promotion-eligible candidate region. After sorting and selecting the best candidates below,
         // we may still decide to exclude this promotion-eligible region from the current collection set.  If this

@@ -178,7 +178,7 @@ uint IndexSet::lrg_union(uint lr1, uint lr2,
       LRG &lrg = ifg->lrgs(element);
       if (mask.overlap(lrg.mask())) {
         insert(element);
-        if (!lrg.mask().is_AllStack()) {
+        if (!lrg.mask().is_infinite_stack()) {
           reg_degree += lrg1.compute_degree(lrg);
           if (reg_degree >= fail_degree) return reg_degree;
         } else {
@@ -198,7 +198,7 @@ uint IndexSet::lrg_union(uint lr1, uint lr2,
       LRG &lrg = ifg->lrgs(element);
       if (mask.overlap(lrg.mask())) {
         if (insert(element)) {
-          if (!lrg.mask().is_AllStack()) {
+          if (!lrg.mask().is_infinite_stack()) {
             reg_degree += lrg2.compute_degree(lrg);
             if (reg_degree >= fail_degree) return reg_degree;
           } else {

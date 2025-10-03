@@ -37,8 +37,6 @@ class G1NUMA;
 // some accessors (e.g. allocating into them, or getting their occupancy).
 // Also keeps track of retained regions across GCs.
 class G1Allocator : public CHeapObj<mtGC> {
-  friend class VMStructs;
-
 private:
   G1CollectedHeap* _g1h;
   G1NUMA* _numa;

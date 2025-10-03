@@ -206,12 +206,6 @@ JVMFlag::Error G1SATBBufferSizeConstraintFunc(size_t value, bool verbose) {
                                        verbose);
 }
 
-JVMFlag::Error G1UpdateBufferSizeConstraintFunc(size_t value, bool verbose) {
-  return buffer_size_constraint_helper(FLAG_MEMBER_ENUM(G1UpdateBufferSize),
-                                       value,
-                                       verbose);
-}
-
 JVMFlag::Error gc_cpu_usage_threshold_helper(JVMFlagsEnum flagid,
                                              uint value,
                                              bool verbose) {

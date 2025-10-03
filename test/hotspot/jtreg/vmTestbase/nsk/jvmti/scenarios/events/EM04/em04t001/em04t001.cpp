@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,13 @@ cbDynamicCodeGenerated2(jvmtiEnv *jvmti_env, const char *name,
 
 }
 
+void JNICALL
+cbVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
+    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
+        nsk_jvmti_setFailStatus();
+    }
+}
+
 /* ============================================================================= */
 
 static int
@@ -138,6 +145,7 @@ int setCallBacks(int stage) {
     eventCallbacks.DynamicCodeGenerated = (stage == 1) ?
                             cbDynamicCodeGenerated1 : cbDynamicCodeGenerated2;
 
+    eventCallbacks.VMDeath = &cbVMDeath;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks))))
         return NSK_FALSE;
 
@@ -256,9 +264,6 @@ Agent_OnUnload(JavaVM *jvm)
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_JVMTI_VERIFY(jvmti->DestroyRawMonitor(syncLock))) {
-        nsk_jvmti_setFailStatus();
-    }
 }
 
 }

@@ -225,6 +225,9 @@ uintx CardTable::ct_max_alignment_constraint() {
 
 #ifndef PRODUCT
 void CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
+  if (mr.is_empty()) {
+    return;
+  }
   CardValue* start    = byte_for(mr.start());
   CardValue* end      = byte_for(mr.last());
   bool failures = false;
@@ -255,7 +258,8 @@ void CardTable::verify_dirty_region(MemRegion mr) {
 }
 #endif
 
-void CardTable::print_on(outputStream* st) const {
-  st->print_cr("Card table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
+void CardTable::print_on(outputStream* st, const char* description) const {
+  st->print_cr("%s table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
+               description,
                p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(_byte_map_base));
 }

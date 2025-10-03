@@ -34,31 +34,46 @@ import com.sun.net.httpserver.HttpsServer;
 import jdk.httpclient.test.lib.http2.Http2Handler;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
+import jdk.httpclient.test.lib.http3.Http3TestServer;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
+import jdk.internal.net.http.http3.ConnectionSettings;
+import jdk.internal.net.http.qpack.Encoder;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.net.InetAddress;
 import java.io.ByteArrayInputStream;
+import java.net.ProxySelector;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Builder;
 import java.net.http.HttpClient.Version;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.UncheckedIOException;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpHeaders;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Supplier;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -66,9 +81,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
 
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static jdk.test.lib.Asserts.assertFileContentsEqual;
 
 /**
  * Defines an adaptation layers so that a test server handlers and filters
@@ -93,24 +111,14 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  */
 public interface HttpServerAdapters {
 
-    static final boolean PRINTSTACK =
-            Boolean.getBoolean("jdk.internal.httpclient.debug");
-
-    static void uncheckedWrite(ByteArrayOutputStream baos, byte[] ba) {
-        try {
-            baos.write(ba);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+    static final boolean PRINTSTACK = getPrintStack();
+    private static boolean getPrintStack() {
+        return Boolean.getBoolean("jdk.internal.httpclient.debug");
     }
+    static final HexFormat HEX_FORMAT = HexFormat.ofDelimiter(":").withUpperCase();
 
     static void printBytes(PrintStream out, String prefix, byte[] bytes) {
-        int padding = 4 + 4 - (bytes.length % 4);
-        padding = padding > 4 ? padding - 4 : 4;
-        byte[] bigbytes = new byte[bytes.length + padding];
-        System.arraycopy(bytes, 0, bigbytes, padding, bytes.length);
-        out.println(prefix + bytes.length + " "
-                    + new BigInteger(bigbytes).toString(16));
+        out.println(prefix + bytes.length + " " + HEX_FORMAT.formatHex(bytes));
     }
 
     /**
@@ -122,6 +130,7 @@ public interface HttpServerAdapters {
         public abstract Set<Map.Entry<String, List<String>>> entrySet();
         public abstract List<String> get(String name);
         public abstract boolean containsKey(String name);
+        public abstract OptionalLong firstValueAsLong(String name);
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
@@ -166,6 +175,11 @@ public interface HttpServerAdapters {
                 return headers.containsKey(name);
             }
             @Override
+            public OptionalLong firstValueAsLong(String name) {
+                return Optional.ofNullable(headers.getFirst(name))
+                        .stream().mapToLong(Long::parseLong).findFirst();
+            }
+            @Override
             public String toString() {
                 return String.valueOf(headers);
             }
@@ -190,6 +204,10 @@ public interface HttpServerAdapters {
             @Override
             public boolean containsKey(String name) {
                 return headers.firstValue(name).isPresent();
+            }
+            @Override
+            public OptionalLong firstValueAsLong(String name) {
+                return headers.firstValueAsLong(name);
             }
             @Override
             public String toString() {
@@ -244,17 +262,168 @@ public interface HttpServerAdapters {
         public abstract String getRequestMethod();
         public abstract void close();
         public abstract InetSocketAddress getRemoteAddress();
-        public abstract String getConnectionKey();
         public abstract InetSocketAddress getLocalAddress();
-        public void serverPush(URI uri, HttpHeaders headers, byte[] body) {
+        public abstract String getConnectionKey();
+        public abstract SSLSession getSSLSession();
+        public void serverPush(URI uri, HttpHeaders reqHeaders, byte[] body) throws IOException {
             ByteArrayInputStream bais = new ByteArrayInputStream(body);
-            serverPush(uri, headers, bais);
+            serverPush(uri, reqHeaders, bais);
         }
-        public void serverPush(URI uri, HttpHeaders headers, InputStream body) {
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, byte[] body) throws IOException {
+            ByteArrayInputStream bais = new ByteArrayInputStream(body);
+            serverPush(uri, reqHeaders, rspHeaders, bais);
+        }
+        public void serverPush(URI uri, HttpHeaders reqHeaders, InputStream body)
+                throws IOException {
+            serverPush(uri, reqHeaders, HttpHeaders.of(Map.of(), (n,v) -> true), body);
+        }
+
+        public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
+                throws IOException {
             throw new UnsupportedOperationException("serverPush with " + getExchangeVersion());
+        }
+
+        public void requestStopSending(long errorCode) {
+            throw new UnsupportedOperationException("sendHttp3ConnectionClose with " + getExchangeVersion());
+        }
+
+        /**
+         * Sends an HTTP/3 PUSH_PROMISE frame, for the given {@code uri},
+         * with the given request {@code reqHeaders}, and opens a push promise
+         * stream to send the given response {@code rspHeaders} and {@code body}.
+         *
+         * @implSpec
+         * The default implementation of this method throws {@link
+         * UnsupportedOperationException}
+         *
+         * @param uri        the push promise URI
+         * @param reqHeaders the push promise request headers
+         * @param rspHeaders the push promise request headers
+         * @param body       the push response body
+         *
+         * @return          the pushId used to push the promise
+         *
+         * @throws IOException if an error occurs
+         * @throws UnsupportedOperationException if the exchange is not {@link
+         *         #getExchangeVersion() HTTP_3}
+         */
+        public long http3ServerPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
+                throws IOException {
+            throw new UnsupportedOperationException("serverPushWithId with " + getExchangeVersion());
+        }
+        /**
+         * Sends an HTTP/3 PUSH_PROMISE frame, for the given {@code uri},
+         * with the given request {@code headers}, and with the given
+         * {@code pushId}. This method only sends the PUSH_PROMISE frame
+         * and doesn't open any push stream.
+         *
+         * @apiNote
+         * This method can be used to send a PUSH_PROMISE whose body has
+         * already been promised by calling {@link
+         * #http3ServerPush(URI, HttpHeaders, HttpHeaders, InputStream)}. In that case
+         * the {@code pushId} returned by {@link
+         * #http3ServerPush(URI, HttpHeaders, HttpHeaders, InputStream)} should be passed
+         * as parameter. Otherwise, if {@code pushId=-1} is passed as parameter,
+         * a new pushId will be allocated. The push response headers and body
+         * can be later sent using {@link
+         * #sendHttp3PushResponse(long, URI, HttpHeaders, HttpHeaders, InputStream)}.
+         *
+         * @implSpec
+         * The default implementation of this method throws {@link
+         * UnsupportedOperationException}
+         *
+         * @param pushId    the pushId to use, or {@code -1} if a new
+         *                  pushId should be allocated.
+         * @param uri       the push promise URI
+         * @param headers   the push promise request headers
+         * @return the given pushId, if positive, otherwise the new allocated pushId
+         *
+         * @throws IOException if an error occurs
+         * @throws UnsupportedOperationException if the exchange is not {@link
+         *         #getExchangeVersion() HTTP_3}
+         */
+        public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders headers)
+            throws IOException {
+            throw new UnsupportedOperationException("serverPushId with " + getExchangeVersion());
+        }
+        /**
+         * Opens an HTTP/3 PUSH_STREAM to send a push promise response headers
+         * and body.
+         *
+         * @apiNote
+         * No check is performed on the provided pushId
+         *
+         * @param pushId a positive pushId obtained from {@link
+         *               #sendHttp3PushPromiseFrame(long, URI, HttpHeaders)}
+         * @param uri        the push request URI
+         * @param reqHeaders the push promise request headers
+         * @param rspHeaders the push promise response headers
+         * @param body       the push response body
+         *
+         * @throws IOException if an error occurs
+         * @throws UnsupportedOperationException if the exchange is not {@link
+         */
+        public void sendHttp3PushResponse(long pushId, URI uri,
+                                          HttpHeaders reqHeaders,
+                                          HttpHeaders rspHeaders,
+                                          InputStream body)
+            throws IOException {
+            throw new UnsupportedOperationException("serverPushWithId with " + getExchangeVersion());
+        }
+        /**
+         * Sends an HTTP/3 CANCEL_PUSH frame to cancel a push that has been
+         * promised by either {@link #http3ServerPush(URI, HttpHeaders, HttpHeaders, InputStream)}
+         * or {@link #sendHttp3PushPromiseFrame(long, URI, HttpHeaders)}.
+         *
+         * This method doesn't cancel the push stream but just sends
+         * a CANCEL_PUSH frame.
+         * Note that if the push stream has already been opened this
+         * method may not have any effect.
+         *
+         * @apiNote
+         * No check is performed on the provided pushId
+         *
+         * @implSpec
+         * The default implementation of this method throws {@link
+         * UnsupportedOperationException}
+         *
+         * @param pushId        the cancelled pushId
+         *
+         * @throws IOException  if an error occurs
+         * @throws UnsupportedOperationException if the exchange is not {@link
+         *         #getExchangeVersion() HTTP_3}
+         */
+        public void sendHttp3CancelPushFrame(long pushId)
+            throws IOException {
+            throw new UnsupportedOperationException("cancelPushId with " + getExchangeVersion());
+        }
+        /**
+         * Waits until the given {@code pushId} is allowed by the HTTP/3 peer
+         *
+         * @implSpec
+         * The default implementation of this method throws {@link
+         * UnsupportedOperationException}
+         *
+         * @param pushId a pushId
+         *
+         * @return the maximum pushId allowed (exclusive)
+         *
+         * @throws UnsupportedOperationException if the exchange is not {@link
+         *         #getExchangeVersion() HTTP_3}
+         */
+        public long waitForHttp3MaxPushId(long pushId)
+                throws InterruptedException {
+            throw new UnsupportedOperationException("waitForMaxPushId with " + getExchangeVersion());
         }
         public boolean serverPushAllowed() {
             return false;
+        }
+        public Encoder qpackEncoder() {
+            throw new UnsupportedOperationException("qpackEncoder with " + getExchangeVersion());
+        }
+        public CompletableFuture<ConnectionSettings> clientHttp3Settings() {
+            throw new UnsupportedOperationException("HTTP/3 client connection settings with "
+                    + getExchangeVersion());
         }
         public static HttpTestExchange of(HttpExchange exchange) {
             return new Http1TestExchange(exchange);
@@ -264,6 +433,10 @@ public interface HttpServerAdapters {
         }
 
         abstract void doFilter(Filter.Chain chain) throws IOException;
+
+        public void resetStream(long code) throws IOException {
+            throw new UnsupportedOperationException(String.valueOf(this.getServerVersion()));
+        }
 
         // implementations...
         private static final class Http1TestExchange extends HttpTestExchange {
@@ -303,7 +476,8 @@ public interface HttpServerAdapters {
             }
             @Override
             public void close() { exchange.close(); }
-
+            @Override
+            public SSLSession getSSLSession() { return null; }
             @Override
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
@@ -334,9 +508,9 @@ public interface HttpServerAdapters {
                 this.exchange = exch;
             }
             @Override
-            public Version getServerVersion() { return HTTP_2; }
+            public Version getServerVersion() { return exchange.getServerVersion(); }
             @Override
-            public Version getExchangeVersion() { return HTTP_2; }
+            public Version getExchangeVersion() { return exchange.getServerVersion(); }
             @Override
             public InputStream getRequestBody() {
                 return exchange.getRequestBody();
@@ -365,15 +539,61 @@ public interface HttpServerAdapters {
                 return exchange.serverPushAllowed();
             }
             @Override
-            public void serverPush(URI uri, HttpHeaders headers, InputStream body) {
-                exchange.serverPush(uri, headers, body);
+            public void serverPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body)
+                throws IOException {
+                exchange.serverPush(uri, reqHeaders, rspHeaders, body);
             }
+            @Override
+            public void requestStopSending(long errorCode) {
+                exchange.requestStopSending(errorCode);
+            }
+            @Override
+            public void resetStream(long code) throws IOException {
+                exchange.resetStream(code);
+            }
+
+            @Override
+            public long http3ServerPush(URI uri, HttpHeaders reqHeaders, HttpHeaders rspHeaders, InputStream body) throws IOException {
+                return exchange.serverPushWithId(uri, reqHeaders, rspHeaders, body);
+            }
+            @Override
+            public long sendHttp3PushPromiseFrame(long pushId, URI uri, HttpHeaders reqHeaders) throws IOException {
+               return exchange.sendPushId(pushId, uri, reqHeaders);
+            }
+            @Override
+            public void sendHttp3CancelPushFrame(long pushId) throws IOException {
+                exchange.cancelPushId(pushId);
+            }
+            @Override
+            public void sendHttp3PushResponse(long pushId,
+                                              URI uri,
+                                              HttpHeaders reqHeaders,
+                                              HttpHeaders rspHeaders,
+                                              InputStream body) throws IOException {
+                exchange.sendPushResponse(pushId, uri, reqHeaders, rspHeaders, body);
+            }
+            @Override
+            public long waitForHttp3MaxPushId(long pushId) throws InterruptedException {
+                return exchange.waitForMaxPushId(pushId);
+            }
+            @Override
+            public Encoder qpackEncoder() {
+                return exchange.qpackEncoder();
+            }
+
+            @Override
+            public CompletableFuture<ConnectionSettings> clientHttp3Settings() {
+                return exchange.clientHttp3Settings();
+            }
+
+            @Override
             void doFilter(Filter.Chain filter) throws IOException {
                 throw new IOException("cannot use HTTP/1.1 filter with HTTP/2 server");
             }
             @Override
             public void close() { exchange.close();}
-
+            @Override
+            public SSLSession getSSLSession() { return exchange.getSSLSession();}
             @Override
             public InetSocketAddress getRemoteAddress() {
                 return exchange.getRemoteAddress();
@@ -398,31 +618,6 @@ public interface HttpServerAdapters {
             }
         }
 
-    }
-
-
-    /**
-     * A version agnostic adapter class for HTTP Server Handlers.
-     */
-    public interface HttpTestHandler {
-        void handle(HttpTestExchange t) throws IOException;
-
-        default HttpHandler toHttpHandler() {
-            return (t) -> doHandle(HttpTestExchange.of(t));
-        }
-        default Http2Handler toHttp2Handler() {
-            return (t) -> doHandle(HttpTestExchange.of(t));
-        }
-        private void doHandle(HttpTestExchange t) throws IOException {
-            try {
-                handle(t);
-            } catch (Throwable x) {
-                System.out.println("WARNING: exception caught in HttpTestHandler::handle " + x);
-                System.err.println("WARNING: exception caught in HttpTestHandler::handle " + x);
-                if (PRINTSTACK && !expectException(t)) x.printStackTrace(System.out);
-                throw x;
-            }
-        }
     }
 
     /**
@@ -473,21 +668,189 @@ public interface HttpServerAdapters {
     }
 
 
+    /**
+     * A version agnostic adapter class for HTTP Server Handlers.
+     */
+    public interface HttpTestHandler {
+        void handle(HttpTestExchange t) throws IOException;
+
+        default HttpHandler toHttpHandler() {
+            return (t) -> doHandle(HttpTestExchange.of(t));
+        }
+        default Http2Handler toHttp2Handler() {
+            return (t) -> doHandle(HttpTestExchange.of(t));
+        }
+
+        default void handleFailure(final HttpTestExchange exchange, Throwable failure) {
+            System.out.println("WARNING: exception caught in HttpTestHandler::handle " + failure);
+            System.err.println("WARNING: exception caught in HttpTestHandler::handle " + failure);
+            if (PRINTSTACK && !expectException(exchange)) {
+                failure.printStackTrace(System.out);
+            }
+        }
+
+        private void doHandle(HttpTestExchange exchange) throws IOException {
+            try {
+                handle(exchange);
+            } catch (Throwable failure) {
+                handleFailure(exchange, failure);
+                throw failure;
+            }
+        }
+    }
+
+    /**
+     * An echo handler that can be used to transfer large amount of data, and
+     * uses file on the file system to download the input.
+     */
+    // TODO: it would be good if we could merge this with the Http2EchoHandler,
+    //       from which this code was copied and adapted.
+    public static class HttpTestFileEchoHandler implements HttpTestHandler {
+        static final Path CWD = Paths.get(".");
+
+        @Override
+        public void handle(HttpTestExchange t) throws IOException {
+            try {
+                System.err.printf("EchoHandler received request to %s from %s (version %s)%n",
+                        t.getRequestURI(), t.getRemoteAddress(), t.getExchangeVersion());
+                InputStream is = t.getRequestBody();
+                var requestHeaders = t.getRequestHeaders();
+                var responseHeaders = t.getResponseHeaders();
+                responseHeaders.addHeader("X-Hello", "world");
+                responseHeaders.addHeader("X-Bye", "universe");
+                String fixedrequest = requestHeaders.firstValue("XFixed").orElse(null);
+                File outfile = Files.createTempFile(CWD, "foo", "bar").toFile();
+                //System.err.println ("QQQ = " + outfile.toString());
+                FileOutputStream fos = new FileOutputStream(outfile);
+                long count = is.transferTo(fos);
+                System.err.printf("EchoHandler read %s bytes\n", count);
+                is.close();
+                fos.close();
+                InputStream is1 = new FileInputStream(outfile);
+                OutputStream os = null;
+
+                Path check = requestHeaders.firstValue("X-Compare")
+                        .map((String s) -> Path.of(s)).orElse(null);
+                if (check != null) {
+                    System.err.println("EchoHandler checking file match: " + check);
+                    try {
+                        assertFileContentsEqual(check, outfile.toPath());
+                    } catch (Throwable x) {
+                        System.err.println("Files do not match: " + x);
+                        t.sendResponseHeaders(500, -1);
+                        outfile.delete();
+                        os.close();
+                        return;
+                    }
+                }
+
+                // return the number of bytes received (no echo)
+                String summary = requestHeaders.firstValue("XSummary").orElse(null);
+                if (fixedrequest != null && summary == null) {
+                    t.sendResponseHeaders(200, count);
+                    os = t.getResponseBody();
+                    if (!t.getRequestMethod().equals("HEAD")) {
+                        long count1 = is1.transferTo(os);
+                        System.err.printf("EchoHandler wrote %s bytes%n", count1);
+                    } else {
+                        System.err.printf("EchoHandler HEAD received, no bytes sent%n");
+                    }
+                } else {
+                    t.sendResponseHeaders(200, -1);
+                    os = t.getResponseBody();
+                    if (!t.getRequestMethod().equals("HEAD")) {
+                        long count1 = is1.transferTo(os);
+                        System.err.printf("EchoHandler wrote %s bytes\n", count1);
+
+                        if (summary != null) {
+                            String s = Long.toString(count);
+                            os.write(s.getBytes());
+                        }
+                    } else {
+                        System.err.printf("EchoHandler HEAD received, no bytes sent%n");
+                    }
+                }
+                outfile.delete();
+                os.close();
+                is1.close();
+            } catch (Throwable e) {
+                e.printStackTrace();
+                throw new IOException(e);
+            }
+        }
+    }
+
     public static class HttpTestEchoHandler implements HttpTestHandler {
+
+        private final boolean printBytes;
+        public HttpTestEchoHandler() {
+            this(true);
+        }
+
+        public HttpTestEchoHandler(boolean printBytes) {
+            this.printBytes = printBytes;
+        }
+
         @Override
         public void handle(HttpTestExchange t) throws IOException {
             try (InputStream is = t.getRequestBody();
                  OutputStream os = t.getResponseBody()) {
                 byte[] bytes = is.readAllBytes();
-                printBytes(System.out,"Echo server got "
-                        + t.getExchangeVersion() + " bytes: ", bytes);
+                if (printBytes) {
+                    printBytes(System.out, "Echo server got "
+                            + t.getExchangeVersion() + " bytes: ", bytes);
+                }
                 if (t.getRequestHeaders().firstValue("Content-type").isPresent()) {
                     t.getResponseHeaders().addHeader("Content-type",
                             t.getRequestHeaders().firstValue("Content-type").get());
                 }
                 t.sendResponseHeaders(200, bytes.length);
-                os.write(bytes);
+                if (!t.getRequestMethod().equals("HEAD")) {
+                    os.write(bytes);
+                }
             }
+        }
+    }
+
+    public static class HttpTestRedirectHandler implements HttpTestHandler {
+
+        final Supplier<String> supplier;
+
+        public HttpTestRedirectHandler(Supplier<String> redirectSupplier) {
+            supplier = redirectSupplier;
+        }
+
+        @Override
+        public void handle(HttpTestExchange t) throws IOException {
+            examineExchange(t);
+            try (InputStream is = t.getRequestBody()) {
+                is.readAllBytes();
+                String location = supplier.get();
+                System.err.printf("RedirectHandler request to %s from %s\n",
+                        t.getRequestURI().toString(), t.getRemoteAddress().toString());
+                System.err.println("Redirecting to: " + location);
+                var headersBuilder = t.getResponseHeaders();
+                headersBuilder.addHeader("Location", location);
+                byte[] bb = getResponseBytes();
+                t.sendResponseHeaders(redirectCode(), bb.length);
+                OutputStream os = t.getResponseBody();
+                os.write(bb);
+                os.close();
+                t.close();
+            }
+        }
+
+        protected byte[] getResponseBytes() {
+            return new byte[1024];
+        }
+
+        protected int redirectCode() {
+            return 301;
+        }
+
+        // override in sub-class to examine the exchange, but don't
+        // alter transaction state by reading the request body etc.
+        protected void examineExchange(HttpTestExchange t) {
         }
     }
 
@@ -780,6 +1143,41 @@ public interface HttpServerAdapters {
         public abstract HttpTestContext addHandler(HttpTestHandler handler, String root);
         public abstract InetSocketAddress getAddress();
         public abstract Version getVersion();
+
+        /**
+         * {@return the HTTP3 test server which is acting as an alt-service for this server,
+         * if any}
+         */
+        public Optional<Http3TestServer> getH3AltService() {
+            return Optional.empty();
+        }
+
+        /**
+         * {@return true if any HTTP3 test server is acting as an alt-service for this server and the
+         *         HTTP3 test server listens on the same host and port as this server.
+         *         Returns false otherwise}
+         */
+        public boolean supportsH3DirectConnection() {
+            return false;
+        }
+
+        public Http3DiscoveryMode h3DiscoveryConfig() {
+            return null;
+        }
+
+        @Override
+        public String toString() {
+            var conf = Optional.<Object>ofNullable(h3DiscoveryConfig()).orElse(getVersion());
+            return "HttpTestServer(%s: %s)".formatted(conf, serverAuthority());
+        }
+
+        /**
+         * @param version the HTTP version
+         * @param more additional HTTP versions
+         * {@return  true if the handlers registered with this server can be accessed (through
+         * request URIs) using all of the passed HTTP versions. Returns false otherwise}
+         */
+        public abstract boolean canHandle(Version version, Version... more);
         public abstract void setRequestApprover(final Predicate<String> approver);
 
         @Override
@@ -799,16 +1197,24 @@ public interface HttpServerAdapters {
             return hostString + ":" + address.getPort();
         }
 
-        public static HttpTestServer of(HttpServer server) {
+        public static HttpTestServer of(final HttpServer server) {
+            Objects.requireNonNull(server);
             return new Http1TestServer(server);
         }
 
-        public static HttpTestServer of(HttpServer server, ExecutorService executor) {
+        public static HttpTestServer of(final HttpServer server, ExecutorService executor) {
+            Objects.requireNonNull(server);
             return new Http1TestServer(server, executor);
         }
 
-        public static HttpTestServer of(Http2TestServer server) {
+        public static HttpTestServer of(final Http2TestServer server) {
+            Objects.requireNonNull(server);
             return new Http2TestServerImpl(server);
+        }
+
+        public static HttpTestServer of(final Http3TestServer server) {
+            Objects.requireNonNull(server);
+            return new H3ServerAdapter(server);
         }
 
         /**
@@ -841,7 +1247,7 @@ public interface HttpServerAdapters {
         public static HttpTestServer create(Version serverVersion, SSLContext sslContext)
                 throws IOException {
             Objects.requireNonNull(serverVersion);
-            return create(serverVersion, sslContext, null);
+            return create(serverVersion, sslContext, null, null);
         }
 
         /**
@@ -860,7 +1266,130 @@ public interface HttpServerAdapters {
         public static HttpTestServer create(Version serverVersion, SSLContext sslContext,
                                             ExecutorService executor) throws IOException {
             Objects.requireNonNull(serverVersion);
+            return create(serverVersion, sslContext, null, executor);
+        }
+
+        /**
+         * Creates a {@link HttpTestServer} which supports HTTP_3 version.
+         *
+         * @param h3DiscoveryCfg Discovery config for HTTP_3 connection creation. Can be null
+         * @param sslContext     SSLContext. Cannot be null
+         * @return The newly created server
+         * @throws IOException if any exception occurs during the server creation
+         */
+        public static HttpTestServer create(Http3DiscoveryMode h3DiscoveryCfg,
+                                            SSLContext sslContext)
+                throws IOException {
+            Objects.requireNonNull(sslContext, "SSLContext");
+            return create(h3DiscoveryCfg, sslContext, null);
+        }
+
+        /**
+         * Creates a {@link HttpTestServer} which supports HTTP_3 version.
+         *
+         * @param h3DiscoveryCfg Discovery config for HTTP_3 connection creation. Can be null
+         * @param sslContext     SSLContext. Cannot be null
+         * @param executor       The executor to be used by the server. Can be null
+         * @return The newly created server
+         * @throws IOException if any exception occurs during the server creation
+         */
+        public static HttpTestServer create(Http3DiscoveryMode h3DiscoveryCfg,
+                                            SSLContext sslContext, ExecutorService executor)
+                throws IOException {
+            Objects.requireNonNull(sslContext, "SSLContext");
+            return create(HTTP_3, sslContext, h3DiscoveryCfg, executor);
+        }
+
+
+        /**
+         * Creates a {@link HttpTestServer} which supports the {@code serverVersion}. If the
+         * {@code sslContext} is null, then only {@code http} protocol will be supported by the
+         * server. Else, the server will be configured with the {@code sslContext} and will support
+         * {@code https} protocol.
+         *
+         * If {@code serverVersion} is {@link Version#HTTP_3 HTTP_3}, then a {@code h3DiscoveryCfg}
+         * can be passed to decide how the HTTP_3 server will be created. The following table
+         * summarizes how {@code h3DiscoveryCfg} is used:
+         * <ul>
+         *     <li>HTTP3_ONLY - A server which only supports HTTP_3 is created</li>
+         *     <li>HTTP3_ALTSVC - A HTTP_2 server is created and a HTTP_3 server is created.
+         *          The HTTP_2 server advertises the HTTP_3 server as an alternate service. When
+         *          creating the HTTP_3 server, an ephemeral port is used and thus the alternate
+         *          service will be advertised on a different port than the HTTP_2 server's port</li>
+         *      <li>ANY - A HTTP_2 server is created and a HTTP_3 server is created.
+         *          The HTTP_2 server advertises the HTTP_3 server as an alternate service. When
+         *          creating the HTTP_3 server, the same port as that of the HTTP_2 server is used
+         *          to bind the HTTP_3 server. If that bind attempt fails, then an ephemeral port
+         *          is used to bind the HTTP_3 server</li>
+         * </ul>
+         *
+         * @param serverVersion The HTTP version of the server
+         * @param sslContext    The SSLContext to use. Can be null
+         * @param h3DiscoveryCfg The Http3DiscoveryMode for HTTP_3 server. Can be null,
+         *                       in which case it defaults to {@code ALT_SVC} for HTTP_3
+         *                       server
+         * @param executor      The executor to be used by the server. Can be null
+         * @return The newly created server
+         * @throws IllegalArgumentException if {@code serverVersion} is not supported by this method
+         * @throws IllegalArgumentException if {@code h3DiscoveryCfg} is not null when
+         *                                  {@code serverVersion} is not {@code HTTP_3}
+         * @throws IOException              if any exception occurs during the server creation
+         */
+        private static HttpTestServer create(final Version serverVersion, final SSLContext sslContext,
+                                            final Http3DiscoveryMode h3DiscoveryCfg,
+                                            final ExecutorService executor) throws IOException {
+            Objects.requireNonNull(serverVersion);
+            if (h3DiscoveryCfg != null && serverVersion != HTTP_3) {
+                // Http3DiscoveryMode is only supported when version of HTTP_3
+                throw new IllegalArgumentException("Http3DiscoveryMode" +
+                        " isn't allowed for " + serverVersion + " version");
+            }
             switch (serverVersion) {
+                case HTTP_3 -> {
+                    if (sslContext == null) {
+                        throw new IllegalArgumentException("SSLContext cannot be null when" +
+                                " constructing a HTTP_3 server");
+                    }
+                    final Http3DiscoveryMode effectiveDiscoveryCfg = h3DiscoveryCfg == null
+                            ? Http3DiscoveryMode.ALT_SVC
+                            : h3DiscoveryCfg;
+                    switch (effectiveDiscoveryCfg) {
+                        case HTTP_3_URI_ONLY -> {
+                            // create only a HTTP3 server
+                            return HttpTestServer.of(new Http3TestServer(sslContext, executor));
+                        }
+                        case ALT_SVC -> {
+                            // create a HTTP2 server which advertises an HTTP3 alternate service.
+                            // that alternate service will be using an ephemeral port for the server
+                            final Http2TestServer h2WithAltService;
+                            try {
+                                h2WithAltService = new Http2TestServer(
+                                        "localhost", true, 0, executor, sslContext)
+                                        .enableH3AltServiceOnEphemeralPort();
+                            } catch (Exception e) {
+                                throw new IOException(e);
+                            }
+                            return HttpTestServer.of(h2WithAltService);
+                        }
+                        case ANY -> {
+                            // create a HTTP2 server which advertises an HTTP3 alternate service.
+                            // that alternate service will first attempt to use the same port as the
+                            // HTTP2 server and if binding to that port fails, then will attempt
+                            // to use a ephemeral port.
+                            final Http2TestServer h2WithAltService;
+                            try {
+                                h2WithAltService = new Http2TestServer(
+                                        "localhost", true, 0, executor, sslContext)
+                                        .enableH3AltServiceOnSamePort();
+                            } catch (Exception e) {
+                                throw new IOException(e);
+                            }
+                            return HttpTestServer.of(h2WithAltService);
+                        }
+                        default -> throw new IllegalArgumentException("Unsupported" +
+                                " Http3DiscoveryMode: " + effectiveDiscoveryCfg);
+                    }
+                }
                 case HTTP_2 -> {
                     Http2TestServer underlying;
                     try {
@@ -874,7 +1403,7 @@ public interface HttpServerAdapters {
                     }
                     return HttpTestServer.of(underlying);
                 }
-                case HTTP_1_1 ->  {
+                case HTTP_1_1 -> {
                     InetAddress loopback = InetAddress.getLoopbackAddress();
                     InetSocketAddress sa = new InetSocketAddress(loopback, 0);
                     HttpServer underlying;
@@ -933,7 +1462,21 @@ public interface HttpServerAdapters {
                 return new InetSocketAddress(InetAddress.getLoopbackAddress(),
                         impl.getAddress().getPort());
             }
+            @Override
             public Version getVersion() { return HTTP_1_1; }
+
+            @Override
+            public boolean canHandle(final Version version, final Version... more) {
+                if (version != HTTP_1_1) {
+                    return false;
+                }
+                for (var v : more) {
+                    if (v != HTTP_1_1) {
+                        return false;
+                    }
+                }
+                return true;
+            }
 
             @Override
             public void setRequestApprover(final Predicate<String> approver) {
@@ -996,7 +1539,40 @@ public interface HttpServerAdapters {
                 return new InetSocketAddress(InetAddress.getLoopbackAddress(),
                         impl.getAddress().getPort());
             }
+
+            @Override
+            public Optional<Http3TestServer> getH3AltService() {
+                return impl.getH3AltService();
+            }
+
+            @Override
+            public boolean supportsH3DirectConnection() {
+                return impl.supportsH3DirectConnection();
+            }
+
+            public Http3DiscoveryMode h3DiscoveryConfig() {
+                return supportsH3DirectConnection()
+                        ? Http3DiscoveryMode.ANY
+                        : Http3DiscoveryMode.ALT_SVC;
+            }
+
             public Version getVersion() { return HTTP_2; }
+
+            @Override
+            public boolean canHandle(final Version version, final Version... more) {
+                final Set<Version> supported = new HashSet<>();
+                supported.add(HTTP_2);
+                impl.getH3AltService().ifPresent((unused)->  supported.add(HTTP_3));
+                if (!supported.contains(version)) {
+                    return false;
+                }
+                for (var v : more) {
+                    if (!supported.contains(v)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
 
             @Override
             public void setRequestApprover(final Predicate<String> approver) {
@@ -1036,6 +1612,119 @@ public interface HttpServerAdapters {
             }
             @Override public Version getVersion() { return HTTP_2; }
         }
+
+        private static final class H3ServerAdapter extends HttpTestServer {
+            private final Http3TestServer underlyingH3Server;
+
+            private H3ServerAdapter(final Http3TestServer server) {
+                this.underlyingH3Server = server;
+            }
+
+            @Override
+            public void start() {
+                underlyingH3Server.start();
+            }
+
+            @Override
+            public void stop() {
+                underlyingH3Server.stop();
+            }
+
+            @Override
+            public HttpTestContext addHandler(final HttpTestHandler handler, final String path) {
+                Objects.requireNonNull(path);
+                Objects.requireNonNull(handler);
+                final H3RootCtx h3Ctx = new H3RootCtx(path, handler);
+                this.underlyingH3Server.addHandler(path, h3Ctx::doHandle);
+                return h3Ctx;
+            }
+
+            @Override
+            public InetSocketAddress getAddress() {
+                return underlyingH3Server.getAddress();
+            }
+
+            @Override
+            public Version getVersion() {
+                return HTTP_3;
+            }
+
+            @Override
+            public Http3DiscoveryMode h3DiscoveryConfig() {
+                return Http3DiscoveryMode.HTTP_3_URI_ONLY;
+            }
+
+            @Override
+            public boolean canHandle(Version version, Version... more) {
+                if (version != HTTP_3) {
+                    return false;
+                }
+                for (var v : more) {
+                    if (v != HTTP_3) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public void setRequestApprover(final Predicate<String> approver) {
+                underlyingH3Server.setRequestApprover(approver);
+            }
+
+        }
+
+        private static final class H3RootCtx extends HttpTestContext implements HttpTestHandler {
+            private final String path;
+            private final HttpTestHandler handler;
+            private final List<HttpTestFilter> filters = new CopyOnWriteArrayList<>();
+
+            private H3RootCtx(final String path, final HttpTestHandler handler) {
+                this.path = path;
+                this.handler = handler;
+            }
+
+            @Override
+            public String getPath() {
+                return this.path;
+            }
+
+            @Override
+            public void addFilter(final HttpTestFilter filter) {
+                Objects.requireNonNull(filter);
+                this.filters.add(filter);
+            }
+
+            @Override
+            public Version getVersion() {
+                return HTTP_3;
+            }
+
+            @Override
+            public void setAuthenticator(final Authenticator authenticator) {
+                if (authenticator instanceof BasicAuthenticator basicAuth) {
+                    addFilter(new HttpBasicAuthFilter(basicAuth));
+                } else {
+                    throw new UnsupportedOperationException(
+                            "Only BasicAuthenticator is supported on an H3 context");
+                }
+            }
+
+            @Override
+            public void handle(final HttpTestExchange exchange) throws IOException {
+                HttpChain.of(this.filters, this.handler).doFilter(exchange);
+            }
+
+            private void doHandle(final Http2TestExchange exchange) throws IOException {
+                final HttpTestExchange adapted = HttpTestExchange.of(exchange);
+                try {
+                    H3RootCtx.this.handle(adapted);
+                } catch (Throwable failure) {
+                    handleFailure(adapted, failure);
+                    throw failure;
+                }
+            }
+        }
     }
 
     public static void enableServerLogging() {
@@ -1044,4 +1733,73 @@ public interface HttpServerAdapters {
         HttpTestServer.ServerLogging.enableLogging();
     }
 
+    public default HttpClient.Builder newClientBuilderForH3() {
+        return createClientBuilderForH3();
+    }
+
+    /**
+     * {@return a client builder suitable for interacting with the specified
+     * version}
+     * The builder's {@linkplain HttpClient.Builder#version(Version) version},
+     * {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy selector}
+     * and {@linkplain HttpClient.Builder#sslContext(SSLContext) SSL context}
+     * are not set.
+     * @apiNote This method sets the {@linkplain HttpClient.Builder#localAddress(InetAddress)
+     * bind address} to the {@linkplain InetAddress#getLoopbackAddress() loopback address}
+     * if version is HTTP/3, the OS is Mac, and the OS version is 10.X, in order to
+     * avoid conflicting with system allocated ephemeral UDP ports.
+     * @param version the highest version the client is assumed to interact with.
+     */
+    public static HttpClient.Builder createClientBuilderFor(Version version) {
+        var builder = HttpClient.newBuilder();
+        return switch (version) {
+            case HTTP_3 -> configureForH3(builder);
+            default -> builder;
+        };
+    }
+
+    /**
+     * {@return a client builder suitable for interacting with HTTP/3}
+     * The builder's {@linkplain HttpClient.Builder#version(Version) version},
+     * {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy selector}
+     * and {@linkplain HttpClient.Builder#sslContext(SSLContext) SSL context}
+     * are not set.
+     * @apiNote This method sets the {@linkplain HttpClient.Builder#localAddress(InetAddress)
+     * bind address} to the {@linkplain InetAddress#getLoopbackAddress() loopback address}
+     * if version is HTTP/3, the OS is Mac, and the OS version is 10.X, in order to
+     * avoid conflicting with system allocated ephemeral UDP ports.
+     * @implSpec This is identical to calling {@link #createClientBuilderFor(Version)
+     * newClientBuilderFor(Version.HTTP_3)} or {@link #configureForH3(Builder)
+     * configureForH3(HttpClient.newBuilder())}
+     */
+    public static HttpClient.Builder createClientBuilderForH3() {
+        return configureForH3(HttpClient.newBuilder());
+    }
+
+    /**
+     * Configure a builder to be suitable for a client that may send requests
+     * through HTTP/3.
+     * The builder's {@linkplain HttpClient.Builder#version(Version) version},
+     * {@linkplain HttpClient.Builder#proxy(ProxySelector) proxy selector}
+     * and {@linkplain HttpClient.Builder#sslContext(SSLContext) SSL context}
+     * are not set.
+     * @apiNote This method sets the {@linkplain HttpClient.Builder#localAddress(InetAddress)
+     * bind address} to the {@linkplain InetAddress#getLoopbackAddress() loopback address}
+     * if the OS is Mac, and the OS version is 10.X, in order to
+     * avoid conflicting with system allocated ephemeral UDP ports.
+     * @return a client builder suitable for interacting with HTTP/3
+     */
+    public static HttpClient.Builder configureForH3(HttpClient.Builder builder) {
+        if (TestUtil.sysPortsMayConflict()) {
+            return builder.localAddress(InetAddress.getLoopbackAddress());
+        }
+        return builder;
+    }
+
+    public static InetAddress clientLocalBindAddress() {
+        if (TestUtil.sysPortsMayConflict()) {
+            return InetAddress.getLoopbackAddress();
+        }
+        return new InetSocketAddress(0).getAddress();
+    }
 }

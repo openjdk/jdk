@@ -114,15 +114,15 @@ import java.util.Objects;
  * <p>
  * The length of the solar day is the standard way that humans measure time.
  * This has traditionally been subdivided into 24 hours of 60 minutes of 60 seconds,
- * forming a 86400 second day.
+ * forming an 86,400 second day.
  * <p>
  * Modern timekeeping is based on atomic clocks which precisely define an SI second
  * relative to the transitions of a Caesium atom. The length of an SI second was defined
- * to be very close to the 86400th fraction of a day.
+ * to be very close to the 86,400th fraction of a day.
  * <p>
  * Unfortunately, as the Earth rotates the length of the day varies.
  * In addition, over time the average length of the day is getting longer as the Earth slows.
- * As a result, the length of a solar day in 2012 is slightly longer than 86400 SI seconds.
+ * As a result, the length of a solar day in 2012 is slightly longer than 86,400 SI seconds.
  * The actual length of any given day and the amount by which the Earth is slowing
  * are not predictable and can only be determined by measurement.
  * The UT1 time-scale captures the accurate length of day, but is only available some
@@ -131,7 +131,7 @@ import java.util.Objects;
  * The UTC time-scale is a standard approach to bundle up all the additional fractions
  * of a second from UT1 into whole seconds, known as <i>leap-seconds</i>.
  * A leap-second may be added or removed depending on the Earth's rotational changes.
- * As such, UTC permits a day to have 86399 SI seconds or 86401 SI seconds where
+ * As such, UTC permits a day to have 86,399 SI seconds or 86,401 SI seconds where
  * necessary in order to keep the day aligned with the Sun.
  * <p>
  * The modern UTC time-scale was introduced in 1972, introducing the concept of whole leap-seconds.
@@ -143,7 +143,7 @@ import java.util.Objects;
  * Given the complexity of accurate timekeeping described above, this Java API defines
  * its own time-scale, the <i>Java Time-Scale</i>.
  * <p>
- * The Java Time-Scale divides each calendar day into exactly 86400
+ * The Java Time-Scale divides each calendar day into exactly 86,400
  * subdivisions, known as seconds.  These seconds may differ from the
  * SI second.  It closely matches the de facto international civil time
  * scale, the definition of which changes from time to time.
@@ -171,7 +171,7 @@ import java.util.Objects;
  * This is identical to UTC on days that do not have a leap second.
  * On days that do have a leap second, the leap second is spread equally
  * over the last 1000 seconds of the day, maintaining the appearance of
- * exactly 86400 seconds per day.
+ * exactly 86,400 seconds per day.
  * <p>
  * For the segment prior to 1972-11-03, extending back arbitrarily far,
  * the consensus international time scale is defined to be UT1, applied

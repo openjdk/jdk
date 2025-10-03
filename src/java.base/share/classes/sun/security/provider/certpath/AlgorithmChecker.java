@@ -221,7 +221,7 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
                     currSigAlg, prevPubKey, currSigAlgParams)) {
                     throw new CertPathValidatorException(
                         "Algorithm constraints check failed on " +
-                            currSigAlg + "signature and " +
+                            currSigAlg + " signature and " +
                             currPubKey.getAlgorithm() + " key with size of " +
                             sun.security.util.KeyUtil.getKeySize(currPubKey) +
                             "bits",

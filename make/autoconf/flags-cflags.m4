@@ -37,56 +37,25 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Default works for linux, might work on other platforms as well.
     SHARED_LIBRARY_FLAGS='-shared'
-    # --disable-new-dtags forces use of RPATH instead of RUNPATH for rpaths.
-    # This protects internal library dependencies within the JDK from being
-    # overridden using LD_LIBRARY_PATH. See JDK-8326891 for more information.
-    SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1 -Wl,--disable-new-dtags'
-    SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
-    SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0"
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$(or [$]1,/.)'
-      SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
 
     elif test "x$OPENJDK_TARGET_OS" = xaix; then
       # Linking is different on aix
       SHARED_LIBRARY_FLAGS="-shared -Wl,-bM:SRE -Wl,-bnoentry"
-      SET_EXECUTABLE_ORIGIN=""
-      SET_SHARED_LIBRARY_ORIGIN=''
-      SET_SHARED_LIBRARY_NAME=''
 
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
-        SET_EXECUTABLE_ORIGIN="$SET_EXECUTABLE_ORIGIN -Wl,--disable-new-dtags"
-      fi
-      SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
-
-      # arm specific settings
-      if test "x$OPENJDK_TARGET_CPU" = "xarm"; then
-        # '-Wl,-z,origin' isn't used on arm.
-        SET_SHARED_LIBRARY_ORIGIN='-Wl,-rpath,\$$$$ORIGIN[$]1'
-      else
-        SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
-      fi
     fi
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     SHARED_LIBRARY_FLAGS="-dll"
-    SET_EXECUTABLE_ORIGIN=''
-    SET_SHARED_LIBRARY_ORIGIN=''
-    SET_SHARED_LIBRARY_NAME=''
   fi
 
-  AC_SUBST(SET_EXECUTABLE_ORIGIN)
-  AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
-  AC_SUBST(SET_SHARED_LIBRARY_NAME)
   AC_SUBST(SHARED_LIBRARY_FLAGS)
 ])
 
@@ -934,48 +903,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
         IF_FALSE: [$2FDLIBM_CFLAGS=""])
   fi
   AC_SUBST($2FDLIBM_CFLAGS)
-
-  # Check whether the compiler supports the Arm C Language Extensions (ACLE)
-  # for SVE. Set SVE_CFLAGS to -march=armv8-a+sve if it does.
-  # ACLE and this flag are required to build the aarch64 SVE related functions in
-  # libvectormath. Apple Silicon does not support SVE; use macOS as a proxy for
-  # that check.
-  if test "x$OPENJDK_TARGET_CPU" = "xaarch64" && test "x$OPENJDK_TARGET_OS" = "xlinux"; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      AC_LANG_PUSH(C)
-      OLD_CFLAGS="$CFLAGS"
-      CFLAGS="$CFLAGS -march=armv8-a+sve"
-      AC_MSG_CHECKING([if Arm SVE ACLE is supported])
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([#include <arm_sve.h>],
-          [
-            svint32_t r = svdup_n_s32(1);
-            return 0;
-          ])],
-          [
-            AC_MSG_RESULT([yes])
-            $2SVE_CFLAGS="-march=armv8-a+sve"
-            # Switching the initialization mode with gcc from 'pattern' to 'zero'
-            # avoids the use of unsupported `__builtin_clear_padding` for variable
-            # length aggregates
-            if test "x$DEBUG_LEVEL" != xrelease && test "x$TOOLCHAIN_TYPE" = xgcc ; then
-              INIT_ZERO_FLAG="-ftrivial-auto-var-init=zero"
-              FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$INIT_ZERO_FLAG],
-                IF_TRUE: [
-                  $2SVE_CFLAGS="${$2SVE_CFLAGS} $INIT_ZERO_FLAG"
-                ]
-              )
-            fi
-          ],
-          [
-            AC_MSG_RESULT([no])
-            $2SVE_CFLAGS=""
-          ]
-      )
-      CFLAGS="$OLD_CFLAGS"
-      AC_LANG_POP(C)
-    fi
-  fi
-  AC_SUBST($2SVE_CFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],

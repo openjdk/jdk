@@ -78,6 +78,10 @@
                               "description": "The blocker object responsible for the thread parking."
                             }
                           },
+                          "owner": {
+                            "type": "string",
+                            "description": "The thread identifier of the owner when the parkBlocker is an AbstractOwnableSynchronizer."
+                          }
                           "required": [
                             "object"
                           ]
@@ -115,9 +119,9 @@
                                 "items": {
                                   "type": [
                                     "string",
-                                    null
+                                    "null"
                                   ],
-                                  "description": "The object for which the monitor is owned by the thread, null if eliminated"
+                                  "description": "The object for which the monitor is owned by the thread, null if eliminated."
                                 }
                               }
                             },

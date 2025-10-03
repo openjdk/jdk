@@ -33,8 +33,6 @@
 // that track a space;
 
 class CSpaceCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
  private:
   PerfVariable*      _capacity;
   PerfVariable*      _used;

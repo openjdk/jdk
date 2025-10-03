@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,16 @@
 
 package org.openjdk.tests.separate;
 
-import org.testng.ITestResult;
-import org.testng.annotations.AfterMethod;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import org.junit.jupiter.api.AfterEach;
 
 import static org.openjdk.tests.separate.SourceModel.Class;
 import static org.openjdk.tests.separate.SourceModel.*;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestHarness {
 
@@ -69,7 +68,7 @@ public class TestHarness {
         verboseLocal.set(Boolean.TRUE);
     }
 
-    @AfterMethod
+    @AfterEach
     public void reset() {
         if (!this.verbose) {
             verboseLocal.set(Boolean.FALSE);
@@ -85,16 +84,6 @@ public class TestHarness {
             flags.add(Compiler.Flags.USECACHE);
         }
         return flags.toArray(new Compiler.Flags[0]);
-    }
-
-    @AfterMethod
-    public void printError(ITestResult result) {
-        if (result.getStatus() == ITestResult.FAILURE) {
-            String clsName = result.getTestClass().getName();
-            clsName = clsName.substring(clsName.lastIndexOf(".") + 1);
-            System.out.println("Test " + clsName + "." +
-                               result.getName() + " FAILED");
-        }
     }
 
     private static final ConcreteMethod stdCM = ConcreteMethod.std("-1");
@@ -193,7 +182,7 @@ public class TestHarness {
             Object res = m.invoke(null);
             assertNotNull(res);
             if (value != null) {
-                assertEquals(res, value);
+                assertEquals(value, res);
             }
         } catch (InvocationTargetException | IllegalAccessException e) {
             fail("Unexpected exception thrown: " + e.getCause(), e.getCause());

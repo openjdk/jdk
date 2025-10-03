@@ -160,7 +160,7 @@ void ZJNICritical::exit_inner() {
       // and we should signal that all Java threads have now exited the
       // critical region and we are now blocked.
       if (count == -2) {
-        // Nofity blocked
+        // Notify blocked
         ZLocker<ZConditionLock> locker(_lock);
         _lock->notify_all();
       }
