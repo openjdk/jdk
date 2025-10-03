@@ -62,7 +62,7 @@ public class OptionValueExceptionFactoryTest {
             case VALUE_AND_NAME -> {
                 assertEquals(List.of("str", "foo"), arguments.get());
             }
-            case NONE  -> {
+            case NONE -> {
                 assertEquals(List.of(), arguments.get());
             }
             case VALUE -> {
