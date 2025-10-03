@@ -136,7 +136,8 @@ public class TestTemplate {
         testHookWithNestedTemplates();
         testHookRecursion();
         testDollar();
-        testLet();
+        testLet1();
+        testLet2();
         testDollarAndHashtagBrackets();
         testSelector();
         testRecursion();
@@ -739,7 +740,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testLet() {
+    public static void testLet1() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make("a", (String a) -> scope(
@@ -797,6 +798,24 @@ public class TestTemplate {
             break
             abc = 5 50 150
             }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testLet2() {
+        var template = Template.make(() -> scope(
+            "outer {\n",
+            "x: #x\n", // TODO: should not happen!
+            let("x", "x1", x -> scope(
+                "x: #x ", x, ".\n"
+            )),
+            "x: #x\n",
+            "} outer\n"
+        ));
+
+        String code = template.render();
+        String expected =
+            """
             """;
         checkEQ(code, expected);
     }

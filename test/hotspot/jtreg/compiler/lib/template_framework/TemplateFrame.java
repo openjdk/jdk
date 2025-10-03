@@ -61,7 +61,6 @@ class TemplateFrame {
         return new TemplateFrame(parent, false, id, fuel, Template.DEFAULT_FUEL_COST, false, false);
     }
 
-    // TODO: test scope fuel cost!
     public static TemplateFrame makeInnerScope(TemplateFrame parent,
                                                boolean isTransparentForHashtag,
                                                boolean isTransparentForFuel) {
@@ -124,7 +123,6 @@ class TemplateFrame {
         if (value != null) {
             return value;
         }
-        // TODO: print which ones are all available?
         throw new RendererException("Missing hashtag replacement for #" + key);
     }
 
