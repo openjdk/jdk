@@ -21,7 +21,7 @@
  * questions.
  */
 /**
- * @test 1.4 08/08/05
+ * @test
  * @key headful
  * @bug 6276188
  * @library ../../../../regtesthelpers
@@ -40,17 +40,19 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.event.InputEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.plaf.synth.SynthLookAndFeel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import java.util.concurrent.CountDownLatch;
 
 public class bug6276188 {
 
     private static JButton button;
-    private static Point p;
     private static JFrame testFrame;
 
      // move away from cursor
@@ -65,6 +67,7 @@ public class bug6276188 {
             SynthLookAndFeel lookAndFeel = new SynthLookAndFeel();
             lookAndFeel.load(bug6276188.class.getResourceAsStream("bug6276188.xml"), bug6276188.class);
             UIManager.setLookAndFeel(lookAndFeel);
+            CountDownLatch latch = new CountDownLatch(1);
 
             SwingUtilities.invokeAndWait(new Runnable() {
                 public void run() {
@@ -72,6 +75,13 @@ public class bug6276188 {
                     testFrame.setLayout(new BorderLayout());
                     testFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     testFrame.add(BorderLayout.CENTER, button = new JButton());
+                    button.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mousePressed(MouseEvent e) {
+                            System.out.println("Mouse pressed");
+                            latch.countDown();
+                        }
+                    });
 
                     testFrame.setSize(new Dimension(320, 200));
                     testFrame.setLocationRelativeTo(null);
@@ -82,14 +92,15 @@ public class bug6276188 {
             robot.waitForIdle();
             robot.delay(1000);
 
-            p = Util.getCenterPoint(button);
+            Point p = Util.getCenterPoint(button);
             System.out.println("Button center point: " + p);
 
             robot.mouseMove(p.x , p.y);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle();
-            robot.delay(2000);
+            latch.await();
+            robot.delay(1000);
 
             Color color = robot.getPixelColor(p.x - OFFSET_X, p.y - OFFSET_Y);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
