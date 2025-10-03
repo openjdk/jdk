@@ -178,7 +178,8 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     const size_t old_garbage_threshold = (region_size_bytes * ShenandoahOldGarbageThreshold) / 100;
     shenandoah_assert_generations_reconciled();
     assert(!_heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
-    assert(region->garbage_before_padded_for_promote() < old_garbage_threshold, "Region %zu has too much garbage for promotion", region->index());
+    assert(region->garbage_before_padded_for_promote() < old_garbage_threshold,
+           "Region %zu has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
     assert(region->is_regular(), "Use different service to promote humongous regions");
     assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");
@@ -234,30 +235,18 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
     assert((pip_unpadded == 0) || (pip_pad_bytes == 0), "Only one of pip_unpadded and pip_pad_bytes is non-zero");
 
     // Now that this region is affiliated with old, we can allow it to receive allocations, though it may not be in the
-    // is_collector_free range.
+    // is_collector_free range.  We'll add it to that range below.
     region->restore_top_before_promote();
+#ifdef ASSERT
     size_t region_to_be_used_in_old = region->used();
     assert(region_to_be_used_in_old + pip_pad_bytes + pip_unpadded == region_size_bytes, "invariant");
+#endif
 
     // The update_watermark was likely established while we had the artificially high value of top.  Make it sane now.
     assert(update_watermark >= region->top(), "original top cannot exceed preserved update_watermark");
     region->set_update_watermark(region->top());
 
-    // Unconditionally transfer one region from young to old. This represents the newly promoted region.
-    // This expands old and shrinks new by the size of one region.  Strictly, we do not "need" to expand old
-    // if there are already enough unaffiliated regions in old to account for this newly promoted region.
-    // However, if we do not transfer the capacities, we end up reducing the amount of memory that would have
-    // otherwise been available to hold old evacuations, because old available is max_capacity - used and now
-    // we would be trading a fully empty region for a partially used region.
-
-    size_t available_in_region = region->free();
-    size_t plab_min_size_in_bytes = _heap->plab_min_size() * HeapWordSize;
-    if (available_in_region < plab_min_size_in_bytes) {
-      // The available memory in young had been retired.  Retire it in old also.
-      region_to_be_used_in_old += available_in_region;
-    }
-
-    // add_old_collector_free_region() increases promoted_reserve() if available space exceeds plab_min_size()
+    // Transfer this region from young to old, increasing promoted_reserve if available space exceeds plab_min_size()
     _heap->free_set()->add_promoted_in_place_region_to_old_collector(region);
     region->set_affiliation(OLD_GENERATION);
   }
