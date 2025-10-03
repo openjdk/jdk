@@ -83,7 +83,7 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
                 throw new RuntimeException("error in JVMTI RawMonitorEnter: retCode=" + retCode);
             }
             gotMonitor = true;
-            Thread.sleep(1000);
+            Thread.sleep(500);
             retCode = exitRawMonitor();
             if (retCode != 0) {
                 throw new RuntimeException("error in JVMTI RawMonitorExit: retCode=" + retCode);
@@ -91,8 +91,6 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
         } catch (ThreadDeath td) {
         } catch (InterruptedException e) {
             throw new Error("Unexpected: " + e);
-        } finally {
-            exitRawMonitor();
         }
     }
 
@@ -146,15 +144,12 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
                     Thread.sleep(10);
                 }
 
-                boolean first_iteration = true;
                 while (true) {
                     JVMTIUtils.stopThread(worker2);
-                    if (first_iteration || TEST_MODE != 1) {
-                        // Don't stop() worker1 with JVMTI raw monitors more than once because
-                        // the exception could be thrown at the finally clause before releasing
-                        // the monitor, causing worker2 to deadlock on enter.
+                    if (TEST_MODE != 1) {
+                         // Don't stop() worker1 with JVMTI raw monitors since if the monitor is
+                        // not released worker2 will deadlock on enter
                         JVMTIUtils.stopThread(worker1);
-                        first_iteration = false;
                     }
                     // Give time to throw exception
                     Thread.sleep(10);
