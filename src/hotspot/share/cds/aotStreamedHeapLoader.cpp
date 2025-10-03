@@ -380,13 +380,12 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
                                       linker);
 
     // Copy metadata field
-    Metadata* archive_metadata = *(Metadata**)(uintptr_t(archive_object) + (size_t)metadata_offset);
-    Metadata* runtime_metadata = archive_metadata;
-    if (archive_metadata != nullptr) {
-      runtime_metadata = (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta());
-      assert(AOTMetaspace::in_aot_cache(runtime_metadata), "Invalid metadata pointer");
-    }
-    DEBUG_ONLY(Metadata* previous_metadata = heap_object->metadata_field(metadata_offset);)
+    Metadata* const archive_metadata = *(Metadata**)(uintptr_t(archive_object) + (size_t)metadata_offset);
+    Metadata* const runtime_metadata = archive_metadata != nullptr
+        ? (Metadata*)(address(archive_metadata) + AOTMetaspace::relocation_delta())
+        : nullptr;
+    assert(runtime_metadata == nullptr || AOTMetaspace::in_aot_cache(runtime_metadata), "Invalid metadata pointer");
+    DEBUG_ONLY(Metadata* const previous_metadata = heap_object->metadata_field(metadata_offset);)
     assert(previous_metadata == nullptr || previous_metadata == runtime_metadata, "Should not observe transient values");
     heap_object->metadata_field_put(metadata_offset, runtime_metadata);
     curr_bit = metadata_field_idx + skip;
