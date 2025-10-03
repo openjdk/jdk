@@ -217,9 +217,6 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> setFuelCostScope("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> setFuelCostScope(new Hook("Hook1")), "Unexpected token:");
         Hook hook1 = new Hook("Hook1");
-        expectIllegalArgumentException(() -> hook1.anchor(null),      "Unexpected tokens: null");
-        expectIllegalArgumentException(() -> hook1.anchor("x", null), "Unexpected token: null");
-        expectIllegalArgumentException(() -> hook1.anchor(hook1),     "Unexpected token:");
         expectIllegalArgumentException(() -> testFailingAddDataName1(), "Unexpected mutability: MUTABLE_OR_IMMUTABLE");
         expectIllegalArgumentException(() -> testFailingAddDataName2(), "Unexpected weight: ");
         expectIllegalArgumentException(() -> testFailingAddDataName3(), "Unexpected weight: ");
@@ -417,12 +414,12 @@ public class TestTemplate {
 
         var template2 = Template.make(() -> scope(
             "{\n",
-            hook1.anchor(
+            hook1.anchor(scope(
                 "World\n",
                 // Note: "Hello" from the template below will be inserted
                 // above "World" above.
                 hook1.insert(template1.asToken())
-            ),
+            )),
             "}"
         ));
 
@@ -446,11 +443,11 @@ public class TestTemplate {
         var template2 = Template.make(() -> scope(
             "{\n",
             template0.asToken(),
-            hook1.anchor(
+            hook1.anchor(scope(
                 "World\n",
                 template0.asToken(),
                 hook1.insert(template1.asToken())
-            ),
+            )),
             template0.asToken(),
             "}"
         ));
@@ -477,31 +474,31 @@ public class TestTemplate {
         // Test nested use of hooks in the same template.
         var template2 = Template.make(() -> scope(
             "{\n",
-            hook1.anchor(), // empty
+            hook1.anchor(scope()), // empty
             "zero\n",
-            hook1.anchor(
+            hook1.anchor(scope(
                 template1.asToken("one"),
                 template1.asToken("two"),
                 hook1.insert(template1.asToken("intoHook1a")),
                 hook1.insert(template1.asToken("intoHook1b")),
                 template1.asToken("three"),
-                hook1.anchor(
+                hook1.anchor(scope(
                     template1.asToken("four"),
                     hook1.insert(template1.asToken("intoHook1c")),
                     template1.asToken("five")
-                ),
+                )),
                 template1.asToken("six"),
-                hook1.anchor(), // empty
+                hook1.anchor(scope()), // empty
                 template1.asToken("seven"),
                 hook1.insert(template1.asToken("intoHook1d")),
                 template1.asToken("eight"),
-                hook1.anchor(
+                hook1.anchor(scope(
                     template1.asToken("nine"),
                     hook1.insert(template1.asToken("intoHook1e")),
                     template1.asToken("ten")
-                ),
+                )),
                 template1.asToken("eleven")
-            ),
+            )),
             "}"
         ));
 
@@ -542,22 +539,22 @@ public class TestTemplate {
             hook1.insert(template1.asToken(b + "B")),
             hook2.insert(template1.asToken(b + "C")),
             template1.asToken(b + "D"),
-            hook1.anchor(
+            hook1.anchor(scope(
                 template1.asToken(b + "E"),
                 hook1.insert(template1.asToken(b + "F")),
                 hook2.insert(template1.asToken(b + "G")),
                 template1.asToken(b + "H"),
-                hook2.anchor(
+                hook2.anchor(scope(
                     template1.asToken(b + "I"),
                     hook1.insert(template1.asToken(b + "J")),
                     hook2.insert(template1.asToken(b + "K")),
                     template1.asToken(b + "L")
-                ),
+                )),
                 template1.asToken(b + "M"),
                 hook1.insert(template1.asToken(b + "N")),
                 hook2.insert(template1.asToken(b + "O")),
                 template1.asToken(b + "O")
-            ),
+            )),
             template1.asToken(b + "P"),
             hook1.insert(template1.asToken(b + "Q")),
             hook2.insert(template1.asToken(b + "R")),
@@ -569,15 +566,15 @@ public class TestTemplate {
         var template3 = Template.make(() -> scope(
             "{\n",
             "base-A\n",
-            hook1.anchor(
+            hook1.anchor(scope(
                 "base-B\n",
-                hook2.anchor(
+                hook2.anchor(scope(
                     "base-C\n",
                     template2.asToken("sub-"),
                     "base-D\n"
-                ),
+                )),
                 "base-E\n"
-            ),
+            )),
             "base-F\n",
             "}\n"
         ));
@@ -630,12 +627,12 @@ public class TestTemplate {
             hook1.insert(template1.asToken(b + "B")), // sub-B is rendered before template2.
             template1.asToken(b + "C"),
             "inner-hook-start\n",
-            hook1.anchor(
+            hook1.anchor(scope(
                 "inner-hook-end\n",
                 template1.asToken(b + "E"),
                 hook1.insert(template1.asToken(b + "E")),
                 template1.asToken(b + "F")
-            ),
+            )),
             ">\n"
         ));
 
@@ -643,11 +640,11 @@ public class TestTemplate {
         var template3 = Template.make(() -> scope(
             "{\n",
             "hook-start\n",
-            hook1.anchor(
+            hook1.anchor(scope(
                 "hook-end\n",
                 hook1.insert(template2.asToken("sub-")),
                 "base-C\n"
-            ),
+            )),
             "base-D\n",
             "}\n"
         ));
@@ -696,11 +693,11 @@ public class TestTemplate {
             template1.asToken("name"),     // does not capture -> literal "$name"
             template1.asToken("$name"),    // does not capture -> literal "$name"
             template1.asToken($("name")),  // capture replacement name "name_1"
-            hook1.anchor(
+            hook1.anchor(scope(
                 "$name\n"
-            ),
+            )),
             "break\n",
-            hook1.anchor(
+            hook1.anchor(scope(
                 "one\n",
                 hook1.insert(template1.asToken($("name"))),
                 "two\n",
@@ -708,7 +705,7 @@ public class TestTemplate {
                 "three\n",
                 hook1.insert(template2.asToken($("name"))),
                 "four\n"
-            ),
+            )),
             "}\n"
         ));
 
@@ -764,12 +761,12 @@ public class TestTemplate {
             template1.asToken("alpha"),
             "break\n",
             "x1 = #x\n",
-            hook1.anchor(
+            hook1.anchor(flat( // flat allows hashtags to escape
                 "x2 = #x\n", // leaks inside
                 template1.asToken("beta"),
                 let("y", "one"),
                 "y1 = #y\n"
-            ),
+            )),
             "break\n",
             "y2 = #y\n", // leaks outside
             "break\n",
@@ -1307,7 +1304,7 @@ public class TestTemplate {
         var template4 = Template.make(() -> scope(
             "{\n",
             template1.asToken(),
-            hook1.anchor(
+            hook1.anchor(scope(
                 template1.asToken(),
                 "something\n",
                 template3.asToken(),
@@ -1317,7 +1314,7 @@ public class TestTemplate {
                 template2.asToken($("name"), myInt),
                 "more\n",
                 template1.asToken()
-            ),
+            )),
             template1.asToken(),
             "}\n"
         ));
@@ -1413,7 +1410,7 @@ public class TestTemplate {
         var template8 = Template.make(() -> scope(
             "class $X {\n",
             template1.asToken(myInt),
-            hook1.anchor(
+            hook1.anchor(scope(
                 "begin $scope\n",
                 template1.asToken(myInt),
                 "start with immutable\n",
@@ -1426,7 +1423,7 @@ public class TestTemplate {
                 "then store to it\n",
                 template6.asToken(myInt),
                 template1.asToken(myInt)
-            ),
+            )),
             template1.asToken(myInt),
             "}\n"
         ));
@@ -1520,7 +1517,7 @@ public class TestTemplate {
         var template2 = Template.make(() -> scope(
             "class $Y {\n",
             template1.asToken(myInt),
-            hook1.anchor(
+            hook1.anchor(scope(
                 "begin $scope\n",
                 template1.asToken(myInt),
                 "define mutable $v1\n",
@@ -1529,7 +1526,7 @@ public class TestTemplate {
                 "define immutable $v2\n",
                 addDataName($("v2"), myInt, IMMUTABLE),
                 template1.asToken(myInt)
-            ),
+            )),
             template1.asToken(myInt),
             "}\n"
         ));
@@ -1629,7 +1626,7 @@ public class TestTemplate {
         var template4 = Template.make(() -> scope(
             "class $W {\n",
             template2.asToken(),
-            hook1.anchor(
+            hook1.anchor(scope(
                 "Create name for myClassA11, should be visible for the super classes\n",
                 addDataName($("v1"), myClassA11, MUTABLE),
                 template3.asToken(myClassA11),
@@ -1640,7 +1637,7 @@ public class TestTemplate {
                 template3.asToken(myClassA11),
                 template3.asToken(myClassA1),
                 template2.asToken()
-            ),
+            )),
             template2.asToken(),
             "}\n"
         ));
@@ -1756,12 +1753,12 @@ public class TestTemplate {
 
         // It is safe in separate Hook scopes.
         var template1 = Template.make(() -> scope(
-            hook1.anchor(
+            hook1.anchor(scope(
                 addDataName("name1", myInt, MUTABLE)
-            ),
-            hook1.anchor(
+            )),
+            hook1.anchor(scope(
                 addDataName("name1", myInt, MUTABLE)
-            )
+            ))
         ));
 
         // It is safe in separate Template scopes.
@@ -1780,19 +1777,19 @@ public class TestTemplate {
             // inside the scope where (1) is available.
             // See: testFailingAddNameDuplication8
             // addDataName("name", myInt, MUTABLE),
-            hook2.anchor(
+            hook2.anchor(scope(
                 // (2) This one is added second. Since it is
                 //     inside the hook2.anchor, it does not go
                 //     out to the hook1.anchor, and is not
                 //     available inside the scope of (1).
                 addDataName("name3", myInt, MUTABLE)
-            )
+            ))
         ));
         var template5 = Template.make(() -> scope(
-            hook1.anchor(
+            hook1.anchor(scope(
                 // (1) this is the first one we add.
                 addDataName("name3", myInt, MUTABLE)
-            )
+            ))
         ));
 
         // Put it all together into a single test.
@@ -1952,7 +1949,7 @@ public class TestTemplate {
         var template4 = Template.make(() -> scope(
             "class $Q {\n",
             template2.asToken(),
-            hook1.anchor(
+            hook1.anchor(scope(
                 "Create name for myStructuralTypeA11, should be visible for the supertypes\n",
                 addStructuralName($("v1"), myStructuralTypeA11),
                 template3.asToken(myStructuralTypeA11),
@@ -1963,7 +1960,7 @@ public class TestTemplate {
                 template3.asToken(myStructuralTypeA11),
                 template3.asToken(myStructuralTypeA1),
                 template2.asToken()
-            ),
+            )),
             template2.asToken(),
             "}\n"
         ));
@@ -2110,7 +2107,7 @@ public class TestTemplate {
             "class $X {\n",
             template1.asToken(myStructuralTypeA),
             template1.asToken(myStructuralTypeB),
-            hook1.anchor(
+            hook1.anchor(scope(
                 "begin $scope\n",
                 template1.asToken(myStructuralTypeA),
                 template1.asToken(myStructuralTypeB),
@@ -2126,7 +2123,7 @@ public class TestTemplate {
                 template4.asToken(myStructuralTypeB),
                 template1.asToken(myStructuralTypeA),
                 template1.asToken(myStructuralTypeB)
-            ),
+            )),
             template1.asToken(myStructuralTypeA),
             template1.asToken(myStructuralTypeB),
             "}\n"
@@ -3090,9 +3087,9 @@ public class TestTemplate {
 
         var template1 = Template.make(() -> scope(
             addDataName("name", myInt, MUTABLE),
-            hook1.anchor(
+            hook1.anchor(scope(
                 addDataName("name", myInt, MUTABLE)
-            )
+            ))
         ));
         String code = template1.render();
     }
@@ -3106,10 +3103,10 @@ public class TestTemplate {
         ));
 
         var template2 = Template.make(() -> scope(
-            hook1.anchor(
+            hook1.anchor(scope(
                 addDataName("name", myInt, MUTABLE),
                 hook1.insert(template1.asToken())
-            )
+            ))
         ));
         String code = template2.render();
     }

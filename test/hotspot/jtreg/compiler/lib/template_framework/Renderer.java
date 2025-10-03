@@ -282,11 +282,12 @@ final class Renderer {
             case StringToken(String s) -> {
                 renderStringWithDollarAndHashtagReplacements(s);
             }
-            case HookAnchorToken(Hook hook, List<Token> tokens) -> {
+            case HookAnchorToken(Hook hook, NestingToken innerScope) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. That way, name
                 // definitions at the hook cannot escape the hookCodeFrame.
+                // TODO: what if we want them to escape?
                 CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame);
                 hookCodeFrame.addHook(hook);
 
@@ -296,7 +297,7 @@ final class Renderer {
                 CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame);
                 currentCodeFrame = innerCodeFrame;
 
-                renderTokenList(tokens);
+                renderNestingToken(innerScope, () -> {});
 
                 // Close the hookCodeFrame and innerCodeFrame. hookCodeFrame code comes before the
                 // innerCodeFrame code from the tokens.

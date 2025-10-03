@@ -67,16 +67,15 @@ package compiler.lib.template_framework;
  */
 public record Hook(String name) {
     /**
-     * Anchor this {@link Hook} for the scope of the provided {@code 'tokens'}.
+     * Anchor this {@link Hook} for the provided inner scope.
      * From anywhere inside this scope, even in nested Templates, code can be
      * {@link #insert}ed back to the location where this {@link Hook} was {@link #anchor}ed.
      *
-     * @param tokens A list of tokens, which have the same restrictions as {@link Template#scope}.
-     * @return A {@link Token} that captures the anchoring of the scope and the list of validated {@link Token}s.
+     * @param innerScope An inner scope, for which the {@link Hook} is anchored.
+     * @return A {@link Token} that captures the anchoring and the inner scope.
      */
-    // TODO: scope? - only if it simplifies the code
-    public Token anchor(Object... tokens) {
-        return new HookAnchorToken(this, TokenParser.parse(tokens));
+    public Token anchor(NestingToken innerScope) {
+        return new HookAnchorToken(this, innerScope);
     }
 
     /**
