@@ -271,6 +271,7 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
 }
 
 // Platform-specific thread suspension and CPU context retrieval.
+
 class OSThreadSampler : public SuspendedThreadTask {
  private:
   JfrSampleResult _result;
@@ -281,7 +282,10 @@ class OSThreadSampler : public SuspendedThreadTask {
   OSThreadSampler(JavaThread* jt, SampleCallback callback, void* data) :
     SuspendedThreadTask(jt), _result(THREAD_SUSPENSION_ERROR),
     _callback(callback), _data(data) {}
-  void request_sample() { run(); }
+  void request_sample() {
+    MutexLocker ml(JfrSamplerSR_lock, Mutex::_no_safepoint_check_flag);
+    run();
+  }
   JfrSampleResult result() const { return _result; }
 
   void do_task(const SuspendedThreadTaskContext& context) {
