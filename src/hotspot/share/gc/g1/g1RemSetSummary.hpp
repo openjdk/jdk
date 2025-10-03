@@ -33,10 +33,12 @@ class G1RemSet;
 
 // A G1RemSetSummary manages statistical information about the remembered set.
 class G1RemSetSummary {
-  size_t _num_refine_threads;
-  jlong* _refine_threads_cpu_times;
+  size_t _num_worker_threads;
+  jlong* _worker_threads_cpu_times;
+  jlong _control_thread_cpu_time;
 
-  void set_refine_thread_cpu_time(uint thread, jlong value);
+  void set_worker_thread_cpu_time(uint thread, jlong value);
+  void set_control_thread_cpu_time(jlong value);
 
   // Update this summary with current data from various places.
   void update();
@@ -53,7 +55,8 @@ public:
 
   void print_on(outputStream* out, bool show_thread_times);
 
-  jlong refine_thread_cpu_time(uint thread) const;
+  jlong worker_thread_cpu_time(uint thread) const;
+  jlong control_thread_cpu_time() const;
 };
 
 #endif // SHARE_GC_G1_G1REMSETSUMMARY_HPP

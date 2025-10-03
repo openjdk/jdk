@@ -182,13 +182,13 @@ class JavaThread: public Thread {
 
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
-    // Use Atomic::load() to prevent data race between concurrent modification and
+    // Use AtomicAccess::load() to prevent data race between concurrent modification and
     // concurrent readers, e.g. ThreadService::get_current_contended_monitor().
     // Especially, reloading pointer from thread after null check must be prevented.
-    return Atomic::load(&_current_pending_monitor);
+    return AtomicAccess::load(&_current_pending_monitor);
   }
   void set_current_pending_monitor(ObjectMonitor* monitor) {
-    Atomic::store(&_current_pending_monitor, monitor);
+    AtomicAccess::store(&_current_pending_monitor, monitor);
   }
   void set_current_pending_monitor_is_from_java(bool from_java) {
     _current_pending_monitor_is_from_java = from_java;
@@ -198,10 +198,10 @@ class JavaThread: public Thread {
   }
   ObjectMonitor* current_waiting_monitor() {
     // See the comment in current_pending_monitor() above.
-    return Atomic::load(&_current_waiting_monitor);
+    return AtomicAccess::load(&_current_waiting_monitor);
   }
   void set_current_waiting_monitor(ObjectMonitor* monitor) {
-    Atomic::store(&_current_waiting_monitor, monitor);
+    AtomicAccess::store(&_current_waiting_monitor, monitor);
   }
 
   // JNI handle support
@@ -450,7 +450,6 @@ class JavaThread: public Thread {
   volatile oop     _exception_oop;               // Exception thrown in compiled code
   volatile address _exception_pc;                // PC where exception happened
   volatile address _exception_handler_pc;        // PC for handler of exception
-  volatile int     _is_method_handle_return;     // true (== 1) if the current exception PC is a MethodHandle call site.
 
  private:
   // support for JNI critical regions
@@ -715,7 +714,7 @@ public:
   inline bool clear_carrier_thread_suspended();
 
   bool is_carrier_thread_suspended() const {
-    return Atomic::load(&_carrier_thread_suspended);
+    return AtomicAccess::load(&_carrier_thread_suspended);
   }
 
   bool is_in_VTMS_transition() const             { return _is_in_VTMS_transition; }
@@ -727,8 +726,8 @@ public:
   bool is_in_java_upcall() const                 { return _is_in_java_upcall; }
   void toggle_is_in_java_upcall()                { _is_in_java_upcall = !_is_in_java_upcall; };
 
-  bool VTMS_transition_mark() const              { return Atomic::load(&_VTMS_transition_mark); }
-  void set_VTMS_transition_mark(bool val)        { Atomic::store(&_VTMS_transition_mark, val); }
+  bool VTMS_transition_mark() const              { return AtomicAccess::load(&_VTMS_transition_mark); }
+  void set_VTMS_transition_mark(bool val)        { AtomicAccess::store(&_VTMS_transition_mark, val); }
 
   // Temporarily skip posting JVMTI events for safety reasons when executions is in a critical section:
   // - is in a VTMS transition (_is_in_VTMS_transition)
@@ -817,7 +816,6 @@ public:
   void set_exception_oop(oop o);
   void set_exception_pc(address a)               { _exception_pc = a; }
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
-  void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
 
   void clear_exception_oop_and_pc() {
     set_exception_oop(nullptr);
@@ -866,7 +864,6 @@ public:
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
-  static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
   static ByteSize active_handles_offset()        { return byte_offset_of(JavaThread, _active_handles); }
 
@@ -943,7 +940,7 @@ public:
   }
 
   // Atomic version; invoked by a thread other than the owning thread.
-  bool in_critical_atomic() { return Atomic::load(&_jni_active_critical) > 0; }
+  bool in_critical_atomic() { return AtomicAccess::load(&_jni_active_critical) > 0; }
 
   // Checked JNI: is the programmer required to check for exceptions, if so specify
   // which function name. Returning to a Java frame should implicitly clear the

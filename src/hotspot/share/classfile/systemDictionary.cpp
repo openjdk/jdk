@@ -66,7 +66,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -196,14 +196,19 @@ ClassLoaderData* SystemDictionary::register_loader(Handle class_loader, bool cre
 }
 
 void SystemDictionary::set_system_loader(ClassLoaderData *cld) {
-  assert(_java_system_loader.is_empty(), "already set!");
-  _java_system_loader = cld->class_loader_handle();
-
+  if (_java_system_loader.is_empty()) {
+    _java_system_loader = cld->class_loader_handle();
+  } else {
+    assert(_java_system_loader.resolve() == cld->class_loader(), "sanity");
+  }
 }
 
 void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
-  assert(_java_platform_loader.is_empty(), "already set!");
-  _java_platform_loader = cld->class_loader_handle();
+  if (_java_platform_loader.is_empty()) {
+    _java_platform_loader = cld->class_loader_handle();
+  } else {
+    assert(_java_platform_loader.resolve() == cld->class_loader(), "sanity");
+  }
 }
 
 // ----------------------------------------------------------------------------
@@ -1079,7 +1084,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
   assert(ik != nullptr, "sanity");
   assert(ik->in_aot_cache(), "sanity");
   assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
-  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
+  assert(AtomicAccess::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1147,6 +1152,58 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   if (CDSConfig::is_dumping_final_static_archive()) {
     SystemDictionaryShared::init_dumptime_info_from_preimage(ik);
   }
+}
+
+// This is much more lightweight than SystemDictionary::resolve_or_null
+// - There's only a single Java thread at this point. No need for placeholder.
+// - All supertypes of ik have been loaded
+// - There's no circularity (checked in AOT assembly phase)
+// - There's no need to call java.lang.ClassLoader::load_class() because the boot/platform/app
+//   loaders are well-behaved
+void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRAPS) {
+  precond(Universe::is_bootstrapping());
+  precond(java_platform_loader() != nullptr && java_system_loader() != nullptr);
+  precond(class_loader() == nullptr || class_loader() == java_platform_loader() ||class_loader() == java_system_loader());
+  precond(CDSConfig::is_using_aot_linked_classes());
+  precond(AOTMetaspace::in_aot_cache_static_region((void*)ik));
+  precond(!ik->is_loaded());
+
+#ifdef ASSERT
+  // preload_class() must be called in the correct order -- all super types must have
+  // already been loaded.
+  if (ik->java_super() != nullptr) {
+    assert(ik->java_super()->is_loaded(), "must be");
+  }
+
+  Array<InstanceKlass*>* interfaces = ik->local_interfaces();
+  int num_interfaces = interfaces->length();
+  for (int index = 0; index < num_interfaces; index++) {
+    assert(interfaces->at(index)->is_loaded(), "must be");
+  }
+#endif
+
+  ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
+  oop java_mirror = ik->archived_java_mirror();
+  precond(java_mirror != nullptr);
+
+  Handle pd(THREAD, java_lang_Class::protection_domain(java_mirror));
+  PackageEntry* pkg_entry = ik->package();
+  assert(pkg_entry != nullptr || ClassLoader::package_from_class_name(ik->name()) == nullptr,
+         "non-empty packages must have been archived");
+
+  // TODO: the following assert requires JDK-8365580
+  // assert(is_shared_class_visible(ik->name(), ik, pkg_entry, class_loader), "must be");
+
+  ik->restore_unshareable_info(loader_data, pd, pkg_entry, CHECK);
+  load_shared_class_misc(ik, loader_data);
+  ik->add_to_hierarchy(THREAD);
+
+  if (!ik->is_hidden()) {
+    update_dictionary(THREAD, ik, loader_data);
+  }
+
+  assert(java_lang_Class::module(java_mirror) != nullptr, "must have been archived");
+  assert(ik->is_loaded(), "Must be in at least loaded state");
 }
 
 #endif // INCLUDE_CDS
@@ -1277,10 +1334,10 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     assert(result.get_type() == T_OBJECT, "just checking");
     oop obj = result.get_oop();
 
-    // Primitive classes return null since forName() can not be
+    // Primitive classes return null since forName() cannot be
     // used to obtain any of the Class objects representing primitives or void
     if ((obj != nullptr) && !(java_lang_Class::is_primitive(obj))) {
-      InstanceKlass* k = InstanceKlass::cast(java_lang_Class::as_Klass(obj));
+      InstanceKlass* k = java_lang_Class::as_InstanceKlass(obj);
       // For user defined Java class loaders, check that the name returned is
       // the same as that requested.  This check is done for the bootstrap
       // loader when parsing the class file.

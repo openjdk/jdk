@@ -24,7 +24,7 @@
 
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/support/jfrThreadId.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -54,14 +54,14 @@ void JfrTraceIdEpoch::shift_epoch() {
 
 void JfrTraceIdEpoch::set_method_tracer_tag_state() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  Atomic::release_store(&_method_tracer_state, true);
+  AtomicAccess::release_store(&_method_tracer_state, true);
 }
 
 void JfrTraceIdEpoch::reset_method_tracer_tag_state() {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  Atomic::release_store(&_method_tracer_state, false);
+  AtomicAccess::release_store(&_method_tracer_state, false);
 }
 
 bool JfrTraceIdEpoch::has_method_tracer_changed_tag_state() {
-  return Atomic::load_acquire(&_method_tracer_state);
+  return AtomicAccess::load_acquire(&_method_tracer_state);
 }
