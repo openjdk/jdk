@@ -30,6 +30,7 @@ import jdk.test.lib.net.SimpleSSLContext;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.function.Executable;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -41,6 +42,7 @@ import java.net.http.HttpClient.Version;
 import java.net.http.HttpOption;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -52,6 +54,7 @@ import java.util.stream.Stream;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -389,6 +392,22 @@ public class TimeoutResponseTestSupport {
 
     protected static Stream<ServerRequestPair> serverRequestPairs() {
         return Stream.of(HTTP1, HTTPS1, HTTP2, HTTPS2, HTTP3);
+    }
+
+    protected static void assertThrowsHttpTimeoutException(Executable executable) {
+        Exception rootException = assertThrows(Exception.class, executable);
+        // Due to intricacies involved in the way exceptions are generated and
+        // nested, there is no bullet-proof way to determine at which level of
+        // the causal chain an `HttpTimeoutException` will show up. Hence, we
+        // scan through the entire causal chain.
+        Throwable exception = rootException;
+        while (exception != null) {
+            if (exception instanceof HttpTimeoutException) {
+                return;
+            }
+            exception = exception.getCause();
+        }
+        throw new AssertionError("was expecting an `HttpTimeoutException` in the causal chain", rootException);
     }
 
 }

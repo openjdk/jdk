@@ -29,11 +29,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 
 /*
@@ -97,9 +94,9 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
     @MethodSource("serverRequestPairs")
     void testSend(ServerRequestPair pair) throws Exception {
         try (HttpClient client = pair.createClientWithEstablishedConnection()) {
-            assertTimeoutPreemptively(REQUEST_TIMEOUT.multipliedBy(2), () -> assertThrows(
-                    HttpTimeoutException.class,
-                    () -> {
+            assertTimeoutPreemptively(
+                    REQUEST_TIMEOUT.multipliedBy(2),
+                    () -> assertThrowsHttpTimeoutException(() -> {
                         LOGGER.log("Sending the request");
                         client.send(pair.request(), HttpResponse.BodyHandlers.discarding());
                     }));
@@ -119,13 +116,10 @@ class TimeoutResponseHeaderTest extends TimeoutResponseTestSupport {
                 LOGGER.log("Sending the request asynchronously");
                 CompletableFuture<HttpResponse<Void>> responseFuture =
                         client.sendAsync(pair.request(), HttpResponse.BodyHandlers.discarding());
-                Exception exception = assertThrows(ExecutionException.class, () -> {
+                assertThrowsHttpTimeoutException(() -> {
                     LOGGER.log("Obtaining the response");
                     responseFuture.get();
                 });
-                if (!(exception.getCause() instanceof HttpTimeoutException)) {
-                    throw new AssertionError("was expecting a cause of type `HttpTimeoutException`", exception);
-                }
             });
         }
     }

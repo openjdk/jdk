@@ -26,16 +26,13 @@ import jdk.internal.net.http.common.Utils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
 import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTimeoutPreemptively;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -148,17 +145,12 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     private static void verifyResponseBodyDoesNotArrive(HttpResponse<InputStream> response) {
         assertEquals(200, response.statusCode());
-        IOException exception = assertThrows(
-                IOException.class,
-                () -> {
-                    try (InputStream responseBodyStream = response.body()) {
-                        int readByte = responseBodyStream.read();
-                        fail("Unexpected read byte: " + readByte);
-                    }
-                });
-        if (!(exception.getCause() instanceof HttpTimeoutException)) {
-            throw new AssertionError("was expecting a cause of type `HttpTimeoutException`", exception);
-        }
+        assertThrowsHttpTimeoutException(() -> {
+            try (InputStream responseBodyStream = response.body()) {
+                int readByte = responseBodyStream.read();
+                fail("Unexpected read byte: " + readByte);
+            }
+        });
     }
 
     /**
@@ -213,26 +205,21 @@ class TimeoutResponseBodyTest extends TimeoutResponseTestSupport {
 
     private static void verifyResponseBodyArrivesSlow(HttpResponse<InputStream> response) {
         assertEquals(200, response.statusCode());
-        IOException exception = assertThrows(
-                IOException.class,
-                () -> {
-                    try (InputStream responseBodyStream = response.body()) {
-                        int i = 0;
-                        int l = ServerRequestPair.CONTENT_LENGTH;
-                        for (; i < l; i++) {
-                            LOGGER.log("Reading byte %s/%s", i, l);
-                            int readByte = responseBodyStream.read();
-                            if (readByte < 0) {
-                                break;
-                            }
-                            assertEquals(i, readByte);
-                        }
-                        fail("Should not have reached here! (i=%s)".formatted(i));
+        assertThrowsHttpTimeoutException(() -> {
+            try (InputStream responseBodyStream = response.body()) {
+                int i = 0;
+                int l = ServerRequestPair.CONTENT_LENGTH;
+                for (; i < l; i++) {
+                    LOGGER.log("Reading byte %s/%s", i, l);
+                    int readByte = responseBodyStream.read();
+                    if (readByte < 0) {
+                        break;
                     }
-                });
-        if (!(exception.getCause() instanceof HttpTimeoutException)) {
-            throw new AssertionError("was expecting a cause of type `HttpTimeoutException`", exception);
-        }
+                    assertEquals(i, readByte);
+                }
+                fail("Should not have reached here! (i=%s)".formatted(i));
+            }
+        });
     }
 
 }
