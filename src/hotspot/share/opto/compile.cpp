@@ -2103,7 +2103,6 @@ bool Compile::inline_incrementally_one() {
 
   set_inlining_progress(false);
   set_do_cleanup(false);
-  bool should_stress = false;
 
   for (int i = 0; i < _late_inlines.length(); i++) {
     _late_inlines_pos = i+1;
@@ -2115,8 +2114,7 @@ bool Compile::inline_incrementally_one() {
         // randomly add repeated inline attempt if stress-inlining
         cg->call_node()->set_generator(cg);
         C->igvn_worklist()->push(cg->call_node());
-        should_stress = true;
-        break;
+        continue;
       }
       cg->do_late_inline();
       assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
@@ -2146,7 +2144,7 @@ bool Compile::inline_incrementally_one() {
   _late_inlines.remove_till(_late_inlines_pos);
   _late_inlines_pos = 0;
 
-  assert(should_stress || inlining_progress() || _late_inlines.length() == 0, "no progress");
+  assert(inlining_progress() || _late_inlines.length() == 0, "no progress");
 
   bool needs_cleanup = do_cleanup() || over_inlining_cutoff();
 
