@@ -1648,6 +1648,8 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
       retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
+    } else if (VectorNode::is_reinterpret_opcode(opc)) {
+      retValue = Matcher::match_rule_supported_auto_vectorization(Op_VectorReinterpret, size, velt_basic_type(p0));
     } else if (VectorNode::is_minmax_opcode(opc) && is_subword_type(velt_basic_type(p0))) {
       // Java API for Math.min/max operations supports only int, long, float
       // and double types. Thus, avoid generating vector min/max nodes for
@@ -2108,19 +2110,14 @@ void VTransformGraph::apply_memops_reordering_with_schedule() const {
 
 void VTransformGraph::apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const {
   ResourceMark rm;
-  // We keep track of the resulting Nodes from every "VTransformNode::apply" call.
-  // Since "apply" is called on defs before uses, this allows us to find the
-  // generated def (input) nodes when we are generating the use nodes in "apply".
-  int length = _vtnodes.length();
-  GrowableArray<Node*> vtnode_idx_to_transformed_node(length, length, nullptr);
+  VTransformApplyState apply_state(_vloop_analyzer, _vtnodes.length());
 
   for (int i = 0; i < _schedule.length(); i++) {
     VTransformNode* vtn = _schedule.at(i);
-    VTransformApplyResult result = vtn->apply(_vloop_analyzer,
-                                              vtnode_idx_to_transformed_node);
+    VTransformApplyResult result = vtn->apply(apply_state);
     NOT_PRODUCT( if (_trace._verbose) { result.trace(vtn); } )
 
-    vtnode_idx_to_transformed_node.at_put(vtn->_idx, result.node());
+    apply_state.set_transformed_node(vtn, result.node());
     max_vector_length = MAX2(max_vector_length, result.vector_length());
     max_vector_width  = MAX2(max_vector_width,  result.vector_width());
   }
@@ -3074,7 +3071,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   const bool is_sub = iv_scale * iv_stride > 0;
 
   // 1.1: con
-  Node* xbic = igvn().intcon(is_sub ? -con : con);
+  Node* xbic = phase()->intcon(is_sub ? -con : con);
   TRACE_ALIGN_VECTOR_NODE(xbic);
 
   // 1.2: invar = SUM(invar_summands)
@@ -3091,7 +3088,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
       phase()->register_new_node(invar_variable, pre_ctrl);
       TRACE_ALIGN_VECTOR_NODE(invar_variable);
     }
-    Node* invar_scale_con = igvn().intcon(invar_scale);
+    Node* invar_scale_con = phase()->intcon(invar_scale);
     TRACE_ALIGN_VECTOR_NODE(invar_scale_con);
     Node* invar_summand = new MulINode(invar_variable, invar_scale_con);
     phase()->register_new_node(invar_summand, pre_ctrl);
@@ -3143,7 +3140,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   // 2: Compute (14):
   //    XBIC = xbic / abs(iv_scale)
   //    The division is executed as shift
-  Node* log2_abs_iv_scale = igvn().intcon(exact_log2(abs(iv_scale)));
+  Node* log2_abs_iv_scale = phase()->intcon(exact_log2(abs(iv_scale)));
   Node* XBIC = new URShiftINode(xbic, log2_abs_iv_scale);
   phase()->register_new_node(XBIC, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(log2_abs_iv_scale);
@@ -3168,7 +3165,7 @@ void VTransform::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   //                    = XBIC_OP_old_limit AND (AW - 1)
   //    Since AW is a power of 2, the modulo operation can be replaced with
   //    a bitmask operation.
-  Node* mask_AW = igvn().intcon(AW-1);
+  Node* mask_AW = phase()->intcon(AW-1);
   Node* adjust_pre_iter = new AndINode(XBIC_OP_old_limit, mask_AW);
   phase()->register_new_node(adjust_pre_iter, pre_ctrl);
   TRACE_ALIGN_VECTOR_NODE(mask_AW);

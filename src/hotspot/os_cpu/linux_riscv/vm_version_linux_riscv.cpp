@@ -100,7 +100,6 @@
 #endif
 
 uint32_t VM_Version::cpu_vector_length() {
-  assert(ext_V.enabled(), "should not call this");
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
@@ -126,7 +125,7 @@ void VM_Version::setup_cpu_available_features() {
   char buf[1024] = {};
   if (uarch != nullptr && strcmp(uarch, "") != 0) {
     // Use at max half the buffer.
-    snprintf(buf, sizeof(buf)/2, "%s ", uarch);
+    os::snprintf_checked(buf, sizeof(buf)/2, "%s ", uarch);
   }
   os::free((void*) uarch);
 
@@ -303,7 +302,7 @@ void VM_Version::rivos_features() {
 
   ext_Zvfh.enable_feature();
 
-  unaligned_access.enable_feature(MISALIGNED_FAST);
+  unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.

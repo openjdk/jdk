@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@
 COMMA := ,
 
 os := $(shell uname -o)
-cpu := $(shell uname -p)
+cpu := $(shell uname -m)
 
 # Figure out what platform this is building on.
 me := $(cpu)-$(if $(findstring Linux,$(os)),linux-gnu)
