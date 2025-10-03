@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ import java.net.URI;
 public abstract class HttpExchange implements AutoCloseable, Request {
 
      /**
-      * No response body is being sent with this response
+      * No response body is sent with the response
       */
      public static final long RSPBODY_EMPTY = -1L;
 
      /**
-      * The response body is unspecified and will be chunk encoded
+      * The response body will be chunk encoded
       */
      public static final long RSPBODY_CHUNKED = 0;
 
