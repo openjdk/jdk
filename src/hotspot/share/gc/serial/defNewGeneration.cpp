@@ -807,7 +807,7 @@ void DefNewGeneration::reset_scratch() {
   }
 }
 
-void DefNewGeneration::gc_epilogue(bool full) {
+void DefNewGeneration::gc_epilogue() {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();

@@ -476,7 +476,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _exception_oop(oop()),
   _exception_pc(nullptr),
   _exception_handler_pc(nullptr),
-  _is_method_handle_return(0),
 
   _jni_active_critical(0),
   _pending_jni_exception_check_fn(nullptr),
