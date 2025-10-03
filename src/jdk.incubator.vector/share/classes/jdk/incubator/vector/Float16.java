@@ -35,6 +35,8 @@ import static jdk.incubator.vector.Float16Consts.SIGN_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.EXP_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.SIGNIF_BIT_MASK;
 import static jdk.incubator.vector.Float16Consts.MAG_BIT_MASK;
+import static jdk.incubator.vector.Float16Consts.EXP_BIAS;
+import static jdk.incubator.vector.Float16Consts.SIGNIFICAND_WIDTH;
 
 import static java.lang.Float.float16ToFloat;
 import static java.lang.Float.floatToFloat16;
@@ -427,9 +429,8 @@ public final class Float16
         // to implement a carry out from rounding the significand.
         assert (0xf800 & signif_bits) == 0x0;
 
-        // Exponent bias adjust in the representation is equal to MAX_EXPONENT.
         return new Float16((short)(sign_bit |
-                                   ( ((exp + MAX_EXPONENT) << (PRECISION - 1)) + signif_bits ) ));
+                                   ( ((exp + EXP_BIAS) << (PRECISION - 1)) + signif_bits) ));
     }
 
     /**
@@ -1531,8 +1532,8 @@ public final class Float16
      */
     /*package*/ static int getExponent0(short bits) {
         // package private to be usable in java.lang.Float.
-        int bin16ExpBits     = 0x0000_7c00 & bits;     // Five exponent bits.
-        return (bin16ExpBits >> (PRECISION - 1)) - 15;
+        int bin16ExpBits = EXP_BIT_MASK & bits; // Five exponent bits.
+        return (bin16ExpBits >> (PRECISION - 1)) - EXP_BIAS;
     }
 
     /**
@@ -1687,8 +1688,7 @@ public final class Float16
         // nonzero value by it would be guaranteed to over or
         // underflow; due to rounding, scaling down takes an
         // additional power of two which is reflected here
-        final int MAX_SCALE = Float16.MAX_EXPONENT + -Float16.MIN_EXPONENT +
-                Float16Consts.SIGNIFICAND_WIDTH + 1;
+        final int MAX_SCALE = MAX_EXPONENT + -MIN_EXPONENT + SIGNIFICAND_WIDTH + 1;
 
         // Make sure scaling factor is in a reasonable range
         scaleFactor = Math.clamp(scaleFactor, -MAX_SCALE, MAX_SCALE);
@@ -1725,9 +1725,8 @@ public final class Float16
      * @see Math#copySign(double, double)
      */
     public static Float16 copySign(Float16 magnitude, Float16 sign) {
-        return shortBitsToFloat16((short) ((float16ToRawShortBits(sign) & SIGN_BIT_MASK) |
-                                           (float16ToRawShortBits(magnitude) &
-                                            (EXP_BIT_MASK | SIGNIF_BIT_MASK) )));
+        return shortBitsToFloat16((short)((float16ToRawShortBits(sign)      & SIGN_BIT_MASK) |
+                                          (float16ToRawShortBits(magnitude) & MAG_BIT_MASK)));
     }
 
     /**
