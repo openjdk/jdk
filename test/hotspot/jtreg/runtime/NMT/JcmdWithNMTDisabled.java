@@ -77,8 +77,7 @@ public class JcmdWithNMTDisabled {
     jcmdCommand("summary.diff");
     jcmdCommand("detail.diff");
     jcmdCommand("scale=GB");
-    jcmdCommand("xmlformat");
-    jcmdCommand("file=nmt.xml");
+    jcmdCommand("format=xml");
   }
 
   // Helper method for invoking different jcmd calls, all should fail with the same message saying NMT is not enabled
