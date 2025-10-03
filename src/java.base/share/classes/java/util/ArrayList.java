@@ -1823,4 +1823,20 @@ public class ArrayList<E> extends AbstractList<E>
         // assert size >= 0;
         // assert size == elementData.length || elementData[size] == null;
     }
+
+    public void shuffle() {
+        shuffle(new Random());
+    }
+    public void shuffle(Random r) {
+        shuffle(0, size, r);
+    }
+    public void shuffle(int start, int end, Random r) {
+        if (end-start < 2)return;
+        for (int i = end - 1; i > start; i--) {
+            int j = start + r.nextInt(i - start + 1);
+            Object tmp = elementData[i];
+            elementData[i] = elementData[j];
+            elementData[j] = tmp;
+        }
+    }
 }
