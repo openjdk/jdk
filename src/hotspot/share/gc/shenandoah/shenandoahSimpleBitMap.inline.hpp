@@ -27,6 +27,8 @@
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
+using idx_t = ShenandoahSimpleBitMap::idx_t;
+
 inline uintx ShenandoahSimpleBitMap::tail_mask(uintx bit_number) {
   if (bit_number >= BitsPerWord) {
     return -1;
@@ -34,7 +36,7 @@ inline uintx ShenandoahSimpleBitMap::tail_mask(uintx bit_number) {
   return (uintx(1) << bit_number) - 1;
 }
 
-inline index_type ShenandoahSimpleBitMap::find_first_set_bit(index_type beg, index_type end) const {
+inline idx_t ShenandoahSimpleBitMap::find_first_set_bit(idx_t beg, idx_t end) const {
   assert((beg >= 0) && (beg < _num_bits), "precondition");
   assert((end > beg) && (end <= _num_bits), "precondition");
   do {
@@ -49,7 +51,7 @@ inline index_type ShenandoahSimpleBitMap::find_first_set_bit(index_type beg, ind
       // The next set bit is here.  Find first set bit >= bit_number;
       uintx aligned = element_bits >> bit_number;
       uintx first_set_bit = count_trailing_zeros<uintx>(aligned);
-      index_type candidate_result = (array_idx * BitsPerWord) + bit_number + first_set_bit;
+      idx_t candidate_result = (array_idx * BitsPerWord) + bit_number + first_set_bit;
       return (candidate_result < end)? candidate_result: end;
     } else {
       // Next bit is not here.  Try the next array element
@@ -59,16 +61,16 @@ inline index_type ShenandoahSimpleBitMap::find_first_set_bit(index_type beg, ind
   return end;
 }
 
-inline index_type ShenandoahSimpleBitMap::find_first_set_bit(index_type beg) const {
+inline idx_t ShenandoahSimpleBitMap::find_first_set_bit(idx_t beg) const {
   assert((beg >= 0) && (beg < size()), "precondition");
   return find_first_set_bit(beg, size());
 }
 
-inline index_type ShenandoahSimpleBitMap::find_last_set_bit(index_type beg, index_type end) const {
+inline idx_t ShenandoahSimpleBitMap::find_last_set_bit(idx_t beg, idx_t end) const {
   assert((end >= 0) && (end < _num_bits), "precondition");
   assert((beg >= -1) && (beg < end), "precondition");
   do {
-    index_type array_idx = end >> LogBitsPerWord;
+    idx_t array_idx = end >> LogBitsPerWord;
     uint8_t bit_number = end & (BitsPerWord - 1);
     uintx element_bits = _bitmap[array_idx];
     if (bit_number < BitsPerWord - 1){
@@ -79,7 +81,7 @@ inline index_type ShenandoahSimpleBitMap::find_last_set_bit(index_type beg, inde
       // The prev set bit is here.  Find the first set bit <= bit_number
       uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
       uintx first_set_bit = count_leading_zeros<uintx>(aligned);
-      index_type candidate_result = array_idx * BitsPerWord + (bit_number - first_set_bit);
+      idx_t candidate_result = array_idx * BitsPerWord + (bit_number - first_set_bit);
       return (candidate_result > beg)? candidate_result: beg;
     } else {
       // Next bit is not here.  Try the previous array element
@@ -89,19 +91,19 @@ inline index_type ShenandoahSimpleBitMap::find_last_set_bit(index_type beg, inde
   return beg;
 }
 
-inline index_type ShenandoahSimpleBitMap::find_last_set_bit(index_type end) const {
+inline idx_t ShenandoahSimpleBitMap::find_last_set_bit(idx_t end) const {
   assert((end >= 0) && (end < _num_bits), "precondition");
   return find_last_set_bit(-1, end);
 }
 
-inline index_type ShenandoahSimpleBitMap::find_first_consecutive_set_bits(index_type beg, size_t num_bits) const {
+inline idx_t ShenandoahSimpleBitMap::find_first_consecutive_set_bits(idx_t beg, size_t num_bits) const {
   assert((beg >= 0) && (beg < _num_bits), "precondition");
   return find_first_consecutive_set_bits(beg, size(), num_bits);
 }
 
-inline index_type ShenandoahSimpleBitMap::find_last_consecutive_set_bits(index_type end, size_t num_bits) const {
+inline idx_t ShenandoahSimpleBitMap::find_last_consecutive_set_bits(idx_t end, size_t num_bits) const {
   assert((end >= 0) && (end < _num_bits), "precondition");
-  return find_last_consecutive_set_bits((index_type) -1, end, num_bits);
+  return find_last_consecutive_set_bits((idx_t) -1, end, num_bits);
 }
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_INLINE_HPP

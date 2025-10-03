@@ -39,6 +39,8 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/quickSort.hpp"
 
+using idx_t = ShenandoahSimpleBitMap::idx_t;
+
 template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
 class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
@@ -540,7 +542,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   // Sort the promotion-eligible regions in order of increasing live-data-bytes so that we can first reclaim regions that require
   // less evacuation effort.  This prioritizes garbage first, expanding the allocation pool early before we reclaim regions that
   // have more live data.
-  const index_type num_regions = heap->num_regions();
+  const idx_t num_regions = heap->num_regions();
 
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
@@ -548,10 +550,10 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   ShenandoahFreeSet* freeset = heap->free_set();
 
   // Any region that is to be promoted in place needs to be retired from its Collector or Mutator partition.
-  index_type pip_low_collector_idx = freeset->max_regions();
-  index_type pip_high_collector_idx = -1;
-  index_type pip_low_mutator_idx = freeset->max_regions();
-  index_type pip_high_mutator_idx = -1;
+  idx_t pip_low_collector_idx = freeset->max_regions();
+  idx_t pip_high_collector_idx = -1;
+  idx_t pip_low_mutator_idx = freeset->max_regions();
+  idx_t pip_high_mutator_idx = -1;
   size_t collector_regions_to_pip = 0;
   size_t mutator_regions_to_pip = 0;
 
@@ -561,7 +563,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   size_t pip_collector_bytes = 0;
 
   size_t min_remnant_size = PLAB::min_size() * HeapWordSize;
-  for (index_type i = 0; i < num_regions; i++) {
+  for (idx_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
     if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
       // skip over regions that aren't regular young with some live data
