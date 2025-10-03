@@ -147,7 +147,7 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
                 while (true) {
                     JVMTIUtils.stopThread(worker2);
                     if (TEST_MODE != 1) {
-                         // Don't stop() worker1 with JVMTI raw monitors since if the monitor is
+                        // Don't stop() worker1 with JVMTI raw monitors since if the monitor is
                         // not released worker2 will deadlock on enter
                         JVMTIUtils.stopThread(worker1);
                     }
