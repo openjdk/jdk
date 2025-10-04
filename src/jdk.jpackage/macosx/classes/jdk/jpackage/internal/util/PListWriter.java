@@ -90,7 +90,7 @@ public final class PListWriter {
 
     public static void writePList(XMLStreamWriter xml, XmlConsumer content)
             throws XMLStreamException, IOException {
-        xml.writeDTD("plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"https://www.apple.com/DTDs/PropertyList-1.0.dtd\"");
+        xml.writeDTD("<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"https://www.apple.com/DTDs/PropertyList-1.0.dtd\">");
         xml.writeStartElement("plist");
         xml.writeAttribute("version", "1.0");
         content.accept(xml);
