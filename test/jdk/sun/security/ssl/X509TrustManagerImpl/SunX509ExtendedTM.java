@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,13 @@
  * @test
  * @bug 6916074
  * @summary Add support for TLS 1.2
+ * @enablePreview
  * @run main/othervm SunX509ExtendedTM
  */
 
 import java.net.*;
+import java.security.PEMDecoder;
+import java.security.cert.X509Certificate;
 import java.util.*;
 import java.io.*;
 import javax.net.ssl.*;
@@ -997,13 +1000,10 @@ public class SunX509ExtendedTM {
             String keyCertStr, byte[] modulus,
             byte[] privateExponent, char[] passphrase) throws Exception {
 
-        // generate certificate from cert string
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        PEMDecoder pemDecoder = PEMDecoder.of();
 
-        ByteArrayInputStream is =
-                    new ByteArrayInputStream(trusedCertStr.getBytes());
-        Certificate trusedCert = cf.generateCertificate(is);
-        is.close();
+        // generate certificate from cert string
+        Certificate trusedCert = pemDecoder.decode(trusedCertStr, X509Certificate.class);
 
         // create a key store
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -1022,9 +1022,7 @@ public class SunX509ExtendedTM {
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);
 
             // generate certificate chain
-            is = new ByteArrayInputStream(keyCertStr.getBytes());
-            Certificate keyCert = cf.generateCertificate(is);
-            is.close();
+            Certificate keyCert = pemDecoder.decode(keyCertStr, X509Certificate.class);
 
             Certificate[] chain = new Certificate[2];
             chain[0] = keyCert;
