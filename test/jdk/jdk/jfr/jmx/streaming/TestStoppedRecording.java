@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.jfr.api.consumer.recordingstream;
+package jdk.jfr.jmx.streaming;
 
 import jdk.jfr.Event;
 import jdk.jfr.FlightRecorder;
@@ -29,19 +29,20 @@ import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.management.jfr.RemoteRecordingStream;
 
-import java.util.List;
+import javax.management.MBeanServerConnection;
+import java.lang.management.ManagementFactory;
 import java.util.function.Consumer;
 
 /**
  * @test
- * @summary Tests that a RecordingStream is closed if the underlying Recording
- *          is stopped.
+ * @summary Tests that a RemoteRecordingStream is closed if the underlying Remote Recording is stopped.
  * @requires vm.flagless
  * @requires vm.hasJFR
- * @library /test/lib
- * @run main/othervm jdk.jfr.api.consumer.recordingstream.TestStoppedRecording
+ * @library /test/lib /test/jdk
+ * @build jdk.jfr.api.consumer.recordingstream.EventProducer
+ * @run main/othervm jdk.jfr.jmx.streaming.TestStoppedRecording
  */
 public class TestStoppedRecording {
 
@@ -51,6 +52,7 @@ public class TestStoppedRecording {
             if (recording.getState() == RecordingState.RUNNING) {
                 StopEvent e = new StopEvent();
                 e.commit();
+                System.out.println("StopEvent committed");
             }
         }
     }
@@ -59,13 +61,10 @@ public class TestStoppedRecording {
     }
 
     private static final Consumer<RecordedEvent> STOP_RECORDING = e -> {
-        List<Recording> recordings = FlightRecorder.getFlightRecorder().getRecordings().stream().filter(r -> r.getState() == RecordingState.RUNNING).toList();
-        if (recordings.size() != 1) {
-            throw new IllegalStateException("Expected one recording to be running");
-        }
-        Recording r = recordings.getFirst();
-        r.stop();
+        FlightRecorder.getFlightRecorder().getRecordings().getFirst().stop();
+        System.out.println("stopped");
     };
+    private static final MBeanServerConnection CONNECTION = ManagementFactory.getPlatformMBeanServer();
 
     public static void main(String... args) throws Exception {
         FlightRecorder.addListener(new SendEventListener());
@@ -74,14 +73,14 @@ public class TestStoppedRecording {
     }
 
     private static void sync() throws Exception {
-        try (RecordingStream rs = new RecordingStream()) {
+        try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
             rs.onEvent(STOP_RECORDING);
             rs.start();
         }
     }
 
     private static void async() throws Exception {
-        try (RecordingStream rs = new RecordingStream()) {
+        try (RemoteRecordingStream rs = new RemoteRecordingStream(CONNECTION)) {
             rs.onEvent(STOP_RECORDING);
             rs.startAsync();
             rs.awaitTermination();
