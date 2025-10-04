@@ -164,6 +164,7 @@ public class TestTemplate {
         testListArgument();
         testNestedScopes1();
         testNestedScopes2();
+        testHookAndScopes();
 
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -2672,6 +2673,60 @@ public class TestTemplate {
             dataNames: {g_a int; g_b int; g_c int; v_i int; v_j int; v_k int; }
             close scope.
             dataNames: {g_a int; g_b int; g_c int; }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testHookAndScopes() {
+        Hook hook1 = new Hook("Hook1");
+
+        var listNamesTemplate = Template.make(() -> scope(
+            "{",
+            structuralNames().exactOf(myStructuralTypeA).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
+            "}\n"
+        ));
+
+        // TODO: make the template scope flat? - only names are in question.
+        var insertTemplate = Template.make("name", (String name) -> scope(
+            let("local", "insert garbage"),
+            addStructuralName(name, myStructuralTypeA),
+            "insert: #name\n",
+            listNamesTemplate.asToken()
+        ));
+
+        var template = Template.make(() -> scope(
+            "scope:\n",
+            hook1.anchor(scope(
+                let("local", "scope garbage"),
+                addStructuralName("x1a", myStructuralTypeA),
+                "scope before insert:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertTemplate.asToken("x1b")),
+                "scope after insert:\n",
+                listNamesTemplate.asToken()
+            )),
+            "after scope:\n",
+            listNamesTemplate.asToken(),
+
+            // TODO: other scopes
+
+            let("local", "outer garbage")
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            scope:
+            insert: x1b
+            {x1b}
+            scope before insert:
+            {x1a}
+            scope after insert:
+            {x1b, x1a}
+            after scope:
+            {}
             """;
         checkEQ(code, expected);
     }
