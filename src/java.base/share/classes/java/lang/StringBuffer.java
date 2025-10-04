@@ -271,6 +271,14 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     }
 
     /**
+     * @since     26
+     */
+    @Override
+    public synchronized int codePointCount() {
+        return super.codePointCount();
+    }
+
+    /**
      * @throws IndexOutOfBoundsException {@inheritDoc}
      * @since     1.5
      */
