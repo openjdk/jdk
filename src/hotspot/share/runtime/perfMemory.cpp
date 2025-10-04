@@ -114,7 +114,7 @@ void PerfMemory::initialize() {
     // the warning is issued only in debug mode in order to avoid
     // additional output to the stdout or stderr output streams.
     //
-    if (PrintMiscellaneous && Verbose) {
+    if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
       warning("Could not create PerfData Memory region, reverting to malloc");
     }
 
@@ -250,7 +250,7 @@ char* PerfMemory::get_perfdata_file_path() {
     if(!Arguments::copy_expand_pid(PerfDataSaveFile, strlen(PerfDataSaveFile),
                                    dest_file, JVM_MAXPATHLEN)) {
       FREE_C_HEAP_ARRAY(char, dest_file);
-      if (PrintMiscellaneous && Verbose) {
+      if ((PrintMiscellaneous && Verbose) || EnhanceErrorWarningLogging) {
         warning("Invalid performance data file path name specified, "\
                 "fall back to a default name");
       }
