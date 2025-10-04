@@ -24,6 +24,7 @@
  */
 
 #include "compiler/compilationMemoryStatistic.hpp"
+#include "cppstdlib/new.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/resourceArea.hpp"

@@ -36,7 +36,6 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/copy.hpp"
 
-#include <new>
 #include <type_traits>
 
 const RelocationHolder RelocationHolder::none; // its type is relocInfo::none
