@@ -465,6 +465,10 @@ class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
   // Convert the CallDynamicJava into an inline
   virtual void do_late_inline();
 
+  virtual ciMethod* callee_method() {
+    return _callee;
+  }
+
   virtual void set_callee_method(ciMethod* m) {
     assert(_callee == nullptr || _callee == m, "repeated inline attempt with different callee");
     _callee = m;
