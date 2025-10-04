@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,8 @@
  * @summary Test that URL connections to multi-release jars can be runtime versioned
  * @library /lib/testlibrary/java/util/jar /test/lib
  * @modules jdk.compiler
- *          jdk.httpserver
  *          jdk.jartool
  * @build CreateMultiReleaseTestJars
- *        jdk.test.lib.net.SimpleHttpServer
  *        jdk.test.lib.util.JarBuilder
  *        jdk.test.lib.compiler.Compiler
  * @run testng MultiReleaseJarURLConnection
@@ -51,11 +49,15 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Enumeration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.jar.JarFile;
 
-import jdk.test.lib.net.SimpleHttpServer;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.SimpleFileServer;
 import jdk.test.lib.net.URIBuilder;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -68,8 +70,8 @@ public class MultiReleaseJarURLConnection {
     String unversioned = userdir + "/unversioned.jar";
     String unsigned = userdir + "/multi-release.jar";
     String signed = userdir + "/signed-multi-release.jar";
-    static final String TESTCONTEXT = "/multi-release.jar";
-    SimpleHttpServer server;
+    HttpServer server;
+    ExecutorService executor;
 
     @BeforeClass
     public void initialize() throws Exception {
@@ -78,7 +80,10 @@ public class MultiReleaseJarURLConnection {
         creator.buildUnversionedJar();
         creator.buildMultiReleaseJar();
         creator.buildSignedMultiReleaseJar();
-        server = new SimpleHttpServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), TESTCONTEXT, System.getProperty("user.dir", "."));
+        server = SimpleFileServer.createFileServer(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0),
+                Path.of(System.getProperty("user.dir", ".")), SimpleFileServer.OutputLevel.INFO);
+        executor = Executors.newCachedThreadPool();
+        server.setExecutor(executor);
         server.start();
     }
 
@@ -86,7 +91,9 @@ public class MultiReleaseJarURLConnection {
     public void close() throws IOException {
         // Windows requires server to stop before file is deleted
         if (server != null)
-            server.stop();
+            server.stop(0);
+            executor.shutdown();
+
         Files.delete(Paths.get(unversioned));
         Files.delete(Paths.get(unsigned));
         Files.delete(Paths.get(signed));
@@ -176,8 +183,8 @@ public class MultiReleaseJarURLConnection {
                 {"unsigned", new URL("jar:file:" + unsigned + "!/")},
                 {"signed", new URL("jar:file:" + signed + "!/")},
                 // external jar received via http protocol
-                {"http", toHttpJarURL(server.getPort(), "/multi-release.jar", "!/")},
-                {"http", URIBuilder.newBuilder().scheme("http").port(server.getPort())
+                {"http", toHttpJarURL(server.getAddress().getPort(), "/multi-release.jar", "!/")},
+                {"http", URIBuilder.newBuilder().scheme("http").port(server.getAddress().getPort())
                         .loopback().path("/multi-release.jar").toURL()},
         };
     }
