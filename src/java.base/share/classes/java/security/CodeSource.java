@@ -238,7 +238,12 @@ public class CodeSource implements java.io.Serializable {
         } else if (certs != null) {
             // Convert the certs to code signers
             signers = convertCertArrayToSignerArray(certs);
-            return signers.clone();
+            if (signers != null) {
+                return signers.clone();
+
+            } else {
+                return null;
+            }
 
         } else {
             return null;
