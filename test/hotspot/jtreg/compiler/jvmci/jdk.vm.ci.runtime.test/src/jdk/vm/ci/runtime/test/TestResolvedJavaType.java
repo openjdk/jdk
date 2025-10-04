@@ -106,6 +106,7 @@ import jdk.vm.ci.meta.ResolvedJavaType;
 import jdk.vm.ci.meta.UnresolvedJavaType;
 import sun.reflect.annotation.AnnotationSupport;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotObjectConstant;
 
 /**
  * Tests for {@link ResolvedJavaType}.
@@ -121,6 +122,28 @@ public class TestResolvedJavaType extends TypeUniverse {
     public void getMirrorTest() {
         for (ResolvedJavaType type : javaTypes) {
             assertEquals(type.toClassName(), runtime.getMirror(type).getName());
+        }
+    }
+
+    @Test
+    public void getLoaderTest() {
+        for (ResolvedJavaType type : javaTypes) {
+            JavaConstant loader = type.getLoader();
+            if (loader == null || loader.isNull()) {
+                assertTrue(runtime.getMirror(type).getClassLoader() == null);
+            } else {
+                assertEquals(((HotSpotObjectConstant) loader).getIdentityHashCode(), runtime.getMirror(type).getClassLoader().hashCode());
+            }
+        }
+    }
+
+    @Test
+    public void getCodeLocationTest() {
+        for (ResolvedJavaType type : javaTypes) {
+            var pd = runtime.getMirror(type).getProtectionDomain();
+            if (pd != null && pd.getCodeSource() != null) {
+                assertEquals(type.getCodeLocation(), pd.getCodeSource().getLocation());
+            }
         }
     }
 
@@ -194,6 +217,16 @@ public class TestResolvedJavaType extends TypeUniverse {
             ResolvedJavaType type = metaAccess.lookupJavaType(c);
             boolean expected = c.isEnum();
             boolean actual = type.isEnum();
+            assertEquals(expected, actual);
+        }
+    }
+
+    @Test
+    public void isRecordTest() {
+        for (Class<?> c : classes) {
+            ResolvedJavaType type = metaAccess.lookupJavaType(c);
+            boolean expected = c.isRecord();
+            boolean actual = type.isRecord();
             assertEquals(expected, actual);
         }
     }
