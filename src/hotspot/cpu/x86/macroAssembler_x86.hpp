@@ -29,9 +29,9 @@
 #include "asm/register.hpp"
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
-#include "utilities/macros.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by frequently used macros.
 //

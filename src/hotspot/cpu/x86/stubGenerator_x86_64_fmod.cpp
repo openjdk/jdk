@@ -25,8 +25,8 @@
  */
 
 #include "macroAssembler_x86.hpp"
-#include "stubGenerator_x86_64.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "stubGenerator_x86_64.hpp"
 
 /******************************************************************************/
 //                     ALGORITHM DESCRIPTION - FMOD()

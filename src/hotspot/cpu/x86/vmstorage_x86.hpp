@@ -24,10 +24,10 @@
 #ifndef CPU_X86_VMSTORAGE_X86_INLINE_HPP
 #define CPU_X86_VMSTORAGE_X86_INLINE_HPP
 
-#include <cstdint>
-
 #include "asm/register.hpp"
 #include "code/vmreg.inline.hpp"
+
+#include <cstdint>
 
 // keep in sync with jdk/internal/foreign/abi/x64/X86_64Architecture
 enum class StorageType : int8_t {

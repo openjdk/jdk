@@ -25,8 +25,8 @@
 #include "rdtsc_x86.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "vm_version_x86.hpp"
 
 static jlong _epoch = 0;
