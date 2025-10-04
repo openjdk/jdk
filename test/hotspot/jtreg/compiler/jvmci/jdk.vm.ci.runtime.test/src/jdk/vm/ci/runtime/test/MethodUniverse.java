@@ -37,7 +37,7 @@ public class MethodUniverse extends TypeUniverse {
     public static final Map<Method, ResolvedJavaMethod> methods = new HashMap<>();
     public static final Map<Constructor<?>, ResolvedJavaMethod> constructors = new HashMap<>();
 
-    {
+    static {
         for (Class<?> c : classes) {
             for (Method m : c.getDeclaredMethods()) {
                 ResolvedJavaMethod method = metaAccess.lookupJavaMethod(m);

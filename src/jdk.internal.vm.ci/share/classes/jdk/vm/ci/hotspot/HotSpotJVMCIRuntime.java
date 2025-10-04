@@ -95,12 +95,20 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     private HotSpotResolvedObjectTypeImpl serializableType;
     private HotSpotResolvedObjectTypeImpl cloneableType;
     private HotSpotResolvedObjectTypeImpl enumType;
+    private HotSpotResolvedObjectTypeImpl recordType;
 
     HotSpotResolvedObjectTypeImpl getJavaLangObject() {
         if (javaLangObject == null) {
             javaLangObject = (HotSpotResolvedObjectTypeImpl) fromClass(Object.class);
         }
         return javaLangObject;
+    }
+
+    HotSpotResolvedObjectTypeImpl getJavaLangRecord() {
+        if (recordType == null) {
+            recordType = (HotSpotResolvedObjectTypeImpl) fromClass(Record.class);
+        }
+        return recordType;
     }
 
     HotSpotResolvedObjectTypeImpl getJavaLangString() {
