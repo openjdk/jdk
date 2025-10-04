@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -69,10 +70,10 @@ public class TypeUniverse {
 
     public static final MetaAccessProvider metaAccess = JVMCI.getRuntime().getHostJVMCIBackend().getMetaAccess();
     public static final ConstantReflectionProvider constantReflection = JVMCI.getRuntime().getHostJVMCIBackend().getConstantReflection();
-    public static final Collection<Class<?>> classes = new HashSet<>();
+    public static final Collection<Class<?>> classes = new LinkedHashSet<>();
     public static final Set<ResolvedJavaType> javaTypes;
     public static final ResolvedJavaType predicateType;
-    public static final Map<Class<?>, Class<?>> arrayClasses = new HashMap<>();
+    public static final Map<Class<?>, Class<?>> arrayClasses = new LinkedHashMap<>();
 
     private static List<ConstantValue> constants;
 
@@ -92,7 +93,22 @@ public class TypeUniverse {
 
     }
 
+    private static class PrivateStaticInnerClass {
+
+    }
     protected class ProtectedInnerClass {
+
+    }
+
+    protected static class ProtectedStaticInnerClass {
+
+    }
+
+    protected interface ProtectedInnerInterface {
+
+    }
+
+    protected static interface ProtectedStaticInnerInterface {
 
     }
 
@@ -116,7 +132,7 @@ public class TypeUniverse {
                         byte[][].class, short[][].class, char[][].class, int[][].class, float[][].class, long[][].class, double[][].class, Object[][].class, Class[][].class, List[][].class,
                         ClassLoader.class, String.class, Serializable.class, Cloneable.class, Test.class, TestMetaAccessProvider.class, List.class, Collection.class, Map.class, Queue.class,
                         HashMap.class, LinkedHashMap.class, IdentityHashMap.class, AbstractCollection.class, AbstractList.class, ArrayList.class, InnerClass.class, InnerStaticClass.class,
-                        InnerStaticFinalClass.class, PrivateInnerClass.class, ProtectedInnerClass.class, ScopedMemoryAccess.class};
+                        ScopedMemoryAccess.class, TypeUniverse.class};
         for (Class<?> c : initialClasses) {
             addClass(c);
         }
