@@ -57,7 +57,6 @@ bool ShenandoahMarkBitMap::is_bitmap_clear_range(const HeapWord* start, const He
   return (result == end);
 }
 
-
 HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
                                                      const HeapWord* limit) const {
 #ifdef ASSERT
@@ -74,6 +73,25 @@ HeapWord* ShenandoahMarkBitMap::get_next_marked_addr(const HeapWord* addr,
   size_t const addr_offset = address_to_index(align_up(addr, HeapWordSize << LogMinObjAlignment));
   size_t const limit_offset = address_to_index(limit);
   size_t const nextOffset = get_next_one_offset(addr_offset, limit_offset);
+  return index_to_address(nextOffset);
+}
+
+HeapWord* ShenandoahMarkBitMap::get_last_marked_addr(const HeapWord* addr,
+                                                     const HeapWord* limit) const {
+#ifdef ASSERT
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeapRegion* r = heap->heap_region_containing(addr);
+  ShenandoahMarkingContext* ctx = heap->marking_context();
+  HeapWord* tams = ctx->top_at_mark_start(r);
+  assert(limit != nullptr, "limit must not be null");
+  assert(limit <= r->top(), "limit must be less than top");
+  assert(addr <= tams, "addr must be less than TAMS");
+#endif
+
+  // Round addr up to a possible object boundary to be safe.
+  size_t const addr_offset = address_to_index(align_up(addr, HeapWordSize << LogMinObjAlignment));
+  size_t const limit_offset = address_to_index(limit);
+  size_t const nextOffset = get_last_one_offset(addr_offset, limit_offset);
   return index_to_address(nextOffset);
 }
 

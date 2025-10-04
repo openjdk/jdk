@@ -58,9 +58,13 @@ public:
   inline bool mark_strong(oop obj, bool& was_upgraded);
   inline bool mark_weak(oop obj);
 
+  // Marks the object in the marking bitmap, ignoring TAMS.
+  inline bool mark_strong_ignore_tams(oop obj, bool& was_upgraded);
+
   // Simple versions of marking accessors, to be used outside of marking (e.g. no possible concurrent updates)
   inline bool is_marked(oop obj) const;
   inline bool is_marked(HeapWord* raw_obj) const;
+  inline bool is_marked_ignore_tams(HeapWord* raw_obj) const;
   inline bool is_marked_strong(oop obj) const;
   inline bool is_marked_strong(HeapWord* raw_obj) const;
   inline bool is_marked_weak(oop obj) const;
@@ -68,6 +72,8 @@ public:
   inline bool is_marked_strong_or_old(oop obj) const;
 
   inline HeapWord* get_next_marked_addr(const HeapWord* addr, const HeapWord* limit) const;
+  // Finds last marked address between in interval [addr, limit), return limit, if not found.
+  inline HeapWord* get_last_marked_addr(const HeapWord* addr, const HeapWord* limit) const;
 
   inline bool allocated_after_mark_start(const oop obj) const;
   inline bool allocated_after_mark_start(const HeapWord* addr) const;
