@@ -2679,22 +2679,42 @@ public class TestTemplate {
     }
 
     public static void testTemplateScopes() {
-        var listNamesTemplate = Template.make(() -> scope(
+        var statusTemplate = Template.make(() -> scope(
             "{",
             structuralNames().exactOf(myStructuralTypeA).toList(list -> scope(
                 String.join(", ", list.stream().map(StructuralName::name).toList())
             )),
-            "}\n"
+            "}\n",
+            let("fuel", fuel()),
+            "fuel: #fuel\n"
         ));
 
         var scopeTemplate = Template.make(() -> scope(
+            "scope:\n",
+            let("local", "inner scope"),
+            addStructuralName("x", myStructuralTypeA),
+            statusTemplate.asToken(),
+            setFuelCost(50)
         ));
 
         var flatTemplate = Template.make(() -> flat(
+            "flat:\n",
+            let("local", "inner flag"),
+            addStructuralName("y", myStructuralTypeA), // should escape
+            statusTemplate.asToken(),
+            setFuelCost(50)
         ));
 
         // TODO: implement template with scope that is flat for names
         var template = Template.make(() -> scope(
+            setFuelCost(1),
+            let("local", "root"),
+            addStructuralName("a", myStructuralTypeA),
+            statusTemplate.asToken(),
+            scopeTemplate.asToken(),
+            statusTemplate.asToken(),
+            flatTemplate.asToken(),
+            statusTemplate.asToken()
         ));
 
         String code = template.render();
