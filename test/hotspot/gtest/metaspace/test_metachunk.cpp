@@ -427,3 +427,20 @@ TEST_VM(metaspace, chunk_enlarge_in_place) {
 
 }
 
+#ifdef ASSERT
+// Test ChunkManager::get_chunk
+TEST_VM(metaspace, chunk_zap) {
+  ChunkGtestContext context;
+  Metachunk* c = nullptr;
+  RandSizeGenerator rand(1, K);
+  for (chunklevel_t l = LOWEST_CHUNK_LEVEL; l < HIGHEST_CHUNK_LEVEL; l++) {
+    context.alloc_chunk_expect_success(&c, HIGHEST_CHUNK_LEVEL);
+    for (size_t s = 0; s < c->word_size(); s += rand.get()) {
+      c->ensure_committed(s);
+      c->zap();
+      check_metaspace_zap(c->base(), c->committed_words());
+    }
+    context.return_chunk(c);
+  }
+}
+#endif
