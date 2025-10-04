@@ -114,12 +114,18 @@ public class Difference {
         Map<InputBlock, InputBlock> blocksMap = new HashMap<>();
         for (InputBlock blk : a.getBlocks()) {
             InputBlock diffblk = graph.addBlock(blk.getName());
+            if (blk.isArtificial()) {
+                diffblk.setArtificial();
+            }
             blocksMap.put(blk, diffblk);
         }
         for (InputBlock blk : b.getBlocks()) {
             InputBlock diffblk = graph.getBlock(blk.getName());
             if (diffblk == null) {
                 diffblk = graph.addBlock(blk.getName());
+            }
+            if (blk.isArtificial()) {
+                diffblk.setArtificial();
             }
             blocksMap.put(blk, diffblk);
         }
@@ -248,6 +254,9 @@ public class Difference {
                 }
             }
         }
+
+        Scheduler s = Lookup.getDefault().lookup(Scheduler.class);
+        s.scheduleLocally(graph);
 
         return graph;
     }
