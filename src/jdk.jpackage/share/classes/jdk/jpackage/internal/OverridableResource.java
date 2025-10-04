@@ -231,6 +231,10 @@ final class OverridableResource {
                 return source.getKey();
             }
         }
+
+        Log.verbose(I18N.format("message.no-default-resource",
+                publicName, getPrintableCategory(), publicName));
+
         return null;
     }
 
