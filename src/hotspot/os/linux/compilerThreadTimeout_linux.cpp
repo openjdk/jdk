@@ -23,7 +23,7 @@
  */
 
 #include "compiler/compilerThread.hpp"
-#include "compiler/compileTask.hpp"
+#include "compiler/compileTask.inline.hpp"
 #include "compilerThreadTimeout_linux.hpp"
 #include "oops/method.hpp"
 #include "runtime/osThread.hpp"
