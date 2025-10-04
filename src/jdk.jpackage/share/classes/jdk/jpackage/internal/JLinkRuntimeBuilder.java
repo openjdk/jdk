@@ -33,7 +33,6 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
 import java.nio.file.Path;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -51,7 +50,7 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherModularStartupInfo;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
-import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 
 final class JLinkRuntimeBuilder implements RuntimeBuilder {
@@ -61,7 +60,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     @Override
-    public void create(AppImageLayout appImageLayout) throws PackagerException {
+    public void create(AppImageLayout appImageLayout) {
         var args = new ArrayList<String>();
         args.add("--output");
         args.add(appImageLayout.runtimeDirectory().toString());
@@ -76,7 +75,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         args.add(0, "jlink");
         Log.verbose(args, List.of(jlinkOut), retVal, -1);
         if (retVal != 0) {
-            throw new PackagerException("error.jlink.failed", jlinkOut);
+            throw new JPackageException(I18N.format("error.jlink.failed", jlinkOut));
         }
     }
 
@@ -91,6 +90,32 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
             Set<String> limitModules, List<String> options, List<LauncherStartupInfo> startupInfos) throws ConfigException {
         return new JLinkRuntimeBuilder(createJLinkCmdline(modulePath, addModules, limitModules,
                 options, startupInfos));
+    }
+
+    /**
+     * Returns a list of paths that includes the location where the "java.base"
+     * module can be found.
+     * <p>
+     * Returns the specified path list if "java.base" module is found in one of the
+     * paths from the specified path list. Returns a new path list created from the
+     * specified path list with the path of "java.base" module in the current
+     * runtime appended otherwise.
+     *
+     * @param modulePath the path list where to look up for "java.base" module
+     * @return the path list that includes location of "java.base" module
+     */
+    static List<Path> ensureBaseModuleInModulePath(List<Path> modulePath) {
+
+        if (modulePath.stream().filter(path -> {
+            return ModuleFinder.of(path).find("java.base").isPresent();
+        }).findFirst().isPresent()) {
+            return modulePath;
+        }
+
+        modulePath = new ArrayList<>(modulePath);
+        modulePath.addAll(RuntimeBuilder.getDefaultModulePath());
+
+        return modulePath;
     }
 
     private static List<String> createJLinkCmdline(List<Path> modulePath, Set<String> addModules,
@@ -128,8 +153,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
         for (String option : options) {
             switch (option) {
                 case "--output", "--add-modules", "--module-path" -> {
-                    throw new ConfigException(MessageFormat.format(I18N.getString(
-                            "error.blocked.option"), option), null);
+                    throw I18N.buildConfigException("error.blocked.option", option).create();
                 }
                 default -> {
                     args.add(option);
@@ -230,5 +254,5 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
 
         static final ToolProvider JLINK_TOOL = ToolProvider.findFirst(
                 "jlink").orElseThrow();
-    };
+    }
 }
