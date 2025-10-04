@@ -378,7 +378,8 @@ public class Head extends Content {
                 mainBodyScript.append("const pathtoroot = ")
                         .appendStringLiteral(ptrPath + "/")
                         .append(";\n")
-                        .append("loadScripts(document, 'script');");
+                        .append("loadScripts();\n")
+                        .append("initTheme();\n");
             }
             addScriptElement(head, DocPaths.JQUERY_JS);
             addScriptElement(head, DocPaths.JQUERY_UI_JS);
