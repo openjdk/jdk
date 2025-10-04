@@ -661,7 +661,6 @@ public:
   }
 };
 
-
 bool ZGenerationYoung::pause_mark_end() {
   return VM_ZMarkEndYoung().pause();
 }
@@ -702,13 +701,11 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
   double young_life_expectancy_sum = 0.0;
   uint young_life_expectancy_samples = 0;
   uint last_populated_age = 0;
-  size_t last_populated_live = 0;
 
   for (ZPageAge age : ZPageAgeRangeAll) {
     const size_t young_live = stats.small(age).live() + stats.medium(age).live() + stats.large(age).live();
     if (young_live > 0) {
       last_populated_age = untype(age);
-      last_populated_live = young_live;
       if (young_live_last > 0) {
         young_life_expectancy_sum += double(young_live) / double(young_live_last);
         young_life_expectancy_samples++;
@@ -722,7 +719,6 @@ uint ZGenerationYoung::compute_tenuring_threshold(ZRelocationSetSelectorStats st
     return 0;
   }
 
-  const size_t young_used_at_mark_start = ZGeneration::young()->stat_heap()->used_generation_at_mark_start();
   const size_t young_garbage = ZGeneration::young()->stat_heap()->garbage_at_mark_end();
   const size_t young_allocated = ZGeneration::young()->stat_heap()->allocated_at_mark_end();
   const size_t soft_max_capacity = ZHeap::heap()->soft_max_capacity();
@@ -1319,7 +1315,6 @@ class ZRendezvousGCThreads: public VM_Operation {
     SuspendibleThreadSet::desynchronize();
   };
 };
-
 
 void ZGenerationOld::process_non_strong_references() {
   // Process Soft/Weak/Final/PhantomReferences
