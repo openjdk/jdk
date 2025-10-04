@@ -30,9 +30,10 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8354242
+ * @bug 8354242 8368205
  * @key randomness
  * @library /test/lib /
+ * @requires vm.opt.MaxVectorSize == "null" | vm.opt.MaxVectorSize >= 16
  * @summary test combining vector not operation with compare
  * @modules jdk.incubator.vector
  * @requires (os.arch != "riscv64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"))
