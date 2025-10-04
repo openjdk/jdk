@@ -40,6 +40,7 @@ import java.security.Permission;
 import java.text.Collator;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -179,10 +180,10 @@ public class FileURLConnection extends URLConnection {
         initializeHeaders();
         if (headerFields == null) {
             if (!isReadable()) {
-                return super.getHeaderFields();
+                return Collections.emptyMap();
             }
             if (properties == null) {
-                headerFields = super.getHeaderFields();
+                headerFields = Collections.emptyMap();
             } else {
                 headerFields = properties.getHeaders();
             }
