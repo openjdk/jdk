@@ -769,6 +769,10 @@ void JvmtiExport::post_vm_death() {
 
   JvmtiTagMap::flush_all_object_free_events();
 
+  // It is needed to disable event generation before setting DEAD phase.
+  // The VM_DEATH should be the last posted event.
+  JvmtiEventController::vm_death();
+
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_DEATH)) {
@@ -784,8 +788,7 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
-  JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
-  JvmtiEventController::vm_death();
+ JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
 }
 
 char**
