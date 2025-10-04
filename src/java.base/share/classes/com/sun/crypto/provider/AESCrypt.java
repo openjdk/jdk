@@ -781,7 +781,7 @@ public final class AESCrypt extends SymmetricCipher {
         for (int i = nk; i < len * (rounds + 1); i++) {
             tmp = w[i - 1];
             if (i % nk == 0) {
-                rW = (tmp << 8) & 0xFFFFFF00 | (tmp >> 24) & 0xFF;
+                rW = (tmp << 8) & 0xFFFFFF00 | (tmp >>> 24);
                 SubWord = subByte(rW, SBOX);
                 g = SubWord ^ RCON[(i / nk) - 1];
                 tmp = g;
@@ -850,7 +850,7 @@ public final class AESCrypt extends SymmetricCipher {
         for (int i = 1; i < rounds; i++) {
             System.arraycopy(sessionK[0], i * len, w, 0, len);
             invMixRKey(w);
-            System.arraycopy(w, 0, tw, kLen - i * len, len);
+            System.arraycopy(w, 0, tw, kLen - (i * len), len);
         }
         System.arraycopy(sessionK[0], kLen - len, tw, len, len);
         System.arraycopy(sessionK[0], 0, tw, 0, len);
