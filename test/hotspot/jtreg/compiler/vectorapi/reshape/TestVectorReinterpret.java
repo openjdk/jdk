@@ -40,6 +40,7 @@ import jdk.incubator.vector.VectorSpecies;
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector reinterpret intrinsics work as intended.
  * @requires os.arch != "riscv64" | vm.cpu.features ~= ".*rvv.*"
+ * @requires vm.opt.EnableVectorSupport == true
  * @library /test/lib /
  * @run main compiler.vectorapi.reshape.TestVectorReinterpret
  */

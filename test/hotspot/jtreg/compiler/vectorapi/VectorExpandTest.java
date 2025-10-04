@@ -34,6 +34,7 @@ import jdk.test.lib.Asserts;
  * @key randomness
  * @library /test/lib /
  * @summary AArch64: Add missing backend support of VectorAPI expand operation
+ * @requires vm.opt.EnableVectorSupport == true
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.VectorExpandTest

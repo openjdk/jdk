@@ -26,6 +26,7 @@
 * @bug 8356760
 * @library /test/lib /
 * @summary Optimize VectorMask.fromLong for all-true/all-false cases
+* @requires vm.opt.EnableVectorSupport == true
 * @modules jdk.incubator.vector
 *
 * @run driver compiler.vectorapi.VectorMaskToLongTest
