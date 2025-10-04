@@ -1952,7 +1952,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   int relock_count = JvmtiDeferredUpdates::get_and_reset_relock_count_after_wait(current);
   _recursions =   save          // restore the old recursion count
                 + relock_count; //  increased by the deferred relock count
-  current->inc_held_monitor_count(relock_count); // Deopt never entered these counts.
   _waiters--;             // decrement the number of waiters
 
   // Verify a few postconditions

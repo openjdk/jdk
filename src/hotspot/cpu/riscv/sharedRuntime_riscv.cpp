@@ -885,11 +885,8 @@ static void fill_continuation_entry(MacroAssembler* masm) {
 
   __ ld(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
   __ sd(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
-  __ ld(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
-  __ sd(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
 
   __ sd(zr, Address(xthread, JavaThread::cont_fastpath_offset()));
-  __ sd(zr, Address(xthread, JavaThread::held_monitor_count_offset()));
 }
 
 // on entry, sp points to the ContinuationEntry
@@ -905,50 +902,6 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 
   __ ld(t0, Address(sp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ sd(t0, Address(xthread, JavaThread::cont_fastpath_offset()));
-
-  if (CheckJNICalls) {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ lwu(t0, Address(sp, ContinuationEntry::flags_offset()));
-    __ beqz(t0, L_skip_vthread_code);
-
-    // If the held monitor count is > 0 and this vthread is terminating then
-    // it failed to release a JNI monitor. So we issue the same log message
-    // that JavaThread::exit does.
-    __ ld(t0, Address(xthread, JavaThread::jni_monitor_count_offset()));
-    __ beqz(t0, L_skip_vthread_code);
-
-    // Save return value potentially containing the exception oop in callee-saved x9
-    __ mv(x9, x10);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    // Restore potential return value
-    __ mv(x10, x9);
-
-    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-    // on termination. The held count is implicitly zeroed below when we restore from
-    // the parent held count (which has to be zero).
-    __ sd(zr, Address(xthread, JavaThread::jni_monitor_count_offset()));
-
-    __ bind(L_skip_vthread_code);
-  }
-#ifdef ASSERT
-  else {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ lwu(t0, Address(sp, ContinuationEntry::flags_offset()));
-    __ beqz(t0, L_skip_vthread_code);
-
-    // See comment just above. If not checking JNI calls the JNI count is only
-    // needed for assertion checking.
-    __ sd(zr, Address(xthread, JavaThread::jni_monitor_count_offset()));
-
-    __ bind(L_skip_vthread_code);
-  }
-#endif
-
-  __ ld(t0, Address(sp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ sd(t0, Address(xthread, JavaThread::held_monitor_count_offset()));
-
   __ ld(t0, Address(sp, ContinuationEntry::parent_offset()));
   __ sd(t0, Address(xthread, JavaThread::cont_entry_offset()));
   __ add(fp, sp, (int)ContinuationEntry::size() + 2 * wordSize /* 2 extra words to match up with leave() */);

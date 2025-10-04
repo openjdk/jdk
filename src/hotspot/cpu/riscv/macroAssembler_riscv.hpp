@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -848,9 +848,6 @@ public:
 
   void push_cont_fastpath(Register java_thread = xthread);
   void pop_cont_fastpath(Register java_thread = xthread);
-
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
 
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
