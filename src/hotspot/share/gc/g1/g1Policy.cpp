@@ -164,7 +164,7 @@ void G1Policy::record_new_heap_size(uint new_number_of_regions) {
 
   _young_gen_sizer.heap_size_changed(new_number_of_regions);
 
-  _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
+  _ihop_control->update_heap_size(new_number_of_regions * G1HeapRegion::GrainBytes);
 }
 
 uint G1Policy::calculate_desired_eden_length_by_mmu() const {
