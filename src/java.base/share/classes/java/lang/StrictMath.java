@@ -1631,6 +1631,10 @@ public final class StrictMath {
      * argument but with a guaranteed zero sign bit indicating a
      * positive value: <br>
      * {@code Float.intBitsToFloat(0x7fffffff & Float.floatToRawIntBits(a))}
+     * <p>
+     * This method corresponds to the abs operation defined in IEEE
+     * 754, but without the requirements that the sign bit of a
+     * NaN result be set to 0.
      *
      * @param   a   the argument whose absolute value is to be determined
      * @return  the absolute value of the argument.
@@ -1655,6 +1659,10 @@ public final class StrictMath {
      * argument but with a guaranteed zero sign bit indicating a
      * positive value: <br>
      * {@code Double.longBitsToDouble((Double.doubleToRawLongBits(a)<<1)>>>1)}
+     * <p>
+     * This method corresponds to the abs operation defined in IEEE
+     * 754, but without the requirements that the sign bit of a
+     * NaN result be set to 0.
      *
      * @param   a   the argument whose absolute value is to be determined
      * @return  the absolute value of the argument.
