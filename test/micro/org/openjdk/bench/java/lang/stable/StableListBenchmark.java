@@ -28,6 +28,7 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -39,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring stable list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -50,35 +51,52 @@ import java.util.function.IntFunction;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-public class StableIntFunctionSingleBenchmark {
+@OperationsPerInvocation(100)
+public class StableListBenchmark {
 
     private static final int SIZE = 100;
     private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final List<Integer> STABLE = StableValue.list(SIZE, IDENTITY);
-    private static final IntFunction<Integer> INT_FUNCTION = StableValue.intFunction(SIZE, IDENTITY);
+    private static final List<Integer> LIST = List.ofLazy(SIZE, IDENTITY);
+    private static final IntFunction<Integer> INT_FUNCTION = LIST::get;
 
-    private final List<Integer> stable = StableValue.list(SIZE, IDENTITY);
-    private final IntFunction<Integer> intFunction = StableValue.intFunction(SIZE, IDENTITY);
+    private final List<Integer> list = List.ofLazy(SIZE, IDENTITY);
+    private final IntFunction<Integer> intFunction = list::get;
 
     @Benchmark
     public int list() {
-        return stable.get(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += list.get(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int intFunction() {
-        return intFunction.apply(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += intFunction.apply(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int staticList() {
-        return STABLE.get(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += LIST.get(i);
+        }
+        return sum;
     }
 
     @Benchmark
     public int staticIntFunction() {
-        return INT_FUNCTION.apply(1);
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += INT_FUNCTION.apply(i);
+        }
+        return sum;
     }
 
 }
