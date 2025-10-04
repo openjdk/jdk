@@ -23,6 +23,17 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
-record HookAnchorToken(Hook hook, NestingToken innerScope) implements Token {}
+// TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
+// TODO: documentation about lambda and hashtag, maybe also an assert?
+record NameSampleToken<N>(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<N, NestingToken> function) implements Token {
+
+    NestingToken getNestingToken(Name n) {
+        return function().apply((N)n);
+    }
+}

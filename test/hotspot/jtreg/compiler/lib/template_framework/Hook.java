@@ -35,13 +35,13 @@ package compiler.lib.template_framework;
  * {@snippet lang=java :
  * var myHook = new Hook("MyHook");
  *
- * var template1 = Template.make("name", (String name) -> body(
+ * var template1 = Template.make("name", (String name) -> scope(
  *     """
  *     public static int #name = 42;
  *     """
  * ));
  *
- * var template2 = Template.make(() -> body(
+ * var template2 = Template.make(() -> scope(
  *     """
  *     public class Test {
  *     """,
@@ -67,15 +67,15 @@ package compiler.lib.template_framework;
  */
 public record Hook(String name) {
     /**
-     * Anchor this {@link Hook} for the scope of the provided {@code 'tokens'}.
+     * Anchor this {@link Hook} for the provided inner scope.
      * From anywhere inside this scope, even in nested Templates, code can be
      * {@link #insert}ed back to the location where this {@link Hook} was {@link #anchor}ed.
      *
-     * @param tokens A list of tokens, which have the same restrictions as {@link Template#body}.
-     * @return A {@link Token} that captures the anchoring of the scope and the list of validated {@link Token}s.
+     * @param innerScope An inner scope, for which the {@link Hook} is anchored.
+     * @return A {@link Token} that captures the anchoring and the inner scope.
      */
-    public Token anchor(Object... tokens) {
-        return new HookAnchorToken(this, TokenParser.parse(tokens));
+    public Token anchor(NestingToken innerScope) {
+        return new HookAnchorToken(this, innerScope);
     }
 
     /**
@@ -83,7 +83,7 @@ public record Hook(String name) {
      * This could be in the same Template, or one nested further out.
      *
      * @param templateToken The Template with applied arguments to be inserted at the {@link Hook}.
-     * @return The {@link Token} which when used inside a {@link Template#body} performs the code insertion into the {@link Hook}.
+     * @return The {@link Token} which when used inside a {@link Template#scope} performs the code insertion into the {@link Hook}.
      */
     public Token insert(TemplateToken templateToken) {
         return new HookInsertToken(this, templateToken);

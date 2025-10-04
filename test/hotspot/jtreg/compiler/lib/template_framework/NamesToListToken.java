@@ -23,6 +23,15 @@
 
 package compiler.lib.template_framework;
 
+import java.util.function.Function;
 import java.util.List;
 
-record HookAnchorToken(Hook hook, NestingToken innerScope) implements Token {}
+record NamesToListToken<N>(
+        NameSet.Predicate predicate,
+        Function<List<N>, NestingToken> function) implements Token {
+
+    NestingToken getNestingToken(List<Name> names) {
+        List<N> castNames = names.stream().map(n -> (N)n).toList();
+        return function().apply(castNames);
+    }
+}

@@ -23,6 +23,14 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
-record HookAnchorToken(Hook hook, NestingToken innerScope) implements Token {}
+// TODO: documentation
+record NameCountToken(
+        NameSet.Predicate predicate,
+        Function<Integer, NestingToken> function) implements Token {
+
+    NestingToken getNestingToken(int count) {
+        return function().apply(count);
+    }
+}

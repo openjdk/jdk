@@ -23,6 +23,5 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
-
-record HookAnchorToken(Hook hook, NestingToken innerScope) implements Token {}
+// TODO: documentation
+record SetFuelCostToken(float fuelCost) implements Token {}

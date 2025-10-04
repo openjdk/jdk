@@ -23,4 +23,12 @@
 
 package compiler.lib.template_framework;
 
-record NothingToken() implements Token {}
+import java.util.function.Function;
+
+// TODO: desc
+record LetToken<T>(String key, T value, Function<T, NestingToken> function) implements Token {
+
+    NestingToken getNestingToken() {
+        return function().apply(value);
+    }
+}

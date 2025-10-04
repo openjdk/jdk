@@ -65,7 +65,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * {@snippet lang=java :
- * var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> body(
+ * var testTemplate = Template.make("typeName", "operator", "generator", (String typeName, String operator, MyGenerator generator) -> scope(
  *     let("con1", generator.next()),
  *     let("con2", generator.next()),
  *     """
@@ -86,13 +86,13 @@ import compiler.lib.ir_framework.TestFramework;
  * }
  *
  * <p>
- * To get an executable test, we define a {@link Template} that produces a class body with a main method. The Template
+ * To get an executable test, we define a {@link Template} that produces a class scope with a main method. The Template
  * takes a list of types, and calls the {@code testTemplate} defined above for each type and operator. We use
  * the {@link TestFramework} to call our {@code @Test} methods.
  *
  * <p>
  * {@snippet lang=java :
- * var classTemplate = Template.make("types", (List<Type> types) -> body(
+ * var classTemplate = Template.make("types", (List<Type> types) -> scope(
  *     let("classpath", comp.getEscapedClassPathOfCompiledClasses()),
  *     """
  *     package p.xyz;
@@ -153,7 +153,7 @@ import compiler.lib.ir_framework.TestFramework;
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
  * Alternatively, we can generate a {@link Token} (more specifically, a {@link TemplateToken}) with {@code asToken()}
- * (e.g. {@link Template.ZeroArgs#asToken()}), and use the {@link Token} inside another {@link Template#body}.
+ * (e.g. {@link Template.ZeroArgs#asToken()}), and use the {@link Token} inside another {@link Template#scope}.
  *
  * <p>
  * Ideally, we would have used <a href="https://openjdk.org/jeps/430">string templates</a> to inject these Template
@@ -176,7 +176,7 @@ import compiler.lib.ir_framework.TestFramework;
  * {@code #{name}}.
  *
  * <p>
- * A {@link TemplateToken} cannot just be used in {@link Template#body}, but it can also be
+ * A {@link TemplateToken} cannot just be used in {@link Template#scope}, but it can also be
  * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#anchor}ed earlier (in some outer scope of the code).
  * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
  * new field, or define a utility method.
@@ -191,7 +191,7 @@ import compiler.lib.ir_framework.TestFramework;
  * with a limited amount of {@link #fuel} (default: 100, see {@link #DEFAULT_FUEL}), which is decreased at each
  * Template nesting by a certain amount (default: 10, see {@link #DEFAULT_FUEL_COST}). The default fuel for a
  * template can be changed when we {@code render()} it (e.g. {@link ZeroArgs#render(float)}) and the default
- * fuel cost with {@link #setFuelCost}) when defining the {@link #body(Object...)}. Recursive templates are
+ * fuel cost with {@link #setFuelCost}) when defining the {@link #scope(Object...)}. Recursive templates are
  * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
  *
  * <p>
@@ -213,8 +213,8 @@ import compiler.lib.ir_framework.TestFramework;
  * <p>
  * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
  * relevant scopes, as well as the execution order of the {@link Template} lambdas and the evaluation
- * of the {@link Template#body} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
- * lambda, we generate the tokens, and create the {@link Template#body}. Once the lambda returns, the
+ * of the {@link Template#scope} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
+ * lambda, we generate the tokens, and create the {@link Template#scope}. Once the lambda returns, the
  * tokens are evaluated one by one. While evaluating the tokens, the {@link Renderer} might encounter a nested
  * {@link TemplateToken}, which in turn triggers the evaluation of that nested {@link Template}, i.e.
  * the evaluation of its lambda and later the evaluation of its tokens. It is important to keep in mind
@@ -229,7 +229,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * {@snippet lang=java :
- * var testTemplate = Template.make(() -> body(
+ * var testTemplate = Template.make(() -> scope(
  *     // The lambda has just been invoked.
  *     // We count the DataNames and assign the count to the hashtag replacement "c1".
  *     let("c1", dataNames(MUTABLE).exactOf(someType).count()),
@@ -260,7 +260,7 @@ import compiler.lib.ir_framework.TestFramework;
  *     // nested Template would observe an increment in the count.
  *     anotherTemplate.asToken()
  *     // By this point, all methods are called, and the tokens generated.
- *     // The lambda returns the "body", which is all of the tokens that we just
+ *     // The lambda returns the "scope", which is all of the tokens that we just
  *     // generated. After returning from the lambda, the tokens will be evaluated
  *     // one by one.
  * ));
@@ -281,10 +281,12 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * A {@link Template} with no arguments.
      *
-     * @param function The {@link Supplier} that creates the {@link TemplateBody}.
+     * @param function The {@link Supplier} that creates the {@link NestingToken}.
      */
-    record ZeroArgs(Supplier<TemplateBody> function) implements Template {
-        TemplateBody instantiate() {
+    // TODO: consider allowing different nesting tokens, to allow escaping names. hashtags
+    // should be local, and setFuelCost as well.
+    record ZeroArgs(Supplier<NestingToken> function) implements Template {
+        NestingToken instantiate() {
             return function.get();
         }
 
@@ -324,10 +326,10 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param arg1Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the (first) argument.
-     * @param function The {@link Function} that creates the {@link TemplateBody} given the template argument.
+     * @param function The {@link Function} that creates the {@link NestingToken} given the template argument.
      */
-    record OneArg<T1>(String arg1Name, Function<T1, TemplateBody> function) implements Template {
-        TemplateBody instantiate(T1 arg1) {
+    record OneArg<T1>(String arg1Name, Function<T1, NestingToken> function) implements Template {
+        NestingToken instantiate(T1 arg1) {
             return function.apply(arg1);
         }
 
@@ -372,10 +374,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg2Name The name of the second argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
-     * @param function The {@link BiFunction} that creates the {@link TemplateBody} given the template arguments.
+     * @param function The {@link BiFunction} that creates the {@link NestingToken} given the template arguments.
      */
-    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateBody> function) implements Template {
-        TemplateBody instantiate(T1 arg1, T2 arg2) {
+    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, NestingToken> function) implements Template {
+        NestingToken instantiate(T1 arg1, T2 arg2) {
             return function.apply(arg1, arg2);
         }
 
@@ -447,10 +449,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
      * @param <T3> The type of the third argument.
-     * @param function The function with three arguments that creates the {@link TemplateBody} given the template arguments.
+     * @param function The function with three arguments that creates the {@link NestingToken} given the template arguments.
      */
-    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, TemplateBody> function) implements Template {
-        TemplateBody instantiate(T1 arg1, T2 arg2, T3 arg3) {
+    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, NestingToken> function) implements Template {
+        NestingToken instantiate(T1 arg1, T2 arg2, T3 arg3) {
             return function.apply(arg1, arg2, arg3);
         }
 
@@ -496,28 +498,28 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Creates a {@link Template} with no arguments.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      *
      * <p>
      * Example:
      * {@snippet lang=java :
-     * var template = Template.make(() -> body(
+     * var template = Template.make(() -> scope(
      *     """
      *     Multi-line string or other tokens.
      *     """
      * ));
      * }
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link NestingToken} created by {@link Template#scope}.
      * @return A {@link Template} with zero arguments.
      */
-    static Template.ZeroArgs make(Supplier<TemplateBody> body) {
-        return new Template.ZeroArgs(body);
+    static Template.ZeroArgs make(Supplier<NestingToken> scope) {
+        return new Template.ZeroArgs(scope);
     }
 
     /**
      * Creates a {@link Template} with one argument.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced but not enforced: {@code arg1Name} should match the lambda argument name.
      *
      * <p>
@@ -525,7 +527,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * for use in hashtag replacements, and captured once as lambda argument with the corresponding type
      * of the generic argument.
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> body(
+     * var template = Template.make("a", (Integer a) -> scope(
      *     """
      *     Multi-line string or other tokens.
      *     We can use the hashtag replacement #a to directly insert the String value of a.
@@ -534,18 +536,18 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link NestingToken} created by {@link Template#scope}.
      * @param <T1> Type of the (first) argument.
      * @param arg1Name The name of the (first) argument for hashtag replacement.
      * @return A {@link Template} with one argument.
      */
-    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, TemplateBody> body) {
-        return new Template.OneArg<>(arg1Name, body);
+    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, NestingToken> scope) {
+        return new Template.OneArg<>(arg1Name, scope);
     }
 
     /**
      * Creates a {@link Template} with two arguments.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced: {@code arg1Name} and {@code arg2Name} should match the lambda argument names.
      *
      * <p>
@@ -553,7 +555,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * for use in hashtag replacements, and captured once as lambda arguments with the corresponding types
      * of the generic arguments.
      * {@snippet lang=java :
-     * var template = Template.make("a", "b", (Integer a, String b) -> body(
+     * var template = Template.make("a", "b", (Integer a, String b) -> scope(
      *     """
      *     Multi-line string or other tokens.
      *     We can use the hashtag replacement #a and #b to directly insert the String value of a and b.
@@ -562,23 +564,23 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link NestingToken} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
      * @param arg2Name The name of the second argument for hashtag replacement.
      * @return A {@link Template} with two arguments.
      */
-    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, TemplateBody> body) {
-        return new Template.TwoArgs<>(arg1Name, arg2Name, body);
+    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, NestingToken> scope) {
+        return new Template.TwoArgs<>(arg1Name, arg2Name, scope);
     }
 
     /**
      * Creates a {@link Template} with three arguments.
-     * See {@link #body} for more details about how to construct a Template with {@link Token}s.
+     * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced: {@code arg1Name}, {@code arg2Name}, and {@code arg3Name} should match the lambda argument names.
      *
-     * @param body The {@link TemplateBody} created by {@link Template#body}.
+     * @param scope The {@link NestingToken} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
@@ -587,18 +589,18 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg3Name The name of the third argument for hashtag replacement.
      * @return A {@link Template} with three arguments.
      */
-    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, TemplateBody> body) {
-        return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, body);
+    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, NestingToken> scope) {
+        return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, scope);
     }
 
     /**
-     * Creates a {@link TemplateBody} from a list of tokens, which can be {@link String}s,
+     * Creates a {@link NestingToken} from a list of tokens, which can be {@link String}s,
      * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}), any {@link Token},
      * or {@link List}s of any of these.
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make(() -> body(
+     * var template = Template.make(() -> scope(
      *     """
      *     Multi-line string
      *     """,
@@ -611,11 +613,32 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link TemplateBody} which captures the list of validated {@link Token}s.
+     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static TemplateBody body(Object... tokens) {
-        return new TemplateBody(TokenParser.parse(tokens));
+    // TODO: fix documentation, examples. hashtag, names, setFuel
+    static NestingToken scope(Object... tokens) {
+        return new NestingToken.Scope(TokenParser.parse(tokens));
+    }
+
+    // TODO: document
+    static NestingToken flat(Object... tokens) {
+        return new NestingToken.Flat(TokenParser.parse(tokens));
+    }
+
+    // TODO: document
+    static NestingToken nameScope(Object... tokens) {
+        return new NestingToken.NameScope(TokenParser.parse(tokens));
+    }
+
+    // TODO: document
+    static NestingToken hashtagScope(Object... tokens) {
+        return new NestingToken.HashtagScope(TokenParser.parse(tokens));
+    }
+
+    // TODO: document
+    static NestingToken setFuelCostScope(Object... tokens) {
+        return new NestingToken.SetFuelCostScope(TokenParser.parse(tokens));
     }
 
     /**
@@ -628,7 +651,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * with an implicit dollar replacement, and then captures that dollar replacement
      * using {@link #$} for the use inside a nested template.
      * {@snippet lang=java :
-     * var template = Template.make(() -> body(
+     * var template = Template.make(() -> scope(
      *     """
      *     int $var = 42;
      *     """,
@@ -648,7 +671,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> body(
+     * var template = Template.make("a", (Integer a) -> scope(
      *     let("b", a * 5),
      *     """
      *     System.out.println("Use a and b with hashtag replacement: #a and #b");
@@ -658,26 +681,28 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param key Name for the hashtag replacement.
      * @param value The value that the hashtag is replaced with.
-     * @return A token that does nothing, so that the {@link #let} can easily be put in a list of tokens
-     *         inside a {@link Template#body}.
-     * @throws RendererException if there is a duplicate hashtag {@code key}.
+     * @return A token that represents the hashtag replacement definition.
      */
     static Token let(String key, Object value) {
-        Renderer.getCurrent().addHashtagReplacement(key, value);
-        return new NothingToken();
+        return new LetToken(key, value, v -> flat());
     }
 
     /**
      * Define a hashtag replacement for {@code "#key"}, with a specific value, which is also captured
-     * by the provided {@code function} with type {@code <T>}.
+     * by the provided {@code function} with type {@code <T>}. While the argument of the lambda that
+     * captures the value is naturally bounded to the scope of the lambda, the hashtag replacement
+     * may be bound to the scope or escape it, depending on the choice of scope, see {@link scope}
+     * and {@link flat}.
      *
      * <p>
      * {@snippet lang=java :
-     * var template = Template.make("a", (Integer a) -> let("b", a * 2, (Integer b) -> body(
-     *     """
-     *     System.out.println("Use a and b with hashtag replacement: #a and #b");
-     *     """,
-     *     "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
+     * var template = Template.make("a", (Integer a) -> scope(
+     *     let("b", a * 2, (Integer b) -> scope(
+     *         """
+     *         System.out.println("Use a and b with hashtag replacement: #a and #b");
+     *         """,
+     *         "System.out.println(\"Use a and b as capture variables:\"" + a + " and " + b + ");\n"
+     *     ))
      * )));
      * }
      *
@@ -685,12 +710,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param value The value that the hashtag is replaced with.
      * @param <T> The type of the value.
      * @param function The function that is applied with the provided {@code value}.
-     * @return A {@link TemplateBody}.
-     * @throws RendererException if there is a duplicate hashtag {@code key}.
+     * @return A {@link Token} representing the hashtag replacement definition and inner scope.
      */
-    static <T> TemplateBody let(String key, T value, Function<T, TemplateBody> function) {
-        Renderer.getCurrent().addHashtagReplacement(key, value);
-        return function.apply(value);
+    static <T> Token let(String key, T value, Function<T, NestingToken> function) {
+        return new LetToken(key, value, function);
     }
 
     /**
@@ -702,7 +725,7 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * The default amount of fuel spent per Template. It is subtracted from the current {@link #fuel} at every
      * nesting level, and once the {@link #fuel} reaches zero, the nesting is supposed to terminate. Can be changed
-     * with {@link #setFuelCost(float)} inside {@link #body(Object...)}.
+     * with {@link #setFuelCost(float)} inside {@link #scope(Object...)}.
      */
     float DEFAULT_FUEL_COST = 10.0f;
 
@@ -721,7 +744,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * <p>
      * {@snippet lang=java :
      * var binding = new TemplateBinding<Template.OneArg<Integer>>();
-     * var template = Template.make("depth", (Integer depth) -> body(
+     * var template = Template.make("depth", (Integer depth) -> scope(
      *     setFuelCost(5.0f),
      *     let("fuel", fuel()),
      *     """
@@ -745,16 +768,15 @@ public sealed interface Template permits Template.ZeroArgs,
      * {@link Template#DEFAULT_FUEL_COST}.
      *
      * @param fuelCost The amount of fuel used for the current Template.
-     * @return A token for convenient use in {@link Template#body}.
+     * @return A token for convenient use in {@link Template#scope}.
      */
     static Token setFuelCost(float fuelCost) {
-        Renderer.getCurrent().setFuelCost(fuelCost);
-        return new NothingToken();
+        return new SetFuelCostToken(fuelCost);
     }
 
     /**
      * Add a {@link DataName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}.
+     * {@link Template#scope} or {@link Hook#anchor}.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -780,7 +802,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link DataName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
+     * {@link Template#scope} or {@link Hook#anchor}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -805,7 +827,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link StructuralName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}.
+     * {@link Template#scope} or {@link Hook#anchor}.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
@@ -823,7 +845,7 @@ public sealed interface Template permits Template.ZeroArgs,
 
     /**
      * Add a {@link StructuralName} in the current scope, that is the innermost of either
-     * {@link Template#body} or {@link Hook#anchor}, with a {@code weight} of 1.
+     * {@link Template#scope} or {@link Hook#anchor}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
