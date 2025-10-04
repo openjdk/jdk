@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,11 +29,12 @@ import java.io.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.Arrays;
+
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.io.JdkConsoleImpl;
 
 /**
  * A utility class for reading passwords
- *
  */
 public class Password {
     /** Reads user password from given input stream. */
@@ -53,18 +54,28 @@ public class Password {
 
         try {
             // Only use Console if `in` is the initial System.in
-            Console con;
-            if (!isEchoOn &&
-                    in == SharedSecrets.getJavaLangAccess().initialSystemIn() &&
-                    ((con = System.console()) != null)) {
-                consoleEntered = con.readPassword();
-                // readPassword returns "" if you just press ENTER with the built-in Console,
-                // to be compatible with old Password class, change to null
-                if (consoleEntered == null || consoleEntered.length == 0) {
-                    return null;
+            if (!isEchoOn) {
+                if (in == SharedSecrets.getJavaLangAccess().initialSystemIn()
+                        && ConsoleHolder.consoleIsAvailable()) {
+                    consoleEntered = ConsoleHolder.readPassword();
+                    // readPassword returns "" if you just press ENTER with the built-in Console,
+                    // to be compatible with old Password class, change to null
+                    if (consoleEntered == null || consoleEntered.length == 0) {
+                        return null;
+                    }
+                    consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
+                    in = new ByteArrayInputStream(consoleBytes);
+                } else if (System.in.available() == 0) {
+                    // This may be running in an IDE Run Window or in JShell,
+                    // which acts like an interactive console and echoes the
+                    // entered password. In this case, print a warning that
+                    // the password might be echoed. If available() is not zero,
+                    // it's more likely the input comes from a pipe, such as
+                    // "echo password |" or "cat password_file |" where input
+                    // will be silently consumed without echoing to the screen.
+                    System.err.print(ResourcesMgr.getString
+                            ("warning.input.may.be.visible.on.screen"));
                 }
-                consoleBytes = convertToBytes(consoleEntered);
-                in = new ByteArrayInputStream(consoleBytes);
             }
 
             // Rest of the lines still necessary for KeyStoreLoginModule
@@ -131,32 +142,66 @@ public class Password {
         }
     }
 
-    /**
-     * Change a password read from Console.readPassword() into
-     * its original bytes.
-     *
-     * @param pass a char[]
-     * @return its byte[] format, similar to new String(pass).getBytes()
-     */
-    private static byte[] convertToBytes(char[] pass) {
-        if (enc == null) {
-            synchronized (Password.class) {
-                enc = System.console()
-                        .charset()
-                        .newEncoder()
-                        .onMalformedInput(CodingErrorAction.REPLACE)
-                        .onUnmappableCharacter(CodingErrorAction.REPLACE);
+    // Everything on Console or JdkConsoleImpl is inside this class.
+    private static class ConsoleHolder {
+
+        // primary console; may be null
+        private static final Console c1;
+        // secondary console (when stdout is redirected); may be null
+        private static final JdkConsoleImpl c2;
+        // encoder for c1 or c2
+        private static final CharsetEncoder enc;
+
+        static {
+            c1 = System.console();
+            Charset charset;
+            if (c1 != null) {
+                c2 = null;
+                charset = c1.charset();
+            } else {
+                c2 = JdkConsoleImpl.passwordConsole().orElse(null);
+                charset = (c2 != null) ? c2.charset() : null;
+            }
+            enc = charset == null ? null : charset.newEncoder()
+                    .onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        }
+
+        public static boolean consoleIsAvailable() {
+            return c1 != null || c2 != null;
+        }
+
+        public static char[] readPassword() {
+            assert consoleIsAvailable();
+            if (c1 != null) {
+                return c1.readPassword();
+            } else {
+                try {
+                    return c2.readPasswordNoNewLine();
+                } finally {
+                    System.err.println();
+                }
             }
         }
-        byte[] ba = new byte[(int)(enc.maxBytesPerChar() * pass.length)];
-        ByteBuffer bb = ByteBuffer.wrap(ba);
-        synchronized (enc) {
-            enc.reset().encode(CharBuffer.wrap(pass), bb, true);
+
+        /**
+         * Convert a password read from console into its original bytes.
+         *
+         * @param pass a char[]
+         * @return its byte[] format, equivalent to new String(pass).getBytes()
+         *      but String is immutable and cannot be cleaned up.
+         */
+        public static byte[] convertToBytes(char[] pass) {
+            assert consoleIsAvailable();
+            byte[] ba = new byte[(int) (enc.maxBytesPerChar() * pass.length)];
+            ByteBuffer bb = ByteBuffer.wrap(ba);
+            synchronized (enc) {
+                enc.reset().encode(CharBuffer.wrap(pass), bb, true);
+            }
+            if (bb.remaining() > 0) {
+                bb.put((byte)'\n'); // will be recognized as a stop sign
+            }
+            return ba;
         }
-        if (bb.position() < ba.length) {
-            ba[bb.position()] = '\n';
-        }
-        return ba;
     }
-    private static volatile CharsetEncoder enc;
 }
