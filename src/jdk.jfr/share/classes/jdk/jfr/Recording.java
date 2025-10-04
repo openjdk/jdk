@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.Type;
@@ -83,6 +84,7 @@ public final class Recording implements Closeable {
     }
 
     private final PlatformRecording internal;
+    private final RecordingStream stream;
 
     /**
      * Creates a recording with settings from a map of name-value pairs.
@@ -100,10 +102,15 @@ public final class Recording implements Closeable {
      * @since 11
      */
     public Recording(Map<String, String> settings) {
+        this(settings, null);
+    }
+
+    Recording(Map<String, String> settings, RecordingStream stream) {
         Objects.requireNonNull(settings, "settings");
         Map<String, String> sanitized = Utils.sanitizeNullFreeStringMap(settings);
         PlatformRecorder r = FlightRecorder.getFlightRecorder().getInternal();
         synchronized (r) {
+            this.stream = stream;
             this.internal = r.newRecording(sanitized);
             this.internal.setRecording(this);
             if (internal.getRecording() != this) {
@@ -203,6 +210,9 @@ public final class Recording implements Closeable {
      *
      */
     public boolean stop() {
+        if (stream != null) {
+            return stream.stop();
+        }
         return internal.stop("Stopped by user");
     }
 
@@ -331,6 +341,10 @@ public final class Recording implements Closeable {
      */
     @Override
     public void close() {
+        if (stream != null) {
+            stream.close();
+            return;
+        }
         internal.close();
     }
 
