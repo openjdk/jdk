@@ -2630,6 +2630,10 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exception_record->ExceptionCode;
 #if defined(_M_ARM64)
   address pc = (address) exceptionInfo->ContextRecord->Pc;
+
+  if (handle_safefetch(exception_code, pc, (void*)exceptionInfo->ContextRecord)) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
 #else
@@ -2690,10 +2694,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
         report_error(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
-#endif
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
@@ -2745,10 +2747,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
       report_error(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
-#endif
       return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2808,41 +2808,20 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
-  if (exception_code != EXCEPTION_BREAKPOINT) {
+  bool should_report_error = (exception_code != EXCEPTION_BREAKPOINT);
+
+#if defined(_M_ARM64)
+  should_report_error = should_report_error &&
+                        (exception_code != DBG_PRINTEXCEPTION_C);
+#endif
+
+  if (should_report_error) {
     report_error(t, exception_code, pc, exception_record,
                  exceptionInfo->ContextRecord);
   }
-#endif
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-#if defined(_M_ARM64)
-  address pc = (address) exceptionInfo->ContextRecord->Pc;
-#elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-
-  // Fast path for code part of the code cache
-  if (CodeCache::low_bound() <= pc && pc < CodeCache::high_bound()) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
-
-  // If the exception occurred in the codeCache, pass control
-  // to our normal exception handler.
-  CodeBlob* cb = CodeCache::find_blob(pc);
-  if (cb != nullptr) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -4519,7 +4498,7 @@ jint os::init_2(void) {
   // Setup Windows Exceptions
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
-  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
+  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
 #endif
 
