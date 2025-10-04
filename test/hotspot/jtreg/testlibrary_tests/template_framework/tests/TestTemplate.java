@@ -1290,8 +1290,9 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> scope(
-            addDataName(name, type, MUTABLE),
+        // Note: the scope of the template must be flat, so that the addDataName can escape.
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> flat(
+            addDataName(name, type, MUTABLE), // escapes
             "define #type #name\n",
             template1.asToken()
         ));
@@ -1309,14 +1310,15 @@ public class TestTemplate {
             hook1.anchor(scope(
                 template1.asToken(),
                 "something\n",
-                template3.asToken(),
+                template3.asToken(), // name_4 is inserted to hook1
                 "more\n",
                 template1.asToken(),
                 "more\n",
-                template2.asToken($("name"), myInt),
+                template2.asToken($("name"), myInt), // name_1 escapes
                 "more\n",
                 template1.asToken()
             )),
+            "final:\n",
             template1.asToken(),
             "}\n"
         ));
@@ -1339,7 +1341,8 @@ public class TestTemplate {
             define int name_1
             [true, 2, names: {name_4, name_1}]
             more
-            [true, 1, names: {name_4}]
+            [true, 2, names: {name_4, name_1}]
+            final:
             [false, 0, names: {}]
             }
             """;
@@ -1369,14 +1372,14 @@ public class TestTemplate {
             "]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> scope(
-            addDataName(name, type, MUTABLE),
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> flat(
+            addDataName(name, type, MUTABLE), // escapes
             "define mutable #type #name\n",
             template1.asToken(type)
         ));
 
-        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> scope(
-            addDataName(name, type, IMMUTABLE),
+        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> flat(
+            addDataName(name, type, IMMUTABLE), // escapes
             "define immutable #type #name\n",
             template1.asToken(type)
         ));
@@ -2086,8 +2089,8 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> scope(
-            addStructuralName(name, type),
+        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> flat(
+            addStructuralName(name, type), // escapes
             "define #type #name\n"
         ));
 
@@ -2705,7 +2708,6 @@ public class TestTemplate {
             setFuelCost(50)
         ));
 
-        // TODO: implement template with scope that is flat for names
         var template = Template.make(() -> scope(
             setFuelCost(1),
             let("local", "root"),
@@ -2720,6 +2722,18 @@ public class TestTemplate {
         String code = template.render();
         String expected =
             """
+            {a}
+            fuel: 99.0f
+            scope:
+            {a, x}
+            fuel: 89.0f
+            {a}
+            fuel: 99.0f
+            flat:
+            {a, y}
+            fuel: 89.0f
+            {a, y}
+            fuel: 99.0f
             """;
         checkEQ(code, expected);
     }
@@ -2735,11 +2749,22 @@ public class TestTemplate {
             "}\n"
         ));
 
-        // TODO: make the template scope flat? - only names are in question.
-        var insertTemplate = Template.make("name", (String name) -> scope(
-            let("local", "insert garbage"),
+        var insertScopeTemplate = Template.make("name", (String name) -> scope(
+            let("local", "insert scope garbage"),
             addStructuralName(name, myStructuralTypeA),
-            "insert: #name\n",
+            "inserted scope: #name\n",
+            listNamesTemplate.asToken()
+        ));
+
+        var insertFlatTemplate = Template.make("name", (String name) -> flat(
+            let("local", "insert flat garbage"),
+            addStructuralName(name, myStructuralTypeA),
+            "inserted flat: #name\n",
+            listNamesTemplate.asToken()
+        ));
+
+        var probeTemplate = Template.make(() -> scope(
+            "inserted probe:\n",
             listNamesTemplate.asToken()
         ));
 
@@ -2748,11 +2773,18 @@ public class TestTemplate {
             hook1.anchor(scope(
                 let("local", "scope garbage"),
                 addStructuralName("x1a", myStructuralTypeA),
-                "scope before insert:\n",
+                "scope before insert scope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(insertTemplate.asToken("x1b")),
-                "scope after insert:\n",
-                listNamesTemplate.asToken()
+                hook1.insert(insertScopeTemplate.asToken("x1b")),
+                "scope after insert scope:\n",
+                listNamesTemplate.asToken(),
+                "scope before insert flat:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertFlatTemplate.asToken("x1c")),
+                "scope after insert flat:\n",
+                listNamesTemplate.asToken(),
+                "scope insert probe.\n",
+                hook1.insert(probeTemplate.asToken())
             )),
             "after scope:\n",
             listNamesTemplate.asToken(),
@@ -2766,12 +2798,21 @@ public class TestTemplate {
         String expected =
             """
             scope:
-            insert: x1b
+            inserted scope: x1b
             {x1b}
-            scope before insert:
+            inserted flat: x1c
+            {x1c}
+            inserted probe:
+            {x1c}
+            scope before insert scope:
             {x1a}
-            scope after insert:
-            {x1b, x1a}
+            scope after insert scope:
+            {x1a}
+            scope before insert flat:
+            {x1a}
+            scope after insert flat:
+            {x1c, x1a}
+            scope insert probe.
             after scope:
             {}
             """;
@@ -3200,8 +3241,8 @@ public class TestTemplate {
     public static void testFailingAddNameDuplication8() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> scope(
-            addDataName("name", myInt, MUTABLE)
+        var template1 = Template.make(() -> flat(
+            addDataName("name", myInt, MUTABLE) // escapes
         ));
 
         var template2 = Template.make(() -> scope(

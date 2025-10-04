@@ -224,13 +224,17 @@ final class Renderer {
     }
 
     private void renderTemplateToken(TemplateToken templateToken) {
+        // We need a TemplateFrame in all cases, this ensures that the outermost scope of the template
+        // is not transparent for hashtags and setFuelCost, and also that the id of the template is
+        // unique.
         TemplateFrame templateFrame = TemplateFrame.make(currentTemplateFrame, nextTemplateFrameId++);
         currentTemplateFrame = templateFrame;
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
+
+        // If the NestingToken is transparent to Names, then the Template is transparent to names.
         NestingToken nt = templateToken.instantiate();
-        // TODO: make it possibly transparent for names?
-        renderTokenList(nt.tokens);
+        renderNestingToken(nt, () -> {});
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
@@ -327,14 +331,7 @@ final class Renderer {
                 currentCodeFrame = callerCodeFrame;
             }
             case TemplateToken templateToken -> {
-                // Use a nested CodeFrame.
-                CodeFrame callerCodeFrame = currentCodeFrame;
-                currentCodeFrame = CodeFrame.make(currentCodeFrame);
-
                 renderTemplateToken(templateToken);
-
-                callerCodeFrame.addCode(currentCodeFrame.getCode());
-                currentCodeFrame = callerCodeFrame;
             }
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
