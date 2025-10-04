@@ -100,6 +100,11 @@ public:
     return _old_heuristics;
   }
 
+  // Use this only for unit testing.  Do not use for production.
+  inline void set_capacity(size_t bytes) {
+    ShenandoahHeap::heap()->free_set()->resize_old_collector_capacity(bytes / ShenandoahHeapRegion::region_size_bytes());
+  }
+
   // See description in field declaration
   void set_promoted_reserve(size_t new_val);
   size_t get_promoted_reserve() const;
@@ -135,7 +140,9 @@ public:
   void configure_plab_for_current_thread(const ShenandoahAllocRequest &req);
 
   // See description in field declaration
-  void set_region_balance(ssize_t balance) { _region_balance = balance; }
+  void set_region_balance(ssize_t balance) {
+    _region_balance = balance;
+  }
   ssize_t get_region_balance() const { return _region_balance; }
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; };
@@ -319,6 +326,14 @@ public:
 
   static const char* state_name(State state);
 
+  size_t bytes_allocated_since_gc_start() const override;
+  size_t used() const override;
+  size_t used_regions() const override;
+  size_t used_regions_size() const override;
+  size_t get_humongous_waste() const override;
+  size_t free_unaffiliated_regions() const override;
+  size_t get_affiliated_region_count() const override;
+  size_t max_capacity() const override;
 };
 
 

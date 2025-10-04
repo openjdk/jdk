@@ -404,7 +404,6 @@ jint ShenandoahHeap::initialize() {
 
   {
     ShenandoahHeapLocker locker(lock());
-    _free_set = new ShenandoahFreeSet(this, _num_regions);
     for (size_t i = 0; i < _num_regions; i++) {
       HeapWord* start = (HeapWord*)sh_rs.base() + ShenandoahHeapRegion::region_size_words() * i;
       bool is_committed = i < num_committed_regions;
@@ -419,12 +418,21 @@ jint ShenandoahHeap::initialize() {
 
       _affiliations[i] = ShenandoahAffiliation::FREE;
     }
+    _free_set = new ShenandoahFreeSet(this, _num_regions);
 
-    size_t young_cset_regions, old_cset_regions;
 
+    post_initialize_heuristics();
     // We are initializing free set.  We ignore cset region tallies.
-    size_t first_old, last_old, num_old;
+    size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+    if (mode()->is_generational()) {
+      ShenandoahGenerationalHeap* gen_heap = ShenandoahGenerationalHeap::heap();
+      // We cannot call
+      //  gen_heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions)
+      // until after the heap is fully initialized.  So we make up a safe value here.
+      size_t allocation_runway = InitialHeapSize / 2;
+      gen_heap->compute_old_generation_balance(allocation_runway, old_cset_regions);
+    }
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
 
@@ -520,6 +528,10 @@ void ShenandoahHeap::initialize_mode() {
 void ShenandoahHeap::initialize_heuristics() {
   _global_generation = new ShenandoahGlobalGeneration(mode()->is_generational(), max_workers(), max_capacity());
   _global_generation->initialize_heuristics(mode());
+}
+
+void ShenandoahHeap::post_initialize_heuristics() {
+  _global_generation->post_initialize(this);
 }
 
 #ifdef _MSC_VER
@@ -737,46 +749,8 @@ void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
 
   if (req.is_gc_alloc()) {
     assert(wasted_bytes == 0 || req.type() == ShenandoahAllocRequest::_alloc_plab, "Only PLABs have waste");
-    increase_used(generation, actual_bytes + wasted_bytes);
   } else {
     assert(req.is_mutator_alloc(), "Expected mutator alloc here");
-    // padding and actual size both count towards allocation counter
-    generation->increase_allocated(actual_bytes + wasted_bytes);
-
-    // only actual size counts toward usage for mutator allocations
-    increase_used(generation, actual_bytes);
-
-    if (wasted_bytes > 0 && ShenandoahHeapRegion::requires_humongous(req.actual_size())) {
-      increase_humongous_waste(generation,wasted_bytes);
-    }
-  }
-}
-
-void ShenandoahHeap::increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
-  generation->increase_humongous_waste(bytes);
-  if (!generation->is_global()) {
-    global_generation()->increase_humongous_waste(bytes);
-  }
-}
-
-void ShenandoahHeap::decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes) {
-  generation->decrease_humongous_waste(bytes);
-  if (!generation->is_global()) {
-    global_generation()->decrease_humongous_waste(bytes);
-  }
-}
-
-void ShenandoahHeap::increase_used(ShenandoahGeneration* generation, size_t bytes) {
-  generation->increase_used(bytes);
-  if (!generation->is_global()) {
-    global_generation()->increase_used(bytes);
-  }
-}
-
-void ShenandoahHeap::decrease_used(ShenandoahGeneration* generation, size_t bytes) {
-  generation->decrease_used(bytes);
-  if (!generation->is_global()) {
-    global_generation()->decrease_used(bytes);
   }
 }
 
@@ -2349,18 +2323,16 @@ void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
   // bytes are allocated after the start of subsequent gc.
   size_t unaccounted_bytes;
+  ShenandoahFreeSet* _free_set = free_set();
+  size_t bytes_allocated = _free_set->get_bytes_allocated_since_gc_start();
   if (mode()->is_generational()) {
-    size_t bytes_allocated = young_generation()->bytes_allocated_since_gc_start();
     unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
-    young_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
-    unaccounted_bytes = 0;
-    old_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
   } else {
-    size_t bytes_allocated = global_generation()->bytes_allocated_since_gc_start();
     // Single-gen Shenandoah uses global heuristics.
     unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
   }
-  global_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+  ShenandoahHeapLocker locker(lock());
+  _free_set->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {
@@ -2741,6 +2713,10 @@ GrowableArray<MemoryPool*> ShenandoahHeap::memory_pools() {
 }
 
 MemoryUsage ShenandoahHeap::memory_usage() {
+  assert(_initial_size <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(used() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(committed() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
+  assert(max_capacity() <= ShenandoahHeap::heap()->max_capacity(), "sanity");
   return MemoryUsage(_initial_size, used(), committed(), max_capacity());
 }
 

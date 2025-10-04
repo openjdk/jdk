@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -39,7 +40,6 @@ class ShenandoahHeapRegionClosure;
 class ShenandoahHeuristics;
 class ShenandoahMode;
 class ShenandoahReferenceProcessor;
-
 
 class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahSpaceInfo {
   friend class VMStructs;
@@ -69,9 +69,8 @@ protected:
   // Usage
 
   volatile size_t _used;
-  volatile size_t _bytes_allocated_since_gc_start;
   size_t _max_capacity;
-
+  ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
 
 private:
@@ -99,6 +98,7 @@ private:
   // to false.
   size_t select_aged_regions(size_t old_available);
 
+  // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
  public:
@@ -107,16 +107,15 @@ private:
                        size_t max_capacity);
   ~ShenandoahGeneration();
 
-  bool is_young() const  { return _type == YOUNG; }
-  bool is_old() const    { return _type == OLD; }
-  bool is_global() const { return _type == GLOBAL || _type == NON_GEN; }
+  inline bool is_young() const                 { return _type == YOUNG; }
+  inline bool is_old() const                   { return _type == OLD; }
+  inline bool is_global() const                { return _type == GLOBAL || _type == NON_GEN; }
+  inline ShenandoahGenerationType type() const { return _type; }
 
   // see description in field declaration
   void set_evacuation_reserve(size_t new_val);
   size_t get_evacuation_reserve() const;
   void augment_evacuation_reserve(size_t increment);
-
-  inline ShenandoahGenerationType type() const { return _type; }
 
   virtual ShenandoahHeuristics* heuristics() const { return _heuristics; }
 
@@ -124,34 +123,25 @@ private:
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  size_t max_capacity() const override      { return _max_capacity; }
+  virtual void post_initialize(ShenandoahHeap* heap);
+
+  virtual size_t bytes_allocated_since_gc_start() const override;
+  virtual size_t used() const override;
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
+  virtual size_t get_humongous_waste() const;
   virtual size_t free_unaffiliated_regions() const;
-  size_t used() const override { return AtomicAccess::load(&_used); }
+  virtual size_t get_affiliated_region_count() const;
+  virtual size_t max_capacity() const override;
+
   size_t available() const override;
   size_t available_with_reserve() const;
-  size_t used_including_humongous_waste() const {
-    return used() + get_humongous_waste();
-  }
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
   // to believe it has less memory available than is _really_ available. Lowering the soft
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
   size_t soft_available() const override;
-
-  size_t bytes_allocated_since_gc_start() const override;
-  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
-  void increase_allocated(size_t bytes);
-
-  // These methods change the capacity of the generation by adding or subtracting the given number of bytes from the current
-  // capacity, returning the capacity of the generation following the change.
-  size_t increase_capacity(size_t increment);
-  size_t decrease_capacity(size_t decrement);
-
-  // Set the capacity of the generation, returning the value set
-  size_t set_capacity(size_t byte_size);
 
   void log_status(const char* msg) const;
 
@@ -211,29 +201,6 @@ private:
 
   // Scan remembered set at start of concurrent young-gen marking.
   void scan_remembered_set(bool is_concurrent);
-
-  // Return the updated value of affiliated_region_count
-  size_t increment_affiliated_region_count();
-
-  // Return the updated value of affiliated_region_count
-  size_t decrement_affiliated_region_count();
-  // Same as decrement_affiliated_region_count, but w/o the need to hold heap lock before being called.
-  size_t decrement_affiliated_region_count_without_lock();
-
-  // Return the updated value of affiliated_region_count
-  size_t increase_affiliated_region_count(size_t delta);
-
-  // Return the updated value of affiliated_region_count
-  size_t decrease_affiliated_region_count(size_t delta);
-
-  void establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste);
-
-  void increase_used(size_t bytes);
-  void decrease_used(size_t bytes);
-
-  void increase_humongous_waste(size_t bytes);
-  void decrease_humongous_waste(size_t bytes);
-  size_t get_humongous_waste() const { return _humongous_waste; }
 
   virtual bool is_concurrent_mark_in_progress() = 0;
   void confirm_heuristics_mode();
