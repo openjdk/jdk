@@ -5119,4 +5119,37 @@ public final class String
         return this;
     }
 
+    /**
+     * Checks whether the current string represents a valid integer number.
+     * <p>
+     * - Leading and trailing whitespaces are ignored (via {@code trim()}).
+     * - An optional leading '-' sign is allowed to indicate a negative number.
+     * - All remaining characters must be digits ('0'–'9').
+     * <p>
+     * Examples:
+     * <ul>
+     *   <li>"123" → true</li>
+     *   <li>"-456" → true</li>
+     *   <li>"  789  " → true</li>
+     *   <li>"12a3" → false</li>
+     *   <li>"--42" → false</li>
+     * </ul>
+     *
+     * @return {@code true} if the string is a valid integer number, {@code false} otherwise.
+     */
+    @Override
+    public boolean isNumber(){
+        if (this.trim().isEmpty()) return false;
+        char[] str = this.trim().toCharArray();
+        int start = 0;
+        if (str[0] == '-'||str[0] == '+') start = 1;
+        if (start == s.length()) return false;
+        for (int i=start;i < str.length; i++) {
+            if (!Character.isDigit(str[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }

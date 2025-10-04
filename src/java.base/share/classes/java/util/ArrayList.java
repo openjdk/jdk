@@ -1827,9 +1827,11 @@ public class ArrayList<E> extends AbstractList<E>
     public void shuffle() {
         shuffle(new Random());
     }
+
     public void shuffle(Random r) {
         shuffle(0, size, r);
     }
+
     public void shuffle(int start, int end, Random r) {
         if (end-start < 2)return;
         for (int i = end - 1; i > start; i--) {
