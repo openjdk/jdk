@@ -24,6 +24,7 @@
 package jdk.jfr.event.profiling;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -41,8 +42,15 @@ import jdk.test.whitebox.WhiteBox;
 
 /*
  * Tests the sample queues increase in size as needed, when loss is recorded.
+ *
+ * The test starts CPU time sampling with a short interval (1ms), disabling
+ * out-of-stack sample processing for the duration of the test.
+ * It now runs in native for one second, to cause queue overflows,
+ * then it comes back into Java to trigger the queue walking.
+ * Repeats the cycle 5 times and verifies that the loss decreases from the first
+ * to the last iteration.
  * @test
- * @requires vm.hasJFR & os.family == "linux" & vm.debug
+ * @requires vm.hasJFR & os.family == "linux" & vm.debug & vm.flagless
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal
  * @build  jdk.test.whitebox.WhiteBox
@@ -54,15 +62,13 @@ public class TestCPUTimeSampleQueueAutoSizes {
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
 
-    private static final String BURST_THREAD_NAME = "Burst-Thread-1";
-
-    static volatile boolean alive = true;
-
     record LossEvent(long relativeTimeMillis, long lostSamples) {}
 
     /** A data collection from the CPUTimeSampleLost events for the burst thread */
     static class LossEventCollection {
         private final List<LossEvent> events = new ArrayList<>();
+        private final List<Long> sampleEventsInTimeBox = new ArrayList<>();
+        private final List<Long> timeBoxEnds = new ArrayList<>();
 
         public synchronized void addEvent(LossEvent event) {
             events.add(event);
@@ -74,81 +80,100 @@ public class TestCPUTimeSampleQueueAutoSizes {
                          .collect(Collectors.toList());
         }
 
-        public List<LossEvent> getEventsPerInterval(long widthMillis, long stopTimeMillis) {
+        public synchronized List<LossEvent> getEventsPerTimeBox() {
             List<LossEvent> ret = new ArrayList<>();
-            for (long start = 0; start < stopTimeMillis; start += widthMillis) {
-                long actualStart = Math.min(start, stopTimeMillis - widthMillis);
+            AtomicLong previousEnd = new AtomicLong(0);
+            for (Long timeBoxEnd : timeBoxEnds) {
                 long lostSamples = events.stream()
-                                          .filter(e -> e.relativeTimeMillis >= actualStart && e.relativeTimeMillis < actualStart + widthMillis)
+                                          .filter(e -> e.relativeTimeMillis >= previousEnd.get() && e.relativeTimeMillis <= timeBoxEnd)
                                           .mapToLong(e -> e.lostSamples)
                                           .sum();
-                ret.add(new LossEvent(actualStart, lostSamples));
+                ret.add(new LossEvent(previousEnd.get(), lostSamples));
+                previousEnd.set(timeBoxEnd);
             }
             return ret;
         }
 
+        public synchronized void addTimeBoxEnd(long timeBoxEnd, long sampleEvents) {
+            timeBoxEnds.add(timeBoxEnd);
+            sampleEventsInTimeBox.add(sampleEvents);
+        }
+
+        public synchronized void print() {
+            System.out.println("Loss event information:");
+            for (int i = 0; i < timeBoxEnds.size(); i++) {
+                System.out.println("  Time box end: " + timeBoxEnds.get(i) + ", sample events: " + sampleEventsInTimeBox.get(i));
+            }
+            for (LossEvent e : events) {
+                System.out.println("  Lost samples event: " + e.lostSamples + " at " + e.relativeTimeMillis);
+            }
+            for (LossEvent e : getEventsPerTimeBox()) {
+                System.out.println("  Lost samples in time box ending at " + e.relativeTimeMillis + ": " + e.lostSamples);
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {
         try (RecordingStream rs = new RecordingStream()) {
             // setup recording
-            AtomicLong firstSampleTimeMillis = new AtomicLong(0);
-            AtomicLong lastSampleTimeMillis = new AtomicLong(0);
+            long burstThreadId = Thread.currentThread().threadId();
+            final long startTimeMillis = Instant.now().toEpochMilli();
             LossEventCollection lossEvents = new LossEventCollection();
+            AtomicLong sampleEventCountInTimeBox = new AtomicLong(0);
             rs.enable(EventNames.CPUTimeSample).with("throttle", "1ms");
-            rs.onEvent(EventNames.CPUTimeSample, e -> {
-                if (firstSampleTimeMillis.get() == 0 && e.getThread("eventThread").getJavaName().equals(BURST_THREAD_NAME)) {
-                    firstSampleTimeMillis.set(e.getStartTime().toEpochMilli());
-                }
-                if (e.getThread("eventThread").getJavaName().equals(BURST_THREAD_NAME)) {
-                    lastSampleTimeMillis.set(e.getStartTime().toEpochMilli());
-                }
-            });
             rs.enable(EventNames.CPUTimeSamplesLost);
             rs.onEvent(EventNames.CPUTimeSamplesLost, e -> {
-                if (e.getThread("eventThread").getJavaName().equals(BURST_THREAD_NAME)) {
+                if (e.getThread("eventThread").getJavaThreadId() == burstThreadId) {
                     long eventTime = e.getStartTime().toEpochMilli();
-                    long relativeTime = firstSampleTimeMillis.get() > 0 ? (eventTime - firstSampleTimeMillis.get()) : eventTime;
-                    System.out.println("Lost samples: " + e.getLong("lostSamples") + " at " + relativeTime);
+                    long relativeTime = eventTime - startTimeMillis;
+                    System.out.println("Lost samples: " + e.getLong("lostSamples") + " at " + relativeTime + " start time " + startTimeMillis);
                     lossEvents.addEvent(new LossEvent(relativeTime, e.getLong("lostSamples")));
                 }
             });
-            WHITE_BOX.cpuSamplerSetOutOfStackWalking(false);
+            rs.onEvent(EventNames.CPUTimeSample, e -> {
+                if (e.getThread("eventThread").getJavaThreadId() == burstThreadId) {
+                    sampleEventCountInTimeBox.incrementAndGet();
+                }
+            });
             rs.startAsync();
-            // this thread runs all along
-            Thread burstThread = new Thread(() -> WHITE_BOX.busyWait(11000));
-            burstThread.setName(BURST_THREAD_NAME);
-            burstThread.start();
-            // now we toggle out-of-stack-walking off, wait 1 second and then turn it on for 500ms a few times
+            // we disable the out-of-stack walking so that the queue fills up and overflows
+            // while we are in native code
+            disableOutOfStackWalking();
+
+
             for (int i = 0; i < 5; i++) {
-                boolean supported = WHITE_BOX.cpuSamplerSetOutOfStackWalking(false);
-                if (!supported) {
-                    System.out.println("Out-of-stack-walking not supported, skipping test");
-                    Asserts.assertFalse(true);
-                    return;
-                }
-                Thread.sleep(700);
-                long iterations = WHITE_BOX.cpuSamplerOutOfStackWalkingIterations();
-                WHITE_BOX.cpuSamplerSetOutOfStackWalking(true);
-                Thread.sleep(300);
-                while (WHITE_BOX.cpuSamplerOutOfStackWalkingIterations() == iterations) {
-                    Thread.sleep(50); // just to make sure the stack walking really ran
-                }
+                // run in native for one second
+                WHITE_BOX.busyWaitCPUTime(1000);
+                // going out-of-native at the end of the previous call should have triggered
+                // the safepoint handler, thereby also triggering the stack walking and creation
+                // of the loss event
+                WHITE_BOX.forceSafepoint(); // just to be sure
+                lossEvents.addTimeBoxEnd(Instant.now().toEpochMilli() - startTimeMillis, sampleEventCountInTimeBox.get());
+                sampleEventCountInTimeBox.set(0);
             }
+
+            rs.stop();
             rs.close();
-            checkThatLossDecreased(lossEvents, lastSampleTimeMillis.get() - firstSampleTimeMillis.get());
+
+            enableOutOfStackWalking();
+
+            checkThatLossDecreased(lossEvents);
         }
     }
 
-    static void checkThatLossDecreased(LossEventCollection lossEvents, long lastSampleTimeMillis) {
-        List<LossEvent> intervalLosses = lossEvents.getEventsPerInterval(1000, lastSampleTimeMillis);
-        for (LossEvent interval : intervalLosses) {
-            System.out.println("Lost samples in interval " + interval.relativeTimeMillis + ": " + interval.lostSamples);
-        }
-        // check that there are at least 3 intervals
-        Asserts.assertTrue(intervalLosses.size() > 2);
-        // check that the second to last interval has far fewer lost samples than the first
-        Asserts.assertTrue(intervalLosses.get(intervalLosses.size() - 2).lostSamples <
-                           intervalLosses.get(0).lostSamples / 2);
+    static void disableOutOfStackWalking() {
+        Asserts.assertTrue(WHITE_BOX.cpuSamplerSetOutOfStackWalking(false), "Out-of-stack-walking not supported");
+    }
+
+    static void enableOutOfStackWalking() {
+        WHITE_BOX.cpuSamplerSetOutOfStackWalking(true);
+    }
+
+    static void checkThatLossDecreased(LossEventCollection lossEvents) {
+        lossEvents.print();
+        List<LossEvent> timeBoxedLosses = lossEvents.getEventsPerTimeBox();
+        // check that the last time box has far fewer lost samples than the first
+        Asserts.assertTrue(timeBoxedLosses.get(timeBoxedLosses.size() - 1).lostSamples <=
+                           timeBoxedLosses.get(0).lostSamples / 2);
     }
 }
