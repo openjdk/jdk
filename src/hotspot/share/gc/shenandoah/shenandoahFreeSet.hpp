@@ -28,7 +28,11 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
+
+typedef ShenandoahLock    ShenandoahRebuildLock;
+typedef ShenandoahLocker  ShenandoahRebuildLocker;
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -316,6 +320,9 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
+  // This locks the rebuild process (in combination with the global heap lock)
+  ShenandoahRebuildLock _lock;
+
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
@@ -415,6 +422,11 @@ public:
 
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
+
+  ShenandoahRebuildLock* lock() {
+    return &_lock;
+  }
+
   // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   inline size_t alloc_capacity(size_t idx) const;
@@ -480,7 +492,10 @@ public:
   // locked action can be seen by these unlocked functions.
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
-  inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
+  inline size_t available() {
+    ShenandoahRebuildLocker locker(lock());
+    return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator);
+  }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
