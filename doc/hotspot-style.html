@@ -114,7 +114,7 @@ id="toc-compatibility-with-c11">Compatibility with C11</a></li>
 id="toc-additional-permitted-features">Additional Permitted
 Features</a></li>
 </ul></li>
-<li><a href="#excluded-features" id="toc-excluded-features">Excluded
+<li><a href="#forbidden-features" id="toc-forbidden-features">Forbidden
 Features</a>
 <ul>
 <li><a href="#structured-bindings"
@@ -123,8 +123,8 @@ id="toc-structured-bindings">Structured Bindings</a></li>
 System Library</a></li>
 <li><a href="#aggregate-extensions"
 id="toc-aggregate-extensions">Aggregate Extensions</a></li>
-<li><a href="#additional-excluded-features"
-id="toc-additional-excluded-features">Additional Excluded
+<li><a href="#additional-forbidden-features"
+id="toc-additional-forbidden-features">Additional Forbidden
 Features</a></li>
 </ul></li>
 <li><a href="#undecided-features" id="toc-undecided-features">Undecided
@@ -506,19 +506,19 @@ uses a subset. (Backports to JDK versions lacking support for more
 recent Standards must of course stick with the original C++98/03
 subset.)</p>
 <p>This section describes that subset. Features from the C++98/03
-language may be used unless explicitly excluded here. Features from
+language may be used unless explicitly forbidden here. Features from
 C++11, C++14, and C++17 may be explicitly permitted or explicitly
-excluded, and discussed accordingly here. There is a third category,
+forbidden, and discussed accordingly here. There is a third category,
 undecided features, about which HotSpot developers have not yet reached
 a consensus, or perhaps have not discussed at all. Use of these features
-is also excluded.</p>
+is also forbidden.</p>
 <p>(The use of some features may not be immediately obvious and may slip
 in anyway, since the compiler will accept them. The code review process
 is the main defense against this.)</p>
 <p>Some features are discussed in their own subsection, typically to
 provide more extensive discussion or rationale for limitations. Features
 that don't have their own subsection are listed in omnibus feature
-sections for permitted, excluded, and undecided features.</p>
+sections for permitted, forbidden, and undecided features.</p>
 <p>Lists of new features for C++11, C++14, and C++17, along with links
 to their descriptions, can be found in the online documentation for some
 of the compilers and libraries. The C++17 Standard is the definitive
@@ -594,8 +594,9 @@ title="Runtime Type Information">RTTI</a> are deemed not worthwhile,
 given the alternatives.</p>
 <h3 id="memory-allocation">Memory Allocation</h3>
 <p>Do not use the standard global allocation and deallocation functions
-(global <code>operator new</code> and related functions). Use of these
-functions by HotSpot code is disabled for some platforms.</p>
+(global <code>operator new</code> and related functions), other than the
+non-allocating forms of those functions. Use of these functions by
+HotSpot code is disabled for some platforms.</p>
 <p>Rationale: HotSpot often uses "resource" or "arena" allocation. Even
 where heap allocation is used, the standard global functions are avoided
 in favor of wrappers around <code>malloc</code> and <code>free</code>
@@ -665,9 +666,9 @@ identifiers into scope just to remove the need for namespace
 qualification. Requiring qualification makes it easy to distinguish
 between references to external libraries and code that is part of
 HotSpot.</p>
-<p>As with language features, standard library facilities are either
-permitted, explicitly excluded, or undecided (and so implicitly
-excluded).</p>
+<p>As with language features, Standard Library facilities are either
+permitted, explicitly forbidden, or undecided (and so implicitly
+forbidden).</p>
 <p>Most HotSpot code should not directly <code>#include</code> C++
 Standard Library headers. HotSpot provides a set of wrapper headers for
 the Standard Library headers containing permitted definitions. These
@@ -723,9 +724,29 @@ used C++ codes that exist.</p></li>
 different naming conventions. The coexistence of those different
 conventions might appear jarring and reduce readability. However,
 experience in some other code bases suggests this isn't a significant
-problem and can even be beneficial, as it makes HotSpot-specific
-facilities and Standard Library facilities easily
-distinguishable.</p></li>
+problem, so long as Standard Library names are namespace-qualified. It
+is tempting to bring the Standard Library names into scope via a
+<code>using std;</code> directive. Doing so makes writing code using
+those names easier, since the qualifiers don't need to be included. But
+there are reasons not to do that.</p>
+<ul>
+<li><p>There is a risk of future name collisions. Additional Standard
+Library headers may be included, adding to the list of names being used.
+Also, future versions of the Standard Library may add currently unknown
+names to the headers already being included.</p></li>
+<li><p>It may harm readability. Code where this is relevant is a mixture
+of the local HotSpot naming conventions and the Standard Library's (or
+other 3rd-party library's) naming conventions. With only unqualified
+names, any distinctions from the naming conventions for the different
+code sources are lost. Instead one may end up with an undifferentiated
+mess, where it's not obvious whether an identifier is from local code
+that is inconsistent with HotSpot style (and there's a regretable amount
+of that for historical reasons), or is following some other convention.
+Having the qualifiers disambiguates that.</p></li>
+<li><p>It can be helpful to know, at a glance, whether the definition is
+in HotSpot or elsewhere, for purposes of looking up the definition or
+documentation.</p></li>
+</ul></li>
 </ul>
 <h3 id="type-deduction">Type Deduction</h3>
 <p>Use type deduction only if it makes the code clearer or safer. Do not
@@ -1603,10 +1624,10 @@ href="http://wg21.link/p0138r2">p0138r2</a>)</p></li>
 <li><p>Allow <code>typename</code> in template template parameter (<a
 href="http://wg21.link/n4051">n4051</a>) — template template parameters
 are barely used (if at all) in HotSpot, but there's no reason to
-artificially disallow this syntactic regularization in any such
+artificially forbid this syntactic regularization in any such
 uses.</p></li>
 </ul>
-<h2 id="excluded-features">Excluded Features</h2>
+<h2 id="forbidden-features">Forbidden Features</h2>
 <h3 id="structured-bindings">Structured Bindings</h3>
 <p>The use of structured bindings <a
 href="http://wg21.link/p0217r3">p0217r3</a> is forbidden. Preferred
@@ -1648,7 +1669,8 @@ initialization for classes with base classes (<a
 href="https://wg21.link/p0017r1">p0017r1</a>). HotSpot makes very little
 use of aggregate classes, preferring explicit constructors even for very
 simple classes.</p>
-<h3 id="additional-excluded-features">Additional Excluded Features</h3>
+<h3 id="additional-forbidden-features">Additional Forbidden
+Features</h3>
 <ul>
 <li><p><code>&lt;algorithm&gt;</code>, <code>&lt;iterator&gt;</code>,
 <code>&lt;numeric&gt;</code><br> Not useful without standard containers
