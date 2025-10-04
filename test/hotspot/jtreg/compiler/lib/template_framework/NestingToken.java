@@ -42,12 +42,13 @@ public sealed abstract class NestingToken implements Token permits NestingToken.
     abstract boolean nestedNamesAreLocal();
     abstract boolean nestedHashtagsAreLocal();
     abstract boolean nestedSetFuelCostAreLocal();
+    // TODO: just make it one inner record!
 
     private NestingToken(List<Token> tokens) {
         this.tokens = tokens;
     }
 
-    public static final class Scope extends NestingToken implements Token {
+    static final class Scope extends NestingToken implements Token {
         Scope(List<Token> tokens) { super(tokens); }
         boolean nestedNamesAreLocal() { return true; }
         boolean nestedHashtagsAreLocal() { return true; }

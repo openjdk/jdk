@@ -164,6 +164,7 @@ public class TestTemplate {
         testListArgument();
         testNestedScopes1();
         testNestedScopes2();
+        testTemplateScopes();
         testHookAndScopes();
 
         // The following tests should all fail, with an expected exception and message.
@@ -2673,6 +2674,32 @@ public class TestTemplate {
             dataNames: {g_a int; g_b int; g_c int; v_i int; v_j int; v_k int; }
             close scope.
             dataNames: {g_a int; g_b int; g_c int; }
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testTemplateScopes() {
+        var listNamesTemplate = Template.make(() -> scope(
+            "{",
+            structuralNames().exactOf(myStructuralTypeA).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
+            "}\n"
+        ));
+
+        var scopeTemplate = Template.make(() -> scope(
+        ));
+
+        var flatTemplate = Template.make(() -> flat(
+        ));
+
+        // TODO: implement template with scope that is flat for names
+        var template = Template.make(() -> scope(
+        ));
+
+        String code = template.render();
+        String expected =
+            """
             """;
         checkEQ(code, expected);
     }

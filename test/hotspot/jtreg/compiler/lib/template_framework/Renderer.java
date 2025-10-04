@@ -228,8 +228,9 @@ final class Renderer {
         currentTemplateFrame = templateFrame;
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
-        NestingToken.Scope scope = templateToken.instantiate();
-        renderTokenList(scope.tokens);
+        NestingToken nt = templateToken.instantiate();
+        // TODO: make it possibly transparent for names?
+        renderTokenList(nt.tokens);
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
