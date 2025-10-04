@@ -141,8 +141,9 @@ const Type* PopCountINode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  KnownBits<juint> bits = t->isa_int()->_bits;
-  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), Type::WidenMax);
+  const TypeInt* tint = t->isa_int();
+  KnownBits<juint> bits = tint->_bits;
+  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), tint->_widen);
 
 }
 
@@ -151,6 +152,7 @@ const Type* PopCountLNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) {
     return Type::TOP;
   }
-  KnownBits<julong> bits = t->isa_long()->_bits;
-  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), Type::WidenMax);
+  const TypeLong* tlong = t->isa_long();
+  KnownBits<julong> bits = tlong->_bits;
+  return TypeInt::make(population_count(bits._ones), population_count(~bits._zeros), tlong->_widen);
 }
