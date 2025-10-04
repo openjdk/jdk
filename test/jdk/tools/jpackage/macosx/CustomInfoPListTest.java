@@ -50,8 +50,10 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -80,6 +82,8 @@ public class CustomInfoPListTest {
     private static final Map<String, String> embeddedRuntimeKeyValue = new HashMap<>();
     private static final Map<String, String> runtimeKeyValue = new HashMap<>();
 
+    private static final List<String> faKeysAndValues = new ArrayList<>();
+
     static {
         appKeyValue.put("CFBundleExecutable", "AppCustomInfoPListTest");
         appKeyValue.put("CFBundleIconFile", "AppCustomInfoPListTest.icns");
@@ -90,8 +94,6 @@ public class CustomInfoPListTest {
         appKeyValue.put("CFBundleVersion", "1.0");
         appKeyValue.put("NSHumanReadableCopyright", JPackageStringBundle.MAIN.cannedFormattedString(
                 "param.copyright.default", new Date()).getValue());
-        appKeyValue.put("UTTypeIdentifier", "Hello.foo");
-        appKeyValue.put("UTTypeDescription", "bar");
 
         embeddedRuntimeKeyValue.put("CFBundleIdentifier", "Hello");
         embeddedRuntimeKeyValue.put("CFBundleName", "AppCustomInfoPListTest");
@@ -102,6 +104,13 @@ public class CustomInfoPListTest {
         runtimeKeyValue.put("CFBundleName", "foo");
         runtimeKeyValue.put("CFBundleShortVersionString", "1.0");
         runtimeKeyValue.put("CFBundleVersion", "1.0");
+
+        faKeysAndValues.add("CFBundleDocumentTypes");
+        faKeysAndValues.add("LSItemContentTypes");
+        faKeysAndValues.add("Hello.foo");
+        faKeysAndValues.add("UTTypeDescription");
+        faKeysAndValues.add("CFBundleTypeName");
+        faKeysAndValues.add("bar");
     }
 
     // We do not need full and valid Info.plist for testing
@@ -171,6 +180,15 @@ public class CustomInfoPListTest {
         });
     }
 
+    // For FA check that main keys and values are present
+    private static void validateInfoPListFA(PListReader plistFile, List<String> values) {
+        String faXml = plistFile.queryValue("CustomInfoPListFA");
+        values.forEach(value -> {
+            TKit.assertTrue(faXml.contains(value), String.format(
+                "Check FA key/value is present [%s]", value));
+        });
+    }
+
     @Test
     @Parameter({"TRUE", "FALSE"})
     @Parameter({"FALSE", "TRUE"})
@@ -195,6 +213,7 @@ public class CustomInfoPListTest {
         if (includeMainPList) {
             validateInfoPListFileKey(appPList, Optional.of(APP_PLIST_KEY));
             validateInfoPList(appPList, appKeyValue);
+            validateInfoPListFA(appPList, faKeysAndValues);
         } else {
             validateInfoPListFileKey(appPList, Optional.empty());
         }
