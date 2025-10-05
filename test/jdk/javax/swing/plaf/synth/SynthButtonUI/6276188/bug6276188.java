@@ -98,7 +98,6 @@ public class bug6276188 {
             robot.mouseMove(p.x , p.y);
             robot.waitForIdle();
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            robot.waitForIdle();
             latch.await();
             robot.delay(1000);
 
