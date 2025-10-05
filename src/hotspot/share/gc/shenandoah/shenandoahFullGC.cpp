@@ -1163,6 +1163,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
       ShenandoahGenerationalFullGC::compute_balances();
       free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
     } else {
+      ShenandoahRebuildLocker locker(free_set->lock());
       free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
       free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
     }
