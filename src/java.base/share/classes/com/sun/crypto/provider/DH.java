@@ -122,28 +122,26 @@ public class DH implements KEMSpi {
     public EncapsulatorSpi engineNewEncapsulator(
             PublicKey publicKey, AlgorithmParameterSpec spec,
             SecureRandom secureRandom) throws InvalidKeyException {
-        return new Handler(publicKey, null, spec, secureRandom);
+        return new Handler(publicKey, null, secureRandom);
     }
 
     @Override
     public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey,
             AlgorithmParameterSpec spec) throws InvalidKeyException {
-        return new Handler(null, privateKey, spec, null);
+        return new Handler(null, privateKey, null);
     }
 
     static final class Handler
             implements KEMSpi.EncapsulatorSpi, KEMSpi.DecapsulatorSpi {
         private final PublicKey pkR;
         private final PrivateKey skR;
-        private final AlgorithmParameterSpec spec;
         private final SecureRandom sr;
         private final Params params;
 
-        Handler(PublicKey pk, PrivateKey sk, AlgorithmParameterSpec spec,
-                SecureRandom sr) throws InvalidKeyException {
+        Handler(PublicKey pk, PrivateKey sk, SecureRandom sr)
+                throws InvalidKeyException {
             this.pkR = pk;
             this.skR = sk;
-            this.spec = spec;
             this.sr = sr;
             this.params = paramsFromKey(pk == null ? sk : pk);
         }
@@ -221,9 +219,11 @@ public class DH implements KEMSpi {
                 }
             } else if (k instanceof XECKey xkey
                     && xkey.getParams() instanceof NamedParameterSpec ns) {
-                if (ns.getName().equalsIgnoreCase("X25519")) {
+                if (ns.getName().equalsIgnoreCase(
+                        NamedParameterSpec.X25519.getName())) {
                     return Params.X25519;
-                } else if (ns.getName().equalsIgnoreCase("X448")) {
+                } else if (ns.getName().equalsIgnoreCase(
+                        NamedParameterSpec.X448.getName())) {
                     return Params.X448;
                 }
             }

@@ -95,9 +95,15 @@ public class Hybrid {
         return KeyFactory.getInstance(name);
     }
 
+    /**
+     * Returns a KEM instance for each side of the hybrid algorithm.
+     * For traditional key exchange algorithms, we use the DH-based KEM
+     * implementation provided by DH.PROVIDER.
+     * For ML-KEM post-quantum algorithms, we obtain a KEM instance
+     * using the given algorithm name.
+     */
     private static KEM getKEM(String name) throws NoSuchAlgorithmException {
-        if (name.startsWith("secp") || name.equals("X25519") ||
-                name.equals("X448")) {
+        if (name.startsWith("secp") || name.equals("X25519")) {
             return KEM.getInstance("DH", DH.PROVIDER);
         } else {
             return KEM.getInstance(name);
@@ -286,9 +292,17 @@ public class Hybrid {
     }
 
     private static byte[] concat(byte[]... inputs) {
-        ByteArrayOutputStream o = new ByteArrayOutputStream();
-        Arrays.stream(inputs).forEach(o::writeBytes);
-        return o.toByteArray();
+        int outLen = 0;
+        for (byte[] in : inputs) {
+            outLen += in.length;
+        }
+        byte[] out = new byte[outLen];
+        int pos = 0;
+        for (byte[] in : inputs) {
+            System.arraycopy(in, 0, out, pos, in.length);
+            pos += in.length;
+        }
+        return out;
     }
 
     private record Handler(KEM.Encapsulator le, KEM.Encapsulator re,

@@ -650,6 +650,8 @@ enum NamedGroup {
         // Finite Field Groups (XDH)
         NAMED_GROUP_XDH("XDH", XDHScheme.instance),
 
+        // Post-Quantum Cryptography (PQC) KEM groups
+        // Currently used for hybrid named groups
         NAMED_GROUP_KEM("PQC", KEMScheme.instance),
 
         // arbitrary prime and curves (ECDHE)
