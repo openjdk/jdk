@@ -29,6 +29,7 @@ import com.sun.management.HotSpotDiagnosticMXBean;
 import com.sun.management.ThreadMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryManagerMXBean;
+import java.lang.management.MemoryMXBean;
 import java.lang.management.OperatingSystemMXBean;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -51,6 +52,7 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
     private final List<PlatformComponent<?>> mxbeanList;
     private static HotSpotDiagnostic hsDiagMBean = null;
     private static OperatingSystemMXBean osMBean = null;
+    private static MemoryMXBean memoryMBean = null;
 
     static {
        System.loadLibrary("management_ext");
@@ -195,6 +197,41 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
         });
 
         /**
+         * MemoryMXBean
+         */
+        initMBeanList.add(new PlatformComponent<MemoryMXBean>() {
+            private final Set<String> memoryMXBeanInterfaceNames
+                    = Collections.unmodifiableSet(
+                            Stream.of("java.lang.management.MemoryMXBean",
+                                    "com.sun.management.MemoryMXBean")
+                            .collect(Collectors.toSet()));
+
+            @Override
+            public Set<Class<? extends MemoryMXBean>> mbeanInterfaces() {
+                return Stream.of(java.lang.management.MemoryMXBean.class,
+                        com.sun.management.MemoryMXBean.class)
+                        .collect(Collectors.toSet());
+            }
+
+            @Override
+            public Set<String> mbeanInterfaceNames() {
+                return memoryMXBeanInterfaceNames;
+            }
+
+            @Override
+            public String getObjectNamePattern() {
+                return ManagementFactory.MEMORY_MXBEAN_NAME;
+            }
+
+            @Override
+            public Map<String, java.lang.management.MemoryMXBean> nameToMBeanMap() {
+                return Collections.<String, java.lang.management.MemoryMXBean>singletonMap(
+                        ManagementFactory.MEMORY_MXBEAN_NAME,
+                        getMemoryMXBean());
+            }
+        });
+
+        /**
          * OperatingSystemMXBean
          */
         initMBeanList.add(new PlatformComponent<OperatingSystemMXBean>() {
@@ -311,5 +348,12 @@ public final class PlatformMBeanProviderImpl extends PlatformMBeanProvider {
             osMBean = new OperatingSystemImpl(ManagementFactoryHelper.getVMManagement());
         }
         return osMBean;
+    }
+
+    private static synchronized MemoryMXBean getMemoryMXBean() {
+        if (memoryMBean == null) {
+            memoryMBean = new HotSpotMemoryImpl(ManagementFactoryHelper.getVMManagement());
+        }
+        return memoryMBean;
     }
 }

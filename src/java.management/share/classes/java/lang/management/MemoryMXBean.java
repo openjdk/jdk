@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,24 +268,6 @@ public interface MemoryMXBean extends PlatformManagedObject {
     public MemoryUsage getNonHeapMemoryUsage();
 
     /**
-     * Returns the CPU time used by all garbage collection threads.
-     *
-     * <p> This include time since genesis, so the value can be
-     * non-zero even if no garbage collection cycles occured. In
-     * general this includes time for all driver threads,
-     * workers, VM operations on the VM thread and the string
-     * deduplication thread (if enabled). This method returns
-     * {@code -1} if the platform does not support this operation
-     * or if called during shutdown.
-     *
-     * @return the total CPU time for all garbage collection
-     * threads in nanoseconds.
-     *
-     * @since 26
-     */
-    public long getGcCpuTime();
-
-    /**
      * Tests if verbose output for the memory system is enabled.
      *
      * @return {@code true} if verbose output for the memory
@@ -320,4 +302,5 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * @see     java.lang.System#gc()
      */
     public void gc();
+
 }
