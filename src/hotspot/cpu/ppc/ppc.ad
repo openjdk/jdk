@@ -1834,6 +1834,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (!masm && !do_size) {
+        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy%s",
+                  "STX", Matcher::regName[src_lo], dst_offset, is_aligned(dst_offset, 16) ? "" : " (unaligned)");
+      }
+#endif // !PRODUCT
     }
     // Memory->VectorRegister Spill.
     else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vec) {
@@ -1860,6 +1866,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         }
         size += 8;
       }
+#ifndef PRODUCT
+      if (!masm && !do_size) {
+        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy%s",
+                  "LXV", Matcher::regName[dst_lo], src_offset, is_aligned(src_offset, 16) ? "" : " (unaligned)");
+      }
+#endif // !PRODUCT
     }
     // VectorRegister->VectorRegister.
     else if (src_lo_rc == rc_vec && dst_lo_rc == rc_vec) {
@@ -1869,6 +1881,12 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
         __ xxlor(Rdst, Rsrc, Rsrc);
       }
       size += 4;
+#ifndef PRODUCT
+      if (!masm && !do_size) {
+        st->print("%-7s %s, %s, %s\t// vector spill copy",
+                  "XXLOR", Matcher::regName[dst_lo], Matcher::regName[src_lo], Matcher::regName[src_lo]);
+      }
+#endif // !PRODUCT
     }
     else {
       ShouldNotReachHere(); // No VR spill.
