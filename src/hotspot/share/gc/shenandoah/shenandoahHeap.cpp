@@ -2586,6 +2586,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
           get_region(first_old_region)->is_old() && get_region(last_old_region)->is_old()),
          "sanity: old_region_count: %zu, first_old_region: %zu, last_old_region: %zu",
          old_region_count, first_old_region, last_old_region);
+
   if (mode()->is_generational()) {
 #ifdef ASSERT
     if (ShenandoahVerify) {

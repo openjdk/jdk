@@ -238,7 +238,7 @@ public:
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
   // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
   // enforce a consistency assert.
-  inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
+  inline size_t available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
@@ -494,7 +494,7 @@ public:
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() {
     ShenandoahRebuildLocker locker(lock());
-    return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator);
+    return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
