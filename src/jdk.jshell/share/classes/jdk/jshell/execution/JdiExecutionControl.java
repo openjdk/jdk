@@ -90,7 +90,7 @@ public abstract class JdiExecutionControl extends StreamingExecutionControl impl
             vm().redefineClasses(rmp);
         } catch (EngineTerminationException ex) {
             throw ex;
-        } catch (Exception ex) {
+        } catch (Exception | LinkageError ex) {
             throw new ClassInstallException("redefine: " + ex.getMessage(), new boolean[cbcs.length]);
         }
         // forward the redefine to remote-end to register the redefined bytecode
