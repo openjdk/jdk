@@ -269,8 +269,9 @@ void AOTStreamedHeapLoader::copy_payload_carefully(oopDesc* archive_object,
     assert(unfinished_bit >= start_bit && unfinished_bit < end_bit, "out of bounds copying");
 
     // This is the address of the pointee inside the input stream
-    RawElementT* archive_payload_addr = ((RawElementT*)archive_object) + unfinished_bit - header_bit;
-    RawElementT* heap_payload_addr = cast_from_oop<RawElementT*>(heap_object) + unfinished_bit - header_bit;
+    size_t payload_offset = unfinished_bit - header_bit;
+    RawElementT* archive_payload_addr = ((RawElementT*)archive_object) + payload_offset;
+    RawElementT* heap_payload_addr = cast_from_oop<RawElementT*>(heap_object) + payload_offset;
 
     assert(heap_payload_addr >= cast_from_oop<RawElementT*>(heap_object) &&
            (HeapWord*)heap_payload_addr < cast_from_oop<HeapWord*>(heap_object) + heap_object->size(),
