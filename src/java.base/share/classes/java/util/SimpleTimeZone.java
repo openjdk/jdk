@@ -863,7 +863,7 @@ public class SimpleTimeZone extends TimeZone {
     }
 
     /**
-     * Generates the hash code for the SimpleDateFormat object.
+     * Generates the hash code for the SimpleTimeZone object.
      * @return the hash code for this object
      */
     public int hashCode()
