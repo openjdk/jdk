@@ -61,6 +61,20 @@ protected:
 
   inline size_t compute_byte_map_size(size_t num_bytes);
 
+  // We use 0x00 (zero) to represent Dirty and 0xFF to represent Clean because
+  // this choice reduces the barrier code by one instruction on architectures with
+  // a constant-zero register. On such architectures, the Dirty value (0x00) is
+  // directly accessible through the zero register, eliminating the need to load
+  // the value explicitly and thereby saving one instruction
+  //
+  // E.g. see
+  //  Urs Hölzle. A fast write barrier for generational garbage collectors.
+  //  In Eliot Moss, Paul R. Wilson, and Benjamin Zorn, editors, OOPSLA/ECOOP '93
+  //  Workshop on Garbage Collection in Object-Oriented Systems, October 1993
+  //
+  // that shows this for SPARC (but aarch32/aarch64/RISC-V are similar in this
+  // respect).
+  //
   enum CardValues {
     clean_card                  = (CardValue)-1,
 

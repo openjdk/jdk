@@ -354,8 +354,6 @@ class Compile : public Phase {
   bool                  _parsed_irreducible_loop; // True if ciTypeFlow detected irreducible loops during parsing
 #endif
   bool                  _has_irreducible_loop;  // Found irreducible loops
-  // JSR 292
-  bool                  _has_method_handle_invokes; // True if this method has MethodHandle invokes.
   bool                  _has_monitors;          // Metadata transfered to nmethod to enable Continuations lock-detection fastpath
   bool                  _has_scoped_access;     // For shared scope closure
   bool                  _clinit_barrier_on_entry; // True if clinit barrier is needed on nmethod entry
@@ -665,10 +663,6 @@ public:
 #endif
   bool              has_irreducible_loop() const { return _has_irreducible_loop; }
   void          set_has_irreducible_loop(bool z) { _has_irreducible_loop = z; }
-
-  // JSR 292
-  bool              has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void          set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   Ticks _latest_stage_start_counter;
 
@@ -1100,7 +1094,8 @@ public:
   bool inline_incrementally_one();
   void inline_incrementally_cleanup(PhaseIterGVN& igvn);
   void inline_incrementally(PhaseIterGVN& igvn);
-  bool should_delay_inlining() { return AlwaysIncrementalInline || (StressIncrementalInlining && (random() % 2) == 0); }
+  bool should_stress_inlining() { return StressIncrementalInlining && (random() % 2) == 0; }
+  bool should_delay_inlining() { return AlwaysIncrementalInline || should_stress_inlining(); }
   void inline_string_calls(bool parse_time);
   void inline_boxing_calls(PhaseIterGVN& igvn);
   bool optimize_loops(PhaseIterGVN& igvn, LoopOptsMode mode);
