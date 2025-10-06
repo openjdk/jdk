@@ -186,20 +186,16 @@ oop AOTStreamedHeapLoader::allocate_object(oopDesc* archive_object, markWord mar
 
   oop heap_object;
 
-  Klass* klass = archive_object->klass();
+ Klass* klass = archive_object->klass();
   if (klass->is_mirror_instance_klass()) {
     heap_object = Universe::heap()->class_allocate(klass, size, CHECK_NULL);
-  } else if (archive_object->is_instance()) {
-    heap_object = Universe::heap()->obj_allocate(archive_object->klass(), size, CHECK_NULL);
-  } else if (archive_object->is_typeArray()) {
-    int len = archive_array_length(archive_object);
-    BasicType elem_type = static_cast<ArrayKlass*>(archive_object->klass())->element_type();
-    heap_object = oopFactory::new_typeArray_nozero(elem_type, len, CHECK_NULL);
+  } else if (klass->is_instance_klass()) {
+    heap_object = Universe::heap()->obj_allocate(klass, size, CHECK_NULL);
   } else {
-    assert(archive_object->is_objArray(), "must be");
-    int len = archive_array_length(archive_object);
-    Klass* elem_klass = static_cast<ObjArrayKlass*>(archive_object->klass())->element_klass();
-    heap_object = oopFactory::new_objArray(elem_klass, len, CHECK_NULL);
+    assert(klass->is_array_klass(), "must be");
+    int length = archive_array_length(archive_object);
+    bool do_zero = klass->is_objArray_klass();
+    heap_object = Universe::heap()->array_allocate(klass, size, length, do_zero, CHECK_NULL);
   }
 
   heap_object->set_mark(mark);
