@@ -640,7 +640,7 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
                  selected_regions, selected_live, old_consumed, old_promotion_reserve);
   }
 
-  const size_t tenuring_threshold = heap->age_census()->tenuring_threshold();
+  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
   const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
 
