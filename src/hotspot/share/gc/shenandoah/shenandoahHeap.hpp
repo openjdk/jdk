@@ -460,6 +460,10 @@ public:
   // old mark does _not_ touch the oom handler).
   inline void clear_cancelled_gc(bool clear_oom_handler = true);
 
+  // Clears the cancellation cause iff the current cancellation reason equals the given
+  // expected cancellation cause. Does not reset the oom handler.
+  inline GCCause::Cause clear_cancellation(GCCause::Cause expected);
+
   void cancel_concurrent_mark();
 
   // Returns true if and only if this call caused a gc to be cancelled.

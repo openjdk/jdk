@@ -31,6 +31,7 @@
 
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
@@ -278,6 +279,10 @@ inline void ShenandoahHeap::clear_cancelled_gc(bool clear_oom_handler) {
   if (clear_oom_handler) {
     _oom_evac_handler.clear();
   }
+}
+
+inline GCCause::Cause ShenandoahHeap::clear_cancellation(GCCause::Cause expected) {
+  return _cancelled_gc.cmpxchg(GCCause::_no_gc, expected);
 }
 
 inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size) {
