@@ -179,29 +179,30 @@ public abstract class Process implements Closeable {
     /**
      * Close all writer and reader streams and terminate the process.
      * The streams are closed immediately and the process is terminated without waiting.
-     * This method is idempotent, if the process has already been closed
+     * This method is idempotent, if this {@code Process} has already been closed
      * invoking this method has no effect.
      * <p>
-     * If the data from the process streams is needed, it must be read before calling this method.
-     * The contents of streams that have not been read fully are lost, they are discarded or ignored.
+     * If the data from the process input or error streams is needed, it must be read before
+     * calling this method. The contents of streams that have not been read to end of stream
+     * are lost, they are discarded or ignored.
      * <p>
      * If the process should be allowed to run to completion or the exit value of the process
      * is of interest, then the caller must {@linkplain #waitFor() wait} for the process
-     * to complete before calling this method.
+     * to terminate before calling this method.
      * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
      * the try-with-resources block allows the process time to clean up and exit normally.
      * <p>
      * Streams should be closed when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
-     * If an {@code IOException} occurs when closing a stream it is
-     * re-thrown after the process is terminated. Additional {@code IOExceptions}
+     * If an {@code IOException} occurs when closing a stream it is thrown
+     * by this method after the process is terminated. Additional {@code IOExceptions}
      * thrown by closing the remaining streams, if any, are added to the first
      * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
-     * The process may already have terminated or be in the process of terminating;
-     * if it is {@linkplain #isAlive() alive}, it is {@linkplain #destroy destroyed}.
+     * The process is {@linkplain #destroy destroyed}.
+     * This is a no-op if the process has already terminated.
      * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
-     * is not available and the process is forcibly terminated.
+     * is not available and the process is {@linkplain #destroyForcibly() forcibly destroyed}.
      * Calling {@linkplain #waitFor() waitFor} after
      * {@linkplain #close() close} or after the try-with-resources block exits
      * can verify that the process has been terminated.
