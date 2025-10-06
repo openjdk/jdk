@@ -240,13 +240,6 @@ void os::print_register_info(outputStream *st, const void *context, int& continu
 // Stubs for things that would be in bsd_zero.s if it existed.
 // You probably want to disassemble these monkeys to check they're ok.
 
-// Atomically copy 64 bits of data
-static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
-  int64_t tmp;
-  __atomic_load(reinterpret_cast<const volatile int64_t*>(src), &tmp, __ATOMIC_RELAXED);
-  __atomic_store(reinterpret_cast<volatile int64_t*>(dst), &tmp, __ATOMIC_RELAXED);
-}
-
 extern "C" {
   int SpinPause() {
     return 1;
@@ -284,14 +277,14 @@ extern "C" {
     if (from > to) {
       const jlong *end = from + count;
       while (from < end)
-        atomic_copy64(from++, to++);
+        AtomicAccess::store(to++, AtomicAccess::load(from++));
     }
     else if (from < to) {
       const jlong *end = from;
       from += count - 1;
       to   += count - 1;
       while (from >= end)
-        atomic_copy64(from--, to--);
+        AtomicAccess::store(to--, AtomicAccess::load(from--));
     }
   }
 
