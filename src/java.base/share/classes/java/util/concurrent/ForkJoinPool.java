@@ -1427,13 +1427,22 @@ public class ForkJoinPool extends AbstractExecutorService
 
         // specialized execution methods
 
-        /**
-         * Runs the given task, as well as remaining local tasks.
+        /*
+         * Two version (lifo and fifo) of top-level execution, split
+         * across modes to better isolate task dispatch and local
+         * processing from top-level scheduling.
          */
-        final void topLevelExec(ForkJoinTask<?> task, int fifo) {
+        final void topLevelExecLifo(ForkJoinTask<?> task) {
             while (task != null) {
                 task.doExec();
-                task = (fifo == 0) ? localPop() : localPoll();
+                task = localPop();
+            }
+        }
+
+        final void topLevelExecFifo(ForkJoinTask<?> task) {
+            while (task != null) {
+                task.doExec();
+                task = localPoll();
             }
         }
 
@@ -2009,7 +2018,10 @@ public class ForkJoinPool extends AbstractExecutorService
                                 if (nt != null &&         // confirm a[nk]
                                     U.getReference(a, np) == nt)
                                     signalWork(a, nk);    // propagate
-                                w.topLevelExec(t, fifo);  // run t & its subtasks
+                                if (fifo != 0)            // run t & its subtasks
+                                    w.topLevelExecFifo(t);
+                                else
+                                    w.topLevelExecLifo(t);
                             }
                         }
                     }
@@ -2071,11 +2083,9 @@ public class ForkJoinPool extends AbstractExecutorService
     private int awaitWork(WorkQueue w, int activePhase, int qsize) {
         int idle = 1;
         if ((runState & STOP) == 0L && w != null) {
-            int cfg = w.config, src = w.source;
-            long startTime = System.nanoTime();
-            long minWaitTime = TimeUnit.MILLISECONDS.toNanos(TIMEOUT_SLOP);
-            long waitTime = (src == INVALID_ID) ? minWaitTime :
-                TimeUnit.MILLISECONDS.toNanos(keepAlive);
+            int cfg = w.config;
+            long waitTime = (w.source == INVALID_ID) ? 0L : keepAlive;
+            long deadline = waitTime + System.currentTimeMillis();
             int spins = (qsize << 1) | (qsize - 1); // approx traversal cost
             if ((cfg & CLEAR_TLS) != 0 &&     // instanceof check always true
                 Thread.currentThread() instanceof ForkJoinWorkerThread f)
@@ -2090,17 +2100,20 @@ public class ForkJoinPool extends AbstractExecutorService
                     break;
                 if ((runState & STOP) != 0L)
                     break;
-                long wt = waitTime - (System.nanoTime() - startTime);
-                long parkTime = 0L, c;        // use timed wait if trimmable
-                if (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase &&
-                    (parkTime = wt) <= minWaitTime) {
-                    if (tryTrim(w, c, activePhase))
-                        break;
-                    continue;                 // lost race to trim
+                boolean trimmable = false;    // use timed wait if trimmable
+                long d = 0L, c;
+                if (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase) {
+                    if (deadline - System.currentTimeMillis() <= TIMEOUT_SLOP) {
+                        if (tryTrim(w, c, activePhase))
+                            break;
+                        continue;             // lost race to trim
+                    }
+                    d = deadline;
+                    trimmable = true;
                 }
                 w.parking = 1;                // enable unpark and recheck
                 if ((idle = w.phase - activePhase) != 0)
-                    U.park(false, parkTime);  // timed relative wait if nonzero
+                    U.park(trimmable, d);
                 w.parking = 0;                // close unpark window
                 if (idle == 0 || (idle = w.phase - activePhase) == 0)
                     break;
