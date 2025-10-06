@@ -448,7 +448,7 @@ Node* AddNode::Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt) 
   if (bt == T_INT) {
     con = phase->intcon(java_add(static_cast<jint>(mul.multiplier()), 1));
   } else {
-    con = phase->longcon(java_add(mul.multiplier(), static_cast<jlong>(1)));
+    con = phase->longcon(java_add(mul.multiplier(), CONST64(1)));
   }
 
   return MulNode::make(con, mul.variable(), bt);
@@ -558,12 +558,12 @@ AddNode::Multiplication AddNode::Multiplication::find_power_of_two_addition_patt
 
     // Pattern (2)
     if (lhs.is_valid_with(n->in(2))) {
-      return Multiplication(lhs.variable(), java_add(lhs.multiplier(), static_cast<jlong>(1)));
+      return Multiplication(lhs.variable(), java_add(lhs.multiplier(), CONST64(1)));
     }
 
     // Pattern (3)
     if (rhs.is_valid_with(n->in(1))) {
-      return Multiplication(rhs.variable(), java_add(rhs.multiplier(), static_cast<jlong>(1)));
+      return Multiplication(rhs.variable(), java_add(rhs.multiplier(), CONST64(1)));
     }
 
     // Pattern (4), which is equivalent to a simple addition pattern
