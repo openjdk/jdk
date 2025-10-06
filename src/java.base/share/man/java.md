@@ -724,6 +724,7 @@ the Java HotSpot Virtual Machine.
         - An invalid JNI reference
         - An attempt to use a `ReleaseXXX` function on a parameter not
           produced by the corresponding `GetXXX` function
+    - A JNI call was made to mutate a final field.
 
     The following checks only result in warnings being printed:
 
