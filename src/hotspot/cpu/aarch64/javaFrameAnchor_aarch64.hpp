@@ -39,6 +39,9 @@ public:
   //  3 - restoring an old state (javaCalls)
 
   void clear(void) {
+    // No fencing required, the members are declared volatile so the compiler will not reorder and
+    // the profiler always reads from the same thread and should observe the state in program order.
+
     // clearing _last_Java_sp must be first
     _last_Java_sp = nullptr;
     _last_Java_fp = nullptr;
@@ -53,6 +56,8 @@ public:
     // To act like previous version (pd_cache_state) don't null _last_Java_sp
     // unless the value is changing
     //
+    // No fencing required, the members are declared volatile so the compiler will not reorder and
+    // the profiler always reads from the same thread and should observe the state in program order.
     if (_last_Java_sp != src->_last_Java_sp) {
       _last_Java_sp = nullptr;
     }
