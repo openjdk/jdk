@@ -632,24 +632,20 @@ void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
  * return:
  *    number of CPUs
  */
-int CgroupSubsystem::active_processor_count() {
-  int quota_count = 0;
-  int cpu_count;
-  int result;
-
+double CgroupSubsystem::active_processor_count() {
   // We use a cache with a timeout to avoid performing expensive
   // computations in the event this function is called frequently.
   // [See 8227006].
-  CachingCgroupController<CgroupCpuController>* contrl = cpu_controller();
-  CachedMetric* cpu_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupCpuController, double>* contrl = cpu_controller();
+  CachedMetric<double>* cpu_limit = contrl->metrics_cache();
   if (!cpu_limit->should_check_metric()) {
-    int val = (int)cpu_limit->value();
-    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %d", val);
+    double val = cpu_limit->value();
+    log_trace(os, container)("CgroupSubsystem::active_processor_count (cached): %.2f", val);
     return val;
   }
 
-  cpu_count = os::Linux::active_processor_count();
-  result = CgroupUtil::processor_count(contrl->controller(), cpu_count);
+  int cpu_count = os::Linux::active_processor_count();
+  double result = CgroupUtil::processor_count(contrl->controller(), cpu_count);
   // Update cached metric to avoid re-reading container settings too often
   cpu_limit->set_value(result, OSCONTAINER_CACHE_TIMEOUT);
 
@@ -666,8 +662,8 @@ int CgroupSubsystem::active_processor_count() {
  *    OSCONTAINER_ERROR for not supported
  */
 jlong CgroupSubsystem::memory_limit_in_bytes(julong upper_bound) {
-  CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
-  CachedMetric* memory_limit = contrl->metrics_cache();
+  CachingCgroupController<CgroupMemoryController, jlong>* contrl = memory_controller();
+  CachedMetric<jlong>* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
     return memory_limit->value();
   }

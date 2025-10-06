@@ -81,10 +81,6 @@
 #include "utilities/permitForbiddenFunctions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#ifdef LINUX
-#include "osContainer_linux.hpp"
-#endif
-
 #ifndef _WINDOWS
 # include <poll.h>
 #endif
@@ -2205,17 +2201,14 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
 }
 
 bool os::used_memory(physical_memory_size_type& value) {
-#ifdef LINUX
-  if (OSContainer::is_containerized()) {
-    jlong mem_usage = OSContainer::memory_usage_in_bytes();
-    if (mem_usage > 0) {
-      value = static_cast<physical_memory_size_type>(mem_usage);
-      return true;
-    } else {
-      return false;
-    }
+  if (is_containerized()) {
+    return container_used_memory(value);
   }
-#endif
+
+  return machine_used_memory(value);
+}
+
+bool os::machine_used_memory(physical_memory_size_type& value) {
   physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
@@ -2223,6 +2216,52 @@ bool os::used_memory(physical_memory_size_type& value) {
   value = phys_mem - avail_mem;
   return true;
 }
+
+#ifndef LINUX
+bool os::is_containerized() {
+  return false;
+}
+
+double os::container_processor_count() {
+  assert(is_containerized(), "must be running containerized");
+  return 0.0;
+}
+
+bool os::container_available_memory(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+
+bool os::container_used_memory(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+
+bool os::container_total_swap_space(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+
+bool os::container_free_swap_space(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+
+bool os::container_memory_limit(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+
+bool os::container_memory_soft_limit(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+
+bool os::container_memory_throttle_limit(physical_memory_size_type& value) {
+  assert(is_containerized(), "must be running containerized");
+  return false;
+}
+#endif
 
 
 bool os::commit_memory(char* addr, size_t bytes, bool executable) {

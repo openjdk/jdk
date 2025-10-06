@@ -31,7 +31,7 @@
 class CgroupUtil: AllStatic {
 
   public:
-    static int processor_count(CgroupCpuController* cpu, int host_cpus);
+    static double processor_count(CgroupCpuController* cpu, int host_cpus);
     // Given a memory controller, adjust its path to a point in the hierarchy
     // that represents the closest memory limit.
     static void adjust_controller(CgroupMemoryController* m);
