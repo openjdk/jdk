@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +27,7 @@ import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.util.Args;
+import jdk.xml.internal.Utils;
 
 /**
  * This class represents a chunk of Java byte code contained in a method. It is instantiated by the
@@ -59,7 +60,7 @@ import com.sun.org.apache.bcel.internal.util.Args;
  * @see CodeException
  * @see LineNumberTable
  * @see LocalVariableTable
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public final class Code extends Attribute {
 
@@ -93,7 +94,7 @@ public final class Code extends Attribute {
         code = new byte[codeLength]; // Read byte code
         file.readFully(code);
         /*
-         * Read exception table that contains all regions where an exception handler is active, i.e., a try { ... } catch()
+         * Read exception table that contains all regions where an exception handler is active, i.e., a try { ... } catch ()
          * block.
          */
         final int exceptionTableLength = file.readUnsignedShort();
@@ -107,7 +108,7 @@ public final class Code extends Attribute {
         final int attributesCount = file.readUnsignedShort();
         attributes = new Attribute[attributesCount];
         for (int i = 0; i < attributesCount; i++) {
-            attributes[i] = Attribute.readAttribute(file, constantPool);
+            attributes[i] = readAttribute(file, constantPool);
         }
         /*
          * Adjust length, because of setAttributes in this(), s.b. length is incorrect, because it didn't take the internal
@@ -131,8 +132,8 @@ public final class Code extends Attribute {
         super(Const.ATTR_CODE, nameIndex, length, constantPool);
         this.maxStack = Args.requireU2(maxStack, "maxStack");
         this.maxLocals = Args.requireU2(maxLocals, "maxLocals");
-        this.code = code != null ? code : Const.EMPTY_BYTE_ARRAY;
-        this.exceptionTable = exceptionTable != null ? exceptionTable : CodeException.EMPTY_CODE_EXCEPTION_ARRAY;
+        this.code = Utils.createEmptyArrayIfNull(code);
+        this.exceptionTable = Utils.createEmptyArrayIfNull(exceptionTable, CodeException[].class);
         Args.requireU2(this.exceptionTable.length, "exceptionTable.length");
         this.attributes = attributes != null ? attributes : EMPTY_ARRAY;
         super.setLength(calculateLength()); // Adjust length
@@ -264,6 +265,20 @@ public final class Code extends Attribute {
     }
 
     /**
+     * Gets the local variable type table attribute {@link LocalVariableTypeTable}.
+     * @return LocalVariableTypeTable of Code, if it has one, null otherwise.
+     * @since 6.10.0
+     */
+    public LocalVariableTypeTable getLocalVariableTypeTable() {
+        for (final Attribute attribute : attributes) {
+            if (attribute instanceof LocalVariableTypeTable) {
+                return (LocalVariableTypeTable) attribute;
+            }
+        }
+        return null;
+    }
+
+    /**
      * @return Number of local variables.
      */
     public int getMaxLocals() {
@@ -278,6 +293,20 @@ public final class Code extends Attribute {
     }
 
     /**
+     * Finds the attribute of {@link StackMap} instance.
+     * @return StackMap of Code, if it has one, else null.
+     * @since 6.8.0
+     */
+    public StackMap getStackMap() {
+        for (final Attribute attribute : attributes) {
+            if (attribute instanceof StackMap) {
+                return (StackMap) attribute;
+            }
+        }
+        return null;
+    }
+
+    /**
      * @param attributes the attributes to set for this Code
      */
     public void setAttributes(final Attribute[] attributes) {
@@ -289,7 +318,7 @@ public final class Code extends Attribute {
      * @param code byte code
      */
     public void setCode(final byte[] code) {
-        this.code = code != null ? code : Const.EMPTY_BYTE_ARRAY;
+        this.code = Utils.createEmptyArrayIfNull(code);
         super.setLength(calculateLength()); // Adjust length
     }
 
@@ -297,7 +326,7 @@ public final class Code extends Attribute {
      * @param exceptionTable exception table
      */
     public void setExceptionTable(final CodeException[] exceptionTable) {
-        this.exceptionTable = exceptionTable != null ? exceptionTable : CodeException.EMPTY_CODE_EXCEPTION_ARRAY;
+        this.exceptionTable = exceptionTable != null ? exceptionTable : CodeException.EMPTY_ARRAY;
         super.setLength(calculateLength()); // Adjust length
     }
 

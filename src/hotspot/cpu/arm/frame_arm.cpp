@@ -330,56 +330,6 @@ JavaThread** frame::saved_thread_address(const frame& f) {
 }
 
 //------------------------------------------------------------------------------
-// frame::verify_deopt_original_pc
-//
-// Verifies the calculated original PC of a deoptimization PC for the
-// given unextended SP.  The unextended SP might also be the saved SP
-// for MethodHandle call sites.
-#ifdef ASSERT
-void frame::verify_deopt_original_pc(nmethod* nm, intptr_t* unextended_sp, bool is_method_handle_return) {
-  frame fr;
-
-  // This is ugly but it's better than to change {get,set}_original_pc
-  // to take an SP value as argument.  And it's only a debugging
-  // method anyway.
-  fr._unextended_sp = unextended_sp;
-
-  address original_pc = nm->get_original_pc(&fr);
-  assert(nm->insts_contains_inclusive(original_pc),
-         "original PC must be in the main code section of the compiled method (or must be immediately following it)");
-  assert(nm->is_method_handle_return(original_pc) == is_method_handle_return, "must be");
-}
-#endif
-
-//------------------------------------------------------------------------------
-// frame::adjust_unextended_sp
-void frame::adjust_unextended_sp() {
-  // same as on x86
-
-  // If we are returning to a compiled MethodHandle call site, the
-  // saved_fp will in fact be a saved value of the unextended SP.  The
-  // simplest way to tell whether we are returning to such a call site
-  // is as follows:
-
-  nmethod* sender_nm = (_cb == nullptr) ? nullptr : _cb->as_nmethod_or_null();
-  if (sender_nm != nullptr) {
-    // If the sender PC is a deoptimization point, get the original
-    // PC.  For MethodHandle call site the unextended_sp is stored in
-    // saved_fp.
-    if (sender_nm->is_deopt_mh_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_mh_original_pc(sender_nm, _fp));
-      _unextended_sp = _fp;
-    }
-    else if (sender_nm->is_deopt_entry(_pc)) {
-      DEBUG_ONLY(verify_deopt_original_pc(sender_nm, _unextended_sp));
-    }
-    else if (sender_nm->is_method_handle_return(_pc)) {
-      _unextended_sp = _fp;
-    }
-  }
-}
-
-//------------------------------------------------------------------------------
 // frame::update_map_with_saved_link
 void frame::update_map_with_saved_link(RegisterMap* map, intptr_t** link_addr) {
   // see x86 for comments
