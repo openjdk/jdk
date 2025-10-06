@@ -433,13 +433,13 @@ physical_memory_size_type os::physical_memory() {
   if (is_containerized()) {
     physical_memory_size_type mem_limit;
     if (container_memory_limit(mem_limit)) {
-      log_trace(os)("total container memory: %zu", mem_limit);
+      log_trace(os)("total container memory: " PHYS_MEM_TYPE_FORMAT, mem_limit);
       return mem_limit;
     }
   }
 
   physical_memory_size_type phys_mem = machine_physical_memory();
-  log_trace(os)("total system memory: %zu", phys_mem);
+  log_trace(os)("total system memory: " PHYS_MEM_TYPE_FORMAT, phys_mem);
   return phys_mem;
 }
 
