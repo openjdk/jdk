@@ -28,12 +28,11 @@
 /* Implement and update https://bugs.openjdk.org/browse/JDK-8030957 */
 
 #include <jni.h>
-#include <time.h>
-#include <stdlib.h>
 #include <libperfstat.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <time.h>
 #include "com_sun_management_internal_OperatingSystemImpl.h"
-#define HTIC2SEC(x) (((double)(x) * XINTFRAC) / 1000000000.0)
 
 static struct perfMetrics{
     unsigned long long timebase;
@@ -87,8 +86,7 @@ Java_com_sun_management_internal_OperatingSystemImpl_getCpuLoad0
         }
         if (total == 0) {
             load = 0.0;
-        }
-        else {
+        } else {
             load = (double)(user_diff + sys_diff) / total;
             load = MAX(load, 0.0);
             load = MIN(load, 1.0);
@@ -120,15 +118,14 @@ Java_com_sun_management_internal_OperatingSystemImpl_getProcessCpuLoad0
         if ((long long)timebase_diff < 0 || XINTFRAC == 0) {
             return -1.0;
         }
-        delta_time = HTIC2SEC(timebase_diff);
+        delta_time = HTIC2NANOSEC(timebase_diff) / 1000000000.0;
         user_diff = (double)(curr_stats.ucpu_time - counters.stats.ucpu_time);
         sys_diff  = (double)(curr_stats.scpu_time - counters.stats.scpu_time);
         counters.stats = curr_stats;
         counters.timebase = curr_timebase;
-        if(delta_time == 0) {
+        if (delta_time == 0) {
             cpu_load = 0.0;
-        }
-        else {
+        } else {
             cpu_load = (user_diff + sys_diff) / delta_time;
             cpu_load = MAX(cpu_load, 0.0);
             cpu_load = MIN(cpu_load, 1.0);
