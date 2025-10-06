@@ -5396,6 +5396,7 @@ static void find_candidate_control_inputs(Unique_Node_List& worklist, Unique_Nod
         if (in->is_Multi()) {
           // We got here by following data inputs so we should only have one control use
           // (no IfNode, etc)
+          assert(!n->is_MultiBranch(), "unexpected node type: %s", n->Name());
           candidates.push(in->as_Multi()->proj_out(TypeFunc::Control));
         } else {
           candidates.push(in);
