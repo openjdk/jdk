@@ -432,7 +432,7 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_inner(int obj
   // Install forwarding
   set_heap_object_for_object_index(object_index, heap_object);
 
-  // Fill in object contents, and recursively materialize
+  // Fill in object contents
   copy_object(object_index, archive_object, heap_object, size, dfs_stack);
 
   if (string_intern) {
