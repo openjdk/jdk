@@ -100,8 +100,11 @@ public class CatalogFileInputTest extends CatalogSupportBase {
         executor = Executors.newCachedThreadPool();
         httpserver.setExecutor(executor);
         httpserver.start();
-        remoteFilePath = "http:" + URIBuilder.newBuilder().host(httpserver.getAddress().getAddress()).
-                port(httpserver.getAddress().getPort()).build().toString() + REMOTE_FILE_LOCATION;
+        remoteFilePath = URIBuilder.newBuilder()
+                .scheme("http")
+                .host(httpserver.getAddress().getAddress())
+                .port(httpserver.getAddress().getPort())
+                .build().toString() + REMOTE_FILE_LOCATION;
     }
 
     @AfterClass
