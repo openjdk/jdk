@@ -877,18 +877,20 @@ void ShenandoahConcurrentGC::op_weak_refs() {
 class ShenandoahEvacUpdateCleanupOopStorageRootsClosure : public BasicOopIterateClosure {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   ShenandoahMarkingContext* const _mark_context;
   bool  _evac_in_progress;
   Thread* const _thread;
 
 public:
-  ShenandoahEvacUpdateCleanupOopStorageRootsClosure();
+  explicit ShenandoahEvacUpdateCleanupOopStorageRootsClosure(ShenandoahGeneration* generation);
   void do_oop(oop* p);
   void do_oop(narrowOop* p);
 };
 
-ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure() :
+ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure(ShenandoahGeneration* generation) :
   _heap(ShenandoahHeap::heap()),
+  _generation(generation),
   _mark_context(ShenandoahHeap::heap()->marking_context()),
   _evac_in_progress(ShenandoahHeap::heap()->is_evacuation_in_progress()),
   _thread(Thread::current()) {
@@ -898,7 +900,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   const oop obj = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
-      if (_heap->is_in_active_generation(obj)) {
+      if (_generation->contains(obj)) {
         // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
@@ -941,14 +943,16 @@ private:
   ShenandoahClassLoaderDataRoots<true /* concurrent */>
                                              _cld_roots;
   ShenandoahConcurrentNMethodIterator        _nmethod_itr;
+  ShenandoahGeneration*                      _generation;
   ShenandoahPhaseTimings::Phase              _phase;
 
 public:
-  ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
+  ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahGeneration* generation, ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
     _nmethod_itr(ShenandoahCodeRoots::table()),
+    _generation(generation),
     _phase(phase) {}
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
@@ -956,14 +960,14 @@ public:
     _vm_roots.report_num_dead();
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner sts_join;
     {
       ShenandoahEvacOOMScope oom;
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
-      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
+      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl(_generation);
       _vm_roots.oops_do(&cl, worker_id);
     }
 
@@ -998,7 +1002,7 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     // Concurrent weak root processing
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots_work);
     heap->workers()->run_task(&task);
   }
 

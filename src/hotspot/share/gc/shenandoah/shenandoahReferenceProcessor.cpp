@@ -437,10 +437,12 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   HeapWord* raw_referent = reference_referent_raw<T>(reference);
 
 #ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahHeapRegion* region  = heap->heap_region_containing(raw_referent);
-  ShenandoahMarkingContext* ctx = heap->generation_for(region->affiliation())->complete_marking_context();
-  assert(raw_referent == nullptr || ctx->is_marked(raw_referent), "only drop references with alive referents");
+  if (raw_referent != nullptr) {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapRegion* region  = heap->heap_region_containing(raw_referent);
+    ShenandoahMarkingContext* ctx = heap->generation_for(region->affiliation())->complete_marking_context();
+    assert(ctx->is_marked(raw_referent), "only drop references with alive referents");
+  }
 #endif
 
   // Unlink and return next in list

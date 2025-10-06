@@ -2424,10 +2424,8 @@ void ShenandoahHeap::sync_pinned_region_status() {
 void ShenandoahHeap::assert_pinned_region_status() {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* r = get_region(i);
-    if (global_generation()->contains(r)) {
-      assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-             "Region %zu pinning status is inconsistent", i);
-    }
+    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+           "Region %zu pinning status is inconsistent", i);
   }
 }
 #endif
