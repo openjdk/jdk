@@ -1980,7 +1980,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     if (!m->try_enter(current, /*check_for_recursion*/ false)) {
       // Some other thread acquired the lock (or the monitor was
       // deflated). Either way we are done.
-      current->dec_held_monitor_count();
       return;
     }
   }
@@ -2000,20 +1999,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
-JRT_END
-
-// This is only called when CheckJNICalls is true, and only
-// for virtual thread termination.
-JRT_LEAF(void,  SharedRuntime::log_jni_monitor_still_held())
-  assert(CheckJNICalls, "Only call this when checking JNI usage");
-  if (log_is_enabled(Debug, jni)) {
-    JavaThread* current = JavaThread::current();
-    int64_t vthread_id = java_lang_Thread::thread_id(current->vthread());
-    int64_t carrier_id = java_lang_Thread::thread_id(current->threadObj());
-    log_debug(jni)("VirtualThread (tid: " INT64_FORMAT ", carrier id: " INT64_FORMAT
-                   ") exiting with Objects still locked by JNI MonitorEnter.",
-                   vthread_id, carrier_id);
-  }
 JRT_END
 
 #ifndef PRODUCT
