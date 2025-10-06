@@ -265,7 +265,7 @@ public class TestPrintContextual {
         }
     }
 
-    private static void span(int depth) {
+    private static void span(int depth) throws InterruptedException {
         awaitUniqueTimestamp();
         SpanEvent span = new SpanEvent();
         span.name = "span";
@@ -279,14 +279,10 @@ public class TestPrintContextual {
         span.commit();
     }
 
-    private static void awaitUniqueTimestamp() {
+    private static void awaitUniqueTimestamp() throws InterruptedException {
         Instant timestamp = Instant.now();
         while (timestamp.equals(Instant.now())) {
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-                // ignore
-            }
+            Thread.sleep(1);
         }
     }
 
