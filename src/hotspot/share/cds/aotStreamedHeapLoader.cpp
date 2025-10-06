@@ -489,23 +489,8 @@ oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_object_transitive(in
 
 oop AOTStreamedHeapLoader::TracingObjectLoader::materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
   int root_object_index = object_index_for_root_index(root_index);
-
-  return materialize_object_transitive(root_object_index, dfs_stack, THREAD);
-}
-
-oop AOTStreamedHeapLoader::TracingObjectLoader::root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS) {
-  // Get the materialized roots array
-  oop roots_obj = NativeAccess<>::oop_load(_roots_heap);
-  objArrayOop roots = (objArrayOop)roots_obj;
-
-  // Check if we got the corresponding root
-  oop root = roots->obj_at(root_index);
-
-  if (root == nullptr) {
-    // If not, materialize the root
-    root = materialize_root(root_index, dfs_stack, CHECK_NULL);
-    install_root(root_index, root);
-  }
+  oop root = materialize_object_transitive(root_object_index, dfs_stack, CHECK_NULL);
+  install_root(root_index, root);
 
   return root;
 }
@@ -987,11 +972,14 @@ oop AOTStreamedHeapLoader::materialize_root(int root_index) {
   {
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
 
-    if (!IterativeObjectLoader::has_more()) {
-      objArrayOop roots = objArrayOop((oop)NativeAccess<>::oop_load(_roots_heap));
-      result = roots->obj_at(root_index);
+    oop root = objArrayOop(_roots.resolve())->obj_at(root_index);
+
+    if (root != nullptr) {
+      // The root has already been materialized
+      result = root;
     } else {
-      result = TracingObjectLoader::root(root_index, dfs_stack, CHECK_NULL);
+      // The root has not been materialized, start tracing materialization
+      result = TracingObjectLoader::materialize_root(root_index, dfs_stack, CHECK_NULL);
     }
   }
 

@@ -201,13 +201,12 @@ private:
                             size_t size,
                             Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack);
     static void drain_stack(Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
-    static oop materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
+    static oop materialize_object_transitive(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
 
     static void wait_for_iterator();
 
   public:
-    static oop materialize_object_transitive(int object_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
-    static oop root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
+    static oop materialize_root(int root_index, Stack<AOTHeapTraversalEntry, mtClassShared>& dfs_stack, TRAPS);
   };
 
   class IterativeObjectLoader {
