@@ -107,26 +107,30 @@ private:
   ResourceMark _rm;
   HandleMark _hm;
   JavaThreadState _saved_state;
-  JavaThread *_jthread;
+  Thread *_thread;
 
 public:
   JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
+    _thread = thread;
+    _thread->enter_jvmti_event_callback();
     if (thread->is_Java_thread()) {
-       _jthread = JavaThread::cast(thread);
-       _saved_state = _jthread->thread_state();
-       if (_saved_state == _thread_in_Java) {
-         ThreadStateTransition::transition_from_java(_jthread, _thread_in_native);
-       } else {
-         ThreadStateTransition::transition_from_vm(_jthread, _thread_in_native);
-       }
-    } else {
-      _jthread = nullptr;
+      JavaThread* jthread = JavaThread::cast(thread);
+      _saved_state = jthread->thread_state();
+      if (_saved_state == _thread_in_Java) {
+        ThreadStateTransition::transition_from_java(jthread, _thread_in_native);
+      } else {
+        ThreadStateTransition::transition_from_vm(jthread, _thread_in_native);
+      }
     }
-  }
+ }
 
   ~JvmtiThreadEventTransition() {
-    if (_jthread != nullptr)
+    assert(_thread != nullptr, "should not be nullptr");
+    _thread->leave_jvmti_event_callback();
+    if (_thread->is_Java_thread()) {
+      JavaThread* _jthread = JavaThread::cast(_thread);
       ThreadStateTransition::transition_from_native(_jthread, _saved_state);
+    }
   }
 };
 
@@ -772,6 +776,27 @@ void JvmtiExport::post_vm_death() {
   // It is needed to disable event generation before setting DEAD phase.
   // The VM_DEATH should be the last posted event.
   JvmtiEventController::vm_death();
+
+  const double start = os::elapsedTime();
+  const double max_wait_time = 60 * 60 * 1000;
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
+      while(thread->current_jvmti_event_callback_depth() != 0) {
+        if (os::elapsedTime() - start > max_wait_time) {
+          assert(thread->current_jvmti_event_callback_depth() == 0, "Find case");
+          break;
+        }
+        SpinPause();
+      }
+  }
+  for (NonJavaThread::Iterator njti; !njti.end(); njti.step()) {
+     while (njti.current()->current_jvmti_event_callback_depth() != 0) {
+       if (os::elapsedTime() - start > max_wait_time) {
+         assert(njti.current()->current_jvmti_event_callback_depth() == 0, "Find case");
+         break;
+       }
+       SpinPause();
+     }
+  }
 
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
