@@ -211,7 +211,7 @@ public class CustomInfoPListTest {
     }
 
 
-    enum PListRole {
+    private enum PListRole {
         MAIN,
         EMBEDDED_RUNTIME,
         ;
@@ -227,7 +227,8 @@ public class CustomInfoPListTest {
         }
     }
 
-    public enum CustomPListType {
+
+    private enum CustomPListType {
         APP(
                 CustomPListFactory.PLIST_INPUT::writeAppPlist,
                 CustomPListFactory.PLIST_OUTPUT::writeAppPlist,
