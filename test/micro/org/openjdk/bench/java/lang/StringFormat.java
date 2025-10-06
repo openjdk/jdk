@@ -66,6 +66,11 @@ public class StringFormat {
     }
 
     @Benchmark
+    public String intFormat() {
+        return " %d".formatted(i);
+    }
+
+    @Benchmark
     public String widthStringFormat() {
         return "%3s".formatted(s);
     }
