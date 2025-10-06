@@ -83,4 +83,3 @@ public class kqueue_h$shared {
         };
     }
 }
-

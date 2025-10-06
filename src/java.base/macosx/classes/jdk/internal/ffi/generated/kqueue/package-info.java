@@ -33,7 +33,7 @@
  *   echo "#include <sys/event.h>" >> $HEADER_NAME
  *
  *
- * jextract --target-package jdk.internal.natives.net.kqueue \
+ * jextract --target-package jdk.internal.ffi.generated.kqueue \
  *    --include-constant EV_CLEAR \
  *    --include-constant EV_ONESHOT \
  *    --include-constant EV_DELETE \

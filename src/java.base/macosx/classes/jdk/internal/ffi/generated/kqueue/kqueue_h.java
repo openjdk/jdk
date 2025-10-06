@@ -220,4 +220,3 @@ public class kqueue_h extends kqueue_h$shared {
         return EVFILT_WRITE;
     }
 }
-

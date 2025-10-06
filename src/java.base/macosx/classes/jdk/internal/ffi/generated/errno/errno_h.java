@@ -114,4 +114,3 @@ public class errno_h extends errno_h$shared {
         }
     }
 }
-

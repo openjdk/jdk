@@ -41,4 +41,3 @@ public class timespec_h extends timespec_h$shared {
             .or(Linker.nativeLinker().defaultLookup());
 
 }
-

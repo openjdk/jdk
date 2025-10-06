@@ -192,4 +192,3 @@ public class timespec {
         return addr.reinterpret(layout().byteSize() * elementCount, arena, cleanup);
     }
 }
-
