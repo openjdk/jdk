@@ -172,9 +172,9 @@ public class CustomInfoPListTest {
         }
 
         ThrowingConsumer<JPackageCommand> createPListFilesVerifier(JPackageCommand cmd) throws IOException {
-            ThrowingConsumer<JPackageCommand> defaultVerifier = thecmd -> {
+            ThrowingConsumer<JPackageCommand> defaultVerifier = otherCmd -> {
                 for (var customPList : customPLists) {
-                    customPList.verifyPListFile(thecmd);
+                    customPList.verifyPListFile(otherCmd);
                 }
             };
 
@@ -190,13 +190,13 @@ public class CustomInfoPListTest {
                         .setArgumentValue("--dest", TKit.createTempDirectory("vanilla"));
                 vanillaCmd.executeIgnoreExitCode().assertExitCodeIsZero();
 
-                return thecmd -> {
-                    defaultVerifier.accept(thecmd);
+                return otherCmd -> {
+                    defaultVerifier.accept(otherCmd);
                     for (var defaultPListFile : defaultPListFiles) {
                         final var expectedPListPath = defaultPListFile.path(vanillaCmd);
                         final var expectedPList = MacHelper.readPList(expectedPListPath);
 
-                        final var actualPListPath = defaultPListFile.path(thecmd);
+                        final var actualPListPath = defaultPListFile.path(otherCmd);
                         final var actualPList = MacHelper.readPList(actualPListPath);
 
                         var expected = toStringList(expectedPList);
