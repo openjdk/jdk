@@ -444,9 +444,13 @@ Node* AddNode::Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt) 
     }
   }
 
-  Node* con = (bt == T_INT)
-              ? static_cast<Node *>(phase->intcon(java_add(static_cast<jint>(mul.multiplier()), 1))) // Overflow at max_jint
-              : static_cast<Node *>(phase->longcon(java_add(mul.multiplier(), static_cast<jlong>(1))));
+  Node* con;
+  if (bt == T_INT) {
+    con = phase->intcon(java_add(static_cast<jint>(mul.multiplier()), 1));
+  } else {
+    con = phase->longcon(java_add(mul.multiplier(), static_cast<jlong>(1)));
+  }
+
   return MulNode::make(con, mul.variable(), bt);
 }
 
@@ -491,7 +495,7 @@ AddNode::Multiplication AddNode::Multiplication::find_collapsible_addition_patte
 // The method matches `n` for pattern: a + a.
 AddNode::Multiplication AddNode::Multiplication::find_simple_addition_pattern(const Node* n, BasicType bt) {
   if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
-    return {n->in(1), 2};
+    return Multiplication(n->in(1), 2);
   }
 
   return make_invalid();
@@ -506,7 +510,7 @@ AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(cons
   if (n->Opcode() == Op_LShift(bt) && n->in(2)->is_Con()) {
     Node* con = n->in(2);
     if (!con->is_top()) {
-      return {n->in(1), java_shift_left(1, con->get_int(), bt)};
+      return Multiplication(n->in(1), java_shift_left(1, con->get_int(), bt));
     }
   }
 
@@ -514,24 +518,17 @@ AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(cons
 }
 
 // Try to match `n = CON * a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = CON`.
-// Match `n` for patterns:
-//     - (1) CON * a
-//     - (2) a * CON
+// Match `n` for patterns: a * CON
+// Note that `CON` will always be the second input node of a Mul node canonicalized by Ideal().
 AddNode::Multiplication AddNode::Multiplication::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
-  // This optimization technically only produces MulNode(CON, a), but we might as match MulNode(a, CON), too.
-  if (n->Opcode() == Op_Mul(bt) && (n->in(1)->is_Con() || n->in(2)->is_Con())) {
-    // Pattern (1)
-    Node* con = n->in(1);
-    Node* base = n->in(2);
+  assert(!(n->Opcode() == Op_Mul(bt) && n->in(1)->is_Con()), "mul node not canonicalized");
 
-    // Pattern (2)
-    if (!con->is_Con()) {
-      // swap ConNode to lhs for easier matching
-      swap(con, base);
-    }
+  if (n->Opcode() == Op_Mul(bt) && n->in(2)->is_Con()) {
+    Node* con = n->in(2);
+    Node* base = n->in(1);
 
     if (!con->is_top()) {
-      return {base, con->get_integer_as_long(bt)};
+      return Multiplication(base, con->get_integer_as_long(bt));
     }
   }
 
@@ -561,19 +558,19 @@ AddNode::Multiplication AddNode::Multiplication::find_power_of_two_addition_patt
 
     // Pattern (2)
     if (lhs.is_valid_with(n->in(2))) {
-      return {lhs.variable(), java_add(lhs.multiplier(), static_cast<jlong>(1))};
+      return Multiplication(lhs.variable(), java_add(lhs.multiplier(), static_cast<jlong>(1)));
     }
 
     // Pattern (3)
     if (rhs.is_valid_with(n->in(1))) {
-      return {rhs.variable(), java_add(rhs.multiplier(), static_cast<jlong>(1))};
+      return Multiplication(rhs.variable(), java_add(rhs.multiplier(), static_cast<jlong>(1)));
     }
 
     // Pattern (4), which is equivalent to a simple addition pattern
     return find_simple_addition_pattern(n, bt);
   }
 
-  return Multiplication::make_invalid();
+  return make_invalid();
 }
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
