@@ -63,7 +63,6 @@ class ExecutableJarTest {
     private static final String WARNING_UNREFLECTED =
             " has been unreflected for mutation by class " + HELPER + " in unnamed module";
 
-
     /**
      * Test executable JAR with code that uses Field.set to mutate a final field.
      * A warning should be printed.
@@ -74,6 +73,19 @@ class ExecutableJarTest {
         testExecutableJar(jarFile, "testFieldSetInt")
                 .shouldContain(WARNING_LINE1)
                 .shouldContain(WARNING_MUTATED)
+                .shouldHaveExitValue(0);
+    }
+
+    /**
+     * Test executable JAR with code thatyses  Lookup.unreflectSetter to get MH to a
+     * final field. A warning should be printed.
+     */
+    @Test
+    void testUnreflectExpectingWarning() throws Exception {
+        String jarFile = createExecutableJar(Map.of());
+        testExecutableJar(jarFile, "testUnreflectSetter")
+                .shouldContain(WARNING_LINE1)
+                .shouldContain(WARNING_UNREFLECTED)
                 .shouldHaveExitValue(0);
     }
 
