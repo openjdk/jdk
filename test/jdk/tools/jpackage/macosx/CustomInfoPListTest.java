@@ -172,7 +172,7 @@ public class CustomInfoPListTest {
         }
 
         ThrowingConsumer<JPackageCommand> createPListFilesVerifier(JPackageCommand cmd) throws IOException {
-            ThrowingConsumer<JPackageCommand> defaultVarifier = thecmd -> {
+            ThrowingConsumer<JPackageCommand> defaultVerifier = thecmd -> {
                 for (var customPList : customPLists) {
                     customPList.verifyPListFile(thecmd);
                 }
@@ -181,7 +181,7 @@ public class CustomInfoPListTest {
             var defaultPListFiles = CustomPListType.defaultRoles(customPLists);
 
             if (defaultPListFiles.isEmpty()) {
-                return defaultVarifier;
+                return defaultVerifier;
             } else {
                 var vanillaCmd = new JPackageCommand().setFakeRuntime()
                         .addArguments(cmd.getAllArguments())
@@ -191,7 +191,7 @@ public class CustomInfoPListTest {
                 vanillaCmd.executeIgnoreExitCode().assertExitCodeIsZero();
 
                 return thecmd -> {
-                    defaultVarifier.accept(thecmd);
+                    defaultVerifier.accept(thecmd);
                     for (var defaultPListFile : defaultPListFiles) {
                         final var expectedPListPath = defaultPListFile.path(vanillaCmd);
                         final var expectedPList = MacHelper.readPList(expectedPListPath);
