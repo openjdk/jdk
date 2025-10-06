@@ -108,8 +108,9 @@ size_t AOTStreamedHeapLoader::buffer_offset_for_archive_object(oopDesc* archive_
   return size_t(archive_object) - size_t(bottom);
 }
 
+template <bool use_coops>
 BitMap::idx_t AOTStreamedHeapLoader::obj_bit_idx_for_buffer_offset(size_t buffer_offset) {
-  if (UseCompressedOops) {
+  if constexpr (use_coops) {
     return BitMap::idx_t(buffer_offset / sizeof(narrowOop));
   } else {
     return BitMap::idx_t(buffer_offset / sizeof(HeapWord));
@@ -331,7 +332,7 @@ void AOTStreamedHeapLoader::copy_object_impl(oopDesc* archive_object,
   size_t header_size = word_scale;
 
   size_t buffer_offset = buffer_offset_for_archive_object(archive_object);
-  const BitMap::idx_t header_bit = obj_bit_idx_for_buffer_offset(buffer_offset);
+  const BitMap::idx_t header_bit = obj_bit_idx_for_buffer_offset<use_coops>(buffer_offset);
   const BitMap::idx_t start_bit = header_bit + header_size;
   const BitMap::idx_t end_bit = header_bit + size * word_scale;
 

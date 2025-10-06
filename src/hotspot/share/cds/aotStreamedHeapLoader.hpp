@@ -162,6 +162,7 @@ private:
   static size_t buffer_offset_for_object_index(int object_index);
   static oopDesc* archive_object_for_object_index(int object_index);
   static size_t buffer_offset_for_archive_object(oopDesc* archive_object);
+  template <bool use_coops>
   static BitMap::idx_t obj_bit_idx_for_buffer_offset(size_t buffer_offset);
 
   template <bool use_coops, typename LinkerT>
