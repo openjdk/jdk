@@ -179,7 +179,7 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
   LIRGenerator *gen = access.gen();
   DecoratorSet decorators = access.decorators();
   bool is_volatile = (decorators & MO_SEQ_CST) != 0;
-  bool needs_atomic = is_volatile || (AlwaysAtomicAccesses && !access_is_atomic(result->type()));
+  bool needs_atomic = AlwaysAtomicAccesses && !access_is_atomic(result->type());
   bool needs_patching = (decorators & C1_NEEDS_PATCHING) != 0;
   bool mask_boolean = (decorators & C1_MASK_BOOLEAN) != 0;
   bool in_native = (decorators & IN_NATIVE) != 0;
