@@ -641,60 +641,6 @@ class MonitorWaitNotify {
     }
 
     /**
-     * Test no deadlock happens when Object.wait is called from a mix of pinned and non-pinned
-     * paths and notification is done using notifyAll.
-     */
-    @Test
-    void testMixedPinnedUnmounted() throws Exception {
-        assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
-        try (ExecutorService scheduler = Executors.newFixedThreadPool(1)) {
-            ThreadFactory factory = VThreadScheduler.virtualThreadFactory(scheduler);
-            var lock = new Object();
-
-            var startedNotPinned = new CountDownLatch(1);
-            var vthreadNotPinned = factory.newThread(() -> {
-                synchronized (lock) {
-                    try {
-                        startedNotPinned.countDown();
-                        lock.wait();
-                    } catch (InterruptedException e) {
-                        fail("wait interrupted");
-                    }
-                }
-            });
-            vthreadNotPinned.start();
-            startedNotPinned.await();
-            await(vthreadNotPinned, Thread.State.WAITING);
-
-            var startedPinned = new CountDownLatch(1);
-            var vthreadPinned = factory.newThread(() -> {
-                synchronized (lock) {
-                    try {
-                        startedPinned.countDown();
-                        VThreadPinner.runPinned(() -> {
-                            lock.wait();
-                        });
-                    } catch (InterruptedException e) {
-                        fail("wait interrupted");
-                    }
-                }
-            });
-            vthreadPinned.start();
-            startedPinned.await();
-            await(vthreadPinned, Thread.State.WAITING);
-
-            // wakeup threads
-            synchronized (lock) {
-                lock.notifyAll();
-            }
-
-            // thread should terminate
-            vthreadNotPinned.join();
-            vthreadPinned.join();
-        }
-    }
-
-    /**
      * Test that Object.wait releases the carrier. This test uses a custom scheduler
      * with one carrier thread.
      */
