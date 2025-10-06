@@ -521,31 +521,19 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::copy_object(oopDesc* archive_
 
 // The range is inclusive
 void AOTStreamedHeapLoader::IterativeObjectLoader::initialize_range(int first_object_index, int last_object_index, TRAPS) {
-  bool last_object_was_interned_string = false;
-
   for (int i = first_object_index; i <= last_object_index; ++i) {
     oopDesc* archive_object = archive_object_for_object_index(i);
     markWord mark = archive_object->mark();
     bool string_intern = mark.is_marked();
+    if (string_intern) {
+      // Interned strings are eagerly materialized in the allocation phase, so there is
+      // nothing else to do for interned strings here for the string nor its value array.
+      i++;
+      continue;
+    }
     size_t size = archive_object_size(archive_object);
     oop heap_object = heap_object_for_object_index(i);
     copy_object(archive_object, heap_object, size);
-
-    // Link interned strings if necessary
-    if (last_object_was_interned_string) {
-      int string_object_index = i - 1;
-      oop string_object = heap_object_for_object_index(string_object_index);
-
-      // Replace string with interned string
-      string_object = StringTable::intern(string_object, CHECK);
-      replace_heap_object_for_object_index(string_object_index, string_object);
-
-      last_object_was_interned_string = false;
-    } else if (string_intern) {
-      // Because the objects are laid out in DFS order, the value array will always
-      // be the next object in iteration order.
-      last_object_was_interned_string = true;
-    }
   }
 }
 
@@ -556,7 +544,9 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
 
   for (int i = first_object_index; i <= last_object_index; ++i) {
     oopDesc* archive_object = archive_object_for_object_index(i);
-    markWord mark = archive_object->mark().set_unmarked();
+    markWord mark = archive_object->mark();
+    bool string_intern = mark.is_marked();
+    mark = mark.set_unmarked();
     size_t size = archive_object_size(archive_object);
     materialized_words += size;
     oop heap_object = heap_object_for_object_index(i);
@@ -564,6 +554,33 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
       // The normal case; no lazy loading have loaded the object yet
       heap_object = allocate_object(archive_object, mark, size, CHECK_0);
       set_heap_object_for_object_index(i, heap_object);
+
+      if (string_intern) {
+        heap_object = nullptr; // Clean up unhandled oop
+
+        // Eagerly materialize interned strings to ensure that objects earlier than the string
+        // in a batch get linked to the intended interned string, and not a copy.
+        int string_object_index = i;
+        int value_object_index = i + 1;
+        oopDesc* archive_string_object = archive_object;
+        oopDesc* archive_value_object = archive_object_for_object_index(value_object_index);
+        size_t string_size = size;
+        size_t value_size = archive_object_size(archive_value_object);
+        markWord value_mark = archive_value_object->mark();
+        oop value_heap_object = allocate_object(archive_value_object, value_mark, value_size, CHECK_0);
+        oop string_heap_object = heap_object_for_object_index(string_object_index);
+
+        // We have to associate the value object index with the value object before copy_object
+        // runs on the string object, as the linking of the string object will read it
+        set_heap_object_for_object_index(value_object_index, value_heap_object);
+        copy_object(archive_string_object, string_heap_object, string_size);
+        copy_object(archive_value_object, value_heap_object, value_size);
+
+        string_heap_object = StringTable::intern(string_heap_object, CHECK_0);
+        value_heap_object = java_lang_String::value(string_heap_object);
+        replace_heap_object_for_object_index(string_object_index, string_heap_object);
+        replace_heap_object_for_object_index(value_object_index, value_heap_object);
+      }
     } else {
       // Lazy loading has already initialized the object; we must not mutate it
       lazy_object_indices.append(i);
