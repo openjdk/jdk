@@ -27,7 +27,7 @@ import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.bcel.internal.classfile.Utility;
 
 /**
- * Denotes reference such as java.lang.String.
+ * Denotes reference such as {@link String}.
  */
 public class ObjectType extends ReferenceType {
 
@@ -47,7 +47,7 @@ public class ObjectType extends ReferenceType {
     /**
      * Constructs a new instance.
      *
-     * @param className fully qualified class name, e.g. java.lang.String
+     * @param className fully qualified class name, e.g. {@link String}
      */
     public ObjectType(final String className) {
         super(Const.T_REFERENCE, "L" + Utility.packageToPath(className) + ";");
@@ -151,7 +151,7 @@ public class ObjectType extends ReferenceType {
      * @throws ClassNotFoundException if any of this class's superclasses can't be found
      */
     public boolean subclassOf(final ObjectType superclass) throws ClassNotFoundException {
-        if (this.referencesInterfaceExact() || superclass.referencesInterfaceExact()) {
+        if (referencesInterfaceExact() || superclass.referencesInterfaceExact()) {
             return false;
         }
         return Repository.instanceOf(this.className, superclass.className);

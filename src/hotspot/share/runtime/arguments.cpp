@@ -546,6 +546,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
   { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
+  { "G1UpdateBufferSize",           JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #if defined(AARCH64)
   { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 #endif
@@ -1648,7 +1649,7 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  size_t phys_mem = os::physical_memory();
+  physical_memory_size_type phys_mem = os::physical_memory();
   julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {

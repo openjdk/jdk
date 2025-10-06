@@ -5630,38 +5630,6 @@ void MacroAssembler::tlab_allocate(Register obj,
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
 }
 
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(rthread, JavaThread::held_monitor_count_offset());
-#ifdef ASSERT
-  ldr(tmp, dst);
-  increment(tmp);
-  str(tmp, dst);
-  Label ok;
-  tbz(tmp, 63, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#else
-  increment(dst);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(rthread, JavaThread::held_monitor_count_offset());
-#ifdef ASSERT
-  ldr(tmp, dst);
-  decrement(tmp);
-  str(tmp, dst);
-  Label ok;
-  tbz(tmp, 63, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#else
-  decrement(dst);
-#endif
-}
-
 void MacroAssembler::verify_tlab() {
 #ifdef ASSERT
   if (UseTLAB && VerifyOops) {

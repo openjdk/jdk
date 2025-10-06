@@ -56,6 +56,17 @@ public final class MacSignVerify {
                 String.format("Check [%s] signed with adhoc signature", path));
     }
 
+    public static Optional<PListReader> findEntitlements(Path path) {
+        final var exec = Executor.of("/usr/bin/codesign", "-d", "--entitlements", "-", "--xml", path.toString()).saveOutput().dumpOutput();
+        final var result = exec.execute();
+        var xml = result.stdout().getOutput();
+        if (xml.isEmpty()) {
+            return Optional.empty();
+        } else {
+            return Optional.of(MacHelper.readPList(xml));
+        }
+    }
+
     public static void assertUnsigned(Path path) {
         TKit.assertTrue(findSpctlSignOrigin(SpctlType.EXEC, path).isEmpty(),
                 String.format("Check [%s] unsigned", path));
