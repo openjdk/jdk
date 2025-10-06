@@ -28,11 +28,15 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#ifdef KELVIN_REVERT
 #include "gc/shenandoah/shenandoahLock.hpp"
+#endif
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 
+#ifdef KELVIN_REVERT
 typedef ShenandoahLock    ShenandoahRebuildLock;
 typedef ShenandoahLocker  ShenandoahRebuildLocker;
+#endif
 
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum class ShenandoahFreeSetPartitionId : uint8_t {
@@ -238,7 +242,11 @@ public:
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
   // returned without acquiring the lock.  In debug builds, the global heap lock is acquired in order to
   // enforce a consistency assert.
+#ifdef KELVIN_REVERT
   inline size_t available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId which_partition) const {
+#else
+  inline size_t available_in_not_locked(ShenandoahFreeSetPartitionId which_partition) const {
+#endif
     assert (which_partition < NumPartitions, "selected free set must be valid");
     shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
@@ -320,9 +328,10 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
+#ifdef KELVIN_REVERT
   // This locks the rebuild process (in combination with the global heap lock)
   ShenandoahRebuildLock _lock;
-
+#endif
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
   // Return the address of memory allocated, setting in_new_region to true iff the allocation is taken
@@ -422,10 +431,11 @@ public:
 
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
-
+#ifdef KELVIN_REVERT
   ShenandoahRebuildLock* lock() {
     return &_lock;
   }
+#endif
 
   // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
@@ -492,11 +502,14 @@ public:
   // locked action can be seen by these unlocked functions.
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
+#ifdef KELVIN_REVERT
   inline size_t available() {
     ShenandoahRebuildLocker locker(lock());
     return _partitions.available_in_locked_for_rebuild(ShenandoahFreeSetPartitionId::Mutator);
   }
-
+#else
+  inline size_t available() { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
+#endif
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
   /*

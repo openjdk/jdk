@@ -1155,8 +1155,11 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     heap->collection_set()->clear();
     size_t young_cset_regions, old_cset_regions, first_old, last_old, num_old;
     ShenandoahFreeSet* free_set = heap->free_set();
+#ifdef KELVIN_REVERT
     ShenandoahRebuildLocker rebuild_locker(free_set->lock());
+#endif
     free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
+
     // We also do not expand old generation size following Full GC because we have scrambled age populations and
     // no longer have objects separated by age into distinct regions.
     if (heap->mode()->is_generational()) {
