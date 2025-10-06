@@ -451,7 +451,6 @@ int HeapShared::append_root(oop obj) {
   return _pending_roots->append(obj);
 }
 
-// Returns an objArray that contains all the roots of the archived objects
 oop HeapShared::get_root(int index, bool clear) {
   assert(index >= 0, "sanity");
   assert(!CDSConfig::is_dumping_heap() && CDSConfig::is_using_archive(), "runtime only");
