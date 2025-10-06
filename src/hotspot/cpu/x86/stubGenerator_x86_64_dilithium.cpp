@@ -200,10 +200,10 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
             __ vmovdqu(output2[i], input2[i], vector_len);
           }
           for (int i = 0; i < regCnt; i++) {
-            __ evmovshdup(output2[i], k2, input1[i], true, vector_len);
+            __ evmovshdup(output2[i], mergeMask2, input1[i], true, vector_len);
           }
           for (int i = 0; i < regCnt; i++) {
-            __ evmovsldup(input1[i], k1, input2[i], true, vector_len);
+            __ evmovsldup(input1[i], mergeMask1, input2[i], true, vector_len);
           }
           break;
         // Special cases
@@ -390,7 +390,7 @@ static void storeXmms(Register destination, int offset, const XMMRegister xmmReg
 // static int implDilithiumAlmostNtt(int[] coeffs, int zetas[]) {}
 //
 // coeffs (int[256]) = c_rarg0
-// zetas (int[256]) = c_rarg1
+// zetas (int[128*8]) = c_rarg1
 //
 static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
                             int vector_len, MacroAssembler *_masm) {
@@ -647,7 +647,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
 // static int implDilithiumAlmostInverseNtt(int[] coeffs, int[] zetas) {}
 //
 // coeffs (int[256]) = c_rarg0
-// zetas (int[256]) = c_rarg1
+// zetas (int[128*8]) = c_rarg1
 static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
                                          int vector_len,MacroAssembler *_masm) {
   __ align(CodeEntryAlignment);
@@ -1017,12 +1017,13 @@ static address generate_dilithiumMontMulByConstant_avx(StubGenerator *stubgen,
     __ evpbroadcastd(constant, rConstant, Assembler::AVX_512bit); // constant multiplier
 
     __ mov64(scratch, 0b0101010101010101); //dw-mask
-    __ kmovwl(k2, scratch);
+    __ kmovwl(mergeMask, scratch);
   }
 
   // Total payload is 256*int32s.
   // - memStep is number of bytes one montMul64 processes.
   // - loopCnt is number of iterations it will take to process entire payload.
+  // - (two memSteps per loop)
   int memStep = 4 * 64;
   int loopCnt = 2;
   if (vector_len == Assembler::AVX_256bit) {
@@ -1321,15 +1322,15 @@ void StubGenerator::generate_dilithium_stubs() {
   }
   // Generate Dilithium intrinsics code
   if (UseDilithiumIntrinsics) {
-      StubRoutines::_dilithiumAlmostNtt =
+    StubRoutines::_dilithiumAlmostNtt =
         generate_dilithiumAlmostNtt_avx(this, vector_len, _masm);
-      StubRoutines::_dilithiumAlmostInverseNtt =
+    StubRoutines::_dilithiumAlmostInverseNtt =
         generate_dilithiumAlmostInverseNtt_avx(this, vector_len, _masm);
-      StubRoutines::_dilithiumNttMult =
+    StubRoutines::_dilithiumNttMult =
         generate_dilithiumNttMult_avx(this, vector_len, _masm);
-      StubRoutines::_dilithiumMontMulByConstant =
+    StubRoutines::_dilithiumMontMulByConstant =
         generate_dilithiumMontMulByConstant_avx(this, vector_len, _masm);
-      StubRoutines::_dilithiumDecomposePoly =
+    StubRoutines::_dilithiumDecomposePoly =
         generate_dilithiumDecomposePoly_avx(this, vector_len, _masm);
   }
 }

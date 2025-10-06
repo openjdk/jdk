@@ -48,9 +48,7 @@ import java.security.NoSuchAlgorithmException;
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @Fork(value = 1, jvmArgs = {"--add-opens", "java.base/sun.security.provider=ALL-UNNAMED"})
 public class MLDSABench extends CryptoBase {
-
     public static final int SET_SIZE = 128;
-    private static final int ML_DSA_N = 256;
 
     private int[][] coeffs1;
     private int[][] coeffs2;
@@ -109,7 +107,7 @@ public class MLDSABench extends CryptoBase {
     }
 
     @Benchmark
-    public void mult1() throws Exception, Throwable {
+    public void mult() throws Exception, Throwable {
         mult.invoke(prod1[index], coeffs1[index], coeffs2[index]);
         index = (index + 1) % SET_SIZE;
     }
@@ -143,6 +141,8 @@ public class MLDSABench extends CryptoBase {
         index = (index + 1) % SET_SIZE;
     }
 
+    // Copied constants from sun.security.provider.ML_DSA
+    private static final int ML_DSA_N = 256;
     private static final int[] MONT_ZETAS_FOR_VECTOR_INVERSE_NTT = new int[]{
             -1976782, 846154, -1400424, -3937738, 1362209, 48306, -3919660, 554416,
             3545687, -1612842, 976891, -183443, 2286327, 420899, 2235985, 2939036,
