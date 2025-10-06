@@ -156,11 +156,9 @@ static uint32_t insn_at(address insn_addr, int n) {
 template<typename T>
 class RelocActions {
 
-  const T _actor;
-
 public:
 
-  RelocActions(T actor) : _actor(actor) {}
+  RelocActions(T actor) {}
 
   int ALWAYSINLINE run(address insn_addr, address &target) {
     int instructions = 1;
@@ -170,16 +168,16 @@ public:
     switch(dispatch) {
       case 0b001010:
       case 0b001011: {
-        instructions = _actor.unconditionalBranch(insn_addr, target);
+        instructions = T::unconditionalBranch(insn_addr, target);
         break;
       }
       case 0b101010:   // Conditional branch (immediate)
       case 0b011010: { // Compare & branch (immediate)
-        instructions = _actor.conditionalBranch(insn_addr, target);
+        instructions = T::conditionalBranch(insn_addr, target);
         break;
       }
       case 0b011011: {
-        instructions = _actor.testAndBranch(insn_addr, target);
+        instructions = T::testAndBranch(insn_addr, target);
         break;
       }
       case 0b001100:
@@ -193,7 +191,7 @@ public:
         // load/store
         if ((Instruction_aarch64::extract(insn, 29, 24) & 0b111011) == 0b011000) {
           // Load register (literal)
-          instructions = _actor.loadStore(insn_addr, target);
+          instructions = T::loadStore(insn_addr, target);
           break;
         } else {
           // nothing to do
@@ -213,20 +211,20 @@ public:
           if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
               Instruction_aarch64::extract(insn, 4, 0) ==
               Instruction_aarch64::extract(insn2, 9, 5)) {
-            instructions = _actor.adrp(insn_addr, target, T::adrpMem);
+            instructions = T::adrp(insn_addr, target, T::adrpMem);
           } else if (Instruction_aarch64::extract(insn2, 31, 22) == 0b1001000100 &&
                      Instruction_aarch64::extract(insn, 4, 0) ==
                      Instruction_aarch64::extract(insn2, 4, 0)) {
-            instructions = _actor.adrp(insn_addr, target, T::adrpAdd);
+            instructions = T::adrp(insn_addr, target, T::adrpAdd);
           } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
                      Instruction_aarch64::extract(insn, 4, 0) ==
                      Instruction_aarch64::extract(insn2, 4, 0)) {
-            instructions = _actor.adrp(insn_addr, target, T::adrpMovk);
+            instructions = T::adrp(insn_addr, target, T::adrpMovk);
           } else {
             ShouldNotReachHere();
           }
         } else {
-          instructions = _actor.adr(insn_addr, target);
+          instructions = T::adr(insn_addr, target);
         }
         break;
       }
@@ -234,7 +232,7 @@ public:
       case 0b011001:
       case 0b101001:
       case 0b111001: {
-        instructions = _actor.immediate(insn_addr, target);
+        instructions = T::immediate(insn_addr, target);
         break;
       }
       default: {
@@ -242,7 +240,7 @@ public:
       }
     }
 
-    _actor.verify(insn_addr, target);
+    T::verify(insn_addr, target);
     return instructions * NativeInstruction::instruction_size;
   }
 };
@@ -251,27 +249,27 @@ class Patcher {
 public:
   Patcher() {}
 
-  int unconditionalBranch(address insn_addr, address &target) const {
+  static int unconditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
     return 1;
   }
-  int conditionalBranch(address insn_addr, address &target) const {
+  static int conditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     return 1;
   }
-  int testAndBranch(address insn_addr, address &target) const {
+  static int testAndBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 18, 5, offset);
     return 1;
   }
-  int loadStore(address insn_addr, address &target) const {
+  static int loadStore(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 23, 5, offset);
     return 1;
   }
-  int adr(address insn_addr, address &target) const {
+  static int adr(address insn_addr, address &target) {
 #ifdef ASSERT
     assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 28, 24) == 0b10000, "must be");
 #endif
@@ -284,7 +282,7 @@ public:
     return 1;
   }
   template<typename U>
-  int adrp(address insn_addr, address &target, U inner) const {
+  static int adrp(address insn_addr, address &target, U inner) {
     int instructions = 1;
 #ifdef ASSERT
     assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 28, 24) == 0b10000, "must be");
@@ -326,7 +324,7 @@ public:
     target = address(dest);
     return 2;
   }
-  int immediate(address insn_addr, address &target) const {
+  static int immediate(address insn_addr, address &target) {
     assert(Instruction_aarch64::extract(insn_at(insn_addr, 0), 31, 21) == 0b11010010100, "must be");
     uint64_t dest = (uint64_t)target;
     // Move wide constant
@@ -337,7 +335,7 @@ public:
     Instruction_aarch64::patch(insn_addr+8, 20, 5, (dest >>= 16) & 0xffff);
     return 3;
   }
-  void verify(address insn_addr, address &target) const {
+  static void verify(address insn_addr, address &target) {
 #ifdef ASSERT
     address address_is = MacroAssembler::target_addr_for_insn(insn_addr);
     if (!(address_is == target)) {
@@ -375,27 +373,27 @@ class AArch64Decoder {
 public:
   AArch64Decoder() {}
 
-  int loadStore(address insn_addr, address &target) const {
+  static int loadStore(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 23, 5);
     target = insn_addr + (offset << 2);
     return 1;
   }
-  int unconditionalBranch(address insn_addr, address &target) const {
+  static int unconditionalBranch(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 25, 0);
     target = insn_addr + (offset << 2);
     return 1;
   }
-  int conditionalBranch(address insn_addr, address &target) const {
+  static int conditionalBranch(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 23, 5);
     target = address(((uint64_t)insn_addr + (offset << 2)));
     return 1;
   }
-  int testAndBranch(address insn_addr, address &target) const {
+  static int testAndBranch(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 18, 5);
     target = address(((uint64_t)insn_addr + (offset << 2)));
     return 1;
   }
-  int adr(address insn_addr, address &target) const {
+  static int adr(address insn_addr, address &target) {
     // PC-rel. addressing
     uint32_t insn = insn_at(insn_addr, 0);
     intptr_t offset = Instruction_aarch64::extract(insn, 30, 29);
@@ -404,7 +402,7 @@ public:
     return 1;
   }
   template<typename U>
-  int adrp(address insn_addr, address &target, U inner) const {
+  static int adrp(address insn_addr, address &target, U inner) {
     uint32_t insn = insn_at(insn_addr, 0);
     assert(Instruction_aarch64::extract(insn, 28, 24) == 0b10000, "must be");
     intptr_t offset = Instruction_aarch64::extract(insn, 30, 29);
@@ -454,7 +452,7 @@ public:
       return 2;
     }
   }
-  int immediate(address insn_addr, address &target) const {
+  static int immediate(address insn_addr, address &target) {
     uint32_t *insns = (uint32_t *)insn_addr;
     assert(Instruction_aarch64::extract(insns[0], 31, 21) == 0b11010010100, "must be");
     // Move wide constant: movz, movk, movk.  See movptr().
@@ -467,24 +465,20 @@ public:
     assert(nativeInstruction_at(insn_addr+8)->is_movk(), "wrong insns in patch");
     return 3;
   }
-  void verify(address insn_addr, address &target) const {
+  static void verify(address insn_addr, address &target) {
   }
 };
 
 address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
-  AArch64Decoder decoder;
-  RelocActions actions(decoder);
   address target;
-  actions.run(insn_addr, target);
+  RelocActions(AArch64Decoder{}).run(insn_addr, target);
   return target;
 }
 
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
-  Patcher patcher;
-  RelocActions actions(patcher);
-  return actions.run(insn_addr, target);
+  return RelocActions(Patcher{}).run(insn_addr, target);
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
