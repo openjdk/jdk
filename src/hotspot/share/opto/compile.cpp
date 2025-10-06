@@ -650,7 +650,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
-      _has_method_handle_invokes(false),
       _clinit_barrier_on_entry(false),
       _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
@@ -693,7 +692,9 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _inline_printer(this),
       _java_calls(0),
       _inner_loops(0),
+      _FIRST_STACK_mask(comp_arena()),
       _interpreter_frame_size(0),
+      _regmask_arena(mtCompiler, Arena::Tag::tag_regmask),
       _output(nullptr)
 #ifndef PRODUCT
       ,
@@ -923,7 +924,6 @@ Compile::Compile(ciEnv* ci_env,
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
-      _has_method_handle_invokes(false),
       _clinit_barrier_on_entry(false),
       _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
@@ -954,7 +954,9 @@ Compile::Compile(ciEnv* ci_env,
       _inline_printer(this),
       _java_calls(0),
       _inner_loops(0),
+      _FIRST_STACK_mask(comp_arena()),
       _interpreter_frame_size(0),
+      _regmask_arena(mtCompiler, Arena::Tag::tag_regmask),
       _output(nullptr),
 #ifndef PRODUCT
       _in_dump_cnt(0),
@@ -2102,6 +2104,12 @@ bool Compile::inline_incrementally_one() {
     bool is_scheduled_for_igvn_before = C->igvn_worklist()->member(cg->call_node());
     bool does_dispatch = cg->is_virtual_late_inline() || cg->is_mh_late_inline();
     if (inlining_incrementally() || does_dispatch) { // a call can be either inlined or strength-reduced to a direct call
+      if (should_stress_inlining()) {
+        // randomly add repeated inline attempt if stress-inlining
+        cg->call_node()->set_generator(cg);
+        C->igvn_worklist()->push(cg->call_node());
+        continue;
+      }
       cg->do_late_inline();
       assert(_late_inlines.at(i) == cg, "no insertions before current position allowed");
       if (failing()) {

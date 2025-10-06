@@ -97,8 +97,8 @@ struct ShenandoahNoiseStats {
 // once the per-worker data is consolidated into the appropriate population vector
 // per minor collection. The _local_age_table is thus C x N, for N GC workers.
 class ShenandoahAgeCensus: public CHeapObj<mtGC> {
-  AgeTable** _global_age_table;      // Global age table used for adapting tenuring threshold, one per snapshot
-  AgeTable** _local_age_table;       // Local scratch age tables to track object ages, one per worker
+  AgeTable** _global_age_tables;      // Global age tables used for adapting tenuring threshold, one per snapshot
+  AgeTable** _local_age_tables;       // Local scratch age tables to track object ages, one per worker
 
 #ifdef SHENANDOAH_CENSUS_NOISE
   ShenandoahNoiseStats* _global_noise; // Noise stats, one per snapshot
@@ -175,7 +175,7 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // Return the local age table (population vector) for worker_id.
   // Only used in the case of ShenandoahGenerationalAdaptiveTenuring
   AgeTable* get_local_age_table(uint worker_id) const {
-    return _local_age_table[worker_id];
+    return _local_age_tables[worker_id];
   }
 
   // Return the most recently computed tenuring threshold.
@@ -209,11 +209,7 @@ class ShenandoahAgeCensus: public CHeapObj<mtGC> {
   // age0_pop is the population of Cohort 0 that may have been missed in
   // the regular census during the marking cycle, corresponding to objects
   // allocated when the concurrent marking was in progress.
-  // Optional parameters, pv1 and pv2 are population vectors that together
-  // provide object census data (only) for the case when
-  // ShenandoahGenerationalCensusAtEvac. In this case, the age0_pop
-  // is 0, because the evacuated objects have all had their ages incremented.
-  void update_census(size_t age0_pop, AgeTable* pv1 = nullptr, AgeTable* pv2 = nullptr);
+  void update_census(size_t age0_pop);
 
   // Reset the epoch, clearing accumulated census history
   // Note: this isn't currently used, but reserved for planned

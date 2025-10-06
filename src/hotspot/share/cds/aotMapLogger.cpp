@@ -33,6 +33,8 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
@@ -348,6 +350,12 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     case MetaspaceObj::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
+    case MetaspaceObj::MethodCountersType:
+      log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::MethodDataType:
+      log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
+      break;
     case MetaspaceObj::SymbolType:
       log_symbol((Symbol*)src, requested_addr, type_name, bytes, current);
       break;
@@ -387,6 +395,18 @@ void AOTMapLogger::log_const_method(ConstMethod* cm, address requested_addr, con
                                     int bytes, Thread* current) {
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  cm->method()->external_name());
+}
+
+void AOTMapLogger::log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name,
+                                      int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  mc->method()->external_name());
+}
+
+void AOTMapLogger::log_method_data(MethodData* md, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  md->method()->external_name());
 }
 
 void AOTMapLogger::log_klass(Klass* k, address requested_addr, const char* type_name,
