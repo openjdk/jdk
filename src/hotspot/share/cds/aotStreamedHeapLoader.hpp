@@ -156,6 +156,9 @@ private:
 
   static OopHandle _roots;
 
+  template <typename LinkerT>
+  class CopyConjointLinkingOopClosure;
+
   static oop allocate_object(oopDesc* archive_object, markWord mark, size_t size, TRAPS);
   static int object_index_for_root_index(int root_index);
   static int highest_object_index_for_root_index(int root_index);

@@ -227,7 +227,7 @@ void AOTStreamedHeapLoader::TracingObjectLoader::wait_for_iterator() {
 
 // Link object after copying in-place
 template <typename LinkerT>
-class CopyConjointLinkingOopClosure : public BasicOopIterateClosure {
+class AOTStreamedHeapLoader::CopyConjointLinkingOopClosure : public BasicOopIterateClosure {
 private:
   oop _obj;
   LinkerT _linker;
