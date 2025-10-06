@@ -30,19 +30,24 @@ import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -74,19 +79,23 @@ public class CustomInfoPListTest {
 
     @Test
     @ParameterSupplier("customPLists")
-    public void testAppImage(CustomPListType[] customPLists) throws IOException {
-        var cmd = init(JPackageCommand.helloAppImage(), customPLists);
+    public void testAppImage(TestConfig cfg) throws Throwable {
+        var cmd = cfg.init(JPackageCommand.helloAppImage());
+        var verifier = cfg.createPListFilesVerifier(cmd.executePrerequisiteActions());
         cmd.executeAndAssertHelloAppImageCreated();
-        verifyPListFiles(cmd, customPLists);
+        verifier.accept(cmd);
     }
 
     @Test
     @ParameterSupplier("customPLists")
-    public void testNativePackage(CustomPListType[] customPLists) {
-        new PackageTest().forTypes(PackageType.MAC_PKG).configureHelloApp().addInitializer(cmd -> {
-            init(cmd.setFakeRuntime(), customPLists);
+    public void testNativePackage(TestConfig cfg) {
+        List<ThrowingConsumer<JPackageCommand>> verifier = new ArrayList<>();
+        new PackageTest().configureHelloApp().addInitializer(cmd -> {
+            cfg.init(cmd.setFakeRuntime());
+        }).addRunOnceInitializer(() -> {
+            verifier.add(cfg.createPListFilesVerifier(JPackageCommand.helloAppImage().executePrerequisiteActions()));
         }).addInstallVerifier(cmd -> {
-            verifyPListFiles(cmd, customPLists);
+            verifier.get(0).accept(cmd);
         }).run(Action.CREATE_AND_UNPACK);
     }
 
@@ -94,56 +103,129 @@ public class CustomInfoPListTest {
     public void testRuntime() {
         final Path runtimeImage[] = new Path[1];
 
+        var cfg = new TestConfig(Set.of(CustomPListType.RUNTIME));
+
         new PackageTest().addRunOnceInitializer(() -> {
             runtimeImage[0] = JPackageCommand.createInputRuntimeImage();
         }).addInitializer(cmd -> {
             cmd.ignoreDefaultRuntime(true)
                     .removeArgumentWithValue("--input")
                     .setArgumentValue("--runtime-image", runtimeImage[0]);
-            init(cmd, CustomPListType.RUNTIME);
+            cfg.init(cmd);
         }).addInstallVerifier(cmd -> {
-            verifyPListFiles(cmd, CustomPListType.RUNTIME);
+            cfg.createPListFilesVerifier(cmd).accept(cmd);
         }).run(Action.CREATE_AND_UNPACK);
     }
 
     public static Collection<Object[]> customPLists() {
         return Stream.of(
-                List.of(CustomPListType.APP),
-                List.of(CustomPListType.APP_WITH_FA),
-                List.of(CustomPListType.EMBEDDED_RUNTIME),
-                List.of(CustomPListType.APP, CustomPListType.EMBEDDED_RUNTIME)
-        ).map(list -> {
-            return list.toArray(CustomPListType[]::new);
-        }).map(arr -> {
-            return new Object[] { arr };
+                Set.of(CustomPListType.APP),
+                Set.of(CustomPListType.APP_WITH_FA),
+                Set.of(CustomPListType.EMBEDDED_RUNTIME),
+                Set.of(CustomPListType.APP, CustomPListType.EMBEDDED_RUNTIME)
+        ).map(TestConfig::new).map(cfg -> {
+            return new Object[] { cfg };
         }).toList();
     }
 
-    private static JPackageCommand init(JPackageCommand cmd, CustomPListType... customPLists) throws IOException {
-        if (Stream.of(customPLists).anyMatch(Predicate.isEqual(CustomPListType.APP_WITH_FA))) {
-            final Path propFile = TKit.createTempFile("fa.properties");
-            var map = Map.ofEntries(
-                    entry("mime-type", "application/x-jpackage-foo"),
-                    entry("extension", "foo"),
-                    entry("description", "bar")
-            );
-            TKit.createPropertiesFile(propFile, map);
-            cmd.setArgumentValue("--file-associations", propFile);
-        }
-
-        cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
-        for (var customPList : customPLists) {
-            customPList.createInputPListFile(cmd);
-        }
-        return cmd;
+    private static List<String> toStringList(PListReader plistReader) {
+        return MacHelper.flatMapPList(plistReader).entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(e -> {
+            return String.format("%s: %s", e.getKey(), e.getValue());
+        }).toList();
     }
 
-    private static void verifyPListFiles(JPackageCommand cmd, CustomPListType... customPLists) throws IOException {
-        for (var customPList : customPLists) {
-            customPList.verifyPListFile(cmd);
+
+    public record TestConfig(Set<CustomPListType> customPLists) {
+
+        public TestConfig {
+            Objects.requireNonNull(customPLists);
+            if (customPLists.isEmpty()) {
+                throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public String toString() {
+            return customPLists.stream()
+                    .sorted(Comparator.comparing(CustomPListType::role))
+                    .map(CustomPListType::toString)
+                    .collect(Collectors.joining("+"));
+        }
+
+        JPackageCommand init(JPackageCommand cmd) throws IOException {
+            if (customPLists.contains(CustomPListType.APP_WITH_FA)) {
+                final Path propFile = TKit.createTempFile("fa.properties");
+                var map = Map.ofEntries(
+                        entry("mime-type", "application/x-jpackage-foo"),
+                        entry("extension", "foo"),
+                        entry("description", "bar")
+                );
+                TKit.createPropertiesFile(propFile, map);
+                cmd.setArgumentValue("--file-associations", propFile);
+            }
+
+            cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
+            for (var customPList : customPLists) {
+                customPList.createInputPListFile(cmd);
+            }
+            return cmd;
+        }
+
+        ThrowingConsumer<JPackageCommand> createPListFilesVerifier(JPackageCommand cmd) throws IOException {
+            ThrowingConsumer<JPackageCommand> defaultVarifier = thecmd -> {
+                for (var customPList : customPLists) {
+                    customPList.verifyPListFile(thecmd);
+                }
+            };
+
+            var defaultPListFiles = CustomPListType.defaultRoles(customPLists);
+
+            if (defaultPListFiles.isEmpty()) {
+                return defaultVarifier;
+            } else {
+                var vanillaCmd = new JPackageCommand().setFakeRuntime()
+                        .addArguments(cmd.getAllArguments())
+                        .setPackageType(PackageType.IMAGE)
+                        .removeArgumentWithValue("--resource-dir")
+                        .setArgumentValue("--dest", TKit.createTempDirectory("vanilla"));
+                vanillaCmd.executeIgnoreExitCode().assertExitCodeIsZero();
+
+                return thecmd -> {
+                    defaultVarifier.accept(thecmd);
+                    for (var defaultPListFile : defaultPListFiles) {
+                        final var expectedPListPath = defaultPListFile.path(vanillaCmd);
+                        final var expectedPList = MacHelper.readPList(expectedPListPath);
+
+                        final var actualPListPath = defaultPListFile.path(thecmd);
+                        final var actualPList = MacHelper.readPList(actualPListPath);
+
+                        var expected = toStringList(expectedPList);
+                        var actual = toStringList(actualPList);
+
+                        TKit.assertStringListEquals(expected, actual, String.format(
+                                "Check contents of [%s] and [%s] plist files are the same", expectedPListPath, actualPListPath));
+                    }
+                };
+            }
         }
     }
 
+
+    enum PListRole {
+        MAIN,
+        EMBEDDED_RUNTIME,
+        ;
+
+        Path path(JPackageCommand cmd) {
+            final Path bundleRoot;
+            if (cmd.isRuntime() || this == EMBEDDED_RUNTIME) {
+                bundleRoot = cmd.appRuntimeDirectory();
+            } else {
+                bundleRoot = cmd.appLayout().contentDirectory().getParent();
+            }
+            return bundleRoot.resolve("Contents/Info.plist");
+        }
+    }
 
     public enum CustomPListType {
         APP(
@@ -190,32 +272,33 @@ public class CustomInfoPListTest {
                     outputPlistWriter.accept(cmd, xml);
                 }).getNode());
 
-            final var actualPListPath = actualPListPath(cmd);
+            final var actualPListPath = role().path(cmd);
             final var actualPList = MacHelper.readPList(actualPListPath);
 
-            Function<PListReader, List<String>> toStringList = plistReader -> {
-                return MacHelper.flatMapPList(plistReader).entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(e -> {
-                    return String.format("%s: %s", e.getKey(), e.getValue());
-                }).toList();
-            };
-
-            var expected = toStringList.apply(expectedPList);
-            var actual = toStringList.apply(actualPList);
+            var expected = toStringList(expectedPList);
+            var actual = toStringList(actualPList);
 
             TKit.assertStringListEquals(expected, actual, String.format("Check contents of [%s] plist file is as expected", actualPListPath));
         }
 
-        private Path actualPListPath(JPackageCommand cmd) {
-            final Path bundleRoot;
-            switch (this) {
-                case EMBEDDED_RUNTIME, RUNTIME -> {
-                    bundleRoot = cmd.appRuntimeDirectory();
-                }
-                default -> {
-                    bundleRoot = cmd.appLayout().contentDirectory().getParent();
-                }
+        PListRole role() {
+            if (this == EMBEDDED_RUNTIME) {
+                return PListRole.EMBEDDED_RUNTIME;
+            } else {
+                return PListRole.MAIN;
             }
-            return bundleRoot.resolve("Contents/Info.plist");
+        }
+
+        static Set<PListRole> defaultRoles(Collection<CustomPListType> customPLists) {
+            var result = new HashSet<>(Set.of(PListRole.values()));
+            customPLists.stream().<PListRole>mapMulti((customPList, acc) -> {
+                if (customPList == CustomPListType.RUNTIME) {
+                    List.of(PListRole.values()).forEach(acc::accept);
+                } else {
+                    acc.accept(customPList.role());
+                }
+            }).forEach(result::remove);
+            return Collections.unmodifiableSet(result);
         }
 
         private final BiConsumer<JPackageCommand, XMLStreamWriter> inputPlistWriter;
