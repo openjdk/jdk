@@ -926,7 +926,11 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
           if (iter.has_current()) end = iter.addr();
         }
 
-        Disassembler::decode(start, end, st);
+        // Always print hex. Disassembler may still have problems if start is not a correct instruction start.
+        os::print_hex_dump(st, start, end, 1, /* print_ascii=*/false);
+        if (!Disassembler::is_abstract()) {
+          Disassembler::decode(start, end, st);
+        }
       }
     }
     return;
