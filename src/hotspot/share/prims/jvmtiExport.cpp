@@ -813,7 +813,7 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
- JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
+  JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
 }
 
 char**
