@@ -51,6 +51,7 @@ public class Password {
 
         char[] consoleEntered = null;
         byte[] consoleBytes = null;
+        char[] buf = null;
 
         try {
             // Only use Console if `in` is the initial System.in
@@ -80,11 +81,7 @@ public class Password {
 
             // Rest of the lines still necessary for KeyStoreLoginModule
             // and when there is no console.
-
-            char[] lineBuffer;
-            char[] buf;
-
-            buf = lineBuffer = new char[128];
+            buf = new char[128];
 
             int room = buf.length;
             int offset = 0;
@@ -112,11 +109,11 @@ public class Password {
                     /* fall through */
                   default:
                     if (--room < 0) {
+                        char[] oldBuf = buf;
                         buf = new char[offset + 128];
                         room = buf.length - offset - 1;
-                        System.arraycopy(lineBuffer, 0, buf, 0, offset);
-                        Arrays.fill(lineBuffer, ' ');
-                        lineBuffer = buf;
+                        System.arraycopy(oldBuf, 0, buf, 0, offset);
+                        Arrays.fill(oldBuf, ' ');
                     }
                     buf[offset++] = (char) c;
                     break;
@@ -129,8 +126,6 @@ public class Password {
 
             char[] ret = new char[offset];
             System.arraycopy(buf, 0, ret, 0, offset);
-            Arrays.fill(buf, ' ');
-
             return ret;
         } finally {
             if (consoleEntered != null) {
@@ -138,6 +133,9 @@ public class Password {
             }
             if (consoleBytes != null) {
                 Arrays.fill(consoleBytes, (byte)0);
+            }
+            if (buf != null) {
+                Arrays.fill(buf, ' ');
             }
         }
     }
