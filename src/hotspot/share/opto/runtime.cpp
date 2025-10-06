@@ -61,7 +61,7 @@
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -1913,9 +1913,6 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
 
     current->set_exception_pc(pc);
     current->set_exception_handler_pc(handler_address);
-
-    // Check if the exception PC is a MethodHandle call site.
-    current->set_is_method_handle_return(nm->is_method_handle_return(pc));
   }
 
   // Restore correct return pc.  Was saved above.
@@ -2206,7 +2203,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
     c->set_next(nullptr);
     head = _named_counters;
     c->set_next(head);
-  } while (Atomic::cmpxchg(&_named_counters, head, c) != head);
+  } while (AtomicAccess::cmpxchg(&_named_counters, head, c) != head);
   return c;
 }
 

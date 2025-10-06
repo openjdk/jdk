@@ -34,7 +34,7 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/trimNativeHeap.hpp"
@@ -216,17 +216,17 @@ void SymbolTable::create_table ()  {
   }
 }
 
-void SymbolTable::reset_has_items_to_clean() { Atomic::store(&_has_items_to_clean, false); }
-void SymbolTable::mark_has_items_to_clean()  { Atomic::store(&_has_items_to_clean, true); }
-bool SymbolTable::has_items_to_clean()       { return Atomic::load(&_has_items_to_clean); }
+void SymbolTable::reset_has_items_to_clean() { AtomicAccess::store(&_has_items_to_clean, false); }
+void SymbolTable::mark_has_items_to_clean()  { AtomicAccess::store(&_has_items_to_clean, true); }
+bool SymbolTable::has_items_to_clean()       { return AtomicAccess::load(&_has_items_to_clean); }
 
 void SymbolTable::item_added() {
-  Atomic::inc(&_items_count);
+  AtomicAccess::inc(&_items_count);
 }
 
 void SymbolTable::item_removed() {
-  Atomic::inc(&(_symbols_removed));
-  Atomic::dec(&_items_count);
+  AtomicAccess::inc(&(_symbols_removed));
+  AtomicAccess::dec(&_items_count);
 }
 
 double SymbolTable::get_load_factor() {
@@ -237,7 +237,7 @@ size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
-bool SymbolTable::has_work() { return Atomic::load_acquire(&_has_work); }
+bool SymbolTable::has_work() { return AtomicAccess::load_acquire(&_has_work); }
 
 void SymbolTable::trigger_cleanup() {
   // Avoid churn on ServiceThread
@@ -786,7 +786,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
     bdt.done(jt);
   }
 
-  Atomic::add(&_symbols_counted, stdc._processed);
+  AtomicAccess::add(&_symbols_counted, stdc._processed);
 
   log_debug(symboltable)("Cleaned %zu of %zu",
                          stdd._deleted, stdc._processed);
@@ -814,7 +814,7 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   // Rehash if needed.  Rehashing goes to a safepoint but the rest of this
   // work is concurrent.
   if (needs_rehashing() && maybe_rehash_table()) {
-    Atomic::release_store(&_has_work, false);
+    AtomicAccess::release_store(&_has_work, false);
     return; // done, else grow
   }
   log_debug(symboltable, perf)("Concurrent work, live factor: %g", get_load_factor());
@@ -824,7 +824,7 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   } else {
     clean_dead_entries(jt);
   }
-  Atomic::release_store(&_has_work, false);
+  AtomicAccess::release_store(&_has_work, false);
 }
 
 // Called at VM_Operation safepoint

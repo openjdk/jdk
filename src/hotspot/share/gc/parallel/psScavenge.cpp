@@ -33,7 +33,7 @@
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psRootType.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
+#include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcId.hpp"
@@ -51,7 +51,6 @@
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -99,7 +98,7 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
 
     case ParallelRootType::code_cache:
       {
-        MarkingNMethodClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations, false /* keepalive nmethods */);
+        NMethodToOopClosure code_closure(&roots_to_old_closure, NMethodToOopClosure::FixRelocations);
         ScavengableNMethods::nmethods_do(&code_closure);
       }
       break;
@@ -127,7 +126,7 @@ static void steal_work(TaskTerminator& terminator, uint worker_id) {
     ScannerTask task;
     if (PSPromotionManager::steal_depth(worker_id, task)) {
       pm->process_popped_location_depth(task, true);
-      pm->drain_stacks_depth(true);
+      pm->drain_stacks(true);
     } else {
       if (terminator.offer_termination()) {
         break;
@@ -148,15 +147,10 @@ public:
 PSIsAliveClosure PSScavenge::_is_alive_closure;
 
 class PSKeepAliveClosure: public OopClosure {
-protected:
-  MutableSpace* _to_space;
   PSPromotionManager* _promotion_manager;
 
 public:
   PSKeepAliveClosure(PSPromotionManager* pm) : _promotion_manager(pm) {
-    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
-    _to_space = heap->young_gen()->to_space();
-
     assert(_promotion_manager != nullptr, "Sanity");
   }
 
@@ -221,25 +215,24 @@ public:
 };
 
 class PSThreadRootsTaskClosure : public ThreadClosure {
-  uint _worker_id;
+  PSPromotionManager* _pm;
 public:
-  PSThreadRootsTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  PSThreadRootsTaskClosure(PSPromotionManager* pm) : _pm(pm) {}
   virtual void do_thread(Thread* thread) {
     assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
 
-    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(_worker_id);
-    PSScavengeRootsClosure roots_closure(pm);
+    PSScavengeRootsClosure roots_closure(_pm);
 
     // No need to visit nmethods, because they are handled by ScavengableNMethods.
     thread->oops_do(&roots_closure, nullptr);
 
     // Do the real work
-    pm->drain_stacks(false);
+    _pm->drain_stacks(false);
   }
 };
 
 class ScavengeRootsTask : public WorkerTask {
-  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  ThreadsClaimTokenScope _threads_claim_token_scope; // needed for Threads::possibly_parallel_threads_do
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_strong_par_state;
   SequentialSubTasksDone _subtasks;
   PSOldGen* _old_gen;
@@ -252,7 +245,7 @@ public:
   ScavengeRootsTask(PSOldGen* old_gen,
                     uint active_workers) :
     WorkerTask("ScavengeRootsTask"),
-    _strong_roots_scope(active_workers),
+    _threads_claim_token_scope(),
     _subtasks(ParallelRootType::sentinel),
     _old_gen(old_gen),
     _gen_top(old_gen->object_space()->top()),
@@ -268,12 +261,12 @@ public:
   virtual void work(uint worker_id) {
     assert(worker_id < _active_workers, "Sanity");
     ResourceMark rm;
+    PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
 
     if (!_is_old_gen_empty) {
       // There are only old-to-young pointers if there are objects
       // in the old gen.
       {
-        PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
 
         // The top of the old gen changes during scavenge when objects are promoted.
@@ -293,14 +286,14 @@ public:
       scavenge_roots_work(static_cast<ParallelRootType::Value>(root_type), worker_id);
     }
 
-    PSThreadRootsTaskClosure closure(worker_id);
-    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
+    PSThreadRootsTaskClosure thread_closure(pm);
+    Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &thread_closure);
 
     // Scavenge OopStorages
     {
-      PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-      PSScavengeRootsClosure closure(pm);
-      _oop_storage_strong_par_state.oops_do(&closure);
+      PSScavengeRootsClosure root_closure(pm);
+      _oop_storage_strong_par_state.oops_do(&root_closure);
+
       // Do the real work
       pm->drain_stacks(false);
     }
