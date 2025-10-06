@@ -168,7 +168,7 @@ void AOTStreamedHeapWriter::write(GrowableArrayCHeap<oop, mtClassShared>* roots,
   allocate_buffer();
   order_source_objs(roots);
   copy_source_objs_to_buffer(roots);
-  map_embedded_oops(roots, heap_info);
+  map_embedded_oops(heap_info);
   populate_archive_heap_info(heap_info);
 }
 
@@ -453,8 +453,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 }
 
 // Update all oop fields embedded in the buffered objects
-void AOTStreamedHeapWriter::map_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                              ArchiveStreamedHeapInfo* heap_info) {
+void AOTStreamedHeapWriter::map_embedded_oops(ArchiveStreamedHeapInfo* heap_info) {
   size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size / oopmap_unit);
