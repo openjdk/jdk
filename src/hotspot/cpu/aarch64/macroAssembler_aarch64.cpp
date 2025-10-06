@@ -154,13 +154,11 @@ static uint32_t insn_at(address insn_addr, int n) {
 }
 
 template<typename T>
-class RelocActions {
+class RelocActions : public AllStatic {
 
 public:
 
-  RelocActions(T actor) {}
-
-  int ALWAYSINLINE run(address insn_addr, address &target) {
+  static int ALWAYSINLINE run(address insn_addr, address &target) {
     int instructions = 1;
     uint32_t insn = insn_at(insn_addr, 0);
 
@@ -245,10 +243,8 @@ public:
   }
 };
 
-class Patcher {
+class Patcher : public AllStatic {
 public:
-  Patcher() {}
-
   static int unconditionalBranch(address insn_addr, address &target) {
     intptr_t offset = (target - insn_addr) >> 2;
     Instruction_aarch64::spatch(insn_addr, 25, 0, offset);
@@ -369,9 +365,8 @@ static bool offset_for(uint32_t insn1, uint32_t insn2, ptrdiff_t &byte_offset) {
   return false;
 }
 
-class AArch64Decoder {
+class AArch64Decoder : public AllStatic {
 public:
-  AArch64Decoder() {}
 
   static int loadStore(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(insn_at(insn_addr, 0), 23, 5);
@@ -471,14 +466,14 @@ public:
 
 address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
   address target;
-  RelocActions(AArch64Decoder{}).run(insn_addr, target);
+  RelocActions<AArch64Decoder>::run(insn_addr, target);
   return target;
 }
 
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
-  return RelocActions(Patcher{}).run(insn_addr, target);
+  return RelocActions<Patcher>::run(insn_addr, target);
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
