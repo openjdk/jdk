@@ -67,6 +67,11 @@ public class NullParams {
         test("SHA3-256withRSA", true);
         test("SHA3-384withRSA", true);
         test("SHA3-512withRSA", true);
+        test("HmacSHA1", true);
+        test("HmacSHA224", true);
+        test("HmacSHA256", true);
+        test("HmacSHA384", true);
+        test("HmacSHA512", true);
 
         // Full old list: must be absent
         test("SHA1withECDSA", false);
@@ -83,7 +88,6 @@ public class NullParams {
         // Others
         test("DSA", false);
         test("SHA1withDSA", false);
-        test("HmacSHA1", false);
 
         if (failed) {
             throw new RuntimeException("At least one failed");

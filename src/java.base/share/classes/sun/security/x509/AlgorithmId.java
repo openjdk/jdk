@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,10 +127,30 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;
-        if (params != null) {
-            encodedParams = params.toByteArray();
-            decodeParams();
+
+        if (params == null) {
+            this.encodedParams = null;
+            this.algParams = null;
+            return;
         }
+
+        /*
+         * Follow parse(DerValue) behavior: if the DerValue is an ASN.1 NULL,
+         * validate it and canonicalize to "no parameters" (encodedParams == null).
+         */
+        if (params.tag == DerValue.tag_Null) {
+            if (params.length() != 0) {
+                throw new IOException("invalid NULL");
+            }
+            // canonicalize: treat as absent parameters
+            this.encodedParams = null;
+            this.algParams = null;
+            return;
+        }
+
+        // Normal case: non-NULL params -> store and decode
+        this.encodedParams = params.toByteArray();
+        decodeParams();
     }
 
     protected void decodeParams() throws IOException {
@@ -165,36 +185,12 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if (encodedParams == null) {
             // MessageDigest algorithms usually have a NULL parameters even
             // if most RFCs suggested absent.
-            // RSA key and signature algorithms requires the NULL parameters
-            // to be present, see A.1 and A.2.4 of RFC 8017.
-            if (algid.equals(RSAEncryption_oid)
-                    || algid.equals(MD2_oid)
-                    || algid.equals(MD5_oid)
-                    || algid.equals(SHA_oid)
-                    || algid.equals(SHA224_oid)
-                    || algid.equals(SHA256_oid)
-                    || algid.equals(SHA384_oid)
-                    || algid.equals(SHA512_oid)
-                    || algid.equals(SHA512_224_oid)
-                    || algid.equals(SHA512_256_oid)
-                    || algid.equals(SHA3_224_oid)
-                    || algid.equals(SHA3_256_oid)
-                    || algid.equals(SHA3_384_oid)
-                    || algid.equals(SHA3_512_oid)
-                    || algid.equals(SHA1withRSA_oid)
-                    || algid.equals(SHA224withRSA_oid)
-                    || algid.equals(SHA256withRSA_oid)
-                    || algid.equals(SHA384withRSA_oid)
-                    || algid.equals(SHA512withRSA_oid)
-                    || algid.equals(SHA512$224withRSA_oid)
-                    || algid.equals(SHA512$256withRSA_oid)
-                    || algid.equals(MD2withRSA_oid)
-                    || algid.equals(MD5withRSA_oid)
-                    || algid.equals(SHA3_224withRSA_oid)
-                    || algid.equals(SHA3_256withRSA_oid)
-                    || algid.equals(SHA3_384withRSA_oid)
-                    || algid.equals(SHA3_512withRSA_oid)) {
+            // RSA key and signature algorithms and HmacSHA* algorithms requires
+            // the NULL parameters to be present, see A.1 and A.2.4 of RFC 8017.
+            if (OIDS_REQUIRING_NULL.contains(algid)) {
                 bytes.putNull();
+            } else {
+                // Parameters omitted
             }
         } else {
             bytes.writeBytes(encodedParams);
@@ -672,4 +668,59 @@ public class AlgorithmId implements Serializable, DerEncoder {
             ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA);
     public static final ObjectIdentifier SHA3_512withRSA_oid =
             ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA);
+
+    // HMAC algorithms
+    public static final ObjectIdentifier HMACSHA1_oid =
+            ObjectIdentifier.of(KnownOIDs.HmacSHA1);
+    public static final ObjectIdentifier HMACSHA224_oid =
+            ObjectIdentifier.of(KnownOIDs.HmacSHA224);
+    public static final ObjectIdentifier HMACSHA256_oid =
+            ObjectIdentifier.of(KnownOIDs.HmacSHA256);
+    public static final ObjectIdentifier HMACSHA384_oid =
+            ObjectIdentifier.of(KnownOIDs.HmacSHA384);
+    public static final ObjectIdentifier HMACSHA512_oid =
+            ObjectIdentifier.of(KnownOIDs.HmacSHA512);
+
+    // Set of OIDs that must explicitly encode a NULL parameter
+    private static final Set<ObjectIdentifier> OIDS_REQUIRING_NULL = Set.of(
+            // Hash algorithms
+            ObjectIdentifier.of(KnownOIDs.MD2),
+            ObjectIdentifier.of(KnownOIDs.MD5),
+            ObjectIdentifier.of(KnownOIDs.SHA_1),
+            ObjectIdentifier.of(KnownOIDs.SHA_224),
+            ObjectIdentifier.of(KnownOIDs.SHA_256),
+            ObjectIdentifier.of(KnownOIDs.SHA_384),
+            ObjectIdentifier.of(KnownOIDs.SHA_512),
+            ObjectIdentifier.of(KnownOIDs.SHA_512$224),
+            ObjectIdentifier.of(KnownOIDs.SHA_512$256),
+            ObjectIdentifier.of(KnownOIDs.SHA3_224),
+            ObjectIdentifier.of(KnownOIDs.SHA3_256),
+            ObjectIdentifier.of(KnownOIDs.SHA3_384),
+            ObjectIdentifier.of(KnownOIDs.SHA3_512),
+
+            // RSA encryption
+            ObjectIdentifier.of(KnownOIDs.RSA),
+
+            // RSA signatures
+            ObjectIdentifier.of(KnownOIDs.SHA1withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA224withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA256withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA384withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA512withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA512$224withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA512$256withRSA),
+            ObjectIdentifier.of(KnownOIDs.MD2withRSA),
+            ObjectIdentifier.of(KnownOIDs.MD5withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA3_224withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA3_256withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA),
+            ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA),
+
+            // HMACs
+            ObjectIdentifier.of(KnownOIDs.HmacSHA1),
+            ObjectIdentifier.of(KnownOIDs.HmacSHA224),
+            ObjectIdentifier.of(KnownOIDs.HmacSHA256),
+            ObjectIdentifier.of(KnownOIDs.HmacSHA384),
+            ObjectIdentifier.of(KnownOIDs.HmacSHA512)
+    );
 }
