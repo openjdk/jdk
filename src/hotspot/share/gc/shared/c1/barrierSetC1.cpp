@@ -42,7 +42,7 @@
 
 // The JMM requires atomicity for all accesses to fields of primitive
 // types other than double and long. In practice, HotSpot assumes that
-// on all all processors, accesses to memory operands of wordSize and
+// on all processors, accesses to memory operands of wordSize and
 // smaller are atomic.
 static bool access_is_atomic(BasicType bt) {
   return type2aelembytes(bt) <= wordSize;
