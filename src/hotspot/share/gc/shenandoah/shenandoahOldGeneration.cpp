@@ -242,9 +242,9 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  AtomicAccess::store(&_promoted_expended, 0UL);
-  AtomicAccess::store(&_promotion_failure_count, 0UL);
-  AtomicAccess::store(&_promotion_failure_words, 0UL);
+  AtomicAccess::store(&_promoted_expended, static_cast<size_t>(0));
+  AtomicAccess::store(&_promotion_failure_count, static_cast<size_t>(0));
+  AtomicAccess::store(&_promotion_failure_words, static_cast<size_t>(0));
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
