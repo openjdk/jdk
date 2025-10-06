@@ -97,19 +97,26 @@ import jdk.internal.vm.vector.Float16Math;
  *      <cite>IEEE Standard for Floating-Point Arithmetic</cite></a>
  */
 
-// Currently Float16 is a value-based class and in future it is
+// Currently Float16 is a value-based class and in the future it is
 // expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
 @jdk.internal.ValueBased
 public final class Float16
     extends Number
     implements Comparable<Float16> {
-    /** @serial */
+
+    /**
+     * Primitive {@code short} field to hold the bits of the {@code Float16}.
+     * @serial
+     */
     private final short value;
+
     private static final long serialVersionUID = 16; // May not be needed when a value class?
 
     // Functionality for future consideration:
-    // IEEEremainder / remainder operator remainder
+    // IEEEremainder and separate % operator remainder (which are
+    // defined to use different rounding modes, see JLS sections 15.4
+    // and 15.17.3).
 
     // Do *not* define any public constructors
    /**
@@ -149,8 +156,14 @@ public final class Float16
      */
     public static final Float16 NaN = valueOf(Float.NaN);
 
+    /**
+     * A constant holding a zero (0.0) of type {@code Float16}.
+     */
     private static final Float16 ZERO = valueOf(0);
 
+    /**
+     * A constant holding a one (1.0) of type {@code Float16}.
+     */
     private static final Float16 ONE  = valueOf(1);
 
     /**
@@ -1567,7 +1580,7 @@ public final class Float16
         case MAX_EXPONENT + 1 -> abs(f16);  // NaN or infinity
         case MIN_EXPONENT - 1 -> MIN_VALUE; // zero or subnormal
         default -> {
-            assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT;
+            assert exp <= MAX_EXPONENT && exp >= MIN_EXPONENT: "Out of range exponent";
             // ulp(x) is usually 2^(SIGNIFICAND_WIDTH-1)*(2^ilogb(x))
             // Let float -> float16 conversion handle encoding issues.
             yield scalb(ONE, exp - (PRECISION - 1));
