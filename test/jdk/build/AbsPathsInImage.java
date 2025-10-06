@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -215,41 +214,45 @@ public class AbsPathsInImage {
 
     private List<String> scanBytes(InputStream input, List<byte[]> searchPatterns) throws IOException {
         List<String> matches = new ArrayList<>();
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
         byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
         int[] states = new int[searchPatterns.size()];
-        String buffer = "";
-        int markpos = -1;
+        int[] zeroes = new int[searchPatterns.size()];
         int bytesRead;
         boolean found = false;
         while ((bytesRead = input.read(buf)) != -1) {
+            int markpos = -1;
             for (int i = 0; i < bytesRead; i++) {
                 byte datum = buf[i];
-                if (datum < 32 || datum > 126) {
-                    if (found) {
-                        matches.add((++markpos < 0) ? buffer + new String(buf, 0, i) : new String(buf, markpos, i - markpos));
-                        found = false;
-                    }
-                    markpos = i;
-                    continue;
-                }
+                // match byte, saving the position of searchPatterns byte search
+                // can skip if a searchPattern already found
                 for (int j = 0; !found && j < searchPatterns.size(); j++) {
                     if (datum != searchPatterns.get(j)[states[j]]) {
                         states[j] = 0;
                     } else if (++states[j] == searchPatterns.get(j).length) {
                         Arrays.fill(states, 0);
                         found = true;
+                        break;
                     }
                 }
+                // use undesired bytes as delimiters
+                if (datum < 32 || datum > 126) {
+                    if (found) {
+                        markpos++;
+                        output.write(buf, markpos, i - markpos);
+                        matches.add(output.toString());
+                        found = false;
+                    }
+                    markpos = i;
+                    output.reset();
+                }
             }
-            if (++markpos == bytesRead) {
-                buffer = new String(buf, markpos, bytesRead - markpos);
-                markpos -= bytesRead;
-            } else {
-                markpos = -1;
+            if (++markpos < bytesRead) {
+                output.write(buf, markpos, bytesRead - markpos);
             }
         }
         if (found) {
-            matches.add((++markpos < 0) ? buffer + new String(buf, 0, bytesRead) : new String(buf, markpos, bytesRead - markpos));
+            matches.add(output.toString());
         }
         return matches;
     }
