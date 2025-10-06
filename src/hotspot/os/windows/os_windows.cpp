@@ -42,7 +42,7 @@
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -534,13 +534,6 @@ static unsigned thread_native_entry(void* t) {
   OSThread* osthr = thread->osthread();
   assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
 
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
-
   // Diagnostic code to investigate JDK-6573254
   int res = 30115;  // non-java thread
   if (thread->is_Java_thread()) {
@@ -597,13 +590,6 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -848,39 +834,56 @@ jlong os::elapsed_frequency() {
 }
 
 
-julong os::available_memory() {
-  return win32::available_memory();
+bool os::available_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
 }
 
-julong os::free_memory() {
-  return win32::available_memory();
+bool os::free_memory(physical_memory_size_type& value) {
+  return win32::available_memory(value);
 }
 
-julong os::win32::available_memory() {
+bool os::win32::available_memory(physical_memory_size_type& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-
-  return (julong)ms.ullAvailPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPhys);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-jlong os::total_swap_space() {
+bool os::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullTotalPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<physical_memory_size_type>(ms.ullTotalPageFile);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-jlong os::free_swap_space() {
+bool os::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
-  GlobalMemoryStatusEx(&ms);
-  return (jlong) ms.ullAvailPageFile;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res == TRUE) {
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPageFile);
+    return true;
+  } else {
+    assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
+    return false;
+  }
 }
 
-julong os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -1411,7 +1414,7 @@ void os::die() {
 void  os::dll_unload(void *lib) {
   char name[MAX_PATH];
   if (::GetModuleFileName((HMODULE)lib, name, sizeof(name)) == 0) {
-    snprintf(name, MAX_PATH, "<not available>");
+    os::snprintf_checked(name, MAX_PATH, "<not available>");
   }
 
   JFR_ONLY(NativeLibraryUnloadEvent unload_event(name);)
@@ -1427,7 +1430,7 @@ void  os::dll_unload(void *lib) {
     Events::log_dll_message(nullptr, "Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     log_info(os)("Attempt to unload dll \"%s\" [" INTPTR_FORMAT "] failed (error code %d)", name, p2i(lib), errcode);
     if (tl == 0) {
-      os::snprintf(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
+      os::snprintf_checked(buf, sizeof(buf), "Attempt to unload dll failed (error code %d)", (int) errcode);
     }
     JFR_ONLY(unload_event.set_error_msg(buf);)
   }
@@ -1824,14 +1827,14 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   }
 
   if (lib_arch_str != nullptr) {
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load %s-bit .dll on a %s-bit platform",
-                 lib_arch_str, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load %s-bit .dll on a %s-bit platform",
+                         lib_arch_str, running_arch_str);
   } else {
     // don't know what architecture this dll was build for
-    os::snprintf(ebuf, ebuflen - 1,
-                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
-                 lib_arch, running_arch_str);
+    os::snprintf_checked(ebuf, ebuflen - 1,
+                         "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
+                         lib_arch, running_arch_str);
   }
   JFR_ONLY(load_event.set_error_msg(ebuf);)
   return nullptr;
@@ -2445,7 +2448,7 @@ static void jdk_misc_signal_init() {
 
 void os::signal_notify(int sig) {
   if (sig_sem != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_sem->signal();
   } else {
     // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
@@ -2458,7 +2461,7 @@ static int check_pending_signals() {
   while (true) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -2794,9 +2797,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (cb != nullptr && cb->is_nmethod()) {
           nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = nm->is_method_handle_return(pc) ?
-            nm->deopt_mh_handler_begin() :
-            nm->deopt_handler_begin();
+          address deopt = nm->deopt_handler_begin();
           assert(nm->insts_contains_inclusive(pc), "");
           nm->set_original_pc(&fr, pc);
           // Set pc to handler
@@ -3198,7 +3199,7 @@ int os::create_file_for_heap(const char* dir) {
     vm_exit_during_initialization(err_msg("Malloc failed during creation of backing file for heap (%s)", os::strerror(errno)));
     return -1;
   }
-  int n = snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
+  int n = os::snprintf(fullname, fullname_len + 1, "%s%s", dir, name_template);
   assert((size_t)n == fullname_len, "Unexpected number of characters in string");
 
   os::native_path(fullname);
@@ -3777,7 +3778,6 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
 
 void os::numa_make_global(char *addr, size_t bytes)    { }
 void os::numa_make_local(char *addr, size_t bytes, int lgrp_hint)    { }
-bool os::numa_topology_changed()                       { return false; }
 size_t os::numa_get_groups_num()                       { return MAX2(numa_node_list_holder.get_count(), 1); }
 int os::numa_get_group_id()                            { return 0; }
 size_t os::numa_get_leaf_groups(uint *ids, size_t size) {
@@ -3945,25 +3945,25 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_processor_type            = 0;
+int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
-int    os::win32::_processor_level           = 0;
-julong os::win32::_physical_memory           = 0;
+int                       os::win32::_processor_level           = 0;
+physical_memory_size_type os::win32::_physical_memory           = 0;
 
-bool   os::win32::_is_windows_server         = false;
+bool                      os::win32::_is_windows_server         = false;
 
 // 6573254
 // Currently, the bug is observed across all the supported Windows releases,
 // including the latest one (as of this writing - Windows Server 2012 R2)
-bool   os::win32::_has_exit_bug              = true;
+bool                      os::win32::_has_exit_bug              = true;
 
-int    os::win32::_major_version             = 0;
-int    os::win32::_minor_version             = 0;
-int    os::win32::_build_number              = 0;
-int    os::win32::_build_minor               = 0;
+int                       os::win32::_major_version             = 0;
+int                       os::win32::_minor_version             = 0;
+int                       os::win32::_build_number              = 0;
+int                       os::win32::_build_minor               = 0;
 
-bool   os::win32::_processor_group_warning_displayed = false;
-bool   os::win32::_job_object_processor_group_warning_displayed = false;
+bool                      os::win32::_processor_group_warning_displayed = false;
+bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
@@ -4178,8 +4178,11 @@ void os::win32::initialize_system_info() {
 
   // also returns dwAvailPhys (free physical memory bytes), dwTotalVirtual, dwAvailVirtual,
   // dwMemoryLoad (% of memory in use)
-  GlobalMemoryStatusEx(&ms);
-  _physical_memory = ms.ullTotalPhys;
+  BOOL res = GlobalMemoryStatusEx(&ms);
+  if (res != TRUE) {
+    assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
+  }
+  _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.
@@ -4278,15 +4281,15 @@ static void exit_process_or_thread(Ept what, int exit_code) {
     // The first thread that reached this point, initializes the critical section.
     if (!InitOnceExecuteOnce(&init_once_crit_sect, init_crit_sect_call, &crit_sect, nullptr)) {
       warning("crit_sect initialization failed in %s: %d\n", __FILE__, __LINE__);
-    } else if (Atomic::load_acquire(&process_exiting) == 0) {
+    } else if (AtomicAccess::load_acquire(&process_exiting) == 0) {
       if (what != EPT_THREAD) {
         // Atomically set process_exiting before the critical section
         // to increase the visibility between racing threads.
-        Atomic::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
+        AtomicAccess::cmpxchg(&process_exiting, (DWORD)0, GetCurrentThreadId());
       }
       EnterCriticalSection(&crit_sect);
 
-      if (what == EPT_THREAD && Atomic::load_acquire(&process_exiting) == 0) {
+      if (what == EPT_THREAD && AtomicAccess::load_acquire(&process_exiting) == 0) {
         // Remove from the array those handles of the threads that have completed exiting.
         for (i = 0, j = 0; i < handle_count; ++i) {
           res = WaitForSingleObject(handles[i], 0 /* don't wait */);
@@ -4399,7 +4402,7 @@ static void exit_process_or_thread(Ept what, int exit_code) {
     }
 
     if (!registered &&
-        Atomic::load_acquire(&process_exiting) != 0 &&
+        AtomicAccess::load_acquire(&process_exiting) != 0 &&
         process_exiting != GetCurrentThreadId()) {
       // Some other thread is about to call exit(), so we don't let
       // the current unregistered thread proceed to exit() or _endthreadex()
@@ -4680,13 +4683,13 @@ static bool is_symbolic_link(const wchar_t* wide_path) {
   if (f != INVALID_HANDLE_VALUE) {
     const bool result = fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT && fd.dwReserved0 == IO_REPARSE_TAG_SYMLINK;
     if (::FindClose(f) == 0) {
-      errno = ::GetLastError();
-      log_debug(os)("is_symbolic_link() failed to FindClose: GetLastError->%ld.", errno);
+      DWORD errcode = ::GetLastError();
+      log_debug(os)("is_symbolic_link() failed to FindClose: GetLastError->%lu.", errcode);
     }
     return result;
   } else {
-    errno = ::GetLastError();
-    log_debug(os)("is_symbolic_link() failed to FindFirstFileW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("is_symbolic_link() failed to FindFirstFileW: GetLastError->%lu.", errcode);
     return false;
   }
 }
@@ -4696,8 +4699,8 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   HANDLE hFile = CreateFileW(wide_path, GENERIC_READ, FILE_SHARE_READ, nullptr,
                              OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (hFile == INVALID_HANDLE_VALUE) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to CreateFileW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CreateFileW: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
@@ -4705,8 +4708,8 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   const size_t target_path_size = ::GetFinalPathNameByHandleW(hFile, nullptr, 0,
                                                               FILE_NAME_NORMALIZED);
   if (target_path_size == 0) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
@@ -4716,14 +4719,14 @@ static WCHAR* get_path_to_target(const wchar_t* wide_path) {
   const size_t res = ::GetFinalPathNameByHandleW(hFile, path_to_target, static_cast<DWORD>(target_path_size),
                                                  FILE_NAME_NORMALIZED);
   if (res != target_path_size - 1) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to GetFinalPathNameByHandleW: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
   if (::CloseHandle(hFile) == 0) {
-    errno = ::GetLastError();
-    log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("get_path_to_target() failed to CloseHandle: GetLastError->%lu.", errcode);
     return nullptr;
   }
 
@@ -4804,9 +4807,8 @@ int os::stat(const char *path, struct stat *sbuf) {
   if (is_symlink) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
-      // it is a symbolic link, but we failed to resolve it,
-      // errno has been set in the call to get_path_to_target(),
-      // no need to overwrite it
+      // it is a symbolic link, but we failed to resolve it
+      errno = ENOENT;
       os::free(wide_path);
       return -1;
     }
@@ -4817,8 +4819,13 @@ int os::stat(const char *path, struct stat *sbuf) {
 
   // if getting attributes failed, GetLastError should be called immediately after that
   if (!bret) {
-    errno = ::GetLastError();
-    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%ld.", errno);
+    DWORD errcode = ::GetLastError();
+    if (errcode == ERROR_FILE_NOT_FOUND || errcode == ERROR_PATH_NOT_FOUND) {
+      errno = ENOENT;
+    } else {
+      errno = 0;
+    }
+    log_debug(os)("os::stat() failed to GetFileAttributesExW: GetLastError->%lu.", errcode);
     os::free(wide_path);
     os::free(path_to_target);
     return -1;
@@ -5018,9 +5025,8 @@ int os::open(const char *path, int oflag, int mode) {
   if (is_symlink) {
     path_to_target = get_path_to_target(wide_path);
     if (path_to_target == nullptr) {
-      // it is a symbolic link, but we failed to resolve it,
-      // errno has been set in the call to get_path_to_target(),
-      // no need to overwrite it
+      // it is a symbolic link, but we failed to resolve it
+      errno = ENOENT;
       os::free(wide_path);
       return -1;
     }
@@ -5028,10 +5034,9 @@ int os::open(const char *path, int oflag, int mode) {
 
   int fd = ::_wopen(is_symlink ? path_to_target : wide_path, oflag | O_BINARY | O_NOINHERIT, mode);
 
-  // if opening files failed, GetLastError should be called immediately after that
+  // if opening files failed, errno has been set to indicate the problem
   if (fd == -1) {
-    errno = ::GetLastError();
-    log_debug(os)("os::open() failed to _wopen: GetLastError->%ld.", errno);
+    log_debug(os)("os::open() failed to _wopen: errno->%s.", strerror(errno));
   }
   os::free(wide_path);
   os::free(path_to_target);
@@ -5099,7 +5104,8 @@ bool os::dir_is_empty(const char* path) {
     }
     FindClose(f);
   } else {
-    errno = ::GetLastError();
+    DWORD errcode = ::GetLastError();
+    log_debug(os)("os::dir_is_empty() failed to FindFirstFileW: GetLastError->%lu.", errcode);
   }
 
   return is_empty;
@@ -5562,7 +5568,7 @@ int PlatformEvent::park(jlong Millis) {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
+    if (AtomicAccess::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return OS_OK;
@@ -5625,7 +5631,7 @@ void PlatformEvent::park() {
   int v;
   for (;;) {
     v = _Event;
-    if (Atomic::cmpxchg(&_Event, v, v-1) == v) break;
+    if (AtomicAccess::cmpxchg(&_Event, v, v-1) == v) break;
   }
   guarantee((v == 0) || (v == 1), "invariant");
   if (v != 0) return;
@@ -5672,7 +5678,7 @@ void PlatformEvent::unpark() {
   // from the first park() call after an unpark() call which will help
   // shake out uses of park() and unpark() without condition variables.
 
-  if (Atomic::xchg(&_Event, 1) >= 0) return;
+  if (AtomicAccess::xchg(&_Event, 1) >= 0) return;
 
   ::SetEvent(_ParkHandle);
 }

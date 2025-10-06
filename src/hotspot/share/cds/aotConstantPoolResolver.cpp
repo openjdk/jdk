@@ -85,7 +85,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
-    if (!ik->is_shared() && SystemDictionaryShared::is_excluded_class(ik)) {
+    if (!ik->in_aot_cache() && SystemDictionaryShared::is_excluded_class(ik)) {
       return false;
     }
 

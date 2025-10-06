@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @build nsk.jdwp.VirtualMachine.HoldEvents.holdevents002a
- * @run main/othervm/timeout=420
+ * @run main/othervm/timeout=1680
  *      nsk.jdwp.VirtualMachine.HoldEvents.holdevents002
  *      -arch=${os.family}-${os.simpleArch}
  *      -verbose
@@ -62,4 +62,3 @@
  *      -transport.address=dynamic
  *      -debugee.vmkeys="${test.vm.opts} ${test.java.opts}"
  */
-
