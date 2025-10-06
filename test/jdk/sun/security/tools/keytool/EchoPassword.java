@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8354469
- * @summary keytool password prompt shows warning when cannot suppress echo
+ * @summary keytool password does not echo in multiple cases
  * @library /java/awt/regtesthelpers
  * @modules java.base/jdk.internal.util
  * @build PassFailJFrame

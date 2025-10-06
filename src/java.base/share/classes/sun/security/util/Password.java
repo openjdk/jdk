@@ -59,9 +59,8 @@ public class Password {
                 if (in == SharedSecrets.getJavaLangAccess().initialSystemIn()
                         && ConsoleHolder.consoleIsAvailable()) {
                     consoleEntered = ConsoleHolder.readPassword();
-                    // readPassword returns "" if you just press ENTER with the built-in Console,
-                    // to be compatible with old Password class, change to null
-                    if (consoleEntered == null || consoleEntered.length == 0) {
+                    // readPassword might return null. Stop now.
+                    if (consoleEntered == null) {
                         return null;
                     }
                     consoleBytes = ConsoleHolder.convertToBytes(consoleEntered);
