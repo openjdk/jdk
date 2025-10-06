@@ -54,14 +54,18 @@ public:
     // To act like previous version (pd_cache_state) don't null _last_Java_sp
     // unless the value is changing
     //
-    if (_last_Java_sp != src->_last_Java_sp) {
+    bool different_sp = _last_Java_sp != src->_last_Java_sp;
+    if (different_sp) {
       _last_Java_sp = nullptr;
       OrderAccess::release();
     }
     _last_Java_fp = src->_last_Java_fp;
     _last_Java_pc = src->_last_Java_pc;
-    // Must be last so profiler will always see valid frame if has_last_frame() is true
-    _last_Java_sp = src->_last_Java_sp;
+    if (different_sp) {
+      // Must be last so profiler will always see valid frame if has_last_frame() is true
+      OrderAccess::release();
+      _last_Java_sp = src->_last_Java_sp;
+    }
   }
 
   bool walkable(void)                            { return _last_Java_sp != nullptr && _last_Java_pc != nullptr; }
