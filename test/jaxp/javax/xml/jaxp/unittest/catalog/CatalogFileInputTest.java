@@ -53,6 +53,7 @@ import static jaxp.library.JAXPTestUtilities.getSystemProperty;
 
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.SimpleFileServer;
+import jdk.test.lib.net.URIBuilder;
 import jdk.test.lib.util.JarUtils;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
@@ -99,7 +100,7 @@ public class CatalogFileInputTest extends CatalogSupportBase {
         executor = Executors.newCachedThreadPool();
         httpserver.setExecutor(executor);
         httpserver.start();
-        remoteFilePath = "http:" + jdk.test.lib.net.URIBuilder.newBuilder().host(httpserver.getAddress().getAddress()).
+        remoteFilePath = "http:" + URIBuilder.newBuilder().host(httpserver.getAddress().getAddress()).
                 port(httpserver.getAddress().getPort()).build().toString() + REMOTE_FILE_LOCATION;
     }
 
