@@ -64,7 +64,7 @@ public final class SerializedFormSize {
             int size = bos.size();
             if (size < min || size > max) {
                 System.err.println("Expected: >= " + min + " and <= " + max);
-                System.err.println("Actual : " + size);
+                System.err.println("Actual: " + size);
                 throw new RuntimeException("Wrong size");
             }
         }
