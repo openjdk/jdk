@@ -210,6 +210,8 @@ public class FileURLConnection extends URLConnection {
     /* since getOutputStream isn't supported, only read permission is
      * relevant
      */
+    @Override
+    @Deprecated(since = "25", forRemoval = true)
     @SuppressWarnings("removal")
     public Permission getPermission() throws IOException {
         if (permission == null) {

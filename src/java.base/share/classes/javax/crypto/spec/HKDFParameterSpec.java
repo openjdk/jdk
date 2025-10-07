@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 
 package javax.crypto.spec;
-
-import jdk.internal.javac.PreviewFeature;
 
 import javax.crypto.SecretKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -75,9 +73,8 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc5869
  *      RFC 5869: HMAC-based Extract-and-Expand Key Derivation Function (HKDF)
  * @see javax.crypto.KDF
- * @since 24
+ * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public interface HKDFParameterSpec extends AlgorithmParameterSpec {
 
     /**
@@ -92,7 +89,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * use-cases respectively. Note that the {@code Builder} is not
      * thread-safe.
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Builder {
 
         private List<SecretKey> ikms = new ArrayList<>();
@@ -296,7 +292,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * Defines the input parameters of an Extract operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Extract implements HKDFParameterSpec {
 
         // HKDF-Extract(salt, IKM) -> PRK
@@ -350,7 +345,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * Defines the input parameters of an Expand operation as defined in <a
      * href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class Expand implements HKDFParameterSpec {
 
         // HKDF-Expand(PRK, info, L) -> OKM
@@ -419,7 +413,6 @@ public interface HKDFParameterSpec extends AlgorithmParameterSpec {
      * Defines the input parameters of an Extract-then-Expand operation as
      * defined in <a href="http://tools.ietf.org/html/rfc5869">RFC 5869</a>.
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
     final class ExtractThenExpand implements HKDFParameterSpec {
         private final Extract ext;
         private final Expand exp;

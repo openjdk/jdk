@@ -28,8 +28,6 @@
 #include "runtime/thread.hpp"
 
 class NonJavaThread: public Thread {
-  friend class VMStructs;
-
   NonJavaThread* volatile _next;
 
   class List;
@@ -103,7 +101,6 @@ class NamedThread: public NonJavaThread {
 
 // A single WatcherThread is used for simulating timer interrupts.
 class WatcherThread: public NonJavaThread {
-  friend class VMStructs;
  protected:
   virtual void run();
 

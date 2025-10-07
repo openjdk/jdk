@@ -23,6 +23,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGeneration.inline.hpp"
+#include "gc/z/zGlobals.hpp"
 #include "gc/z/zPage.inline.hpp"
 #include "gc/z/zPageAge.hpp"
 #include "gc/z/zRememberedSet.inline.hpp"
@@ -43,7 +44,7 @@ ZPage::ZPage(ZPageType type, ZPageAge age, const ZVirtualMemory& vmem, ZMultiPar
     _multi_partition_tracker(multi_partition_tracker) {
   assert(!_virtual.is_null(), "Should not be null");
   assert((_type == ZPageType::small && size() == ZPageSizeSmall) ||
-         (_type == ZPageType::medium && size() == ZPageSizeMedium) ||
+         (_type == ZPageType::medium && ZPageSizeMediumMin <= size() && size() <= ZPageSizeMediumMax) ||
          (_type == ZPageType::large && is_aligned(size(), ZGranuleSize)),
          "Page type/size mismatch");
   reset(age);
@@ -78,8 +79,8 @@ const ZGeneration* ZPage::generation() const {
 }
 
 void ZPage::reset_seqnum() {
-  Atomic::store(&_seqnum, generation()->seqnum());
-  Atomic::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
+  AtomicAccess::store(&_seqnum, generation()->seqnum());
+  AtomicAccess::store(&_seqnum_other, ZGeneration::generation(_generation_id == ZGenerationId::young ? ZGenerationId::old : ZGenerationId::young)->seqnum());
 }
 
 void ZPage::remset_alloc() {

@@ -69,14 +69,25 @@ else ifeq ($(BASE_OS), Fedora)
   ifeq ($(BASE_OS_VERSION), )
     BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
   endif
+  ifeq ($(filter aarch64 armhfp ppc64le riscv64 s390x x86_64, $(ARCH)), )
+    $(error Only "aarch64 armhfp ppc64le riscv64 s390x x86_64" architectures are supported for Fedora, but "$(ARCH)" was requested)
+  endif
   ifeq ($(ARCH), riscv64)
+    ifeq ($(filter 38 39 40 41, $(BASE_OS_VERSION)), )
+      $(error Only Fedora 38-41 are supported for "$(ARCH)", but Fedora $(BASE_OS_VERSION) was requested)
+    endif
     BASE_URL := http://fedora.riscv.rocks/repos-dist/f$(BASE_OS_VERSION)/latest/$(ARCH)/Packages/
   else
-    LATEST_ARCHIVED_OS_VERSION := 35
-    ifeq ($(filter x86_64 armhfp, $(ARCH)), )
+    LATEST_ARCHIVED_OS_VERSION := 36
+    ifeq ($(filter aarch64 armhfp x86_64, $(ARCH)), )
       FEDORA_TYPE := fedora-secondary
     else
       FEDORA_TYPE := fedora/linux
+    endif
+    ifeq ($(ARCH), armhfp)
+      ifneq ($(BASE_OS_VERSION), 36)
+        $(error Fedora 36 is the last release supporting "armhfp", but $(BASE_OS) was requested)
+      endif
     endif
     NOT_ARCHIVED := $(shell [ $(BASE_OS_VERSION) -gt $(LATEST_ARCHIVED_OS_VERSION) ] && echo true)
     ifeq ($(NOT_ARCHIVED),true)
@@ -106,13 +117,13 @@ dependencies := gcc binutils ccache mpfr gmp mpc gdb
 
 $(foreach dep,$(dependencies),$(eval $(dep)_ver := $(dep)-$($(dep)_ver_only)))
 
-GCC := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
-BINUTILS := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
-CCACHE := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
-MPFR := https://www.mpfr.org/$(mpfr_ver)/$(mpfr_ver).tar.bz2
-GMP := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
-MPC := http://ftp.gnu.org/pub/gnu/mpc/$(mpc_ver).tar.gz
-GDB := http://ftp.gnu.org/gnu/gdb/$(gdb_ver).tar.xz
+GCC_URL := http://ftp.gnu.org/pub/gnu/gcc/$(gcc_ver)/$(gcc_ver).tar.xz
+BINUTILS_URL := http://ftp.gnu.org/pub/gnu/binutils/$(binutils_ver).tar.gz
+CCACHE_URL := https://github.com/ccache/ccache/releases/download/v$(ccache_ver_only)/$(ccache_ver).tar.xz
+MPFR_URL := https://www.mpfr.org/$(mpfr_ver)/$(mpfr_ver).tar.bz2
+GMP_URL := http://ftp.gnu.org/pub/gnu/gmp/$(gmp_ver).tar.bz2
+MPC_URL := http://ftp.gnu.org/pub/gnu/mpc/$(mpc_ver).tar.gz
+GDB_URL := http://ftp.gnu.org/gnu/gdb/$(gdb_ver).tar.xz
 
 REQUIRED_MIN_MAKE_MAJOR_VERSION := 4
 ifneq ($(REQUIRED_MIN_MAKE_MAJOR_VERSION),)
@@ -190,7 +201,7 @@ download-rpms:
 # Generate downloading + unpacking of sources.
 define Download
   # Allow override
-  $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)))))
+  $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)_URL))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
   ifeq ($$($(1)_CMAKE_BASED),)
     $(1)_CFG = $$($(1)_DIR)/configure
@@ -201,7 +212,7 @@ define Download
     $(1)_SRC_MARKER = $$($(1)_DIR)/CMakeLists.txt
     $(1)_CONFIG = $$(CMAKE_CONFIG) $$($(1)_DIR)
   endif
-  $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)))
+  $(1)_FILE = $(DOWNLOAD)/$(notdir $($(1)_URL))
 
   $$($(1)_SRC_MARKER) : $$($(1)_FILE)
 	mkdir -p $$(SRCDIR)
@@ -213,7 +224,7 @@ define Download
 	touch $$@
 
   $$($(1)_FILE) :
-	wget -P $(DOWNLOAD) $$($(1))
+	wget -P $(DOWNLOAD) $$($(1)_URL)
 endef
 
 # Download and unpack all source packages
@@ -464,7 +475,7 @@ ifeq ($(ARCH), armhfp)
   $(BUILDDIR)/$(gcc_ver)/Makefile : CONFIG +=  --with-float=hard
 endif
 
-ifneq ($(filter riscv64 ppc64 ppc64le s390x, $(ARCH)), )
+ifneq ($(filter riscv64 ppc64le s390x, $(ARCH)), )
   # We only support 64-bit on these platforms anyway
   CONFIG += --disable-multilib
 endif

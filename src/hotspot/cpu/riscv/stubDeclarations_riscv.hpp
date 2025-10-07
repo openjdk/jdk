@@ -26,6 +26,13 @@
 #ifndef CPU_RISCV_STUBDECLARATIONS_HPP
 #define CPU_RISCV_STUBDECLARATIONS_HPP
 
+#define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
+                                          do_arch_blob,                 \
+                                          do_arch_entry,                \
+                                          do_arch_entry_init)           \
+  do_arch_blob(preuniverse, 0)                                          \
+
+
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
@@ -66,6 +73,9 @@
   do_stub(compiler, string_indexof_linear_ul)                           \
   do_arch_entry(riscv, compiler, string_indexof_linear_ul,              \
                 string_indexof_linear_ul, string_indexof_linear_ul)     \
+  do_stub(compiler, arrays_hashcode_powers_of_31)                       \
+  do_arch_entry(riscv, compiler, arrays_hashcode_powers_of_31,          \
+            arrays_hashcode_powers_of_31, arrays_hashcode_powers_of_31) \
 
 
 #define STUBGEN_FINAL_BLOBS_ARCH_DO(do_stub,                            \

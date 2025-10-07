@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,6 +34,10 @@ import jdk.internal.vm.annotation.ForceInline;
  * @since 24
  */
 public abstract class ModifiedUtf {
+    // Maximum number of bytes allowed for a Modified UTF-8 encoded string
+    // in a ClassFile constant pool entry (CONSTANT_Utf8_info).
+    public static final int CONSTANT_POOL_UTF8_MAX_BYTES = 65535;
+
     private ModifiedUtf() {
     }
 
@@ -59,13 +64,34 @@ public abstract class ModifiedUtf {
      * @param countNonZeroAscii the number of non-zero ascii characters in the prefix calculated by JLA.countNonZeroAscii(str)
      */
     @ForceInline
-    public static int utfLen(String str, int countNonZeroAscii) {
-        int utflen = str.length();
-        for (int i = utflen - 1; i >= countNonZeroAscii; i--) {
+    public static long utfLen(String str, int countNonZeroAscii) {
+        long utflen = str.length();
+        for (int i = (int)utflen - 1; i >= countNonZeroAscii; i--) {
             int c = str.charAt(i);
             if (c >= 0x80 || c == 0)
-                utflen += (c >= 0x800) ? 2 : 1;
+                utflen += (c >= 0x800) ? 2L : 1L;
         }
         return utflen;
+    }
+
+    /**
+     * Checks whether the Modified UTF-8 encoded length of the given string
+     * fits within the ClassFile constant pool limit (u2 length = 65535 bytes).
+     * @param str the string to check
+     */
+    @ForceInline
+    public static boolean isValidLengthInConstantPool(String str) {
+        // Quick approximation: each char can be at most 3 bytes in Modified UTF-8.
+        // If the string is short enough, it definitely fits.
+        int strLen = str.length();
+        if (strLen <= CONSTANT_POOL_UTF8_MAX_BYTES / 3) {
+            return true;
+        }
+        if (strLen > CONSTANT_POOL_UTF8_MAX_BYTES) {
+            return false;
+        }
+        // Check exact Modified UTF-8 length.
+        long utfLen = utfLen(str, 0);
+        return utfLen <= CONSTANT_POOL_UTF8_MAX_BYTES;
     }
 }

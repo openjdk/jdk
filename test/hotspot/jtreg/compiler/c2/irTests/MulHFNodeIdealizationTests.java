@@ -53,6 +53,7 @@ public class MulHFNodeIdealizationTests {
     }
 
     @Test
+    @Warmup(value = 10000)
     @IR(counts = {IRNode.ADD_HF, "1"},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"},
         failOn = {IRNode.MUL_HF})

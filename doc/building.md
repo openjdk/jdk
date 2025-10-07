@@ -1258,11 +1258,11 @@ toolchain and a sysroot environment which can easily be used together with the
 following command:
 
 ```
-bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64-linux-gnu && make
+bash configure --with-devkit=<devkit-path> --openjdk-target=ppc64le-linux-gnu && make
 ```
 
-will configure and build the JDK for Linux/ppc64 assuming that `<devkit-path>`
-points to a Linux/x86_64 to Linux/ppc64 devkit.
+will configure and build the JDK for Linux/ppc64le assuming that `<devkit-path>`
+points to a Linux/x86_64 to Linux/ppc64le devkit.
 
 Devkits can be created from the `make/devkit` directory by executing:
 
@@ -1281,16 +1281,14 @@ at least the following targets are known to work:
 | x86_64-linux-gnu         |
 | aarch64-linux-gnu        |
 | arm-linux-gnueabihf      |
-| ppc64-linux-gnu          |
 | ppc64le-linux-gnu        |
+| riscv64-linux-gnu        |
 | s390x-linux-gnu          |
 
-`BASE_OS` must be one of "OEL6" for Oracle Enterprise Linux 6 or "Fedora" (if
-not specified "OEL6" will be the default). If the base OS is "Fedora" the
-corresponding Fedora release can be specified with the help of the
-`BASE_OS_VERSION` option (with "27" as default version). If the build is
-successful, the new devkits can be found in the `build/devkit/result`
-subdirectory:
+`BASE_OS` must be one of `OL` for Oracle Enterprise Linux or `Fedora`. If the
+base OS is `Fedora` the corresponding Fedora release can be specified with the
+help of the `BASE_OS_VERSION` option. If the build is successful, the new
+devkits can be found in the `build/devkit/result` subdirectory:
 
 ```
 cd make/devkit

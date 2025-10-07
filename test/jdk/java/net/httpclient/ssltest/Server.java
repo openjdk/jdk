@@ -22,6 +22,7 @@
  */
 
 import com.sun.net.httpserver.*;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -44,9 +45,9 @@ public class Server {
     // response with a short text string.
     public Server(SSLContext ctx) throws Exception {
         initLogger();
-        Configurator cfg = new Configurator(ctx);
         InetSocketAddress addr = new InetSocketAddress(
                 InetAddress.getLoopbackAddress(), 0);
+        Configurator cfg = new Configurator(addr.getAddress(), ctx);
         server = HttpsServer.create(addr, 10);
         server.setHttpsConfigurator(cfg);
         server.createContext("/", new MyHandler());
@@ -94,15 +95,20 @@ public class Server {
     }
 
     class Configurator extends HttpsConfigurator {
-        public Configurator(SSLContext ctx) throws Exception {
+        private final InetAddress serverAddr;
+
+        public Configurator(InetAddress addr, SSLContext ctx) throws Exception {
             super(ctx);
+            this.serverAddr = addr;
         }
 
+        @Override
         public void configure(HttpsParameters params) {
             SSLParameters p = getSSLContext().getDefaultSSLParameters();
             for (String cipher : p.getCipherSuites())
                 System.out.println("Cipher: " + cipher);
             System.err.println("Params = " + p);
+            TestServerConfigurator.addSNIMatcher(this.serverAddr, p);
             params.setSSLParameters(p);
         }
     }

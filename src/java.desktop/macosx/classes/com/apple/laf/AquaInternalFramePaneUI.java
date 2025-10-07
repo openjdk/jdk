@@ -34,7 +34,7 @@ import javax.swing.border.Border;
 import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicDesktopPaneUI;
 
-public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener {
+public final class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements MouseListener {
 
     JComponent fDock;
     DockLayoutManager fLayoutMgr;
@@ -43,6 +43,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         return new AquaInternalFramePaneUI();
     }
 
+    @Override
     public void update(final Graphics g, final JComponent c) {
         if (c.isOpaque()) {
             super.update(g, c);
@@ -51,6 +52,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         paint(g, c);
     }
 
+    @Override
     public void installUI(final JComponent c) {
         super.installUI(c);
         fLayoutMgr = new DockLayoutManager();
@@ -59,6 +61,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         c.addMouseListener(this);
     }
 
+    @Override
     public void uninstallUI(final JComponent c) {
         c.removeMouseListener(this);
 
@@ -74,6 +77,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     // Our superclass hardcodes DefaultDesktopManager - how rude!
+    @Override
     protected void installDesktopManager() {
         if (desktop.getDesktopManager() == null) {
             desktopManager = new AquaDockingDesktopManager();
@@ -81,6 +85,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         }
     }
 
+    @Override
     protected void uninstallDesktopManager() {
         final DesktopManager manager = desktop.getDesktopManager();
         if (manager instanceof AquaDockingDesktopManager) {
@@ -96,28 +101,33 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         return fDock;
     }
 
-    class DockLayoutManager implements LayoutManager {
+    final class DockLayoutManager implements LayoutManager {
+        @Override
         public void addLayoutComponent(final String name, final Component comp) {
         }
 
+        @Override
         public void removeLayoutComponent(final Component comp) {
         }
 
+        @Override
         public Dimension preferredLayoutSize(final Container parent) {
             return parent.getSize();
         }
 
+        @Override
         public Dimension minimumLayoutSize(final Container parent) {
             return parent.getSize();
         }
 
+        @Override
         public void layoutContainer(final Container parent) {
             if (fDock != null) ((Dock)fDock).updateSize();
         }
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    class Dock extends JComponent implements Border {
+    final class Dock extends JComponent implements Border {
         static final int DOCK_EDGE_SLACK = 8;
 
         Dock(final JComponent parent) {
@@ -126,6 +136,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             setVisible(false);
         }
 
+        @Override
         public void removeNotify() {
             fDock = null;
             super.removeNotify();
@@ -136,6 +147,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             setBounds((getParent().getWidth() - d.width) / 2, getParent().getHeight() - d.height, d.width, d.height);
         }
 
+        @Override
         public Component add(final Component c) {
             super.add(c);
             if (!isVisible()) {
@@ -147,6 +159,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             return c;
         }
 
+        @Override
         public void remove(final Component c) {
             super.remove(c);
             if (getComponentCount() == 0) {
@@ -157,14 +170,17 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             }
         }
 
+        @Override
         public Insets getBorderInsets(final Component c) {
             return new Insets(DOCK_EDGE_SLACK / 4, DOCK_EDGE_SLACK, 0, DOCK_EDGE_SLACK);
         }
 
+        @Override
         public boolean isBorderOpaque() {
             return false;
         }
 
+        @Override
         public void paintBorder(final Component c, final Graphics g, final int x, final int y, final int w, final int h) {
             if (!(g instanceof Graphics2D)) return;
             final Graphics2D g2d = (Graphics2D)g;
@@ -187,7 +203,8 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
     }
 
     @SuppressWarnings("serial") // JDK implementation class
-    static class AquaDockingDesktopManager extends AquaInternalFrameManager {
+    static final class AquaDockingDesktopManager extends AquaInternalFrameManager {
+        @Override
         public void openFrame(final JInternalFrame f) {
             final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
             final Container dock = desktopIcon.getParent();
@@ -197,6 +214,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             removeIconFor(f);
         }
 
+        @Override
         public void deiconifyFrame(final JInternalFrame f) {
             final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
             final Container dock = desktopIcon.getParent();
@@ -213,6 +231,7 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             } catch(final PropertyVetoException pve) { /* do nothing */ }
         }
 
+        @Override
         public void iconifyFrame(final JInternalFrame f) {
             final JInternalFrame.JDesktopIcon desktopIcon = f.getDesktopIcon();
             // paint the frame onto the icon before hiding the frame, else the contents won't show
@@ -220,12 +239,14 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
             super.iconifyFrame(f);
         }
 
+        @Override
         void addIcon(final Container c, final JInternalFrame.JDesktopIcon desktopIcon) {
             final DesktopPaneUI ui = ((JDesktopPane)c).getUI();
             ((AquaInternalFramePaneUI)ui).getDock().add(desktopIcon);
         }
     }
 
+    @Override
     public void mousePressed(final MouseEvent e) {
         JInternalFrame selectedFrame = desktop.getSelectedFrame();
         if (selectedFrame != null) {
@@ -236,8 +257,12 @@ public class AquaInternalFramePaneUI extends BasicDesktopPaneUI implements Mouse
         }
     }
 
+    @Override
     public void mouseReleased(final MouseEvent e) { }
+    @Override
     public void mouseClicked(final MouseEvent e) { }
+    @Override
     public void mouseEntered(final MouseEvent e) { }
+    @Override
     public void mouseExited(final MouseEvent e) { }
 }

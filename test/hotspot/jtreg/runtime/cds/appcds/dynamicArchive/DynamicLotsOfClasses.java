@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ public class DynamicLotsOfClasses extends DynamicArchiveTestBase {
              "ALL-SYSTEM",
              "-Xlog:hashtables",
              "-Xmx500m",
-             "-Xlog:cds=debug", // test detailed metadata info printing
+             "-Xlog:cds=debug,aot=debug", // test detailed metadata info printing
              "-Xlog:cds+dynamic=info",
              bootClassPath,
              "-XX:+UnlockDiagnosticVMOptions", "-XX:+WhiteBoxAPI",

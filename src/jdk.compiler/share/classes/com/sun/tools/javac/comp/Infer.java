@@ -206,7 +206,11 @@ public class Infer {
                     //propagate outwards if needed
                     if (shouldPropagate) {
                         //propagate inference context outwards and exit
-                        minContext.dupTo(resultInfo.checkContext.inferenceContext());
+                        InferenceContext duppedTo = resultInfo.checkContext.inferenceContext();
+                        minContext.dupTo(duppedTo);
+                        if (minContext != inferenceContext) {
+                            duppedTo.parentIC = inferenceContext;
+                        }
                         deferredAttrContext.complete();
                         return mt;
                     }

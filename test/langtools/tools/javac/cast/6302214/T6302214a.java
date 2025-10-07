@@ -25,7 +25,7 @@
  * @test
  * @bug     6302214
  * @summary erroneus "inconvertible types" error
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile -Xlint:unchecked -Werror T6302214a.java
  */
 

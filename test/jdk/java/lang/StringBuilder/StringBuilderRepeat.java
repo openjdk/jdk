@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.util.Arrays;
 
 /**
  * @test
- * @bug 8302323
+ * @bug 8302323 8351443
  * @summary Test StringBuilder.repeat sanity tests
  * @run testng/othervm -XX:-CompactStrings StringBuilderRepeat
  * @run testng/othervm -XX:+CompactStrings StringBuilderRepeat
@@ -107,7 +107,7 @@ public class StringBuilderRepeat {
 
         String expected = "repeat233333233333-2-3-3-3-3-3\u2461\u2462\u2462\u2462\u2462\u2462\u2461\u2462\u2462\u2462\u2462\u2462-\u2461-\u2462-\u2462-\u2462-\u2462-\u2462abcabcabc" +
                           "nullnullnullnullnullnullnullnullnullnullnullnull";
-        assertEquals(expected, sb.toString());
+        assertEquals(sb.toString(), expected);
 
         // Codepoints
 
@@ -127,7 +127,7 @@ public class StringBuilderRepeat {
         sb.repeat(0x10FFFF, 5);
 
         expected = "\u0000\u0000\u0000\u0000\u0000\u0000\u0020\u0020\u0020\u0020\u0020\u0020\u2461\u2462\u2462\u2462\u2462\u2462\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff\udbff\udfff";
-        assertEquals(expected, sb.toString());
+        assertEquals(sb.toString(), expected);
 
     }
 

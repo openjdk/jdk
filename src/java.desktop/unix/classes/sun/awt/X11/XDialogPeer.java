@@ -40,6 +40,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         super(target);
     }
 
+    @Override
     public void preInit(XCreateWindowParams params) {
         super.preInit(params);
 
@@ -58,6 +59,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         winAttr.initialState = XWindowAttributesData.NORMAL;
     }
 
+    @Override
     public void setVisible(boolean vis) {
         XToolkit.awtLock();
         try {
@@ -89,6 +91,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         }
     }
 
+    @Override
     int getDecorations() {
         int d = super.getDecorations();
         // remove minimize and maximize buttons for dialogs
@@ -100,6 +103,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         return d;
     }
 
+    @Override
     int getFunctions() {
         int f = super.getFunctions();
         // remove minimize and maximize functions for dialogs
@@ -111,6 +115,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
         return f;
     }
 
+    @Override
     public void blockWindows(java.util.List<Window> toBlock) {
         Vector<XWindowPeer> javaToplevels = null;
         XToolkit.awtLock();
@@ -134,6 +139,7 @@ class XDialogPeer extends XDecoratedPeer implements DialogPeer {
      * The focused window can't be blocked at the time it's focused.
      * Thus we don't have to perform any transitive (a blocker of a blocker) checks.
      */
+    @Override
     boolean isFocusedWindowModalBlocker() {
         Window focusedWindow = XKeyboardFocusManagerPeer.getInstance().getCurrentFocusedWindow();
         XWindowPeer focusedWindowPeer = null;

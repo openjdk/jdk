@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
@@ -52,7 +53,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/whitebox.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/escapeBarrier.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
@@ -217,11 +218,16 @@ CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
   CompilerThread* thread = CompilerThread::current();
   thread->set_task(task);
   CompileLog*     log  = thread->log();
+  thread->timeout()->arm();
   if (log != nullptr && !task->is_unloaded())  task->log_task_start(log);
 }
 
 CompileTaskWrapper::~CompileTaskWrapper() {
   CompilerThread* thread = CompilerThread::current();
+
+  // First, disarm the timeout. This still relies on the underlying task.
+  thread->timeout()->disarm();
+
   CompileTask* task = thread->task();
   CompileLog*  log  = thread->log();
   if (log != nullptr && !task->is_unloaded())  task->log_task_done(log);
@@ -230,12 +236,12 @@ CompileTaskWrapper::~CompileTaskWrapper() {
   if (task->is_blocking()) {
     bool free_task = false;
     {
-      MutexLocker notifier(thread, task->lock());
+      MutexLocker notifier(thread, CompileTaskWait_lock);
       task->mark_complete();
 #if INCLUDE_JVMCI
       if (CompileBroker::compiler(task->comp_level())->is_jvmci()) {
         if (!task->has_waiter()) {
-          // The waiting thread timed out and thus did not free the task.
+          // The waiting thread timed out and thus did not delete the task.
           free_task = true;
         }
         task->set_blocking_jvmci_compile_state(nullptr);
@@ -244,19 +250,19 @@ CompileTaskWrapper::~CompileTaskWrapper() {
       if (!free_task) {
         // Notify the waiting thread that the compilation has completed
         // so that it can free the task.
-        task->lock()->notify_all();
+        CompileTaskWait_lock->notify_all();
       }
     }
     if (free_task) {
-      // The task can only be freed once the task lock is released.
-      CompileTask::free(task);
+      // The task can only be deleted once the task lock is released.
+      delete task;
     }
   } else {
     task->mark_complete();
 
-    // By convention, the compiling thread is responsible for
-    // recycling a non-blocking CompileTask.
-    CompileTask::free(task);
+    // By convention, the compiling thread is responsible for deleting
+    // a non-blocking CompileTask.
+    delete task;
   }
 }
 
@@ -347,45 +353,50 @@ void CompileQueue::add(CompileTask* task) {
     task->log_task_queued();
   }
 
+  if (TrainingData::need_data() && !CDSConfig::is_dumping_final_static_archive()) {
+    CompileTrainingData* ctd = CompileTrainingData::make(task);
+    if (ctd != nullptr) {
+      task->set_training_data(ctd);
+    }
+  }
+
   // Notify CompilerThreads that a task is available.
   MethodCompileQueue_lock->notify_all();
 }
 
 /**
- * Empties compilation queue by putting all compilation tasks onto
- * a freelist. Furthermore, the method wakes up all threads that are
- * waiting on a compilation task to finish. This can happen if background
+ * Empties compilation queue by deleting all compilation tasks.
+ * Furthermore, the method wakes up all threads that are waiting
+ * on a compilation task to finish. This can happen if background
  * compilation is disabled.
  */
-void CompileQueue::free_all() {
+void CompileQueue::delete_all() {
   MutexLocker mu(MethodCompileQueue_lock);
-  CompileTask* next = _first;
+  CompileTask* current = _first;
 
   // Iterate over all tasks in the compile queue
-  while (next != nullptr) {
-    CompileTask* current = next;
-    next = current->next();
-    bool found_waiter = false;
-    {
-      MutexLocker ct_lock(current->lock());
-      assert(current->waiting_for_completion_count() <= 1, "more than one thread are waiting for task");
-      if (current->waiting_for_completion_count() > 0) {
-        // If another thread waits for this task, we must wake them up
-        // so they will stop waiting and free the task.
-        current->lock()->notify();
-        found_waiter = true;
-      }
+  while (current != nullptr) {
+    CompileTask* next = current->next();
+    if (!current->is_blocking()) {
+      // Non-blocking task. No one is waiting for it, delete it now.
+      delete current;
+    } else {
+      // Blocking task. By convention, it is the waiters responsibility
+      // to delete the task. We cannot delete it here, because we do not
+      // coordinate with waiters. We will notify the waiters later.
     }
-    if (!found_waiter) {
-      // If no one was waiting for this task, we need to free it ourselves. In this case, the task
-      // is also certainly unlocked, because, again, there is no waiter.
-      // Otherwise, by convention, it's the waiters responsibility to free the task.
-      // Put the task back on the freelist.
-      CompileTask::free(current);
-    }
+    current = next;
   }
   _first = nullptr;
   _last = nullptr;
+
+  // Wake up all blocking task waiters to deal with remaining blocking
+  // tasks. This is not a performance sensitive path, so we do this
+  // unconditionally to simplify coding/testing.
+  {
+    MonitorLocker ml(Thread::current(), CompileTaskWait_lock);
+    ml.notify_all();
+  }
 
   // Wake up all threads that block on the queue.
   MethodCompileQueue_lock->notify_all();
@@ -398,7 +409,6 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
   // save methods from RedefineClasses across safepoint
   // across MethodCompileQueue_lock below.
   methodHandle save_method;
-  methodHandle save_hot_method;
 
   MonitorLocker locker(MethodCompileQueue_lock);
   // If _first is null we have no more compile jobs. There are two reasons for
@@ -442,7 +452,7 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
   CompileTask* task;
   {
     NoSafepointVerifier nsv;
-    task = CompilationPolicy::select_task(this);
+    task = CompilationPolicy::select_task(this, thread);
     if (task != nullptr) {
       task = task->select_for_compilation();
     }
@@ -453,7 +463,6 @@ CompileTask* CompileQueue::get(CompilerThread* thread) {
     // the compilation queue, which is walked during RedefineClasses.
     Thread* thread = Thread::current();
     save_method = methodHandle(thread, task->method());
-    save_hot_method = methodHandle(thread, task->hot_method());
 
     remove(task);
   }
@@ -476,6 +485,7 @@ void CompileQueue::purge_stale_tasks() {
       MutexUnlocker ul(MethodCompileQueue_lock);
       for (CompileTask* task = head; task != nullptr; ) {
         CompileTask* next_task = task->next();
+        task->set_next(nullptr);
         CompileTaskWrapper ctw(task); // Frees the task
         task->set_failure_reason("stale task");
         task = next_task;
@@ -501,6 +511,8 @@ void CompileQueue::remove(CompileTask* task) {
     assert(task == _last, "Sanity");
     _last = task->prev();
   }
+  task->set_next(nullptr);
+  task->set_prev(nullptr);
   --_size;
   ++_total_removed;
 }
@@ -783,6 +795,10 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   _initialized = true;
 }
 
+void TrainingReplayThread::training_replay_thread_entry(JavaThread* thread, TRAPS) {
+  CompilationPolicy::replay_training_at_init_loop(thread);
+}
+
 #if defined(ASSERT) && COMPILER2_OR_JVMCI
 // Entry for DeoptimizeObjectsALotThread. The threads are started in
 // CompileBroker::init_compiler_threads() iff DeoptimizeObjectsALot is enabled
@@ -860,6 +876,9 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
       new_thread = new DeoptimizeObjectsALotThread();
       break;
 #endif // ASSERT
+    case training_replay_t:
+      new_thread = new TrainingReplayThread();
+      break;
     default:
       ShouldNotReachHere();
   }
@@ -1017,6 +1036,16 @@ void CompileBroker::init_compiler_threads() {
 #endif // defined(ASSERT) && COMPILER2_OR_JVMCI
 }
 
+void CompileBroker::init_training_replay() {
+  // Ensure any exceptions lead to vm_exit_during_initialization.
+  EXCEPTION_MARK;
+  if (TrainingData::have_data()) {
+    Handle thread_oop = JavaThread::create_system_thread_object("Training replay thread", CHECK);
+    jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
+    make_thread(training_replay_t, thread_handle, nullptr, nullptr, THREAD);
+  }
+}
+
 void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
 
   int old_c2_count = 0, new_c2_count = 0, old_c1_count = 0, new_c1_count = 0;
@@ -1035,7 +1064,9 @@ void CompileBroker::possibly_add_compiler_threads(JavaThread* THREAD) {
   if (new_c2_count <= old_c2_count && new_c1_count <= old_c1_count) return;
 
   // Now, we do the more expensive operations.
-  julong free_memory = os::free_memory();
+  physical_memory_size_type free_memory = 0;
+  // Return value ignored - defaulting to 0 on failure.
+  (void)os::free_memory(free_memory);
   // If SegmentedCodeCache is off, both values refer to the single heap (with type CodeBlobType::All).
   size_t available_cc_np = CodeCache::unallocated_capacity(CodeBlobType::MethodNonProfiled),
          available_cc_p  = CodeCache::unallocated_capacity(CodeBlobType::MethodProfiled);
@@ -1154,7 +1185,6 @@ void CompileBroker::mark_on_stack() {
 void CompileBroker::compile_method_base(const methodHandle& method,
                                         int osr_bci,
                                         int comp_level,
-                                        const methodHandle& hot_method,
                                         int hot_count,
                                         CompileTask::CompileReason compile_reason,
                                         bool blocking,
@@ -1173,13 +1203,8 @@ void CompileBroker::compile_method_base(const methodHandle& method,
       tty->print(" osr_bci: %d", osr_bci);
     }
     tty->print(" level: %d comment: %s count: %d", comp_level, CompileTask::reason_name(compile_reason), hot_count);
-    if (!hot_method.is_null()) {
-      tty->print(" hot: ");
-      if (hot_method() != method()) {
-          hot_method->print_short_name(tty);
-      } else {
-        tty->print("yes");
-      }
+    if (hot_count > 0) {
+      tty->print(" hot: yes");
     }
     tty->cr();
   }
@@ -1326,7 +1351,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
     task = create_compile_task(queue,
                                compile_id, method,
                                osr_bci, comp_level,
-                               hot_method, hot_count, compile_reason,
+                               hot_count, compile_reason,
                                blocking);
   }
 
@@ -1337,7 +1362,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
-                                       const methodHandle& hot_method, int hot_count,
+                                       int hot_count,
                                        CompileTask::CompileReason compile_reason,
                                        TRAPS) {
   // Do nothing if compilebroker is not initialized or compiles are submitted on level none
@@ -1357,14 +1382,14 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
 
   DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
   // CompileBroker::compile_method can trap and can have pending async exception.
-  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, directive, THREAD);
+  nmethod* nm = CompileBroker::compile_method(method, osr_bci, comp_level, hot_count, compile_reason, directive, THREAD);
   DirectivesStack::release(directive);
   return nm;
 }
 
 nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                          int comp_level,
-                                         const methodHandle& hot_method, int hot_count,
+                                         int hot_count,
                                          CompileTask::CompileReason compile_reason,
                                          DirectiveSet* directive,
                                          TRAPS) {
@@ -1460,7 +1485,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
       return nullptr;
     }
     bool is_blocking = !directive->BackgroundCompilationOption || ReplayCompiles;
-    compile_method_base(method, osr_bci, comp_level, hot_method, hot_count, compile_reason, is_blocking, THREAD);
+    compile_method_base(method, osr_bci, comp_level, hot_count, compile_reason, is_blocking, THREAD);
   }
 
   // return requested nmethod
@@ -1565,14 +1590,14 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
     assert(!is_osr, "can't be osr");
     // Adapters, native wrappers and method handle intrinsics
     // should be generated always.
-    return Atomic::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
+    return AtomicAccess::add(CICountNative ? &_native_compilation_id : &_compilation_id, 1);
   } else if (CICountOSR && is_osr) {
-    id = Atomic::add(&_osr_compilation_id, 1);
+    id = AtomicAccess::add(&_osr_compilation_id, 1);
     if (CIStartOSR <= id && id < CIStopOSR) {
       return id;
     }
   } else {
-    id = Atomic::add(&_compilation_id, 1);
+    id = AtomicAccess::add(&_compilation_id, 1);
     if (CIStart <= id && id < CIStop) {
       return id;
     }
@@ -1584,7 +1609,7 @@ int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #else
   // CICountOSR is a develop flag and set to 'false' by default. In a product built,
   // only _compilation_id is incremented.
-  return Atomic::add(&_compilation_id, 1);
+  return AtomicAccess::add(&_compilation_id, 1);
 #endif
 }
 
@@ -1607,14 +1632,11 @@ CompileTask* CompileBroker::create_compile_task(CompileQueue*       queue,
                                                 const methodHandle& method,
                                                 int                 osr_bci,
                                                 int                 comp_level,
-                                                const methodHandle& hot_method,
                                                 int                 hot_count,
                                                 CompileTask::CompileReason compile_reason,
                                                 bool                blocking) {
-  CompileTask* new_task = CompileTask::allocate();
-  new_task->initialize(compile_id, method, osr_bci, comp_level,
-                       hot_method, hot_count, compile_reason,
-                       blocking);
+  CompileTask* new_task = new CompileTask(compile_id, method, osr_bci, comp_level,
+                                          hot_count, compile_reason, blocking);
   queue->add(new_task);
   return new_task;
 }
@@ -1635,11 +1657,11 @@ static const int JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS = 10;
  * JVMCI_COMPILATION_PROGRESS_WAIT_TIMESLICE *
  * JVMCI_COMPILATION_PROGRESS_WAIT_ATTEMPTS.
  *
- * @return true if this thread needs to free/recycle the task
+ * @return true if this thread needs to delete the task
  */
 bool CompileBroker::wait_for_jvmci_completion(JVMCICompiler* jvmci, CompileTask* task, JavaThread* thread) {
   assert(UseJVMCICompiler, "sanity");
-  MonitorLocker ml(thread, task->lock());
+  MonitorLocker ml(thread, CompileTaskWait_lock);
   int progress_wait_attempts = 0;
   jint thread_jvmci_compilation_ticks = 0;
   jint global_jvmci_compilation_ticks = jvmci->global_compilation_ticks();
@@ -1707,31 +1729,43 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   } else
 #endif
   {
-    MonitorLocker ml(thread, task->lock());
     free_task = true;
-    task->inc_waiting_for_completion();
+    // Wait until the task is complete or compilation is shut down.
+    MonitorLocker ml(thread, CompileTaskWait_lock);
     while (!task->is_complete() && !is_compilation_disabled_forever()) {
       ml.wait();
     }
-    task->dec_waiting_for_completion();
+  }
+
+  // It is harmless to check this status without the lock, because
+  // completion is a stable property.
+  if (!task->is_complete()) {
+    // Task is not complete, likely because we are exiting for compilation
+    // shutdown. The task can still be reached through the queue, or executed
+    // by some compiler thread. There is no coordination with either MCQ lock
+    // holders or compilers, therefore we cannot delete the task.
+    //
+    // This will leave task allocated, which leaks it. At this (degraded) point,
+    // it is less risky to abandon the task, rather than attempting a more
+    // complicated deletion protocol.
+    free_task = false;
   }
 
   if (free_task) {
-    if (is_compilation_disabled_forever()) {
-      CompileTask::free(task);
-      return;
-    }
-
-    // It is harmless to check this status without the lock, because
-    // completion is a stable property (until the task object is recycled).
     assert(task->is_complete(), "Compilation should have completed");
+    assert(task->next() == nullptr && task->prev() == nullptr,
+           "Completed task should not be in the queue");
 
-    // By convention, the waiter is responsible for recycling a
+    // By convention, the waiter is responsible for deleting a
     // blocking CompileTask. Since there is only one waiter ever
     // waiting on a CompileTask, we know that no one else will
-    // be using this CompileTask; we can free it.
-    CompileTask::free(task);
+    // be using this CompileTask; we can delete it.
+    delete task;
   }
+}
+
+void CompileBroker::wait_for_no_active_tasks() {
+  CompileTask::wait_for_no_active_tasks();
 }
 
 /**
@@ -1807,11 +1841,11 @@ void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerTh
 
     // Delete all queued compilation tasks to make compiler threads exit faster.
     if (_c1_compile_queue != nullptr) {
-      _c1_compile_queue->free_all();
+      _c1_compile_queue->delete_all();
     }
 
     if (_c2_compile_queue != nullptr) {
-      _c2_compile_queue->free_all();
+      _c2_compile_queue->delete_all();
     }
 
     // Set flags so that we continue execution with using interpreter only.
@@ -1897,6 +1931,10 @@ void CompileBroker::compiler_thread_loop() {
                     os::current_process_id());
     log->stamp();
     log->end_elem();
+  }
+
+  if (!thread->init_compilation_timeout()) {
+    return;
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread
@@ -2311,6 +2349,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       while (repeat_compilation_count > 0) {
         ResourceMark rm(thread);
         task->print_ul("NO CODE INSTALLED");
+        thread->timeout()->reset();
         comp->compile_method(&ci_env, target, osr_bci, false, directive);
         repeat_compilation_count--;
       }

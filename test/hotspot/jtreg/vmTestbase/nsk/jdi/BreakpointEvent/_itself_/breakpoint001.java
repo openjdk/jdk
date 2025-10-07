@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,16 +117,7 @@ public class breakpoint001 {
             checkedClass = (ReferenceType) classes.get(0);
 
             log.display("Getting reference to main thread");
-            Iterator threadIterator = vm.allThreads().iterator();
-            while (threadIterator.hasNext()) {
-                ThreadReference curThread = (ThreadReference) threadIterator.next();
-                if (curThread.name().equals("main")) {
-                     checkedThread = curThread;
-                }
-            }
-            if (checkedThread == null) {
-                throw new Failure("TEST BUG: unable to find reference to main thread");
-            }
+            checkedThread = debuggee.threadByFieldNameOrThrow(checkedClass, "mainThread", "main");
 
             log.display("Getting reference to method <foo>");
             List allMethods  = checkedClass.methodsByName("foo");

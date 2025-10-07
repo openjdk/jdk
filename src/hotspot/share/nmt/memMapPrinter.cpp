@@ -28,11 +28,11 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTagBitmap.hpp"
-#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -111,7 +111,7 @@ public:
     if (_count == _capacity) {
       // Enlarge if needed
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
-      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
+      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks.
       _ranges = (Range*)permit_forbidden_function::realloc(_ranges, new_capacity * sizeof(Range));
       _mem_tags = (MemTag*)permit_forbidden_function::realloc(_mem_tags, new_capacity * sizeof(MemTag));
       if (_ranges == nullptr || _mem_tags == nullptr) {
@@ -157,7 +157,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::walk_virtual_memory(this);
+    return MemTracker::walk_virtual_memory(this);
   }
 };
 
@@ -237,7 +237,7 @@ MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInform
 {}
 
 void MappingPrintSession::print_nmt_flag_legend() const {
-#define DO(flag, shortname, text) _out->indent(); _out->print_cr("%10s: %s", shortname, text);
+#define DO(flag, shortname, text) _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }

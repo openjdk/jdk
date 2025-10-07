@@ -26,7 +26,7 @@
 option timestamp {
   column {
     header "^Timestamp"
-    data (sun.os.hrt.ticks/sun.os.hrt.frequency)
+    data ((jstat.timestamp - sun.rt.createVmBeginTime) / 1000)
     scale sec
     align right
     width 15

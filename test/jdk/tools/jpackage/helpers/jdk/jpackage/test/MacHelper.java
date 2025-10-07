@@ -32,6 +32,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -74,9 +75,23 @@ public final class MacHelper {
 
         Path mountPoint = null;
         try {
-            var plist = readPList(attachExecutor.getOutput());
-            mountPoint = Path.of(plist.queryValue("mount-point"));
+            // One of "dict" items of "system-entities" array property should contain "mount-point" string property.
+            mountPoint = readPList(attachExecutor.getOutput()).queryArrayValue("system-entities", false).map(PListReader.class::cast).map(dict -> {
+                try {
+                    return dict.queryValue("mount-point");
+                } catch (NoSuchElementException ex) {
+                    return (String)null;
+                }
+            }).filter(Objects::nonNull).map(Path::of).findFirst().orElseThrow();
+        } finally {
+            if (mountPoint == null) {
+                TKit.trace("Unexpected plist file missing `system-entities` array:");
+                attachExecutor.getOutput().forEach(TKit::trace);
+                TKit.trace("Done");
+            }
+        }
 
+        try {
             // code here used to copy just <runtime name> or <app name>.app
             // We now have option to include arbitrary content, so we copy
             // everything in the mounted image.
@@ -178,7 +193,7 @@ public final class MacHelper {
     private static int installDmg(JPackageCommand cmd) {
         cmd.verifyIsOfType(PackageType.MAC_DMG);
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("sudo", "cp", "-r")
+            Executor.of("sudo", "cp", "-R")
                     .addArgument(dmgImage)
                     .addArgument(getInstallationDirectory(cmd).getParent())
                     .execute(0);
@@ -205,7 +220,7 @@ public final class MacHelper {
         }
 
         withExplodedDmg(cmd, dmgImage -> {
-            Executor.of("cp", "-r")
+            Executor.of("cp", "-R")
             .addArgument(dmgImage)
             .addArgument(unpackDir)
             .execute();
@@ -334,7 +349,7 @@ public final class MacHelper {
             installLocation = cmd.getArgumentValue("--install-dir", () -> defaultInstallLocation, Path::of);
         }
 
-        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? "" : ".app"));
+        return installLocation.resolve(cmd.name() + (cmd.isRuntime() ? ".jdk" : ".app"));
     }
 
     static Path getUninstallCommand(JPackageCommand cmd) {
@@ -400,22 +415,27 @@ public final class MacHelper {
                 Executor.of("/usr/bin/xcrun", "--help").executeWithoutExitCodeCheck().getExitCode() == 0;
     }
 
+    private static Set<Path> createBundleContents(String... customItems) {
+        return Stream.concat(Stream.of(customItems), Stream.of(
+                "MacOS",
+                "Info.plist",
+                "_CodeSignature"
+        )).map(Path::of).collect(toSet());
+    }
+
     static final Set<Path> CRITICAL_RUNTIME_FILES = Set.of(Path.of(
             "Contents/Home/lib/server/libjvm.dylib"));
 
     private static final Method getServicePListFileName = initGetServicePListFileName();
 
-    private static final Set<Path> APP_BUNDLE_CONTENTS = Stream.of(
-            "Info.plist",
-            "MacOS",
+    private static final Set<Path> APP_BUNDLE_CONTENTS = createBundleContents(
             "app",
             "runtime",
             "Resources",
-            "PkgInfo",
-            "_CodeSignature"
-    ).map(Path::of).collect(toSet());
+            "PkgInfo"
+    );
 
-    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = Stream.of(
+    private static final Set<Path> RUNTIME_BUNDLE_CONTENTS = createBundleContents(
             "Home"
-    ).map(Path::of).collect(toSet());
+    );
 }

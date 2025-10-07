@@ -22,8 +22,8 @@
  *
  */
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
@@ -40,10 +40,6 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
-
-void* ArrayKlass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
-  return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, true, THREAD);
-}
 
 ArrayKlass::ArrayKlass() {
   assert(CDSConfig::is_dumping_static_archive() || CDSConfig::is_using_archive(), "only for CDS");
@@ -120,8 +116,8 @@ void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, 
   // java.base is defined.
   assert((module_entry != nullptr) || ((module_entry == nullptr) && !ModuleEntryTable::javabase_defined()),
          "module entry not available post " JAVA_BASE_NAME " definition");
-  oop module = (module_entry != nullptr) ? module_entry->module() : (oop)nullptr;
-  java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module), Handle(), Handle(), CHECK);
+  oop module_oop = (module_entry != nullptr) ? module_entry->module_oop() : (oop)nullptr;
+  java_lang_Class::create_mirror(k, Handle(THREAD, k->class_loader()), Handle(THREAD, module_oop), Handle(), Handle(), CHECK);
 }
 
 ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
@@ -187,16 +183,6 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
   return nullptr;
 }
 
-objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
-  check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
-  size_t size = objArrayOopDesc::object_size(length);
-  ArrayKlass* ak = array_klass(n + dimension(), CHECK_NULL);
-  objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
-                                                                /* do_zero */ true, CHECK_NULL);
-  // initialization to null not necessary, area already cleared
-  return o;
-}
-
 // JVMTI support
 
 jint ArrayKlass::jvmti_class_status() const {
@@ -207,7 +193,7 @@ void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   Klass::metaspace_pointers_do(it);
 
   ResourceMark rm;
-  log_trace(cds)("Iter(ArrayKlass): %p (%s)", this, external_name());
+  log_trace(aot)("Iter(ArrayKlass): %p (%s)", this, external_name());
 
   // need to cast away volatile
   it->push((Klass**)&_higher_dimension);
@@ -259,9 +245,9 @@ void ArrayKlass::log_array_class_load(Klass* k) {
     LogStream ls(lt);
     ResourceMark rm;
     ls.print("%s", k->name()->as_klass_external_name());
-    if (MetaspaceShared::is_shared_dynamic((void*)k)) {
+    if (AOTMetaspace::in_aot_cache_dynamic_region((void*)k)) {
       ls.print(" source: shared objects file (top)");
-    } else if (MetaspaceShared::is_shared_static((void*)k)) {
+    } else if (AOTMetaspace::in_aot_cache_static_region((void*)k)) {
       ls.print(" source: shared objects file");
     }
     ls.cr();

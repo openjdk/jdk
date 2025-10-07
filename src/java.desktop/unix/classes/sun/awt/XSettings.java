@@ -58,7 +58,7 @@ public class XSettings {
     /**
      * TBS ...
      */
-    class Update {
+    final class Update {
 
         /* byte order mark */
         private static final int LITTLE_ENDIAN = 0;

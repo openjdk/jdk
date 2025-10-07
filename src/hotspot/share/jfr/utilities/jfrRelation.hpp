@@ -32,6 +32,10 @@ inline int compare_traceid(const traceid& lhs, const traceid& rhs) {
   return lhs > rhs ? 1 : (lhs < rhs) ? -1 : 0;
 }
 
+inline bool equals_traceid(const traceid& lhs, const traceid& rhs) {
+  return lhs == rhs;
+}
+
 inline int sort_traceid(traceid* lhs, traceid* rhs) {
   return compare_traceid(*lhs, *rhs);
 }

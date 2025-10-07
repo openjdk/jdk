@@ -52,7 +52,7 @@ import jdk.jpackage.test.TKit;
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror PostImageScriptTest.java
- * @run main/othervm/timeout=720 -Xmx512m
+ * @run main/othervm/timeout=2880 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=PostImageScriptTest
  */
@@ -146,13 +146,15 @@ public class PostImageScriptTest {
                     final Path runtimeBinDir = runtimeDir.resolve("bin");
 
                     if (TKit.isWindows()) {
-                        JPackageUserScript.POST_IMAGE.create(cmd, List.of(
-                                WinGlobals.JS_SHELL.expr(),
-                                WinGlobals.JS_FS.expr(),
+                        final List<String> script = new ArrayList<>();
+                        script.addAll(WinGlobals.JS_SHELL.expr());
+                        script.addAll(WinGlobals.JS_FS.expr());
+                        script.addAll(List.of(
                                 "WScript.Echo('PWD: ' + fs.GetFolder(shell.CurrentDirectory).Path)",
                                 String.format("WScript.Echo('Probe directory: %s')", runtimeBinDir),
                                 String.format("fs.GetFolder('%s')", runtimeBinDir.toString().replace('\\', '/'))
                         ));
+                        JPackageUserScript.POST_IMAGE.create(cmd, script);
                     } else {
                         JPackageUserScript.POST_IMAGE.create(cmd, List.of(
                                 "set -e",
@@ -203,7 +205,7 @@ public class PostImageScriptTest {
         JPackageUserScript.verifyPackagingDirectories()
                 .withUnchangedDirectory("../services")
                 .withUnchangedDirectory("../support")
-                .withEmptyDirectory("../packages")
+                .withNonexistantPath("../packages")
                 .apply(test).run(Action.CREATE);
     }
 

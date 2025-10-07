@@ -172,12 +172,6 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
         }
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        dispose();
-        super.finalize();
-    }
-
     /**
      * Invokes openIM() that invokes XOpenIM() if it's not opened yet.
      * @return  true if openXIM() is successful or it's already been opened.
@@ -202,6 +196,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      *
      * @see java.awt.im.spi.InputMethod#setInputMethodContext
      */
+    @Override
     public void setInputMethodContext(InputMethodContext context) {
     }
 
@@ -212,6 +207,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      * @param lang locale to input
      * @return the true is returned when specified locale is supported.
      */
+    @Override
     public boolean setLocale(Locale lang) {
         if (lang.equals(locale)) {
             return true;
@@ -227,6 +223,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * Returns current input locale.
      */
+    @Override
     public Locale getLocale() {
         return locale;
     }
@@ -236,6 +233,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      *
      * @see java.awt.im.spi.InputMethod#setCharacterSubsets
      */
+    @Override
     public void setCharacterSubsets(Subset[] subsets) {
     }
 
@@ -246,6 +244,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      *
      * @param e event
      */
+    @Override
     public void dispatchEvent(AWTEvent e) {
     }
 
@@ -292,6 +291,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * Activate input method.
      */
+    @Override
     public abstract void activate();
 
     protected abstract boolean createXIC();
@@ -299,12 +299,14 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * Deactivate input method.
      */
+    @Override
     public abstract void deactivate(boolean isTemporary);
 
     /**
      * Explicitly disable the native IME. Native IME is not disabled when
      * deactivate is called.
      */
+    @Override
     public void disableInputMethod() {
         if (lastXICFocussedComponent != null) {
             setXICFocus(getPeer(lastXICFocussedComponent), false, isLastXICActive);
@@ -318,6 +320,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     }
 
     // implements java.awt.im.spi.InputMethod.hideWindows
+    @Override
     public abstract void hideWindows();
 
     /**
@@ -342,6 +345,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * @see sun.awt.im.InputMethodAdapter#setAWTFocussedComponent
      */
+    @Override
     protected void setAWTFocussedComponent(Component component) {
         if (component == null) {
             return;
@@ -359,6 +363,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * @see sun.awt.im.InputMethodAdapter#stopListening
      */
+    @Override
     protected void stopListening() {
         // It is desirable to disable XIM by calling XSetICValues with
         // XNPreeditState == XIMPreeditDisable.  But Solaris 2.6 and
@@ -535,6 +540,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      *
      * @see java.awt.im.spi.InputMethod#dispose
      */
+    @Override
     public final void dispose() {
         boolean call_disposeImpl = false;
 
@@ -556,6 +562,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      *
      * @see java.awt.im.spi.InputMethod#getControlObject
      */
+    @Override
     public Object getControlObject() {
         return null;
     }
@@ -563,6 +570,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * @see java.awt.im.spi.InputMethod#removeNotify
      */
+    @Override
     public synchronized void removeNotify() {
         dispose();
     }
@@ -570,11 +578,13 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
     /**
      * @see java.awt.im.spi.InputMethod#setCompositionEnabled(boolean)
      */
+    @Override
     public abstract void setCompositionEnabled(boolean enable);
 
     /**
      * @see java.awt.im.spi.InputMethod#isCompositionEnabled
      */
+    @Override
     public boolean isCompositionEnabled() {
         /* isCompositionEnabledNative may throw UnsupportedOperationException.
            Don't try to catch it since this method may be called by clients.
@@ -597,6 +607,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      * saved to a file or copied to the clipboard.
      *
      */
+    @Override
     public void endComposition() {
         if (disposed) {
             return;
@@ -664,6 +675,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
      * $HOME/.dtprofile when you run these two commands.
      *
      */
+    @Override
     public String getNativeInputMethodInfo() {
         String xmodifiers = System.getenv("XMODIFIERS");
         String imInfo = null;
@@ -786,6 +798,7 @@ public abstract class X11InputMethodBase extends InputMethodAdapter {
             return index;
         }
 
+        @Override
         public String toString() {
             StringBuilder s = new StringBuilder();
             for (int i = 0; i < size;) {

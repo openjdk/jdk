@@ -31,9 +31,6 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
-// Note: It would be possible to just use `LazyList::get` instead of this
-// class but explicitly providing a class like this provides better
-// debug capability, exception handling, and may provide better performance.
 /**
  * Implementation of a stable IntFunction.
  * <p>

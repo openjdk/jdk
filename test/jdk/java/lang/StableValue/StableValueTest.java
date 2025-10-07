@@ -29,6 +29,7 @@
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -355,12 +356,14 @@ final class StableValueTest {
 
     void race(BiPredicate<StableValue<Integer>, Integer> winnerPredicate) {
         int noThreads = 10;
-        CountDownLatch starter = new CountDownLatch(1);
+        CountDownLatch starter = new CountDownLatch(noThreads);
         StableValue<Integer> stable = StableValue.of();
         Map<Integer, Boolean> winners = new ConcurrentHashMap<>();
         List<Thread> threads = IntStream.range(0, noThreads).mapToObj(i -> new Thread(() -> {
                     try {
-                        // Ready, set ...
+                        // Ready ...
+                        starter.countDown();
+                        // ... set ...
                         starter.await();
                         // Here we go!
                         winners.put(i, winnerPredicate.test(stable, i));
@@ -370,9 +373,6 @@ final class StableValueTest {
                 }))
                 .toList();
         threads.forEach(Thread::start);
-        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(1));
-        // Start the race
-        starter.countDown();
         threads.forEach(StableValueTest::join);
         // There can only be one winner
         assertEquals(1, winners.values().stream().filter(b -> b).count());

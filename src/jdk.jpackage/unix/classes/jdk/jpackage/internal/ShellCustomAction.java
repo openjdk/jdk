@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
  * Interface to add custom actions composed of shell commands to installers.
@@ -105,7 +106,7 @@ abstract class ShellCustomAction {
     }
 
     protected static String stringifyTextFile(String resourceName) throws IOException {
-        try ( InputStream is = OverridableResource.readDefault(resourceName);
+        try ( InputStream is = ResourceLocator.class.getResourceAsStream(resourceName);
                 InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
                 BufferedReader reader = new BufferedReader(isr)) {
             return reader.lines().collect(Collectors.joining("\n"));

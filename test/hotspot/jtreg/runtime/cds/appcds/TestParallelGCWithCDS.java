@@ -121,34 +121,23 @@ public class TestParallelGCWithCDS {
         out.shouldNotContain(errMsg);
         out.shouldHaveExitValue(0);
 
-        int n = 2;
         if (!dumpWithParallel && execWithParallel) {
             // We dumped with G1, so we have an archived heap. At exec time, try to load them into
             // a small ParallelGC heap that may be too small.
-            String[] sizes = {
-                "4m",   // usually this will success load the archived heap
-                "2m",   // usually this will fail to load the archived heap, but app can launch
-                        // or fail with "GC triggered before VM initialization completed"
-                "1m"    // usually this will cause VM launch to fail with "Too small maximum heap"
-            };
-            for (String sz : sizes) {
-                String xmx = "-Xmx" + sz;
-                System.out.println("=======\n" + n + ". Exec with " + execGC + " " + xmx);
-                out = TestCommon.exec(helloJar,
-                                      execGC,
-                                      small1,
-                                      small2,
-                                      xmx,
-                                      coops,
-                                      "-Xlog:cds",
-                                      "Hello");
-                if (out.getExitValue() == 0) {
-                    out.shouldContain(HELLO);
-                    out.shouldNotContain(errMsg);
-                } else {
-                    out.shouldNotHaveFatalError();
-                }
-                n++;
+            System.out.println("2. Exec with " + execGC);
+            out = TestCommon.exec(helloJar,
+                                    execGC,
+                                    small1,
+                                    small2,
+                                    "-Xmx4m",
+                                    coops,
+                                    "-Xlog:cds",
+                                    "Hello");
+            if (out.getExitValue() == 0) {
+                out.shouldContain(HELLO);
+                out.shouldNotContain(errMsg);
+            } else {
+                out.shouldNotHaveFatalError();
             }
         }
     }

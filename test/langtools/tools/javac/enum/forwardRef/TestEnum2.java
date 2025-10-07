@@ -2,7 +2,7 @@
  * @test    /nodynamiccopyright/
  * @bug     6209839
  * @summary Illegal forward reference to enum constants allowed by javac
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile/fail/ref=TestEnum2.out -XDrawDiagnostics  TestEnum2.java
  */
 
