@@ -115,8 +115,8 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   size_t initial_capacity_old = max_capacity() - max_capacity_young;
   size_t max_capacity_old = max_capacity() - initial_capacity_young;
 
-  _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young);
-  _old_generation = new ShenandoahOldGeneration(max_workers(), max_capacity_old);
+  _young_generation = new ShenandoahYoungGeneration(max_workers());
+  _old_generation = new ShenandoahOldGeneration(max_workers());
   _young_generation->initialize_heuristics(mode());
   _old_generation->initialize_heuristics(mode());
 }

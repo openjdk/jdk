@@ -52,24 +52,10 @@ private:
 
   ShenandoahReferenceProcessor* const _ref_processor;
 
-  volatile size_t _affiliated_region_count;
-
-  // How much free memory is left in the last region of humongous objects.
-  // This is _not_ included in used, but it _is_ deducted from available,
-  // which gives the heuristics a more accurate view of how much memory remains
-  // for allocation. This figure is also included the heap status logging.
-  // The units are bytes. The value is only changed on a safepoint or under the
-  // heap lock.
-  size_t _humongous_waste;
-
   // Bytes reserved within this generation to hold evacuated objects from the collection set
   size_t _evacuation_reserve;
 
 protected:
-  // Usage
-
-  volatile size_t _used;
-  size_t _max_capacity;
   ShenandoahFreeSet* _free_set;
   ShenandoahHeuristics* _heuristics;
 
@@ -103,8 +89,7 @@ private:
 
  public:
   ShenandoahGeneration(ShenandoahGenerationType type,
-                       uint max_workers,
-                       size_t max_capacity);
+                       uint max_workers);
   ~ShenandoahGeneration();
 
   inline bool is_young() const                 { return _type == YOUNG; }
@@ -128,7 +113,7 @@ private:
   virtual size_t bytes_allocated_since_gc_start() const = 0;
   virtual size_t used() const = 0;
   virtual size_t used_regions() const = 0;
-    virtual size_t used_regions_size() const = 0;
+  virtual size_t used_regions_size() const = 0;
   virtual size_t get_humongous_waste() const = 0;
   virtual size_t free_unaffiliated_regions() const = 0;
   virtual size_t get_affiliated_region_count() const = 0;

@@ -30,8 +30,8 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
-ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity) :
-  ShenandoahGeneration(YOUNG, max_queues, max_capacity),
+ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
+  ShenandoahGeneration(YOUNG, max_queues),
   _old_gen_task_queues(nullptr) {
   assert(type() == ShenandoahGenerationType::YOUNG, "OO sanity");
 }

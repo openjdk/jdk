@@ -866,14 +866,11 @@ void ShenandoahGeneration::cancel_marking() {
 }
 
 ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
-                                           uint max_workers,
-                                           size_t max_capacity) :
+                                           uint max_workers) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
-  _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
-  _used(0),
-  _max_capacity(max_capacity),
+  _evacuation_reserve(0),
   _free_set(nullptr),
   _heuristics(nullptr)
 {

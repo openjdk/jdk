@@ -32,8 +32,8 @@
 // A "generation" that represents the whole heap.
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {
 public:
-  ShenandoahGlobalGeneration(bool generational, uint max_queues, size_t max_capacity)
-  : ShenandoahGeneration(generational ? GLOBAL : NON_GEN, max_queues, max_capacity) {
+  ShenandoahGlobalGeneration(bool generational, uint max_queues)
+  : ShenandoahGeneration(generational ? GLOBAL : NON_GEN, max_queues) {
 #ifdef ASSERT
     ShenandoahHeap* heap = ShenandoahHeap::heap();
     bool is_generational = heap->mode()->is_generational();

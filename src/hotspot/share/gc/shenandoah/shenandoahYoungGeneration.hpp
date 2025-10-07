@@ -34,7 +34,7 @@ private:
   ShenandoahYoungHeuristics* _young_heuristics;
 
 public:
-  ShenandoahYoungGeneration(uint max_queues, size_t max_capacity);
+  ShenandoahYoungGeneration(uint max_queues);
 
   ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 
