@@ -642,45 +642,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier MGF1_oid =
             ObjectIdentifier.of(KnownOIDs.MGF1);
 
-    public static final ObjectIdentifier SHA1withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA1withRSA);
-    public static final ObjectIdentifier SHA224withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA224withRSA);
-    public static final ObjectIdentifier SHA256withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA256withRSA);
-    public static final ObjectIdentifier SHA384withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA384withRSA);
-    public static final ObjectIdentifier SHA512withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512withRSA);
-    public static final ObjectIdentifier SHA512$224withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512$224withRSA);
-    public static final ObjectIdentifier SHA512$256withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512$256withRSA);
-    public static final ObjectIdentifier MD2withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.MD2withRSA);
-    public static final ObjectIdentifier MD5withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.MD5withRSA);
-    public static final ObjectIdentifier SHA3_224withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_224withRSA);
-    public static final ObjectIdentifier SHA3_256withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_256withRSA);
-    public static final ObjectIdentifier SHA3_384withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA);
-    public static final ObjectIdentifier SHA3_512withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA);
-
-    // HMAC algorithms
-    public static final ObjectIdentifier HMACSHA1_oid =
-            ObjectIdentifier.of(KnownOIDs.HmacSHA1);
-    public static final ObjectIdentifier HMACSHA224_oid =
-            ObjectIdentifier.of(KnownOIDs.HmacSHA224);
-    public static final ObjectIdentifier HMACSHA256_oid =
-            ObjectIdentifier.of(KnownOIDs.HmacSHA256);
-    public static final ObjectIdentifier HMACSHA384_oid =
-            ObjectIdentifier.of(KnownOIDs.HmacSHA384);
-    public static final ObjectIdentifier HMACSHA512_oid =
-            ObjectIdentifier.of(KnownOIDs.HmacSHA512);
-
     // Set of OIDs that must explicitly encode a NULL parameter
     private static final Set<ObjectIdentifier> OIDS_REQUIRING_NULL = Set.of(
             // Hash algorithms
