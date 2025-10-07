@@ -63,8 +63,13 @@ private:
   const ssize_t _max;           // The maximum number of heap regions
   const size_t _region_size_bytes;
   const ShenandoahFreeSet* _free_set;
+#ifdef ASSERT
+  // Is the free set under construction?
+  bool _under_construction;
+#endif
   // For each partition, we maintain a bitmap of which regions are affiliated with his partition.
   ShenandoahSimpleBitMap _membership[UIntNumPartitions];
+
 
   // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
   // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
@@ -117,8 +122,6 @@ public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions() {}
 
-  static const size_t FreeSetUnderConstruction = SIZE_MAX;
-
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
 
@@ -156,8 +159,14 @@ public:
 
   // Place region idx into free partition new_partition, adjusting used and capacity totals for the original and new partition
   // given that available bytes can still be allocated within this region.  Requires that idx is currently not NotFree.
+  // Iff update_available is true, the available_in values are updated for orig_partition and new_partition.
   void move_from_partition_to_partition(ssize_t idx, ShenandoahFreeSetPartitionId orig_partition,
-                                        ShenandoahFreeSetPartitionId new_partition, size_t available);
+                                        ShenandoahFreeSetPartitionId new_partition, size_t available,
+                                        bool update_available = true);
+
+  // Now that we are done with rebuild, we overwrite available so that clients requesting available() will see the
+  // updated values.  (We've been hiding intermediate values of available during reconstruction of the freeset.)
+  void establish_available_at_end_of_rebuild(size_t available_in_mutator, size_t available_in_young, size_t  available_in_old);
 
   const char* partition_membership_name(ssize_t idx) const;
 
@@ -251,7 +260,7 @@ public:
     shenandoah_assert_not_heaplocked();
 #ifdef ASSERT
     ShenandoahHeapLocker locker(ShenandoahHeap::heap()->lock());
-    assert((_available[int(which_partition)] == FreeSetUnderConstruction) ||
+    assert((_under_construction == true) ||
            (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
            "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
            _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
@@ -427,8 +436,6 @@ private:
   void log_status();
 
 public:
-  static const size_t FreeSetUnderConstruction = ShenandoahRegionPartitions::FreeSetUnderConstruction;
-
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
 #ifdef KELVIN_REVERT
@@ -566,8 +573,11 @@ public:
 
   // Ensure that Collector has at least to_reserve bytes of available memory, and OldCollector has at least old_reserve
   // bytes of available memory.  On input, old_region_count holds the number of regions already present in the
-  // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
-  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
+  // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition,
+  // mutator_available holds bytes available in mutator partition, collector_available holds bytes available to young collector,
+  // old_collector_available holds bytes available to old collector
+  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
+                       size_t &mutator_available, size_t &collector_available, size_t &old_collector_available);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right
   // of regions reserved of young evacuations.
