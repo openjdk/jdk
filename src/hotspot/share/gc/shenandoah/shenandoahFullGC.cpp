@@ -1142,8 +1142,6 @@ void ShenandoahFullGC::phase5_epilog() {
   _preserved_marks->restore(heap->workers());
   _preserved_marks->reclaim();
 
-  // We defer generation resizing actions until after cset regions have been recycled.  We do this even following an
-  // abbreviated cycle.
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::rebuild_remembered_set(heap);
   }
