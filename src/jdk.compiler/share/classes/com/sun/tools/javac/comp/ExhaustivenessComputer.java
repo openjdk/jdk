@@ -640,7 +640,8 @@ public class ExhaustivenessComputer {
     }
 
     protected void checkTimeout() {
-        if (startTime != (-1) && (System.currentTimeMillis() - startTime) > missingExhaustivenessTimeout) {
+        if (startTime != (-1) &&
+            (System.currentTimeMillis() - startTime) > missingExhaustivenessTimeout) {
             throw new TimeoutException(null);
         }
     }
