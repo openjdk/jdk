@@ -934,7 +934,7 @@ public final class AESCrypt extends SymmetricCipher {
      * @return w the cipher round keys.
      */
     private int[] genRKeys(byte[] key, int nk) {
-        int len = WB, tmp, rW, SubWord, g;
+        int len = WB, tmp, rW, subWord, g;
         int[] w = new int[len * (rounds + 1)];
 
         for (int i = 0; i < nk; i++) {
@@ -947,12 +947,12 @@ public final class AESCrypt extends SymmetricCipher {
             tmp = w[i - 1];
             if (i % nk == 0) {
                 rW = (tmp << 8) & 0xFFFFFF00 | (tmp >>> 24);
-                SubWord = subByte(rW, SBOX);
-                g = SubWord ^ RCON[(i / nk) - 1];
+                subWord = subByte(rW, SBOX);
+                g = subWord ^ RCON[(i / nk) - 1];
                 tmp = g;
             } else if ((nk > 6) && ((i % nk) == len)) {
-                SubWord = subByte(tmp, SBOX);
-                tmp = SubWord;
+                subWord = subByte(tmp, SBOX);
+                tmp = subWord;
             }
             w[i] = w[i - nk] ^ tmp;
         }
@@ -1007,7 +1007,7 @@ public final class AESCrypt extends SymmetricCipher {
         int len = WB;
         int kLen = sessionK[0].length;;
         int[] w = new int[len];
-        int[] tw = new int[kLen];
+        int[] tW = new int[kLen];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
@@ -1015,13 +1015,13 @@ public final class AESCrypt extends SymmetricCipher {
         for (int i = 1; i < rounds; i++) {
             System.arraycopy(sessionK[0], i * len, w, 0, len);
             invMixRKey(w);
-            System.arraycopy(w, 0, tw, kLen - (i * len), len);
+            System.arraycopy(w, 0, tW, kLen - (i * len), len);
         }
-        System.arraycopy(sessionK[0], kLen - len, tw, len, len);
-        System.arraycopy(sessionK[0], 0, tw, 0, len);
+        System.arraycopy(sessionK[0], kLen - len, tW, len, len);
+        System.arraycopy(sessionK[0], 0, tW, 0, len);
         Arrays.fill(w, 0);
 
-        return tw;
+        return tW;
     }
 
     /**
