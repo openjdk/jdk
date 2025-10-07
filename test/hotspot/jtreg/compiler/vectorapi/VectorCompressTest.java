@@ -168,6 +168,8 @@ public class VectorCompressTest {
     @Test
     @IR(counts = { IRNode.COMPRESS_VB, "= 1" },
         applyIfCPUFeature = { "sve", "true" })
+    @IR(counts = { IRNode.COMPRESS_VB, "= 1" },
+        applyIfCPUFeatureAnd = {"avx512_vbmi2", "true", "avx512vl", "true"})
     public static void testVectorCompressByte() {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
         VectorMask<Byte> m = VectorMask.fromArray(B_SPECIES, ma, 0);
@@ -178,6 +180,8 @@ public class VectorCompressTest {
     @Test
     @IR(counts = { IRNode.COMPRESS_VS, "= 1" },
         applyIfCPUFeature = { "sve", "true" })
+    @IR(counts = { IRNode.COMPRESS_VS, "= 1" },
+        applyIfCPUFeatureAnd = {"avx512_vbmi2", "true", "avx512vl", "true"})
     public static void testVectorCompressShort() {
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
         VectorMask<Short> m = VectorMask.fromArray(S_SPECIES, ma, 0);
@@ -188,6 +192,8 @@ public class VectorCompressTest {
     @Test
     @IR(counts = { IRNode.COMPRESS_VI, "= 1" },
         applyIfCPUFeature = { "sve", "true" })
+    @IR(counts = { IRNode.COMPRESS_VI, "= 1" },
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx512vl", "true"})
     public static void testVectorCompressInt() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         VectorMask<Integer> m = VectorMask.fromArray(I_SPECIES, ma, 0);
@@ -198,6 +204,8 @@ public class VectorCompressTest {
     @Test
     @IR(counts = { IRNode.COMPRESS_VL, "= 1" },
         applyIfCPUFeature = { "sve", "true" })
+    @IR(counts = { IRNode.COMPRESS_VL, "= 1" },
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx512vl", "true"})
     public static void testVectorCompressLong() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         VectorMask<Long> m = VectorMask.fromArray(L_SPECIES, ma, 0);
@@ -208,6 +216,8 @@ public class VectorCompressTest {
     @Test
     @IR(counts = { IRNode.COMPRESS_VF, "= 1" },
         applyIfCPUFeature = { "sve", "true" })
+    @IR(counts = { IRNode.COMPRESS_VF, "= 1" },
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx512vl", "true"})
     public static void testVectorCompressFloat() {
         FloatVector av = FloatVector.fromArray(F_SPECIES, fa, 0);
         VectorMask<Float> m = VectorMask.fromArray(F_SPECIES, ma, 0);
@@ -218,6 +228,8 @@ public class VectorCompressTest {
     @Test
     @IR(counts = { IRNode.COMPRESS_VD, "= 1" },
         applyIfCPUFeature = { "sve", "true" })
+    @IR(counts = { IRNode.COMPRESS_VD, "= 1" },
+        applyIfCPUFeatureAnd = {"avx512f", "true", "avx512vl", "true"})
     public static void testVectorCompressDouble() {
         DoubleVector av = DoubleVector.fromArray(D_SPECIES, da, 0);
         VectorMask<Double> m = VectorMask.fromArray(D_SPECIES, ma, 0);

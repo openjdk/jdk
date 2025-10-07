@@ -2271,8 +2271,8 @@ void C2_MacroAssembler::sve_compress_byte(FloatRegister dst, FloatRegister src, 
   // Example input:   src   = q p n m l k j i h g f e d c b a, one character is 8 bits.
   //                  mask  = 0 1 0 0 0 0 0 1 0 1 0 0 0 1 0 1, one character is 1 bit.
   // Expected result: dst   = 0 0 0 0 0 0 0 0 0 0 0 p i g c a
-  sve_dup(vtmp3, B, 0);
   FloatRegister vzr = vtmp3;
+  sve_dup(vzr, B, 0);
 
   // Extend lowest half to type SHORT.
   // vtmp1 =  0h  0g  0f  0e  0d  0c  0b  0a
