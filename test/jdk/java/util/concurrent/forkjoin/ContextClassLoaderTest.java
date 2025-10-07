@@ -49,28 +49,14 @@ class ContextClassLoaderTest {
             Thread thread = Thread.currentThread();
             ClassLoader originalCCL = thread.getContextClassLoader();
             ClassLoader customCCL = new URLClassLoader(new URL[0], originalCCL);
-
-            try {
-                // Set custom context classloader and verify it
-                thread.setContextClassLoader(customCCL);
-                assertSame(customCCL, thread.getContextClassLoader(), "Custom context class loader not set");
-
-                // Reset to original and verify restoration
-                thread.setContextClassLoader(originalCCL);
-                assertSame(originalCCL, thread.getContextClassLoader(), "Original context class loader not restored");
-            } finally {
-                // Always restore the context class loader, even if assertions fail
-                thread.setContextClassLoader(originalCCL);
-
-                // Close custom class loader if possible (Java 7+)
-                try {
-                    if (customCCL instanceof URLClassLoader) {
-                        ((URLClassLoader) customCCL).close();
-                    }
-                } catch (Exception ignored) {}
-
-                latch.countDown();
-            }
+            // Set custom context classloader and verify it
+            thread.setContextClassLoader(customCCL);
+            assertSame(customCCL, thread.getContextClassLoader(), "Custom context class loader not set");
+            // Reset to original and verify restoration
+            thread.setContextClassLoader(originalCCL);
+            assertSame(originalCCL, thread.getContextClassLoader(), "Original context class loader not restored");
+            latch.countDown();
         });
+        latch.await();
     }
 }
