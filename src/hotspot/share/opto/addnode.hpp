@@ -71,7 +71,7 @@ class AddNode : public Node {
 
     Multiplication add(const Multiplication rhs) const {
       if (is_valid_with(rhs.variable()) && rhs.is_valid_with(variable())) {
-        return {variable(), java_add(multiplier(), rhs.multiplier())};
+        return Multiplication(variable(), java_add(multiplier(), rhs.multiplier()));
       }
 
       return make_invalid();
