@@ -1103,7 +1103,7 @@ public class FDBigInteger {
      * It is filled lazily.
      */
     private static final FDBigInteger[] LARGE_POW_5_CACHE =
-            new FDBigInteger[(1 - DoubleToDecimal.Q_MIN) - MAX_FIVE_POW + 1];
+            new FDBigInteger[(2 - DoubleToDecimal.Q_MIN) - MAX_FIVE_POW + 1];
 
     /**
      * Computes 5 raised to a given power.
@@ -1115,7 +1115,7 @@ public class FDBigInteger {
         if (e < MAX_FIVE_POW) {
             return POW_5_CACHE[e];
         }
-        if (e > 1 - DoubleToDecimal.Q_MIN) {
+        if (e > 2 - DoubleToDecimal.Q_MIN) {
             throw new IllegalArgumentException("exponent too large: " + e);
         }
         synchronized (LARGE_POW_5_CACHE) {
