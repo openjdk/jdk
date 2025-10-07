@@ -368,20 +368,15 @@ class ExchangeImpl {
     }
 
     public Object getAttribute (String name) {
-        if (name == null) {
-            throw new NullPointerException("null name parameter");
-        }
-        return attributes.get(name);
+        return attributes.get(Objects.requireNonNull(name, "null name parameter"));
     }
 
     public void setAttribute (String name, Object value) {
-        if (name == null) {
-            throw new NullPointerException("null name parameter");
-        }
+        var key = Objects.requireNonNull(name, "null name parameter");
         if (value != null) {
-            attributes.put(name, value);
+            attributes.put(key, value);
         } else {
-            attributes.remove(name);
+            attributes.remove(key);
         }
     }
 
