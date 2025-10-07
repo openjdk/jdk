@@ -1998,10 +1998,7 @@ bool ShenandoahFreeSet::transfer_one_region_from_mutator_to_old_collector(size_t
   ShenandoahOldGeneration* old_gen = gen_heap->old_generation();
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   assert(alloc_capacity == region_size_bytes, "Region must be empty");
-  if ((young_unaffiliated_regions() > 0) &&
-      ((_partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) + region_size_bytes)
-       <= gen_heap->generation_sizer()->max_size_for(old_gen)) &&
-      ((total_young_regions() - 1) * region_size_bytes >= gen_heap->generation_sizer()->min_size_for(young_gen))) {
+  if (young_unaffiliated_regions() > 0) {
     _partitions.move_from_partition_to_partition(idx, ShenandoahFreeSetPartitionId::Mutator,
                                                  ShenandoahFreeSetPartitionId::OldCollector, alloc_capacity);
     gen_heap->old_generation()->augment_evacuation_reserve(alloc_capacity);
