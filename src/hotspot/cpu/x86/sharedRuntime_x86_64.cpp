@@ -1352,11 +1352,8 @@ static void fill_continuation_entry(MacroAssembler* masm, Register reg_cont_obj,
 
   __ movptr(rax, Address(r15_thread, JavaThread::cont_fastpath_offset()));
   __ movptr(Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()), rax);
-  __ movq(rax, Address(r15_thread, JavaThread::held_monitor_count_offset()));
-  __ movq(Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()), rax);
 
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), 0);
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), 0);
 }
 
 //---------------------------- continuation_enter_cleanup ---------------------------
@@ -1380,49 +1377,6 @@ static void continuation_enter_cleanup(MacroAssembler* masm) {
 #endif
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_cont_fastpath_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_fastpath_offset()), rbx);
-
-  if (CheckJNICalls) {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
-    __ jcc(Assembler::equal, L_skip_vthread_code);
-
-    // If the held monitor count is > 0 and this vthread is terminating then
-    // it failed to release a JNI monitor. So we issue the same log message
-    // that JavaThread::exit does.
-    __ cmpptr(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-    __ jcc(Assembler::equal, L_skip_vthread_code);
-
-    // rax may hold an exception oop, save it before the call
-    __ push(rax);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::log_jni_monitor_still_held));
-    __ pop(rax);
-
-    // For vthreads we have to explicitly zero the JNI monitor count of the carrier
-    // on termination. The held count is implicitly zeroed below when we restore from
-    // the parent held count (which has to be zero).
-    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-
-    __ bind(L_skip_vthread_code);
-  }
-#ifdef ASSERT
-  else {
-    // Check if this is a virtual thread continuation
-    Label L_skip_vthread_code;
-    __ cmpl(Address(rsp, ContinuationEntry::flags_offset()), 0);
-    __ jcc(Assembler::equal, L_skip_vthread_code);
-
-    // See comment just above. If not checking JNI calls the JNI count is only
-    // needed for assertion checking.
-    __ movq(Address(r15_thread, JavaThread::jni_monitor_count_offset()), 0);
-
-    __ bind(L_skip_vthread_code);
-  }
-#endif
-
-  __ movq(rbx, Address(rsp, ContinuationEntry::parent_held_monitor_count_offset()));
-  __ movq(Address(r15_thread, JavaThread::held_monitor_count_offset()), rbx);
-
   __ movptr(rbx, Address(rsp, ContinuationEntry::parent_offset()));
   __ movptr(Address(r15_thread, JavaThread::cont_entry_offset()), rbx);
   __ addptr(rsp, checked_cast<int32_t>(ContinuationEntry::size()));
