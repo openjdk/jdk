@@ -25,16 +25,15 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
@@ -180,7 +179,7 @@ public class LintMapper {
     private static class FileInfo {
 
         final LintRange rootRange;                              // the root LintRange (covering the entire source file)
-        final List<Span> unmappedDecls = new ArrayList<>();     // unmapped top-level declarations awaiting attribution
+        final List<Span> unmappedDecls = new LinkedList<>();    // unmapped top-level declarations awaiting attribution
 
         // After parsing: Add top-level declarations to our "unmappedDecls" list
         FileInfo(Lint rootLint, JCCompilationUnit tree) {
@@ -252,12 +251,12 @@ public class LintMapper {
 
         // Create a node representing the entire file, using the root lint configuration
         LintRange(Lint rootLint) {
-            this(Span.MAXIMAL, rootLint, new ArrayList<>());
+            this(Span.MAXIMAL, rootLint, new LinkedList<>());
         }
 
         // Create a node representing the given declaration and its corresponding Lint configuration
         LintRange(JCTree tree, EndPosTable endPositions, Lint lint) {
-            this(new Span(tree, endPositions), lint, new ArrayList<>());
+            this(new Span(tree, endPositions), lint, new LinkedList<>());
         }
 
         // Find the most specific node in this tree (including me) that contains the given position, if any
