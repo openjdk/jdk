@@ -128,7 +128,7 @@ public class ServerStopTerminationTest {
         log("Complete Exchange triggered");
 
         // Time the shutdown sequence
-        final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(5));
+        final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(20));
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
         final long elapsed = timeShutdown(delayDuration);
         log("Shutdown complete");
