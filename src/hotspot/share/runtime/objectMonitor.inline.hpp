@@ -144,17 +144,17 @@ inline void ObjectMonitor::increment_recursions(JavaThread* current) {
 }
 
 inline void ObjectMonitor::inc_unmounted_vthreads() {
-  assert(_unmounted_vthreads >= 0, "");
+  assert(_unmounted_vthreads >= 0, "invariant");
   AtomicAccess::inc(&_unmounted_vthreads, memory_order_relaxed);
 }
 
 inline void ObjectMonitor::dec_unmounted_vthreads() {
-  assert(_unmounted_vthreads > 0, "");
+  assert(_unmounted_vthreads > 0, "invariant");
   AtomicAccess::dec(&_unmounted_vthreads, memory_order_relaxed);
 }
 
 inline bool ObjectMonitor::has_unmounted_vthreads() const {
-  assert(_unmounted_vthreads >= 0, "");
+  assert(_unmounted_vthreads >= 0, "invariant");
   return AtomicAccess::load(&_unmounted_vthreads) > 0;
 }
 
