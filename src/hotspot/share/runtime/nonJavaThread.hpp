@@ -30,9 +30,7 @@
 #include "utilities/singleWriterSynchronizer.hpp"
 
 class NonJavaThread: public Thread {
-  friend class VMStructs;
   friend class Threads;
-
   class List {
    public:
     NonJavaThread* volatile _head;
@@ -118,7 +116,6 @@ class NamedThread: public NonJavaThread {
 
 // A single WatcherThread is used for simulating timer interrupts.
 class WatcherThread: public NonJavaThread {
-  friend class VMStructs;
  protected:
   virtual void run();
 
