@@ -26,7 +26,6 @@
 #define SHARE_OOPS_TRAININGDATA_HPP
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -402,7 +401,7 @@ private:
       _deps_dyn = nullptr;
     }
 #endif
-    void prepare(ClassLoaderData* loader_data);
+    void prepare();
     void metaspace_pointers_do(MetaspaceClosure *iter);
   };
 
@@ -479,10 +478,6 @@ class KlassTrainingData : public TrainingData {
   }
   virtual KlassTrainingData* as_KlassTrainingData() const { return const_cast<KlassTrainingData*>(this); };
 
-  ClassLoaderData* class_loader_data() {
-    assert(has_holder(), "");
-    return holder()->class_loader_data();
-  }
   void notice_fully_initialized() NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -620,8 +615,8 @@ public:
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare(ClassLoaderData* loader_data) {
-        _data.prepare(loader_data);
+      void prepare() {
+        _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _data.metaspace_pointers_do(iter);
@@ -639,8 +634,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare(ClassLoaderData* loader_data) {
-      ciMethod__inline_instructions_size.prepare(loader_data);
+    void prepare() {
+      ciMethod__inline_instructions_size.prepare();
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);

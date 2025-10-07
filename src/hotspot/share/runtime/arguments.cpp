@@ -1649,7 +1649,7 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  size_t phys_mem = os::physical_memory();
+  physical_memory_size_type phys_mem = os::physical_memory();
   julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {

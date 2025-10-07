@@ -174,7 +174,6 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 
   // No longer holding SharedDictionary_lock
   // No need to lock, as <ik> can be held only by a single thread.
-  loader_data->add_class(ik);
 
   // Get the package entry.
   PackageEntry* pkg_entry = CDSProtectionDomain::get_package_entry_from_class(ik, class_loader);
