@@ -25,17 +25,14 @@
 
 package com.sun.tools.javac.code;
 
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.tree.EndPosTable;
@@ -125,9 +122,10 @@ public class LintMapper {
      */
     public Optional<Lint> lintAt(JavaFileObject sourceFile, DiagnosticPosition pos) {
         initializeIfNeeded();
-        return Optional.of(sourceFile)
-          .map(fileInfoMap::get)
-          .flatMap(fileInfo -> fileInfo.lintAt(pos));
+        FileInfo fileInfo = fileInfoMap.get(sourceFile);
+        if (fileInfo != null)
+            return fileInfo.lintAt(pos);
+        return Optional.empty();
     }
 
     /**
@@ -204,8 +202,11 @@ public class LintMapper {
 
         // Find the most specific Lint configuration applying to the given position, unless the position has not been mapped yet
         Optional<Lint> lintAt(DiagnosticPosition pos) {
-            boolean mapped = unmappedDecls.stream().noneMatch(span -> span.contains(pos));
-            return mapped ? Optional.of(rootRange.bestMatch(pos).lint) : Optional.empty();
+            for (Span span : unmappedDecls) {
+                if (span.contains(pos))
+                    return Optional.empty();
+            }
+            return Optional.of(rootRange.bestMatch(pos).lint);
         }
 
         boolean isTopLevelDecl(JCTree tree) {
