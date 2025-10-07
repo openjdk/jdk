@@ -110,7 +110,6 @@ void ShenandoahGenerationalHeap::initialize_heuristics() {
   _generation_sizer.heap_size_changed(max_capacity());
   size_t initial_capacity_young = _generation_sizer.max_young_size();
   size_t max_capacity_young = _generation_sizer.max_young_size();
-  size_t initial_capacity_old = max_capacity() - max_capacity_young;
   size_t max_capacity_old = max_capacity() - initial_capacity_young;
 
   _young_generation = new ShenandoahYoungGeneration(max_workers(), max_capacity_young);
@@ -302,9 +301,10 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
         }
       }
       // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
-      // We choose not to promote objects smaller than PLAB::min_size() by way of shared allocations, as this is too
-      // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
-      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= PLAB::min_size())
+      // We choose not to promote objects smaller than PLAB::max_size() by way of shared allocations, as this is too
+      // costly (such objects should use the PLAB). Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB)
+      // and will promote in a future evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size
+      // <= PLAB::max_size())
     }
 #ifdef ASSERT
   }

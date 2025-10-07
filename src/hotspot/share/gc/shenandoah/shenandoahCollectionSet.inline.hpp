@@ -58,7 +58,7 @@ size_t ShenandoahCollectionSet::get_live_bytes_in_old_regions() const {
   return _old_bytes_to_evacuate;
 }
 
-size_t ShenandoahCollectionSet::get_live_bytes_in_young_regions() const {
+size_t ShenandoahCollectionSet::get_live_bytes_in_untenurable_regions() const {
   return _young_bytes_to_evacuate - _young_bytes_to_promote;
 }
 

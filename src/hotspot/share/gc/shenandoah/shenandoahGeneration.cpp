@@ -252,6 +252,28 @@ void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegio
   ShenandoahHeap::heap()->parallel_heap_region_iterate(cl);
 }
 
+// Here's the algebra.
+// Let SOEP = ShenandoahOldEvacRatioPercent,
+//     OE = old evac,
+//     YE = young evac, and
+//     TE = total evac = OE + YE
+// By definition:
+//            SOEP/100 = OE/TE
+//                     = OE/(OE+YE)
+//  => SOEP/(100-SOEP) = OE/((OE+YE)-OE)         // componendo-dividendo: If a/b = c/d, then a/(b-a) = c/(d-c)
+//                     = OE/YE
+//  =>              OE = YE*SOEP/(100-SOEP)
+size_t get_maximum_old_evacuation_reserve(size_t maximum_young_evacuation_reserve, size_t old_available) {
+  // We have to be careful in the event that SOEP is set to 100 by the user.
+  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
+  if (ShenandoahOldEvacRatioPercent == 100) {
+    return old_available;
+  }
+
+  const size_t ratio_of_old_in_collection_set = (maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent);
+  return MIN2(ratio_of_old_in_collection_set, old_available);
+}
+
 void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap) {
   shenandoah_assert_generational();
 
@@ -276,24 +298,10 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
 
   // maximum_old_evacuation_reserve is an upper bound on memory evacuated from old and evacuated to old (promoted),
   // clamped by the old generation space available.
-  //
-  // Here's the algebra.
-  // Let SOEP = ShenandoahOldEvacRatioPercent,
-  //     OE = old evac,
-  //     YE = young evac, and
-  //     TE = total evac = OE + YE
-  // By definition:
-  //            SOEP/100 = OE/TE
-  //                     = OE/(OE+YE)
-  //  => SOEP/(100-SOEP) = OE/((OE+YE)-OE)         // componendo-dividendo: If a/b = c/d, then a/(b-a) = c/(d-c)
-  //                     = OE/YE
-  //  =>              OE = YE*SOEP/(100-SOEP)
-
-  // We have to be careful in the event that SOEP is set to 100 by the user.
-  assert(ShenandoahOldEvacRatioPercent <= 100, "Error");
-  const size_t ratio_of_old_in_collection_set = (maximum_young_evacuation_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent);
   const size_t old_available = old_generation->available();
-  const size_t maximum_old_evacuation_reserve = (ShenandoahOldEvacRatioPercent == 100) ? old_available : MIN2(ratio_of_old_in_collection_set, old_available);
+  const size_t maximum_old_evacuation_reserve = get_maximum_old_evacuation_reserve(maximum_young_evacuation_reserve, old_available);
+
+
   log_debug(gc, cset)("max_young_evac_reserver: %zu, max_old_evac_reserve: %zu, old_available: %zu",
                       maximum_young_evacuation_reserve, maximum_old_evacuation_reserve, old_available);
 
@@ -351,6 +359,7 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   // and identify regions that will promote in place. These use the tenuring threshold.
   const size_t consumed_by_advance_promotion = select_aged_regions(old_promo_reserve);
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
+  assert(consumed_by_advance_promotion <= old_promo_reserve, "Cannot promote more than was reserved");
 
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
@@ -405,11 +414,10 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
   }
 
-  const size_t young_evacuated = collection_set->get_live_bytes_in_young_regions();
-  const size_t young_evacuated_reserve_used = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
-  const size_t total_young_available = young_generation->available_with_reserve();
-  assert(young_evacuated_reserve_used <= total_young_available, "Cannot evacuate more than is available in young");
-  young_generation->set_evacuation_reserve(young_evacuated_reserve_used);
+  const size_t young_evacuated = collection_set->get_live_bytes_in_untenurable_regions();
+  const size_t young_evacuated_commited = (size_t) (ShenandoahEvacWaste * double(young_evacuated));
+  assert(young_evacuated_commited <= young_generation->available_with_reserve(), "Cannot evacuate more than is available in young");
+  young_generation->set_evacuation_reserve(young_evacuated_commited);
 
   // Now that we've established the collection set, we know how much memory is really required by old-gen for evacuation
   // and promotion reserves.  Try shrinking OLD now in case that gives us a bit more runway for mutator allocations during
@@ -654,7 +662,7 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
 
   // old_consumed may exceed tenurable_this_cycle because it has been scaled by ShenandoahPromoEvacWaste.
   old_consumed = MAX2(old_consumed, tenurable_this_cycle);
-  return MIN2(tenurable_this_cycle, old_promotion_reserve);
+  return MIN2(old_consumed, old_promotion_reserve);
 }
 
 void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {

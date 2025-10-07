@@ -225,7 +225,7 @@ void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_g
                  count());
 
     if (garbage() > 0) {
-      const size_t young_evac_bytes = get_live_bytes_in_young_regions();
+      const size_t young_evac_bytes = get_live_bytes_in_untenurable_regions();
       const size_t promote_evac_bytes = get_live_bytes_in_tenurable_regions();
       const size_t old_evac_bytes = get_live_bytes_in_old_regions();
       const size_t total_evac_bytes = young_evac_bytes + promote_evac_bytes + old_evac_bytes;

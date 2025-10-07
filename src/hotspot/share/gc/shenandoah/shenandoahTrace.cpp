@@ -39,7 +39,7 @@ void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cse
     e.set_cSetUsedAfter(cset->live());
     e.set_collectedOld(cset->get_live_bytes_in_old_regions());
     e.set_collectedPromoted(cset->get_live_bytes_in_tenurable_regions());
-    e.set_collectedYoung(cset->get_live_bytes_in_young_regions());
+    e.set_collectedYoung(cset->get_live_bytes_in_untenurable_regions());
     e.set_regionsPromotedHumongous(regions_promoted_humongous);
     e.set_regionsPromotedRegular(regions_promoted_regular);
     e.set_regularPromotedGarbage(regular_promoted_garbage);
