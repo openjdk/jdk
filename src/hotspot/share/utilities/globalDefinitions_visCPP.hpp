@@ -36,13 +36,14 @@
 
 # include <ctype.h>
 # include <fcntl.h>
-# include <float.h> // for _isnan
+# include <float.h>    // for _isnan
+# include <intrin.h>   // for _ReadWriteBarrier
 # include <inttypes.h>
-# include <io.h>    // for stream.cpp
+# include <io.h>       // for stream.cpp
 # include <limits.h>
 # include <math.h>
 # include <stdarg.h>
-# include <stddef.h>// for offsetof
+# include <stddef.h>   // for offsetof
 # include <stdint.h>
 # include <stdio.h>
 # include <stdlib.h>
@@ -102,5 +103,12 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 #define SSIZE_MIN LLONG_MIN
 #define SSIZE_MAX LLONG_MAX
 #endif // SSIZE_MAX missing
+
+// Complier barrier which prevents the compiler from reordering loads and stores.
+// It does not prevent the hardware from doing so. Typically you should use
+// OrderAccess instead.
+static inline void compiler_barrier() {
+  _ReadWriteBarrier();
+}
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_VISCPP_HPP

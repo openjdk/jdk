@@ -96,4 +96,11 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #define ALWAYSINLINE inline __attribute__ ((always_inline))
 #define ATTRIBUTE_FLATTEN __attribute__ ((flatten))
 
+// Complier barrier which prevents the compiler from reordering loads and stores.
+// It does not prevent the hardware from doing so. Typically you should use
+// OrderAccess instead.
+static inline void compiler_barrier() {
+  __asm__ volatile ("" : : : "memory");
+}
+
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

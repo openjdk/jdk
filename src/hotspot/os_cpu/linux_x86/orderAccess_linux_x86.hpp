@@ -27,15 +27,12 @@
 
 // Included in orderAccess.hpp header file.
 
+#include "utilities/globalDefinitions.hpp"
+
 // Compiler version last used for testing: gcc 4.8.2
 // Please update this information when this file changes
 
 // Implementation of class OrderAccess.
-
-// A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
-static inline void compiler_barrier() {
-  __asm__ volatile ("" : : : "memory");
-}
 
 inline void OrderAccess::loadload()   { compiler_barrier(); }
 inline void OrderAccess::storestore() { compiler_barrier(); }
