@@ -31,7 +31,6 @@
 #include "runtime/safepoint.hpp"
 
 ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(ShenandoahPhaseTimings::Phase phase,
-                                                           uint num_workers,
                                                            bool unloading_occurred) :
   WorkerTask("Shenandoah Class Unloading"),
   _phase(phase),
