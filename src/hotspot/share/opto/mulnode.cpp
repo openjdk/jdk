@@ -1182,51 +1182,74 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return nullptr;
 }
 
-//------------------------------Value------------------------------------------
-// A LShiftINode shifts its input2 left by input1 amount.
-const Type* LShiftINode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
+const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
+  const Type *t1 = phase->type(in(1));
+  const Type *t2 = phase->type(in(2));
   // Either input is TOP ==> the result is TOP
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  if (t1 == Type::TOP) {
+    return Type::TOP;
+  }
+  if (t2 == Type::TOP) {
+    return Type::TOP;
+  }
 
   // Left input is ZERO ==> the result is ZERO.
-  if( t1 == TypeInt::ZERO ) return TypeInt::ZERO;
+  if (t1 == TypeInteger::zero(bt)) {
+    return TypeInteger::zero(bt);
+  }
   // Shift by zero does nothing
-  if( t2 == TypeInt::ZERO ) return t1;
+  if (t2 == TypeInt::ZERO) {
+    return t1;
+  }
 
   // Either input is BOTTOM ==> the result is BOTTOM
-  if( (t1 == TypeInt::INT) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
+  if ((t1 == TypeInteger::bottom(bt)) || (t2 == TypeInt::INT) ||
+      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM)) {
     return TypeInt::INT;
+  }
 
-  const TypeInt *r1 = t1->is_int(); // Handy access
+  const TypeInteger *r1 = t1->is_integer(bt); // Handy access
   const TypeInt *r2 = t2->is_int(); // Handy access
 
-  if (!r2->is_con())
-    return TypeInt::INT;
+  if (!r2->is_con()) {
+    return TypeInteger::bottom(bt);
+  }
 
   uint shift = r2->get_con();
-  shift &= BitsPerJavaInteger-1;  // semantics of Java shifts
-  // Shift by a multiple of 32 does nothing:
-  if (shift == 0)  return t1;
+  shift &= bits_per_java_integer(bt)-1;  // semantics of Java shifts
+  // Shift by a multiple of 32/64 does nothing:
+  if (shift == 0) {
+    return t1;
+  }
 
   // If the shift is a constant, shift the bounds of the type,
   // unless this could lead to an overflow.
   if (!r1->is_con()) {
-    jint lo = r1->_lo, hi = r1->_hi;
-    if (((lo << shift) >> shift) == lo &&
-        ((hi << shift) >> shift) == hi) {
+    jlong lo = r1->lo_as_long(), hi = r1->hi_as_long();
+#ifdef ASSERT
+    if (bt == T_INT) {
+      jint lo_int = r1->is_int()->_lo, hi_int = r1->is_int()->_hi;
+      assert((java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo) == (((lo_int << shift) >> shift) == lo_int), "inconsistent");
+      assert((java_shift_right(java_shift_left(hi, shift, bt),  shift, bt) == hi) == (((hi_int << shift) >> shift) == hi_int), "inconsistent");
+    }
+#endif
+    if (java_shift_right(java_shift_left(lo, shift, bt),  shift, bt) == lo &&
+        java_shift_right(java_shift_left(hi, shift, bt), shift, bt) == hi) {
       // No overflow.  The range shifts up cleanly.
-      return TypeInt::make((jint)lo << (jint)shift,
-                           (jint)hi << (jint)shift,
-                           MAX2(r1->_widen,r2->_widen));
+      return TypeInteger::make(java_shift_left(lo, shift, bt),
+                               java_shift_right(hi,  shift, bt),
+                               MAX2(r1->_widen, r2->_widen), bt);
     }
     return TypeInt::INT;
   }
 
-  return TypeInt::make( (jint)r1->get_con() << (jint)shift );
+  return TypeInteger::make(java_shift_left(r1->get_con_as_long(bt), shift, bt), bt);
+}
+
+//------------------------------Value------------------------------------------
+// A LShiftINode shifts its input2 left by input1 amount.
+const Type* LShiftINode::Value(PhaseGVN* phase) const {
+  return ValueIL(phase, T_INT);
 }
 
 //=============================================================================
@@ -1371,48 +1394,7 @@ Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 //------------------------------Value------------------------------------------
 // A LShiftLNode shifts its input2 left by input1 amount.
 const Type* LShiftLNode::Value(PhaseGVN* phase) const {
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  // Either input is TOP ==> the result is TOP
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
-
-  // Left input is ZERO ==> the result is ZERO.
-  if( t1 == TypeLong::ZERO ) return TypeLong::ZERO;
-  // Shift by zero does nothing
-  if( t2 == TypeInt::ZERO ) return t1;
-
-  // Either input is BOTTOM ==> the result is BOTTOM
-  if( (t1 == TypeLong::LONG) || (t2 == TypeInt::INT) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return TypeLong::LONG;
-
-  const TypeLong *r1 = t1->is_long(); // Handy access
-  const TypeInt  *r2 = t2->is_int();  // Handy access
-
-  if (!r2->is_con())
-    return TypeLong::LONG;
-
-  uint shift = r2->get_con();
-  shift &= BitsPerJavaLong - 1;  // semantics of Java shifts
-  // Shift by a multiple of 64 does nothing:
-  if (shift == 0)  return t1;
-
-  // If the shift is a constant, shift the bounds of the type,
-  // unless this could lead to an overflow.
-  if (!r1->is_con()) {
-    jlong lo = r1->_lo, hi = r1->_hi;
-    if (((lo << shift) >> shift) == lo &&
-        ((hi << shift) >> shift) == hi) {
-      // No overflow.  The range shifts up cleanly.
-      return TypeLong::make((jlong)lo << (jint)shift,
-                            (jlong)hi << (jint)shift,
-                            MAX2(r1->_widen,r2->_widen));
-    }
-    return TypeLong::LONG;
-  }
-
-  return TypeLong::make( (jlong)r1->get_con() << (jint)shift );
+  return ValueIL(phase, T_LONG);
 }
 
 RShiftNode* RShiftNode::make(Node* in1, Node* in2, BasicType bt) {

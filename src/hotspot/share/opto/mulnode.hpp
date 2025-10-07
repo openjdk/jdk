@@ -264,6 +264,8 @@ public:
     init_class_id(Class_LShift);
   }
 
+  const Type* ValueIL(PhaseGVN* phase, BasicType bt) const;
+
   static LShiftNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
@@ -275,6 +277,7 @@ public:
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }

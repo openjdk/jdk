@@ -27,6 +27,7 @@
 
 #include "classfile_constants.h"
 #include "utilities/compilerWarnings.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
@@ -1252,6 +1253,31 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jint, juint)
 JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
+
+inline jlong java_shift_left(jlong lhs, jint rhs, BasicType bt) {
+  if (bt == T_INT) {
+    return java_shift_left(checked_cast<jint>(lhs), rhs);
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_shift_left(lhs, rhs);
+}
+
+inline jlong java_shift_right(jlong lhs, jint rhs, BasicType bt) {
+  if (bt == T_INT) {
+    return java_shift_right(checked_cast<jint>(lhs), rhs);
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_shift_right(lhs, rhs);
+}
+
+inline jlong java_shift_right_unsigned(jlong lhs, jint rhs, BasicType bt) {
+  if (bt == T_INT) {
+    return java_shift_right_unsigned(checked_cast<jint>(lhs), rhs);
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_shift_right_unsigned(lhs, rhs);
+}
+
 
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
