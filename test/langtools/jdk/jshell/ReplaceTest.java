@@ -312,6 +312,8 @@ public class ReplaceTest extends KullaTesting {
                    ste(oKey, VALID, OVERWRITTEN, false, null));
         assertEval("var i2 = new O.I();");
         assertEval("var i = new O.I();",
+                   DiagCheck.DIAG_OK,
+                   DiagCheck.DIAG_IGNORE, //there are errors in the original (replaced) Snippet
                    ste(MAIN_SNIPPET, RECOVERABLE_NOT_DEFINED, VALID, true, null),
                    ste(vKey, RECOVERABLE_NOT_DEFINED, OVERWRITTEN, false, null));
     }
