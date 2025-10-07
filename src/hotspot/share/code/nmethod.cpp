@@ -3998,13 +3998,25 @@ void nmethod::print_value_on_impl(outputStream* st) const {
 void nmethod::print_code_snippet(outputStream* st, address addr) const {
   if (entry_point() <= addr && addr < code_end()) {
     // Pointing into the nmethod's code. Try to disassemble some instructions around addr.
-    address start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
+    // Determine conservative start and end points.
+    address start;
+    if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+        addr >= code_begin() + frame_complete_offset()) {
+      start = code_begin() + frame_complete_offset();
+    } else {
+      start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
+    }
     address end = code_end();
-    // Try using relocations to find known instruction start and end points.
+
+    // Try using relocations to find closer instruction start and end points.
     // (Some platforms have variable length instructions and can only
     // disassemble correctly at instruction start addresses.)
     RelocIterator iter((nmethod*)this, start);
     while (iter.next() && iter.addr() < addr) { // find relocation before addr
+      // Note: There's a relocation which doesn't point to an instruction start:
+      // ZBarrierRelocationFormatStoreGoodAfterMov with ZGC on x86_64
+      // We could detect and skip it, but hex dump is still usable when
+      // disassembler produces garbage in such a very rare case.
       start = iter.addr();
     }
     if (iter.has_current()) {
