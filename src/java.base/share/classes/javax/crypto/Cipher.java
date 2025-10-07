@@ -287,8 +287,6 @@ public class Cipher {
     }
 
     // for special handling SHA-512/224, SHA-512/256, SHA512/224, SHA512/256
-    private static final String SHA512TRUNCATED = "512/2";
-
     static int indexOfRealSlash(String s, int fromIndex) {
         while (true) {
             int pos = s.indexOf('/', fromIndex);
