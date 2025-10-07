@@ -88,11 +88,12 @@ public class ExhaustivenessComputer {
         Options options = Options.instance(context);
         String timeout = options.get("exhaustivityTimeout");
         long computedTimeout = DEFAULT_TIMEOUT;
+
         if (timeout != null) {
             try {
                 computedTimeout = Long.parseLong(timeout);
-            } catch (NumberFormatException ex) {
-                //TODO: notify?
+            } catch (NumberFormatException _) {
+                //ignore invalid values and use the default timeout
             }
         }
 
@@ -1104,7 +1105,6 @@ public class ExhaustivenessComputer {
             }
             Assert.check(index != (-1));
 
-            //TODO: isSameType erasure?
             int indexFin = index;
             Set<PatternDescription> filteredBasePatterns =
                     basePatterns.stream()
