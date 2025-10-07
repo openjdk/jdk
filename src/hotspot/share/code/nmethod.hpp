@@ -996,6 +996,7 @@ public:
   void print_on_impl(outputStream* st) const;
   void print_code();
   void print_value_on_impl(outputStream* st) const;
+  void print_code_snippet(outputStream* st, address addr) const;
 
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
