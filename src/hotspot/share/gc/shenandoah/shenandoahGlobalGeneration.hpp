@@ -33,7 +33,15 @@
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {
 public:
   ShenandoahGlobalGeneration(bool generational, uint max_queues, size_t max_capacity)
-  : ShenandoahGeneration(generational ? GLOBAL : NON_GEN, max_queues, max_capacity) { }
+  : ShenandoahGeneration(generational ? GLOBAL : NON_GEN, max_queues, max_capacity) {
+#ifdef ASSERT
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    bool is_generational = heap->mode()->is_generational();
+    assert(is_generational == generational, "sanity");
+    assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
+           (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
+#endif
+  }
 
 public:
   const char* name() const override;

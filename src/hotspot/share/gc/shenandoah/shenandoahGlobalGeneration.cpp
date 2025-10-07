@@ -37,84 +37,36 @@ const char* ShenandoahGlobalGeneration::name() const {
 }
 
 size_t ShenandoahGlobalGeneration::max_capacity() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   size_t total_regions = _free_set->total_global_regions();
   return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahGlobalGeneration::free_unaffiliated_regions() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   return _free_set->global_unaffiliated_regions();
 }
 
 size_t ShenandoahGlobalGeneration::used() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   return _free_set->global_used();
 }
 
 size_t ShenandoahGlobalGeneration::bytes_allocated_since_gc_start() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   return _free_set->get_bytes_allocated_since_gc_start();
 }
 
 size_t ShenandoahGlobalGeneration::get_affiliated_region_count() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   return _free_set->global_affiliated_regions();
 }
 
 size_t ShenandoahGlobalGeneration::get_humongous_waste() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   return _free_set->total_humongous_waste();
 }
 
 
 size_t ShenandoahGlobalGeneration::used_regions() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   return _free_set->global_affiliated_regions();
 }
 
 size_t ShenandoahGlobalGeneration::used_regions_size() const {
-#ifdef ASSERT
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  bool is_generational = heap->mode()->is_generational();
-  assert((is_generational && (type() == ShenandoahGenerationType::GLOBAL)) ||
-         (!is_generational && (type() == ShenandoahGenerationType::NON_GEN)), "OO sanity");
-#endif
   size_t used_regions = _free_set->global_affiliated_regions();
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }

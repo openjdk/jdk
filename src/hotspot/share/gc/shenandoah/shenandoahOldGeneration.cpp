@@ -213,6 +213,7 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
     _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
 {
+  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
@@ -832,18 +833,15 @@ void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
 }
 
 size_t ShenandoahOldGeneration::used() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   return _free_set->old_used();
 }
 
 size_t ShenandoahOldGeneration::bytes_allocated_since_gc_start() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   assert(ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
   return 0;
 }
 
 size_t ShenandoahOldGeneration::get_affiliated_region_count() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   return _free_set->old_affiliated_regions();
 }
 
@@ -852,23 +850,19 @@ size_t ShenandoahOldGeneration::get_humongous_waste() const {
 }
 
 size_t ShenandoahOldGeneration::used_regions() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   return _free_set->old_affiliated_regions();
 }
 
 size_t ShenandoahOldGeneration::used_regions_size() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   size_t used_regions = _free_set->old_affiliated_regions();
   return used_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahOldGeneration::max_capacity() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   size_t total_regions = _free_set->total_old_regions();
   return total_regions * ShenandoahHeapRegion::region_size_bytes();
 }
 
 size_t ShenandoahOldGeneration::free_unaffiliated_regions() const {
-  assert(type() == ShenandoahGenerationType::OLD, "OO sanity");
   return _free_set->old_unaffiliated_regions();
 }
