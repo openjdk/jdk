@@ -26,7 +26,7 @@
 
 /*
  * @test
- * @bug 8161086
+ * @bug 8161086 8367059
  * @summary DTLS handshaking fails if some messages were lost
  * @modules java.base/sun.security.util
  * @library /test/lib
@@ -43,10 +43,12 @@
  * @run main/othervm PacketLossRetransmission server 14 server_hello_done
  * @run main/othervm PacketLossRetransmission server 20 finished
  * @run main/othervm PacketLossRetransmission server -1 change_cipher_spec
+ * @run main/othervm PacketLossRetransmission server 4 new_session_ticket
+ * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false PacketLossRetransmission server 4 new_session_ticket
+ * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false PacketLossRetransmission server 4 new_session_ticket
  */
 
 import java.util.List;
-import java.util.ArrayList;
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
 import javax.net.ssl.SSLEngine;

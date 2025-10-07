@@ -1601,7 +1601,8 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             return false;
         }
 
-        // Looking for the ChangeCipherSpec and Finished messages.
+        // Looking for the ChangeCipherSpec, Finished and
+        // NewSessionTicket messages.
         //
         // As the cached Finished message should be a ciphertext, we don't
         // exactly know a ciphertext is a Finished message or not.  According
@@ -1612,24 +1613,29 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             boolean hasCCS = false;
             boolean hasFin = false;
+            boolean hasNst = false;
+
             for (RecordFragment fragment : fragments) {
                 if (fragment.contentType == ContentType.CHANGE_CIPHER_SPEC.id) {
-                    if (hasFin) {
-                        return true;
-                    }
                     hasCCS = true;
                 } else if (fragment.contentType == ContentType.HANDSHAKE.id) {
-                    // Finished is the first expected message of a new epoch.
                     if (fragment.isCiphertext) {
-                        if (hasCCS) {
-                            return true;
-                        }
+                        // Finished is the first expected ciphertext message.
                         hasFin = true;
+                    } else if (((HandshakeFragment) fragment).handshakeType
+                                == SSLHandshake.NEW_SESSION_TICKET.id) {
+                        hasNst = true;
                     }
                 }
             }
 
-            return false;
+            return hasCCS && hasFin
+                    // NewSessionTicket message presence in the final flight
+                    // should only be expected on the client side, and only
+                    // if stateless resumption is enabled.
+                    && (!tc.sslConfig.isClientMode
+                    || !tc.handshakeContext.statelessResumption
+                    || hasNst);
         }
 
         // Is client CertificateVerify a mandatory message?
