@@ -2590,7 +2590,7 @@ void VM_Version::resolve_cpu_information_details(void) {
     _no_of_sockets = 1;
   }
 
-  // estimate the number of cores.
+  // estimate the number of cores
   _no_of_cores = cores_per_cpu() * _no_of_sockets;
 }
 
