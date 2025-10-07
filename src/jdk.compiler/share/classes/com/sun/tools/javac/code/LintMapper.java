@@ -184,10 +184,10 @@ public class LintMapper {
         // After parsing: Add top-level declarations to our "unmappedDecls" list
         FileInfo(Lint rootLint, JCCompilationUnit tree) {
             rootRange = new LintRange(rootLint);
-            tree.defs.stream()
-              .filter(this::isTopLevelDecl)
-              .map(decl -> new Span(decl, tree.endPositions))
-              .forEach(unmappedDecls::add);
+            for (JCTree decl : tree.defs) {
+                if (isTopLevelDecl(decl))
+                    unmappedDecls.add(new Span(decl, tree.endPositions));
+            }
         }
 
         // After attribution: Discard the span from "unmappedDecls" and populate the declaration's subtree under "rootRange"
@@ -261,12 +261,17 @@ public class LintMapper {
 
         // Find the most specific node in this tree (including me) that contains the given position, if any
         LintRange bestMatch(DiagnosticPosition pos) {
-            return children.stream()
-              .filter(child -> child.span.contains(pos))    // don't recurse unless necessary
-              .map(child -> child.bestMatch(pos))
-              .filter(Objects::nonNull)
-              .reduce((a, b) -> a.span.contains(b.span) ? b : a)
-              .orElseGet(() -> span.contains(pos) ? this : null);
+            LintRange bestMatch = null;
+            for (LintRange child : children) {
+                if (!child.span.contains(pos))          // don't recurse unless necessary
+                    continue;
+                LintRange childBestMatch = child.bestMatch(pos);
+                if (childBestMatch != null && (bestMatch == null || bestMatch.span.contains(childBestMatch.span)))
+                    bestMatch = childBestMatch;
+            }
+            if (bestMatch == null)
+                bestMatch = span.contains(pos) ? this : null;
+            return bestMatch;
         }
 
         // Populate a sparse subtree corresponding to the given nested declaration.
