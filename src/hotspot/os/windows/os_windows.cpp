@@ -1718,7 +1718,7 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // Append a dot to the name passed to LoadLibrary to prevent LoadLibrary from
   // automatically adding a .DLL extension.
   size_t name_len = strlen(name);
-  char *name_with_dot = malloc(name_len + 2, mtInternal);
+  char *name_with_dot = (char *)malloc(name_len + 2, mtInternal);
   if (name_with_dot == nullptr) {
     strncpy(ebuf, "malloc failed", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
