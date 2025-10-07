@@ -2409,6 +2409,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
   NearLabel resolved;
+  Label L_clinit_barrier_slow;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2425,6 +2426,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ z_bre(resolved);
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ load_const_optimized(Z_ARG2, (int)code);
   __ call_VM(noreg, entry, Z_ARG2);
@@ -2433,6 +2436,15 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ load_field_entry(cache, index);
 
   __ bind(resolved);
+
+  // Class initialization barrier for static fields
+  if (VM_Version::supports_fast_class_init_checks() &&
+      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+    const Register field_holder = index;
+
+    __ load_sized_value(field_holder, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
+    __ clinit_barrier(field_holder, Z_thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+  }
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_field");
 }
