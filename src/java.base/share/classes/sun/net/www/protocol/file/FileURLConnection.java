@@ -40,7 +40,6 @@ import java.security.Permission;
 import java.text.Collator;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -77,7 +76,6 @@ public class FileURLConnection extends URLConnection {
 
     private long length = -1;
     private long lastModified = 0;
-    private Map<String, List<String>> headerFields;
 
     protected FileURLConnection(URL u, File file) {
         super(u);
@@ -178,36 +176,19 @@ public class FileURLConnection extends URLConnection {
     @Override
     public Map<String, List<String>> getHeaderFields() {
         initializeHeaders();
-        if (headerFields == null) {
-            if (!isReadable()) {
-                return Collections.emptyMap();
-            }
-            if (properties == null) {
-                headerFields = Collections.emptyMap();
-            } else {
-                headerFields = properties.getHeaders();
-            }
-        }
-        return headerFields;
+        return super.getHeaderFields();
     }
 
     @Override
     public String getHeaderField(String name) {
         initializeHeaders();
-        if (!isReadable()) {
-            return null;
-        }
-        return properties == null ? null : properties.findValue(name);
+        return super.getHeaderField(name);
     }
 
     @Override
     public String getHeaderField(int n) {
         initializeHeaders();
-        if (!isReadable()) {
-            return null;
-        }
-        MessageHeader props = properties;
-        return props == null ? null : props.getValue(n);
+        return super.getHeaderField(n);
     }
 
     @Override
@@ -227,11 +208,7 @@ public class FileURLConnection extends URLConnection {
     @Override
     public String getHeaderFieldKey(int n) {
         initializeHeaders();
-        if (!isReadable()) {
-            return null;
-        }
-        MessageHeader props = properties;
-        return props == null ? null : props.getKey(n);
+        return super.getHeaderFieldKey(n);
     }
 
     @Override
@@ -281,16 +258,12 @@ public class FileURLConnection extends URLConnection {
         return is;
     }
 
-    private synchronized boolean isReadable() {
-        try {
-            // connect() (if not already connected) does the readability checks
-            // and throws an IOException if those checks fail. A successful
-            // completion from connect() implies the File is readable.
-            connect();
-        } catch (IOException e) {
-            return false;
-        }
-        return true;
+    @Override
+    protected synchronized void ensureCanServeHeaders() throws IOException {
+        // connect() (if not already connected) does the readability checks
+        // and throws an IOException if those checks fail. A successful
+        // completion from connect() implies the File is readable.
+        connect();
     }
 
 
