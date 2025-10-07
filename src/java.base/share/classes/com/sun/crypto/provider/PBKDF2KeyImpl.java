@@ -67,7 +67,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
 
     // The following fields are not Serializable. See writeReplace method.
     private final transient Mac prf;
-    private final transient Cleaner.Cleanable cleaner;
+    private transient Cleaner.Cleanable cleaner;
 
     /**
      * Creates a PBE key from a given PBE key specification.
@@ -224,6 +224,13 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     public void clear() {
         cleaner.clean();
     }
+
+    public void destroy() { 
+        if (cleaner != null) {
+            cleaner.clean();
+            cleaner = null;
+        }   
+    }   
 
     public char[] getPassword() {
         try {

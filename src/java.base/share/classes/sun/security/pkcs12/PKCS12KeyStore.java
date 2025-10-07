@@ -2079,6 +2079,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                                 "MAC iteration count too large: " + ic);
                     }
 
+                    // Store MAC algorithm of keystore that was just loaded.
+                    macAlgorithm = macData.getMacAlgorithm();
                     macIterationCount = ic;
                     PBEParameterSpec params = new PBEParameterSpec(salt, ic);
                     RetryWithZero.run(pass -> {

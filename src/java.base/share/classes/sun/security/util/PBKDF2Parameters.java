@@ -68,7 +68,7 @@ import java.io.IOException;
  *
  * </pre>
  */
-final public class PBKDF2Parameters {
+public final class PBKDF2Parameters {
 
     public static final ObjectIdentifier pkcs5PBKDF2_OID =
             ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
@@ -79,10 +79,6 @@ final public class PBKDF2Parameters {
 
     // keyLength in bits, or -1 if not present
     private int keyLength = -1;
-
-    // the pseudorandom function (default is HmacSHA1)
-    private ObjectIdentifier kdfAlgo_OID =
-            ObjectIdentifier.of(KnownOIDs.HmacSHA1);
 
     private String prfAlgo = "HmacSHA1";
 
@@ -122,7 +118,8 @@ final public class PBKDF2Parameters {
         var prfDer = pBKDF2_params.data.getOptional(DerValue.tag_Sequence);
         if (prfDer.isPresent()) {
             DerValue prf = prfDer.get();
-            kdfAlgo_OID = prf.data.getOID();
+            // the pseudorandom function (default is HmacSHA1)
+            ObjectIdentifier kdfAlgo_OID = prf.data.getOID();
             KnownOIDs o = KnownOIDs.findMatch(kdfAlgo_OID.toString());
             if (o == null || (!o.stdName().equals("HmacSHA1") &&
                     !o.stdName().equals("HmacSHA224") &&
@@ -144,8 +141,7 @@ final public class PBKDF2Parameters {
     /**
      * Returns the salt.
      *
-     * @return the salt. Returns a new array
-     * each time this method is called.
+     * @return the salt
      */
     public byte[] getSalt() {
         return this.salt;
