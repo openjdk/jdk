@@ -872,11 +872,10 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == nullptr) {
     set_class_loader_data(loader_data);
-
-    // Add to class loader list first before creating the mirror
-    // (same order as class file parsing)
-    loader_data->add_class(this);
   }
+  // Add to class loader list first before creating the mirror
+  // (same order as class file parsing)
+  loader_data->add_class(this);
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
