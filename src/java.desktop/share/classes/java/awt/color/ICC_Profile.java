@@ -41,6 +41,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
@@ -1549,33 +1550,19 @@ public sealed class ICC_Profile implements Serializable
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         s.defaultReadObject();
-
-        String csName = (String) s.readObject();
-        byte[] data = (byte[]) s.readObject();
-
-        int cspace = 0;         // ColorSpace.CS_* constant if known
-        boolean isKnownPredefinedCS = false;
-        if (csName != null) {
-            isKnownPredefinedCS = true;
-            if (csName.equals("CS_sRGB")) {
-                cspace = ColorSpace.CS_sRGB;
-            } else if (csName.equals("CS_CIEXYZ")) {
-                cspace = ColorSpace.CS_CIEXYZ;
-            } else if (csName.equals("CS_PYCC")) {
-                cspace = ColorSpace.CS_PYCC;
-            } else if (csName.equals("CS_GRAY")) {
-                cspace = ColorSpace.CS_GRAY;
-            } else if (csName.equals("CS_LINEAR_RGB")) {
-                cspace = ColorSpace.CS_LINEAR_RGB;
-            } else {
-                isKnownPredefinedCS = false;
-            }
-        }
-
-        if (isKnownPredefinedCS) {
-            resolvedDeserializedProfile = getInstance(cspace);
-        } else {
-            resolvedDeserializedProfile = getInstance(data);
+        try {
+            String csName = (String) s.readObject();
+            byte[] data = (byte[]) s.readObject();
+            resolvedDeserializedProfile = switch (csName) {
+                case "CS_sRGB" -> getInstance(ColorSpace.CS_sRGB);
+                case "CS_CIEXYZ" -> getInstance(ColorSpace.CS_CIEXYZ);
+                case "CS_PYCC" -> getInstance(ColorSpace.CS_PYCC);
+                case "CS_GRAY" -> getInstance(ColorSpace.CS_GRAY);
+                case "CS_LINEAR_RGB" -> getInstance(ColorSpace.CS_LINEAR_RGB);
+                case null, default -> getInstance(data);
+            };
+        } catch (ClassCastException | IllegalArgumentException e) {
+            throw new InvalidObjectException("Invalid ICC Profile Data", e);
         }
     }
 
