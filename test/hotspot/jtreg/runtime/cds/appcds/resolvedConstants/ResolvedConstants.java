@@ -58,6 +58,22 @@
  * @run main/othervm -Dcds.app.tester.workflow=DYNAMIC -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. ResolvedConstants DYNAMIC
  */
 
+/*
+ * @test id=aot
+ * @summary Dump time resolution of constant pool entries (AOT workflow).
+ * @requires vm.cds
+ * @requires vm.cds.supports.aot.class.linking
+ * @requires vm.compMode != "Xcomp"
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes/
+ * @build OldProvider OldClass OldConsumer StringConcatTestOld
+ * @build ResolvedConstants
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 ResolvedConstantsApp ResolvedConstantsFoo ResolvedConstantsBar
+ *                 MyInterface InterfaceWithClinit NormalClass
+ *                 OldProvider OldClass OldConsumer SubOfOldClass
+ *                 StringConcatTest StringConcatTestOld
+ * @run driver ResolvedConstants AOT --two-step-training
+ */
 import java.util.function.Consumer;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
@@ -122,12 +138,15 @@ public class ResolvedConstants {
             .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsBar.a:I"))
             .shouldMatch(ALWAYS("field.* ResolvedConstantsBar => ResolvedConstantsFoo.a:I"))
             .shouldMatch(ALWAYS("field.* ResolvedConstantsFoo => ResolvedConstantsFoo.a:I"))
+            .shouldMatch(ALWAYS("field.* ResolvedConstantsApp => ResolvedConstantsApp.static_i:I"))
 
             // Resolve field references to child classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.static_b:I"))
             .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.a:I"))
             .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsFoo => ResolvedConstantsBar.b:I"))
 
             // Resolve field references to unrelated classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.static_b:I"))
             .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.a:I"))
             .shouldMatch(AOTLINK_ONLY("field.* ResolvedConstantsApp => ResolvedConstantsBar.b:I"));
 
@@ -150,8 +169,8 @@ public class ResolvedConstants {
             .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.privateInstanceCall:"))
             .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.publicInstanceCall:"))
 
-            // Should not resolve references to static method
-            .shouldNotMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:"))
+            // Should resolve references to static method
+            .shouldMatch(ALWAYS("method.*: ResolvedConstantsApp ResolvedConstantsApp.staticCall:"))
 
             // Should resolve references to method in super type
             .shouldMatch(ALWAYS("method.*: ResolvedConstantsBar ResolvedConstantsFoo.doBar:"))
@@ -164,7 +183,12 @@ public class ResolvedConstants {
             .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp java/io/PrintStream.println:"))
             .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsBar java/lang/Class.getName:"))
 
-            // Resole resolve methods in unrelated classes ONLY when using -XX:+AOTClassLinking
+            // Resolve method references to child classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("method.* ResolvedConstantsFoo ResolvedConstantsBar.static_doit"))
+            .shouldMatch(AOTLINK_ONLY("method.* ResolvedConstantsFoo ResolvedConstantsBar.doit2"))
+
+            // Resolve methods in unrelated classes ONLY when using -XX:+AOTClassLinking
+            .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp ResolvedConstantsBar.static_doit:"))
             .shouldMatch(AOTLINK_ONLY("method.*: ResolvedConstantsApp ResolvedConstantsBar.doit:"))
 
           // End ---
@@ -203,11 +227,14 @@ class ResolvedConstantsApp implements Runnable {
         System.out.println("Hello ResolvedConstantsApp");
         ResolvedConstantsApp app = new ResolvedConstantsApp();
         ResolvedConstantsApp.staticCall();
+        ResolvedConstantsApp.static_i ++;
         app.privateInstanceCall();
         app.publicInstanceCall();
         Object a = app;
         ((Runnable)a).run();
 
+        ResolvedConstantsBar.static_b += 10;
+        ResolvedConstantsBar.static_doit();
         ResolvedConstantsFoo foo = new ResolvedConstantsFoo();
         ResolvedConstantsBar bar = new ResolvedConstantsBar();
         bar.a ++;
@@ -218,6 +245,7 @@ class ResolvedConstantsApp implements Runnable {
         StringConcatTest.test();
         StringConcatTestOld.main(null);
     }
+    private static int static_i = 10;
     private static void staticCall() {}
     private void privateInstanceCall() {}
     public void publicInstanceCall() {}
@@ -313,13 +341,21 @@ class ResolvedConstantsFoo {
     }
 
     void doBar(ResolvedConstantsBar bar) {
+        ResolvedConstantsBar.static_b += 1;
+        ResolvedConstantsBar.static_doit();
+
         bar.a ++;
         bar.b ++;
+        bar.doit2();
     }
 }
 
 class ResolvedConstantsBar extends ResolvedConstantsFoo {
+    public static int static_b = 10;
     int b = 2;
+    public static void static_doit() {
+    }
+
     void doit() {
         System.out.println("Hello ResolvedConstantsBar and " + ResolvedConstantsFoo.class.getName());
         System.out.println("a = " + a);
@@ -329,5 +365,9 @@ class ResolvedConstantsBar extends ResolvedConstantsFoo {
         doBar(this);
 
         ((ResolvedConstantsFoo)this).doBar(this);
+    }
+
+    void doit2() {
+
     }
 }
