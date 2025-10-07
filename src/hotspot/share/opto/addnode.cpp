@@ -518,14 +518,21 @@ AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(cons
 }
 
 // Try to match `n = CON * a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = CON`.
-// Match `n` for patterns: a * CON
-// Note that `CON` will always be the second input node of a Mul node canonicalized by Ideal().
+// Match `n` for patterns:
+//     - (1) CON * a
+//     - (2) a * CON
 AddNode::Multiplication AddNode::Multiplication::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
-  assert(!(n->Opcode() == Op_Mul(bt) && n->in(1)->is_Con() && !n->in(2)->is_Con()), "mul node not canonicalized");
+  // This optimization technically only produces MulNode(CON, a), but we also match MulNode(a, CON) to cover more cases.
+  if (n->Opcode() == Op_Mul(bt) && (n->in(1)->is_Con() || n->in(2)->is_Con())) {
+    // Pattern (1)
+    Node* con = n->in(1);
+    Node* base = n->in(2);
 
-  if (n->Opcode() == Op_Mul(bt) && n->in(2)->is_Con()) {
-    Node* con = n->in(2);
-    Node* base = n->in(1);
+    // Pattern (2)
+    if (!con->is_Con()) {
+      // swap ConNode to lhs for easier matching
+      swap(con, base);
+    }
 
     if (!con->is_top()) {
       return Multiplication(base, con->get_integer_as_long(bt));
