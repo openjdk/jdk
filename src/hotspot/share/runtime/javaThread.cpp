@@ -56,7 +56,7 @@
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
 #include "runtime/continuationHelper.inline.hpp"
@@ -476,7 +476,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _exception_oop(oop()),
   _exception_pc(nullptr),
   _exception_handler_pc(nullptr),
-  _is_method_handle_return(0),
 
   _jni_active_critical(0),
   _pending_jni_exception_check_fn(nullptr),
@@ -489,8 +488,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _cont_entry(nullptr),
   _cont_fastpath(nullptr),
   _cont_fastpath_thread_state(1),
-  _held_monitor_count(0),
-  _jni_monitor_count(0),
   _unlocked_inflated_monitor(nullptr),
 
   _preempt_alternate_return(nullptr),
@@ -928,27 +925,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
            "should not have a Java frame when detaching or exiting");
     ObjectSynchronizer::release_monitors_owned_by_thread(this);
     assert(!this->has_pending_exception(), "release_monitors should have cleared");
-    // Check for monitor counts being out of sync.
-    assert(held_monitor_count() == jni_monitor_count(),
-           "held monitor count should be equal to jni: %zd != %zd",
-           held_monitor_count(), jni_monitor_count());
-    // All in-use monitors, including JNI-locked ones, should have been released above.
-    assert(held_monitor_count() == 0, "Failed to unlock %zd object monitors",
-           held_monitor_count());
-  } else {
-    // Check for monitor counts being out of sync.
-    assert(held_monitor_count() == jni_monitor_count(),
-           "held monitor count should be equal to jni: %zd != %zd",
-           held_monitor_count(), jni_monitor_count());
-    // It is possible that a terminating thread failed to unlock monitors it locked
-    // via JNI so we don't assert the count is zero.
-  }
-
-  if (CheckJNICalls && jni_monitor_count() > 0) {
-    // We would like a fatal here, but due to we never checked this before there
-    // is a lot of tests which breaks, even with an error log.
-    log_debug(jni)("JavaThread %s (tid: %zu) with Objects still locked by JNI MonitorEnter.",
-                   exit_type == JavaThread::normal_exit ? "exiting" : "detaching", os::current_thread_id());
   }
 
   // These things needs to be done while we are still a Java Thread. Make sure that thread
@@ -1064,11 +1040,11 @@ JavaThread* JavaThread::active() {
 }
 
 oop JavaThread::exception_oop() const {
-  return Atomic::load(&_exception_oop);
+  return AtomicAccess::load(&_exception_oop);
 }
 
 void JavaThread::set_exception_oop(oop o) {
-  Atomic::store(&_exception_oop, o);
+  AtomicAccess::store(&_exception_oop, o);
 }
 
 void JavaThread::handle_special_runtime_exit_condition() {
@@ -1988,26 +1964,6 @@ void JavaThread::trace_stack() {
 
 
 #endif // PRODUCT
-
-// Slow-path increment of the held monitor counts. JNI locking is always
-// this slow-path.
-void JavaThread::inc_held_monitor_count(intx i, bool jni) {
-#ifdef SUPPORT_MONITOR_COUNT
-  // Nothing to do. Just do some sanity check.
-  assert(_held_monitor_count == 0, "counter should not be used");
-  assert(_jni_monitor_count == 0, "counter should not be used");
-#endif // SUPPORT_MONITOR_COUNT
-}
-
-// Slow-path decrement of the held monitor counts. JNI unlocking is always
-// this slow-path.
-void JavaThread::dec_held_monitor_count(intx i, bool jni) {
-#ifdef SUPPORT_MONITOR_COUNT
-  // Nothing to do. Just do some sanity check.
-  assert(_held_monitor_count == 0, "counter should not be used");
-  assert(_jni_monitor_count == 0, "counter should not be used");
-#endif // SUPPORT_MONITOR_COUNT
-}
 
 frame JavaThread::vthread_last_frame() {
   assert (is_vthread_mounted(), "Virtual thread not mounted");

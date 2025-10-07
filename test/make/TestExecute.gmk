@@ -60,10 +60,30 @@ $(eval $(call SetupExecute, EXEC_2, \
 run-test2: $(EXEC_2)
 	test -f $(OUTPUT_DIR)/exec_2/special/specialfile
 
+$(eval $(call SetupExecute, EXEC_3, \
+    INFO := Testing that SetupExecute with DRYRUN does nothing, \
+    OUTPUT_DIR := $(OUTPUT_DIR)/exec_3, \
+    DRYRUN := true, \
+    COMMAND := $(ECHO) "This should not happen" > $(OUTPUT_DIR)/exec_3/dryrunfile, \
+))
 
-TEST_TARGETS += run-test1 run-test2
+run-test3: $(EXEC_3)
+	test ! -f $(OUTPUT_DIR)/exec_3/dryrunfile
 
-.PHONY: run-test1 run-test2
+$(eval $(call SetupExecute, EXEC_4, \
+    INFO := Testing that SetupExecute with DRYRUN does nothing but touches output file, \
+    OUTPUT_FILE := $(OUTPUT_DIR)/exec_4/output, \
+    DRYRUN := true, \
+    COMMAND := $(ECHO) "This should not happen" > $(OUTPUT_DIR)/exec_4/dryrunfile, \
+))
+
+run-test4: $(EXEC_4)
+	test ! -f $(OUTPUT_DIR)/exec_4/dryrunfile
+	test -f $(OUTPUT_DIR)/exec_4/output
+
+TEST_TARGETS += run-test1 run-test2 run-test3 run-test4
+
+.PHONY: run-test1 run-test2 run-test3 run-test4
 
 ################################################################################
 
