@@ -241,14 +241,14 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     while (cur_tss != nullptr) {
       assert(cur_tss->is_running(), "Illegal initial state");
       if (thread_not_running(cur_tss)) {
-        log_trace(safepoint)("Thread \"%s\" [" INTPTR_FORMAT "] is now blocked", cur_tss->thread()->name(), p2i(cur_tss->thread()));
+        log_trace(safepoint)("Thread " INTPTR_FORMAT " is now blocked", p2i(cur_tss->thread()));
         --still_running;
         *p_prev = nullptr;
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
       } else {
-        log_trace(safepoint)("Thread \"%s\" [" INTPTR_FORMAT "] is still running", cur_tss->thread()->name(), p2i(cur_tss->thread()));
+        log_trace(safepoint)("Thread " INTPTR_FORMAT " is still running", p2i(cur_tss->thread()));
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
         cur_tss = cur_tss->get_next();
@@ -547,10 +547,10 @@ bool SafepointSynchronize::handshake_safe(JavaThread *thread) {
 void SafepointSynchronize::block(JavaThread *thread) {
   assert(thread != nullptr, "thread must be set");
 
-  log_trace(safepoint)("Blocking thread \"%s\" [" INTPTR_FORMAT "]", thread->name(), p2i(thread));
-
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
+
+  log_trace(safepoint)("Blocking thread " INTPTR_FORMAT, p2i(thread));
 
   // Only bail from the block() call if the thread is gone from the
   // thread list; starting to exit should still block.
@@ -596,7 +596,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 
-  log_trace(safepoint)("Resuming thread \"%s\" [" INTPTR_FORMAT "]", thread->name(), p2i(thread));
+  log_trace(safepoint)("Unblocking thread " INTPTR_FORMAT, p2i(thread));
 }
 
 // ------------------------------------------------------------------------------------------------------
@@ -967,12 +967,12 @@ void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps)
   _nof_running = nof_running;
   _page_trap   = traps;
   RuntimeService::record_safepoint_synchronized(_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns);
-  log_trace(safepoint)("Safepoint synchronization finished");
+  log_debug(safepoint)("Safepoint synchronization finished");
 }
 
 void SafepointTracing::leave() {
   _last_safepoint_leave_time_ns = os::javaTimeNanos();
-  log_trace(safepoint)("Leaving safepoint");
+  log_debug(safepoint)("Leaving safepoint");
 }
 
 void SafepointTracing::end() {
@@ -1007,5 +1007,5 @@ void SafepointTracing::end() {
      );
 
   RuntimeService::record_safepoint_end(_last_safepoint_end_time_ns - _last_safepoint_sync_time_ns);
-  log_trace(safepoint)("Safepoint complete");
+  log_debug(safepoint)("Safepoint complete");
 }
