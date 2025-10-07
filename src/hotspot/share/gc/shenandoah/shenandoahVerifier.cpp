@@ -495,7 +495,7 @@ class ShenandoahGenerationStatsClosure : public ShenandoahHeapRegionClosure {
 };
 
 class ShenandoahVerifyHeapRegionClosure : public ShenandoahHeapRegionClosure {
-  private:
+private:
   ShenandoahHeap* _heap;
   const char* _phase;
   ShenandoahVerifier::VerifyRegions _regions;
@@ -590,7 +590,7 @@ class ShenandoahVerifyHeapRegionClosure : public ShenandoahHeapRegionClosure {
 };
 
 class ShenandoahVerifierReachableTask : public WorkerTask {
-  private:
+private:
   const char* _label;
   ShenandoahVerifier::VerifyOptions _options;
   ShenandoahHeap* _heap;
@@ -598,7 +598,7 @@ class ShenandoahVerifierReachableTask : public WorkerTask {
   MarkBitMap* _bitmap;
   volatile size_t _processed;
 
-  public:
+public:
   ShenandoahVerifierReachableTask(MarkBitMap* bitmap,
                                   ShenandoahLivenessData* ld,
                                   const char* label,
@@ -673,7 +673,7 @@ class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
   volatile size_t _processed;
   ShenandoahGeneration* _generation;
 
-  public:
+public:
   ShenandoahVerifierMarkedRegionTask(MarkBitMap* bitmap,
                                      ShenandoahLivenessData* ld,
                                      const char* label,
@@ -796,11 +796,11 @@ class ShenandoahVerifierMarkedRegionTask : public WorkerTask {
 };
 
 class VerifyThreadGCState : public ThreadClosure {
-  private:
+private:
   const char* const _label;
   char const _expected;
 
-  public:
+public:
   VerifyThreadGCState(const char* label, char expected) : _label(label), _expected(expected) {}
   void do_thread(Thread* t) override {
     char actual = ShenandoahThreadLocalData::gc_state(t);
