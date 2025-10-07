@@ -52,6 +52,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
@@ -66,6 +67,7 @@ import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
+import jdk.jpackage.test.MacSign.CertificateRequest;
 import jdk.jpackage.test.PackageTest.PackageHandlers;
 
 public final class MacHelper {
@@ -229,23 +231,59 @@ public final class MacHelper {
         }
     }
 
+    /**
+     * Returns {@code true} if the given jpackage command line is configured to sign
+     * predefined app image in place.
+     * <p>
+     * jpackage will not create a new app image or a native bundle.
+     *
+     * @param cmd the jpackage command to examine
+     * @return {@code true} if the given jpackage command line is configured to sign
+     *         predefined app image in place and {@code false} otherwise.
+     */
     public static boolean signPredefinedAppImage(JPackageCommand cmd) {
         Objects.requireNonNull(cmd);
         if (!TKit.isOSX()) {
             throw new UnsupportedOperationException();
         }
-        return cmd.hasArgument("--mac-sign") && cmd.hasArgument("--app-image");
+        return cmd.hasArgument("--mac-sign") && cmd.hasArgument("--app-image") && cmd.isImagePackageType();
     }
 
+    /**
+     * Returns {@code true} if the given jpackage command line is configured such
+     * that the app image it will produce will be signed.
+     * <p>
+     * If the jpackage command line is bundling a native package, the function
+     * returns {@code true} if the bundled app image will be signed.
+     *
+     * @param cmd the jpackage command to examine
+     * @return {@code true} if the given jpackage command line is configured such
+     *         that the app image it will produce will be signed and {@code false}
+     *         otherwise.
+     */
     public static boolean appImageSigned(JPackageCommand cmd) {
         Objects.requireNonNull(cmd);
         if (!TKit.isOSX()) {
             throw new UnsupportedOperationException();
         }
 
-        if (Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of).map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
+        var runtimeImage = Optional.ofNullable(cmd.getArgumentValue("--runtime-image")).map(Path::of);
+        var appImage = Optional.ofNullable(cmd.getArgumentValue("--app-image")).map(Path::of);
+
+        if (cmd.isRuntime() && Files.isDirectory(runtimeImage.orElseThrow().resolve("Contents/_CodeSignature"))) {
+            // If the predefined runtime is a signed bundle, bundled image should be signed too.
+            return true;
+        } else if (appImage.map(AppImageFile::load).map(AppImageFile::macSigned).orElse(false)) {
             // The external app image is signed, so the app image is signed too.
             return true;
+        }
+
+        if (!cmd.isImagePackageType() && appImage.isPresent()) {
+            // Building a ".pkg" or a ".dmg" bundle from the predefined app image.
+            // The predefined app image is unsigned, so the app image bundled
+            // in the output native package will be unsigned too
+            // (even if the ".pkg" file may be signed itself, and we never sign ".dmg" files).
+            return false;
         }
 
         if (!cmd.hasArgument("--mac-sign")) {
@@ -330,6 +368,100 @@ public final class MacHelper {
                 }));
             }
         }).run();
+    }
+
+    public static JPackageCommand useKeychain(JPackageCommand cmd, MacSign.ResolvedKeychain keychain) {
+        return useKeychain(cmd, keychain.spec().keychain());
+    }
+
+    public static JPackageCommand useKeychain(JPackageCommand cmd, MacSign.Keychain keychain) {
+        return sign(cmd).addArguments("--mac-signing-keychain", keychain.name());
+    }
+
+    public static JPackageCommand sign(JPackageCommand cmd) {
+        if (!cmd.hasArgument("--mac-sign")) {
+            cmd.addArgument("--mac-sign");
+        }
+        return cmd;
+    }
+
+    public record SignKeyOption(Type type, CertificateRequest certRequest) {
+
+        public SignKeyOption {
+            Objects.requireNonNull(type);
+            Objects.requireNonNull(certRequest);
+        }
+
+        public enum Type {
+            SIGN_KEY_USER_NAME,
+            SIGN_KEY_IDENTITY,
+            ;
+        }
+
+        @Override
+        public String toString() {
+            var sb = new StringBuffer();
+            applyTo((optionName, _) -> {
+                sb.append(String.format("{%s: %s}", optionName, certRequest));
+            });
+            return sb.toString();
+        }
+
+        public JPackageCommand addTo(JPackageCommand cmd) {
+            applyTo(cmd::addArguments);
+            return sign(cmd);
+        }
+
+        public JPackageCommand setTo(JPackageCommand cmd) {
+            applyTo(cmd::setArgumentValue);
+            return sign(cmd);
+        }
+
+        private void applyTo(BiConsumer<String, String> sink) {
+            switch (certRequest.type()) {
+                case INSTALLER -> {
+                    switch (type) {
+                        case SIGN_KEY_IDENTITY -> {
+                            sink.accept("--mac-installer-sign-identity", certRequest.name());
+                            return;
+                        }
+                        case SIGN_KEY_USER_NAME -> {
+                            sink.accept("--mac-signing-key-user-name", certRequest.shortName());
+                            return;
+                        }
+                    }
+                }
+                case CODE_SIGN -> {
+                    switch (type) {
+                        case SIGN_KEY_IDENTITY -> {
+                            sink.accept("--mac-app-image-sign-identity", certRequest.name());
+                            return;
+                        }
+                        case SIGN_KEY_USER_NAME -> {
+                            sink.accept("--mac-signing-key-user-name", certRequest.shortName());
+                            return;
+                        }
+                    }
+                }
+            }
+
+            throw new AssertionError();
+        }
+    }
+
+    static void verifyUnsignedBundleSignature(JPackageCommand cmd) {
+        if (!cmd.isImagePackageType()) {
+            MacSignVerify.assertUnsigned(cmd.outputBundle());
+        }
+
+        final Path bundleRoot;
+        if (cmd.isImagePackageType()) {
+            bundleRoot = cmd.outputBundle();
+        } else {
+            bundleRoot = cmd.pathToUnpackedPackageFile(cmd.appInstallationDirectory());
+        }
+
+        MacSignVerify.assertAdhocSigned(bundleRoot);
     }
 
     static PackageHandlers createDmgPackageHandlers() {
