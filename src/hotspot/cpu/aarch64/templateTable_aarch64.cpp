@@ -2351,7 +2351,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
       (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
     const Register field_holder = temp;
 
-    __ ldr(field_holder, Address(cache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
+    __ ldr(field_holder, Address(Rcache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
     __ clinit_barrier(field_holder, rscratch1, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
   }
 }
