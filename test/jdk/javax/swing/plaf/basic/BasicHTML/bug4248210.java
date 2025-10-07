@@ -71,8 +71,7 @@ public class bug4248210 {
             UIManager.getDefaults().put("Label.foreground", labelColor);
         }
 
-        JLabel label = new JLabel("<html><body>WWWWWWWWWMMMMMMM?</body></html>");
-        label.setFont(new java.awt.Font("Dialog", java.awt.Font.BOLD, 20));
+        JLabel label = new JLabel("<html><body>\u2588 \u2588 \u2588 \u2588</body></html>");
         label.setSize(150, 30);
 
         BufferedImage img = paintToImage(label);
