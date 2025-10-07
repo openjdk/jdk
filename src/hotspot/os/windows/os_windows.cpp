@@ -1716,7 +1716,7 @@ static int _print_module(const char* fname, address base_address,
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
   // Append a dot to the name passed to LoadLibrary to prevent LoadLibrary from
-  // automatically a .DLL extension.
+  // automatically adding a .DLL extension.
   size_t name_len = strlen(name);
   char *name_with_dot = malloc(name_len + 2);
   if (name_with_dot == nullptr) {
