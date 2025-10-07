@@ -21,16 +21,18 @@
  * questions.
  */
 
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
@@ -84,17 +86,17 @@ import jdk.jpackage.test.TKit;
  */
 public class SigningRuntimeImagePackageTest {
 
-    private static JPackageCommand addSignOptions(JPackageCommand cmd, int certIndex) {
+    private static JPackageCommand addSignOptions(JPackageCommand cmd, MacSign.ResolvedKeychain keychain, int certIndex) {
         if (certIndex != SigningBase.CertIndex.INVALID_INDEX.value()) {
             cmd.addArguments(
                     "--mac-sign",
-                    "--mac-signing-keychain", SigningBase.getKeyChain(),
+                    "--mac-signing-keychain", keychain.name(),
                     "--mac-signing-key-user-name", SigningBase.getDevName(certIndex));
         }
         return cmd;
     }
 
-    private static Path createInputRuntimeBundle(int certIndex) throws IOException {
+    private static Path createInputRuntimeBundle(MacSign.ResolvedKeychain keychain, int certIndex) throws IOException {
 
         final var runtimeImage = JPackageCommand.createInputRuntimeImage();
 
@@ -111,7 +113,7 @@ public class SigningRuntimeImagePackageTest {
                 .addArguments("--runtime-image", runtimeImage)
                 .addArguments("--dest", runtimeBundleWorkDir);
 
-        addSignOptions(cmd, certIndex);
+        addSignOptions(cmd, keychain, certIndex);
 
         cmd.execute();
 
@@ -147,13 +149,21 @@ public class SigningRuntimeImagePackageTest {
     public static void test(boolean useJDKBundle,
                             SigningBase.CertIndex jdkBundleCert,
                             SigningBase.CertIndex signCert) throws Exception {
+        MacSign.withKeychain(toConsumer(keychain -> {
+            test(keychain, useJDKBundle, jdkBundleCert, signCert);
+        }), SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private static void test(MacSign.ResolvedKeychain keychain, boolean useJDKBundle,
+            SigningBase.CertIndex jdkBundleCert,
+            SigningBase.CertIndex signCert) throws Exception {
 
         final Path inputRuntime[] = new Path[1];
 
         new PackageTest()
                 .addRunOnceInitializer(() -> {
                     if (useJDKBundle) {
-                        inputRuntime[0] = createInputRuntimeBundle(jdkBundleCert.value());
+                        inputRuntime[0] = createInputRuntimeBundle(keychain, jdkBundleCert.value());
                     } else {
                         inputRuntime[0] = JPackageCommand.createInputRuntimeImage();
                     }
@@ -164,7 +174,7 @@ public class SigningRuntimeImagePackageTest {
                     // create input directory in the test and jpackage fails
                     // if --input references non existent directory.
                     cmd.removeArgumentWithValue("--input");
-                    addSignOptions(cmd, signCert.value());
+                    addSignOptions(cmd, keychain, signCert.value());
                 })
                 .addInstallVerifier(cmd -> {
                     final var certIndex = Stream.of(signCert, jdkBundleCert)

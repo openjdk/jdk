@@ -91,7 +91,7 @@ public class SigningBase {
     }
 
     public enum StandardKeychain {
-        MAIN(DEFAULT_KEYCHAIN,
+        MAIN("jpackagerTest.keychain",
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_UNICODE,
@@ -114,30 +114,26 @@ public class SigningBase {
         StandardKeychain(String keychainName, CertificateRequest cert, CertificateRequest... otherCerts) {
             final var builder = keychain(keychainName).addCert(cert);
             List.of(otherCerts).forEach(builder::addCert);
-            this.spec = new ResolvedKeychain(builder.create());
+            this.keychain = new ResolvedKeychain(builder.create());
         }
 
-        public KeychainWithCertsSpec spec() {
-            return spec.spec();
+        public ResolvedKeychain keychain() {
+            return keychain;
         }
 
         public X509Certificate mapCertificateRequest(CertificateRequest certRequest) {
-            return Objects.requireNonNull(spec.mapCertificateRequests().get(certRequest));
+            return Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest));
         }
 
         private static KeychainWithCertsSpec.Builder keychain(String name) {
             return new KeychainWithCertsSpec.Builder().name(name);
         }
 
-        private static CertificateRequest.Builder cert() {
-            return new CertificateRequest.Builder();
-        }
-
         private static List<KeychainWithCertsSpec> signingEnv() {
-            return Stream.of(values()).map(StandardKeychain::spec).toList();
+            return Stream.of(values()).map(StandardKeychain::keychain).map(ResolvedKeychain::spec).toList();
         }
 
-        private final ResolvedKeychain spec;
+        private final ResolvedKeychain keychain;
     }
 
     public static void setUp() {
@@ -179,7 +175,6 @@ public class SigningBase {
         "jpackage.openjdk.java.net",
         "jpackage.openjdk.java.net (ö)",
     };
-    private static String DEFAULT_KEYCHAIN = "jpackagerTest.keychain";
 
     public static String getDevName(int certIndex) {
         // Always use values from system properties if set
@@ -195,32 +190,12 @@ public class SigningBase {
         return Arrays.binarySearch(DEV_NAMES, devName);
     }
 
-    // Returns 'true' if dev name from DEV_NAMES
-    public static boolean isDevNameDefault() {
-        String value = System.getProperty("jpackage.mac.signing.key.user.name");
-        if (value != null) {
-            return false;
-        }
-
-        return true;
-    }
-
     public static String getAppCert(int certIndex) {
         return "Developer ID Application: " + getDevName(certIndex);
     }
 
     public static String getInstallerCert(int certIndex) {
         return "Developer ID Installer: " + getDevName(certIndex);
-    }
-
-    public static String getKeyChain() {
-        // Always use values from system properties if set
-        String value = System.getProperty("jpackage.mac.signing.keychain");
-        if (value != null) {
-            return value;
-        }
-
-        return DEFAULT_KEYCHAIN;
     }
 
     public static void verifyCodesign(Path target, boolean signed, int certIndex) {

@@ -1130,6 +1130,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 MacHelper.verifyBundleStructure(cmd);
             }
         }),
+        MAC_BUNDLE_UNSIGNED_SIGNATURE(cmd -> {
+            if (TKit.isOSX() && !MacHelper.appImageSigned(cmd)) {
+                MacHelper.verifyUnsignedBundleSignature(cmd);
+            }
+        }),
         ;
 
         AppLayoutAssert(Consumer<JPackageCommand> action) {
