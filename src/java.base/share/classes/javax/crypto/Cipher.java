@@ -289,43 +289,30 @@ public class Cipher {
     // for special handling SHA-512/224, SHA-512/256, SHA512/224, SHA512/256
     private static final String SHA512TRUNCATED = "512/2";
 
-    record Indices(String tr, int startIdx, int endIdx) {
-        // first invocation
-        static Indices findNext(String tr, int startIdx) {
-            int endIdx = tr.indexOf('/', startIdx);
-            if (endIdx != -1) { // found a slash
-                // check the presence of special algorithms with "/" in the
-                // name, e.g. truncated SHA512, which can cause the parsing
-                // logic to go wrong
-                int sha512Idx = tr.indexOf(SHA512TRUNCATED, startIdx);
-                int sha512SlashIdx = (sha512Idx != -1 ? sha512Idx + 3 : -2);
-                // if the current slash is the special algorithm slash,
-                // move forward to the next non-algorithm slash
-                while (endIdx == sha512SlashIdx) {
-                    endIdx = tr.indexOf('/', endIdx + 1);
-                    // check for the next truncated SHA512 and update
-                    sha512Idx = tr.indexOf(SHA512TRUNCATED, sha512SlashIdx + 1);
-                    sha512SlashIdx = (sha512Idx != -1 ? sha512Idx + 3 : -2);
-                }
+    static int indexOfRealSlash(String s, int fromIndex) {
+        while (true) {
+            int pos = s.indexOf('/', fromIndex);
+            // 512/2
+            if (pos > 3 && pos + 1 < s.length()
+                    && s.charAt(pos - 3) == '5'
+                    && s.charAt(pos - 2) == '1'
+                    && s.charAt(pos - 1) == '2'
+                    && s.charAt(pos + 1) == '2') {
+                fromIndex = pos + 1;
+                // see 512/2, find next
+            } else {
+                return pos;
             }
-            return new Indices(tr, startIdx, endIdx);
         }
+    }
 
-        // find the next set of indices given the current set of indices;
-        // called when curr.endIdx != -1
-        static Indices findNext(Indices curr) {
-            return findNext(curr.tr, curr.endIdx + 1);
+    static String reqNonEmpty(String in, String msg)
+            throws NoSuchAlgorithmException {
+        in = in.trim();
+        if (in.isEmpty()) {
+            throw new NoSuchAlgorithmException(msg);
         }
-
-        // check and return the trimmed string, i.e. from startIdx to endIdx.
-        String getValue(String errMsg) throws NoSuchAlgorithmException {
-            String value = (endIdx == -1 ? tr.substring(startIdx).trim() :
-                    tr.substring(startIdx, endIdx).trim());
-            if (value.isEmpty()) {
-                throw new NoSuchAlgorithmException(errMsg);
-            }
-            return value;
-        }
+        return in;
     }
 
     // Parse the specified cipher transformation for algorithm and the
@@ -345,25 +332,32 @@ public class Cipher {
          * 2) feedback component (e.g., CFB) - optional
          * 3) padding component (e.g., PKCS5Padding) - optional
          */
-        Indices marker = Indices.findNext(transformation, 0);
-        String algo = marker.getValue(
-                "Invalid transformation: algorithm not specified");
-        if (marker.endIdx == -1) { // done, algo only
-            return new String[] { algo };
-        } else { // should be algo/mode/padding
-            marker = Indices.findNext(marker);
-            if (marker.endIdx != -1) {
-                String mode = marker.getValue(
-                        "Invalid transformation: missing mode");
+        int endIdx = indexOfRealSlash(transformation, 0);
+        if (endIdx == -1) { // algo only, done
+            return new String[] { reqNonEmpty(transformation,
+                        "Invalid transformation: algorithm not specified")
+            };
+        }
+        // must be algo/mode/padding
+        String algo = reqNonEmpty(transformation.substring(0, endIdx),
+                    "Invalid transformation: algorithm not specified");
 
-                marker = Indices.findNext(marker);
-                // should have no more slash now
-                if (marker.endIdx == -1) {
-                    String padding = marker.getValue(
-                            "Invalid transformation: missing padding");
-                    return new String[] { algo, mode, padding };
-                }
-            }
+        int startIdx = endIdx + 1;
+        endIdx = indexOfRealSlash(transformation, startIdx);
+        if (endIdx == -1) {
+            throw new NoSuchAlgorithmException(
+                    "Invalid transformation format: " + transformation);
+        }
+        String mode = reqNonEmpty(transformation.substring(startIdx,
+                endIdx), "Invalid transformation: missing mode");
+
+        startIdx = endIdx + 1;
+        endIdx = indexOfRealSlash(transformation, startIdx);
+        if (endIdx == -1) {
+            return new String[] { algo, mode,
+                    reqNonEmpty(transformation.substring(startIdx),
+                            "Invalid transformation: missing padding") };
+        } else {
             throw new NoSuchAlgorithmException(
                     "Invalid transformation format: " + transformation);
         }
