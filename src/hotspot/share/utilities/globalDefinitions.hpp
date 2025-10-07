@@ -1278,6 +1278,14 @@ inline jlong java_shift_right_unsigned(jlong lhs, jint rhs, BasicType bt) {
   return java_shift_right_unsigned(lhs, rhs);
 }
 
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
 
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.
