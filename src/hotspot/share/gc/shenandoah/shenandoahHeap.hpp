@@ -231,14 +231,7 @@ private:
   volatile size_t _committed;
   shenandoah_padding(1);
 
-  void increase_used(const ShenandoahAllocRequest& req);
-
 public:
-  void increase_used(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_used(ShenandoahGeneration* generation, size_t bytes);
-  void increase_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-  void decrease_humongous_waste(ShenandoahGeneration* generation, size_t bytes);
-
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
 

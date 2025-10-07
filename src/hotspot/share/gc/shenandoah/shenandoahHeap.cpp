@@ -723,37 +723,6 @@ void ShenandoahHeap::decrease_committed(size_t bytes) {
   _committed -= bytes;
 }
 
-// For tracking usage based on allocations, it should be the case that:
-// * The sum of regions::used == heap::used
-// * The sum of a generation's regions::used == generation::used
-// * The sum of a generation's humongous regions::free == generation::humongous_waste
-// These invariants are checked by the verifier on GC safepoints.
-//
-// Additional notes:
-// * When a mutator's allocation request causes a region to be retired, the
-//   free memory left in that region is considered waste. It does not contribute
-//   to the usage, but it _does_ contribute to allocation rate.
-// * The bottom of a PLAB must be aligned on card size. In some cases this will
-//   require padding in front of the PLAB (a filler object). Because this padding
-//   is included in the region's used memory we include the padding in the usage
-//   accounting as waste.
-// * Mutator allocations are used to compute an allocation rate.
-// * There are three sources of waste:
-//  1. The padding used to align a PLAB on card size
-//  2. Region's free is less than minimum TLAB size and is retired
-//  3. The unused portion of memory in the last region of a humongous object
-void ShenandoahHeap::increase_used(const ShenandoahAllocRequest& req) {
-  size_t actual_bytes = req.actual_size() * HeapWordSize;
-  size_t wasted_bytes = req.waste() * HeapWordSize;
-  ShenandoahGeneration* generation = generation_for(req.affiliation());
-
-  if (req.is_gc_alloc()) {
-    assert(wasted_bytes == 0 || req.type() == ShenandoahAllocRequest::_alloc_plab, "Only PLABs have waste");
-  } else {
-    assert(req.is_mutator_alloc(), "Expected mutator alloc here");
-  }
-}
-
 size_t ShenandoahHeap::capacity() const {
   return committed();
 }
@@ -1001,10 +970,6 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   if (result == nullptr) {
     req.set_actual_size(0);
   }
-
-  // This is called regardless of the outcome of the allocation to account
-  // for any waste created by retiring regions with this request.
-  increase_used(req);
 
   if (result != nullptr) {
     size_t requested = req.size();
