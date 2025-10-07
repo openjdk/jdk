@@ -996,6 +996,7 @@ public final class AESCrypt extends SymmetricCipher {
         mSum[3] = invMix(state, 3);
 
         System.arraycopy(mSum, 0, state, 0, len);
+        Arrays.fill(mSum, 0);
     }
 
     /**
