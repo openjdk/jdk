@@ -43,10 +43,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RoundingToLSDTieTest {
 
+    // Safe to re-use since we are not testing any fast-path cases
+    // so state is irrelevant
+    private static final NumberFormat format = NumberFormat.getInstance(Locale.US);
+
     @ParameterizedTest
     @MethodSource("ties")
     void roundingTieTest(RoundingMode rm, int maxDigits, double db, String expected) {
-        var format = NumberFormat.getInstance(Locale.US);
         format.setRoundingMode(rm);
         format.setMaximumFractionDigits(maxDigits);
         assertEquals(expected, format.format(db), "Rounding failed under " + rm);
@@ -66,7 +69,7 @@ public class RoundingToLSDTieTest {
                 Arguments.of(RoundingMode.HALF_DOWN, 6, 0.0000005, "0"),
                 // 3) String is not rounded up from binary
                 // Non-exponential notation
-                // new BigDecimal(0.05) -> 0.05000000000000000277555756156289135105907917022705078125
+                // 0.05 -> 0.05000000000000000277555756156289135105907917022705078125
                 Arguments.of(RoundingMode.HALF_EVEN, 1, 0.05, "0.1"),
                 Arguments.of(RoundingMode.HALF_UP, 1, 0.05, "0.1"),
                 Arguments.of(RoundingMode.HALF_DOWN, 1, 0.05, "0.1"),
