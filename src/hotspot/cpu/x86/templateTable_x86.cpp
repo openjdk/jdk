@@ -2245,6 +2245,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   const Register temp = rbx;
   assert_different_registers(cache, index, temp);
 
+  Label L_clinit_barrier_slow;
   Label resolved;
 
   Bytecodes::Code code = bytecode();
@@ -2265,6 +2266,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ jcc(Assembler::equal, resolved);
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ movl(temp, code);
   __ call_VM(noreg, entry, temp);
@@ -2272,6 +2275,15 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ load_field_entry(cache, index);
 
   __ bind(resolved);
+
+  // Class initialization barrier for static fields
+  if (VM_Version::supports_fast_class_init_checks() &&
+      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+    const Register field_holder = temp;
+
+    __ movptr(field_holder, Address(cache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
+    __ clinit_barrier(field_holder, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+  }
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,
