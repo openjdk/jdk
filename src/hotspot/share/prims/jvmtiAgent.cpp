@@ -31,7 +31,7 @@
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -83,7 +83,7 @@ JvmtiAgent::JvmtiAgent(const char* name, const char* options, bool is_absolute_p
   _xrun(false) {}
 
 JvmtiAgent* JvmtiAgent::next() const {
-  return Atomic::load_acquire(&_next);
+  return AtomicAccess::load_acquire(&_next);
 }
 
 const char* JvmtiAgent::name() const {
@@ -576,25 +576,14 @@ static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
 }
 
 #if INCLUDE_CDS
-// CDS dumping does not support native JVMTI agent.
-// CDS dumping supports Java agent if the AllowArchivingWithJavaAgent diagnostic option is specified.
 static void check_cds_dump(JvmtiAgent* agent) {
   if (CDSConfig::new_aot_flags_used()) { // JEP 483
     // Agents are allowed with -XX:AOTMode=record and -XX:AOTMode=on/auto.
-    // Agents are completely disabled when -XX:AOTMode=create
+    // Agents are completely disabled when -XX:AOTMode=create (see cdsConfig.cpp)
     assert(!CDSConfig::is_dumping_final_static_archive(), "agents should have been disabled with -XX:AOTMode=create");
-    return;
-  }
-
-  // This is classic CDS limitations -- we disallow agents by default. They can be used
-  // with -XX:+AllowArchivingWithJavaAgent, but that should be used for diagnostic purposes only.
-  assert(agent != nullptr, "invariant");
-  if (!agent->is_instrument_lib()) {
-    vm_exit_during_cds_dumping("CDS dumping does not support native JVMTI agent, name", agent->name());
-  }
-  if (!AllowArchivingWithJavaAgent) {
-    vm_exit_during_cds_dumping(
-      "Must enable AllowArchivingWithJavaAgent in order to run Java agent during CDS dumping");
+  } else if (CDSConfig::is_dumping_classic_static_archive() || CDSConfig::is_dumping_dynamic_archive()) {
+    // Classic CDS (static or dynamic dump). Disallow agents.
+    vm_exit_during_cds_dumping("JVMTI agents are not allowed when dumping CDS archives");
   }
 }
 #endif // INCLUDE_CDS

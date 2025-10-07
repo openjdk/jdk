@@ -105,7 +105,7 @@ final class SnippetMaps {
         return new ArrayList<>(snippets);
     }
 
-    String packageAndImportsExcept(Set<Key> except, Collection<Snippet> plus) {
+    String packageAndImportsExcept(Set<Key> except, Collection<String> extraImports) {
         StringBuilder sb = new StringBuilder();
         sb.append("package ").append(REPL_PACKAGE).append(";\n");
         for (Snippet si : keyIndexToSnippet) {
@@ -113,9 +113,7 @@ final class SnippetMaps {
                 sb.append(si.importLine(state));
             }
         }
-        if (plus != null) {
-            plus.forEach(psi -> sb.append(psi.importLine(state)));
-        }
+        extraImports.forEach(sb::append);
         return sb.toString();
     }
 
