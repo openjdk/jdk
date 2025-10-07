@@ -1511,12 +1511,12 @@ void Arguments::set_heap_size() {
   uint64_t physical_memory;
 
   // Check if the user has configured any limit on the amount of RAM we may use.
-  bool ram_limit_set = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
+  bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MinRAMPercentage) ||
                        !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
                        !FLAG_IS_DEFAULT(MaxRAM);
 
-  if (ram_limit_set) {
+  if (has_ram_limit) {
     if (!FLAG_IS_DEFAULT(MaxRAM)) {
       // The user has configured MaxRAM, use that instead of physical memory
       // reported by the OS.
@@ -1601,7 +1601,7 @@ void Arguments::set_heap_size() {
       // then disable compressed oops if the calculated max exceeds max_coop_heap
       // and UseCompressedOops was not specified.
       if (reasonable_max > max_coop_heap) {
-        if (FLAG_IS_ERGO(UseCompressedOops) && ram_limit_set) {
+        if (FLAG_IS_ERGO(UseCompressedOops) && has_ram_limit) {
           aot_log_info(aot)("UseCompressedOops disabled due to "
                             "max heap %zu > compressed oop heap %zu. "
                             "Please check the setting of MaxRAMPercentage %5.2f.",
