@@ -44,15 +44,12 @@ class JfrThreadSampler : public JfrCHeapObj {
   static JfrThreadSampler* create();
   static void destroy();
 
-  static bool sample_java_thread(JavaThread* jt, SampleCallback callback, void* data);
-  static bool sample_native_thread(JavaThread* jt, SampleCallback callback, void* data);
-
  public:
   static void set_java_sample_period(int64_t period_millis);
   static void set_native_sample_period(int64_t period_millis);
 
   // Sample a single java thread
-  static bool sample_thread(JavaThread* t, SampleCallback callback, void* data);
+  static void sample_thread(JavaThread* t, jobject target, SampleCallback callback, void* context);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP

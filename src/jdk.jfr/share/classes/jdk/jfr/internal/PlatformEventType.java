@@ -263,7 +263,7 @@ public final class PlatformEventType extends Type {
         updateCommittable();
         if (isJVM) {
             if (isMethodSampling) {
-                long p = enabled ? period : 0;
+                long p = enabled ? period : -1;
                 JVM.setMethodSamplingPeriod(getId(), p);
             } else if (isCPUTimeMethodSampling) {
                 TimespanRate r = enabled ? cpuRate : TimespanRate.OFF;

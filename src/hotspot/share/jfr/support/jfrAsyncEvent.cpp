@@ -48,17 +48,24 @@ JfrAsyncEvent::~JfrAsyncEvent() {
   os::free(_payload);
 }
 
-void JfrAsyncEvent::async_event_callback(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, void* data) {
-  assert(data != nullptr, "invariant");
-  JfrAsyncEvent* event = (JfrAsyncEvent*)data;
+void JfrAsyncEvent::async_event_callback(JfrSampleCallbackReason reason,
+                                         const JfrTicks* start_time,
+                                         const JfrTicks* end_time,
+                                         traceid sid,
+                                         traceid tid,
+                                         void* context) {
+  assert(context != nullptr, "invariant");
+  JfrAsyncEvent* event = (JfrAsyncEvent*)context;
 
-  Thread* const thread = Thread::current();
-  JfrThreadLocal* const tl = thread->jfr_thread_local();
-  JfrBuffer* const buffer = tl->native_buffer();
-  if (buffer != nullptr) {
-    if (!write_sized_event(buffer, thread, start_time, end_time, tid, sid, event, false)) {
-      // Try large size.
-      write_sized_event(buffer, thread, start_time, end_time, tid, sid, event, true);
+  if (reason == COMMIT_EVENT) {
+    Thread* const thread = Thread::current();
+    JfrThreadLocal* const tl = thread->jfr_thread_local();
+    JfrBuffer* const buffer = tl->native_buffer();
+    if (buffer != nullptr) {
+      if (!write_sized_event(buffer, thread, start_time, end_time, tid, sid, event, false)) {
+        // Try large size.
+        write_sized_event(buffer, thread, start_time, end_time, tid, sid, event, true);
+      }
     }
   }
   // Delivered, done!
@@ -67,20 +74,22 @@ void JfrAsyncEvent::async_event_callback(const JfrTicks& start_time, const JfrTi
 
 bool JfrAsyncEvent::write_sized_event(JfrBuffer* buffer,
                                       Thread* thread,
-                                      const JfrTicks& start_time,
-                                      const JfrTicks& end_time,
+                                      const JfrTicks* start_time,
+                                      const JfrTicks* end_time,
                                       traceid tid,
                                       traceid sid,
                                       JfrAsyncEvent* event,
                                       bool large_size) {
+    assert(start_time != nullptr, "invariant");
+    assert(end_time != nullptr, "invariant");
     JfrNativeEventWriter writer(buffer, thread);
     writer.begin_event_write(large_size);
     writer.write<u8>(event->event_id());
 
-    assert(start_time.value() != 0, "invariant");
-    writer.write(start_time);
+    assert(start_time->value() != 0, "invariant");
+    writer.write(*start_time);
     if (event->has_duration()) {
-      writer.write(end_time - start_time);
+      writer.write(*end_time - *start_time);
     }
     if (event->has_event_thread()) {
       writer.write(tid);
@@ -94,26 +103,17 @@ bool JfrAsyncEvent::write_sized_event(JfrBuffer* buffer,
     return writer.end_event_write(large_size) > 0;
 }
 
+
 void JfrAsyncEvent::send_async_event(jobject target,
                                      jlong event_id,
                                      jboolean has_duration,
                                      jboolean has_event_thread,
                                      jboolean has_stack_trace,
-                                     jbyteArray payload) {
+                                     jbyteArray payload,
+                                     JavaThread* const jt) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current()));
-
-  // Make sure target thread is valid
-  ThreadsListHandle tlh;
-  JavaThread* jt = nullptr;
-  bool is_alive = tlh.cv_internal_thread_to_JavaThread(target, &jt, nullptr);
-  if (!is_alive) {
-    return;
-  }
 
   typeArrayOop payloadOop = typeArrayOop(JNIHandles::resolve(payload));
   JfrAsyncEvent* event = new JfrAsyncEvent(event_id, has_duration, has_event_thread, has_event_thread, payloadOop);
-  if (!JfrThreadSampler::sample_thread(jt, async_event_callback, (void*)event)) {
-    // fail to deliver the event, discard it
-    delete event;
-  }
+  JfrThreadSampler::sample_thread(jt, target, async_event_callback, (void*)event);
 }

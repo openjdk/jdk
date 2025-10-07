@@ -286,7 +286,7 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const void* u
                                                                    JfrThreadLocal* tl,
                                                                    JavaThread* jt,
                                                                    SampleCallback callback,
-                                                                   void* data) {
+                                                                   void* context) {
   assert(ucontext != nullptr, "invariant");
   assert(tl != nullptr, "invariant");
   assert(tl->sample_state() == NO_SAMPLE, "invariant");
@@ -296,7 +296,7 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const void* u
   JfrSampleRequest request;
 
   request._callback = callback;
-  request._data = data;
+  request._context = context;
 
   // Prioritize the ljf, if one exists.
   request._sample_sp = jt->last_Java_sp();
@@ -339,3 +339,4 @@ void JfrSampleRequestBuilder::build_cpu_time_sample_request(JfrSampleRequest& re
     }
   }
 }
+

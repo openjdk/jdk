@@ -46,7 +46,8 @@ public:
                                jboolean has_duration,
                                jboolean has_event_thread,
                                jboolean has_stack_trace,
-                               jbyteArray payload);
+                               jbyteArray payload,
+                               JavaThread* const thread);
 private:
   JfrAsyncEvent(long event_id, bool has_duration, bool has_event_thread, bool has_stack_trace, typeArrayOop payloadOop);
   ~JfrAsyncEvent();
@@ -59,11 +60,16 @@ private:
   jbyte* payload()        const { return _payload; }
 
   // Callback
-  static void async_event_callback(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, void* data);
+  static void async_event_callback(JfrSampleCallbackReason reason,
+                                    const JfrTicks* start_time,
+                                    const JfrTicks* end_time,
+                                    traceid sid,
+                                    traceid tid,
+                                    void* context);
   static bool write_sized_event(JfrBuffer* buffer,
                                 Thread* thread,
-                                const JfrTicks& start_time,
-                                const JfrTicks& end_time,
+                                const JfrTicks* start_time,
+                                const JfrTicks* end_time,
                                 traceid tid,
                                 traceid sid,
                                 JfrAsyncEvent* event,

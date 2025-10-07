@@ -10,7 +10,7 @@
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
+ * accompanied this code)._no_safepoint_check
  *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
@@ -139,7 +139,7 @@ extern Mutex*   FinalImageRecipes_lock;          // Protecting the tables used b
 extern Mutex*   JfrStacktrace_lock;              // used to guard access to the JFR stacktrace table
 extern Monitor* JfrMsg_lock;                     // protects JFR messaging
 extern Mutex*   JfrBuffer_lock;                  // protects JFR buffer operations
-extern Mutex*   JfrSamplerSR_lock;               // protects OSThreadSampler
+extern Monitor* JfrAsyncEventRequest_lock;       // protects JFR sampler
 #endif
 
 extern Mutex*   Metaspace_lock;                  // protects Metaspace virtualspace and chunk expansions

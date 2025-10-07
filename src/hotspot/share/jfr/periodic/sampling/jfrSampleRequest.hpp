@@ -33,8 +33,17 @@
 class JavaThread;
 class JfrThreadLocal;
 
-typedef void (*SampleCallback)(const JfrTicks& start_time, const JfrTicks& end_time, traceid sid, traceid tid, void* data);
+enum JfrSampleCallbackReason {
+  COMMIT_EVENT,   // Sample succeeded, callback to commit the event
+  SKIP_EVENT      // Sample failed, callback to cleanup
+};
 
+typedef void (*SampleCallback)(JfrSampleCallbackReason reason,
+                               const JfrTicks* start_time,
+                               const JfrTicks* end_time,
+                               traceid sid,
+                               traceid tid,
+                               void* context);
 enum JfrSampleResult {
   THREAD_SUSPENSION_ERROR,
   WRONG_THREAD_STATE,
@@ -63,15 +72,15 @@ struct JfrSampleRequest {
   void* _sample_pc;
   void* _sample_bcp;
   JfrTicks _sample_ticks;
-  void* _data;
+  void* _context;
   SampleCallback _callback;
 
-  JfrSampleRequest(void* data = nullptr, SampleCallback func = nullptr) :
+  JfrSampleRequest(void* context = nullptr, SampleCallback func = nullptr) :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
     _sample_ticks(),
-    _data(data),
+    _context(context),
     _callback(func){}
 
   JfrSampleRequest(const JfrTicks& ticks) :
@@ -79,7 +88,7 @@ struct JfrSampleRequest {
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
     _sample_ticks(ticks),
-    _data(nullptr),
+    _context(nullptr),
     _callback(nullptr) {}
 };
 
