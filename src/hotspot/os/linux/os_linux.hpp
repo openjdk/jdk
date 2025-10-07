@@ -33,7 +33,6 @@ class os::Linux {
   friend class os;
 
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);
-  static int (*_pthread_setname_np)(pthread_t, const char*);
 
   static address   _initial_thread_stack_bottom;
   static uintptr_t _initial_thread_stack_size;
@@ -50,11 +49,11 @@ class os::Linux {
 
  protected:
 
-  static size_t _physical_memory;
+  static physical_memory_size_type _physical_memory;
   static pthread_t _main_thread;
 
-  static bool available_memory(size_t& value);
-  static bool free_memory(size_t& value);
+  static bool available_memory(physical_memory_size_type& value);
+  static bool free_memory(physical_memory_size_type& value);
 
 
   static void initialize_system_info();
@@ -117,7 +116,7 @@ class os::Linux {
   static address   initial_thread_stack_bottom(void)                { return _initial_thread_stack_bottom; }
   static uintptr_t initial_thread_stack_size(void)                  { return _initial_thread_stack_size; }
 
-  static size_t physical_memory() { return _physical_memory; }
+  static physical_memory_size_type physical_memory() { return _physical_memory; }
   static julong host_swap();
 
   static intptr_t* ucontext_get_sp(const ucontext_t* uc);

@@ -110,7 +110,7 @@ public class RET extends Instruction implements IndexedInstruction, TypedInstruc
     }
 
     /**
-     * Set index of local variable containg the return address
+     * Sets index of local variable containg the return address
      */
     @Override
     public final void setIndex(final int n) {
