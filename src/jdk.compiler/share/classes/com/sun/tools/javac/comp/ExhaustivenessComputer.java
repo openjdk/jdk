@@ -49,6 +49,7 @@ import java.util.SequencedSet;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -149,325 +150,20 @@ public class ExhaustivenessComputer {
             Set<String> details =
                     this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
                         .stream()
-                        .map(PatternDescription::toString)
+                        .flatMap(pd -> {
+                            if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
+                                Symbol enumType = bp.type.tsym;
+                                return enum2Constants.get(enumType).stream().map(c -> enumType.toString() + "." + c.name);
+                            } else {
+                                return Stream.of(pd.toString());
+                            }
+                        })
                         .collect(Collectors.toSet());
 
             return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
             chk.completionError(selector.pos(), cf);
             return ExhaustivenessResult.ofExhaustive(); //error recovery
-        }
-    }
-
-    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType, Set<PatternDescription> incompletePatterns) {
-        if (missingExhaustivenessTimeout == 0) {
-            return Set.of();
-        }
-        try {
-            startTime = System.currentTimeMillis();
-            PatternDescription defaultPattern = new BindingPattern(selectorType);
-            return expandMissingPatternDescriptions(selectorType, selectorType, defaultPattern, incompletePatterns, Set.of(defaultPattern));
-        } catch (TimeoutException ex) {
-            return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
-        } finally {
-            startTime = -1;
-        }
-    }
-
-    private Set<PatternDescription> expandMissingPatternDescriptions(Type selectorType, Type targetType, PatternDescription toExpand, Set<? extends PatternDescription> basePatterns, Set<PatternDescription> inMissingPatterns) {
-        try {
-            return doExpandMissingPatternDescriptions(selectorType, targetType, toExpand, basePatterns, inMissingPatterns);
-        } catch (TimeoutException ex) {
-            if (ex.missingPatterns == null) {
-                ex = new TimeoutException(inMissingPatterns);
-            }
-            throw ex;
-        }
-    }
-
-    private Set<PatternDescription> doExpandMissingPatternDescriptions(Type selectorType, Type targetType, PatternDescription toExpand, Set<? extends PatternDescription> basePatterns, Set<PatternDescription> inMissingPatterns) {
-        if (toExpand instanceof BindingPattern bp) {
-            if (bp.type.tsym.isSealed()) {
-                List<Type> permitted = ((ClassSymbol) bp.type.tsym).getPermittedSubclasses();
-                Set<BindingPattern> viablePermittedPatterns = permitted.stream().map(type -> type.tsym).filter(csym -> {
-                    Type instantiated;
-                    if (csym.type.allparams().isEmpty()) {
-                        instantiated = csym.type;
-                    } else {
-                        instantiated = infer.instantiatePatternType(targetType, csym);
-                    }
-
-                    return instantiated != null && types.isCastable(targetType, instantiated);
-                }).map(csym -> new BindingPattern(types.erasure(csym.type))).collect(Collectors.toSet());
-
-                boolean reduced = false;
-
-                for (Iterator<BindingPattern> it = viablePermittedPatterns.iterator(); it.hasNext(); ) {
-                    BindingPattern current = it.next();
-                    Set<BindingPattern> reducedPermittedPatterns = new HashSet<>(viablePermittedPatterns);
-
-                    reducedPermittedPatterns.remove(current);
-
-                    Set<PatternDescription> replaced = replace(inMissingPatterns, toExpand, reducedPermittedPatterns);
-
-                    if (computeCoverage(selectorType, joinSets(basePatterns, replaced), true).covered()) {
-                        it.remove();
-                        reduced = true;
-                    }
-                }
-
-                if (!reduced) {
-                    return inMissingPatterns;
-                }
-
-                Set<PatternDescription> currentMissingPatterns = replace(inMissingPatterns, toExpand, viablePermittedPatterns);
-
-                //try to recursively work on each viable pattern:
-                for (PatternDescription viable : viablePermittedPatterns) {
-                    currentMissingPatterns = expandMissingPatternDescriptions(selectorType, targetType, viable, basePatterns, currentMissingPatterns);
-                }
-
-                return currentMissingPatterns;
-            } else if ((bp.type.tsym.flags_field & Flags.RECORD) != 0 &&
-                       basePatternsHaveRecordPatternOnThisSpot(basePatterns, findRootContaining(inMissingPatterns, toExpand), toExpand)) { //only expand record types into record patterns if there's a chance it may change the outcome
-                Type[] componentTypes = ((ClassSymbol) bp.type.tsym).getRecordComponents()
-                        .map(r -> types.memberType(bp.type, r))
-                        .toArray(s -> new Type[s]);
-                List<List<Type>> combinatorialNestedTypes = List.of(List.nil());
-                for (Type componentType : componentTypes) {
-                    List<Type> variants;
-                    if (componentType.tsym.isSealed()) {
-                        variants = leafPermittedSubTypes(componentType.tsym, csym -> {
-                            Type instantiated;
-                            if (csym.type.allparams().isEmpty()) {
-                                instantiated = csym.type;
-                            } else {
-                                instantiated = infer.instantiatePatternType(componentType, csym);
-                            }
-
-                            return instantiated != null && types.isCastable(componentType, instantiated);
-                        }).stream().map(csym -> csym.type).collect(List.collector()); //XXX: csym.type => instantiate
-                    } else {
-                        variants = List.of(componentType);
-                    }
-                    List<List<Type>> newCombinatorialNestedTypes = List.nil();
-                    for (List<Type> existing : combinatorialNestedTypes) {
-                        for (Type nue : variants) {
-                            newCombinatorialNestedTypes = newCombinatorialNestedTypes.prepend(existing.append(nue));
-                        }
-                    }
-                    combinatorialNestedTypes = newCombinatorialNestedTypes;
-                }
-
-                Set<PatternDescription> combinatorialPatterns = combinatorialNestedTypes.stream().map(combination -> new RecordPattern(bp.type, componentTypes, combination.map(BindingPattern::new).toArray(PatternDescription[]::new))).collect(Collectors.toSet());
-
-                //remove unnecessary:
-                //preserve the most specific:
-                combinatorialPatterns = new LinkedHashSet<>(sortPattern(combinatorialPatterns, basePatterns, inMissingPatterns).reversed());
-
-                for (Iterator<PatternDescription> it = combinatorialPatterns.iterator(); it.hasNext(); ) {
-                    PatternDescription current = it.next();
-                    Set<PatternDescription> reducedAdded = new HashSet<>(combinatorialPatterns);
-
-                    reducedAdded.remove(current);
-
-                    if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded)), true).covered()) {
-                        it.remove();
-                    }
-                }
-
-                CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns, true);
-
-                if (!coverageResult.covered()) {
-                    //nothing better can be done(?)
-                    combinatorialPatterns = coverageResult.incompletePatterns();
-                }
-
-                //combine sealed subtypes into the supertype, if all is covered.
-                //but preserve more specific record patterns in positions where there are record patterns
-                //this is particularly for the case where the sealed supertype only has one permitted type, the record:
-                Set<PatternDescription> sortedCandidates = sortPattern(combinatorialPatterns, basePatterns, combinatorialPatterns);
-
-                //remove unnecessary:
-                OUTER: for (Iterator<PatternDescription> it = sortedCandidates.iterator(); it.hasNext(); ) {
-                    PatternDescription current = it.next();
-                    Set<PatternDescription> reducedAdded = new HashSet<>(sortedCandidates);
-
-                    reducedAdded.remove(current);
-
-                    if (computeCoverage(selectorType, joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded)), true).covered()) {
-                        it.remove();
-                    }
-                }
-
-                Set<PatternDescription> currentMissingPatterns = replace(inMissingPatterns, toExpand, sortedCandidates);
-
-                for (PatternDescription addedPattern : sortedCandidates) {
-                    if (addedPattern instanceof RecordPattern addedRP) {
-                        for (int c = 0; c < addedRP.nested.length; c++) {
-                            currentMissingPatterns = expandMissingPatternDescriptions(selectorType, addedRP.fullComponentTypes[c], addedRP.nested[c], basePatterns, currentMissingPatterns);
-                        }
-                    }
-                }
-
-                return currentMissingPatterns;
-            }
-        }
-        return inMissingPatterns;
-    }
-
-    private PatternDescription findRootContaining(Set<? extends PatternDescription> rootPatterns, PatternDescription added) {
-        for (PatternDescription pd : rootPatterns) {
-            if (isUnderRoot(pd, added)) {
-                return pd;
-            }
-        }
-
-        //assert?
-        return null;
-    }
-
-    private boolean basePatternsHaveRecordPatternOnThisSpot(Set<? extends PatternDescription> basePatterns, PatternDescription rootPattern, PatternDescription added) {
-        if (rootPattern == added) {
-            return basePatterns.stream().anyMatch(pd -> pd instanceof RecordPattern);
-        }
-        if (!(rootPattern instanceof RecordPattern rootPatternRecord)) {
-            return false;
-        }
-        int index = -1;
-        for (int c = 0; c < rootPatternRecord.nested.length; c++) {
-            if (isUnderRoot(rootPatternRecord.nested[c], added)) {
-                index = c;
-                break;
-            }
-        }
-        Assert.check(index != (-1));
-        //TODO: isSameType erasure?
-        //TODO: indexing into the nested array - error recovery(!)
-        int indexFin = index;
-        Set<PatternDescription> filteredBasePatterns = basePatterns.stream().filter(pd -> pd instanceof RecordPattern).map(rp -> (RecordPattern) rp).filter(rp -> types.isSameType(rp.recordType(), rootPatternRecord.recordType())).map(rp -> rp.nested[indexFin]).collect(Collectors.toSet());
-        return basePatternsHaveRecordPatternOnThisSpot(filteredBasePatterns, rootPatternRecord.nested[index], added);
-    }
-
-    private boolean isUnderRoot(PatternDescription root, PatternDescription searchFor) {
-        if (root == searchFor) {
-            return true;
-        } else if (root instanceof RecordPattern rp) {
-            for (int c = 0; c < rp.nested.length; c++) {
-                if (isUnderRoot(rp.nested[c], searchFor)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    private SequencedSet<PatternDescription> sortPattern(Set<PatternDescription> candidates, Set<? extends PatternDescription> basePatterns, Set<PatternDescription> missingPatterns) {
-        SequencedSet<PatternDescription> sortedCandidates = new LinkedHashSet<>();
-
-        while (!candidates.isEmpty()) {
-            PatternDescription mostSpecific = null;
-            for (PatternDescription current : candidates) {
-                if (mostSpecific == null || isMoreImportant(current, mostSpecific, basePatterns, missingPatterns)) {
-                    mostSpecific = current;
-                }
-            }
-            sortedCandidates.add(mostSpecific);
-            candidates.remove(mostSpecific);
-        }
-        return sortedCandidates;
-    }
-
-    private Set<PatternDescription> replace(Iterable<? extends PatternDescription> in, PatternDescription what, Collection<? extends PatternDescription> to) {
-        Set<PatternDescription> result = new HashSet<>();
-
-        for (PatternDescription pd : in) {
-            Collection<? extends PatternDescription> replaced = replace(pd, what, to);
-            if (replaced != null) {
-                result.addAll(replaced);
-            } else {
-                result.add(pd);
-            }
-        }
-
-        return result;
-    }
-
-    //null: no change
-    private Collection<? extends PatternDescription> replace(PatternDescription in, PatternDescription what, Collection<? extends PatternDescription> to) {
-        if (in == what) {
-            return to;
-        } else if (in instanceof RecordPattern rp) {
-            for (int c = 0; c < rp.nested.length; c++) {
-                Collection<? extends PatternDescription> replaced = replace(rp.nested[c], what, to);
-                if (replaced != null) {
-                    Set<PatternDescription> withReplaced = new HashSet<>();
-
-                    generatePatternsWithReplacedNestedPattern(rp, c, replaced, withReplaced::add);
-
-                    return replace(withReplaced, what, to);
-                }
-            }
-            return null;
-        } else {
-            return null; //binding patterns have no children
-        }
-    }
-
-    //true iff pd1 is more important than pd2
-    //false otherwise
-    //TODO: there may be a better name for this method:
-    private boolean isMoreImportant(PatternDescription pd1, PatternDescription pd2, Set<? extends PatternDescription> basePatterns, Set<? extends PatternDescription> missingPatterns) {
-        if (pd1 instanceof RecordPattern rp1 && pd2 instanceof RecordPattern rp2) {
-            for (int c = 0; c < rp1.nested.length; c++) {
-                if (isMoreImportant((BindingPattern) rp1.nested[c], (BindingPattern) rp2.nested[c], basePatterns, missingPatterns)) {
-                    return true;
-                }
-            }
-        } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
-            Type t1 = bp1.type();
-            Type t2 = bp2.type();
-            boolean t1IsImportantRecord = (t1.tsym.flags_field & RECORD) != 0 && hasMatchingRecordPattern(basePatterns, missingPatterns, bp1);
-            boolean t2IsImportantRecord = (t2.tsym.flags_field & RECORD) != 0 && hasMatchingRecordPattern(basePatterns, missingPatterns, bp2);
-            if (t1IsImportantRecord && !t2IsImportantRecord) {
-                return false;
-            }
-            if (!t1IsImportantRecord && t2IsImportantRecord) {
-                return true;
-            }
-            if (!types.isSameType(t1, t2) && types.isSubtype(t1, t2)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean hasMatchingRecordPattern(Set<? extends PatternDescription> basePatterns, Set<? extends PatternDescription> missingPatterns, PatternDescription query) {
-        PatternDescription root = findRootContaining(missingPatterns, query);
-
-        if (root == null) {
-            return false;
-        }
-        return basePatternsHaveRecordPatternOnThisSpot(basePatterns, root, query);
-    }
-
-    private Set<PatternDescription> joinSets(Collection<? extends PatternDescription> s1, Collection<? extends PatternDescription> s2) {
-        Set<PatternDescription> result = new HashSet<>();
-
-        result.addAll(s1);
-        result.addAll(s2);
-        return result;
-    }
-
-    //TODO: unify with the similar code below:
-    private void generatePatternsWithReplacedNestedPattern(RecordPattern basePattern, int replaceComponent, Iterable<? extends PatternDescription> updatedNestedPatterns, Consumer<RecordPattern> sink) {
-        for (PatternDescription nested : updatedNestedPatterns) {
-            PatternDescription[] newNested =
-                    Arrays.copyOf(basePattern.nested, basePattern.nested.length);
-            newNested[replaceComponent] = nested;
-            sink.accept(new RecordPattern(basePattern.recordType(),
-                                            basePattern.fullComponentTypes(),
-                                            newNested));
         }
     }
 
@@ -573,16 +269,7 @@ public class ExhaustivenessComputer {
                             continue;
                         }
 
-                        Set<Symbol> permitted = allPermittedSubTypes(clazz, csym -> {
-                            Type instantiated;
-                            if (csym.type.allparams().isEmpty()) {
-                                instantiated = csym.type;
-                            } else {
-                                instantiated = infer.instantiatePatternType(selectorType, csym);
-                            }
-
-                            return instantiated != null && types.isCastable(selectorType, instantiated);
-                        });
+                        Set<Symbol> permitted = allPermittedSubTypes(clazz, isPossibleSubtypePredicate(selectorType));
                         int permittedSubtypes = permitted.size();
 
                         for (PatternDescription pdOther : patterns) {
@@ -650,8 +337,24 @@ public class ExhaustivenessComputer {
         return permitted;
     }
 
-    private Set<Symbol> leafPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
-        Set<Symbol> permitted = new HashSet<>();
+    private <C extends TypeSymbol> Predicate<C> isPossibleSubtypePredicate(Type targetType) {
+        return csym -> {
+            Type instantiated = instantiatePatternType(targetType, csym);
+
+            return instantiated != null && types.isCastable(targetType, instantiated);
+        };
+    }
+
+    private Type instantiatePatternType(Type targetType, TypeSymbol csym) {
+        if (csym.type.allparams().isEmpty()) {
+            return csym.type;
+        } else {
+            return infer.instantiatePatternType(targetType, csym);
+        }
+    }
+
+    private Set<ClassSymbol> leafPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
+        Set<ClassSymbol> permitted = new HashSet<>();
         List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
 
         while (permittedSubtypesClosure.nonEmpty()) {
@@ -827,16 +530,13 @@ public class ExhaustivenessComputer {
                                 current.removeAll(join);
                             }
 
-                            for (PatternDescription nested : updatedPatterns) {
-                                PatternDescription[] newNested =
-                                        Arrays.copyOf(rpOne.nested, rpOne.nested.length);
-                                newNested[mismatchingCandidateFin] = nested;
-                                RecordPattern nue = new RecordPattern(rpOne.recordType(),
-                                                                rpOne.fullComponentTypes(),
-                                                                newNested);
+                            generatePatternsWithReplacedNestedPattern(rpOne,
+                                                                      mismatchingCandidateFin,
+                                                                      updatedPatterns,
+                                                                      nue -> {
                                 current.add(nue);
                                 replaces.put(nue, new HashSet<>(join));
-                            }
+                            });
                         }
                     }
                 }
@@ -987,7 +687,7 @@ public class ExhaustivenessComputer {
         public BindingPattern(Type type) {
             this(type, -1);
         }
-        
+
         @Override
         public int hashCode() {
             return type.tsym.hashCode();
@@ -1053,6 +753,410 @@ public class ExhaustivenessComputer {
         }
         public static ExhaustivenessResult ofDetails(Set<String> notExhaustiveDetails) {
             return new ExhaustivenessResult(false, notExhaustiveDetails != null ? notExhaustiveDetails : Set.of());
+        }
+    }
+
+    //computation of missing patterns:
+    protected Set<PatternDescription> computeMissingPatternDescriptions(Type selectorType,
+                                                                        Set<PatternDescription> incompletePatterns) {
+        if (missingExhaustivenessTimeout == 0) {
+            return Set.of();
+        }
+        try {
+            startTime = System.currentTimeMillis();
+            PatternDescription defaultPattern = new BindingPattern(selectorType);
+            return expandMissingPatternDescriptions(selectorType,
+                                                    selectorType,
+                                                    defaultPattern,
+                                                    incompletePatterns,
+                                                    Set.of(defaultPattern));
+        } catch (TimeoutException ex) {
+            return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
+        } finally {
+            startTime = -1;
+        }
+    }
+
+    private Set<PatternDescription> expandMissingPatternDescriptions(Type selectorType,
+                                                                     Type targetType,
+                                                                     PatternDescription toExpand,
+                                                                     Set<? extends PatternDescription> basePatterns,
+                                                                     Set<PatternDescription> inMissingPatterns) {
+        try {
+            return doExpandMissingPatternDescriptions(selectorType, targetType,
+                                                      toExpand, basePatterns,
+                                                      inMissingPatterns);
+        } catch (TimeoutException ex) {
+            if (ex.missingPatterns == null) {
+                ex = new TimeoutException(inMissingPatterns);
+            }
+            throw ex;
+        }
+    }
+
+    private Set<PatternDescription> doExpandMissingPatternDescriptions(Type selectorType,
+                                                                       Type targetType,
+                                                                       PatternDescription toExpand,
+                                                                       Set<? extends PatternDescription> basePatterns,
+                                                                       Set<PatternDescription> inMissingPatterns) {
+        if (toExpand instanceof BindingPattern bp) {
+            if (bp.type.tsym.isSealed()) {
+                //try to replace binding patterns for sealed types with all their immediate permitted types:
+                List<Type> permitted = ((ClassSymbol) bp.type.tsym).getPermittedSubclasses();
+                Set<BindingPattern> viablePermittedPatterns =
+                        permitted.stream()
+                                 .map(type -> type.tsym)
+                                 .filter(isPossibleSubtypePredicate(targetType))
+                                 .map(csym -> new BindingPattern(types.erasure(csym.type)))
+                                 .collect(Collectors.toCollection(HashSet::new));
+
+                //remove the permitted subtypes that are not needed to achieve exhaustivity
+                boolean reduced = false;
+
+                for (Iterator<BindingPattern> it = viablePermittedPatterns.iterator(); it.hasNext(); ) {
+                    BindingPattern current = it.next();
+                    Set<BindingPattern> reducedPermittedPatterns = new HashSet<>(viablePermittedPatterns);
+
+                    reducedPermittedPatterns.remove(current);
+
+                    Set<PatternDescription> replaced =
+                            replace(inMissingPatterns, toExpand, reducedPermittedPatterns);
+
+                    if (computeCoverage(selectorType, joinSets(basePatterns, replaced), true).covered()) {
+                        it.remove();
+                        reduced = true;
+                    }
+                }
+
+                if (!reduced) {
+                    //if all immediate permitted subtypes are needed
+                    //give up, and simply use the current pattern:
+                    return inMissingPatterns;
+                }
+
+                Set<PatternDescription> currentMissingPatterns =
+                        replace(inMissingPatterns, toExpand, viablePermittedPatterns);
+
+                //try to recursively expand on each viable pattern:
+                for (PatternDescription viable : viablePermittedPatterns) {
+                    currentMissingPatterns = expandMissingPatternDescriptions(selectorType, targetType,
+                                                                              viable, basePatterns,
+                                                                              currentMissingPatterns);
+                }
+
+                return currentMissingPatterns;
+            } else if ((bp.type.tsym.flags_field & Flags.RECORD) != 0 &&
+                       //only expand record types into record patterns if there's a chance it may change the outcome
+                       //i.e. there is a record pattern in at the spot in the original base patterns:
+                       hasMatchingRecordPattern(basePatterns, inMissingPatterns, toExpand)) {
+                //if there is a binding pattern at a place where the original based patterns
+                //have a record pattern, try to expand the binding pattern into a record pattern
+                //create all possible combinations of record pattern components:
+                Type[] componentTypes = ((ClassSymbol) bp.type.tsym).getRecordComponents()
+                        .map(r -> types.memberType(bp.type, r))
+                        .toArray(s -> new Type[s]);
+                List<List<Type>> combinatorialNestedTypes = List.of(List.nil());
+
+                for (Type componentType : componentTypes) {
+                    List<Type> variants;
+
+                    if (componentType.tsym.isSealed()) {
+                        variants = leafPermittedSubTypes(componentType.tsym,
+                                                         isPossibleSubtypePredicate(componentType))
+                                .stream()
+                                .map(csym -> instantiatePatternType(componentType, csym))
+                                .collect(List.collector());
+                    } else {
+                        variants = List.of(componentType);
+                    }
+
+                    List<List<Type>> newCombinatorialNestedTypes = List.nil();
+
+                    for (List<Type> existing : combinatorialNestedTypes) {
+                        for (Type nue : variants) {
+                            newCombinatorialNestedTypes = newCombinatorialNestedTypes.prepend(existing.append(nue));
+                        }
+                    }
+
+                    combinatorialNestedTypes = newCombinatorialNestedTypes;
+                }
+
+                Set<PatternDescription> combinatorialPatterns =
+                        combinatorialNestedTypes.stream()
+                                                .map(combination -> new RecordPattern(bp.type,
+                                                                                      componentTypes,
+                                                                                      combination.map(BindingPattern::new)
+                                                                                                 .toArray(PatternDescription[]::new)))
+                                                .collect(Collectors.toCollection(HashSet::new));
+
+                //remove unnecessary:
+                for (Iterator<PatternDescription> it = combinatorialPatterns.iterator(); it.hasNext(); ) {
+                    PatternDescription current = it.next();
+                    Set<PatternDescription> reducedAdded = new HashSet<>(combinatorialPatterns);
+
+                    reducedAdded.remove(current);
+
+                    Set<PatternDescription> combinedPatterns =
+                            joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded));
+
+                    if (computeCoverage(selectorType, combinedPatterns, true).covered()) {
+                        it.remove();
+                    }
+                }
+
+                CoverageResult coverageResult = computeCoverage(targetType, combinatorialPatterns, true);
+
+                if (!coverageResult.covered()) {
+                    //use the partially merged/combined patterns:
+                    combinatorialPatterns = coverageResult.incompletePatterns();
+                }
+
+                //combine sealed subtypes into the supertype, if all is covered.
+                //but preserve more specific record types in positions where there are record patterns in the original patterns
+                //this is particularly for the case where the sealed supertype only has one permitted type, the record
+                //the base type could be used instead of the record otherwise, which would produce less specific missing pattern:
+                Set<PatternDescription> sortedCandidates =
+                        partialSortPattern(combinatorialPatterns, basePatterns, combinatorialPatterns);
+
+                //remove unnecessary:
+                OUTER: for (Iterator<PatternDescription> it = sortedCandidates.iterator(); it.hasNext(); ) {
+                    PatternDescription current = it.next();
+                    Set<PatternDescription> reducedAdded = new HashSet<>(sortedCandidates);
+
+                    reducedAdded.remove(current);
+
+                    Set<PatternDescription> combinedPatterns =
+                            joinSets(basePatterns, replace(inMissingPatterns, bp, reducedAdded));
+
+                    if (computeCoverage(selectorType, combinedPatterns, true).covered()) {
+                        it.remove();
+                    }
+                }
+
+                Set<PatternDescription> currentMissingPatterns =
+                        replace(inMissingPatterns, toExpand, sortedCandidates);
+
+                for (PatternDescription addedPattern : sortedCandidates) {
+                    if (addedPattern instanceof RecordPattern addedRP) {
+                        for (int c = 0; c < addedRP.nested.length; c++) {
+                            currentMissingPatterns = expandMissingPatternDescriptions(selectorType,
+                                                                                      addedRP.fullComponentTypes[c],
+                                                                                      addedRP.nested[c],
+                                                                                      basePatterns,
+                                                                                      currentMissingPatterns);
+                        }
+                    }
+                }
+
+                return currentMissingPatterns;
+            }
+        }
+        return inMissingPatterns;
+    }
+
+    /*
+     * Inside any pattern in {@code in}, in any nesting depth, replace
+     * pattern {@code what} with patterns {@code to}.
+     */
+    private Set<PatternDescription> replace(Iterable<? extends PatternDescription> in,
+                                            PatternDescription what,
+                                            Collection<? extends PatternDescription> to) {
+        Set<PatternDescription> result = new HashSet<>();
+
+        for (PatternDescription pd : in) {
+            Collection<? extends PatternDescription> replaced = replace(pd, what, to);
+            if (replaced != null) {
+                result.addAll(replaced);
+            } else {
+                result.add(pd);
+            }
+        }
+
+        return result;
+    }
+    //where:
+        //null: no change
+        private Collection<? extends PatternDescription> replace(PatternDescription in,
+                                                                 PatternDescription what,
+                                                                 Collection<? extends PatternDescription> to) {
+            if (in == what) {
+                return to;
+            } else if (in instanceof RecordPattern rp) {
+                for (int c = 0; c < rp.nested.length; c++) {
+                    Collection<? extends PatternDescription> replaced = replace(rp.nested[c], what, to);
+                    if (replaced != null) {
+                        Set<PatternDescription> withReplaced = new HashSet<>();
+
+                        generatePatternsWithReplacedNestedPattern(rp, c, replaced, withReplaced::add);
+
+                        return replace(withReplaced, what, to);
+                    }
+                }
+                return null;
+            } else {
+                return null; //binding patterns have no children
+            }
+        }
+
+    /*
+     * Sort patterns so that those that those that are prefered for removal
+     * are in front of those that are preferred to remain (when there's a choice).
+     */
+    private SequencedSet<PatternDescription> partialSortPattern(Set<PatternDescription> candidates,
+                                                                Set<? extends PatternDescription> basePatterns,
+                                                                Set<PatternDescription> missingPatterns) {
+        SequencedSet<PatternDescription> sortedCandidates = new LinkedHashSet<>();
+
+        while (!candidates.isEmpty()) {
+            PatternDescription mostSpecific = null;
+            for (PatternDescription current : candidates) {
+                if (mostSpecific == null ||
+                    shouldAppearBefore(current, mostSpecific, basePatterns, missingPatterns)) {
+                    mostSpecific = current;
+                }
+            }
+            sortedCandidates.add(mostSpecific);
+            candidates.remove(mostSpecific);
+        }
+        return sortedCandidates;
+    }
+    //where:
+        //true iff pd1 should appear before pd2
+        //false otherwise
+        private boolean shouldAppearBefore(PatternDescription pd1,
+                                           PatternDescription pd2,
+                                           Set<? extends PatternDescription> basePatterns,
+                                           Set<? extends PatternDescription> missingPatterns) {
+            if (pd1 instanceof RecordPattern rp1 && pd2 instanceof RecordPattern rp2) {
+                for (int c = 0; c < rp1.nested.length; c++) {
+                    if (shouldAppearBefore((BindingPattern) rp1.nested[c],
+                                           (BindingPattern) rp2.nested[c],
+                                           basePatterns,
+                                           missingPatterns)) {
+                        return true;
+                    }
+                }
+            } else if (pd1 instanceof BindingPattern bp1 && pd2 instanceof BindingPattern bp2) {
+                Type t1 = bp1.type();
+                Type t2 = bp2.type();
+                boolean t1IsImportantRecord =
+                        (t1.tsym.flags_field & RECORD) != 0 &&
+                        hasMatchingRecordPattern(basePatterns, missingPatterns, bp1);
+                boolean t2IsImportantRecord =
+                        (t2.tsym.flags_field & RECORD) != 0 &&
+                        hasMatchingRecordPattern(basePatterns, missingPatterns, bp2);
+                if (t1IsImportantRecord && !t2IsImportantRecord) {
+                    return false;
+                }
+                if (!t1IsImportantRecord && t2IsImportantRecord) {
+                    return true;
+                }
+                if (!types.isSameType(t1, t2) && types.isSubtype(t1, t2)) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+    /*
+     * Do the {@code basePatterns} have a record pattern at a place that corresponds to
+     * position of pattern {@code query} inside {@code missingPatterns}?
+     */
+    private boolean hasMatchingRecordPattern(Set<? extends PatternDescription> basePatterns,
+                                             Set<? extends PatternDescription> missingPatterns,
+                                             PatternDescription query) {
+        PatternDescription root = findRootContaining(missingPatterns, query);
+
+        if (root == null) {
+            return false;
+        }
+        return basePatternsHaveRecordPatternOnThisSpot(basePatterns, root, query);
+    }
+    //where:
+        private PatternDescription findRootContaining(Set<? extends PatternDescription> rootPatterns,
+                                                      PatternDescription added) {
+            for (PatternDescription pd : rootPatterns) {
+                if (isUnderRoot(pd, added)) {
+                    return pd;
+                }
+            }
+
+            //assert?
+            return null;
+        }
+
+        private boolean basePatternsHaveRecordPatternOnThisSpot(Set<? extends PatternDescription> basePatterns,
+                                                                PatternDescription rootPattern,
+                                                                PatternDescription added) {
+            if (rootPattern == added) {
+                return basePatterns.stream().anyMatch(pd -> pd instanceof RecordPattern);
+            }
+            if (!(rootPattern instanceof RecordPattern rootPatternRecord)) {
+                return false;
+            }
+            int index = -1;
+            for (int c = 0; c < rootPatternRecord.nested.length; c++) {
+                if (isUnderRoot(rootPatternRecord.nested[c], added)) {
+                    index = c;
+                    break;
+                }
+            }
+            Assert.check(index != (-1));
+
+            //TODO: isSameType erasure?
+            int indexFin = index;
+            Set<PatternDescription> filteredBasePatterns =
+                    basePatterns.stream()
+                                .filter(pd -> pd instanceof RecordPattern)
+                                .map(rp -> (RecordPattern) rp)
+                                .filter(rp -> types.isSameType(rp.recordType(), rootPatternRecord.recordType()))
+                                .map(rp -> rp.nested[indexFin])
+                                .collect(Collectors.toSet());
+
+            return basePatternsHaveRecordPatternOnThisSpot(filteredBasePatterns, rootPatternRecord.nested[index], added);
+        }
+
+        private boolean isUnderRoot(PatternDescription root, PatternDescription searchFor) {
+            if (root == searchFor) {
+                return true;
+            } else if (root instanceof RecordPattern rp) {
+                for (int c = 0; c < rp.nested.length; c++) {
+                    if (isUnderRoot(rp.nested[c], searchFor)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+    private Set<PatternDescription> joinSets(Collection<? extends PatternDescription> s1,
+                                             Collection<? extends PatternDescription> s2) {
+        Set<PatternDescription> result = new HashSet<>();
+
+        result.addAll(s1);
+        result.addAll(s2);
+
+        return result;
+    }
+
+    /*
+     * Based on {@code basePattern} generate new {@code RecordPattern}s such that all
+     * components instead of {@code replaceComponent}th component, which is replaced
+     * with values from {@code updatedNestedPatterns}. Resulting {@code RecordPatterns}s
+     * are sent to {@code target}.
+     */
+    private void generatePatternsWithReplacedNestedPattern(RecordPattern basePattern,
+                                                           int replaceComponent,
+                                                           Iterable<? extends PatternDescription> updatedNestedPatterns,
+                                                           Consumer<RecordPattern> target) {
+        for (PatternDescription nested : updatedNestedPatterns) {
+            PatternDescription[] newNested =
+                    Arrays.copyOf(basePattern.nested, basePattern.nested.length);
+            newNested[replaceComponent] = nested;
+            target.accept(new RecordPattern(basePattern.recordType(),
+                                            basePattern.fullComponentTypes(),
+                                            newNested));
         }
     }
 

@@ -394,7 +394,7 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
     }
 
     @Test
-    public void testInfiniteRecursion(Path base) throws Exception {
+    public void testNoInfiniteRecursion(Path base) throws Exception {
         doTest(base,
                new String[0],
                """
@@ -410,6 +410,68 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                public record R(R r1, R r2, R r3, Object o) {}
                """,
                "test.R(test.R _, test.R _, test.R(test.R _, test.R _, test.R _, java.lang.Object _), java.lang.Object _)");
+    }
+
+    @Test
+    public void testEnum(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(I i) {
+                       return switch (i) {
+                           case E.A -> 0;
+                           case C _ -> 1;
+                       };
+                   }
+                   sealed interface I {}
+                   enum E implements I {A, B}
+                   final class C implements I {}
+               }
+               public record R(R r1, R r2, R r3, Object o) {}
+               """,
+               "test.Test.E.B");
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(I i) {
+                       return switch (i) {
+                           case C _ -> 1;
+                       };
+                   }
+                   sealed interface I {}
+                   enum E implements I {A, B}
+                   final class C implements I {}
+               }
+               public record R(R r1, R r2, R r3, Object o) {}
+               """,
+               "test.Test.E _");
+    }
+
+    @Test
+    public void testInstantiateComponentTypes(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   private int test(Pair<Base<Base>> p) {
+                       return switch (p) {
+                           case Pair(A(A(_)) -> 0;
+                           case Pair(A(B(_)) -> 0;
+                           case Pair(B(A(_)) -> 0;
+                       };
+                   }
+                   record Pair<T>(T c) {}
+                   sealed interface Base<T> permits A, B {}
+                   record A<T>(T c) implements Base<T> {}
+                   record B<T>(T c) implements Base<T> {}
+               }
+               """,
+               "test.Test.Pair(test.Test.B(test.Test.B _))");
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
