@@ -23,15 +23,19 @@
 
 package ir_framework.tests;
 
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import compiler.lib.ir_framework.*;
-import compiler.lib.ir_framework.shared.TestRunException;
 import compiler.lib.ir_framework.shared.TestFormatException;
 import jdk.test.lib.Asserts;
 
 /*
  * @test
+ * @bug 8365262 8369232
  * @requires vm.debug == true & vm.compMode != "Xint" & vm.compiler2.enabled & vm.flagless
  * @summary Test cross product scenarios with the framework.
  * @library /test/lib /testlibrary_tests /
@@ -39,29 +43,17 @@ import jdk.test.lib.Asserts;
  */
 
 public class TestScenariosCrossProduct {
-    static void hasNFailures(String s, int count) {
-        if (!s.matches("The following scenarios have failed: (#[0-9](, )?){" + count + "}. Please check stderr for more information.")) {
-            throw new RuntimeException("Expected " + count + " failures in \"" + s + "\"");
-        }
-    }
 
     public static void main(String[] args) {
-        // Test argument handling
-        try {
-            TestFramework t = new TestFramework();
-            t.addCrossProductScenarios((Set<String>[]) null);
-            Asserts.fail("Should have thrown exception");
-        } catch (TestFormatException e) {}
-        try {
-            TestFramework t = new TestFramework();
-            t.addCrossProductScenarios(Set.of("foo", "bar"), null);
-            Asserts.fail("Should have thrown exception");
-        } catch (TestFormatException e) {}
+        expectFormatFailure((Set<String>[]) null);
+        expectFormatFailure(Set.of("foo", "bar"), null);
+
         try {
             TestFramework t = new TestFramework();
             t.addCrossProductScenarios(Set.of("blub"), Set.of("foo", null));
-            Asserts.fail("Should have thrown exception");
+            shouldHaveThrown();
         } catch (NullPointerException e) {} // Set.of prevents null elements
+
         try {
             TestFramework t = new TestFramework();
             t.addCrossProductScenarios();
@@ -70,95 +62,202 @@ public class TestScenariosCrossProduct {
         }
 
         // Single set should test all flags in the set by themselves.
-        try {
-            TestFramework t1 = new TestFramework();
-            t1.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=51",
-                                               "-XX:TLABRefillWasteFraction=53",
-                                               "-XX:TLABRefillWasteFraction=64"));
-            t1.start();
-            Asserts.fail("Should have thrown exception");
-        } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 3);
-        }
+        new TestCase()
+                .inputFlags(Set.of(
+                                    Set.of("-XX:TLABRefillWasteFraction=51",
+                                           "-XX:TLABRefillWasteFraction=53",
+                                           "-XX:TLABRefillWasteFraction=64")
+                            )
+                )
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:TLABRefillWasteFraction=51"),
+                        Set.of("-XX:TLABRefillWasteFraction=53"),
+                        Set.of("-XX:TLABRefillWasteFraction=64")
+                ))
+                .run();
 
         // The cross product of a set with one element and a set with three elements is three sets.
-        try {
-            TestFramework t2 = new TestFramework();
-            t2.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=53"),
-                                        Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2", "-XX:+UseNewCode3"));
-            t2.start();
-            Asserts.fail("Should have thrown exception");
-        } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 3);
-        }
+        new TestCase()
+                .inputFlags(Set.of(
+                                    Set.of("-XX:TLABRefillWasteFraction=53"),
+                                    Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2", "-XX:+UseNewCode3")
+                            )
+                )
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode3")
+                ))
+                .run();
+
 
         // The cross product of two sets with two elements is four sets.
-        try {
-            TestFramework t3 = new TestFramework();
-            t3.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=53", "-XX:TLABRefillWasteFraction=64"),
-                                        Set.of("-XX:+UseNewCode", "-XX:-UseNewCode"));
-            t3.start();
-            Asserts.fail("Should have thrown exception");
-        } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 4);
-        }
+        new TestCase()
+                .inputFlags(Set.of(
+                                    Set.of("-XX:TLABRefillWasteFraction=53", "-XX:TLABRefillWasteFraction=64"),
+                                    Set.of("-XX:+UseNewCode", "-XX:-UseNewCode")
+                            )
+                )
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:-UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=64", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=64", "-XX:-UseNewCode")
+                ))
+                .run();
+
 
         // Test with a pair of flags.
+        new TestCase()
+                .inputFlags(Set.of(
+                                    Set.of("-XX:TLABRefillWasteFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
+                                    Set.of("-XX:+UseNewCode2")
+                            )
+                )
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:TLABRefillWasteFraction=50", "-XX:+UseNewCode", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=40", "-XX:+UseNewCode2")
+                ))
+                .run();
+
+        // Test with an empty string, resulting in 6 scenarios.
+        new TestCase()
+                .inputFlags(Set.of(
+                                    Set.of("", "-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
+                                    Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2")
+                            )
+                )
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:+UseNewCode"),
+                        Set.of("-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode2")
+                ))
+                .run();
+
+        // Test with 3 input sets which equals to 2x2x2 = 8 scenarios.
+        new TestCase()
+                .inputFlags(Set.of(
+                                    Set.of("-XX:TLABRefillWasteFraction=51",
+                                           "-XX:TLABRefillWasteFraction=53"),
+                                    Set.of("-XX:+UseNewCode",
+                                           "-XX:-UseNewCode"),
+                                    Set.of("-XX:+UseNewCode2",
+                                           "-XX:-UseNewCode2")
+                            )
+                )
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:+UseNewCode", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:-UseNewCode", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:-UseNewCode", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:+UseNewCode", "-XX:-UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode", "-XX:-UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:-UseNewCode", "-XX:-UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:-UseNewCode", "-XX:-UseNewCode2")
+                ))
+                .run();
+
+        TestFramework testFramework = new TestFramework();
+        testFramework.addScenarios(new Scenario(0, "-XX:TLABRefillWasteFraction=50", "-XX:+UseNewCode"));
+        testFramework.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
+                                               Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
         try {
-            TestFramework t4 = new TestFramework();
-            t4.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=50 -XX:+UseNewCode", "-XX:TLABRefillWasteFraction=40"),
-                                        Set.of("-XX:+UseNewCode2"));
-            t4.start();
-            Asserts.fail("Should have thrown exception");
-        } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 1);
+            testFramework.addScenarios(new Scenario(4, "-XX:+UseNewCode3")); // fails because index 4 is already used
+            shouldHaveThrown();
+        } catch (TestFormatException _) {
+            // Expected.
+        }
+        testFramework.addScenarios(new Scenario(5, "-XX:+UseNewCode3"));
+
+        new TestCase()
+                .expectedScenariosWithFlags(Set.of(
+                        Set.of("-XX:TLABRefillWasteFraction=50", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=51", "-XX:+UseNewCode2"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode"),
+                        Set.of("-XX:TLABRefillWasteFraction=53", "-XX:+UseNewCode2"),
+                        Set.of("-XX:+UseNewCode3")
+                ))
+                .runWithPreAddedScenarios(testFramework);
+    }
+
+    private static void expectFormatFailure(Set<String>... flagSets) {
+        TestFramework testFramework = new TestFramework();
+        try {
+            testFramework.addCrossProductScenarios(flagSets);
+            shouldHaveThrown();
+        } catch (TestFormatException _) {
+            // Expected.
+        }
+    }
+
+    private static void shouldHaveThrown() {
+        Asserts.fail("Should have thrown exception");
+    }
+
+    static class TestCase {
+        private Set<Set<String>> inputFlags;
+        private Set<Set<String>> expectedScenariosWithFlags;
+
+        public TestCase inputFlags(Set<Set<String>> inputFlags) {
+            this.inputFlags = inputFlags;
+            return this;
         }
 
-        // Test with an empty string. All 6 scenarios fail because 64 is the default value for TLABRefillWasteFraction.
-        try {
-            TestFramework t5 = new TestFramework();
-            t5.addCrossProductScenarios(Set.of("", "-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
-                                        Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
-            t5.start();
-            Asserts.fail("Should have thrown exception");
-        } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 6);
+        public TestCase expectedScenariosWithFlags(Set<Set<String>> expectedScenariosWithFlags) {
+            this.expectedScenariosWithFlags = expectedScenariosWithFlags;
+            return this;
         }
 
-        try {
-            TestFramework t6 = new TestFramework();
-            t6.addScenarios(new Scenario(0, "-XX:TLABRefillWasteFraction=50", "-XX:+UseNewCode")); // failPair
-            t6.addCrossProductScenarios(Set.of("-XX:TLABRefillWasteFraction=51", "-XX:TLABRefillWasteFraction=53"),
-                                        Set.of("-XX:+UseNewCode", "-XX:+UseNewCode2"));
+        public void run() {
+            TestFramework testFramework = new TestFramework();
+            testFramework.addCrossProductScenarios(inputFlags.toArray(new Set[0]));
+            runWithPreAddedScenarios(testFramework);
+        }
+
+        public void runWithPreAddedScenarios(TestFramework testFramework) {
+            List<Scenario> scenarios = getScenarios(testFramework);
+            assertScenarioCount(expectedScenariosWithFlags.size(), scenarios);
+            assertScenariosWithFlags(scenarios, expectedScenariosWithFlags);
+        }
+
+        private static List<Scenario> getScenarios(TestFramework testFramework) {
+            Field field;
             try {
-                t6.addScenarios(new Scenario(4, "-XX:+UseNewCode3")); // fails because index 4 is already used
-            Asserts.fail("Should have thrown exception");
-            } catch (TestFormatException e) {}
-            t6.addScenarios(new Scenario(5, "-XX:+UseNewCode3")); // fail default
-            t6.start();
-            Asserts.fail("Should have thrown exception");
-        } catch (TestRunException e) {
-            hasNFailures(e.getMessage(), 6);
+                field = TestFramework.class.getDeclaredField("scenarios");
+                field.setAccessible(true);
+                return (List<Scenario>)field.get(testFramework);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private static void assertScenarioCount(int expectedCount, List<Scenario> scenarios) {
+            Asserts.assertEQ(expectedCount, scenarios.size(), "Scenario count is off");
+        }
+
+        // Check that the added scenarios to the IR framework match the expectation.
+        private static void assertScenariosWithFlags(List<Scenario> scenarios, Set<Set<String>> expectedScenariosWithFlags) {
+            outer:
+            for (Set<String> expectedScenarioFlags : expectedScenariosWithFlags) {
+                for (Scenario scenario : scenarios) {
+                    Set<String> scenarioFlags = new HashSet<>(scenario.getFlags());
+                    if (scenarioFlags.equals(expectedScenarioFlags)) { // equals() ignores order
+                        continue outer;
+                    }
+                }
+                System.err.println("Found scenarios:");
+                for (Scenario s : scenarios) {
+                    System.err.println(Arrays.toString(s.getFlags().toArray()));
+                }
+                throw new RuntimeException("Could not find a scenario with the provided flags: " + Arrays.toString(expectedScenarioFlags.toArray()));
+            }
         }
     }
 
     @Test
-    @IR(applyIf = {"TLABRefillWasteFraction", "64"}, counts = {IRNode.CALL, "1"})
-    public void failDefault() {
-    }
-
-    @Test
-    @IR(applyIf = {"TLABRefillWasteFraction", "51"}, counts = {IRNode.CALL, "1"})
-    public void fail1() {
-    }
-
-    @Test
-    @IR(applyIf = {"TLABRefillWasteFraction", "53"}, counts = {IRNode.CALL, "1"})
-    public void fail2() {
-    }
-
-    @Test
-    @IR(applyIfAnd = {"TLABRefillWasteFraction", "50", "UseNewCode", "true"}, counts = {IRNode.CALL, "1"})
-    public void failPair() {
-    }
+    public void notActuallyRun() {}
 }
