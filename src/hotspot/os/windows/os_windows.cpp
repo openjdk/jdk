@@ -1727,8 +1727,9 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   memcpy(name_with_dot, name, name_len);
   name_with_dot[name_len] = '.';
   name_with_dot[name_len + 1] = '\0';
+  void* result;
   JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
-  void *result = LoadLibrary(name_with_dot);
+  result = LoadLibrary(name_with_dot);
   free(name_with_dot);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
