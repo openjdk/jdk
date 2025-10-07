@@ -45,6 +45,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/annotations.hpp"
+#include "oops/bsmAttribute.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"

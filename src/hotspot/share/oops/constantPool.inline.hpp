@@ -88,27 +88,4 @@ inline oop ConstantPool::resolved_reference_from_method(int index) const {
   return resolved_references()->obj_at(cache()->resolved_method_entry_at(index)->resolved_references_index());
 }
 
-inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_entry(u2 bsmi, u2 argc) {
-  if (_cur_offset + 1 > insert_into->offsets()->length() ||
-      _cur_array + BSMAttributeEntry::u2s_required(argc) > insert_into->bootstrap_methods()->length()) {
-    return nullptr;
-  }
-  insert_into->_offsets->at_put(_cur_offset, _cur_array);
-  BSMAttributeEntry* e = insert_into->entry(_cur_offset);
-  e->_bootstrap_method_index = bsmi;
-  e->_argument_count = argc;
-
-  _cur_array += 1 + 1 + argc;
-  _cur_offset += 1;
-  return e;
-}
-
-inline void BSMAttributeEntry::copy_args_into(BSMAttributeEntry* entry) const {
-  assert(entry->argument_count() == this->argument_count(), "must be same");
-  for (int i = 0; i < argument_count(); i++) {
-    entry->set_argument(i, this->argument(i));
-  }
-}
-
-
 #endif // SHARE_OOPS_CONSTANTPOOL_INLINE_HPP

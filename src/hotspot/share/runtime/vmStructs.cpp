@@ -55,6 +55,7 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/bsmAttribute.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
