@@ -637,10 +637,6 @@ address SharedRuntime::get_poll_stub(address pc) {
            "polling page safepoint stub not created yet");
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
-  log_debug(safepoint)("... found polling page %s exception at pc = "
-                       INTPTR_FORMAT ", stub =" INTPTR_FORMAT,
-                       at_poll_return ? "return" : "loop",
-                       (intptr_t)pc, (intptr_t)stub);
   return stub;
 }
 

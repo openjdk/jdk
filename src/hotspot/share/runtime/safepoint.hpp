@@ -250,7 +250,7 @@ private:
 public:
   static void init();
 
-  static void begin(VM_Operation::VMOp_Type type);
+  static void begin(VM_Operation::VMOp_Type type, WaitBarrier* wait_barrier);
   static void synchronized(int nof_threads, int nof_running, int traps);
   static void leave();
   static void end();
