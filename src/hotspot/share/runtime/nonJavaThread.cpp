@@ -34,6 +34,7 @@
 #include "runtime/task.hpp"
 #include "sanitizers/leak.hpp"
 #include "utilities/defaultStream.hpp"
+#include "utilities/singleWriterSynchronizer.hpp"
 #include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
@@ -41,7 +42,19 @@
 
 // List of all NonJavaThreads and safe iteration over that list.
 
+class NonJavaThread::List {
+public:
+  NonJavaThread* volatile _head;
+  SingleWriterSynchronizer _protect;
+
+  List() : _head(nullptr), _protect() {}
+};
+
 DeferredStatic<NonJavaThread::List> NonJavaThread::_the_list;
+
+void NonJavaThread::init() {
+  _the_list.initialize();
+}
 
 NonJavaThread::Iterator::Iterator() :
   _protect_enter(_the_list->_protect.enter()),
@@ -335,4 +348,3 @@ void WatcherThread::print_on(outputStream* st) const {
   Thread::print_on(st);
   st->cr();
 }
-
