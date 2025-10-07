@@ -102,7 +102,7 @@ public class Basic {
     };
     static final Consumer<Result> CIRCULAR = r -> {
         if (r.exitValue == 0 ||
-                !r.output.contains("Circular loading of URL stream handler providers detected")) {
+            !r.output.contains("Circular loading of URL stream handler providers detected")) {
             throw new RuntimeException("exitValue: " + r.exitValue + ", output:[" + r.output + "]");
         }
     };
@@ -132,14 +132,13 @@ public class Basic {
                                 sysProps);
     }
 
-    static void viaCircularProvider(
-            String protocol, Consumer<Result> resultChecker, String... sysProps)
-            throws Exception {
-        viaProviderWithTemplate(
-                protocol,
-                resultChecker,
-                TEST_SRC.resolve("circular.provider.template"),
-                sysProps);
+    static void viaCircularProvider(String protocol, Consumer<Result> resultChecker,
+                                    String... sysProps)
+        throws Exception
+    {
+        viaProviderWithTemplate(protocol, resultChecker,
+                                TEST_SRC.resolve("circular.provider.template"),
+                                sysProps);
     }
 
     static void viaProviderWithTemplate(String protocol,
