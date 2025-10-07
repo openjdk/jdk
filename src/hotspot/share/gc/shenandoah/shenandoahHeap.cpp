@@ -424,9 +424,7 @@ jint ShenandoahHeap::initialize() {
 
     // We are initializing free set.  We ignore cset region tallies.
     size_t first_old, last_old, num_old;
-#ifdef KELVIN_REVERT
     ShenandoahRebuildLocker rebuild_locker(_free_set->lock());
-#endif
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
@@ -2578,9 +2576,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
   ShenandoahHeapLocker locker(lock());
-#ifdef KELVIN_REVERT
   ShenandoahRebuildLocker rebuild_locker(_free_set->lock());
-#endif
   size_t young_cset_regions, old_cset_regions;
   size_t first_old_region, last_old_region, old_region_count;
   _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
