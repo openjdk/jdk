@@ -25,7 +25,7 @@
  * @test
  * @bug 8369184
  * @summary Checks if equals()/hashCode() of SimpleTimeZone works correctly
- * @run junit SimpleTimeZoneHashCodeTest
+ * @run junit SimpleTimeZoneEqualsHashCodeTest
  */
 
 import java.util.SimpleTimeZone;
@@ -39,7 +39,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SimpleTimeZoneHashCodeTest {
+public class SimpleTimeZoneEqualsHashCodeTest {
     private static final SimpleTimeZone STZ_WITH_DST =
         new SimpleTimeZone(-288_000_000, "America/Los_Angeles",
             MARCH, 8, -SUNDAY, 7_200_000,
