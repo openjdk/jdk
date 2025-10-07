@@ -1715,9 +1715,21 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
-  void* result;
+  // Append a dot to the name passed to LoadLibrary to prevent LoadLibrary from
+  // automatically a .DLL extension.
+  size_t name_len = strlen(name);
+  char *name_with_dot = malloc(name_len + 2);
+  if (name_with_dot == nullptr) {
+    strncpy(ebuf, "malloc failed", ebuflen - 1);
+    ebuf[ebuflen - 1] = '\0';
+    return nullptr;
+  }
+  memcpy(name_with_dot, name, name_len);
+  name_with_dot[name_len] = '.';
+  name_with_dot[name_len + 1] = '\0';
   JFR_ONLY(NativeLibraryLoadEvent load_event(name, &result);)
-  result = LoadLibrary(name);
+  void *result = LoadLibrary(name_with_dot);
+  free(name_with_dot);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.

@@ -70,8 +70,4 @@ class ClassLoaderHelper {
                 ldPath.substring(pathStart, ldLen) : ".");
         return paths.toArray(new String[paths.size()]);
     }
-
-    static String mapToNativeLibraryName(String name) {
-        return name;
-    }
 }
