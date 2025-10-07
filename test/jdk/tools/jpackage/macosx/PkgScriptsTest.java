@@ -38,8 +38,13 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import jdk.jpackage.internal.util.PathUtils;
@@ -49,110 +54,115 @@ import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 
 public class PkgScriptsTest {
 
+    public static Collection<?> input() {
+        return List.of(new Object[][]{
+            { new PkgInstallScript[]{
+                    PkgInstallScript.PREINSTALL,
+                    PkgInstallScript.POSTINSTALL },
+            },
+            { new PkgInstallScript[]{
+                    PkgInstallScript.PREINSTALL },
+            },
+            { new PkgInstallScript[]{
+                    PkgInstallScript.POSTINSTALL },
+            },
+        });
+    }
+
     @Test
-    @Parameter({"TRUE", "TRUE"})
-    @Parameter({"TRUE", "FALSE"})
-    @Parameter({"FALSE", "TRUE"})
-    @Parameter({"FALSE", "FALSE"})
-    public void test(boolean preinstall, boolean postinstall) {
-        final Path resources;
-        if (preinstall || postinstall) {
-            resources = TKit.createTempDirectory("resources");
-            if (preinstall) {
-                createScript(resources, "preinstall");
-            }
-            if (postinstall) {
-                createScript(resources, "postinstall");
-            }
-        } else {
-            resources = null;
-        }
+    @ParameterSupplier("input")
+    public void test(PkgInstallScript[] customScriptRoles) {
+        var responseDir = TKit.createTempDirectory("response");
+
+        var customScripts = Stream.of(customScriptRoles).map(role -> {
+            return new CustomInstallScript(responseDir, role);
+        }).toList();
 
         new PackageTest()
-                .forTypes(PackageType.MAC_PKG)
-                .configureHelloApp()
-                .addInitializer(cmd -> {
-                    if (resources != null) {
-                        cmd.addArguments("--resource-dir", resources.toString());
-                    }
-                })
-                .addInstallVerifier(PkgScriptsTest::verifyPKG)
-                .setExpectedExitCode(0)
-                .run();
-    }
-
-    private static void createScript(Path resourcesDir, String name) {
-        Path scriptOutputFile = TKit.workDir().resolve(name).toAbsolutePath();
-        List<String> script = Stream.of("#!/usr/bin/env sh",
-                                        String.format("touch \"%s\"", scriptOutputFile.toString()),
-                                        "exit 0").toList();
-        try {
-            Files.write(resourcesDir.resolve(name), script);
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private static boolean isScriptExistsInResourceDir(JPackageCommand cmd, String name) {
-        return Optional.ofNullable(cmd.getArgumentValue("--resource-dir"))
-                .map(resourceDir -> {
-                    return Files.exists(Path.of(resourceDir).resolve(name));
-                }).orElseGet(() -> {
-                    return false;
+            .forTypes(PackageType.MAC_PKG)
+            .configureHelloApp()
+            .addInitializer(cmd -> {
+                cmd.addArguments("--resource-dir", TKit.createTempDirectory("resources"));
+                customScripts.forEach(customScript -> {
+                    customScript.createFor(cmd);
                 });
+            }).addInstallVerifier(cmd -> {
+                customScripts.forEach(customScript -> {
+                    customScript.verify(cmd);
+                });
+                if (cmd.isPackageUnpacked()) {
+                    var noScriptRoles = new HashSet<>(Set.of(customScriptRoles));
+                    customScripts.stream().map(CustomInstallScript::role).forEach(noScriptRoles::remove);
+                    noScriptRoles.forEach(role -> {
+                        role.verifyExists(cmd, false);
+                    });
+                }
+            }).run();
     }
 
-    private static void validateScriptUnpacked(boolean exists, Path scriptPath) {
-        if (exists) {
-            TKit.assertFileExists(scriptPath);
-            TKit.assertTrue(Files.isExecutable(scriptPath), String.format
-                    ("Check [%s] is executable", scriptPath));
-        } else {
-            TKit.assertPathExists(scriptPath, false);
+    enum PkgInstallScript {
+        POSTINSTALL,
+        PREINSTALL,
+        ;
+
+        String scriptName() {
+            return name().toLowerCase();
         }
-    }
 
-    private static void validateScriptInstalled(boolean exists, String name) {
-        Path scriptOutputFile = TKit.workDir().resolve(name).toAbsolutePath();
-        if (exists) {
-            TKit.assertFileExists(scriptOutputFile);
-        } else {
-            TKit.assertPathExists(scriptOutputFile, false);
-        }
-    }
-
-    private static void verifyPKG(JPackageCommand cmd) {
-        final var preinstall = isScriptExistsInResourceDir(cmd, "preinstall");
-        final var postinstall = isScriptExistsInResourceDir(cmd, "postinstall");
-
-        if (cmd.isPackageUnpacked()) {
-            Path dataDir = cmd.pathToUnpackedPackageFile(Path.of("/"))
-                    .toAbsolutePath()
-                    .getParent()
-                    .resolve("data");
-            try (var dataListing = Files.list(dataDir)) {
-                dataListing.filter(file -> {
-                    return ".pkg".equals(PathUtils.getSuffix(file.getFileName()));
-                }).forEach(ThrowingConsumer.toConsumer(pkgDir -> {
-                    Path preinstallPath =
-                            pkgDir.resolve("Scripts").resolve("preinstall");
-                    Path postinstallPath =
-                            pkgDir.resolve("Scripts").resolve("postinstall");
-                    validateScriptUnpacked(preinstall, preinstallPath);
-                    validateScriptUnpacked(postinstall, postinstallPath);
-                }));
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
+        Path pathInUnpackedPackage(JPackageCommand cmd) {
+            cmd.verifyIsOfType(PackageType.MAC_PKG);
+            if (!cmd.isPackageUnpacked()) {
+                throw new UnsupportedOperationException();
             }
-        } else {
-            validateScriptInstalled(preinstall, "preinstall");
-            validateScriptInstalled(postinstall, "postinstall");
+            // Internal unpacked pkg name will be "PkgScriptsTest-app.pkg" and not a
+            // "PkgScriptsTest-1.0.pkg"
+            return cmd.pathToUnpackedPackageFile(Path.of("/")).getParent()
+                    .resolve("data").resolve(cmd.name() + "-app.pkg")
+                    .resolve("Scripts");
+        }
+
+        void verifyExists(JPackageCommand cmd, boolean exists) {
+            var scriptPath = pathInUnpackedPackage(cmd).resolve(scriptName());
+            if (exists) {
+                TKit.assertExecutableFileExists(scriptPath);
+            } else {
+                TKit.assertPathExists(scriptPath, false);
+            }
+        }
+    }
+
+    record CustomInstallScript(Path responseDir, PkgInstallScript role) {
+        CustomInstallScript {
+            Objects.requireNonNull(responseDir);
+            Objects.requireNonNull(role);
+        }
+
+        void createFor(JPackageCommand cmd) {
+            Path scriptOutputFile = responseFilePath(cmd).toAbsolutePath();
+            TKit.assertPathExists(scriptOutputFile, false);
+            TKit.createTextFile(scriptOutputFile, Stream.of(
+                    "#!/usr/bin/env sh",
+                    String.format("touch \"%s\"", scriptOutputFile),
+                    "exit 0"
+            ));
+        }
+
+        void verify(JPackageCommand cmd) {
+            if (cmd.isPackageUnpacked()) {
+                role.verifyExists(cmd, true);
+            } else {
+                TKit.assertFileExists(responseFilePath(cmd));
+            }
+        }
+
+        private Path responseFilePath(JPackageCommand cmd) {
+            return Path.of(cmd.getArgumentValue("--resource-dir")).resolve(role.scriptName());
         }
     }
 }
