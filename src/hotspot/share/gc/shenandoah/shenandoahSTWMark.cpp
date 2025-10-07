@@ -83,7 +83,7 @@ void ShenandoahSTWMark::mark() {
   // Init mark, do not expect forwarded pointers in roots
   if (ShenandoahVerify) {
     assert(Thread::current()->is_VM_thread(), "Must be");
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   start_mark();

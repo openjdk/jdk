@@ -91,8 +91,8 @@ public:
 };
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
+  ShenandoahGC(generation),
   _mark(generation),
-  _generation(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
   _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {
@@ -763,7 +763,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   if (!heap->cancelled_gc()) {
@@ -1166,7 +1166,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   // Has to be done before cset is clear
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_in_to_space();
+    heap->verifier()->verify_roots_in_to_space(_generation);
   }
 
   // If we are running in generational mode and this is an aging cycle, this will also age active

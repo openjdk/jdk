@@ -145,17 +145,10 @@ class ShenandoahHeap : public CollectedHeap {
 private:
   ShenandoahHeapLock _lock;
 
-  // Indicates the generation whose collection is in
-  // progress. Mutator threads aren't allowed to read
-  // this field.
-  ShenandoahGeneration* _gc_generation;
-
   // This is set and cleared by only the VMThread
-  // at each STW pause (safepoint) to the value seen in
-  // _gc_generation. This allows the value to be always consistently
+  // at each STW pause (safepoint) to the value given to the VM operation.
+  // This allows the value to be always consistently
   // seen by all mutators as well as all GC worker threads.
-  // In that sense, it's a stable snapshot of _gc_generation that is
-  // updated at each STW pause associated with a ShenandoahVMOp.
   ShenandoahGeneration* _active_generation;
 
 protected:
@@ -167,25 +160,13 @@ public:
     return &_lock;
   }
 
-  ShenandoahGeneration* gc_generation() const {
-    // We don't want this field read by a mutator thread
-    assert(!Thread::current()->is_Java_thread(), "Not allowed");
-    // value of _gc_generation field, see above
-    return _gc_generation;
-  }
-
   ShenandoahGeneration* active_generation() const {
     // value of _active_generation field, see above
     return _active_generation;
   }
 
-  // Set the _gc_generation field
-  void set_gc_generation(ShenandoahGeneration* generation);
-
-  // Copy the value in the _gc_generation field into
-  // the _active_generation field: can only be called at
-  // a safepoint by the VMThread.
-  void set_active_generation();
+  // Update the _active_generation field: can only be called at a safepoint by the VMThread.
+  void set_active_generation(ShenandoahGeneration* generation);
 
   ShenandoahHeuristics* heuristics();
 

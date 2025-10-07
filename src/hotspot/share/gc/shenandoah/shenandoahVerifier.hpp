@@ -223,8 +223,8 @@ public:
   void verify_generic(ShenandoahGeneration* generation, VerifyOption option);
 
   // Roots should only contain to-space oops
-  void verify_roots_in_to_space();
-  void verify_roots_no_forwarded();
+  void verify_roots_in_to_space(ShenandoahGeneration* generation);
+  void verify_roots_no_forwarded(ShenandoahGeneration* generation);
 
   // Check that generation usages are accurate before rebuilding free set
   void verify_before_rebuilding_free_set();

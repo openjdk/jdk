@@ -529,7 +529,6 @@ void ShenandoahHeap::initialize_heuristics() {
 
 ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   CollectedHeap(),
-  _gc_generation(nullptr),
   _active_generation(nullptr),
   _initial_size(0),
   _committed(0),
@@ -1657,17 +1656,11 @@ void ShenandoahHeap::print_tracing_info() const {
   }
 }
 
-void ShenandoahHeap::set_gc_generation(ShenandoahGeneration* generation) {
-  shenandoah_assert_control_or_vm_thread_at_safepoint();
-  _gc_generation = generation;
-}
-
 // Active generation may only be set by the VM thread at a safepoint.
-void ShenandoahHeap::set_active_generation() {
+void ShenandoahHeap::set_active_generation(ShenandoahGeneration* generation) {
   assert(Thread::current()->is_VM_thread(), "Only the VM Thread");
   assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint!");
-  assert(_gc_generation != nullptr, "Will set _active_generation to nullptr");
-  _active_generation = _gc_generation;
+  _active_generation = generation;
 }
 
 void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation) {
@@ -1676,17 +1669,14 @@ void ShenandoahHeap::on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* 
   const GCCause::Cause current = gc_cause();
   assert(current == GCCause::_no_gc, "Over-writing cause: %s, with: %s",
          GCCause::to_string(current), GCCause::to_string(cause));
-  assert(_gc_generation == nullptr, "Over-writing _gc_generation");
 
   set_gc_cause(cause);
-  set_gc_generation(generation);
 
   generation->heuristics()->record_cycle_start();
 }
 
 void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
   assert(gc_cause() != GCCause::_no_gc, "cause wasn't set");
-  assert(_gc_generation != nullptr, "_gc_generation wasn't set");
 
   generation->heuristics()->record_cycle_end();
   if (mode()->is_generational() && generation->is_global()) {
@@ -1695,7 +1685,6 @@ void ShenandoahHeap::on_cycle_end(ShenandoahGeneration* generation) {
     old_generation()->heuristics()->record_cycle_end();
   }
 
-  set_gc_generation(nullptr);
   set_gc_cause(GCCause::_no_gc);
 }
 

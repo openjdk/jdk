@@ -46,9 +46,8 @@
 #include "utilities/events.hpp"
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation) :
-  ShenandoahGC(),
+  ShenandoahGC(generation),
   _degen_point(degen_point),
-  _generation(generation),
   _abbreviated(false) {
 }
 
@@ -340,7 +339,7 @@ void ShenandoahDegenGC::op_finish_mark() {
 void ShenandoahDegenGC::op_prepare_evacuation() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   // STW cleanup weak roots and unload classes

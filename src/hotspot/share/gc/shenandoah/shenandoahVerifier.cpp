@@ -596,9 +596,9 @@ public:
                                       ShenandoahMessageBuffer("%s, Roots", _label),
                                       _options);
         if (_heap->unload_classes()) {
-          ShenandoahRootVerifier::strong_roots_do(&cl);
+          ShenandoahRootVerifier::strong_roots_do(&cl, _generation);
         } else {
-          ShenandoahRootVerifier::roots_do(&cl);
+          ShenandoahRootVerifier::roots_do(&cl, _generation);
         }
     }
 
@@ -1241,14 +1241,14 @@ public:
   void do_oop(oop* p)       override { do_oop_work(p); }
 };
 
-void ShenandoahVerifier::verify_roots_in_to_space() {
+void ShenandoahVerifier::verify_roots_in_to_space(ShenandoahGeneration* generation) {
   ShenandoahVerifyInToSpaceClosure cl;
-  ShenandoahRootVerifier::roots_do(&cl);
+  ShenandoahRootVerifier::roots_do(&cl, generation);
 }
 
-void ShenandoahVerifier::verify_roots_no_forwarded() {
+void ShenandoahVerifier::verify_roots_no_forwarded(ShenandoahGeneration* generation) {
   ShenandoahVerifyNoForwarded cl;
-  ShenandoahRootVerifier::roots_do(&cl);
+  ShenandoahRootVerifier::roots_do(&cl, generation);
 }
 
 template<typename Scanner>

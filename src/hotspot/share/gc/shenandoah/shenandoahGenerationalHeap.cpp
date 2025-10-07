@@ -1045,7 +1045,7 @@ public:
 
 void ShenandoahGenerationalHeap::final_update_refs_update_region_states() {
   ShenandoahSynchronizePinnedRegionStates pins;
-  ShenandoahUpdateRegionAges ages(active_generation()->complete_marking_context());
+  ShenandoahUpdateRegionAges ages(marking_context());
   auto cl = ShenandoahCompositeRegionClosure::of(pins, ages);
   parallel_heap_region_iterate(&cl);
 }

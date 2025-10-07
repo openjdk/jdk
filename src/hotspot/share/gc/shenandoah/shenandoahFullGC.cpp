@@ -68,6 +68,7 @@
 #include "utilities/growableArray.hpp"
 
 ShenandoahFullGC::ShenandoahFullGC() :
+  ShenandoahGC(ShenandoahHeap::heap()->global_generation()),
   _gc_timer(ShenandoahHeap::heap()->gc_timer()),
   _preserved_marks(new PreservedMarksSet(true)) {}
 
@@ -118,7 +119,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
   metrics.snap_after();
 
-  if (metrics.is_good_progress(heap->global_generation())) {
+  if (metrics.is_good_progress(_generation)) {
     heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
@@ -127,7 +128,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   }
 
   // Regardless if progress was made, we record that we completed a "successful" full GC.
-  heap->global_generation()->heuristics()->record_success_full();
+  _generation->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
 
   {
@@ -144,7 +145,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   }
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_before_fullgc(heap->global_generation());
+    heap->verifier()->verify_before_fullgc(_generation);
   }
 
   if (VerifyBeforeGC) {
@@ -197,7 +198,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     }
 
     // d. Abandon reference discovery and clear all discovered references.
-    ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
+    ShenandoahReferenceProcessor* rp = _generation->ref_processor();
     rp->abandon_partial_discovery();
 
     // e. Sync pinned region status from the CP marks
@@ -276,7 +277,7 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   heap->set_full_gc_in_progress(false);
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_after_fullgc(heap->global_generation());
+    heap->verifier()->verify_after_fullgc(_generation);
   }
 
   if (VerifyAfterGC) {
@@ -295,19 +296,19 @@ void ShenandoahFullGC::phase1_mark_heap() {
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  heap->global_generation()->reset_mark_bitmap<true, true>();
+  _generation->reset_mark_bitmap<true, true>();
   assert(heap->marking_context()->is_bitmap_clear(), "sanity");
-  assert(!heap->global_generation()->is_mark_complete(), "sanity");
+  assert(!_generation->is_mark_complete(), "sanity");
 
-  heap->set_unload_classes(heap->global_generation()->heuristics()->can_unload_classes());
+  heap->set_unload_classes(_generation->heuristics()->can_unload_classes());
 
-  ShenandoahReferenceProcessor* rp = heap->global_generation()->ref_processor();
+  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   // enable ("weak") refs discovery
   rp->set_soft_reference_policy(true); // forcefully purge all soft references
 
-  ShenandoahSTWMark mark(heap->global_generation(), true /*full_gc*/);
+  ShenandoahSTWMark mark(_generation, true /*full_gc*/);
   mark.mark();
-  heap->parallel_cleaning(heap->global_generation(), true /* full_gc */);
+  heap->parallel_cleaning(_generation, true /* full_gc */);
 
   if (ShenandoahHeap::heap()->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::log_live_in_old(heap);
@@ -354,9 +355,10 @@ public:
   }
 
   void do_object(oop p) {
+    shenandoah_assert_mark_complete(cast_from_oop<HeapWord*>(p));
     assert(_from_region != nullptr, "must set before work");
-    assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
-    assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+    assert(_heap->marking_context()->is_marked(p), "must be marked");
+    assert(!_heap->marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
     size_t obj_size = p->size();
     if (_compact_point + obj_size > _to_region->end()) {
@@ -800,7 +802,7 @@ public:
     _heap(ShenandoahHeap::heap()) {
   }
   void do_object(oop p) {
-    assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->marking_context()->is_marked(p), "must be marked");
     p->oop_iterate(&_cl);
   }
 };
@@ -884,7 +886,7 @@ public:
     _heap(ShenandoahHeap::heap()), _worker_id(worker_id) {}
 
   void do_object(oop p) {
-    assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+    assert(_heap->marking_context()->is_marked(p), "must be marked");
     size_t size = p->size();
     if (FullGCForwarding::is_forwarded(p)) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
@@ -957,7 +959,7 @@ public:
     // NOTE: See blurb at ShenandoahMCResetCompleteBitmapTask on why we need to skip
     // pinned regions.
     if (!r->is_pinned()) {
-      _heap->global_generation()->complete_marking_context()->reset_top_at_mark_start(r);
+      _heap->marking_context()->reset_top_at_mark_start(r);
     }
 
     size_t live = r->used();
@@ -1082,7 +1084,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
 // we need to remain able to walk pinned regions.
 // Since pinned region do not move and don't get compacted, we will get holes with
 // unreachable objects in them (which may have pointers to unloaded Klasses and thus
-// cannot be iterated over using oop->size(). The only way to safely iterate over those is using
+// cannot be iterated over using oop->size()). The only way to safely iterate over those is using
 // a valid marking bitmap and valid TAMS pointer. This class only resets marking
 // bitmaps for un-pinned regions, and later we only reset TAMS for unpinned regions.
 class ShenandoahMCResetCompleteBitmapTask : public WorkerTask {
@@ -1098,7 +1100,8 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    ShenandoahMarkingContext* const ctx = heap->global_generation()->complete_marking_context();
+    ShenandoahMarkingContext* const ctx = heap->marking_context();
+    assert(heap->global_generation()->is_mark_complete(), "Marking must be complete");
     while (region != nullptr) {
       if (heap->is_bitmap_slice_committed(region) && !region->is_pinned() && region->has_live()) {
         ctx->clear_bitmap(region);
@@ -1166,7 +1169,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     heap->free_set()->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
 
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
-    heap->global_generation()->set_mark_incomplete();
+    _generation->set_mark_incomplete();
 
     heap->clear_cancelled_gc(true /* clear oom handler */);
   }
