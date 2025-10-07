@@ -852,7 +852,7 @@
   </Event>
 
   <Event name="CPUInformation" category="Operating System, Processor" label="CPU Information"
-         description="Characteristics and descriptions of the processor(s) the JVM is running on"
+         description="Characteristics and descriptions of the processor(s) the JVM is running on. Note that \"cores\" field would be incorrect on hybrid CPU."
          period="endChunk">
     <Field type="string" name="cpu" label="Type" />
     <Field type="string" name="description" label="Description" />
