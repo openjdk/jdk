@@ -925,50 +925,6 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   }
 }
 
-size_t ShenandoahGeneration::used() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  return _free_set->global_used();
-}
-
-
-size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  assert(!ShenandoahHeap::heap()->mode()->is_generational(), "NON_GEN implies not generational");
-  return _free_set->get_bytes_allocated_since_gc_start();
-}
-
-size_t ShenandoahGeneration::get_affiliated_region_count() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  return _free_set->global_affiliated_regions();
-}
-
-size_t ShenandoahGeneration::get_humongous_waste() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  return _free_set->total_humongous_waste();
-}
-
-size_t ShenandoahGeneration::used_regions() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  return _free_set->global_affiliated_regions();
-}
-
-size_t ShenandoahGeneration::max_capacity() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  size_t total_regions = _free_set->total_global_regions();
-  return total_regions * ShenandoahHeapRegion::region_size_bytes();
-}
-
-size_t ShenandoahGeneration::free_unaffiliated_regions() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  return _free_set->global_unaffiliated_regions();
-}
-
-size_t ShenandoahGeneration::used_regions_size() const {
-  assert(_type == ShenandoahGenerationType::NON_GEN, "OO sanity");
-  size_t used_regions = _free_set->global_affiliated_regions();
-  return used_regions * ShenandoahHeapRegion::region_size_bytes();
-}
-
 size_t ShenandoahGeneration::available() const {
   size_t result = available(max_capacity());
   return result;

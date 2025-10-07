@@ -125,14 +125,14 @@ private:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  virtual size_t bytes_allocated_since_gc_start() const override;
-  virtual size_t used() const override;
-  virtual size_t used_regions() const;
-  virtual size_t used_regions_size() const;
-  virtual size_t get_humongous_waste() const;
-  virtual size_t free_unaffiliated_regions() const;
-  virtual size_t get_affiliated_region_count() const;
-  virtual size_t max_capacity() const override;
+  virtual size_t bytes_allocated_since_gc_start() const = 0;
+  virtual size_t used() const = 0;
+  virtual size_t used_regions() const = 0;
+    virtual size_t used_regions_size() const = 0;
+  virtual size_t get_humongous_waste() const = 0;
+  virtual size_t free_unaffiliated_regions() const = 0;
+  virtual size_t get_affiliated_region_count() const = 0;
+  virtual size_t max_capacity() const = 0;
 
   size_t available() const override;
   size_t available_with_reserve() const;
