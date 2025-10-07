@@ -521,7 +521,7 @@ AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(cons
 // Match `n` for patterns: a * CON
 // Note that `CON` will always be the second input node of a Mul node canonicalized by Ideal().
 AddNode::Multiplication AddNode::Multiplication::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
-  assert(!(n->Opcode() == Op_Mul(bt) && n->in(1)->is_Con()), "mul node not canonicalized");
+  assert(!(n->Opcode() == Op_Mul(bt) && n->in(1)->is_Con() && !n->in(2)->is_Con()), "mul node not canonicalized");
 
   if (n->Opcode() == Op_Mul(bt) && n->in(2)->is_Con()) {
     Node* con = n->in(2);
