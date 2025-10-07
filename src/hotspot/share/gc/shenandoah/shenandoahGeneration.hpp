@@ -110,7 +110,7 @@ private:
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  virtual size_t bytes_allocated_since_gc_start() const = 0;
+  virtual size_t bytes_allocated_since_gc_start() const override = 0;
   virtual size_t used() const = 0;
   virtual size_t used_regions() const = 0;
   virtual size_t used_regions_size() const = 0;
