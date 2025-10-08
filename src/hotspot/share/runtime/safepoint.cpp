@@ -335,10 +335,12 @@ void SafepointSynchronize::begin() {
   EventSafepointBegin begin_event;
   SafepointTracing::begin(VMThread::vm_op_type());
 
+  log_trace(safepoint)("Suspending GC threads");
   Universe::heap()->safepoint_synchronize_begin();
 
   // By getting the Threads_lock, we assure that no threads are about to start or
   // exit. It is released again in SafepointSynchronize::end().
+  log_trace(safepoint)("Blocking threads from starting/exiting");
   Threads_lock->lock();
 
   assert( _state == _not_synchronized, "trying to safepoint synchronize with wrong state");
@@ -473,8 +475,10 @@ void SafepointSynchronize::end() {
   EventSafepointEnd event;
   assert(Thread::current()->is_VM_thread(), "Only VM thread can execute a safepoint");
 
+  log_trace(safepoint)("Disarming wait barrier");
   disarm_safepoint();
 
+  log_trace(safepoint)("Resuming GC threads");
   Universe::heap()->safepoint_synchronize_end();
 
   SafepointTracing::end();
