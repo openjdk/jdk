@@ -200,6 +200,7 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             CK_ATTRIBUTE[] attributes = new CK_ATTRIBUTE[] {
                 new CK_ATTRIBUTE(CKA_CLASS, CKO_SECRET_KEY),
                 new CK_ATTRIBUTE(CKA_KEY_TYPE, CKK_GENERIC_SECRET),
+                new CK_ATTRIBUTE(CKA_VALUE_LEN, secretLen),
             };
             attributes = token.getAttributes
                 (O_GENERATE, CKO_SECRET_KEY, CKK_GENERIC_SECRET, attributes);
@@ -213,22 +214,11 @@ final class P11KeyAgreement extends KeyAgreementSpi {
             token.p11.C_GetAttributeValue(session.id(), keyID, attributes);
             byte[] secret = attributes[0].getByteArray();
             token.p11.C_DestroyObject(session.id(), keyID);
-            // Some vendors, e.g. NSS, trim off the leading 0x00 byte(s) from
-            // the generated secret. Thus, we need to check the secret length
-            // and trim/pad it so the returned value has the same length as
-            // the modulus size
-            if (secret.length == secretLen) {
-                return secret;
-            } else {
-                if (secret.length > secretLen) {
-                    // Shouldn't happen; but check just in case
-                    throw new ProviderException("generated secret is out-of-range");
-                }
-                byte[] newSecret = new byte[secretLen];
-                System.arraycopy(secret, 0, newSecret, secretLen - secret.length,
-                    secret.length);
-                return newSecret;
+            if (secret.length != secretLen) {
+                // Shouldn't happen; but check just in case
+                throw new ProviderException("generated secret is out-of-range");
             }
+            return secret;
         } catch (PKCS11Exception e) {
             throw new ProviderException("Could not derive key", e);
         } finally {
