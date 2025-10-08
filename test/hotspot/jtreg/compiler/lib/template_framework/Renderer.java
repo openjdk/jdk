@@ -246,7 +246,7 @@ final class Renderer {
         // We need the CodeFrame for local names.
         CodeFrame outerCodeFrame = currentCodeFrame;
         if (nt.nestedNamesAreLocal()) {
-            currentCodeFrame = CodeFrame.make(currentCodeFrame);
+            currentCodeFrame = CodeFrame.make(currentCodeFrame, false);
         }
 
         // We need to be able to define local hashtag replacements, but still
@@ -290,16 +290,14 @@ final class Renderer {
             case HookAnchorToken(Hook hook, NestingToken innerScope) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
-                // We need a CodeFrame to which the hook can insert code. That way, name
-                // definitions at the hook cannot escape the hookCodeFrame.
-                // TODO: what if we want them to escape?
-                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame);
+                // We need a CodeFrame to which the hook can insert code. If the nested names
+                // are to be local, the CodeFrame must be non-transparent for names.
+                CodeFrame hookCodeFrame = CodeFrame.make(outerCodeFrame, !innerScope.nestedNamesAreLocal());
                 hookCodeFrame.addHook(hook);
 
-                // We need a CodeFrame where the tokens can be rendered. That way, name
-                // definitions from the tokens cannot escape the innerCodeFrame to the
-                // hookCodeFrame.
-                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame);
+                // We need a CodeFrame where the tokens can be rendered for code that is
+                // generated inside the anchor scope, but not inserted directly to the hook.
+                CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame, !innerScope.nestedNamesAreLocal());
                 currentCodeFrame = innerCodeFrame;
 
                 renderNestingToken(innerScope, () -> {});
@@ -321,7 +319,7 @@ final class Renderer {
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
                 // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateToken.
-                currentCodeFrame = CodeFrame.makeTransparentForNames(hookCodeFrame);
+                currentCodeFrame = CodeFrame.make(hookCodeFrame, true);
 
                 // TODO: check if this is right here
                 renderTemplateToken(templateToken);

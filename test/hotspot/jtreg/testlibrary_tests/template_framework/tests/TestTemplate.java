@@ -2789,7 +2789,67 @@ public class TestTemplate {
             "after scope:\n",
             listNamesTemplate.asToken(),
 
-            // TODO: other scopes
+            "flat:\n",
+            hook1.anchor(flat(
+                let("flat2", "abc"),
+                addStructuralName("x2a", myStructuralTypeA),
+                "flat before insert scope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertScopeTemplate.asToken("x2b")),
+                "flat after insert scope:\n",
+                listNamesTemplate.asToken(),
+                "flat before insert flat:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertFlatTemplate.asToken("x2c")),
+                "flat after insert flat:\n",
+                listNamesTemplate.asToken(),
+                "flat insert probe.\n",
+                hook1.insert(probeTemplate.asToken())
+            )),
+            "after flat:\n",
+            listNamesTemplate.asToken(),
+            "flat2: #flat2\n",
+
+            "hashtagScope:\n",
+            hook1.anchor(hashtagScope(
+                let("local", "hashtagScope garbage"),
+                addStructuralName("x3a", myStructuralTypeA),
+                "hashtagScope before insert scope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertScopeTemplate.asToken("x3b")),
+                "hashtagScope after insert scope:\n",
+                listNamesTemplate.asToken(),
+                "hashtagScope before insert flat:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertFlatTemplate.asToken("x3c")),
+                "hashtagScope after insert flat:\n",
+                listNamesTemplate.asToken(),
+                "hashtagScope insert probe.\n",
+                hook1.insert(probeTemplate.asToken())
+            )),
+            "after hashtagScope:\n",
+            listNamesTemplate.asToken(),
+
+            "nameScope:\n",
+            hook1.anchor(nameScope(
+                let("flat4", "abcde"),
+                addStructuralName("x4a", myStructuralTypeA),
+                "nameScope before insert scope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertScopeTemplate.asToken("x4b")),
+                "nameScope after insert scope:\n",
+                listNamesTemplate.asToken(),
+                "nameScope before insert flat:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(insertFlatTemplate.asToken("x4c")),
+                "nameScope after insert flat:\n",
+                listNamesTemplate.asToken(),
+                "nameScope insert probe.\n",
+                hook1.insert(probeTemplate.asToken())
+            )),
+            "after nameScope:\n",
+            listNamesTemplate.asToken(),
+            "flat4: #flat4\n",
 
             let("local", "outer garbage")
         ));
@@ -2815,6 +2875,62 @@ public class TestTemplate {
             scope insert probe.
             after scope:
             {}
+            flat:
+            inserted scope: x2b
+            {x2a, x2b}
+            inserted flat: x2c
+            {x2a, x2c}
+            inserted probe:
+            {x2a, x2c}
+            flat before insert scope:
+            {x2a}
+            flat after insert scope:
+            {x2a}
+            flat before insert flat:
+            {x2a}
+            flat after insert flat:
+            {x2a, x2c}
+            flat insert probe.
+            after flat:
+            {x2a, x2c}
+            flat2: abc
+            hashtagScope:
+            inserted scope: x3b
+            {x2a, x2c, x3a, x3b}
+            inserted flat: x3c
+            {x2a, x2c, x3a, x3c}
+            inserted probe:
+            {x2a, x2c, x3a, x3c}
+            hashtagScope before insert scope:
+            {x2a, x2c, x3a}
+            hashtagScope after insert scope:
+            {x2a, x2c, x3a}
+            hashtagScope before insert flat:
+            {x2a, x2c, x3a}
+            hashtagScope after insert flat:
+            {x2a, x2c, x3a, x3c}
+            hashtagScope insert probe.
+            after hashtagScope:
+            {x2a, x2c, x3a, x3c}
+            nameScope:
+            inserted scope: x4b
+            {x2a, x2c, x3a, x3c, x4b}
+            inserted flat: x4c
+            {x2a, x2c, x3a, x3c, x4c}
+            inserted probe:
+            {x2a, x2c, x3a, x3c, x4c}
+            nameScope before insert scope:
+            {x2a, x2c, x3a, x3c, x4a}
+            nameScope after insert scope:
+            {x2a, x2c, x3a, x3c, x4a}
+            nameScope before insert flat:
+            {x2a, x2c, x3a, x3c, x4a}
+            nameScope after insert flat:
+            {x2a, x2c, x3a, x3c, x4c, x4a}
+            nameScope insert probe.
+            after nameScope:
+            {x2a, x2c, x3a, x3c}
+            flat4: abcde
             """;
         checkEQ(code, expected);
     }
