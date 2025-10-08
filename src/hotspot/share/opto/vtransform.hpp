@@ -412,6 +412,14 @@ public:
     n->add_out_strong_edge(this);
   }
 
+  void set_req(uint i, VTransformNode* n) {
+    assert(i < _req, "must be a req");
+    VTransformNode* old = _in.at(i);
+    if (old != nullptr) { old->del_out(this); }
+    _in.at_put(i, n);
+    if (n != nullptr) { n->add_out_strong_edge(this); }
+  }
+
   void swap_req(uint i, uint j) {
     assert(i < _req, "must be a req");
     assert(j < _req, "must be a req");
@@ -457,6 +465,13 @@ private:
 
   void add_out_weak_memory_edge(VTransformNode* n) {
     _out.push(n);
+  }
+
+  void del_out(VTransformNode* n) {
+    assert(false, "TODO");
+    // VTransformNode* last = _out.top();
+    // int i = _out.find(n);
+    // _out.delete_at(i); // replace with last
   }
 
 public:

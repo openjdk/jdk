@@ -23,6 +23,7 @@
 
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 #include "opto/vectornode.hpp"
 #include "opto/vtransform.hpp"
@@ -982,6 +983,7 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
   return ReductionNode::auto_vectorization_requires_strict_order(vopc);
 }
 
+// TODO: description?
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
@@ -1000,15 +1002,15 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   }
 
   // We have a phi with a single use.
-  VTransformLoopPhiNode* phi = in(1)->isa_LoopPhi();
-  if (phi == nullptr || phi->outs() != 1) { return false; }
+  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
+  if (phi == nullptr || phi->out_strong_edges() != 1) { return false; }
 
   // Traverse up the chain of non strict order reductions, checking that it loops
   // back to the phi. Check that all non strict order reductions only have a single
   // use, except for the last (last_red), which only has phi as a use in the loop,
   // and all other uses are outside the loop.
   VTransformReductionVectorNode* first_red   = this;
-  VTransformReductionVectorNode* last_red    = phi->in(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
   VTransformReductionVectorNode* current_red = last_red;
   while (true) {
     if (current_red == nullptr ||
@@ -1018,7 +1020,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       return false; // not compatible
     }
 
-    VTransformVectorNode* vector_input = current_red->in(2)->isa_Vector();
+    VTransformVectorNode* vector_input = current_red->in_req(2)->isa_Vector();
     if (vector_input == nullptr) {
       assert(false, "reduction has a bad vector input");
       return false;
@@ -1027,8 +1029,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     // Expect single use of the non strict order reduction. Except for the last_red.
     if (current_red == last_red) {
       // All uses must be outside loop body, except for the phi.
-      for (int i = 0; i < current_red->outs(); i++) {
-        VTransformNode* use = current_red->out(i);
+      for (uint i = 0; i < current_red->out_strong_edges(); i++) {
+        VTransformNode* use = current_red->out_strong_edge(i);
         if (use->isa_LoopPhi() == nullptr &&
             use->isa_Outer() == nullptr) {
           // Should not be allowed by SuperWord::mark_reductions
@@ -1037,13 +1039,13 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         }
       }
     } else {
-      if (current_red->outs() != 1) {
+      if (current_red->out_strong_edges() != 1) {
         return false; // Only single use allowed
       }
     }
 
     // If the scalar input is a phi, we passed all checks.
-    VTransformNode* scalar_input = current_red->in(1);
+    VTransformNode* scalar_input = current_red->in_req(1);
     if (scalar_input == phi) {
       break;
     }
@@ -1060,18 +1062,16 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
   // Create a vector of identity values.
+  // TODO: consider wrapping this in a vtn, so we only create it when necessary.
   Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
   phase->set_ctrl(identity, phase->C->root());
+  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, identity);
 
-  VTransformNodePrototype scalar_prototype = VTransformNodePrototype::make_from_scalar(identity, vloop_analyzer);
-  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, scalar_prototype, identity);
-
-  VTransformNodePrototype vector_prototype = VTransformNodePrototype(first_red->approximate_origin(), -1, vlen, bt, nullptr);
-  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vector_prototype);
+  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
   vtn_identity_vector->init_req(1, vtn_identity);
 
   // Turn the scalar phi into a vector phi.
-  VTransformNode* init = phi->in(1);
+  VTransformNode* init = phi->in_req(1);
   phi->set_req(1, vtn_identity_vector);
 
   // Traverse down the chain of reductions, and replace them with vector_accumulators.
