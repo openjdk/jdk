@@ -217,6 +217,12 @@
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
   </Event>
 
+  <Event name="ClassFileDefine" category="Java Virtual Machine, Class Loading" label="ClassFile Definition" thread="true" stackTrace="true" startTime="false">
+    <Field type="Class" name="definedClass" label="Defined Class" />
+    <Field type="string" name="source" label="ClassFile Path" />
+    <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
+  </Event>
+
   <Event name="ClassRedefinition" category="Java Virtual Machine, Class Loading" label="Class Redefinition" thread="false" stackTrace="false" startTime="false">
     <Field type="Class" name="redefinedClass" label="Redefined Class" />
     <Field type="int" name="classModificationCount" label="Class Modification Count" description="The number of times the class has changed"/>

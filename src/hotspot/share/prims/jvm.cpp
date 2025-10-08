@@ -894,6 +894,16 @@ static jclass jvm_define_class_common(const char *name,
     trace_class_resolution(k);
   }
 
+  EventClassFileDefine cfd_evt;
+
+  if (cfd_evt.should_commit()) {
+    cfd_evt.set_definedClass(k);
+    cfd_evt.set_source(source);
+    cfd_evt.set_definingClassLoader(k->class_loader_data());
+
+    cfd_evt.commit();
+  }
+
   return (jclass) JNIHandles::make_local(THREAD, k->java_mirror());
 }
 
