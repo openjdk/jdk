@@ -43,7 +43,7 @@ public final class SelectInvalid {
      * The list of invalid indexes, their usages should be noop.
      */
     private static final int[] INVALID = {
-            WINDOWS_INVALID, Integer.MIN_VALUE, -100, 5, 100, Integer.MAX_VALUE
+            WINDOWS_INVALID, Integer.MIN_VALUE, -100, 3, 100, Integer.MAX_VALUE
     };
 
     public static void main(String[] args) {
