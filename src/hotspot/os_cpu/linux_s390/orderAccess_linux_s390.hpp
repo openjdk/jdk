@@ -28,7 +28,6 @@
 
 // Included in orderAccess.hpp header file.
 
-#include "runtime/vm_version.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Implementation of class OrderAccess.
