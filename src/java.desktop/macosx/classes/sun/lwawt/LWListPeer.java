@@ -45,6 +45,7 @@ import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JViewport;
 import javax.swing.ListCellRenderer;
+import javax.swing.ListModel;
 import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -135,9 +136,12 @@ final class LWListPeer extends LWComponentPeer<List, LWListPeer.ScrollableJList>
     @Override
     public void select(final int index) {
         synchronized (getDelegateLock()) {
-            getDelegate().setSkipStateChangedEvent(true);
-            getDelegate().getView().addSelectionInterval(index, index);
-            getDelegate().setSkipStateChangedEvent(false);
+            ListModel<String> model = getDelegate().getModel();
+            if (index >= 0 && index < model.getSize()) {
+                getDelegate().setSkipStateChangedEvent(true);
+                getDelegate().getView().addSelectionInterval(index, index);
+                getDelegate().setSkipStateChangedEvent(false);
+            }
         }
     }
 
