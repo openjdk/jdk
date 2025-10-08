@@ -164,15 +164,14 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
   // (see synchronizer.cpp).
 
   T old_value;
-  const uint64_t zero = 0;
 
   pre_membar(order);
 
   __asm__ __volatile__ (
     /* atomic loop */
     "1:                                                 \n"
-    "   lwarx   %[old_value], %[dest], %[zero]          \n"
-    "   stwcx.  %[exchange_value], %[dest], %[zero]     \n"
+    "   lwarx   %[old_value], 0, %[dest]                \n"
+    "   stwcx.  %[exchange_value], 0, %[dest]           \n"
     "   bne-    1b                                      \n"
     /* exit */
     "2:                                                 \n"
@@ -181,7 +180,6 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                         "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),
-      [zero]            "r"     (zero),
       [exchange_value]  "r"     (exchange_value),
                         "m"     (*dest)
     /* clobber */
@@ -204,15 +202,14 @@ inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
   // (see synchronizer.cpp).
 
   T old_value;
-  const uint64_t zero = 0;
 
   pre_membar(order);
 
   __asm__ __volatile__ (
     /* atomic loop */
     "1:                                                 \n"
-    "   ldarx   %[old_value], %[dest], %[zero]          \n"
-    "   stdcx.  %[exchange_value], %[dest], %[zero]     \n"
+    "   ldarx   %[old_value], 0, %[dest]                \n"
+    "   stdcx.  %[exchange_value], 0, %[dest]           \n"
     "   bne-    1b                                      \n"
     /* exit */
     "2:                                                 \n"
@@ -221,7 +218,6 @@ inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
                         "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),
-      [zero]            "r"     (zero),
       [exchange_value]  "r"     (exchange_value),
                         "m"     (*dest)
     /* clobber */
@@ -247,6 +243,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // specified otherwise (see atomicAccess.hpp).
 
   unsigned int old_value;
+
   pre_membar(order);
 
   __asm__ __volatile__ (
@@ -294,7 +291,6 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
   // specified otherwise (see atomicAccess.hpp).
 
   T old_value;
-  const uint64_t zero = 0;
 
   pre_membar(order);
 
@@ -305,10 +301,10 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
     "   bne-    2f                                      \n"
     /* atomic loop */
     "1:                                                 \n"
-    "   lwarx   %[old_value], %[dest], %[zero]          \n"
+    "   lwarx   %[old_value], 0, %[dest]                \n"
     "   cmpw    %[compare_value], %[old_value]          \n"
     "   bne-    2f                                      \n"
-    "   stwcx.  %[exchange_value], %[dest], %[zero]     \n"
+    "   stwcx.  %[exchange_value], 0, %[dest]           \n"
     "   bne-    1b                                      \n"
     /* exit */
     "2:                                                 \n"
@@ -317,7 +313,6 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                         "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),
-      [zero]            "r"     (zero),
       [compare_value]   "r"     (compare_value),
       [exchange_value]  "r"     (exchange_value),
                         "m"     (*dest)
@@ -344,7 +339,6 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
   // specified otherwise (see atomicAccess.hpp).
 
   T old_value;
-  const uint64_t zero = 0;
 
   pre_membar(order);
 
@@ -355,10 +349,10 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
     "   bne-    2f                                      \n"
     /* atomic loop */
     "1:                                                 \n"
-    "   ldarx   %[old_value], %[dest], %[zero]          \n"
+    "   ldarx   %[old_value], 0, %[dest]                \n"
     "   cmpd    %[compare_value], %[old_value]          \n"
     "   bne-    2f                                      \n"
-    "   stdcx.  %[exchange_value], %[dest], %[zero]     \n"
+    "   stdcx.  %[exchange_value], 0, %[dest]           \n"
     "   bne-    1b                                      \n"
     /* exit */
     "2:                                                 \n"
@@ -367,7 +361,6 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                         "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),
-      [zero]            "r"     (zero),
       [compare_value]   "r"     (compare_value),
       [exchange_value]  "r"     (exchange_value),
                         "m"     (*dest)
