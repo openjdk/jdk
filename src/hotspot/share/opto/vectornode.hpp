@@ -95,7 +95,6 @@ class VectorNode : public TypeNode {
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
-  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   static int shift_count_opcode(int opc);
 
