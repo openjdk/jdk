@@ -42,8 +42,6 @@ import java.nio.file.Paths;
 public class TestAccessErrorInCatch {
 
     public static void main(String[] args) throws Throwable {
-System.err.println("X test.class.path " + System.getProperty("test.class.path"));
-System.err.println("X test.classes " + System.getProperty("test.classes"));
         Path TEST_CLASSES_DIR = FileSystems.getDefault().getPath(System.getProperty("test.classes"));
         byte[] bytes = Files.readAllBytes(TEST_CLASSES_DIR.resolve("IllegalAccessInCatch.class"));
 
