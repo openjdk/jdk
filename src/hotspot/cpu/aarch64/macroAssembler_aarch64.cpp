@@ -597,10 +597,8 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
 }
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
-  // We must clear sp first and place a store-store barrier immediately after,
-  // to ensure ACGT does not observe a corrupted frame.
+  // we must set sp to zero to clear frame
   str(zr, Address(rthread, JavaThread::last_Java_sp_offset()));
-  membar(Assembler::StoreStore);
 
   // must clear fp, so that compiled frames are not confused; it is
   // possible that we need it only for debugging
@@ -636,15 +634,12 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     last_java_sp = esp;
   }
 
+  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
+
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
     str(last_java_fp, Address(rthread, JavaThread::last_Java_fp_offset()));
   }
-
-  // We must set sp last and place a store-store barrier immediately before,
-  // to ensure ACGT does not observe a corrupted frame.
-  membar(Assembler::StoreStore);
-  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
