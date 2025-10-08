@@ -105,6 +105,13 @@ final class OverridableResource {
         return externalPath;
     }
 
+    String getPrintableCategory() {
+        if (category != null) {
+            return String.format("[%s]", category);
+        }
+        return "";
+    }
+
     OverridableResource setSubstitutionData(Map<String, String> v) {
         if (v != null) {
             // Disconnect `v`
@@ -232,17 +239,7 @@ final class OverridableResource {
             }
         }
 
-        Log.verbose(I18N.format("message.no-default-resource",
-                publicName, getPrintableCategory(), publicName));
-
         return null;
-    }
-
-    private String getPrintableCategory() {
-        if (category != null) {
-            return String.format("[%s]", category);
-        }
-        return "";
     }
 
     private boolean useExternal(ResourceConsumer dest) throws IOException {

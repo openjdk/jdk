@@ -76,6 +76,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
     enum PkgPackageTaskID implements TaskID {
         PREPARE_MAIN_SCRIPTS,
+        LOG_NO_MAIN_SCRIPTS,
         CREATE_DISTRIBUTION_XML_FILE,
         CREATE_COMPONENT_PLIST_FILE,
         PREPARE_SERVICES
@@ -219,6 +220,10 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
                         .action(this::prepareMainScripts)
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
                         .add()
+                .task(PkgPackageTaskID.LOG_NO_MAIN_SCRIPTS)
+                        .action(this::logNoMainScripts)
+                        .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
+                        .add()
                 .task(PkgPackageTaskID.CREATE_DISTRIBUTION_XML_FILE)
                         .action(this::prepareDistributionXMLFile)
                         .addDependent(PackageTaskID.RUN_POST_IMAGE_USER_SCRIPT)
@@ -354,6 +359,12 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         MacPkgInstallerScripts.createAppScripts()
                 .setResourceDir(env)
                 .saveInFolder(scriptsRoot);
+    }
+
+    private void logNoMainScripts() {
+        MacPkgInstallerScripts.createAppScripts()
+                .setResourceDir(env)
+                .logNoMainScripts();
     }
 
     private void prepareDistributionXMLFile() throws IOException {
