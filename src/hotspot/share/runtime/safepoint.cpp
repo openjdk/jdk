@@ -367,7 +367,7 @@ void SafepointSynchronize::begin() {
   int initial_running = 0;
 
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
-  log_trace(safepoint)("Arming %s wait barrier", _wait_barrier->description());
+  log_trace(safepoint)("Arming safepoint using %s wait barrier", _wait_barrier->description());
   arm_safepoint();
 
   // Will spin until all threads are safe.
@@ -475,7 +475,7 @@ void SafepointSynchronize::end() {
   EventSafepointEnd event;
   assert(Thread::current()->is_VM_thread(), "Only VM thread can execute a safepoint");
 
-  log_trace(safepoint)("Disarming wait barrier");
+  log_trace(safepoint)("Disarming safepoint");
   disarm_safepoint();
 
   log_trace(safepoint)("Resuming GC threads");
