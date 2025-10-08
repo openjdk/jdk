@@ -2180,6 +2180,7 @@ public final class String
      *          false} otherwise
      *
      * @see  #equals(Object)
+     * @see  #equalsFoldCase(String)
      * @see  #codePoints()
      */
     public boolean equalsIgnoreCase(String anotherString) {
@@ -2191,12 +2192,12 @@ public final class String
 
     /**
      * Compares this {@code String} to another {@code String} for equality,
-     * using <em>Unicode case folding</em>. Two strings are considered equal
+     * using <em>{@index "Unicode case folding"}</em>. Two strings are considered equal
      * by this method if their case-folded forms are identical.
      * <p>
      * Case folding is defined by the Unicode Standard in
      * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">CaseFolding.txt</a>,
-     * including 1:M mappings. For example, {@code "Maße".equalsFoldCase("MASSE")}
+     * including 1:M mappings. For example, {@code "Fuß".equalsFoldCase("FUSS")}
      * returns {@code true}, since the character {@code U+00DF} (sharp s) folds
      * to {@code "ss"}.
      * <p>
@@ -2212,8 +2213,8 @@ public final class String
      * per-character mapping performed by {@code equalsIgnoreCase}.
      * For example:
      * <pre>{@snippet lang=java :
-     * String a = "Maße";
-     * String b = "MASSE";
+     * String a = "Fuß";
+     * String b = "FUSS";
      * boolean equalsFoldCase = a.equalsFoldCase(b);       // returns true
      * boolean equalsIgnoreCase = a.equalsIgnoreCase(b);   // returns false
      * }</pre>
@@ -2354,6 +2355,7 @@ public final class String
      *          than this String, ignoring case considerations.
      * @see     java.text.Collator
      * @see     #codePoints()
+     * @see     #compareToFoldCase(String)
      * @since   1.2
      */
     public int compareToIgnoreCase(String str) {
@@ -2386,7 +2388,7 @@ public final class String
     }
 
     /**
-     * Compares two strings lexicographically using <em>Unicode case folding</em>.
+     * Compares two strings lexicographically using <em>{@index "Unicode case folding"}</em>.
      * This method returns an integer whose sign is that of calling {@code compareTo}
      * on the Unicode case folded version of the strings. Unicode Case folding
      * eliminates differences in case according to the Unicode Standard, using the
@@ -2397,7 +2399,7 @@ public final class String
      * Case folding is a locale-independent, language-neutral form of case mapping,
      * primarily intended for caseless matching. Unlike {@link #compareToIgnoreCase(String)},
      * which applies a simpler locale-insensitive uppercase mapping. This method
-     * follows the Unicode <em>full</em> case folding, providing stable and
+     * follows the Unicode <em>{@index "full"}</em> case folding, providing stable and
      * consistent results across all environments.
      * <p>
      * Note that this method does <em>not</em> take locale into account, and may
@@ -2406,13 +2408,14 @@ public final class String
      *
      * @apiNote
      * This method is the Unicode-compliant alternative to
-     * {@link #compareToIgnoreCase(String)}. It implements the <em>full</em> case folding
-     * as defined by the Unicode Standard, which may differ from the simpler
-     * per-character mapping performed by {@code compareToIgnoreCase}.
+     * {@link #compareToIgnoreCase(String)}. It implements the
+     * <em>{@index "full case folding"}</em> as defined by the Unicode Standard, which
+     * may differ from the simpler per-character mapping performed by
+     * {@code compareToIgnoreCase}.
      * For example:
      * <pre>{@snippet lang=java :
-     * String a = "Maße";
-     * String b = "MASSE";
+     * String a = "Fuß";
+     * String b = "FUSS";
      * int cmpFoldCase = a.compareToFoldCase(b);     // returns 0
      * int cmpIgnoreCase = a.compareToIgnoreCase(b); // returns > 0
      * }</pre>
@@ -2421,9 +2424,9 @@ public final class String
      * @return  a negative integer, zero, or a positive integer as the specified
      *          String is greater than, equal to, or less than this String,
      *          ignoring case considerations by case folding.
-     * @see     #equalsFoldCase(String)
-     * @see     #compareToIgnoreCase(String)
      * @see     java.text.Collator
+     * @see     #compareToIgnoreCase(String)
+     * @see     #equalsFoldCase(String)
      * @since   26
      */
     public int compareToFoldCase(String str) {
