@@ -115,20 +115,15 @@ class MallocHeader {
 
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return (uint16_t)(((uint16_t)b1 << 8) | (uint16_t)b2); }
 
-  uint16_t get_footer() const {
-    #if INCLUDE_ASAN
+  #if INCLUDE_ASAN
+    uint16_t get_footer() const {
       ASAN_UNPOISON_MEMORY_REGION(footer_address(), sizeof(uint16_t));
       uint16_t footer = build_footer(footer_address()[0], footer_address()[1]);
       if (_poisoned) {
         ASAN_POISON_MEMORY_REGION(footer_address(), sizeof(uint16_t));
       }
       return footer;
-      #else
-      return build_footer(footer_address()[0], footer_address()[1]);
-    #endif
-  }
-
-  #if INCLUDE_ASAN
+    }
     void set_footer(uint16_t v) {
       bool poisoned_before = _poisoned;
       set_poisoned(false);
@@ -136,9 +131,8 @@ class MallocHeader {
       set_poisoned(poisoned_before);
     }
   #else
-    void set_footer(uint16_t v) {
-      footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v;
-    }
+    uint16_t get_footer() const { return build_footer(footer_address()[0], footer_address()[1]); }
+    void set_footer(uint16_t v) { footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v; }
   #endif
 
   template<typename InTypeParam, typename OutTypeParam>
@@ -147,30 +141,27 @@ class MallocHeader {
 public:
   using CanaryType = uint16_t;
   #ifndef _LP64
-  using AltCanarayType = uint32_t;
-  inline AltCanarayType alt_canary() const {
+    using AltCanarayType = uint32_t;
     #if INCLUDE_ASAN
-      ASAN_UNPOISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanarayType));
-      AltCanarayType ac = _alt_canary;
-      if (_poisoned) {
-        ASAN_POISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanarayType));
+      inline AltCanarayType alt_canary() const {
+        ASAN_UNPOISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanarayType));
+        AltCanarayType ac = _alt_canary;
+        if (_poisoned) {
+          ASAN_POISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanarayType));
+        }
+        return ac;
       }
-      return ac;
+      inline void set_alt_canary(AltCanarayType value) {
+        bool poisoned_before = _poisoned;
+        set_poisoned(false);
+        _alt_canary = value;
+        set_poisoned(poisoned_before);
+      }
     #else
-      return _alt_canary;
-    #endif
-  }
-  inline void set_alt_canary(AltCanarayType value) {
-    #if INCLUDE_ASAN
-      bool poisoned_before = _poisoned;
-      set_poisoned(false);
-      _alt_canary = value;
-      set_poisoned(poisoned_before);
-    #else
-      _alt_canary = value;
-    #endif
-  }
-  #endif
+      inline AltCanarayType alt_canary() const { return _alt_canary; }
+      inline void set_alt_canary() { return _alt_canary = value; }
+    #endif // INCLUDE_ASAN
+  #endif // _LP64
   #if INCLUDE_ASAN
     inline void set_poisoned(bool poison) {
       if (poison) {
@@ -184,10 +175,39 @@ public:
       }
       _poisoned = poison;
     }
+
     inline bool is_poisoned() const { return _poisoned; }
+
+    inline size_t size() const {
+      ASAN_UNPOISON_MEMORY_REGION(&_size, sizeof(_size));
+      size_t size = _size;
+      if (_poisoned) {
+        ASAN_POISON_MEMORY_REGION(&_size, sizeof(_size));
+      }
+      return size;
+    }
+
+    inline void set_header_canary(uint16_t value) {
+      bool poisoned_before = _poisoned;
+      set_poisoned(false);
+      _canary = value;
+      set_poisoned(poisoned_before);
+    }
+
+    inline CanaryType canary() const {
+      ASAN_UNPOISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
+      CanaryType canary = _canary;
+      if (_poisoned) {
+        ASAN_POISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
+      }
+      return canary ;
+    }
   #else
     inline bool is_poisoned() const { return false; }
     inline void set_poisoned(bool poison) { }
+    inline size_t size() const { return _size; }
+    inline void set_header_canary(uint16_t value) {_canary = value;}
+    inline CanaryType canary() const { return _canary; }
   #endif
   uint8_t* footer_address() const { return ((address)this) + sizeof(MallocHeader) + size(); }
   // Contains all of the necessary data to to deaccount block with NMT.
@@ -200,18 +220,6 @@ public:
   inline MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker);
 
   inline static size_t malloc_overhead() { return sizeof(MallocHeader) + sizeof(uint16_t); }
-  inline size_t size() const {
-    #if INCLUDE_ASAN
-      ASAN_UNPOISON_MEMORY_REGION(&_size, sizeof(_size));
-      size_t size = _size;
-      if (_poisoned) {
-        ASAN_POISON_MEMORY_REGION(&_size, sizeof(_size));
-      }
-      return size;
-    #else
-      return _size;
-    #endif
-  }
   inline MemTag mem_tag() const { return _mem_tag; }
   inline uint32_t mst_marker() const { return _mst_marker; }
 
@@ -222,30 +230,6 @@ public:
   inline void mark_block_as_dead();
   inline void revive();
 
-
-  inline void set_header_canary(uint16_t value) {
-    #if INCLUDE_ASAN
-      bool poisoned_before = _poisoned;
-      set_poisoned(false);
-      _canary = value;
-      set_poisoned(poisoned_before);
-    #else
-      _canary = value;
-    #endif
-  }
-
-  inline CanaryType canary() const {
-    #if INCLUDE_ASAN
-      ASAN_UNPOISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
-      CanaryType canary = _canary;
-      if (_poisoned) {
-        ASAN_POISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
-      }
-      return canary ;
-    #else
-      return _canary;
-    #endif
-  }
   bool is_dead() const { return canary() == _header_canary_dead_mark; }
   bool is_live() const { return canary() == _header_canary_live_mark; }
 
