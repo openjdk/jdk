@@ -43,6 +43,10 @@ public class TestFDBigInteger {
     private static final FDBigInteger IMMUTABLE_MILLION = genMillion1().makeImmutable();
     private static final FDBigInteger IMMUTABLE_TEN18 = genTen18().makeImmutable();
 
+    private static BigInteger toBigInteger(FDBigInteger v) {
+        return new BigInteger(v.toByteArray());
+    }
+
     private static FDBigInteger mutable(String hex, int offset) {
         byte[] chars = new BigInteger(hex, 16).toString().getBytes(StandardCharsets.US_ASCII);
         return new FDBigInteger(0, chars, 0, chars.length).multByPow52(0, offset * 32);
@@ -68,8 +72,8 @@ public class TestFDBigInteger {
     }
 
     private static void check(BigInteger expected, FDBigInteger actual, String message) throws Exception {
-        if (!expected.equals(actual.toBigInteger())) {
-            throw new Exception(message + " result " + actual.toHexString() + " expected " + expected.toString(16));
+        if (!expected.equals(toBigInteger(actual))) {
+            throw new Exception(message + " result " + actual + " expected " + expected.toString(16));
         }
     }
 
@@ -114,7 +118,7 @@ public class TestFDBigInteger {
     }
 
     private static void testLeftShift(FDBigInteger t, int shift, boolean isImmutable) throws Exception {
-        BigInteger bt = t.toBigInteger();
+        BigInteger bt = toBigInteger(t);
         FDBigInteger r = t.leftShift(shift);
         if ((bt.signum() == 0 || shift == 0 || !isImmutable) && r != t) {
             throw new Exception("leftShift doesn't reuse its argument");
@@ -164,8 +168,8 @@ public class TestFDBigInteger {
     }
 
     private static void testQuoRemIteration(FDBigInteger t, FDBigInteger s) throws Exception {
-        BigInteger bt = t.toBigInteger();
-        BigInteger bs = s.toBigInteger();
+        BigInteger bt = toBigInteger(t);
+        BigInteger bs = toBigInteger(s);
         int q = t.quoRemIteration(s);
         BigInteger[] qr = bt.divideAndRemainder(bs);
         if (!BigInteger.valueOf(q).equals(qr[0])) {
@@ -194,8 +198,8 @@ public class TestFDBigInteger {
     }
 
     private static void testCmp(FDBigInteger t, FDBigInteger o) throws Exception {
-        BigInteger bt = t.toBigInteger();
-        BigInteger bo = o.toBigInteger();
+        BigInteger bt = toBigInteger(t);
+        BigInteger bo = toBigInteger(o);
         int cmp = t.cmp(o);
         int bcmp = bt.compareTo(bo);
         if (bcmp != cmp) {
@@ -223,7 +227,7 @@ public class TestFDBigInteger {
 
     private static void testCmpPow52(FDBigInteger t, int p5, int p2) throws Exception {
         FDBigInteger o = FDBigInteger.valueOfPow52(p5, p2);
-        BigInteger bt = t.toBigInteger();
+        BigInteger bt = toBigInteger(t);
         BigInteger bo = biPow52(p5, p2);
         int cmp = t.cmp(o);
         int bcmp = bt.compareTo(bo);
@@ -246,9 +250,9 @@ public class TestFDBigInteger {
     }
 
     private static void testAddAndCmp(FDBigInteger t, FDBigInteger x, FDBigInteger y) throws Exception {
-        BigInteger bt = t.toBigInteger();
-        BigInteger bx = x.toBigInteger();
-        BigInteger by = y.toBigInteger();
+        BigInteger bt = toBigInteger(t);
+        BigInteger bx = toBigInteger(x);
+        BigInteger by = toBigInteger(y);
         int cmp = t.addAndCmp(x, y);
         int bcmp = bt.compareTo(bx.add(by));
         if (bcmp != cmp) {
@@ -284,7 +288,7 @@ public class TestFDBigInteger {
     }
 
     private static void testMultBy10(FDBigInteger t, boolean isImmutable) throws Exception {
-        BigInteger bt = t.toBigInteger();
+        BigInteger bt = toBigInteger(t);
         FDBigInteger r = t.multBy10();
         if ((bt.signum() == 0 || !isImmutable) && r != t) {
             throw new Exception("multBy10 of doesn't reuse its argument");
@@ -308,7 +312,7 @@ public class TestFDBigInteger {
     }
 
     private static void testMultByPow52(FDBigInteger t, int p5, int p2) throws Exception {
-        BigInteger bt = t.toBigInteger();
+        BigInteger bt = toBigInteger(t);
         FDBigInteger r = t.multByPow52(p5, p2);
         if (bt.signum() == 0 && r != t) {
             throw new Exception("multByPow52 of doesn't reuse its argument");

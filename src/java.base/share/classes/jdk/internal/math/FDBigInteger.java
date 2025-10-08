@@ -26,7 +26,6 @@ package jdk.internal.math;
 
 import jdk.internal.misc.CDS;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 /**
@@ -80,7 +79,7 @@ public class FDBigInteger {
                     25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
                     25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
                     25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
-                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,
+                    25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,  // 5^27
                 };
             int[] small5pow = {
                     1,
@@ -96,8 +95,9 @@ public class FDBigInteger {
                     25 * 25 * 25 * 25 * 25,
                     25 * 25 * 25 * 25 * 25 * 5,
                     25 * 25 * 25 * 25 * 25 * 25,
-                    25 * 25 * 25 * 25 * 25 * 25 * 5,
+                    25 * 25 * 25 * 25 * 25 * 25 * 5,  // 5^13
                 };
+
             FDBigInteger[] pow5cache = new FDBigInteger[MAX_FIVE_POW];
             int i = 0;
             for (; i < long5pow.length; ++i) {
@@ -107,13 +107,14 @@ public class FDBigInteger {
             for (; i < MAX_FIVE_POW; ++i) {
                 pow5cache[i] = prev = prev.mult(5).makeImmutable();
             }
-            prev = pow5cache[MAX_FIVE_POW - 1];
+
+            /* Here prev is 5^(MAX_FIVE_POW-1). */
             FDBigInteger[] largePow5cache =
                     new FDBigInteger[(2 - DoubleToDecimal.Q_MIN) - MAX_FIVE_POW + 1];
             largePow5cache[2 * (MAX_FIVE_POW - 1) - MAX_FIVE_POW] =
                     prev = prev.mult(prev).makeImmutable();
             largePow5cache[3 * (MAX_FIVE_POW - 1) - MAX_FIVE_POW] =
-                    prev.mult(pow5cache[MAX_FIVE_POW - 1]).makeImmutable();
+                    pow5cache[MAX_FIVE_POW - 1].mult(prev).makeImmutable();
             archivedCaches = caches = new Object[] {small5pow, long5pow, pow5cache, largePow5cache};
         }
         SMALL_5_POW = (int[]) caches[0];
@@ -970,7 +971,8 @@ public class FDBigInteger {
     /*
      * Lookup table of powers of 5 starting with 5^MAX_FIVE_POW.
      * The size just serves for the conversions.
-     * It is filled lazily.
+     * It is filled lazily, except for the entries with exponent
+     * 2 (MAX_FIVE_POW - 1) and 3 (MAX_FIVE_POW - 1).
      */
     private static final FDBigInteger[] LARGE_POW_5_CACHE;
 
@@ -992,7 +994,10 @@ public class FDBigInteger {
             FDBigInteger p5 = LARGE_POW_5_CACHE[e - MAX_FIVE_POW];
             if (p5 == null) {
                 int ep = (e - 1) - (e - 1) % (MAX_FIVE_POW - 1);
-                p5 = pow5(ep).mult(POW_5_CACHE[e - ep]);  // bounded recursion
+                p5 = (ep < MAX_FIVE_POW
+                        ? POW_5_CACHE[ep]
+                        : LARGE_POW_5_CACHE[ep - MAX_FIVE_POW])
+                        .mult(POW_5_CACHE[e - ep]);
                 LARGE_POW_5_CACHE[e - MAX_FIVE_POW] = p5.makeImmutable();
             }
             return p5;
@@ -1005,11 +1010,12 @@ public class FDBigInteger {
      *
      * @return The hexadecimal string representation.
      */
-    public String toHexString() {
+    @Override
+    public String toString() {
         if (nWords == 0) {
             return "0";
         }
-        StringBuilder sb = new StringBuilder(8 * (nWords + offset));
+        StringBuilder sb = new StringBuilder(8 * (size()));
         for (int i = nWords - 1; i >= 0; i--) {
             String subStr = Integer.toHexString(data[i]);
             sb.repeat('0', 8 - subStr.length()).append(subStr);
@@ -1019,11 +1025,12 @@ public class FDBigInteger {
 
     // for debugging ...
     /**
-     * Converts this {@link FDBigInteger} to a {@link BigInteger}.
+     * Converts this {@link FDBigInteger} to a {@code byte[]} for use in
+     * {@link java.math.BigInteger} constructor.
      *
-     * @return The {@link BigInteger} representation.
+     * @return The {@code byte[]} representation.
      */
-    public BigInteger toBigInteger() {
+    public byte[] toByteArray() {
         byte[] magnitude = new byte[4 * size() + 1];
         for (int i = 0, j = magnitude.length - 4 * offset; i < nWords; i += 1, j -= 4) {
             int w = data[i];
@@ -1032,18 +1039,7 @@ public class FDBigInteger {
             magnitude[j - 3] = (byte) (w >> 16);
             magnitude[j - 4] = (byte) (w >> 24);
         }
-        return new BigInteger(magnitude);
-    }
-
-    // for debugging ...
-    /**
-     * Converts this {@link FDBigInteger} to a string.
-     *
-     * @return The string representation.
-     */
-    @Override
-    public String toString(){
-        return toBigInteger().toString();
+        return magnitude;
     }
 
 }

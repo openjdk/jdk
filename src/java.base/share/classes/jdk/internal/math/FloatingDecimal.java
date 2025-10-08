@@ -32,7 +32,7 @@ import static jdk.internal.math.FDBigInteger.valueOfPow52;
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
- * static convenience methods, although a {@link BinaryToASCIIConverter}
+ * static convenience methods, although a {@link BinaryToASCIIBuffer}
  * instance may be obtained and reused.
  */
 public class FloatingDecimal {
@@ -57,7 +57,7 @@ public class FloatingDecimal {
      * represent a properly formatted double precision value.
      */
     public static double parseDouble(String s) throws NumberFormatException {
-        return readJavaFormatString(s, BINARY_64_IX).doubleValue();
+        return readJavaFormatString(s, BINARY_64_IX);
     }
 
     /**
@@ -69,7 +69,7 @@ public class FloatingDecimal {
      * represent a properly formatted single precision value.
      */
     public static float parseFloat(String s) throws NumberFormatException {
-        return readJavaFormatString(s, BINARY_32_IX).floatValue();
+        return (float) readJavaFormatString(s, BINARY_32_IX);
     }
 
     /**
@@ -85,53 +85,15 @@ public class FloatingDecimal {
         return new ASCIIToBinaryBuffer(false, decExp, d, length).doubleValue();
     }
 
-    /**
-     * A converter which can process single or double precision floating point
-     * values into an ASCII <code>String</code> representation.
-     */
-    public interface BinaryToASCIIConverter {
-
-        /**
-         * Retrieves the decimal exponent most closely corresponding to this value.
-         * @return The decimal exponent.
-         */
-        int getDecimalExponent();
-
-        /**
-         * Retrieves the value as an array of digits.
-         * @param digits The digit array.
-         * @return The number of valid digits copied into the array.
-         */
-        int getDigits(byte[] digits);
-
-        /**
-         * Indicates whether the value was rounded up during the binary to ASCII
-         * conversion.
-         *
-         * @return <code>true</code> if and only if the value was rounded up.
-         */
-        boolean digitsRoundedUp();
-
-        /**
-         * Indicates whether the binary to ASCII conversion was exact.
-         *
-         * @return <code>true</code> if any only if the conversion was exact.
-         */
-        boolean decimalDigitsExact();
-    }
-
     private static final String INFINITY_REP = "Infinity";
     private static final String NAN_REP = "NaN";
 
-    private static final BinaryToASCIIConverter B2AC_POSITIVE_ZERO =
+    private static final BinaryToASCIIBuffer B2AC_POSITIVE_ZERO =
             new BinaryToASCIIBuffer(new byte[] {'0'});
-    private static final BinaryToASCIIConverter B2AC_NEGATIVE_ZERO =
+    private static final BinaryToASCIIBuffer B2AC_NEGATIVE_ZERO =
             new BinaryToASCIIBuffer(new byte[] {'0'});
 
-    /**
-     * A buffered implementation of {@link BinaryToASCIIConverter}.
-     */
-    static class BinaryToASCIIBuffer implements BinaryToASCIIConverter {
+    public static class BinaryToASCIIBuffer {
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
@@ -152,7 +114,7 @@ public class FloatingDecimal {
 
         /**
          * Default constructor; used for non-zero values,
-         * <code>BinaryToASCIIBuffer</code> may be thread-local and reused
+         * {@link BinaryToASCIIBuffer} may be thread-local and reused
          */
         BinaryToASCIIBuffer() {
             this.digits = new byte[20];
@@ -168,23 +130,19 @@ public class FloatingDecimal {
             this.nDigits = digits.length;
         }
 
-        @Override
         public int getDecimalExponent() {
             return decExponent;
         }
 
-        @Override
         public int getDigits(byte[] digits) {
             System.arraycopy(this.digits, firstDigitIndex, digits, 0, this.nDigits);
             return this.nDigits;
         }
 
-        @Override
         public boolean digitsRoundedUp() {
             return decimalDigitsRoundedUp;
         }
 
-        @Override
         public boolean decimalDigitsExact() {
             return exactDecimalConversion;
         }
@@ -699,7 +657,7 @@ public class FloatingDecimal {
             8, 8, 8, 9, 9, 9, 9, 10, 10, 10, 11, 11, 11,
             12, 12, 12, 12, 13, 13, 13, 14, 14, 14,
             15, 15, 15, 15, 16, 16, 16, 17, 17, 17,
-            18, 18, 18, 19
+            18, 18, 18, 19,
         };
 
         // approximately ceil( log2( long5pow[i] ) )
@@ -732,6 +690,7 @@ public class FloatingDecimal {
                 56,
                 59,
                 61,
+                63,
         };
 
     }
@@ -744,63 +703,13 @@ public class FloatingDecimal {
     }
 
     /**
-     * A converter which can process an ASCII {@link String} representation
-     * of a single or double precision floating point value into a
-     * {@code float} or a {@code double}.
-     */
-    interface ASCIIToBinaryConverter {
-
-        double doubleValue();
-
-        float floatValue();
-
-    }
-
-    /**
-     * A {@link ASCIIToBinaryConverter} container.
-     */
-    static class PreparedASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        private final double doubleVal;
-        private final float floatVal;
-
-        public PreparedASCIIToBinaryBuffer(double doubleVal, float floatVal) {
-            this.doubleVal = doubleVal;
-            this.floatVal = floatVal;
-        }
-
-        @Override
-        public double doubleValue() {
-            return doubleVal;
-        }
-
-        @Override
-        public float floatValue() {
-            return floatVal;
-        }
-    }
-
-    private static final PreparedASCIIToBinaryBuffer A2BC_POSITIVE_INFINITY =
-            new PreparedASCIIToBinaryBuffer(Double.POSITIVE_INFINITY, Float.POSITIVE_INFINITY);
-    private static final PreparedASCIIToBinaryBuffer A2BC_NEGATIVE_INFINITY =
-            new PreparedASCIIToBinaryBuffer(Double.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
-    private static final PreparedASCIIToBinaryBuffer A2BC_NOT_A_NUMBER  =
-            new PreparedASCIIToBinaryBuffer(Double.NaN, Float.NaN);
-    private static final PreparedASCIIToBinaryBuffer A2BC_POSITIVE_ZERO =
-            new PreparedASCIIToBinaryBuffer(0.0d, 0.0f);
-    private static final PreparedASCIIToBinaryBuffer A2BC_NEGATIVE_ZERO =
-            new PreparedASCIIToBinaryBuffer(-0.0d, -0.0f);
-
-    /**
-     * A buffered implementation of {@link ASCIIToBinaryConverter}.
-     *<p>
      * The mathematical value x of an instance is
      *      ±<0.d_1...d_n> 10^e
      * where d_i = d[i-1] - '0' (0 < i ≤ n) is the i-th digit.
      * It is assumed that d_1 > 0.
      * isNegative denotes the - sign.
      */
-    static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
-        private static final int C_HIGH_32 = 1 << FloatConsts.SIGNIFICAND_WIDTH;
+    private static class ASCIIToBinaryBuffer {
 
         private final boolean isNegative;
         private final int e;
@@ -823,7 +732,6 @@ public class FloatingDecimal {
             return f;
         }
 
-        @Override
         public double doubleValue() {
             /*
              * As described above, the magnitude of the mathematical value is
@@ -1049,17 +957,16 @@ public class FloatingDecimal {
              * we face the risk of double-rounding, so we need corrective
              * actions to avoid a (slightly) incorrect outcomes.
              *
-             * Let Q_NORM = Q_MIN + (P - 1) = -1022, so MIN_NORMAL = 2^Q_NORM.
              * We have
              *      x ≥ nl1 2^(r+127) ≥ 2^(bl-1) 2^(r+127) = 2^(bl+r+126)
              *      x < (nh1 + 1) 2^(r+127) ≤ 2^bh 2^(r+127) = 2^(bh+r+127)
-             * Thus, when bl + r > Q_NORM - 127 then certainly x ≥ MIN_NORMAL,
-             * and when bh + r ≤ Q_NORM - 127 then x < MIN_NORMAL for sure.
-             * Finally, when bl + r ≤ Q_NORM - 127 < bh + r we see that bh ≠ bl,
-             * so bh = bl + 1 must hold instead.
+             * Thus, when bl + r > MIN_EXPONENT - 127 then x ≥ MIN_NORMAL,
+             * and when bh + r ≤ MIN_EXPONENT - 127 then x < MIN_NORMAL for sure.
+             * Finally, when bl + r ≤ MIN_EXPONENT - 127 < bh + r we see that
+             * bh ≠ bl, so bh = bl + 1 must hold instead.
              * But we fail over to full precision in such case.
              *
-             * Now assume bh + r ≤ Q_NORM - 127, which entails x < MIN_NORMAL.
+             * Now assume bh + r ≤ MIN_EXPONENT - 127, entailing x < MIN_NORMAL.
              * We need to tweak nl1 to nl1' and nh1 to nh1' so that rounding
              * them to ul and uh ensures v = scalb(ul, r + 127) in case ul = uh.
              * Then we can return v as above.
@@ -1072,7 +979,7 @@ public class FloatingDecimal {
             long nh0 = fh * (g1 + 1);
 
             int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
-            if (bl + rp > Q_NORM[BINARY_64_IX]) {  // implies x is normal
+            if (bl + rp > Double.MIN_EXPONENT) {  // implies x is normal
                 /*
                  * To round nl we need its most significant P bits, the rounding
                  * bit immediately to the right, and an indication (sticky bit)
@@ -1101,8 +1008,8 @@ public class FloatingDecimal {
                 return ul == uh ? v : -v;
             }
             int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
-            if (bh + rp <= Q_NORM[BINARY_64_IX]) {  // implies x is subnormal
-                int sh = Q_MIN[BINARY_64_IX] - rp;  // shift distance
+            if (bh + rp <= Double.MIN_EXPONENT) {  // implies x is subnormal
+                int sh = DoubleToDecimal.Q_MIN - rp;  // shift distance
                 long sbMask = -1L >>> 1 - sh;
 
                 long nl1p = nl1 >>> sh;
@@ -1122,7 +1029,6 @@ public class FloatingDecimal {
             return -Double.MIN_NORMAL;
         }
 
-        @Override
         public float floatValue() {
             /* For details not covered here, see doubleValue() and friends. */
             if (e <= E_THR_Z[BINARY_32_IX]) {
@@ -1228,15 +1134,15 @@ public class FloatingDecimal {
             long nh0 = fh * (g1 + 1);
 
             int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
-            if (bl + rp > Q_NORM[BINARY_32_IX]) {
+            if (bl + rp > Float.MIN_EXPONENT) {
                 float ul = nl1 | (nl0 != 0 ? 1 : 0);
                 float uh = nh1 | (nh0 != 0 ? 1 : 0);
                 float v = Math.scalb(ul, rp);
                 return ul == uh ? v : -v;
             }
             int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
-            if (bh + rp <= Q_NORM[BINARY_32_IX]) {
-                int sh = Q_MIN[BINARY_32_IX] - rp;
+            if (bh + rp <= Float.MIN_EXPONENT) {
+                int sh = FloatToDecimal.Q_MIN - rp;
                 long sbMask = -1L >>> 1 - sh;
 
                 long nl1p = nl1 >>> sh;
@@ -1284,13 +1190,13 @@ public class FloatingDecimal {
      * @param compat    compatibility with releases < JDK 21
      * @return The converter.
      */
-    public static BinaryToASCIIConverter getBinaryToASCIIConverter(double d, boolean compat) {
+    public static BinaryToASCIIBuffer getBinaryToASCIIConverter(double d, boolean compat) {
         return compat
                 ? getCompatBinaryToASCIIConverter(d)
                 : getBinaryToASCIIConverter(d);
     }
 
-    private static BinaryToASCIIConverter getBinaryToASCIIConverter(double d) {
+    public static BinaryToASCIIBuffer getBinaryToASCIIConverter(double d) {
         assert Double.isFinite(d);
 
         FormattedFPDecimal dec = FormattedFPDecimal.split(d);
@@ -1317,7 +1223,7 @@ public class FloatingDecimal {
      * Should be removed in the future, along with its dependent methods and
      * fields (> 550 lines).
      */
-    private static BinaryToASCIIConverter getCompatBinaryToASCIIConverter(double d) {
+    private static BinaryToASCIIBuffer getCompatBinaryToASCIIConverter(double d) {
         long dBits = Double.doubleToRawLongBits(d);
         boolean isNegative = (dBits&DoubleConsts.SIGN_BIT_MASK) != 0; // discover sign
         long fractBits = dBits & DoubleConsts.SIGNIF_BIT_MASK;
@@ -1362,12 +1268,12 @@ public class FloatingDecimal {
      *
      * @param in the non-null input
      * @param ix one of the {@code BINARY_<S>_IX} constants, where {@code <S>}
-     *          is one of 16, 32, 64
+     *           is one of 16, 32, 64
      * @return an appropriate binary converter
-     * @throws NullPointerException if the input is null
+     * @throws NullPointerException  if the input is null
      * @throws NumberFormatException if the input is malformed
      */
-    static ASCIIToBinaryConverter readJavaFormatString(String in, int ix) {
+    static double readJavaFormatString(String in, int ix) {
         /*
          * The scanning proper does not allocate any object,
          * nor does it perform any costly computation.
@@ -1413,11 +1319,11 @@ public class FloatingDecimal {
             ch = in.charAt(i);
             if (ch == 'I') {
                 scanSymbolic(in, i, INFINITY_REP);
-                return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
+                return ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
             }
             if (ch == 'N') {
                 scanSymbolic(in, i, NAN_REP);
-                return A2BC_NOT_A_NUMBER;  // ignore sign
+                return Double.NaN;  // ignore sign
             }
             if (ch == '0' && i + 1 < len && toLowerCase(in.charAt(i + 1)) == 'x') {
                 isDec = false;
@@ -1496,7 +1402,7 @@ public class FloatingDecimal {
 
         /* By now, the input is syntactically correct. */
         if (tnz == 0) {  // all zero digits, so ignore ep and point
-            return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
+            return ssign != '-' ? 0.0 : -0.0;
         }
 
         /*
@@ -1595,10 +1501,10 @@ public class FloatingDecimal {
              * When ep + bl > QE_MAX then x surely rounds to infinity.
              */
             if (ep < Q_MIN[ix] - bl) {
-                return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
+                return ssign != '-' ? 0.0 : -0.0;
             }
             if (ep > QP_MAX[ix] - bl) {
-                return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
+                return ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
             }
             int q = (int) ep;  // narrowing conversion is safe
             int shr;  // (sh)ift to (r)ight iff shr > 0
@@ -1626,10 +1532,8 @@ public class FloatingDecimal {
 
             /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
             return switch (ix) {
-                case BINARY_32_IX ->
-                    new PreparedASCIIToBinaryBuffer(Double.NaN, buildFloat(ssign, q, c));
-                case BINARY_64_IX ->
-                    new PreparedASCIIToBinaryBuffer(buildDouble(ssign, q, c), Float.NaN);
+                case BINARY_32_IX -> buildFloat(ssign, q, c);
+                case BINARY_64_IX -> buildDouble(ssign, q, c);
                 default -> throw new AssertionError("unexpected");
             };
         }
@@ -1647,10 +1551,10 @@ public class FloatingDecimal {
          */
         int e = Math.clamp(ep + n, E_THR_Z[ix], E_THR_I[ix]);
         if (e == E_THR_Z[ix]) {  // the true mathematical e ≤ E_THR_Z
-            return ssign != '-' ? A2BC_POSITIVE_ZERO : A2BC_NEGATIVE_ZERO;
+            return ssign != '-' ? 0.0 : -0.0;
         }
         if (e == E_THR_I[ix]) {  // the true mathematical e ≥ E_THR_I
-            return ssign != '-' ? A2BC_POSITIVE_INFINITY : A2BC_NEGATIVE_INFINITY;
+            return ssign != '-' ? Double.POSITIVE_INFINITY : Double.NEGATIVE_INFINITY;
         }
 
         /*
@@ -1726,7 +1630,14 @@ public class FloatingDecimal {
         } else {
             copyDigits(in, d, n, lz);
         }
-        return new ASCIIToBinaryBuffer(ssign == '-', e, d, d.length);
+        /* For now throw on BINARY_16_IX, until Float16 is integrated in java.base. */
+        return switch (ix) {
+            case BINARY_32_IX ->
+                    new ASCIIToBinaryBuffer(ssign == '-', e, d, d.length).floatValue();
+            case BINARY_64_IX ->
+                    new ASCIIToBinaryBuffer(ssign == '-', e, d, d.length).doubleValue();
+            default -> throw new AssertionError("unexpected");
+        };
     }
 
     private static int toLowerCase(int ch) {
@@ -1886,16 +1797,6 @@ public class FloatingDecimal {
             Q_MIN[BINARY_64_IX] + P[BINARY_64_IX],  // -1_021
             // Q_MIN[BINARY_128_IX] + P[BINARY_128_IX],  // -16_381
             // Q_MIN[BINARY_256_IX] + P[BINARY_256_IX],  // -262_141
-    };
-
-    /* Exponent of MIN_NORMAL in the c 2^q representation. */
-    @Stable
-    private static final int[] Q_NORM = {
-            QP_MIN[BINARY_16_IX] - 1,  // -14
-            QP_MIN[BINARY_32_IX] - 1,  // -126
-            QP_MIN[BINARY_64_IX] - 1,  // -1_022
-            // QP_MIN[BINARY_128_IX] - 1,  // -16_382
-            // QP_MIN[BINARY_256_IX] - 1,  // -262_142
     };
 
     /* Maximum exponent in the m 2^qp representation. */
