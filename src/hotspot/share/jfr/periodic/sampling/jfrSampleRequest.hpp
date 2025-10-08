@@ -35,7 +35,7 @@ class JfrThreadLocal;
 
 enum JfrSampleCallbackReason {
   COMMIT_EVENT,   // Sample succeeded, callback to commit the event
-  SKIP_EVENT      // Sample failed, callback to cleanup
+  ABORT_EVENT    // Sample failed, abort
 };
 
 typedef void (*SampleCallback)(JfrSampleCallbackReason reason,
@@ -100,7 +100,7 @@ class JfrSampleRequestBuilder : AllStatic {
                                                    JfrThreadLocal* tl,
                                                    JavaThread* jt,
                                                    SampleCallback callback,
-                                                   void* data);
+                                                   void* context);
   static void build_cpu_time_sample_request(JfrSampleRequest &request,
                                             void* ucontext,
                                             JavaThread* jt,

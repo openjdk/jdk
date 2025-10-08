@@ -41,12 +41,13 @@ private:
 
 public:
   // Send asynchronous event to its target
-  static void send_async_event(jobject target,
-                               jlong event_id,
-                               jboolean has_duration,
-                               jboolean has_event_thread,
-                               jboolean has_stack_trace,
-                               jbyteArray payload);
+  static void send(JavaThread* const jt,
+                   jobject target,
+                   jlong event_id,
+                   jboolean has_duration,
+                   jboolean has_event_thread,
+                   jboolean has_stack_trace,
+                   jbyteArray payload);
 private:
   JfrAsyncEvent(long event_id, bool has_duration, bool has_event_thread, bool has_stack_trace, typeArrayOop payloadOop);
   ~JfrAsyncEvent();

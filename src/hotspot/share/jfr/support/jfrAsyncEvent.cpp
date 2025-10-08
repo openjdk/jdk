@@ -105,18 +105,20 @@ bool JfrAsyncEvent::write_sized_event(JfrBuffer* buffer,
 }
 
 
-void JfrAsyncEvent::send_async_event(jobject target,
-                                     jlong event_id,
-                                     jboolean has_duration,
-                                     jboolean has_event_thread,
-                                     jboolean has_stack_trace,
-                                     jbyteArray payload) {
-  JavaThread* jt = JavaThread::current();
-  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
-  ThreadInVMfromNative __tiv(jt);
+void JfrAsyncEvent::send(JavaThread* const jt,
+                         jobject target,
+                         jlong event_id,
+                         jboolean has_duration,
+                         jboolean has_event_thread,
+                         jboolean has_stack_trace,
+                         jbyteArray payload) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current()));
+  // No target
+  if (target == nullptr) {
+    return;
+  }
 
   typeArrayOop payloadOop = typeArrayOop(JNIHandles::resolve(payload));
   JfrAsyncEvent* event = new JfrAsyncEvent(event_id, has_duration, has_event_thread, has_event_thread, payloadOop);
-  JfrThreadSampler::sample_thread(target, async_event_callback, (void*)event);
+  JfrThreadSampler::sample_thread(jt, target, async_event_callback, (void*)event);
 }

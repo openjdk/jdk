@@ -100,7 +100,6 @@ public final class EventInstrumentation {
     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
     private static final MethodDesc METHOD_CURRENT_THREAD = MethodDesc.of("currentThread", "()Ljava/lang/Thread;");
     private static final MethodDesc METHOD_THREAD_EQUALS = MethodDesc.of("equals", "(Ljava/lang/Object;)Z");
-    private static final MethodDesc METHOD_IS_VIRTUAL = MethodDesc.of("isVirtual", "()Z");
 
     private final ClassInspector inspector;
     private final long eventTypeId;
@@ -523,16 +522,6 @@ public final class EventInstrumentation {
             blockCodeBuilder.aload(0);
             getfield(blockCodeBuilder, eventClassDesc, inspector.getTargetThread());
             blockCodeBuilder.astore(3);
-
-            // if targetThread == null, treat it as synchronous event
-            blockCodeBuilder.aload(3);
-            blockCodeBuilder.aconst_null();
-            blockCodeBuilder.if_acmpeq(syncEvent);
-
-            // If targetThread is a virtual thread, no event will be emitted
-            blockCodeBuilder.aload(3);
-            invokevirtual(blockCodeBuilder, TYPE_THREAD, METHOD_IS_VIRTUAL);
-            blockCodeBuilder.ifne(end);
 
             // if targetThread == Thread.currentThread
             blockCodeBuilder.aload(3);
