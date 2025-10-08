@@ -657,6 +657,9 @@ file system locations may be directories, JAR files or JMOD files.
 
     -   `strictfp`: Warns about unnecessary use of the `strictfp` modifier.
 
+    -   `suppression`: Warns about recognized `@SuppressWarnings` values that
+        don't actually suppress any warnings.
+
     -   `synchronization`: Deprecated alias for `identity` with an identical
         effect. Users are encouraged to use `identity` instead of `synchronization`
         for all current and future uses.
