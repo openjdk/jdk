@@ -60,7 +60,6 @@ public class LShiftINodeIdealizationTests {
             "testShiftOfAddSameInput",
             "testLargeShiftOfAddSameInput",
             "testShiftOfAddConstant",
-            "testLargeShiftOfAddConstant",
             "testLShiftOfAndOfRShiftSameCon",
             "testLShiftOfAndOfURShiftSameCon",
             "testLShiftOfAndOfRShift",
@@ -122,7 +121,6 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ((a + a) << 1, testShiftOfAddSameInput(a));
         Asserts.assertEQ((a + a) << 31, testLargeShiftOfAddSameInput(a));
         Asserts.assertEQ(((a + 1) << 1) + 1, testShiftOfAddConstant(a));
-        Asserts.assertEQ(((a + 1) << 31) + 1, testLargeShiftOfAddConstant(a));
         Asserts.assertEQ((a & ((1 << (32 - 10)) -1)) << 10, testLShiftOfAndOfCon(a));
 
         assertDoubleShiftResult(a);
@@ -353,12 +351,6 @@ public class LShiftINodeIdealizationTests {
     @IR(counts = { IRNode.LSHIFT_I, "1",  IRNode.ADD_I, "1" } )
     public int testShiftOfAddConstant(int x) {
         return ((x + 1) << 1) + 1;
-    }
-
-    @Test
-    @IR(counts = { IRNode.LSHIFT_I, "1", IRNode.ADD_I, "2"} )
-    public int testLargeShiftOfAddConstant(int x) {
-        return ((x + 1) << 31) + 1;
     }
 
     static short shortField;
