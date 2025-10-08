@@ -162,7 +162,7 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   _current_method = nullptr;
   _network_stream = nullptr;
   _append = append;
-  _cg = nullptr;
+  _congraph = nullptr;
 
   if (file_name != nullptr) {
     init_file_stream(file_name, use_multiple_files);
@@ -742,8 +742,8 @@ void IdealGraphPrinter::visit_node(Node* n, bool edges) {
       print_prop("lrg", lrg_id);
     }
 
-    if (_cg && node->_idx < _cg->nodes_size()) {
-      PointsToNode* ptn = _cg->ptnode_adr(node->_idx);
+    if (_congraph && node->_idx < _congraph->nodes_size()) {
+      PointsToNode* ptn = _congraph->ptnode_adr(node->_idx);
       if (ptn) {
         print_prop("ea_node", ptn->is_JavaObject() ? "javaobject" :
                               ptn->is_LocalVar() ? "localvar" :

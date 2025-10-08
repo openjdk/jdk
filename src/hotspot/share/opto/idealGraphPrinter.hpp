@@ -116,7 +116,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   Compile *C;
   double _max_freq;
   bool _append;
-  ConnectionGraph *_cg;
+  ConnectionGraph *_congraph;
 
   // Walk the native stack and print relevant C2 frames as IGV properties (if
   // graph_name == nullptr) or the graph name based on the highest C2 frame (if
@@ -163,7 +163,7 @@ class IdealGraphPrinter : public CHeapObj<mtCompiler> {
   void end_method();
   void print_graph(const char* name, const frame* fr = nullptr);
   void print(const char* name, Node* root, GrowableArray<const Node*>& hidden_nodes, const frame* fr = nullptr);
-  void set_cg(ConnectionGraph* cg) { _cg = cg; }
+  void set_congraph(ConnectionGraph* congraph) { _congraph = congraph; }
   void set_compile(Compile* compile) {C = compile; }
   void update_compiled_method(ciMethod* current_method);
 };
