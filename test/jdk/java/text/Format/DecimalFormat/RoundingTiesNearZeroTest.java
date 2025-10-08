@@ -27,7 +27,7 @@
  * @summary Check rounding of DecimalFormat on tie cases when the maximum
  *      fraction digits allowed is one less than the position of the first
  *      significant digit in the double.
- * @run junit RoundingToLSDTieTest
+ * @run junit RoundingTiesNearZeroTest
  */
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -41,7 +41,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RoundingToLSDTieTest {
+public class RoundingTiesNearZeroTest {
 
     // Safe to re-use since we are not testing any fast-path cases
     // so state is irrelevant
