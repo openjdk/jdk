@@ -23,11 +23,5 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_PPC_ORDERACCESS_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_ORDERACCESS_LINUX_PPC_HPP
-
-// Included in orderAccess.hpp header file.
-
+// Including inline assembler functions that are shared between multiple PPC64 platforms.
 #include "orderAccess_ppc.hpp"
-
-#endif // OS_CPU_LINUX_PPC_ORDERACCESS_LINUX_PPC_HPP

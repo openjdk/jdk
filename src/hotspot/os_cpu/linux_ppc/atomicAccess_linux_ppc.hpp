@@ -23,11 +23,5 @@
  *
  */
 
-#ifndef OS_CPU_LINUX_PPC_ATOMICACCESS_LINUX_PPC_HPP
-#define OS_CPU_LINUX_PPC_ATOMICACCESS_LINUX_PPC_HPP
-
-// Included in atomicAccess.hpp header file.
-
+// Including inline assembler functions that are shared between multiple PPC64 platforms.
 #include "atomicAccess_ppc.hpp"
-
-#endif // OS_CPU_LINUX_PPC_ATOMICACCESS_LINUX_PPC_HPP
