@@ -27,16 +27,11 @@
  * @run junit/othervm ContextClassLoaderTest
  * @summary Check the context classloader is reset
  */
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ForkJoinPool;
-import org.junit.jupiter.api.Test;
-
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class ContextClassLoaderTest {
