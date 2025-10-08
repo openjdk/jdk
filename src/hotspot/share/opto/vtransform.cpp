@@ -1087,7 +1087,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
   // Create a vector of identity values.
-  // TODO: consider wrapping this in a vtn, so we only create it when necessary.
   Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
   phase->set_ctrl(identity, phase->C->root());
   VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, identity);
