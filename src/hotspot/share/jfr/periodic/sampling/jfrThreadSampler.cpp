@@ -257,6 +257,9 @@ void JfrSamplerThread::run() {
 
 void JfrSamplerThread::drain_async_event_queue() {
   assert_lock_strong(JfrAsyncEventRequest_lock);
+  if (_async_request_queue.is_empty()) {
+    return;
+  }
 
   // Make a snapshot
   ResourceMark rm;
@@ -278,15 +281,17 @@ void JfrSamplerThread::drain_async_event_queue() {
       if (java_lang_VirtualThread::is_instance(thread_oop)) {
         thread_oop = java_lang_VirtualThread::carrier_thread(thread_oop);
       }
-      JavaThread* jt = java_lang_Thread::thread_acquire(thread_oop);
       bool success = false;
-      if (jt != nullptr && tlh.includes(jt)) {
-        JavaThreadState stat = jt->thread_state();
+      if (thread_oop != nullptr) {
+        JavaThread* jt = java_lang_Thread::thread_acquire(thread_oop);
+        if (jt != nullptr && tlh.includes(jt)) {
+          JavaThreadState stat = jt->thread_state();
 
-        if (stat == _thread_in_Java) {
-          success = sample_java_thread(jt, req->callback(), req->context());
-        } else if (stat == _thread_in_native || stat == _thread_blocked) {
-          success = sample_native_thread(jt, req->callback(), req->context());
+          if (stat == _thread_in_Java) {
+            success = sample_java_thread(jt, req->callback(), req->context());
+          } else if (stat == _thread_in_native || stat == _thread_blocked) {
+            success = sample_native_thread(jt, req->callback(), req->context());
+          }
         }
       }
 

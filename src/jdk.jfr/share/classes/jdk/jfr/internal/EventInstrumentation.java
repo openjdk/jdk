@@ -48,7 +48,7 @@ import java.util.function.Consumer;
 
 import jdk.jfr.Event;
 import jdk.jfr.SettingControl;
-import jdk.jfr.internal.event.BufferedEventWriter;
+import jdk.jfr.internal.event.AsyncEventWriter;
 import jdk.jfr.internal.event.EventConfiguration;
 import jdk.jfr.internal.event.EventWriter;
 import jdk.jfr.internal.util.Bytecode;
@@ -74,7 +74,7 @@ public final class EventInstrumentation {
     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
     private static final ClassDesc TYPE_ISE = classDesc(IllegalStateException.class);
     private static final ClassDesc TYPE_EVENT_WRITER = classDesc(EventWriter.class);
-    private static final ClassDesc TYPE_BUFFERED_EVENT_WRITER = classDesc(BufferedEventWriter.class);
+    private static final ClassDesc TYPE_BUFFERED_EVENT_WRITER = classDesc(AsyncEventWriter.class);
     private static final ClassDesc TYPE_OBJECT = classDesc(Object.class);
     private static final ClassDesc TYPE_THREAD = classDesc(Thread.class);
 

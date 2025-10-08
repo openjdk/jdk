@@ -9,7 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class BufferedEventWriter {
+public class AsyncEventWriter {
     private ByteArrayOutputStream buffer = new ByteArrayOutputStream();
     private DataOutputStream writer = new DataOutputStream(buffer);
 
@@ -21,11 +21,11 @@ public class BufferedEventWriter {
     private boolean hasEventThread;
     private boolean hasStackTrace;
 
-    private BufferedEventWriter() {
+    private AsyncEventWriter() {
     }
 
-    public static BufferedEventWriter getEventWriter() {
-        return new BufferedEventWriter();
+    public static AsyncEventWriter getEventWriter() {
+        return new AsyncEventWriter();
     }
 
     public boolean beginEvent(EventConfiguration configuration, long typeId) {
