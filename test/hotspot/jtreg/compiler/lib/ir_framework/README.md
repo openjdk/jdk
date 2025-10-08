@@ -188,7 +188,6 @@ The framework provides various stress and debug flags. They should mainly be use
 - `-DTestCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a normal `@Test` annotated method.
 - `-DWaitForCompilationTimeout=20`: Change the default waiting time (default: 10s) for a compilation of a `@Test` annotated method with compilation level [WAIT\_FOR\_COMPILATION](./CompLevel.java).
 - `-DIgnoreCompilerControls=true`: Ignore all compiler controls applied in the framework. This includes any compiler control annotations (`@DontCompile`, `@DontInline`, `@ForceCompile`, `@ForceInline`, `@ForceCompileStaticInitializer`), the exclusion of `@Run` and `@Check` methods from compilation, and the directive to not inline `@Test` annotated methods.
-- `-DExcludeRandom=true`: Randomly exclude some methods from compilation.
 - `-DPreferCommandLineFlags=true`: Prefer flags set via the command line over flags specified by the tests.
 
 ## 3. Test Framework Execution
