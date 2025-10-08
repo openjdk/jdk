@@ -1104,12 +1104,6 @@ template<class T> constexpr T MIN3(T a, T b, T c)      { return MIN2(MIN2(a, b),
 template<class T> constexpr T MAX4(T a, T b, T c, T d) { return MAX2(MAX3(a, b, c), d); }
 template<class T> constexpr T MIN4(T a, T b, T c, T d) { return MIN2(MIN3(a, b, c), d); }
 
-// This is typically used to safely convert to size_t from a larger type.
-template <class T>
-size_t limit_by_size_t_max(T value) {
-  return (size_t)MIN2(value, (T)std::numeric_limits<size_t>::max());
-}
-
 #define ABS(x) asserted_abs(x, __FILE__, __LINE__)
 
 template<class T> inline T asserted_abs(T x, const char* file, int line) {

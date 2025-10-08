@@ -1507,6 +1507,10 @@ size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
 // Use static initialization to get the default before parsing
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
+static size_t limit_by_size_t_max(uint64_t value) {
+  return (size_t)MIN2(value, (uint64_t)std::numeric_limits<size_t>::max());
+}
+
 void Arguments::set_heap_size() {
   uint64_t physical_memory;
 
