@@ -258,7 +258,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     DEBUG_ONLY(assert_list_is_valid(tss_head, still_running);)
 
     if (still_running > 0) {
-      log_trace(safepoint)("Waiting for threads to block");
+      log_trace(safepoint)("Waiting for %d threads to block", still_running);
       back_off(start_time);
     }
 
