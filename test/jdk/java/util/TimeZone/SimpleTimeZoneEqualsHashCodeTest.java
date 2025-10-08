@@ -55,7 +55,9 @@ public class SimpleTimeZoneEqualsHashCodeTest {
 
         stz.setEndRule(NOVEMBER, 8, -SUNDAY, 7_200_000);
         assertNotEquals(STZ_WITH_DST, stz);
-        // from the contract point, hash codes may be the same
+        // From the contract point, hash codes may be the same.
+        // This tests the implementation which considers DST
+        // related fields for calculating the hash code.
         assertNotEquals(STZ_WITH_DST.hashCode(), stz.hashCode());
     }
 
@@ -73,6 +75,9 @@ public class SimpleTimeZoneEqualsHashCodeTest {
         stz.setEndRule(NOVEMBER, 8, -SUNDAY, 7_200_000);
         assertTrue(stz.useDaylightTime());
         assertNotEquals(STZ_WITHOUT_DST, stz);
+        // From the contract point, hash codes may be the same.
+        // This tests the implementation which considers DST
+        // related fields for calculating the hash code.
         assertNotEquals(STZ_WITHOUT_DST.hashCode(), stz.hashCode());
     }
 }
