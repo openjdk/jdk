@@ -26,6 +26,7 @@
  * @bug 6870812
  * @summary enhance security tools to use ECC algorithm
  * @library /test/lib
+ * @run main/timeout=300 EC
  */
 
 import jdk.test.lib.SecurityTools;
