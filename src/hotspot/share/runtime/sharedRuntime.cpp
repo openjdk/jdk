@@ -264,6 +264,46 @@ void SharedRuntime::print_ic_miss_histogram() {
     tty->print_cr("Total IC misses: %7d", tot_misses);
   }
 }
+
+#ifdef COMPILER2
+// Runtime methods for printf-style debug nodes (same printing format as fieldDescriptor::print_on_for)
+void SharedRuntime::debug_print_value(jboolean x) {
+  tty->print_cr("boolean %d", x);
+}
+
+void SharedRuntime::debug_print_value(jbyte x) {
+  tty->print_cr("byte %d", x);
+}
+
+void SharedRuntime::debug_print_value(jshort x) {
+  tty->print_cr("short %d", x);
+}
+
+void SharedRuntime::debug_print_value(jchar x) {
+  tty->print_cr("char %c %d", isprint(x) ? x : ' ', x);
+}
+
+void SharedRuntime::debug_print_value(jint x) {
+  tty->print_cr("int %d", x);
+}
+
+void SharedRuntime::debug_print_value(jlong x) {
+  tty->print_cr("long " JLONG_FORMAT, x);
+}
+
+void SharedRuntime::debug_print_value(jfloat x) {
+  tty->print_cr("float %f", x);
+}
+
+void SharedRuntime::debug_print_value(jdouble x) {
+  tty->print_cr("double %lf", x);
+}
+
+void SharedRuntime::debug_print_value(oopDesc* x) {
+  x->print();
+}
+#endif // COMPILER2
+
 #endif // PRODUCT
 
 
@@ -1980,7 +2020,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     if (!m->try_enter(current, /*check_for_recursion*/ false)) {
       // Some other thread acquired the lock (or the monitor was
       // deflated). Either way we are done.
-      current->dec_held_monitor_count();
       return;
     }
   }
@@ -2000,20 +2039,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* obj, BasicLock* lock, JavaThread* current))
   assert(current == JavaThread::current(), "pre-condition");
   SharedRuntime::monitor_exit_helper(obj, lock, current);
-JRT_END
-
-// This is only called when CheckJNICalls is true, and only
-// for virtual thread termination.
-JRT_LEAF(void,  SharedRuntime::log_jni_monitor_still_held())
-  assert(CheckJNICalls, "Only call this when checking JNI usage");
-  if (log_is_enabled(Debug, jni)) {
-    JavaThread* current = JavaThread::current();
-    int64_t vthread_id = java_lang_Thread::thread_id(current->vthread());
-    int64_t carrier_id = java_lang_Thread::thread_id(current->threadObj());
-    log_debug(jni)("VirtualThread (tid: " INT64_FORMAT ", carrier id: " INT64_FORMAT
-                   ") exiting with Objects still locked by JNI MonitorEnter.",
-                   vthread_id, carrier_id);
-  }
 JRT_END
 
 #ifndef PRODUCT
@@ -2515,6 +2540,7 @@ ArchivedAdapterTable AdapterHandlerLibrary::_aot_adapter_handler_table;
 #endif // INCLUDE_CDS
 static const int AdapterHandlerLibrary_size = 16*K;
 BufferBlob* AdapterHandlerLibrary::_buffer = nullptr;
+volatile uint AdapterHandlerLibrary::_id_counter = 0;
 
 BufferBlob* AdapterHandlerLibrary::buffer_blob() {
   assert(_buffer != nullptr, "should be initialized");
@@ -2595,7 +2621,9 @@ void AdapterHandlerLibrary::initialize() {
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* fingerprint) {
-  return AdapterHandlerEntry::allocate(fingerprint);
+  uint id = (uint)AtomicAccess::add((int*)&_id_counter, 1);
+  assert(id > 0, "we can never overflow because AOT cache cannot contain more than 2^32 methods");
+  return AdapterHandlerEntry::allocate(id, fingerprint);
 }
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandle& method) {
@@ -2749,8 +2777,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
 
 void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   ResourceMark rm;
-  const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
-  const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
+  const char* name = AdapterHandlerLibrary::name(handler);
+  const uint32_t id = AdapterHandlerLibrary::id(handler);
 
   CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
   if (blob != nullptr) {
@@ -2845,8 +2873,8 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
   handler->set_adapter_blob(adapter_blob);
   if (!is_transient && AOTCodeCache::is_dumping_adapter()) {
     // try to save generated code
-    const char* name = AdapterHandlerLibrary::name(handler->fingerprint());
-    const uint32_t id = AdapterHandlerLibrary::id(handler->fingerprint());
+    const char* name = AdapterHandlerLibrary::name(handler);
+    const uint32_t id = AdapterHandlerLibrary::id(handler);
     bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
@@ -2986,11 +3014,22 @@ void AdapterHandlerEntry::link() {
 }
 
 void AdapterHandlerLibrary::link_aot_adapters() {
+  uint max_id = 0;
   assert(AOTCodeCache::is_using_adapter(), "AOT adapters code should be available");
-  _aot_adapter_handler_table.iterate([](AdapterHandlerEntry* entry) {
+  /* It is possible that some adapters generated in assembly phase are not stored in the cache.
+   * That implies adapter ids of the adapters in the cache may not be contiguous.
+   * If the size of the _aot_adapter_handler_table is used to initialize _id_counter, then it may
+   * result in collision of adapter ids between AOT stored handlers and runtime generated handlers.
+   * To avoid such situation, initialize the _id_counter with the largest adapter id among the AOT stored handlers.
+   */
+  _aot_adapter_handler_table.iterate([&](AdapterHandlerEntry* entry) {
     assert(!entry->is_linked(), "AdapterHandlerEntry is already linked!");
     entry->link();
+    max_id = MAX2(max_id, entry->id());
   });
+  // Set adapter id to the maximum id found in the AOTCache
+  assert(_id_counter == 0, "Did not expect new AdapterHandlerEntry to be created at this stage");
+  _id_counter = max_id;
 }
 
 // This method is called during production run to lookup simple adapters
@@ -3355,13 +3394,12 @@ bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
   return found;
 }
 
-const char* AdapterHandlerLibrary::name(AdapterFingerPrint* fingerprint) {
-  return fingerprint->as_basic_args_string();
+const char* AdapterHandlerLibrary::name(AdapterHandlerEntry* handler) {
+  return handler->fingerprint()->as_basic_args_string();
 }
 
-uint32_t AdapterHandlerLibrary::id(AdapterFingerPrint* fingerprint) {
-  unsigned int hash = fingerprint->compute_hash();
-  return hash;
+uint32_t AdapterHandlerLibrary::id(AdapterHandlerEntry* handler) {
+  return handler->id();
 }
 
 void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b) {
