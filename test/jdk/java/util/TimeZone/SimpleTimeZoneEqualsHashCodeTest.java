@@ -60,7 +60,7 @@ public class SimpleTimeZoneEqualsHashCodeTest {
     }
 
     @Test
-    void withOutDSTTest() {
+    void withoutDSTTest() {
         var stz = (SimpleTimeZone)STZ_WITHOUT_DST.clone();
 
         // Only setting start rule. Still considered non-DST zone
