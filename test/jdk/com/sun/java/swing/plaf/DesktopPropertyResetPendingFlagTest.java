@@ -27,6 +27,7 @@
  * @summary DesktopProperty never reset pending status to process new updates
  * @modules java.desktop/sun.swing.plaf
  * @run main DesktopPropertyResetPendingFlagTest
+ * @key headful
  */
 
 import javax.swing.JButton;
