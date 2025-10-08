@@ -88,6 +88,19 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ(Integer.MAX_VALUE << 1, testShiftValueOverflow(Integer.MAX_VALUE));
         Asserts.assertEQ((Integer.MAX_VALUE-1) << 1, testShiftValueOverflow(Integer.MAX_VALUE-1));
 
+        assertResult(a, b);
+        assertResult(c, d);
+        assertResult(a, min);
+        assertResult(a, max);
+        assertResult(min, a);
+        assertResult(max, a);
+        assertResult(min, max);
+        assertResult(max, min);
+        assertResult(min, min);
+        assertResult(max, max);
+    }
+
+    private void assertResult(int a, int b) {
         otherInput = b;
         Asserts.assertEQ(((a >> 4) & b) << 4, testLShiftOfAndOfRShiftSameCon(a));
         Asserts.assertEQ(((a >>> 4) & b) << 4, testLShiftOfAndOfURShiftSameCon(a));
