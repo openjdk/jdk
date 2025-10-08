@@ -598,7 +598,7 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
 
 void MacroAssembler::reset_last_Java_frame(bool clear_fp) {
   // Must clear sp first and place a store-store barrier (dmb ISHST) immediately after,
-  // to ensure AGCT does not observe a corrupted frame.
+  // to ensure ACGT does not observe a corrupted frame.
   str(zr, Address(rthread, JavaThread::last_Java_sp_offset()));
   membar(Assembler::StoreStore);
 
@@ -642,7 +642,7 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
   }
 
   // Must set sp last and place a store-store barrier (dmb ISHST) immediately before,
-  // to ensure AGCT does not observe a corrupted frame.
+  // to ensure ACGT does not observe a corrupted frame.
   membar(Assembler::StoreStore);
   str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
 }
