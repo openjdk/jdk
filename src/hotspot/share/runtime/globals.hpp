@@ -1036,7 +1036,7 @@ const int ObjectAlignmentInBytes = 8;
           PRODUCT_ONLY(false) NOT_PRODUCT(true),                            \
           "Error reports are more extensive.")                              \
                                                                             \
-  product(bool, EnhanceErrorWarningLogging, false,                          \
+  product(bool, EnhanceErrorWarningLogging, false, DIAGNOSTIC,              \
           "More logging of warn or error messages.")                        \
                                                                             \
   product(bool, DisplayVMOutputToStderr, false,                             \
