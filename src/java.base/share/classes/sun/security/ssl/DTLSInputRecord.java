@@ -1444,21 +1444,21 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 // the ChangeCipherSpec/Finished flight
                 //
                 if (expectCCSFlight) {
-                    // Have the ChangeCipherSpec/Finished flight been received?
-                    boolean isReady = hasFinishedMessage(bufferedFragments);
-                    if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
-                        SSLLogger.fine(
-                            "Has the final flight been received? " + isReady);
-                    }
-
-                    return isReady
-                            // NewSessionTicket message presence in the final flight
-                            // should only be expected on the client side, and only
-                            // if stateless resumption is enabled.
+                    // NewSessionTicket message presence in the final flight
+                    // should only be expected on the client side, and only
+                    // if stateless resumption is enabled.
+                    boolean isReady = hasFinishedMessage(bufferedFragments)
                             && (!tc.sslConfig.isClientMode
                             || !tc.handshakeContext.statelessResumption
                             || hasCompleted(
                             SSLHandshake.NEW_SESSION_TICKET.id));
+
+                    if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
+                        SSLLogger.fine("Has the final flight been received? "
+                                + isReady);
+                    }
+
+                    return isReady;
                 }
 
                 if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
