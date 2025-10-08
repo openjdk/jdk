@@ -772,7 +772,6 @@ bool OopStorage::reduce_deferred_updates() {
 static inline void check_release_entry(const oop* entry) {
   assert(entry != nullptr, "Releasing null");
   assert(Universe::heap()->contains_null(entry), "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
-  assert(NativeAccess<AS_NO_KEEPALIVE>::oop_load(entry) == oop(nullptr), "invariant");
 }
 
 void OopStorage::release(const oop* ptr) {

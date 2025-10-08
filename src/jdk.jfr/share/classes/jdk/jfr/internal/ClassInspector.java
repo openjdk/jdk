@@ -463,7 +463,7 @@ final class ClassInspector {
 
         if (isAsyncEvent) {
             if (targetThreadCount != 1) {
-                String errMsg = (targetThreadCount < 1) ? "Asynchronous event has no target" :
+                String errMsg = (targetThreadCount < 1) ? "Asynchronous event has no valid target" :
                         "Asynchronous event has more than 1 target";
                 throw new IllegalArgumentException(errMsg);
             }

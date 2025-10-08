@@ -178,7 +178,6 @@ jlongArray JNICALL jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobject
 jlongArray JNICALL jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass);
 
 void JNICALL jfr_send_asysnc_event(JNIEnv* env, jclass clz, jobject thread, jlong eventId, jboolean hasDuration, jboolean hasEventThread, jboolean hasStackTrace, jbyteArray payload);
-
 #ifdef __cplusplus
 }
 #endif
