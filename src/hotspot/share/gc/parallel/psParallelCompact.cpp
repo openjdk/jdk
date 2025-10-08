@@ -28,6 +28,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelArguments.hpp"
@@ -61,7 +62,6 @@
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
@@ -1053,24 +1053,19 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs, bool should_do_max_comp
 }
 
 class PCAddThreadRootsMarkingTaskClosure : public ThreadClosure {
-private:
-  uint _worker_id;
+  ParCompactionManager* _cm;
 
 public:
-  PCAddThreadRootsMarkingTaskClosure(uint worker_id) : _worker_id(worker_id) { }
+  PCAddThreadRootsMarkingTaskClosure(ParCompactionManager* cm) : _cm(cm) { }
   void do_thread(Thread* thread) {
-    assert(ParallelScavengeHeap::heap()->is_stw_gc_active(), "called outside gc");
-
     ResourceMark rm;
 
-    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(_worker_id);
+    MarkingNMethodClosure mark_and_push_in_blobs(&_cm->_mark_and_push_closure);
 
-    MarkingNMethodClosure mark_and_push_in_blobs(&cm->_mark_and_push_closure);
-
-    thread->oops_do(&cm->_mark_and_push_closure, &mark_and_push_in_blobs);
+    thread->oops_do(&_cm->_mark_and_push_closure, &mark_and_push_in_blobs);
 
     // Do the real work
-    cm->follow_marking_stacks();
+    _cm->follow_marking_stacks();
   }
 };
 
@@ -1090,7 +1085,8 @@ void steal_marking_work(TaskTerminator& terminator, uint worker_id) {
 }
 
 class MarkFromRootsTask : public WorkerTask {
-  StrongRootsScope _strong_roots_scope; // needed for Threads::possibly_parallel_threads_do
+  NMethodMarkingScope _nmethod_marking_scope;
+  ThreadsClaimTokenScope _threads_claim_token_scope;
   OopStorageSetStrongParState<false /* concurrent */, false /* is_const */> _oop_storage_set_par_state;
   TaskTerminator _terminator;
   uint _active_workers;
@@ -1098,7 +1094,8 @@ class MarkFromRootsTask : public WorkerTask {
 public:
   MarkFromRootsTask(uint active_workers) :
       WorkerTask("MarkFromRootsTask"),
-      _strong_roots_scope(active_workers),
+      _nmethod_marking_scope(),
+      _threads_claim_token_scope(),
       _terminator(active_workers, ParCompactionManager::marking_stacks()),
       _active_workers(active_workers) {}
 
@@ -1114,7 +1111,7 @@ public:
     }
 
     {
-      PCAddThreadRootsMarkingTaskClosure closure(worker_id);
+      PCAddThreadRootsMarkingTaskClosure closure(cm);
       Threads::possibly_parallel_threads_do(_active_workers > 1 /* is_par */, &closure);
     }
 
