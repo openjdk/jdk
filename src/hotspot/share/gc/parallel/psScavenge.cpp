@@ -556,13 +556,14 @@ bool PSScavenge::should_attempt_scavenge() {
     // Otherwise, the recorded gc-pause-time might be inflated to include time
     // of OS preparing free memory, resulting in inaccurate young-gen resizing.
     assert(old_gen->committed().byte_size() >= old_gen->used_in_bytes(), "inv");
-    size_t free_mem_in_os;
+    // Use uint64_t instead of size_t for 32bit compatibility.
+    uint64_t free_mem_in_os;
     if (os::free_memory(free_mem_in_os)) {
-      size_t free_in_old_gen_and_os = old_gen->committed().byte_size() - old_gen->used_in_bytes()
-                                    + free_mem_in_os;
-      if (promotion_estimate >= free_in_old_gen_and_os) {
-        log_debug(gc, ergo)("Run full-gc; predicted promotion size >= free space in old-gen and OS: %zu >= %zu",
-          promotion_estimate, free_in_old_gen_and_os);
+      size_t actual_free = (size_t)MIN2(old_gen->committed().byte_size() - old_gen->used_in_bytes() + free_mem_in_os,
+                                        (uint64_t)SIZE_MAX);
+      if (promotion_estimate > actual_free) {
+        log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
+          promotion_estimate, actual_free);
         return SHOULD_RUN_FULL_GC;
       }
     }
