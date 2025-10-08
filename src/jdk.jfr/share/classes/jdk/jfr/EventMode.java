@@ -45,8 +45,6 @@ import java.lang.annotation.Target;
  * <li>If target thread is a virtual thread, the event won't be emitted</li>
  * <li>Target thread may have been terminated</li>
  * </ul>
- *
- * </p>
  * @since 26
  */
 @Target({ ElementType.TYPE })

@@ -258,7 +258,7 @@ void JfrSamplerThread::run() {
 void JfrSamplerThread::drain_async_event_queue() {
   assert_lock_strong(JfrAsyncEventRequest_lock);
 
-  // Make a copy of current requests
+  // Make a snapshot
   ResourceMark rm;
   GrowableArray<const JfrAsyncEventRequest*> requests;
   for (int index = 0; index < _async_request_queue.length(); index++) {

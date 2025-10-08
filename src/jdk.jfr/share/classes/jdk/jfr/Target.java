@@ -36,7 +36,6 @@ import java.lang.annotation.RetentionPolicy;
  * <p>
  * If an event doesn't have the annotation, then by default the thread is not the
  * target.
- * <p>
  *
  * @since 26
  */
