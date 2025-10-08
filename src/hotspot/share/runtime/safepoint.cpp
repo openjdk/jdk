@@ -219,6 +219,8 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   *initial_running = still_running;
 
+  log_trace(safepoint)("%d total threads, waiting for %d threads to block", nof_threads, still_running);
+
   // If there is no thread still running, we are already done.
   if (still_running <= 0) {
     assert(tss_head == nullptr, "Must be empty");
@@ -331,7 +333,7 @@ void SafepointSynchronize::begin() {
   assert(Thread::current()->is_VM_thread(), "Only VM thread may execute a safepoint");
 
   EventSafepointBegin begin_event;
-  SafepointTracing::begin(VMThread::vm_op_type(), _wait_barrier);
+  SafepointTracing::begin(VMThread::vm_op_type());
 
   Universe::heap()->safepoint_synchronize_begin();
 
@@ -363,6 +365,7 @@ void SafepointSynchronize::begin() {
   int initial_running = 0;
 
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
+  log_trace(safepoint)("Arming %s wait barrier", _wait_barrier->description());
   arm_safepoint();
 
   // Will spin until all threads are safe.
@@ -946,7 +949,7 @@ void SafepointTracing::statistics_exit_log() {
                               (int64_t)(_max_vmop_time));
 }
 
-void SafepointTracing::begin(VM_Operation::VMOp_Type type, WaitBarrier* wait_barrier) {
+void SafepointTracing::begin(VM_Operation::VMOp_Type type) {
   _op_count[type]++;
   _current_type = type;
 
@@ -958,7 +961,7 @@ void SafepointTracing::begin(VM_Operation::VMOp_Type type, WaitBarrier* wait_bar
   _last_safepoint_end_time_ns = 0;
 
   RuntimeService::record_safepoint_begin(_last_app_time_ns);
-  log_debug(safepoint)("Safepoint synchronization begins using %s wait barrier", wait_barrier->description());
+  log_debug(safepoint)("Safepoint synchronization begins");
 }
 
 void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps) {
