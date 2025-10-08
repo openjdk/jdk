@@ -2730,10 +2730,6 @@ typedef struct ClassCountData {
     jvmtiError   error;
 } ClassCountData;
 
-/* Two different cbObjectCounter's, one for FollowReferences, one for
- *    IterateThroughHeap. Pick a card, any card.
- */
-
 /* Callback for object count heap traversal (heap_reference_callback) */
 static jint JNICALL
 cbObjectCounterFromRef(jvmtiHeapReferenceKind reference_kind,
@@ -2785,38 +2781,6 @@ cbObjectCounterFromRef(jvmtiHeapReferenceKind reference_kind,
     /* Absolute value of class tag is an index into the counts[] array */
     jindex = JLONG_ABS(class_tag);
     index = CLASSTAG2INDEX(jindex);
-    if (index < 0 || index >= data->classCount) {
-        data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
-        return JVMTI_VISIT_ABORT;
-    }
-
-    /* Bump instance count on this class */
-    data->counts[index]++;
-    return JVMTI_VISIT_OBJECTS;
-}
-
-/* Callback for instance count heap traversal (heap_iteration_callback) */
-static jint JNICALL
-cbObjectCounter(jlong class_tag, jlong size, jlong* tag_ptr, jint length,
-                        void* user_data)
-{
-    ClassCountData  *data;
-    int              index;
-
-    /* Check data structure */
-    data = (ClassCountData*)user_data;
-    if (data == NULL) {
-        return JVMTI_VISIT_ABORT;
-    }
-
-    /* Classes with no tag should be filtered out. */
-    if ( class_tag == (jlong)0 ) {
-        data->error = AGENT_ERROR_INTERNAL;
-        return JVMTI_VISIT_ABORT;
-    }
-
-    /* Class tag is actually an index into data arrays */
-    index = CLASSTAG2INDEX(class_tag);
     if (index < 0 || index >= data->classCount) {
         data->error = AGENT_ERROR_ILLEGAL_ARGUMENT;
         return JVMTI_VISIT_ABORT;
