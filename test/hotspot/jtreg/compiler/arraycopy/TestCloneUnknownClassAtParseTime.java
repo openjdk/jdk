@@ -30,6 +30,7 @@
 
 public class TestCloneUnknownClassAtParseTime {
     private static volatile int volatileField;
+    static A field;
 
     public static void main(String[] args) throws CloneNotSupportedException {
         A a = new A();
@@ -43,8 +44,6 @@ public class TestCloneUnknownClassAtParseTime {
             inlined2();
         }
     }
-
-    static A field;
 
     private static A test1(int i) throws CloneNotSupportedException {
         int[] nonEscapingArray = new int[1];
