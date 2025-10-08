@@ -563,8 +563,10 @@ private:
                         // Memory Phi    - most recent unique Phi split out
                         //                 from this Phi
                         // MemNode       - new memory input for this node
-                        // ChecCastPP    - allocation that this is a cast of
+                        // CheckCastPP   - allocation that this is a cast of
                         // allocation    - CheckCastPP of the allocation
+                        // NarrowMem     - newly created projection (type includes instance_id) from projection created
+                        //                 before EA
 
   // manage entries in _node_map
 
@@ -609,11 +611,11 @@ private:
   bool can_reduce_phi_check_inputs(PhiNode* ophi) const;
 
   void reduce_phi_on_field_access(Node* previous_addp, GrowableArray<Node *>  &alloc_worklist);
-  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi_on_castpp_field_load(Node* castpp, GrowableArray<Node*> &alloc_worklist);
   void reduce_phi_on_cmp(Node* cmp);
   bool reduce_phi_on_safepoints(PhiNode* ophi);
   bool reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, Node* selector, Unique_Node_List& safepoints);
-  void reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_worklist, GrowableArray<Node *>  &memnode_worklist);
+  void reduce_phi(PhiNode* ophi, GrowableArray<Node*> &alloc_worklist);
 
   void set_not_scalar_replaceable(PointsToNode* ptn NOT_PRODUCT(COMMA const char* reason)) const {
 #ifndef PRODUCT
