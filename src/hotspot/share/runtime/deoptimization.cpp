@@ -1829,6 +1829,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm, bo
     return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
   }
 
+#if INCLUDE_JVMCI
   // JVMCI support
   vframe* vf = vframe::new_vframe(&caller_frame, &reg_map, thread);
   compiledVFrame* cvf = compiledVFrame::cast(vf);
@@ -1850,6 +1851,7 @@ address Deoptimization::deoptimize_for_missing_exception_handler(nmethod* nm, bo
   if (trap_mdo != nullptr) {
     trap_mdo->inc_trap_count(Deoptimization::Reason_not_compiled_exception_handler);
   }
+#endif
 
   return SharedRuntime::deopt_blob()->unpack_with_exception_in_tls();
 }
@@ -2755,10 +2757,10 @@ const char* Deoptimization::_trap_reason_name[] = {
   "unstable_if",
   "unstable_fused_if",
   "receiver_constraint",
+  "not_compiled_exception_handler",
   "short_running_loop" JVMCI_ONLY("_or_aliasing"),
 #if INCLUDE_JVMCI
   "transfer_to_interpreter",
-  "not_compiled_exception_handler",
   "unresolved",
   "jsr_mismatch",
 #endif
