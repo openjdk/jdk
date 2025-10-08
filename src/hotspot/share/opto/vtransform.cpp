@@ -1078,8 +1078,8 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   VTransformNode* current_vector_accumulator = phi;
   current_red = first_red;
   while (true) {
-    VTransformNode* vector_input = current_red->in(2);
-    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, current_red->prototype(), 3, vopc);
+    VTransformNode* vector_input = current_red->in_req(2);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->properties(), vopc);
     vector_accumulator->init_req(1, current_vector_accumulator);
     vector_accumulator->init_req(2, vector_input);
     TRACE_OPTIMIZE(
@@ -1090,7 +1090,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     )
     current_vector_accumulator = vector_accumulator;
     if (current_red == last_red) { break; }
-    current_red = current_red->unique_out()->isa_ReductionVector();
+    current_red = current_red->unique_out_strong_edge()->isa_ReductionVector();
   }
 
   // Feed vector accumulator into the backedge.

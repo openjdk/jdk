@@ -415,7 +415,7 @@ public:
   void set_req(uint i, VTransformNode* n) {
     assert(i < _req, "must be a req");
     VTransformNode* old = _in.at(i);
-    if (old != nullptr) { old->del_out(this); }
+    if (old != nullptr) { old->del_out_strong_edge(this); }
     _in.at_put(i, n);
     if (n != nullptr) { n->add_out_strong_edge(this); }
   }
@@ -467,11 +467,21 @@ private:
     _out.push(n);
   }
 
-  void del_out(VTransformNode* n) {
-    assert(false, "TODO");
-    // VTransformNode* last = _out.top();
-    // int i = _out.find(n);
-    // _out.delete_at(i); // replace with last
+  void del_out_strong_edge(VTransformNode* n) {
+    int i = _out.find(n);
+    assert(0 <= i && i < (int)_out_end_strong_edges, "must be in strong edges");
+
+    // Replace n with the last strong edge.
+    VTransformNode* last_strong = _out.at(_out_end_strong_edges - 1);
+    _out.at_put(i, last_strong);
+
+    if (_out_end_strong_edges < (uint)_out.length()) {
+      assert(false, "not expected, current uses have no weak edges");
+      // Now replace where last_strong was with the last weak edge.
+      VTransformNode* last_weak = _out.pop();
+      _out.at_put(_out_end_strong_edges - 1, n);
+    }
+    _out_end_strong_edges--;
   }
 
 public:
@@ -499,6 +509,11 @@ public:
       if (_in.at(i) != nullptr) { return true; }
     }
     return false;
+  }
+
+  VTransformNode* unique_out_strong_edge() const {
+    assert(out_strong_edges() == 1, "must be unique");
+    return _out.at(0);
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
@@ -725,6 +740,7 @@ public:
   NOT_PRODUCT(virtual void print_spec() const override;)
 
 protected:
+  const VTransformVectorNodeProperties& properties() const { return _properties; }
   Node* approximate_origin()     const { return _properties.approximate_origin(); }
   int scalar_opcode()            const { return _properties.scalar_opcode(); }
   uint vector_length()           const { return _properties.vector_length(); }
