@@ -121,8 +121,9 @@ public class FileURLConnection extends URLConnection {
                 }
                 directoryListing = Arrays.asList(fileList);
             } else {
-                try (var _ = new FileInputStream(file.getPath())) {
-                }
+                // let FileInputStream constructor do the necessary readability checks
+                // and propagate any failures
+                new FileInputStream(file.getPath()).close();
             }
             connected = true;
         }
