@@ -340,31 +340,45 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // structures don't support efficiently performing the needed
       // additional tests or scrubbing of the mark stack.
       //
-      // Additionally, a humongous object containing references induces
-      // remembered set entries on other regions.  In order to reclaim such an
-      // object, those remembered sets would need to be cleaned up or ignored
-      // during iteration.
+      // We handle humongous objects specially, because frequent allocation and
+      // dropping of large binary blobs is an important use case for eager reclaim,
+      // and this special handling increases needed headroom.
+      // It also helps with G1 allocating humongous objects as old generation
+      // objects although they might also die quite quickly.
       //
-      // We treat is_typeArray() objects specially, allowing them
-      // to be reclaimed even if allocated before the start of
-      // concurrent mark.  For this we rely on mark stack insertion to
-      // exclude is_typeArray() objects, preventing reclaiming an object
+      // TypeArray objects are allowed to be reclaimed even if allocated before
+      // the start of concurrent mark.  For this we rely on mark stack insertion
+      // to exclude is_typeArray() objects, preventing reclaiming an object
       // that is in the mark stack.  We also rely on the metadata for
       // such objects to be built-in and so ensured to be kept live.
-      // Frequent allocation and drop of large binary blobs is an
-      // important use case for eager reclaim, and this special handling
-      // may increase needed headroom.
       //
       // Non-typeArrays that were allocated before marking are excluded from
-      // eager reclaim during marking.  The problem with these regions having
-      // induced card marks in other region's remembered sets is, if they are
-      // now free, handled by ignoring them during merging the remembered sets.
-      // Second, wrt. to the remembered sets, there may be cases where eagerly
-      // reclaimed regions were reallocated.  This may cause scanning of outdated
-      // remembered sets, but apart from extra work this can not cause correctness
-      // issues.  There is no difference between scanning cards covering an
-      // effectively dead humongous object vs. some other objects in reallocated
-      // regions.
+      // eager reclaim during marking.  One issue is the problem described
+      // above with scrubbing the mark stack, but there is also a problem
+      // causing objects being collected incorrectly:
+      //
+      // E.g. if the mutator is running, we may have objects o1 and o2 in the same
+      // region, where o1 has already been scanned and o2 is only reachable by
+      // the candidate object h, which is humongous.
+      //
+      // If the mutator read the reference to o2 from h and installed it into o1,
+      // no remembered set entry would be created for keeping alive o2, as o1 and
+      // o2 are in the same region.  Object h might be reclaimed by the next
+      // garbage collection. o1 still has the reference to o2, but since o1 had
+      // already been scanned we do not detect o2 to be still live and reclaim it.
+      //
+      // There is another minor problem with non-typeArray regions being the source
+      // of remembered set entries in other region's remembered sets.  There are
+      // two cases: first, the remembered set entry is in a Free region after reclaim.
+      // We handle this case by ignoring these cards during merging the remembered
+      // sets.
+      //
+      // Second, there may be cases where eagerly reclaimed regions were already
+      // reallocated.  This may cause scanning of these outdated remembered set
+      // entries, containing some objects. But apart from extra work this does
+      // not cause correctness issues.
+      // There is no difference between scanning cards covering an effectively
+      // dead humongous object vs. some other objects in reallocated regions.
 
       // All regions that were allocated before marking have a TAMS != bottom.
       bool allocated_after_mark_start = region->bottom() == _g1h->concurrent_mark()->top_at_mark_start(region);
@@ -375,19 +389,9 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // mark_in_progress() at the end of that GC: no mutator is running that can
       // sneakily install a new reference to the potentially reclaimed humongous
       // object.
-      //
-      // E.g. if the mutator is running, we may have objects o1 and o2 in the same
-      // region, where o1 has already been scanned and o2 is only reachable by
-      // the candidate object h, which is humongous.
-      //
-      // If the mutator read the reference to o2 from h and installed it into o1,
-      // no remembered set entry would be created for keeping alive o2, as o1 and
-      // o2 are in the same region. Object h might be reclaimed by the next
-      // garbage collection. o1 still has the reference to o2, but since o1 had
-      // already been scanned we do not detect o2 to be still live and reclaim it.
-      //
-      // During (concurrent start) GC this situation can not happen. No mutator
-      // is modifying the object graph to install such an overlooked reference.
+      // During (concurrent start) GC the situation described above where we
+      // miss a reference can not happen. No mutator is modifying the object
+      // graph to install such an overlooked reference.
       //
       // After the pause, having reclaimed h, obviously the mutator can't fetch
       // the reference from h any more.
