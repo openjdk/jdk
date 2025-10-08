@@ -1161,7 +1161,8 @@ Node* LShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
 
   // Check for ((x & ((1<<(32-c0))-1)) << c0) which ANDs off high bits
   // before shifting them away.
-  const jint bits_mask = right_n_bits(bits_per_java_integer(bt)-con);
+  const jlong bits_mask = max_unsigned_integer(bt) >> con;
+  assert(bt != T_INT || bits_mask == right_n_bits(bits_per_java_integer(bt)-con), "inconsistent");
   if (add1_op == Op_And(bt) &&
       phase->type(add1->in(2)) == TypeInteger::make(bits_mask, bt)) {
     return LShiftNode::make(add1->in(1), in(2), bt);
