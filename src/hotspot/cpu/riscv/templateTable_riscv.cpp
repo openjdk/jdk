@@ -2205,7 +2205,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     __ ld(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, t0, nullptr, &clinit_barrier_slow);
+    __ clinit_barrier(temp, t0, nullptr /*L_fast_path*/, &clinit_barrier_slow);
   }
 }
 
@@ -2215,13 +2215,13 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   const Register temp = x9;
   assert_different_registers(Rcache, index, temp);
 
-  Label resolved;
+  Label L_clinit_barrier_slow, resolved;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
-  case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
-  case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
-  default: break;
+    case Bytecodes::_nofast_getfield: code = Bytecodes::_getfield; break;
+    case Bytecodes::_nofast_putfield: code = Bytecodes::_putfield; break;
+    default: break;
   }
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
@@ -2238,6 +2238,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ beq(temp, t0, resolved);
 
   // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mv(temp, (int) code);
   __ call_VM(noreg, entry, temp);
@@ -2245,6 +2247,15 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
   __ bind(resolved);
+
+  // Class initialization barrier for static fields
+  if (VM_Version::supports_fast_class_init_checks() &&
+      (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
+    const Register field_holder = temp;
+
+    __ ld(field_holder, Address(Rcache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
+    __ clinit_barrier(field_holder, t0, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+  }
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,
