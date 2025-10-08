@@ -276,11 +276,13 @@ public interface DocTreeFactory {
 
     /**
      * Creates a new {@code NoteTree} object, to represent a {@code {@note }} tag.
+     * @param tagName the tag name
      * @param attributes the attributes of the tag
      * @param body the body of the tag
+     * @param isInline true if this is an inline tag
      * @return a {@code LiteralTree} object
      */
-    NoteTree newNoteTree(List<? extends DocTree> attributes, List<? extends DocTree> body);
+    NoteTree newNoteTree(String tagName, List<? extends DocTree> attributes, List<? extends DocTree> body, boolean isInline);
 
     /**
      * Creates a new {@code ParamTree} object, to represent a {@code @param} tag.

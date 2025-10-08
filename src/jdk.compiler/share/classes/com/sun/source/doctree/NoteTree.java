@@ -28,16 +28,19 @@ package com.sun.source.doctree;
 import java.util.List;
 
 /**
- * A tree node for an {@code @note} inline tag.
+ * A tree node for an {@code @note} bimodal (inline or block) tag.
  *
  * <pre>
  *    {&#064;note body}
  *    {&#064;note [attributes] body}
+ *
+ *    &#064;note body
+ *    &#064;note [attributes] body
  * </pre>
  *
  * @since 1.8
  */
-public interface NoteTree extends InlineTagTree {
+public interface NoteTree extends BlockTagTree, InlineTagTree {
 
     /**
      * Returns the list of the attributes of the {@code @snippet} tag.
@@ -51,4 +54,10 @@ public interface NoteTree extends InlineTagTree {
      * @return the body of the tag
      */
     List<? extends DocTree> getBody();
+
+    /**
+     * Returns whether this instance is an inline tag.
+     * @return {@code true} if this instance is an inline tag, and {@code false} otherwise
+     */
+    boolean isInline();
 }

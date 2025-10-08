@@ -43,10 +43,28 @@ import java.util.stream.Collectors;
 /**
  * A taglet that represents the {@code {@note ...}} tag to create inline notes.
  */
-public class NoteTaglet extends BaseTaglet {
+public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
-    NoteTaglet(HtmlConfiguration config, DocTree.Kind tagKind) {
-        super(config, tagKind, true, EnumSet.allOf(Taglet.Location.class));
+    NoteTaglet(HtmlConfiguration config) {
+        super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE, "Note:", true, EnumSet.allOf(Taglet.Location.class), true);
+    }
+
+    /**
+     * Constructs a {@code NoteTaglet}.
+     *
+     * @param tagName   the name of this tag
+     * @param header    the header to output
+     * @param locations the possible locations that this tag can appear in
+     *                  The string can contain 'p' for package, 't' for type,
+     *                  'm' for method, 'c' for constructor and 'f' for field.
+     */
+    NoteTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
+        super(config, tagName, DocTree.Kind.NOTE, header, true, getLocations(locations), isEnabled(locations));
+    }
+
+    @Override
+    public boolean isBlockTag() {
+        return true;
     }
 
     @Override

@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -137,6 +138,11 @@ public class TagletManager {
     private final Set<String> potentiallyConflictingTags;
 
     /**
+     * The set of all custom tags.
+     */
+    private final Set<String> customTags;
+
+    /**
      * The set of unseen custom tags.
      */
     private final Set<String> unseenCustomTags;
@@ -179,6 +185,7 @@ public class TagletManager {
         overriddenStandardTags = new HashSet<>();
         potentiallyConflictingTags = new HashSet<>();
         standardTags = new HashSet<>();
+        customTags = new HashSet<>();
         unseenCustomTags = new HashSet<>();
         allTaglets = new LinkedHashMap<>();
         this.config = config;
@@ -296,21 +303,26 @@ public class TagletManager {
      * @param header the header to output
      * @param locations the possible locations that this tag can appear in
      */
-    public void addNewSimpleCustomTag(String tagName, String header, String locations) {
+    public void addNewCustomTag(String tagName, String header, String locations) {
         if (tagName == null || locations == null) {
             return;
         }
         // remove + put in both branches below move the tag to the back of the map's ordering
         Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
-            allTaglets.put(tagName, new SimpleTaglet(config, tagName, header, locations));
+            allTaglets.put(tagName, new NoteTaglet(config, tagName, header, locations));
             if (Utils.toLowerCase(locations).indexOf('x') == -1) {
                 checkTagName(tagName);
             }
+            customTags.add(tagName);
         } else {
             // Move existing tag to the back
             allTaglets.put(tagName, tag);
         }
+    }
+
+    public Set<String> getCustomTags() {
+        return Collections.unmodifiableSet(customTags);
     }
 
     /**
@@ -621,7 +633,7 @@ public class TagletManager {
         addStandardTaglet(new LinkTaglet(config, DocTree.Kind.LINK_PLAIN));
         addStandardTaglet(new LiteralTaglet(config, DocTree.Kind.CODE));
         addStandardTaglet(new LiteralTaglet(config, DocTree.Kind.LITERAL));
-        addStandardTaglet(new NoteTaglet(config, DocTree.Kind.NOTE));
+        addStandardTaglet(new NoteTaglet(config));
         addStandardTaglet(new SnippetTaglet(config));
         addStandardTaglet(new IndexTaglet(config));
         addStandardTaglet(new SummaryTaglet(config));
@@ -630,13 +642,13 @@ public class TagletManager {
         // Keep track of the names of standard tags for error checking purposes.
         // The following are not handled above.
         addStandardTaglet(new DeprecatedTaglet(config));
-        addStandardTaglet(new BaseTaglet(config, USES, false, EnumSet.of(jdk.javadoc.doclet.Taglet.Location.MODULE)));
-        addStandardTaglet(new BaseTaglet(config, PROVIDES, false, EnumSet.of(jdk.javadoc.doclet.Taglet.Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(config, USES, false, EnumSet.of(Location.MODULE)));
+        addStandardTaglet(new BaseTaglet(config, PROVIDES, false, EnumSet.of(Location.MODULE)));
         addStandardTaglet(
                 new SimpleTaglet(config, SERIAL, null,
-                        EnumSet.of(jdk.javadoc.doclet.Taglet.Location.PACKAGE, jdk.javadoc.doclet.Taglet.Location.TYPE, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                        EnumSet.of(Location.PACKAGE, Location.TYPE, Location.FIELD)));
         addStandardTaglet(
-                new SimpleTaglet(config, SERIAL_FIELD, null, EnumSet.of(jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                new SimpleTaglet(config, SERIAL_FIELD, null, EnumSet.of(Location.FIELD)));
     }
 
     /**
@@ -645,11 +657,11 @@ public class TagletManager {
     private void initJavaFXTaglets() {
         addStandardTaglet(new SimpleTaglet(config, "propertyDescription",
                 resources.getText("doclet.PropertyDescription"),
-                EnumSet.of(jdk.javadoc.doclet.Taglet.Location.METHOD, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                EnumSet.of(Location.METHOD, Location.FIELD)));
         addStandardTaglet(new SimpleTaglet(config, "defaultValue", resources.getText("doclet.DefaultValue"),
-                EnumSet.of(jdk.javadoc.doclet.Taglet.Location.METHOD, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                EnumSet.of(Location.METHOD, Location.FIELD)));
         addStandardTaglet(new SimpleTaglet(config, "treatAsPrivate", null,
-                EnumSet.of(jdk.javadoc.doclet.Taglet.Location.TYPE, jdk.javadoc.doclet.Taglet.Location.METHOD, jdk.javadoc.doclet.Taglet.Location.FIELD)));
+                EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
     }
 
     private void addStandardTaglet(Taglet taglet) {

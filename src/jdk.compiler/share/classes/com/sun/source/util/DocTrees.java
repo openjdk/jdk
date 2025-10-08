@@ -28,6 +28,7 @@ package com.sun.source.util;
 import java.io.IOException;
 import java.text.BreakIterator;
 import java.util.List;
+import java.util.Set;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
@@ -256,6 +257,18 @@ public abstract class DocTrees extends Trees {
      * @since 9
      */
     public abstract void setBreakIterator(BreakIterator breakIterator);
+
+    /**
+     * {@return a set of tag names that represent custom {@code @note} tags}
+     */
+    public abstract Set<String> getCustomTags();
+
+    /**
+     * Sets the tag names that represent custom {@code @note} tags.
+     *
+     * @param customTags a set of tag names that represent custom note tags
+     */
+    public abstract void setCustomTags(Set<String> customTags);
 
     /**
      * Returns a utility object for creating {@code DocTree} objects.

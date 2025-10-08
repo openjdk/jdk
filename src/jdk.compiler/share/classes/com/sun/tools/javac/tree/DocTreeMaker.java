@@ -360,8 +360,8 @@ public class DocTreeMaker implements DocTreeFactory {
     }
 
     @Override @DefinedBy(Api.COMPILER_TREE)
-    public DCNote newNoteTree(List<? extends DocTree> attributes, List<? extends DocTree> body) {
-        DCNote tree = new DCNote(cast(attributes), cast(body));
+    public DCNote newNoteTree(String tagName, List<? extends DocTree> attributes, List<? extends DocTree> body, boolean isInline) {
+        DCNote tree = new DCNote(tagName, cast(attributes), cast(body), isInline);
         tree.pos = pos;
         return tree;
     }

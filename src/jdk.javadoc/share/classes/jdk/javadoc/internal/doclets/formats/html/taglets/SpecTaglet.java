@@ -61,7 +61,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
+    public Output inherit(ExecutableElement dst, ExecutableElement src, DocTree tag, boolean isFirstSentence) {
         CommentHelper ch = utils.getCommentHelper(dst);
         var path = ch.getDocTreePath(tag);
         messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
