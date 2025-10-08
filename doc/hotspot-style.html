@@ -1691,10 +1691,6 @@ HotSpot has its own threading support.</p></li>
 specialized allocators.</p></li>
 <li><p><code>&lt;string&gt;</code> - Requires allocator support, similar
 to standard containers.</p></li>
-<li><p><code>&lt;tuple&gt;</code> - Prefer named access to class
-objects, rather than indexed access to anonymous heterogeneous
-sequences. In particular, a standard-layout class is preferred to a
-tuple.</p></li>
 <li><p><code>&lt;typeinfo&gt;</code>, <code>&lt;typeindex&gt;</code><br>
 Use of <a href="#runtime-type-information">runtime type information</a>
 is not permitted.</p></li>
@@ -1957,6 +1953,10 @@ that developers should need to know about this feature. But if someone
 does come up with a good use-case, it's likely that the alternatives are
 significantly worse, because pack manipulation without this can be
 complicated.</p></li>
+<li><p><code>&lt;tuple&gt;</code> - Prefer named access to class
+objects, rather than indexed access to anonymous heterogeneous
+sequences. In particular, a standard-layout class is preferred to a
+tuple.</p></li>
 <li><p><code>std::invoke&lt;&gt;()</code> (<a
 href="http://wg21.link/n4169">n4169</a>)</p></li>
 <li><p><code>&lt;chrono&gt;</code></p></li>

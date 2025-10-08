@@ -1652,10 +1652,6 @@ HotSpot has its own threading support.
 
 * `<string>` - Requires allocator support, similar to standard containers.
 
-* `<tuple>` - Prefer named access to class objects, rather than indexed access
-to anonymous heterogeneous sequences.  In particular, a standard-layout
-class is preferred to a tuple.
-
 * `<typeinfo>`, `<typeindex>`<br>
 Use of [runtime type information](#runtime-type-information) is not permitted.
 
@@ -1957,6 +1953,10 @@ use variadic templates very much. That makes it questionable that developers
 should need to know about this feature.  But if someone does come up with a
 good use-case, it's likely that the alternatives are significantly worse,
 because pack manipulation without this can be complicated.
+
+* `<tuple>` - Prefer named access to class objects, rather than indexed access
+to anonymous heterogeneous sequences.  In particular, a standard-layout
+class is preferred to a tuple.
 
 * `std::invoke<>()`
 ([n4169](http://wg21.link/n4169))
