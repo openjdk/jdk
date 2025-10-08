@@ -263,8 +263,8 @@ checkStaticFieldID(JavaThread* thr, jfieldID fid, jclass cls, int ftype, bool se
   if (setter && fd.is_final() && !fd.is_mutable_static_final()) {
     ResourceMark rm(thr);
     stringStream ss;
-    ss.print("SetStatic<Type>Field attempting to mutate final static field %s.%s", k_oop->external_name(), fd.name()->as_C_string());
-    ReportJNIFatalError(thr, ss.as_string());
+    ss.print("SetStatic<Type>Field called to mutate final static field %s.%s", k_oop->external_name(), fd.name()->as_C_string());
+    ReportJNIWarning(thr, ss.as_string());
   }
 }
 
@@ -307,8 +307,8 @@ checkInstanceFieldID(JavaThread* thr, jfieldID fid, jobject obj, int ftype, bool
   if (setter && fd.is_final()) {
     ResourceMark rm(thr);
     stringStream ss;
-    ss.print("Set<Type>Field attempting to mutate final instance field %s.%s", k_oop->external_name(), fd.name()->as_C_string());
-    ReportJNIFatalError(thr, ss.as_string());
+    ss.print("Set<Type>Field called to mutate final instance field %s.%s", k_oop->external_name(), fd.name()->as_C_string());
+    ReportJNIWarning(thr, ss.as_string());
   }
 }
 

@@ -724,7 +724,6 @@ the Java HotSpot Virtual Machine.
         - An invalid JNI reference
         - An attempt to use a `ReleaseXXX` function on a parameter not
           produced by the corresponding `GetXXX` function
-    - A JNI call was made to mutate a final field.
 
     The following checks only result in warnings being printed:
 
@@ -734,7 +733,8 @@ the Java HotSpot Virtual Machine.
     - A class descriptor is in decorated format (`Lname;`) when it should not be.
     - A `NULL` parameter is allowed, but its use is questionable.
     - Calling other JNI functions in the scope of `Get/ReleasePrimitiveArrayCritical`
-      or `Get/ReleaseStringCritical`
+      or `Get/ReleaseStringCritical`.
+    - A JNI call was made to mutate a final field.
 
     Expect a performance degradation when this option is used.
 
