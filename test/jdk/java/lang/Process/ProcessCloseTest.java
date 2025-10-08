@@ -43,9 +43,13 @@ import java.io.Writer;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -61,6 +65,18 @@ public class ProcessCloseTest {
 
     private final static boolean OS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
     private static List<String> JAVA_ARGS;
+    private static final boolean DEBUG = Boolean.getBoolean("DEBUG");
+    private final static ScopedValue<Appendable> OUT = ScopedValue.newInstance();
+    private final static ScopedValue.Carrier LOG = setupLog();
+
+    private static ScopedValue.Carrier setupLog() {
+        if (DEBUG) {
+            return ScopedValue.where(OUT, System.err);
+        } else {
+            return ScopedValue.where(OUT, new StringBuffer());
+        }
+    }
+
 
     private static List<String> setupJavaEXE() {
         String JAVA_HOME = System.getProperty("test.jdk");
@@ -83,147 +99,199 @@ public class ProcessCloseTest {
         return args;
     }
 
+    private static void logPrintf(String format, Object... args) {
+        try {
+            var log = LOG.get(OUT);
+            log.append(format.formatted(args));
+        } catch (IOException ioe) {
+            throw new UncheckedIOException(ioe);
+        }
+    }
+
     /**
      * {@return A Stream of Arguments}
      * Each Argument consists of three elements.
      * - A List of command line arguments to start a process.
      *   `javaArgs can be used to launch a Java child with ChildCommands
      * - A List of ProcessCommand actions to be invoked on that process
-     * - A expected final ExitStatus
+     * - A List of commands to be invoked on the process after the close or T-W-R exit.
      */
     static Stream<Arguments> singleThreadTestCases() {
         return Stream.of(
                 Arguments.of(List.of("echo", "xyz0"),
                         List.of(ProcessCommand.STDOUT_PRINT_ALL_LINES,
                                 ProcessCommand.STDERR_EXPECT_EMPTY,
-                                ProcessCommand.PROCESS_EXPECT_EXIT_NORMAL),
-                        ExitStatus.NORMAL),
+                                ExitStatus.NORMAL),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("echo", "xyz1"),
                         List.of(ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        ExitStatus.RACY),
+                        List.of(ExitStatus.RACY)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.WRITER_WRITE,
                                 ProcessCommand.WRITER_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        ExitStatus.RACY),
+                        List.of(ExitStatus.RACY)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        ExitStatus.RACY),
+                        List.of(ExitStatus.RACY)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
-                                ProcessCommand.PROCESS_EXPECT_EXIT_NORMAL),
-                        ExitStatus.NORMAL),
+                                ExitStatus.NORMAL),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("cat", "NoSuchFile.txt"),
                         List.of(ProcessCommand.STDERR_PRINT_ALL_LINES,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
-                        ExitStatus.RACY),
+                        List.of(ExitStatus.RACY)),
                 Arguments.of(javaArgs(ChildCommand.STDOUT_MARCO),
                         List.of(ProcessCommand.STDOUT_EXPECT_POLO,
                                 ProcessCommand.STDERR_EXPECT_EMPTY),
-                        ExitStatus.RACY),
+                        List.of(ExitStatus.RACY)),
                 Arguments.of(javaArgs(ChildCommand.STDERR_MARCO),
                         List.of(ProcessCommand.STDERR_EXPECT_POLO,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
-                        ExitStatus.NORMAL),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(javaArgs(ChildCommand.PROCESS_EXIT1),
-                        List.of(ProcessCommand.PROCESS_EXPECT_EXIT_FAIL),
-                        ExitStatus.FAIL),       // Got expected status == 1
+                        List.of(ExitStatus.FAIL),
+                        List.of(ExitStatus.FAIL)),       // Got expected status == 1
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
+                        List.of(ProcessCommand.PROCESS_INTERRUPT, // schedule an interrupt (in 1sec)
+                                ProcessCommand.PROCESS_CLOSE,
+                                ProcessCommand.PROCESS_CHECK_INTERRUPT), // Verify re-interrupted
+                        List.of(ExitStatus.KILLED)), // And process was destroyed
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
+                        List.of(ProcessCommand.PROCESS_INTERRUPT), // Should interrupt the TWR close
+                        List.of(ProcessCommand.PROCESS_CHECK_INTERRUPT, ExitStatus.KILLED)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
+                        List.of(ExitStatus.NORMAL), // waitFor before T-W-R exit
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("echo", "abc"),
                         List.of(ProcessCommand.PROCESS_CLOSE),
-                        ExitStatus.RACY), // Racy, not deterministic
+                        List.of(ExitStatus.RACY)), // Racy, not deterministic
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.PROCESS_CLOSE),
-                        ExitStatus.RACY),  // Racy, not deterministic
+                        List.of(ExitStatus.RACY)),  // Racy, not deterministic
                 Arguments.of(List.of("echo", "abc"),
                         List.of(ProcessCommand.PROCESS_DESTROY),
-                        ExitStatus.RACY), // Racy, not deterministic
+                        List.of(ExitStatus.RACY)), // Racy, not deterministic
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.PROCESS_DESTROY),
-                        ExitStatus.RACY), // Racy, not deterministic
+                        List.of(ExitStatus.RACY)), // Racy, not deterministic
                 Arguments.of(List.of("echo"),
-                        List.of(ProcessCommand.PROCESS_EXPECT_EXIT_NORMAL),
-                        ExitStatus.RACY)
+                        List.of(ExitStatus.NORMAL),
+                        List.of(ExitStatus.RACY))
         );
     }
 
-
-    @ParameterizedTest
-    @MethodSource("singleThreadTestCases")
-    void simple(List<String> args, List<ProcessCommand> commands, ExitStatus exitStatus) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(args);
-        Process p = pb.start();
-        System.err.printf("Program: %s; pid: %d\n", args, p.pid());
+    // Utility to process each command on the process
+    private static void doCommands(Process proc, List<Consumer<Process>> commands) {
         commands.forEach(c -> {
-            System.err.printf("    %s\n", c);
-            c.command.accept(p);
+            logPrintf("    %s\n", c);
+            c.accept(proc);
         });
-        p.close();
-        ProcessCommand.processExpectExit(p, exitStatus);
     }
 
     @ParameterizedTest
     @MethodSource("singleThreadTestCases")
-    void autoCloseable(List<String> args, List<ProcessCommand> commands, ExitStatus exitStatus) {
-        ProcessBuilder pb = new ProcessBuilder(args);
-        Process proc = null;
-        try (Process p = pb.start()) {
-            proc = p;
-            System.err.printf("Program: %s; pid: %d\n", args, p.pid());
-            commands.forEach(c -> {
-                System.err.printf("    %s\n", c);
-                c.command.accept(p);
-            });
-        } catch (IOException ioe) {
-            Assertions.fail(ioe);
+    void simple(List<String> args, List<Consumer<Process>> commands,
+                List<Consumer<Process>> postCommands) throws IOException {
+        var log = LOG.get(OUT);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(args);
+            Process p = pb.start(); // Buffer any debug output
+            logPrintf("Program: %s; pid: %d\n", args, p.pid());
+            doCommands(p, commands);
+            p.close();
+            doCommands(p, postCommands);
+        } catch (Exception ex) {
+            System.err.print(log);
+            throw ex;
         }
-        ProcessCommand.processExpectExit(proc, exitStatus);
     }
 
+    @ParameterizedTest
+    @MethodSource("singleThreadTestCases")
+    void autoCloseable(List<String> args, List<Consumer<Process>> commands,
+                       List<Consumer<Process>> postCommands) {
+        var log = LOG.get(OUT);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(args);
+            Process proc = null;
+            try (Process p = pb.start()) {
+                proc = p;
+                logPrintf("Program: %s; pid: %d\n", args, p.pid());
+                doCommands(p, commands);
+            } catch (IOException ioe) {
+                Assertions.fail(ioe);
+            }
+            doCommands(proc, postCommands);
+        } catch (Exception ex) {
+            System.err.println(log);
+            throw ex;
+        }
+    }
 
     /**
      * Test AutoCloseable for the process and out, in, and err streams.
      * @param args The command line arguments
      * @param commands the commands to the process
-     * @param exitStatus The expected final exit status
+     * @param postCommands The expected final exit status
      */
     @ParameterizedTest
     @MethodSource("singleThreadTestCases")
-    void autoCloseableAll(List<String> args, List<ProcessCommand> commands, ExitStatus exitStatus) {
-        ProcessBuilder pb = new ProcessBuilder(args);
-        Process proc = null;
-        try (Process p = pb.start(); var out = p.getOutputStream();
-             var in = p.getInputStream();
-             var err = p.getErrorStream()) {
-            proc = p;
-            System.err.printf("Program: %s; pid: %d\n", args, p.pid());
-            commands.forEach(c -> {
-                System.err.printf("    %s\n", c);
-                c.command.accept(p);
-            });
-        } catch (IOException ioe) {
-            Assertions.fail(ioe);
+    void autoCloseableAll(List<String> args, List<Consumer<Process>> commands,
+                          List<Consumer<Process>> postCommands) {
+        var log = LOG.get(OUT);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(args);
+            Process proc = null;
+            try (Process p = pb.start(); var out = p.getOutputStream();
+                 var in = p.getInputStream();
+                 var err = p.getErrorStream()) {
+                proc = p;
+                logPrintf("Program: %s; pid: %d\n", args, p.pid());
+                doCommands(p, commands);
+            } catch (IOException ioe) {
+                Assertions.fail(ioe);
+            }
+            doCommands(proc, postCommands);
+        }  catch (Exception ex) {
+            System.err.println(log);
+            throw ex;
         }
-        ProcessCommand.processExpectExit(proc, exitStatus);
     }
 
 
-        // ExitStatus named values and assertions
-    enum ExitStatus {
+    // ExitStatus named values and assertions
+    enum ExitStatus implements Consumer<Process> {
         NORMAL(0),
-        FAIL(1),
-        PIPE(1, 141),
-        KILLED(0, 143),
-        RACY(0, 1, 143),
+            FAIL(1),
+            PIPE(1, 141),   // SIGPIPE
+            KILLED(1, 137), // SIGKILL
+            TERMINATED(0, 143), // SIGTERM
+            RACY(0, 1, 137, 143),
         ;
         private final int[] allowedStatus;
 
         ExitStatus(int... status) {
             this.allowedStatus = status;
+        }
+
+        // If used as a process command, checks the exit status
+        public void accept(Process p) {
+            try {
+                Instant begin = Instant.now();
+                final int exitStatus = p.waitFor();
+                Duration latency = begin.until(Instant.now());
+                logPrintf("    ExitStatus: %d, waitFor latency: %s%n", exitStatus, latency);
+                assertEquals(exitStatus);
+            } catch (InterruptedException ie) {
+                Assertions.fail("Unexpected InterruptedException checking status: " + this);
+            }
         }
 
         // Check a status matches one of the allowed exit status values
@@ -235,7 +303,7 @@ public class ProcessCloseTest {
             }
             if (this == RACY) {
                 // Not an error but report the actual status
-                System.err.printf("Racy exit status: %d\n", actual);
+                logPrintf("Racy exit status: %d\n", actual);
             } else {
                 Assertions.fail("Status: " + actual + ", expected one of: " + Arrays.toString(allowedStatus));
             }
@@ -245,9 +313,7 @@ public class ProcessCloseTest {
      * Commands on a Process that can be sequenced in the parent.
      * See ChildCommands for commands that can be sent to the child process.
      */
-    enum ProcessCommand {
-        PROCESS_EXPECT_EXIT_NORMAL(ProcessCommand::processExpectExitNormal),
-        PROCESS_EXPECT_EXIT_FAIL(ProcessCommand::processExpectExitFail),
+    enum ProcessCommand implements Consumer<Process> {
         PROCESS_CLOSE(ProcessCommand::processClose),
         PROCESS_DESTROY(ProcessCommand::processDestroy),
         PROCESS_FORCE_OUT_CLOSE_EXCEPTION(ProcessCommand::processForceOutCloseException),
@@ -263,6 +329,8 @@ public class ProcessCloseTest {
         STDERR_EXPECT_POLO(ProcessCommand::stderrExpectPolo),
         STDOUT_EXPECT_EMPTY(ProcessCommand::stdoutExpectEmpty),
         STDERR_EXPECT_EMPTY(ProcessCommand::stderrExpectEmpty),
+        PROCESS_INTERRUPT(ProcessCommand::processInterruptThread),
+        PROCESS_CHECK_INTERRUPT(ProcessCommand::processAssertInterrupted),
         ;
         private final Consumer<Process> command;
 
@@ -270,12 +338,16 @@ public class ProcessCloseTest {
             this.command = command;
         }
 
+        public void accept(Process p) {
+            command.accept(p);
+        }
+
         private static void stdoutPrintAllLines(Process p) {
             try {
                 var lines = p.inputReader().readAllLines();
                 Assertions.assertNotEquals(0, lines.size(), "stdout should not be empty");
-                System.err.printf("        %d lines\n", lines.size());
-                System.err.println(lines.toString().indent(8));
+                logPrintf("        %d lines\n", lines.size());
+                logPrintf("%s%n", lines.toString().indent(8));
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -285,8 +357,8 @@ public class ProcessCloseTest {
             try {
                 var lines = p.errorReader().readAllLines();
                 Assertions.assertNotEquals(0, lines.size(), "stderr should not be empty");
-                System.err.printf("        %d lines\n", lines.size());
-                System.err.println(lines.toString().indent(8));
+                logPrintf("        %d lines\n", lines.size());
+                logPrintf("%s%n", lines.toString().indent(8));
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -366,26 +438,6 @@ public class ProcessCloseTest {
             }
         }
 
-        // Expect a normal exit
-        private static void processExpectExitNormal(Process p) {
-            processExpectExit(p, ExitStatus.NORMAL);
-        }
-
-        // expect an error (1) status
-        private static void processExpectExitFail(Process p) {
-            processExpectExit(p, ExitStatus.FAIL);
-        }
-
-        // Process.processExpectExit an expected status
-        private static void processExpectExit(Process p, ExitStatus expected) {
-            try {
-                int st = p.waitFor();
-                expected.assertEquals(st);
-            } catch (InterruptedException ie) {
-                Assertions.fail("Unexpected InterruptedException");
-            }
-        }
-
         private static void processClose(Process p) {
             try {
                 p.close();
@@ -412,13 +464,25 @@ public class ProcessCloseTest {
             var err = p.getErrorStream();
             closeInputStreamPrematurely(err);
         }
+
+        // Hard coded to interrupt the invoking thread after 1 second
+        private static void processInterruptThread(Process p) {
+            final Thread targetThread = Thread.currentThread();
+            ForkJoinPool common = ForkJoinPool.commonPool();
+            common.schedule(targetThread::interrupt, 500, TimeUnit.MILLISECONDS);
+        }
+
+        // Verify that an interrupt is pending and reset it
+        private static void processAssertInterrupted(Process p) {
+            Assertions.assertTrue(Thread.interrupted(), "Expected an interrupt");
+        }
     }
 
     // Commands to Java child sent as command line arguments
     enum ChildCommand {
         STDOUT_ECHO(ChildCommand::stdoutEchoBytes),
         STDERR_ECHO(ChildCommand::stderrEchoBytes),
-        SLEEP5(ChildCommand::sleep5),
+        SLEEP(ChildCommand::SLEEP),
         STDOUT_MARCO(ChildCommand::stdoutMarco),
         STDERR_MARCO(ChildCommand::stderrMarco),
         PROCESS_EXIT1(ChildCommand::processExit1),
@@ -428,11 +492,14 @@ public class ProcessCloseTest {
             this.command = cmd;
         }
 
-        private static void sleep5() {
+        // The child sleeps before continuing with next ChildCommand
+        private static void SLEEP() {
+            final int sleepMS = 2_000;
             try {
-                Thread.sleep(5_000);
+                Thread.sleep(sleepMS);
             } catch (InterruptedException ie) {
                 // Interrupted sleep, re-assert interrupt
+                System.err.println("Sleep interrupted");  // Note the interruption in the log
                 Thread.currentThread().interrupt();
             }
         }
@@ -470,35 +537,35 @@ public class ProcessCloseTest {
     static Stream<Arguments> closeExceptions() {
         final String badFDMsg = OS_WINDOWS ? "The handle is invalid" : "Bad file descriptor";
         return Stream.of(
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg)),
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg)),
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg)),
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg, badFDMsg, badFDMsg)),
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg, badFDMsg)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg, badFDMsg)),
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg, badFDMsg)),
-                Arguments.of(javaArgs(ChildCommand.SLEEP5),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg)),
+                Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_FORCE_IN_CLOSE_EXCEPTION,
                                 ProcessCommand.PROCESS_FORCE_ERROR_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg, badFDMsg)),
+                        List.of(ExitStatus.RACY), List.of(badFDMsg, badFDMsg)),
                 Arguments.of(List.of("echo", "xyz1"),
                         List.of(ProcessCommand.PROCESS_FORCE_OUT_CLOSE_EXCEPTION),
-                        ExitStatus.RACY, List.of(badFDMsg))
+                        List.of(ExitStatus.RACY), List.of(badFDMsg))
         );
     }
     /**
@@ -507,42 +574,45 @@ public class ProcessCloseTest {
      * The command line arguments control the sequence of actions taken by the child.
      * @param args The command line arguments for the child process
      * @param commands the commands to this process controlling the child
-     * @param exitStatus The expected final exit status
+     * @param postCommands The expected final exit status
      * @param expectedMessages the list of exception messages expected by close()
      */
     @ParameterizedTest
     @MethodSource("closeExceptions")
-    void testStreamsCloseThrowing(List<String> args, List<ProcessCommand> commands,
-                                  ExitStatus exitStatus, List<String> expectedMessages) {
-        ProcessBuilder pb = new ProcessBuilder(args);
-        Process proc = null;
-        IOException expectedIOE = null;
-        try (Process p = pb.start()) {
-            proc = p;
-            System.err.printf("Program: %s; pid: %d\n", args, p.pid());
-            commands.forEach(c -> {
-                System.err.printf("    %s\n", c);
-                c.command.accept(p);
-            });
-        } catch (IOException ioe) {
-            expectedIOE = ioe;
-        }
-        // Check the exceptions thrown, if any
-        if (expectedIOE != null) {
-            // Check each exception that it is expected
-            Assertions.assertEquals(expectedMessages.getFirst(), expectedIOE.getMessage(),
-                    "Unexpected exception message");
-            var suppressedEx = expectedIOE.getSuppressed();
-            Assertions.assertEquals(expectedMessages.size() - 1, suppressedEx.length,
-                    "Number of suppressed exceptions");
-            for (int i = 1; i < expectedMessages.size(); i++) {
-                Assertions.assertEquals(expectedMessages.get(i),
-                        suppressedEx[i - 1].getMessage(),
-                        "Unexpected suppressed exception message");
+    void testStreamsCloseThrowing(List<String> args, List<Consumer<Process>> commands,
+                                  List<Consumer<Process>> postCommands, List<String> expectedMessages) {
+        var log = LOG.get(OUT);
+        try {
+            ProcessBuilder pb = new ProcessBuilder(args);
+            Process proc = null;
+            IOException expectedIOE = null;
+            try (Process p = pb.start()) {
+                proc = p;
+                logPrintf("Program: %s; pid: %d\n",args, p.pid());
+                doCommands(p, commands);
+            } catch (IOException ioe) {
+                expectedIOE = ioe;
             }
+            // Check the exceptions thrown, if any
+            if (expectedIOE != null) {
+                // Check each exception that it is expected
+                Assertions.assertEquals(expectedMessages.getFirst(), expectedIOE.getMessage(),
+                        "Unexpected exception message");
+                var suppressedEx = expectedIOE.getSuppressed();
+                Assertions.assertEquals(expectedMessages.size() - 1, suppressedEx.length,
+                        "Number of suppressed exceptions");
+                for (int i = 1; i < expectedMessages.size(); i++) {
+                    Assertions.assertEquals(expectedMessages.get(i),
+                            suppressedEx[i - 1].getMessage(),
+                            "Unexpected suppressed exception message");
+                }
+            }
+            Assertions.assertNotNull(proc, "Process is null");
+            doCommands(proc, postCommands);
+        }  catch (Exception ex) {
+            System.err.println(log);
+            throw ex;
         }
-        Assertions.assertNotNull(proc, "Process is null");
-        ProcessCommand.processExpectExit(proc, exitStatus);
     }
 
     /*
@@ -608,23 +678,23 @@ public class ProcessCloseTest {
             Field fdHandleField = FileDescriptor.class.getDeclaredField("handle");
             fdHandleField.setAccessible(true);
             final long handle = (long) fdHandleField.get(fileDescriptor);
-            System.err.printf("FileDescriptor.handle: %08x%n", handle);
+            logPrintf("FileDescriptor.handle: %08x%n", handle);
             // Close the known handle
             // And restore the handle so normal close() will throw an exception
             fdCloseMethod.invoke(fileDescriptor);
             fdHandleField.set(fileDescriptor, handle);
-            System.err.printf("FileDescriptor.handle to close again and fail: %08x%n", handle);
+            logPrintf("FileDescriptor.handle to close again and fail: %08x%n", handle);
         } else {
             // Linux
             Field fdFdField = FileDescriptor.class.getDeclaredField("fd");
             fdFdField.setAccessible(true);
             final int fd = (int) fdFdField.get(fileDescriptor);
-            System.err.printf("FileDescriptor.fd: %08x%n", fd);
+            logPrintf("FileDescriptor.fd: %08x%n", fd);
             // Close the known fd
             // And restore the fd so normal close() will throw an exception
             fdCloseMethod.invoke(fileDescriptor);
             fdFdField.set(fileDescriptor, fd);
-            System.err.printf("FileDescriptor.fd to close again and fail: %08x%n", fd);
+            logPrintf("FileDescriptor.fd to close again and fail: %08x%n", fd);
         }
     }
 
