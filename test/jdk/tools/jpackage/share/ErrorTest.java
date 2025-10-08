@@ -99,8 +99,8 @@ public final class ErrorTest {
             Files.createFile(root.resolve("Contents/MacOS/libjli.dylib"));
             return root.toString();
         })),
-        EMPTY_RUNTIME_IMAGE(toFunction(cmd -> {
-            return TKit.createTempDirectory("empty-runtime-image");
+        EMPTY_DIR(toFunction(cmd -> {
+            return TKit.createTempDirectory("empty-dir");
         })),
         ADD_LAUNCHER_PROPERTY_FILE;
 
@@ -737,7 +737,7 @@ public final class ErrorTest {
         var runtimeDirWithoutJliLibErr = JPackageStringBundle.MAIN.cannedFormattedString(
                 "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
                     return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.EMPTY_RUNTIME_IMAGE.token()), "lib/**/libjli.dylib");
+                }, Token.EMPTY_DIR.token()), "lib/**/libjli.dylib");
 
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
@@ -747,7 +747,7 @@ public final class ErrorTest {
         for (var mutator : List.<Consumer<TestSpec.Builder>>of(builder -> {
             builder.addArgs("--runtime-image", Token.INVALID_MAC_RUNTIME_BUNDLE.token()).errors(runtimeBundleWithoutJliLibErr);
         }, builder -> {
-            builder.addArgs("--runtime-image", Token.EMPTY_RUNTIME_IMAGE.token()).errors(runtimeDirWithoutJliLibErr);
+            builder.addArgs("--runtime-image", Token.EMPTY_DIR.token()).errors(runtimeDirWithoutJliLibErr);
         })) {
             Stream.of(
                     testSpec(),
