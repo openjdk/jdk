@@ -44,8 +44,6 @@
  * @run main/othervm PacketLossRetransmission server 20 finished
  * @run main/othervm PacketLossRetransmission server -1 change_cipher_spec
  * @run main/othervm PacketLossRetransmission server 4 new_session_ticket
- * @run main/othervm -Djdk.tls.client.enableSessionTicketExtension=false PacketLossRetransmission server 4 new_session_ticket
- * @run main/othervm -Djdk.tls.server.enableSessionTicketExtension=false PacketLossRetransmission server 4 new_session_ticket
  */
 
 import java.util.List;
