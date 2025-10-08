@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_PPC_ATOMICACCESS_PPC_HPP
-#define OS_CPU_PPC_ATOMICACCESS_PPC_HPP
+#ifndef CPU_PPC_ATOMICACCESS_PPC_HPP
+#define CPU_PPC_ATOMICACCESS_PPC_HPP
 
 #ifndef PPC64
 #error "Atomic currently only implemented for PPC64"
@@ -662,4 +662,4 @@ public:
     return result;
   }
 };
-#endif // OS_CPU_PPC_ATOMICACCESS_PPC_HPP
+#endif // CPU_PPC_ATOMICACCESS_PPC_HPP

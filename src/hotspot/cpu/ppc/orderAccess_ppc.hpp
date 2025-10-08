@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef OS_CPU_PPC_ORDERACCESS_PPC_HPP
-#define OS_CPU_PPC_ORDERACCESS_PPC_HPP
+#ifndef CPU_PPC_ORDERACCESS_PPC_HPP
+#define CPU_PPC_ORDERACCESS_PPC_HPP
 
 #ifndef PPC64
 #error "OrderAccess currently only implemented for PPC64"
@@ -83,4 +83,4 @@ inline void   OrderAccess::cross_modify_fence_impl()
 #undef inlasm_eieio
 #undef inlasm_isync
 
-#endif // OS_CPU_PPC_ORDERACCESS_PPC_HPP
+#endif // CPU_PPC_ORDERACCESS_PPC_HPP
