@@ -33,17 +33,4 @@ class MarkScope : public StackObj {
   ~MarkScope();
 };
 
-// Sets up and tears down the required state for sequential/parallel root processing.
-class StrongRootsScope : public MarkScope {
-  // Number of threads participating in the roots processing.
-  // 0 means statically-known sequential root processing; used only by Serial GC
-  const uint _n_threads;
-
- public:
-  StrongRootsScope(uint n_threads);
-  ~StrongRootsScope();
-
-  uint n_threads() const { return _n_threads; }
-};
-
 #endif // SHARE_GC_SHARED_STRONGROOTSSCOPE_HPP

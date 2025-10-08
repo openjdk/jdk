@@ -651,33 +651,58 @@ void pp(oop p)               { pp((void*)p); }
 void help() {
   Command c("help");
   tty->print_cr("basic");
-  tty->print_cr("  pp(void* p)   - try to make sense of p");
-  tty->print_cr("  ps()          - print current thread stack");
-  tty->print_cr("  pss()         - print all thread stacks");
-  tty->print_cr("  pm(int pc)    - print Method* given compiled PC");
-  tty->print_cr("  findm(intptr_t pc) - finds Method*");
-  tty->print_cr("  find(intptr_t x)   - finds & prints nmethod/stub/bytecode/oop based on pointer into it");
-  tty->print_cr("  pns(void* sp, void* fp, void* pc)  - print native (i.e. mixed) stack trace. E.g.");
-  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64 or");
-  tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86 or");
-  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64 or");
-  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64 or");
-  tty->print_cr("                   pns($sp, $s8, $pc)  on Linux/mips or");
-  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V");
+  tty->print_cr("  pp(void* p)         - try to make sense of p");
+  tty->print_cr("  ps()                - print current thread stack");
+  tty->print_cr("  pss()               - print all thread stacks");
+  tty->print_cr("  pm(int pc)          - print Method* given compiled PC");
+  tty->print_cr("  findnm(intptr_t pc) - find nmethod*");
+  tty->print_cr("  findm(intptr_t pc)  - find Method*");
+  tty->print_cr("  find(intptr_t x)    - find & print nmethod/stub/bytecode/oop based on pointer into it");
+  tty->print_cr("  findpc(intptr_t x)  - find & print nmethod/stub/bytecode/oop based on pointer into it (verbose)");
+
+#ifndef PRODUCT
+  tty->print_cr("  pns(void* sp, void* fp, void* pc) - print native (i.e. mixed) stack trace, e.g.");
+#ifdef LINUX
+  AMD64_ONLY(  tty->print_cr("                   pns($sp, $rbp, $pc) on Linux/amd64"));
+  IA32_ONLY(   tty->print_cr("                   pns($sp, $ebp, $pc) on Linux/x86"));
+  AARCH64_ONLY(tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/AArch64"));
+  RISCV_ONLY(  tty->print_cr("                   pns($sp, $fp, $pc)  on Linux/RISC-V"));
+  PPC64_ONLY(  tty->print_cr("                   pns($sp, 0, $pc)    on Linux/ppc64"));
+#endif // LINUX
   tty->print_cr("                 - in gdb do 'set overload-resolution off' before calling pns()");
   tty->print_cr("                 - in dbx do 'frame 1' before calling pns()");
+#endif // !PRODUCT
+
+  tty->print_cr("universe.");
+  tty->print_cr("  verify(intptr_t p) - run verify on Universe");
+  tty->print_cr("  threads()          - print all threads");
+  tty->print_cr("  psd()              - print system dictionary");
+
   tty->print_cr("class metadata.");
   tty->print_cr("  findclass(name_pattern, flags)");
   tty->print_cr("  findmethod(class_name_pattern, method_pattern, flags)");
 
-  tty->print_cr("misc.");
-  tty->print_cr("  flush()       - flushes the log file");
-  tty->print_cr("  events()      - dump events from ring buffers");
+  tty->print_cr("method metadata.");
+  tty->print_cr("  blob(CodeBlob* p)      - print CodeBlob");
+  tty->print_cr("  dump_vtable(address p) - dump vtable of the Klass");
+  tty->print_cr("  nm(intptr_t p)         - find & print CodeBlob details");
+  tty->print_cr("  disnm(intptr_t p)      - find & print disassembly of CodeBlob");
+  tty->print_cr("  printnm(intptr_t p)    - print nmethod details");
+  tty->print_cr("  findbcp(method, bcp)   - find & prints bcp");
 
+  tty->print_cr("stack frame details.");
+  tty->print_cr("  pfl() - print frame layout");
+  tty->print_cr("  psf() - print stack frames");
+
+  tty->print_cr("misc.");
+  tty->print_cr("  flush()                                       - flush the log file");
+  tty->print_cr("  events()                                      - dump events from ring buffers");
+  tty->print_cr("  u5decode(intptr_t addr)                       - decode a single u5 value");
+  tty->print_cr("  u5p(intptr_t addr, intptr_t limit, int count) - decode u5 values");
 
   tty->print_cr("compiler debugging");
-  tty->print_cr("  debug()       - to set things up for compiler debugging");
-  tty->print_cr("  ndebug()      - undo debug");
+  tty->print_cr("  debug()  - set things up for compiler debugging");
+  tty->print_cr("  ndebug() - undo debug");
 }
 
 #ifndef PRODUCT
