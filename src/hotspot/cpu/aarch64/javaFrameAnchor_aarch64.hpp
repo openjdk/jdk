@@ -39,8 +39,10 @@ public:
   //  3 - restoring an old state (javaCalls)
 
   void clear(void) {
-    // clearing _last_Java_sp must be first
+    // Must clear sp first and place a store-store barrier (dmb ISHST) immediately after,
+    // to ensure AGCT does not observe a corrupted frame.
     _last_Java_sp = nullptr;
+    OrderAccess::release();
     _last_Java_fp = nullptr;
     _last_Java_pc = nullptr;
   }
@@ -53,13 +55,21 @@ public:
     // To act like previous version (pd_cache_state) don't null _last_Java_sp
     // unless the value is changing
     //
-    if (_last_Java_sp != src->_last_Java_sp) {
+    bool different_sp = _last_Java_sp != src->_last_Java_sp;
+    if (different_sp) {
+      // Must clear sp first and place a store-store barrier (dmb ISHST) immediately after,
+      // to ensure AGCT does not observe a corrupted frame.
       _last_Java_sp = nullptr;
+      OrderAccess::release();
     }
     _last_Java_fp = src->_last_Java_fp;
     _last_Java_pc = src->_last_Java_pc;
-    // Must be last so profiler will always see valid frame if has_last_frame() is true
-    _last_Java_sp = src->_last_Java_sp;
+    if (different_sp) {
+      // Must set sp last and place a store-store barrier (dmb ISHST) immediately before,
+      // to ensure AGCT does not observe a corrupted frame.
+      OrderAccess::release();
+      _last_Java_sp = src->_last_Java_sp;
+    }
   }
 
   bool walkable(void)                            { return _last_Java_sp != nullptr && _last_Java_pc != nullptr; }
