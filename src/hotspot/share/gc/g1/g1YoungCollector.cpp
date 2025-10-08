@@ -357,38 +357,37 @@ class G1PrepareEvacuationTask : public WorkerTask {
       //
       // Non-typeArrays that were allocated before marking are excluded from
       // eager reclaim during marking.  The problem with these regions having
-      // induced card marks in other region's remembered sets is, first, handled
-      // by ignoring them during merging the remembered sets.
-      // Second, wrt. to the remembered sets, there may be cases where regions
-      // were reallocated after eager reclaim. This can cause scanning of outdated
+      // induced card marks in other region's remembered sets is, if they are
+      // now free, handled by ignoring them during merging the remembered sets.
+      // Second, wrt. to the remembered sets, there may be cases where eagerly
+      // reclaimed regions were reallocated.  This may cause scanning of outdated
       // remembered sets, but apart from extra work this can not cause correctness
       // issues.  There is no difference between scanning cards covering an
       // effectively dead humongous object vs. some other objects in reallocated
       // regions.
 
-      // Do not allow non-typeArrays that were allocated before marking for eager
-      // reclaim. All regions that were allocated before marking have a TAMS
-      // != bottom.
+      // All regions that were allocated before marking have a TAMS != bottom.
       bool allocated_after_mark_start = region->bottom() == _g1h->concurrent_mark()->top_at_mark_start(region);
-      // TAMSes above are only reset after completing the entire mark cycle, during
-      // bitmap clear. It is worth to override above when outside of actual
-      // (concurrent) SATB marking.
+      // TAMSes are only reset after completing the entire mark cycle, during
+      // bitmap clearing. It is worth to not wait until then, and allow reclamation
+      // outside of actual (concurrent) SATB marking.
       // This also applies to the concurrent start pause - we only set
-      // mark_in_progress() at the end of GC: no mutator is running that can
+      // mark_in_progress() at the end of that GC: no mutator is running that can
       // sneakily install a new reference to the potentially reclaimed humongous
       // object.
       //
       // E.g. if the mutator is running, we may have objects o1 and o2 in the same
       // region, where o1 has already been scanned and o2 is only reachable by
-      // the candidate object. There is also a humongous object h that is candidate.
+      // the candidate object h, which is humongous.
       //
       // If the mutator read the reference to o2 from h and installed it into o1,
-      // no remembered set entry would be created, so h might be reclaimed. o1
-      // still has the reference to o2, but since its already scanned we do not
-      // detect o2 to be still live.
+      // no remembered set entry would be created for keeping alive o2, as o1 and
+      // o2 are in the same region. Object h might be reclaimed by the next
+      // garbage collection. o1 still has the reference to o2, but since o1 had
+      // already been scanned we do not detect o2 to be still live and reclaim it.
       //
       // During (concurrent start) GC this situation can not happen. No mutator
-      // is modifying the object graph to install this overlooked reference.
+      // is modifying the object graph to install such an overlooked reference.
       //
       // After the pause, having reclaimed h, obviously the mutator can't fetch
       // the reference from h any more.
