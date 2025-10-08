@@ -163,5 +163,43 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
+#else
+TEST_VM(NMT_ASAN, poisoned_memory_access) {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
 
+  MallocHeader* mah = (MallocHeader*)(p - sizeof(MallocHeader));
+  EXPECT_TRUE(mah->is_poisoned());
+  size_t s = mah->size();
+  EXPECT_EQ(s, SIZE);
+  //reading size won't change the poisoned state
+  EXPECT_TRUE(mah->is_poisoned());
+  const char* msg= ".*AddressSanitizer.*";
+
+  // reading/writing '_canary' of MallocHeader and will cause 'use-after-poison' ASAN error
+  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
+  MallocHeader::CanaryType read_canary = 0;
+  EXPECT_EXIT(*canary_ptr = 1, testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(read_canary = *canary_ptr, testing::KilledBySignal(SIGABRT), msg);
+
+  // same for footer canary
+  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mah->footer_address());
+  EXPECT_EXIT(*footer_ptr = 1, testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(read_canary = *footer_ptr, testing::KilledBySignal(SIGABRT), msg);
+
+  // same for '_size'
+  EXPECT_EXIT(*((char*)mah    ) = 0, testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(*((char*)mah + 1) = 0, testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(*((char*)mah + 2) = 0, testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(*((char*)mah + 3) = 0, testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(*((char*)mah + sizeof(size_t) - 1) = 0, testing::KilledBySignal(SIGABRT), msg);
+  char c = 'c';
+  EXPECT_EXIT(c = *((char*)mah    ), testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(c = *((char*)mah + 1), testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(c = *((char*)mah + 2), testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(c = *((char*)mah + 3), testing::KilledBySignal(SIGABRT), msg);
+  EXPECT_EXIT(c = *((char*)mah + sizeof(size_t) - 1), testing::KilledBySignal(SIGABRT), msg);
+  os::free(p);
+  EXPECT_EXIT(*footer_ptr = 1, testing::KilledBySignal(SIGABRT), msg);
+}
 #endif // !INCLUDE_ASAN

@@ -722,6 +722,7 @@ void* os::realloc(void *memblock, size_t size, MemTag mem_tag, const NativeCallS
     const MallocHeader::FreeInfo free_info = header->free_info();
 
     header->mark_block_as_dead();
+    header->set_poisoned(false);
 
     // the real realloc
     void* const new_outer_ptr = permit_forbidden_function::realloc(header, new_outer_size);
