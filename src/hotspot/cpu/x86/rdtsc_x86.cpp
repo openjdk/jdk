@@ -61,7 +61,7 @@ static void do_time_measurements(volatile jlong& time_base,
     fstart = os::rdtsc();
 
     // use sleep to prevent compiler from optimizing
-    JavaThread::current()->sleep(FT_SLEEP_MILLISECS);
+    os::naked_short_sleep(FT_SLEEP_MILLISECS);
 
     end = os::elapsed_counter();
     OrderAccess::fence();
