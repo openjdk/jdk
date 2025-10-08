@@ -32,6 +32,8 @@ import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
@@ -43,8 +45,6 @@ import static jdk.jpackage.internal.model.MacPackage.RUNTIME_BUNDLE_LAYOUT;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_DMG;
 import static jdk.jpackage.internal.model.StandardPackageType.MAC_PKG;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
-import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
-import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -56,7 +56,6 @@ import java.util.concurrent.Callable;
 import java.util.function.Predicate;
 import jdk.jpackage.internal.ApplicationBuilder.MainLauncherStartupInfo;
 import jdk.jpackage.internal.SigningIdentityBuilder.ExpiredCertificateException;
-import jdk.jpackage.internal.SigningIdentityBuilder.StandardCertificateSelector;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.FileAssociation;
@@ -64,7 +63,6 @@ import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.MacFileAssociation;
-import jdk.jpackage.internal.model.MacLauncher;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPkgPackage;
 import jdk.jpackage.internal.model.PackageType;
@@ -79,7 +77,7 @@ final class MacFromParams {
 
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params)
                 .map(MacPackage::guessRuntimeLayout);
-        
+
         if (predefinedRuntimeLayout.isPresent()) {
             validateRuntimeHasJliLib(predefinedRuntimeLayout.orElseThrow());
             if (APP_STORE.findIn(params).orElse(false)) {
