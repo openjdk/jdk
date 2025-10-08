@@ -22,6 +22,7 @@
  */
 
 import java.io.InputStream;
+import java.lang.ref.Reference;
 import java.net.URLConnection;
 import java.net.UnknownServiceException;
 import java.nio.file.Files;
@@ -71,6 +72,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getContentEncoding();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -81,6 +83,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getContentLength();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -91,6 +94,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getContentLengthLong();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -101,6 +105,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getContentType();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -111,6 +116,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getDate();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -121,6 +127,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getExpiration();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -131,6 +138,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getHeaderField(0);
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -142,6 +150,7 @@ class FileURLConnStreamLeakTest {
         final String val = conn.getHeaderField("foo");
         assertNull(val, "unexpected header field value: " + val);
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -152,6 +161,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getHeaderFieldDate("bar", 42);
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -163,6 +173,7 @@ class FileURLConnStreamLeakTest {
         final int val = conn.getHeaderFieldInt("hello", 42);
         assertEquals(42, val, "unexpected header value");
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -174,6 +185,7 @@ class FileURLConnStreamLeakTest {
         final String val = conn.getHeaderFieldKey(42);
         assertNull(val, "unexpected header value: " + val);
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -185,6 +197,7 @@ class FileURLConnStreamLeakTest {
         final long val = conn.getHeaderFieldLong("foo", 42);
         assertEquals(42, val, "unexpected header value");
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -196,6 +209,7 @@ class FileURLConnStreamLeakTest {
         final Map<String, List<String>> headers = conn.getHeaderFields();
         assertNotNull(headers, "null headers");
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -206,6 +220,7 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final var _ = conn.getLastModified();
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -218,6 +233,7 @@ class FileURLConnStreamLeakTest {
             assertNotNull(is, "input stream is null");
         }
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 
     @Test
@@ -229,6 +245,7 @@ class FileURLConnStreamLeakTest {
         // FileURLConnection only supports reading
         assertThrows(UnknownServiceException.class, conn::getOutputStream);
         Files.delete(this.testFile); // must not fail
+        Reference.reachabilityFence(conn);
     }
 }
 
