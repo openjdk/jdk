@@ -117,7 +117,7 @@ private:
   virtual size_t get_humongous_waste() const = 0;
   virtual size_t free_unaffiliated_regions() const = 0;
   virtual size_t get_affiliated_region_count() const = 0;
-  virtual size_t max_capacity() const = 0;
+  virtual size_t max_capacity() const override = 0;
 
   size_t available() const override;
   size_t available_with_reserve() const;
