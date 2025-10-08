@@ -101,6 +101,8 @@
  * socket option on all incoming connections.
  * </li></ul>
  *
+ * Additional system/networking properties may be defined in net.properties
+ *
  * @apiNote The API and SPI in this module are designed and implemented to support a minimal
  * HTTP server and simple HTTP semantics primarily.
  *

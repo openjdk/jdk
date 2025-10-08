@@ -39,6 +39,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import com.sun.net.httpserver.*;
 
+import sun.net.NetProperties;
+
 class ExchangeImpl {
 
     Headers reqHdrs, rspHdrs;
@@ -61,7 +63,7 @@ class ExchangeImpl {
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
     private static final boolean perExchangeAttributes =
-        !System.getProperty("jdk.httpserver.attributes", "")
+        !Optional.ofNullable(NetProperties.get("jdk.httpserver.attributes")).orElse("")
               .equals("context");
     static {
         String pattern = "EEE, dd MMM yyyy HH:mm:ss zzz";
