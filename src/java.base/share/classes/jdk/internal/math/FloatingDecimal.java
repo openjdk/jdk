@@ -27,6 +27,8 @@ package jdk.internal.math;
 
 import jdk.internal.vm.annotation.Stable;
 
+import static jdk.internal.math.FDBigInteger.valueOfPow52;
+
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
@@ -45,10 +47,6 @@ public class FloatingDecimal {
     private static final int    MIN_SMALL_BIN_EXP = -63 / 3;
     private static final int    MAX_DECIMAL_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
     private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
-
-    private static final int    SINGLE_EXP_SHIFT  = FloatConsts.SIGNIFICAND_WIDTH - 1;
-    private static final int    SINGLE_FRACT_HOB  = 1 << SINGLE_EXP_SHIFT;
-    private static final int    SINGLE_MAX_DECIMAL_DIGITS = 7;
 
     /**
      * Converts a {@link String} to a double precision floating point value.
@@ -550,14 +548,14 @@ public class FloatingDecimal {
                 // We really must do FDBigInteger arithmetic.
                 // Fist, construct our FDBigInteger initial values.
                 //
-                FDBigInteger Sval = FDBigInteger.valueOfPow52(S5, S2);
+                FDBigInteger Sval = valueOfPow52(S5, S2);
                 int shiftBias = Sval.getNormalizationBias();
                 Sval = Sval.leftShift(shiftBias); // normalize so that division works better
 
                 FDBigInteger Bval = FDBigInteger.valueOfMulPow52(fractBits, B5, B2 + shiftBias);
-                FDBigInteger Mval = FDBigInteger.valueOfPow52(M5 + 1, M2 + shiftBias + 1);
+                FDBigInteger Mval = valueOfPow52(M5 + 1, M2 + shiftBias + 1);
 
-                FDBigInteger tenSval = FDBigInteger.valueOfPow52(S5 + 1, S2 + shiftBias + 1); //Sval.mult( 10 );
+                FDBigInteger tenSval = valueOfPow52(S5 + 1, S2 + shiftBias + 1); //Sval.mult( 10 );
                 //
                 // Unroll the first iteration. If our decExp estimate
                 // was too high, our first quotient will be zero. In this
@@ -598,7 +596,7 @@ public class FloatingDecimal {
                 } else {
                     lowDigitDifference = 0L; // this here only for flow analysis!
                 }
-                exactDecimalConversion  = Bval.size() == 0;
+                exactDecimalConversion  = Bval.isZero();
             }
             this.decExponent = decExp+1;
             this.firstDigitIndex = 0;
@@ -739,21 +737,16 @@ public class FloatingDecimal {
     }
 
     private static final ThreadLocal<BinaryToASCIIBuffer> threadLocalBinaryToASCIIBuffer =
-            new ThreadLocal<BinaryToASCIIBuffer>() {
-                @Override
-                protected BinaryToASCIIBuffer initialValue() {
-                    return new BinaryToASCIIBuffer();
-                }
-            };
+            ThreadLocal.withInitial(BinaryToASCIIBuffer::new);
 
     private static BinaryToASCIIBuffer getBinaryToASCIIBuffer() {
         return threadLocalBinaryToASCIIBuffer.get();
     }
 
     /**
-     * A converter which can process an ASCII <code>String</code> representation
+     * A converter which can process an ASCII {@link String} representation
      * of a single or double precision floating point value into a
-     * <code>float</code> or a <code>double</code>.
+     * {@code float} or a {@code double}.
      */
     interface ASCIIToBinaryConverter {
 
@@ -764,7 +757,7 @@ public class FloatingDecimal {
     }
 
     /**
-     * A <code>ASCIIToBinaryConverter</code> container for a <code>double</code>.
+     * A {@link ASCIIToBinaryConverter} container.
      */
     static class PreparedASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
         private final double doubleVal;
@@ -807,6 +800,8 @@ public class FloatingDecimal {
      * isNegative denotes the - sign.
      */
     static class ASCIIToBinaryBuffer implements ASCIIToBinaryConverter {
+        private static final int C_HIGH_32 = 1 << FloatConsts.SIGNIFICAND_WIDTH;
+
         private final boolean isNegative;
         private final int e;
         private final int n;
@@ -823,7 +818,7 @@ public class FloatingDecimal {
         private long toLong(int n) {
             long f = 0;
             for (int i = 0; i < n; ++i) {
-                f = 10 * f + (d[i] - '0');
+                f = 10 * f + d[i] - '0';
             }
             return f;
         }
@@ -837,10 +832,10 @@ public class FloatingDecimal {
              *
              * First filter out extremely tiny or extremely large x.
              */
-            if (e <= E_THR_Z[BINARY_64_IX]) {
+            if (e <= DoubleToDecimal.E_THR_Z) {
                 return isNegative ? -0.0 : 0.0;
             }
-            if (e >= E_THR_I[BINARY_64_IX]) {
+            if (e >= DoubleToDecimal.E_THR_I) {
                 return isNegative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
             }
             /*
@@ -930,91 +925,59 @@ public class FloatingDecimal {
                 return isNegative ? -v : v;
             }
 
-            FDBigInteger f = new FDBigInteger(fl, d, nl, n).makeImmutable();
-            long rbits;
-            int cmp = compare(bits, f, ep);
+            /* Split the double represented by bits into c 2^q. */
+            int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
+            int qr = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
+                    - (be != 0 ? 2 : 1);
+            long cr = 4 * (bits & DoubleConsts.SIGNIF_BIT_MASK | (be != 0 ? DoubleToDecimal.C_MIN : 0)) + 2;
+            long s = 4;  // step
+
+            FDBigInteger lhs =
+                    valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0)).makeImmutable();
+            FDBigInteger rhs = new FDBigInteger(fl, d, nl, n)
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0)).makeImmutable();
+
+            int cmp = lhs.mult(cr).cmp(rhs);
             if (cmp < 0) {
-                long bitsp = bits + 1;
-                while ((cmp = compare(bitsp, f, ep)) < 0) {
-                    bits = bitsp;
-                    bitsp += 1;
+                while (cmp < 0) {
+                    bits += 1;
+                    if (cr != (1L << DoubleToDecimal.P + 2) - 2) {
+                        cr += s;
+                    } else {
+                        cr += 6;
+                        s = 8;
+                    }
+                    cmp = lhs.mult(cr).cmp(rhs);
                 }
-                /* bits < x ≤ bitsp */
-                rbits = cmp != 0 ? closest(bits, bitsp, f, ep) : bitsp;
+                // vr ≥ x
+                v = Double.longBitsToDouble(bits + (cmp != 0 ? 0 : bits & 0b1));
             } else if (cmp > 0) {
-                long bitsp = bits - 1;
-                while ((cmp = compare(bitsp, f, ep)) > 0) {
-                    bits = bitsp;
-                    bitsp -= 1;
+                while (cmp > 0) {
+                    bits -= 1;
+                    if (qr == DoubleToDecimal.Q_MIN - 2 ||
+                            cr != (1L << DoubleToDecimal.P + 1) + 2) {
+                        cr -= s;
+                    } else {
+                        cr -= 3;
+                        s = 2;
+                    }
+                    cmp = lhs.mult(cr).cmp(rhs);
                 }
-                /* bits < x ≤ bitsp */
-                rbits = cmp != 0 ? closest(bits, bitsp, f, ep) : bitsp;
+                // vr ≤ x
+                v = Double.longBitsToDouble(bits + (cmp != 0 ? 1 : bits & 0b1));
             } else {
-                rbits = bits;
+                v = Double.longBitsToDouble(bits + (bits & 0b1));
             }
-            v = Double.longBitsToDouble(rbits);
             return isNegative ? -v : v;
-        }
-
-        private long closest(long bits, long bitsp, FDBigInteger f, int ep) {
-            /* Split the double represented by bits as c 2^q. */
-            int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
-            int q = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
-                    + (be != 0 ? 0 : 1);
-            long c = bits & DoubleConsts.SIGNIF_BIT_MASK |
-                    (be != 0 ? 1L << DoubleConsts.SIGNIFICAND_WIDTH - 1 : 0);
-            /* Split the double represented by bits as c 2^q. */
-            be = (int) ((bitsp & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
-            int qp = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
-                    + (be != 0 ? 0 : 1);
-            long cp = bitsp & DoubleConsts.SIGNIF_BIT_MASK |
-                    (be != 0 ? 1L << DoubleConsts.SIGNIFICAND_WIDTH - 1 : 0);
-
-            int qs;
-            long cs;
-            if (q >= qp) {
-                qs = qp;
-                cs = (c << q - qp) + cp;
-            } else {
-                qs = q;
-                cs = (cp << qp - q) + c;
-            }
-            int cmp = compare(cs, qs, f.leftShift(1), ep);
-            return cmp < 0
-                    ? bitsp
-                    : cmp > 0
-                    ? bits
-                    : (bits & 0b1) != 0 ? bitsp : bits;
-        }
-
-        private int compare(long bits, FDBigInteger f, int ep) {
-            /* Split the double represented by bits as c 2^q. */
-            int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
-            int q = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
-                    + (be != 0 ? 0 : 1);
-            long c = bits & DoubleConsts.SIGNIF_BIT_MASK |
-                    (be != 0 ? 1L << DoubleConsts.SIGNIFICAND_WIDTH - 1 : 0);
-            return compare(c, q, f, ep);
-        }
-
-        private int compare(long c, int q, FDBigInteger f, int ep) {
-            FDBigInteger cc = new FDBigInteger(c).makeImmutable();
-            return ep >= 0
-                    ? ep >= q
-                        ? cc.cmp(f.multByPow52(ep, ep - q))
-                        : cc.leftShift(q - ep).cmp(f.multByPow52(ep, 0))
-                    : ep >= q
-                        ? cc.multByPow52(-ep, 0).cmp(f.leftShift(ep - q))
-                        : cc.multByPow52(-ep, q - ep).cmp(f);
         }
 
         private double highPrecisionDoubleValue(long fl) {
             /* We force fl, fh in [10^(N-1), 10^N] to have more high order bits. */
             long fh;
-            if (n <= MathUtils.N) {
+            if (n <= MathUtils.N) {  // fl = f
                 fl *= MathUtils.pow10(MathUtils.N - n);
                 fh = fl;
-            } else {
+            } else {  // fl is just a N digits long prefix of f
                 fh = fl + 1;
             }
             int ep = e - MathUtils.N;
@@ -1161,303 +1124,151 @@ public class FloatingDecimal {
 
         @Override
         public float floatValue() {
-            /*
-             * As described above, the magnitude of the mathematical value is
-             *      x = 0.d_1...d_n 10^e = d_1...d_n 10^(e-n) = f 10^ep
-             * where f = d_1...d_n and ep = e - n are integers.
-             */
+            /* For details not covered here, see doubleValue() and friends. */
             if (e <= E_THR_Z[BINARY_32_IX]) {
                 return isNegative ? -0.0f : 0.0f;
             }
             if (e >= E_THR_I[BINARY_32_IX]) {
                 return isNegative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
             }
-            /*
-             * Note that for doubles, readJavaFormatString() ensures
-             * d_1 > 0, d_n > 0, 0 < n ≤ 114, so exp does not overflow.
-             */
             int n = this.n;
-            int kDigits = Math.min(n, SINGLE_MAX_DECIMAL_DIGITS + 1);
-            //
-            // convert the lead kDigits to an integer.
-            //
-            int iValue = (int) toLong(kDigits);
-            float fValue = (float) iValue;
-            int exp = e - kDigits;
-            //
-            // iValue now contains an integer with the value of
-            // the first kDigits digits of the number.
-            // fValue contains the (float) of the same.
-            //
-
-            if (n <= SINGLE_MAX_DECIMAL_DIGITS) {
-                //
-                // possibly an easy case.
-                // We know that the digits can be represented
-                // exactly. And if the exponent isn't too outrageous,
-                // the whole thing can be done with one operation,
-                // thus one rounding error.
-                // Note that all our constructors trim all leading and
-                // trailing zeros, so simple values (including zero)
-                // will always end up here.
-                //
-                if (exp == 0 || fValue == 0.0f) {
-                    return (isNegative) ? -fValue : fValue; // small floating integer
-                } else if (exp >= 0) {
-                    if (exp <= SINGLE_MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer with one operation,
-                        // thus one roundoff.
-                        //
-                        fValue *= SINGLE_SMALL_10_POW[exp];
-                        return (isNegative) ? -fValue : fValue;
-                    }
-                    int slop = SINGLE_MAX_DECIMAL_DIGITS - kDigits;
-                    if (exp <= SINGLE_MAX_SMALL_TEN + slop) {
-                        //
-                        // We can multiply fValue by 10^(slop)
-                        // and it is still "small" and exact.
-                        // Then we can multiply by 10^(exp-slop)
-                        // with one rounding.
-                        //
-                        fValue *= SINGLE_SMALL_10_POW[slop];
-                        fValue *= SINGLE_SMALL_10_POW[exp - slop];
-                        return (isNegative) ? -fValue : fValue;
-                    }
-                    //
-                    // Else we have a hard case with a positive exp.
-                    //
-                } else {
-                    if (exp >= -SINGLE_MAX_SMALL_TEN) {
-                        //
-                        // Can get the answer in one division.
-                        //
-                        fValue /= SINGLE_SMALL_10_POW[-exp];
-                        return (isNegative) ? -fValue : fValue;
-                    }
-                    //
-                    // Else we have a hard case with a negative exp.
-                    //
+            int ep = e - n;
+            int nl = Math.min(n, MathUtils.N);
+            long fl = toLong(nl);
+            if (n <= FLOG_10_MAX_LONG && -SINGLE_MAX_SMALL_TEN <= ep) {
+                if (0 < ep && n + ep <= FLOG_10_MAX_LONG) {
+                    fl *= MathUtils.pow10(ep);
+                    ep = 0;
                 }
-            }
-            //
-            // Harder cases:
-            // The sum of digits plus exponent is greater than
-            // what we think we can do with one error.
-            //
-            // Start by approximating the right answer by,
-            // naively, scaling by powers of 10.
-            // Scaling uses doubles to avoid overflow/underflow.
-            //
-            double dValue = fValue;
-            if (exp > 0) {
-                if ((exp & 15) != 0) {
-                    dValue *= SMALL_10_POW[exp & 15];
+                float v = fl;
+                if (ep == 0) {
+                    return isNegative ? -v : v;
                 }
-                if ((exp >>= 4) != 0) {
-                    int j;
-                    for (j = 0; exp > 0; j++, exp >>= 1) {
-                        if ((exp & 1) != 0) {
-                            dValue *= BIG_10_POW[j];
-                        }
-                    }
+                boolean isExact = (long) v == fl;
+                if (isExact && ep <= SINGLE_MAX_SMALL_TEN) {
+                    v = ep >= 0 ? v * SINGLE_SMALL_10_POW[ep] : v / SINGLE_SMALL_10_POW[-ep];
+                    return isNegative ? -v : v;
                 }
-            } else if (exp < 0) {
-                exp = -exp;
-                if ((exp & 15) != 0) {
-                    dValue /= SMALL_10_POW[exp & 15];
-                }
-                if ((exp >>= 4) != 0) {
-                    int j;
-                    for (j = 0; exp > 0; j++, exp >>= 1) {
-                        if ((exp & 1) != 0) {
-                            dValue *= TINY_10_POW[j];
-                        }
+                /* As in doubleValue(), but here 10^8 < 2^P. */
+                if (isExact) {
+                    int ef = 8 - n;
+                    if (ef >= 0 && ep - ef <= SINGLE_MAX_SMALL_TEN) {
+                        v = v * SINGLE_SMALL_10_POW[ef] * SINGLE_SMALL_10_POW[ep - ef];
+                        return isNegative ? -v : v;
                     }
                 }
             }
-            fValue = Math.clamp((float) dValue, Float.MIN_VALUE, Float.MAX_VALUE);
 
-            //
-            // fValue is now approximately the result.
-            // The hard part is adjusting it, by comparison
-            // with FDBigInteger arithmetic.
-            // Formulate the EXACT big-number result as
-            // bigD0 * 10^exp
-            //
-            FDBigInteger bigD0 = new FDBigInteger(iValue, d, kDigits, n);
-            exp = e - n;
-
-            int ieeeBits = Float.floatToRawIntBits(fValue); // IEEE-754 bits of float candidate
-            final int B5 = Math.max(0, -exp); // powers of 5 in bigB, value is not modified inside correctionLoop
-            final int D5 = Math.max(0, exp); // powers of 5 in bigD, value is not modified inside correctionLoop
-            bigD0 = bigD0.multByPow52(D5, 0);
-            bigD0.makeImmutable();   // prevent bigD0 modification inside correctionLoop
-            FDBigInteger bigD = null;
-            int prevD2 = 0;
-
-            while (true) {
-                // here ieeeBits can't be NaN, Infinity or zero
-                int binexp = ieeeBits >>> SINGLE_EXP_SHIFT;
-                int bigBbits = ieeeBits & FloatConsts.SIGNIF_BIT_MASK;
-                if (binexp > 0) {
-                    bigBbits |= SINGLE_FRACT_HOB;
-                } else { // Normalize denormalized numbers.
-                    assert bigBbits != 0 : bigBbits; // floatToBigInt(0.0)
-                    int leadingZeros = Integer.numberOfLeadingZeros(bigBbits);
-                    int shift = leadingZeros - (31 - SINGLE_EXP_SHIFT);
-                    bigBbits <<= shift;
-                    binexp = 1 - shift;
-                }
-                binexp -= FloatConsts.EXP_BIAS;
-                int lowOrderZeros = Integer.numberOfTrailingZeros(bigBbits);
-                bigBbits >>>= lowOrderZeros;
-                final int bigIntExp = binexp - SINGLE_EXP_SHIFT + lowOrderZeros;
-                final int bigIntNBits = SINGLE_EXP_SHIFT + 1 - lowOrderZeros;
-
-                //
-                // Scale bigD, bigB appropriately for
-                // big-integer operations.
-                // Naively, we multiply by powers of ten
-                // and powers of two. What we actually do
-                // is keep track of the powers of 5 and
-                // powers of 2 we would use, then factor out
-                // common divisors before doing the work.
-                //
-                int B2 = B5; // powers of 2 in bigB
-                int D2 = D5; // powers of 2 in bigD
-                int Ulp2;   // powers of 2 in halfUlp.
-                if (bigIntExp >= 0) {
-                    B2 += bigIntExp;
-                } else {
-                    D2 -= bigIntExp;
-                }
-                Ulp2 = B2;
-                // shift bigB and bigD left by a number s. t.
-                // halfUlp is still an integer.
-                int hulpbias;
-                if (binexp <= -FloatConsts.EXP_BIAS) {
-                    // This is going to be a denormalized number
-                    // (if not actually zero).
-                    // half an ULP is at 2^-(FloatConsts.EXP_BIAS+SINGLE_EXP_SHIFT+1)
-                    hulpbias = binexp + lowOrderZeros + FloatConsts.EXP_BIAS;
-                } else {
-                    hulpbias = 1 + lowOrderZeros;
-                }
-                B2 += hulpbias;
-                D2 += hulpbias;
-                // if there are common factors of 2, we might just as well
-                // factor them out, as they add nothing useful.
-                int common2 = Math.min(B2, Math.min(D2, Ulp2));
-                B2 -= common2;
-                D2 -= common2;
-                Ulp2 -= common2;
-                // do multiplications by powers of 5 and 2
-                FDBigInteger bigB = FDBigInteger.valueOfMulPow52(bigBbits, B5, B2);
-                if (bigD == null || prevD2 != D2) {
-                    bigD = bigD0.leftShift(D2);
-                    prevD2 = D2;
-                }
-                //
-                // to recap:
-                // bigB is the scaled-big-int version of our floating-point
-                // candidate.
-                // bigD is the scaled-big-int version of the exact value
-                // as we understand it.
-                // halfUlp is 1/2 an ulp of bigB, except for special cases
-                // of exact powers of 2
-                //
-                // the plan is to compare bigB with bigD, and if the difference
-                // is less than halfUlp, then we're satisfied. Otherwise,
-                // use the ratio of difference to halfUlp to calculate a fudge
-                // factor to add to the floating value, then go 'round again.
-                //
-                FDBigInteger diff;
-                int cmpResult;
-                boolean overvalue;
-                if ((cmpResult = bigB.cmp(bigD)) > 0) {
-                    overvalue = true; // our candidate is too big.
-                    diff = bigB.leftInplaceSub(bigD); // bigB is not user further - reuse
-                    if ((bigIntNBits == 1) && (bigIntExp > -FloatConsts.EXP_BIAS + 1)) {
-                        // candidate is a normalized exact power of 2 and
-                        // is too big (larger than Float.MIN_NORMAL). We will be subtracting.
-                        // For our purposes, ulp is the ulp of the
-                        // next smaller range.
-                        Ulp2 -= 1;
-                        if (Ulp2 < 0) {
-                            // rats. Cannot de-scale ulp this far.
-                            // must scale diff in other direction.
-                            Ulp2 = 0;
-                            diff = diff.leftShift(1);
-                        }
-                    }
-                } else if (cmpResult < 0) {
-                    overvalue = false; // our candidate is too small.
-                    diff = bigD.rightInplaceSub(bigB); // bigB is not user further - reuse
-                } else {
-                    // the candidate is exactly right!
-                    // this happens with surprising frequency
-                    break;
-                }
-                cmpResult = diff.cmpPow52(B5, Ulp2);
-                if ((cmpResult) < 0) {
-                    // difference is small.
-                    // this is close enough
-                    break;
-                } else if (cmpResult == 0) {
-                    // difference is exactly half an ULP
-                    // round to some other value maybe, then finish
-                    if ((ieeeBits & 1) != 0) { // half ties to even
-                        ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    }
-                    break;
-                } else {
-                    // difference is non-trivial.
-                    // could scale addend by ratio of difference to
-                    // halfUlp here, if we bothered to compute that difference.
-                    // Most of the time ( I hope ) it is about 1 anyway.
-                    ieeeBits += overvalue ? -1 : 1; // nextDown or nextUp
-                    if (ieeeBits == 0 || ieeeBits == FloatConsts.EXP_BIT_MASK) { // 0.0 or Float.POSITIVE_INFINITY
-                        break; // oops. Fell off end of range.
-                    }
-                }
-
+            float v = highPrecisionFloatValue(fl);
+            int bits = Float.floatToRawIntBits(v) ^ FloatConsts.SIGN_BIT_MASK;
+            if (bits < 0) {
+                return isNegative ? -v : v;
             }
-            if (isNegative) {
-                ieeeBits |= FloatConsts.SIGN_BIT_MASK;
+
+
+            int be = (bits & FloatConsts.EXP_BIT_MASK) >>> FloatConsts.SIGNIFICAND_WIDTH - 1;
+            int qr = be - (FloatConsts.EXP_BIAS + FloatConsts.SIGNIFICAND_WIDTH - 1)
+                    - (be != 0 ? 2 : 1);
+            int cr = 4 * (bits & FloatConsts.SIGNIF_BIT_MASK | (be != 0 ? FloatToDecimal.C_MIN : 0)) + 2;
+            int s = 4;  // step
+
+            FDBigInteger lhs =
+                    valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0)).makeImmutable();
+            FDBigInteger rhs = new FDBigInteger(fl, d, nl, n)
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0)).makeImmutable();
+
+            int cmp = lhs.mult(cr).cmp(rhs);
+            if (cmp < 0) {
+                while (cmp < 0) {
+                    bits += 1;
+                    if (cr != (1 << FloatToDecimal.P + 2) - 2) {
+                        cr += s;
+                    } else {
+                        cr += 6;
+                        s = 8;
+                    }
+                    cmp = lhs.mult(cr).cmp(rhs);
+                }
+                // vr ≥ x
+                v = Float.intBitsToFloat(bits + (cmp != 0 ? 0 : bits & 0b1));
+            } else if (cmp > 0) {
+                while (cmp > 0) {
+                    bits -= 1;
+                    if (qr == FloatToDecimal.Q_MIN - 2 ||
+                            cr != (1L << FloatToDecimal.P + 1) + 2) {
+                        cr -= s;
+                    } else {
+                        cr -= 3;
+                        s = 2;
+                    }
+                    cmp = lhs.mult(cr).cmp(rhs);
+                }
+                // vr ≤ x
+                v = Float.intBitsToFloat(bits + (cmp != 0 ? 1 : bits & 0b1));
+            } else {
+                v = Float.intBitsToFloat(bits + (bits & 0b1));
             }
-            return Float.intBitsToFloat(ieeeBits);
+            return isNegative ? -v : v;
         }
 
+        private float highPrecisionFloatValue(long fl) {
+            long fh;
+            if (n <= MathUtils.N) {
+                fl *= MathUtils.pow10(MathUtils.N - n);
+                fh = fl;
+            } else {
+                fh = fl + 1;
+            }
+            int ep = e - MathUtils.N;
+            int rp = MathUtils.flog2pow10(ep) + 2;  // r + 127
+            long g1 = MathUtils.g1(ep);
+            long nl1 = Math.unsignedMultiplyHigh(fl, g1);
+            long nl0 = fl * g1;
+            long nh1 = Math.unsignedMultiplyHigh(fh, g1 + 1);
+            long nh0 = fh * (g1 + 1);
 
-        /**
-         * All the positive powers of 10 that can be
-         * represented exactly in double/float.
-         */
+            int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
+            if (bl + rp > Q_NORM[BINARY_32_IX]) {
+                float ul = nl1 | (nl0 != 0 ? 1 : 0);
+                float uh = nh1 | (nh0 != 0 ? 1 : 0);
+                float v = Math.scalb(ul, rp);
+                return ul == uh ? v : -v;
+            }
+            int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
+            if (bh + rp <= Q_NORM[BINARY_32_IX]) {
+                int sh = Q_MIN[BINARY_32_IX] - rp;
+                long sbMask = -1L >>> 1 - sh;
+
+                long nl1p = nl1 >>> sh;
+                long rb = nl1 >>> sh - 1;
+                long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
+                long corr = rb & (sb | nl1p) & 0b1;
+                float ul = nl1p + corr;
+
+                long nh1p = nh1 >>> sh;
+                rb = nh1 >>> sh - 1;
+                sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
+                corr = rb & (sb | nh1p) & 0b1;
+                float uh = nh1p + corr;
+                float v = Math.scalb(ul, rp + sh);
+                return ul == uh ? v : -v;
+            }
+            return -Float.MIN_NORMAL;
+        }
+
+        /* All the powers of 10 that can be represented exactly in double. */
         @Stable
         private static final double[] SMALL_10_POW = {
-                1e0, 1e1, 1e2, 1e3, 1e4,
-                1e5, 1e6, 1e7, 1e8, 1e9,
-                1e10, 1e11, 1e12, 1e13, 1e14,
-                1e15, 1e16, 1e17, 1e18, 1e19,
+                1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6, 1e7, 1e8, 1e9,
+                1e10, 1e11, 1e12, 1e13, 1e14, 1e15, 1e16, 1e17, 1e18, 1e19,
                 1e20, 1e21, 1e22,
         };
 
+        /* All the powers of 10 that can be represented exactly in float. */
         @Stable
         private static final float[] SINGLE_SMALL_10_POW = {
-                1e0f, 1e1f, 1e2f, 1e3f, 1e4f,
-                1e5f, 1e6f, 1e7f, 1e8f, 1e9f,
+                1e0f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f, 1e7f, 1e8f, 1e9f,
                 1e10f,
-        };
-
-        @Stable
-        private static final double[] BIG_10_POW = {
-                1e16, 1e32, 1e64, 1e128, 1e256,
-        };
-
-        @Stable
-        private static final double[] TINY_10_POW = {
-                1e-16, 1e-32, 1e-64, 1e-128, 1e-256,
         };
 
         private static final int MAX_SMALL_TEN = SMALL_10_POW.length - 1;

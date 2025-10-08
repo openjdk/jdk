@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import jdk.internal.math.FDBigInteger;
 
-/**
+/*
  * @test
  * @bug 7032154 8342693
  * @summary unit tests of FDBigInteger
@@ -38,28 +38,14 @@ public class TestFDBigInteger {
     private static final int MAX_P2 = 65;
     private static final long LONG_SIGN_MASK = (1L << 63);
     private static final BigInteger FIVE = BigInteger.valueOf(5);
-    private static final FDBigInteger MUTABLE_ZERO = FDBigInteger.valueOfPow52(0, 0).leftInplaceSub(FDBigInteger.valueOfPow52(0, 0));
-    private static final FDBigInteger IMMUTABLE_ZERO = FDBigInteger.valueOfPow52(0, 0).leftInplaceSub(FDBigInteger.valueOfPow52(0, 0));
-    private static final FDBigInteger IMMUTABLE_MILLION = genMillion1();
-    private static final FDBigInteger IMMUTABLE_BILLION = genBillion1();
-    private static final FDBigInteger IMMUTABLE_TEN18 = genTen18();
-
-    static {
-        IMMUTABLE_ZERO.makeImmutable();
-        IMMUTABLE_MILLION.makeImmutable();
-        IMMUTABLE_BILLION.makeImmutable();
-        IMMUTABLE_TEN18.makeImmutable();
-    }
+    private static final FDBigInteger MUTABLE_ZERO = new FDBigInteger(0);
+    private static final FDBigInteger IMMUTABLE_ZERO = new FDBigInteger(0).makeImmutable();
+    private static final FDBigInteger IMMUTABLE_MILLION = genMillion1().makeImmutable();
+    private static final FDBigInteger IMMUTABLE_TEN18 = genTen18().makeImmutable();
 
     private static FDBigInteger mutable(String hex, int offset) {
         byte[] chars = new BigInteger(hex, 16).toString().getBytes(StandardCharsets.US_ASCII);
         return new FDBigInteger(0, chars, 0, chars.length).multByPow52(0, offset * 32);
-    }
-
-    private static FDBigInteger immutable(String hex, int offset) {
-        FDBigInteger fd = mutable(hex, offset);
-        fd.makeImmutable();
-        return fd;
     }
 
     private static BigInteger biPow52(int p5, int p2) {
@@ -74,11 +60,6 @@ public class TestFDBigInteger {
     // data.length == 2, nWords == 1, offset == 0
     private static FDBigInteger genMillion2() {
         return FDBigInteger.valueOfMulPow52(1000000L, 0, 0);
-    }
-
-    // data.length == 1, nWords == 1, offset == 0
-    private static FDBigInteger genBillion1() {
-        return FDBigInteger.valueOfPow52(9, 0).leftShift(9);
     }
 
     // data.length == 2, nWords == 2, offset == 0
@@ -247,9 +228,9 @@ public class TestFDBigInteger {
         int cmp = t.cmp(o);
         int bcmp = bt.compareTo(bo);
         if (bcmp != cmp) {
-            throw new Exception("cmpPow52 returns " + cmp + " expected " + bcmp);
+            throw new Exception("cmp returns " + cmp + " expected " + bcmp);
         }
-        check(bt, t, "cmpPow52 corrupts this");
+        check(bt, t, "cmp corrupts this");
         check(bo, o, "cmpPow5 corrupts other");
     }
 
@@ -345,79 +326,6 @@ public class TestFDBigInteger {
         }
     }
 
-    private static void testLeftInplaceSub(FDBigInteger left, FDBigInteger right, boolean isImmutable) throws Exception {
-        BigInteger biLeft = left.toBigInteger();
-        BigInteger biRight = right.toBigInteger();
-        FDBigInteger diff = left.leftInplaceSub(right);
-        if (!isImmutable && diff != left) {
-            throw new Exception("leftInplaceSub of doesn't reuse its argument");
-        }
-        if (isImmutable) {
-            check(biLeft, left, "leftInplaceSub corrupts its left immutable argument");
-        }
-        check(biRight, right, "leftInplaceSub corrupts its right argument");
-        check(biLeft.subtract(biRight), diff, "leftInplaceSub returns wrong result");
-    }
-
-    private static void testLeftInplaceSub() throws Exception {
-        for (int p5 = 0; p5 <= MAX_P5; p5++) {
-            for (int p2 = 0; p2 <= MAX_P2; p2++) {
-//                for (int p5r = 0; p5r <= p5; p5r += 10) {
-//                    for (int p2r = 0; p2r <= p2; p2r += 10) {
-                for (int p5r = 0; p5r <= p5; p5r++) {
-                    for (int p2r = 0; p2r <= p2; p2r++) {
-                        // This strange way of creating a value ensures that it is mutable.
-                        FDBigInteger left = FDBigInteger.valueOfPow52(0, 0).multByPow52(p5, p2);
-                        FDBigInteger right = FDBigInteger.valueOfPow52(0, 0).multByPow52(p5r, p2r);
-                        testLeftInplaceSub(left, right, false);
-                        left = FDBigInteger.valueOfPow52(0, 0).multByPow52(p5, p2);
-                        left.makeImmutable();
-                        testLeftInplaceSub(left, right, true);
-                    }
-                }
-            }
-        }
-    }
-
-    private static void testRightInplaceSub(FDBigInteger left, FDBigInteger right, boolean isImmutable) throws Exception {
-        BigInteger biLeft = left.toBigInteger();
-        BigInteger biRight = right.toBigInteger();
-        FDBigInteger diff = left.rightInplaceSub(right);
-        if (!isImmutable && diff != right) {
-            throw new Exception("rightInplaceSub of doesn't reuse its argument");
-        }
-        check(biLeft, left, "leftInplaceSub corrupts its left argument");
-        if (isImmutable) {
-            check(biRight, right, "leftInplaceSub corrupts its right immutable argument");
-        }
-        try {
-            check(biLeft.subtract(biRight), diff, "rightInplaceSub returns wrong result");
-        } catch (Exception e) {
-            System.out.println(biLeft+" - "+biRight+" = "+biLeft.subtract(biRight));
-            throw e;
-        }
-    }
-
-    private static void testRightInplaceSub() throws Exception {
-        for (int p5 = 0; p5 <= MAX_P5; p5++) {
-            for (int p2 = 0; p2 <= MAX_P2; p2++) {
-//                for (int p5r = 0; p5r <= p5; p5r += 10) {
-//                    for (int p2r = 0; p2r <= p2; p2r += 10) {
-                for (int p5r = 0; p5r <= p5; p5r++) {
-                    for (int p2r = 0; p2r <= p2; p2r++) {
-                        // This strange way of creating a value ensures that it is mutable.
-                        FDBigInteger left = FDBigInteger.valueOfPow52(0, 0).multByPow52(p5, p2);
-                        FDBigInteger right = FDBigInteger.valueOfPow52(0, 0).multByPow52(p5r, p2r);
-                        testRightInplaceSub(left, right, false);
-                        right = FDBigInteger.valueOfPow52(0, 0).multByPow52(p5r, p2r);
-                        right.makeImmutable();
-                        testRightInplaceSub(left, right, true);
-                    }
-                }
-            }
-        }
-    }
-
     public static void main(String[] args) throws Exception {
         testValueOfPow52();
         testValueOfMulPow52();
@@ -427,9 +335,7 @@ public class TestFDBigInteger {
         testCmpPow52();
         testAddAndCmp();
         // Uncomment the following for more comprehensize but slow testing.
-        // testLeftInplaceSub();
         // testMultBy10();
         // testMultByPow52();
-        // testRightInplaceSub();
     }
 }
