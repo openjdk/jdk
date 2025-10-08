@@ -155,7 +155,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
             data.put("SERVICES_PACKAGE_ID", servicesPkg.identifier());
 
             MacPkgInstallerScripts.createServicesScripts()
-                    .setResourceDir(env.resourceDir().orElse(null))
+                    .setResourceDir(env)
                     .setSubstitutionData(data)
                     .saveInFolder(servicesScriptsDir);
 
@@ -280,22 +280,16 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         args.add(normalizedAbsolutePathString(componentPlistFile()));
 
         scriptsRoot().ifPresent(scriptsRoot -> {
-            // Script root might be empty
-            try (DirectoryStream<Path> ds = Files.newDirectoryStream(scriptsRoot)) {
-                if (ds.iterator().hasNext()) {
-                    args.add("--scripts");
-                    args.add(normalizedAbsolutePathString(scriptsRoot));
-                }
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
+            args.add("--scripts");
+            args.add(normalizedAbsolutePathString(scriptsRoot));
         });
 
         return InternalPackageType.MAIN.createInternalPackage(env.appImageDir(), pkg, env, args);
     }
 
     Optional<Path> scriptsRoot() {
-        if (pkg.app().appStore() || pkg.isRuntimeInstaller()) {
+        if (pkg.app().appStore() || pkg.isRuntimeInstaller() ||
+                MacPkgInstallerScripts.createAppScripts().setResourceDir(env).isEmpty()) {
             return Optional.empty();
         } else {
             return Optional.of(env.configDir().resolve("scripts"));
@@ -358,7 +352,7 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
         Files.createDirectories(scriptsRoot);
 
         MacPkgInstallerScripts.createAppScripts()
-                .setResourceDir(env.resourceDir().orElse(null))
+                .setResourceDir(env)
                 .saveInFolder(scriptsRoot);
     }
 

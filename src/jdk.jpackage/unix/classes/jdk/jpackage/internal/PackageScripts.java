@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Map;
@@ -63,11 +64,27 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         return this;
     }
 
-    PackageScripts<T> setResourceDir(Path v) throws IOException {
+    PackageScripts<T> setResourceDir(Path v) {
         for (var script : scripts.values()) {
             script.getResource().setResourceDir(v);
         }
         return this;
+    }
+
+    PackageScripts<T> setResourceDir(BuildEnv env) {
+        env.resourceDir().ifPresent(this::setResourceDir);
+        return this;
+    }
+
+    boolean isEmpty() {
+        return scripts.values().stream().map(
+                ShellScriptResource::getResource).allMatch(overridableResource -> {
+            try {
+                return overridableResource.saveToStream(null) == null;
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
     }
 
     void saveInFolder(Path folder) throws IOException {
@@ -88,26 +105,23 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         }
 
         OverridableResource createResource() {
-            final OverridableResource resource;
-            if (defaultName.isEmpty()) {
-                resource = new OverridableResource().setCategory(category);
-            } else {
-                resource = new OverridableResource(defaultName.get(),
-                        ResourceLocator.class).setCategory(category);
-            }
+            final var resource = defaultName.map(v -> {
+                    return new OverridableResource(v, ResourceLocator.class);
+                }).orElseGet(OverridableResource::new).setCategory(category);
+
             return getDefaultPublicName().map(resource::setPublicName).orElse(
                     resource);
         }
 
         private Optional<String> getDefaultPublicName() {
-            if (defaultName.isPresent()) {
+            return defaultName.flatMap(v -> {
                 final String wellKnownSuffix = ".template";
-                if (defaultName.get().endsWith(wellKnownSuffix)) {
-                    return Optional.of(defaultName.get().substring(0,
-                            defaultName.get().length() - wellKnownSuffix.length()));
+                if (v.endsWith(wellKnownSuffix)) {
+                    return Optional.of(v.substring(0,
+                            v.length() - wellKnownSuffix.length()));
                 }
-            }
-            return Optional.ofNullable(null);
+                return Optional.empty();
+            });
         }
 
         private final Optional<String> defaultName;
