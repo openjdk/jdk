@@ -321,7 +321,6 @@ final class Renderer {
                 // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateToken.
                 currentCodeFrame = CodeFrame.make(hookCodeFrame, true);
 
-                // TODO: check if this is right here
                 renderTemplateToken(templateToken);
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());

@@ -88,6 +88,7 @@ public record Hook(String name) {
     public Token insert(TemplateToken templateToken) {
         return new HookInsertToken(this, templateToken);
     }
+    // TODO: consider allowing use of scope directly!
 
     /**
      * Checks if the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope.
