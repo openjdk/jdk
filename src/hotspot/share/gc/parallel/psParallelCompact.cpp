@@ -1171,11 +1171,13 @@ public:
     _klass_cleaning_task() {}
 
   void work(uint worker_id) {
-    if (worker_id == 0) {
+#if INCLUDE_JVMCI
+    if (EnableJVMCI && worker_id == 0) {
       // Serial work; only first worker.
       // Clean JVMCI metadata handles.
-      JVMCI_ONLY(JVMCI::do_unloading(_unloading_occurred));
+      JVMCI::do_unloading(_unloading_occurred);
     }
+#endif
 
     // Do first pass of code cache cleaning.
     _code_cache_task.work(worker_id);
