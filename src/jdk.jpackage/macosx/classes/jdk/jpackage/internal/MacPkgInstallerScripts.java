@@ -45,18 +45,7 @@ final class MacPkgInstallerScripts {
 
         @Override
         public OverridableResource get() {
-            return cfg.createResource().setPublicName(getPublicName());
-        }
-
-        private String getPublicName() {
-            if (this == preinstall) {
-                return "preinstall";
-            } else if (this == postinstall) {
-                return "postinstall";
-            }
-
-            // Should never be reached
-            return null;
+            return cfg.createResource().setPublicName(name());
         }
 
         private final ResourceConfig cfg;
