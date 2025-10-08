@@ -1507,7 +1507,7 @@ size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
 // Use static initialization to get the default before parsing
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
-static size_t limit_by_size_t_max(uint64_t value) {
+static size_t clamp_by_size_t_max(uint64_t value) {
   return (size_t)MIN2(value, (uint64_t)std::numeric_limits<size_t>::max());
 }
 
@@ -1545,8 +1545,8 @@ void Arguments::set_heap_size() {
     uint64_t min_memory = (uint64_t)(((double)physical_memory * MinRAMPercentage) / 100);
     uint64_t max_memory = (uint64_t)(((double)physical_memory * MaxRAMPercentage) / 100);
 
-    const size_t reasonable_min = limit_by_size_t_max(min_memory);
-    size_t reasonable_max = limit_by_size_t_max(max_memory);
+    const size_t reasonable_min = clamp_by_size_t_max(min_memory);
+    size_t reasonable_max = clamp_by_size_t_max(max_memory);
 
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
@@ -1625,13 +1625,13 @@ void Arguments::set_heap_size() {
   // If the minimum or initial heap_size have not been set or requested to be set
   // ergonomically, set them accordingly.
   if (InitialHeapSize == 0 || MinHeapSize == 0) {
-    size_t reasonable_minimum = limit_by_size_t_max((uint64_t)OldSize + (uint64_t)NewSize);
+    size_t reasonable_minimum = clamp_by_size_t_max((uint64_t)OldSize + (uint64_t)NewSize);
     reasonable_minimum = MIN2(reasonable_minimum, MaxHeapSize);
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
       uint64_t initial_memory = (uint64_t)(((double)physical_memory * InitialRAMPercentage) / 100);
-      size_t reasonable_initial = limit_by_size_t_max(initial_memory);
+      size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
       reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
