@@ -140,7 +140,7 @@ public class TestMemoryAwareness {
             .addDockerOpts("--memory", badMem);
 
         Common.run(opts)
-            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), using host value " + hostMaxMem);
+            .shouldMatch("container memory limit (ignored: " + badMem + "|unlimited: -1), upper bound is " + hostMaxMem);
     }
 
 
