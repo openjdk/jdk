@@ -246,7 +246,6 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
   // specified otherwise (see atomicAccess.hpp).
 
-  // Using 32 bit internally.
   unsigned int old_value;
   pre_membar(order);
 
@@ -258,17 +257,15 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
     /* atomic loop */
     "1:                                                   \n"
     "   lbarx   %[old_value], 0, %[dest]                  \n"
-    /* extract byte and compare */
     "   cmpw    %[compare_value], %[old_value]            \n"
     "   bne-    2f                                        \n"
-    /* replace byte and try to store */
     "   stbcx.  %[exchange_value], 0, %[dest]             \n"
     "   bne-    1b                                        \n"
     /* exit */
     "2:                                                   \n"
     /* out */
-    : [old_value]           "=&r"   (old_value),
-                            "=m"    (*dest)
+    : [old_value]       "=&r"   (old_value),
+                        "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),
       [compare_value]   "r"     (compare_value),
@@ -411,10 +408,10 @@ public:
       "   and     %[result], %[old_value], %[bits]    \n"
       "   stwcx.  %[result], 0, %[dest]               \n"
       "   bne-    1b                                  \n"
-      : [old_value] "=&r" (old_value),
-        [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [old_value]  "=&r"  (old_value),
+        [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -433,10 +430,10 @@ public:
       "   or      %[result], %[old_value], %[bits]    \n"
       "   stwcx.  %[result], 0, %[dest]               \n"
       "   bne-    1b                                  \n"
-      : [old_value] "=&r" (old_value),
-        [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [old_value]  "=&r"  (old_value),
+        [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -455,10 +452,10 @@ public:
       "   xor     %[result], %[old_value], %[bits]    \n"
       "   stwcx.  %[result], 0, %[dest]               \n"
       "   bne-    1b                                  \n"
-      : [old_value] "=&r" (old_value),
-        [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [old_value]  "=&r"  (old_value),
+        [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -477,9 +474,9 @@ public:
       "   and     %[result], %[result], %[bits]    \n"
       "   stwcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
-      : [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [result]  "=&r"  (result)
+      : [dest]    "r"    (dest),
+        [bits]    "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -498,9 +495,9 @@ public:
       "   or      %[result], %[result], %[bits]    \n"
       "   stwcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
-      : [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [result]  "=&r"  (result)
+      : [dest]    "r"    (dest),
+        [bits]    "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -519,9 +516,9 @@ public:
       "   xor     %[result], %[result], %[bits]    \n"
       "   stwcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
-      : [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [result]  "=&r"  (result)
+      : [dest]    "r"    (dest),
+        [bits]    "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -544,10 +541,10 @@ public:
       "   and     %[result], %[old_value], %[bits]    \n"
       "   stdcx.  %[result], 0, %[dest]               \n"
       "   bne-    1b                                  \n"
-      : [old_value] "=&r" (old_value),
-        [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [old_value]  "=&r"  (old_value),
+        [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -566,10 +563,10 @@ public:
       "   or      %[result], %[old_value], %[bits]    \n"
       "   stdcx.  %[result], 0, %[dest]               \n"
       "   bne-    1b                                  \n"
-      : [old_value] "=&r" (old_value),
-        [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [old_value]  "=&r"  (old_value),
+        [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -588,10 +585,10 @@ public:
       "   xor     %[result], %[old_value], %[bits]    \n"
       "   stdcx.  %[result], 0, %[dest]               \n"
       "   bne-    1b                                  \n"
-      : [old_value] "=&r" (old_value),
-        [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [old_value]  "=&r"  (old_value),
+        [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -610,9 +607,9 @@ public:
       "   and     %[result], %[result], %[bits]    \n"
       "   stdcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
-      : [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -631,9 +628,9 @@ public:
       "   or      %[result], %[result], %[bits]    \n"
       "   stdcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
-      : [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
@@ -652,9 +649,9 @@ public:
       "   xor     %[result], %[result], %[bits]    \n"
       "   stdcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
-      : [result] "=&r" (result)
-      : [dest] "r" (dest),
-        [bits] "r" (bits)
+      : [result]     "=&r"  (result)
+      : [dest]       "r"    (dest),
+        [bits]       "r"    (bits)
       : "cc", "memory" );
 
     post_membar(order);
