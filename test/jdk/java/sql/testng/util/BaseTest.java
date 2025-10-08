@@ -93,13 +93,6 @@ public class BaseTest {
     }
 
     /*
-     * Utility Method used to set the current Policy
-     */
-    protected static void setPolicy(Policy p) {
-        Policy.setPolicy(p);
-    }
-
-    /*
      * DataProvider used to specify the value to set and check for
      * methods using boolean values
      */
