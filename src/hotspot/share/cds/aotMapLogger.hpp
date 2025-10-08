@@ -29,6 +29,7 @@
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/trainingData.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -105,6 +106,7 @@ class AOTMapLogger : AllStatic {
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
 
 
 #if INCLUDE_CDS_JAVA_HEAP
