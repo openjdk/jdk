@@ -43,6 +43,7 @@ import java.awt.AWTEvent;
 import java.awt.EventQueue;
 import java.awt.Toolkit;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class DesktopPropertyResetPendingFlagTest extends JFrame {
 
@@ -99,40 +100,48 @@ public class DesktopPropertyResetPendingFlagTest extends JFrame {
     }
 
     private static void runTest() throws Exception {
+        AtomicReference<JFrame> frameRef = new AtomicReference<>();
         SwingUtilities.invokeLater(() -> {
             DesktopPropertyResetPendingFlagTest t =
                     new DesktopPropertyResetPendingFlagTest();
             t.pack();
             t.setVisible(true);
+            frameRef.set(t);
         });
 
-        panelUpdateUICounter = 0;
-        observedExpectedExceptionCounter = 0;
+        try {
+            panelUpdateUICounter = 0;
+            observedExpectedExceptionCounter = 0;
 
-        TestDesktopProperty property =
-                new TestDesktopProperty("test", new Object());
+            TestDesktopProperty property =
+                    new TestDesktopProperty("test", new Object());
 
-        SwingUtilities.invokeLater(property::updateUI);
-        SwingUtilities.invokeAndWait(() -> {});
+            SwingUtilities.invokeLater(property::updateUI);
+            SwingUtilities.invokeAndWait(() -> {
+            });
 
-        SwingUtilities.invokeLater(property::updateUI);
-        SwingUtilities.invokeAndWait(() -> {});
+            SwingUtilities.invokeLater(property::updateUI);
+            SwingUtilities.invokeAndWait(() -> {
+            });
 
-        CountDownLatch keepAliveLatch = new CountDownLatch(1);
+            CountDownLatch keepAliveLatch = new CountDownLatch(1);
 
-        SwingUtilities.invokeLater(() -> {
-            // We expect 3 updateUI invocations: during construction, the first
-            // property.updateUI, & the second property.updateUI
-            assertEquals(3, panelUpdateUICounter);
+            SwingUtilities.invokeLater(() -> {
+                // We expect 3 updateUI invocations: during construction, the first
+                // property.updateUI, & the second property.updateUI
+                assertEquals(3, panelUpdateUICounter);
 
-            // We expect 2 attempts on buttonUI.uninstallUI
-            assertEquals(2, observedExpectedExceptionCounter);
+                // We expect 2 attempts on buttonUI.uninstallUI
+                assertEquals(2, observedExpectedExceptionCounter);
 
-            // The test is finished
-            keepAliveLatch.countDown();
-        });
+                // The test is finished
+                keepAliveLatch.countDown();
+            });
 
-        keepAliveLatch.await();
+            keepAliveLatch.await();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> frameRef.get().dispose());
+        }
     }
 
     static int panelUpdateUICounter;
