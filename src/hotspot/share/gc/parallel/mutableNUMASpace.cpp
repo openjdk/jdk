@@ -118,7 +118,10 @@ MutableNUMASpace::LGRPSpace *MutableNUMASpace::lgrp_space_for_thread(Thread* thr
     return space->lgrp_id() == (uint)lgrp_id;
   });
 
-  assert(lgrp_spaces_index != -1, "must have created spaces for all lgrp_ids");
+  if (lgrp_spaces_index == -1) {
+    // Running on a CPU with no memory; pick another CPU based on %.
+    lgrp_spaces_index = lgrp_id % lgrp_spaces()->length();
+  }
   return lgrp_spaces()->at(lgrp_spaces_index);
 }
 
@@ -290,8 +293,11 @@ void MutableNUMASpace::initialize(MemRegion mr,
   size_t num_pages = mr.byte_size() / page_size();
 
   if (num_pages < (size_t)lgrp_spaces()->length()) {
-    vm_exit_during_initialization(err_msg("Failed initializing NUMA, #pages-per-CPU is less than one: space-size: %zu, page-size: %zu, #CPU: %d",
-      mr.byte_size(), page_size(), lgrp_spaces()->length()));
+    log_warning(gc)("Degraded NUMA config: #os-pages (%zu) < #CPU (%d); space-size: %zu, page-size: %zu",
+      num_pages, lgrp_spaces()->length(), mr.byte_size(), page_size());
+
+    // Keep only the first few CPUs.
+    lgrp_spaces()->trunc_to((int)num_pages);
   }
 
   // Handle space resize
