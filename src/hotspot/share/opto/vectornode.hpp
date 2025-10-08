@@ -283,6 +283,8 @@ class ReductionNode : public Node {
     return false;
   }
 
+  static bool auto_vectorization_requires_strict_order(int vopc);
+
 #ifndef PRODUCT
   void dump_spec(outputStream* st) const {
     if (requires_strict_order()) {

@@ -41,7 +41,11 @@
 // - Construction:
 //   - From SuperWord PackSet, with the SuperWordVTransformBuilder.
 //
-// - Future Plans: optimize, if-conversion, etc.
+// - Optimize:
+//   - Move non-strict order reductions out of the loop. This means we have
+//     only element-wise operations inside the loop, rather than the much
+//     more expensive lane-crossing reductions. We need to do this before
+//     assessing profitability with the cost-model.
 //
 // - Schedule:
 //   - Compute linearization of the VTransformGraph, into an order that respects
@@ -62,12 +66,12 @@
 //
 // Future Plans with VTransform:
 // - Cost model: estimate if vectorization is profitable.
-// - Optimizations: moving unordered reductions out of the loop, whih decreases cost.
 // - Pack/Unpack/Shuffle: introduce additional nodes not present in the scalar loop.
 //                        This is difficult to do with the SuperWord packset approach.
 // - If-conversion: convert predicated nodes into CFG.
 
 typedef int VTransformNodeIDX;
+class VTransform;
 class VTransformNode;
 class VTransformMemopScalarNode;
 class VTransformDataScalarNode;
@@ -183,6 +187,7 @@ public:
   const GrowableArray<VTransformNode*>& vtnodes() const { return _vtnodes; }
   const GrowableArray<VTransformNode*>& get_schedule() const { return _schedule; }
 
+  void optimize(VTransform& vtransform);
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
@@ -239,10 +244,12 @@ public:
     _aw_for_main_loop_alignment(aw_for_main_loop_alignment) {}
 
   const VLoopAnalyzer& vloop_analyzer() const { return _vloop_analyzer; }
+  const VLoop& vloop() const { return _vloop; }
   Arena* arena() { return &_arena; }
   DEBUG_ONLY( bool has_graph() const { return !_graph.is_empty(); } )
   VTransformGraph& graph() { return _graph; }
 
+  void optimize() { return _graph.optimize(*this); }
   bool schedule() { return _graph.schedule(); }
   bool has_store_to_load_forwarding_failure() const { return _graph.has_store_to_load_forwarding_failure(_vloop_analyzer); }
   void apply();
@@ -495,6 +502,8 @@ public:
   virtual bool is_load_in_loop() const { return false; }
   virtual bool is_load_or_store_in_loop() const { return false; }
   virtual const VPointer& vpointer() const { ShouldNotReachHere(); }
+
+  virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) { return false; }
 
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
   virtual void apply_backedge(VTransformApplyState& apply_state) const {};
@@ -780,8 +789,14 @@ public:
   VTransformReductionVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
     VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
+  virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
+
+private:
+  int vector_reduction_opcode() const;
+  bool requires_strict_order() const;
+  bool optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform);
 };
 
 class VTransformMemVectorNode : public VTransformVectorNode {

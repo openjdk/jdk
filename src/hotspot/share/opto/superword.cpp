@@ -1606,6 +1606,7 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
       // 3 instructions (1 shuffle and two reduction ops).
       // However, this optimization assumes that these reductions stay in the loop
       // which may not be true any more in most cases after the introduction of:
+      // TODO: rename
       // PhaseIdealLoop::move_unordered_reduction_out_of_loop
       // Hence, this heuristic has room for improvement.
       bool is_two_element_int_or_long_reduction = (size == 2) &&
@@ -1782,6 +1783,7 @@ bool SuperWord::profitable(const Node_List* p) const {
       // This heuristic is a bit simplistic, and assumes that the reduction
       // vector stays in the loop. But in some cases, we can move the
       // reduction out of the loop, replacing it with a single vector op.
+      // TODO: rename
       // See: PhaseIdealLoop::move_unordered_reduction_out_of_loop
       // Hence, this heuristic has room for improvement.
 #ifndef PRODUCT
@@ -1946,6 +1948,8 @@ bool SuperWord::do_vtransform() const {
     ResourceMark rm;
     SuperWordVTransformBuilder builder(_packset, vtransform);
   }
+
+  vtransform.optimize();
 
   if (!vtransform.schedule()) { return false; }
   if (vtransform.has_store_to_load_forwarding_failure()) { return false; }

@@ -292,6 +292,7 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   }
 }
 
+// TODO: remove?
 // Return the scalar opcode for the specified vector opcode
 // and basic type.
 int VectorNode::scalar_opcode(int sopc, BasicType bt) {
@@ -1725,6 +1726,28 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
+}
+
+bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
+  switch (vopc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+    case Op_MulReductionVI:
+    case Op_MulReductionVL:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+      // These are cases that all have associative operations, which can
+      // thus be reordered, allowing non-strict order reductions.
+      return false;
+    default:
+      // Floating-point addition and multiplication are non-associative,
+      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // in auto-vectorization.
+      return true;
+  }
 }
 
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,

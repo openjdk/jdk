@@ -32,6 +32,36 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
   _vtnodes.push(vtnode);
 }
 
+#define TRACE_OPTIMIZE(code)                          \
+  NOT_PRODUCT(                                        \
+    if (vtransform.vloop().is_trace_optimization()) { \
+      code                                            \
+    }                                                 \
+  )
+
+void VTransformGraph::optimize(VTransform& vtransform) {
+  TRACE_OPTIMIZE( tty->print_cr("\nVTransformGraph::optimize"); )
+
+  while (true) {
+    bool progress = false;
+    for (int i = 0; i < _vtnodes.length(); i++) {
+      VTransformNode* vtn = _vtnodes.at(i);
+      // TODO: alive?
+      // if (!vtn->is_alive()) { continue; }
+      progress |= vtn->optimize(_vloop_analyzer, vtransform);
+      // TODO: alive?
+      //if (vtn->outs() == 0 &&
+      //    !(vtn->isa_Outer() != nullptr ||
+      //      vtn->isa_LoopPhi() != nullptr ||
+      //      vtn->is_load_or_store_in_loop())) {
+      //  vtn->mark_dead();
+      //  progress = true;
+      //}
+    }
+    if (!progress) { break; }
+  }
+}
+
 // Compute a linearization of the graph. We do this with a reverse-post-order of a DFS.
 // This only works if the graph is a directed acyclic graph (DAG). The C2 graph, and
 // the VLoopDependencyGraph are both DAGs, but after introduction of vectors/packs, the
@@ -937,6 +967,146 @@ VTransformApplyResult VTransformBoolVectorNode::apply(VTransformApplyState& appl
   VectorNode* vn = new VectorMaskCmpNode(mask, cmp_in1, cmp_in2, mask_node, vt);
   register_new_node_from_vectorization(apply_state, vn);
   return VTransformApplyResult::make_vector(vn);
+}
+
+bool VTransformReductionVectorNode::optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  return optimize_move_non_strict_order_reductions_out_of_loop(vloop_analyzer, vtransform);
+}
+
+int VTransformReductionVectorNode::vector_reduction_opcode() const {
+  return ReductionNode::opcode(scalar_opcode(), element_basic_type());
+}
+
+bool VTransformReductionVectorNode::requires_strict_order() const {
+  int vopc = vector_reduction_opcode();
+  return ReductionNode::auto_vectorization_requires_strict_order(vopc);
+}
+
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  int sopc     = scalar_opcode();
+  uint vlen    = vector_length();
+  BasicType bt = element_basic_type();
+  int ropc     = vector_reduction_opcode();
+
+  if (requires_strict_order()) {
+    return false; // cannot move strict order reduction out of loop
+  }
+
+  const int vopc = VectorNode::opcode(sopc, bt);
+  if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
+    DEBUG_ONLY( this->print(); )
+    assert(false, "do not have normal vector op for this reduction");
+    return false; // not implemented
+  }
+
+  // We have a phi with a single use.
+  VTransformLoopPhiNode* phi = in(1)->isa_LoopPhi();
+  if (phi == nullptr || phi->outs() != 1) { return false; }
+
+  // Traverse up the chain of non strict order reductions, checking that it loops
+  // back to the phi. Check that all non strict order reductions only have a single
+  // use, except for the last (last_red), which only has phi as a use in the loop,
+  // and all other uses are outside the loop.
+  VTransformReductionVectorNode* first_red   = this;
+  VTransformReductionVectorNode* last_red    = phi->in(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* current_red = last_red;
+  while (true) {
+    if (current_red == nullptr ||
+        current_red->vector_reduction_opcode() != ropc ||
+        current_red->element_basic_type() != bt ||
+        current_red->vector_length() != vlen) {
+      return false; // not compatible
+    }
+
+    VTransformVectorNode* vector_input = current_red->in(2)->isa_Vector();
+    if (vector_input == nullptr) {
+      assert(false, "reduction has a bad vector input");
+      return false;
+    }
+
+    // Expect single use of the non strict order reduction. Except for the last_red.
+    if (current_red == last_red) {
+      // All uses must be outside loop body, except for the phi.
+      for (int i = 0; i < current_red->outs(); i++) {
+        VTransformNode* use = current_red->out(i);
+        if (use->isa_LoopPhi() == nullptr &&
+            use->isa_Outer() == nullptr) {
+          // Should not be allowed by SuperWord::mark_reductions
+          assert(false, "reduction has use inside loop");
+          return false;
+        }
+      }
+    } else {
+      if (current_red->outs() != 1) {
+        return false; // Only single use allowed
+      }
+    }
+
+    // If the scalar input is a phi, we passed all checks.
+    VTransformNode* scalar_input = current_red->in(1);
+    if (scalar_input == phi) {
+      break;
+    }
+
+    // We expect another non strict reduction, verify it in the next iteration.
+    current_red = scalar_input->isa_ReductionVector();
+  }
+
+  TRACE_OPTIMIZE(
+    tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
+  )
+
+  // All checks were successful. Edit the vtransform graph now.
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
+
+  // Create a vector of identity values.
+  Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
+  phase->set_ctrl(identity, phase->C->root());
+
+  VTransformNodePrototype scalar_prototype = VTransformNodePrototype::make_from_scalar(identity, vloop_analyzer);
+  VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, scalar_prototype, identity);
+
+  VTransformNodePrototype vector_prototype = VTransformNodePrototype(first_red->approximate_origin(), -1, vlen, bt, nullptr);
+  VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vector_prototype);
+  vtn_identity_vector->init_req(1, vtn_identity);
+
+  // Turn the scalar phi into a vector phi.
+  VTransformNode* init = phi->in(1);
+  phi->set_req(1, vtn_identity_vector);
+
+  // Traverse down the chain of reductions, and replace them with vector_accumulators.
+  VTransformNode* current_vector_accumulator = phi;
+  current_red = first_red;
+  while (true) {
+    VTransformNode* vector_input = current_red->in(2);
+    VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, current_red->prototype(), 3, vopc);
+    vector_accumulator->init_req(1, current_vector_accumulator);
+    vector_accumulator->init_req(2, vector_input);
+    TRACE_OPTIMIZE(
+      tty->print("  replace    ");
+      current_red->print();
+      tty->print("  with       ");
+      vector_accumulator->print();
+    )
+    current_vector_accumulator = vector_accumulator;
+    if (current_red == last_red) { break; }
+    current_red = current_red->unique_out()->isa_ReductionVector();
+  }
+
+  // Feed vector accumulator into the backedge.
+  phi->set_req(2, current_vector_accumulator);
+
+  // Create post-loop reduction. last_red keeps all uses outside the loop.
+  last_red->set_req(1, init);
+  last_red->set_req(2, current_vector_accumulator);
+
+  TRACE_OPTIMIZE(
+    tty->print("  phi        ");
+    phi->print();
+    tty->print("  after loop ");
+    last_red->print();
+  )
+  return true; // success
 }
 
 VTransformApplyResult VTransformReductionVectorNode::apply(VTransformApplyState& apply_state) const {
