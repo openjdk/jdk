@@ -476,11 +476,11 @@ private:
     _out.at_put(i, last_strong);
 
     if (_out_end_strong_edges < (uint)_out.length()) {
-      assert(false, "not expected, current uses have no weak edges");
       // Now replace where last_strong was with the last weak edge.
-      VTransformNode* last_weak = _out.pop();
-      _out.at_put(_out_end_strong_edges - 1, n);
+      VTransformNode* last_weak = _out.top();
+      _out.at_put(_out_end_strong_edges - 1, last_weak);
     }
+    _out.pop();
     _out_end_strong_edges--;
   }
 
