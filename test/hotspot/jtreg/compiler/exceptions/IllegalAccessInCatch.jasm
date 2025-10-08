@@ -24,6 +24,19 @@
 super class IllegalAccessInCatch
     version 52:0
 {
+    /*
+      static int test() {
+        try {
+          return 1 / 0;
+        } catch (jdk.internal.agent.AgentConfigurationError e1) {
+          try {
+            return 0;
+          } catch (IllegalAccessError e2) {
+            return 1;
+          }
+        }
+      }
+    */
     static Method test:"()I"
     stack 2 locals 1
   {
@@ -37,7 +50,6 @@ super class IllegalAccessInCatch
     stack_frame_type full;
     stack_map class java/lang/Throwable;
     try t1;
-    nop;
     iconst_0;
     ireturn;
     endtry t1;
