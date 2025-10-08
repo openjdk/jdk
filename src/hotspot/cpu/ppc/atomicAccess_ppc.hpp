@@ -247,7 +247,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // specified otherwise (see atomicAccess.hpp).
 
   // Using 32 bit internally.
-  unsigned int old_value, loaded_value;
+  unsigned int old_value;
   pre_membar(order);
 
   __asm__ __volatile__ (
@@ -268,7 +268,6 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
     "2:                                                   \n"
     /* out */
     : [old_value]           "=&r"   (old_value),
-      [loaded_value]        "=&r"   (loaded_value),
                             "=m"    (*dest)
     /* in */
     : [dest]            "b"     (dest),
@@ -408,10 +407,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: lwarx   %[old_value], 0, %[dest]    \n"
+      "1: lwarx   %[old_value], 0, %[dest]            \n"
       "   and     %[result], %[old_value], %[bits]    \n"
-      "   stwcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stwcx.  %[result], 0, %[dest]               \n"
+      "   bne-    1b                                  \n"
       : [old_value] "=&r" (old_value),
         [result] "=&r" (result)
       : [dest] "r" (dest),
@@ -430,10 +429,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: lwarx   %[old_value], 0, %[dest]    \n"
+      "1: lwarx   %[old_value], 0, %[dest]            \n"
       "   or      %[result], %[old_value], %[bits]    \n"
-      "   stwcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stwcx.  %[result], 0, %[dest]               \n"
+      "   bne-    1b                                  \n"
       : [old_value] "=&r" (old_value),
         [result] "=&r" (result)
       : [dest] "r" (dest),
@@ -452,10 +451,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: lwarx   %[old_value], 0, %[dest]    \n"
+      "1: lwarx   %[old_value], 0, %[dest]            \n"
       "   xor     %[result], %[old_value], %[bits]    \n"
-      "   stwcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stwcx.  %[result], 0, %[dest]               \n"
+      "   bne-    1b                                  \n"
       : [old_value] "=&r" (old_value),
         [result] "=&r" (result)
       : [dest] "r" (dest),
@@ -474,10 +473,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: lwarx   %[result], 0, %[dest]    \n"
+      "1: lwarx   %[result], 0, %[dest]            \n"
       "   and     %[result], %[result], %[bits]    \n"
-      "   stwcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stwcx.  %[result], 0, %[dest]            \n"
+      "   bne-    1b                               \n"
       : [result] "=&r" (result)
       : [dest] "r" (dest),
         [bits] "r" (bits)
@@ -495,10 +494,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: lwarx   %[result], 0, %[dest]    \n"
+      "1: lwarx   %[result], 0, %[dest]            \n"
       "   or      %[result], %[result], %[bits]    \n"
-      "   stwcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stwcx.  %[result], 0, %[dest]            \n"
+      "   bne-    1b                               \n"
       : [result] "=&r" (result)
       : [dest] "r" (dest),
         [bits] "r" (bits)
@@ -516,10 +515,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: lwarx   %[result], 0, %[dest]    \n"
+      "1: lwarx   %[result], 0, %[dest]            \n"
       "   xor     %[result], %[result], %[bits]    \n"
-      "   stwcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stwcx.  %[result], 0, %[dest]            \n"
+      "   bne-    1b                               \n"
       : [result] "=&r" (result)
       : [dest] "r" (dest),
         [bits] "r" (bits)
@@ -541,10 +540,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: ldarx   %[old_value], 0, %[dest]    \n"
+      "1: ldarx   %[old_value], 0, %[dest]            \n"
       "   and     %[result], %[old_value], %[bits]    \n"
-      "   stdcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stdcx.  %[result], 0, %[dest]               \n"
+      "   bne-    1b                                  \n"
       : [old_value] "=&r" (old_value),
         [result] "=&r" (result)
       : [dest] "r" (dest),
@@ -563,10 +562,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: ldarx   %[old_value], 0, %[dest]    \n"
+      "1: ldarx   %[old_value], 0, %[dest]            \n"
       "   or      %[result], %[old_value], %[bits]    \n"
-      "   stdcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stdcx.  %[result], 0, %[dest]               \n"
+      "   bne-    1b                                  \n"
       : [old_value] "=&r" (old_value),
         [result] "=&r" (result)
       : [dest] "r" (dest),
@@ -585,10 +584,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: ldarx   %[old_value], 0, %[dest]    \n"
+      "1: ldarx   %[old_value], 0, %[dest]            \n"
       "   xor     %[result], %[old_value], %[bits]    \n"
-      "   stdcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stdcx.  %[result], 0, %[dest]               \n"
+      "   bne-    1b                                  \n"
       : [old_value] "=&r" (old_value),
         [result] "=&r" (result)
       : [dest] "r" (dest),
@@ -607,10 +606,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: ldarx   %[result], 0, %[dest]    \n"
+      "1: ldarx   %[result], 0, %[dest]            \n"
       "   and     %[result], %[result], %[bits]    \n"
-      "   stdcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stdcx.  %[result], 0, %[dest]            \n"
+      "   bne-    1b                               \n"
       : [result] "=&r" (result)
       : [dest] "r" (dest),
         [bits] "r" (bits)
@@ -628,10 +627,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: ldarx   %[result], 0, %[dest]    \n"
+      "1: ldarx   %[result], 0, %[dest]            \n"
       "   or      %[result], %[result], %[bits]    \n"
-      "   stdcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stdcx.  %[result], 0, %[dest]            \n"
+      "   bne-    1b                               \n"
       : [result] "=&r" (result)
       : [dest] "r" (dest),
         [bits] "r" (bits)
@@ -649,10 +648,10 @@ public:
     pre_membar(order);
 
     __asm__ __volatile__ (
-      "1: ldarx   %[result], 0, %[dest]    \n"
+      "1: ldarx   %[result], 0, %[dest]            \n"
       "   xor     %[result], %[result], %[bits]    \n"
-      "   stdcx.  %[result], 0, %[dest]    \n"
-      "   bne-    1b            \n"
+      "   stdcx.  %[result], 0, %[dest]            \n"
+      "   bne-    1b                               \n"
       : [result] "=&r" (result)
       : [dest] "r" (dest),
         [bits] "r" (bits)
