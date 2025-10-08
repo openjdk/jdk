@@ -1015,8 +1015,27 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   BasicType bt = element_basic_type();
   int ropc     = vector_reduction_opcode();
 
+  // We have a phi with a single use.
+  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
+  if (phi == nullptr) {
+    return false;
+  }
+  if (phi->out_strong_edges() != 1) {
+    TRACE_OPTIMIZE(
+      tty->print("  Cannot move out of loop, phi has multiple uses:");
+      print();
+      tty->print("  phi: ");
+      phi->print();
+    )
+    return false;
+  }
+
   if (requires_strict_order()) {
-    return false; // cannot move strict order reduction out of loop
+    TRACE_OPTIMIZE(
+      tty->print("  Cannot move out of loop, strict order required: ");
+      print();
+    )
+    return false;
   }
 
   const int vopc = VectorNode::opcode(sopc, bt);
@@ -1025,10 +1044,6 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     assert(false, "do not have normal vector op for this reduction");
     return false; // not implemented
   }
-
-  // We have a phi with a single use.
-  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
-  if (phi == nullptr || phi->out_strong_edges() != 1) { return false; }
 
   // Traverse up the chain of non strict order reductions, checking that it loops
   // back to the phi. Check that all non strict order reductions only have a single
@@ -1042,6 +1057,12 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
         current_red->vector_reduction_opcode() != ropc ||
         current_red->element_basic_type() != bt ||
         current_red->vector_length() != vlen) {
+      TRACE_OPTIMIZE(
+        tty->print("  Cannot move out of loop, other reduction node does not match:");
+        print();
+        tty->print("  other: ");
+        current_red->print();
+      )
       return false; // not compatible
     }
 
@@ -1065,6 +1086,12 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
       }
     } else {
       if (current_red->out_strong_edges() != 1) {
+        TRACE_OPTIMIZE(
+          tty->print("  Cannot move out of loop, other reduction node has use outside loop:");
+          print();
+          tty->print("  other: ");
+          current_red->print();
+        )
         return false; // Only single use allowed
       }
     }
