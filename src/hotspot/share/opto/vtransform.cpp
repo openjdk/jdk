@@ -47,17 +47,21 @@ void VTransformGraph::optimize(VTransform& vtransform) {
     bool progress = false;
     for (int i = 0; i < _vtnodes.length(); i++) {
       VTransformNode* vtn = _vtnodes.at(i);
-      // TODO: alive?
-      // if (!vtn->is_alive()) { continue; }
+      if (!vtn->is_alive()) { continue; }
       progress |= vtn->optimize(_vloop_analyzer, vtransform);
-      // TODO: alive?
-      //if (vtn->outs() == 0 &&
-      //    !(vtn->isa_Outer() != nullptr ||
-      //      vtn->isa_LoopPhi() != nullptr ||
-      //      vtn->is_load_or_store_in_loop())) {
-      //  vtn->mark_dead();
-      //  progress = true;
-      //}
+
+      // Nodes that have no use any more are dead.
+      if (vtn->out_strong_edges() == 0 &&
+          // There are some exceptions:
+          // 1. Memory phi uses are not modeled, so they appear to have no use here, but must be kept alive.
+          // 2. Similarly, some stores may not have their memory uses modeled, but need to be kept alive.
+          // 3. Outer node with strong inputs: is a use after the loop that we must keep alive.
+          !(vtn->isa_LoopPhi() != nullptr ||
+            vtn->is_load_or_store_in_loop() ||
+            (vtn->isa_Outer() != nullptr && vtn->has_strong_in_edge()))) {
+        vtn->mark_dead();
+        progress = true;
+      }
     }
     if (!progress) { break; }
   }
@@ -90,10 +94,11 @@ bool VTransformGraph::schedule() {
   VectorSet post_visited;
 
   collect_nodes_without_strong_in_edges(stack);
+  int num_alive_nodes = count_alive_vtnodes();
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
-  int rpo_idx = _vtnodes.length() - 1;
+  int rpo_idx = num_alive_nodes - 1;
   while (!stack.is_empty()) {
     VTransformNode* vtn = stack.top();
     if (!pre_visited.test_set(vtn->_idx)) {
@@ -109,6 +114,9 @@ bool VTransformGraph::schedule() {
       // runtime check, see VTransform::apply_speculative_aliasing_runtime_checks.
       for (uint i = 0; i < vtn->out_strong_edges(); i++) {
         VTransformNode* use = vtn->out_strong_edge(i);
+
+        // Skip dead nodes
+        if (!use->is_alive()) { continue; }
 
         // Skip LoopPhi backedge.
         if ((use->isa_LoopPhi() != nullptr || use->isa_CountedLoop() != nullptr) && use->in_req(2) == vtn) { continue; }
@@ -152,6 +160,7 @@ bool VTransformGraph::schedule() {
 void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const {
   for (int i = 0; i < _vtnodes.length(); i++) {
     VTransformNode* vtn = _vtnodes.at(i);
+    if (!vtn->is_alive()) { continue; }
     if (!vtn->has_strong_in_edge()) {
       stack.push(vtn);
     }
@@ -161,6 +170,15 @@ void VTransformGraph::collect_nodes_without_strong_in_edges(GrowableArray<VTrans
     assert(vtn->isa_Outer() == nullptr || (vtn->has_strong_in_edge() != (vtn->out_strong_edges() > 0)),
            "Outer nodes should either be inputs or outputs, but not both, otherwise we may get cycles");
   }
+}
+
+int VTransformGraph::count_alive_vtnodes() const {
+  int count = 0;
+  for (int i = 0; i < _vtnodes.length(); i++) {
+    VTransformNode* vtn = _vtnodes.at(i);
+    if (vtn->is_alive()) { count++; }
+  }
+  return count;
 }
 
 #ifndef PRODUCT
@@ -1218,7 +1236,7 @@ void VTransformNode::print() const {
       print_node_idx(_in.at(i));
     }
   }
-  tty->print(") [");
+  tty->print(") %s[", _is_alive ? "" : "dead ");
   for (uint i = 0; i < _out_end_strong_edges; i++) {
     print_node_idx(_out.at(i));
   }

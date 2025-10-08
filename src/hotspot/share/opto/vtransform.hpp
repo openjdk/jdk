@@ -199,6 +199,7 @@ private:
   bool in_bb(const Node* n)   const { return _vloop.in_bb(n); }
 
   void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
+  int count_alive_vtnodes() const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;
@@ -379,6 +380,8 @@ public:
   const VTransformNodeIDX _idx;
 
 private:
+  bool _is_alive;
+
   // We split _in into 3 sections:
   // - data edges (req):     _in[0                           .. _req-1]
   // - strong memory edges:  _in[_req                        .. _in_end_strong_memory_edges-1]
@@ -396,6 +399,7 @@ private:
 public:
   VTransformNode(VTransform& vtransform, const uint req) :
     _idx(vtransform.graph().new_idx()),
+    _is_alive(true),
     _req(req),
     _in_end_strong_memory_edges(req),
     _in(vtransform.arena(),  req, req, nullptr),
@@ -514,6 +518,16 @@ public:
   VTransformNode* unique_out_strong_edge() const {
     assert(out_strong_edges() == 1, "must be unique");
     return _out.at(0);
+  }
+
+  bool is_alive() const { return _is_alive; }
+
+  void mark_dead() {
+    _is_alive = false;
+    // Remove all inputs
+    for (uint i = 0; i < req(); i++) {
+      set_req(i, nullptr);
+    }
   }
 
   virtual VTransformMemopScalarNode* isa_MemopScalar() { return nullptr; }
