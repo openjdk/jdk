@@ -30,6 +30,7 @@
 #include "jfr/writers/jfrNativeEventWriter.hpp"
 #include "oops/oop.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/threadSMR.hpp"
@@ -109,11 +110,13 @@ void JfrAsyncEvent::send_async_event(jobject target,
                                      jboolean has_duration,
                                      jboolean has_event_thread,
                                      jboolean has_stack_trace,
-                                     jbyteArray payload,
-                                     JavaThread* const jt) {
+                                     jbyteArray payload) {
+  JavaThread* jt = JavaThread::current();
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, jt));
+  ThreadInVMfromNative __tiv(jt);
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current()));
 
   typeArrayOop payloadOop = typeArrayOop(JNIHandles::resolve(payload));
   JfrAsyncEvent* event = new JfrAsyncEvent(event_id, has_duration, has_event_thread, has_event_thread, payloadOop);
-  JfrThreadSampler::sample_thread(jt, target, async_event_callback, (void*)event);
+  JfrThreadSampler::sample_thread(target, async_event_callback, (void*)event);
 }

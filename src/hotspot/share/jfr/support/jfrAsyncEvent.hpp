@@ -46,8 +46,7 @@ public:
                                jboolean has_duration,
                                jboolean has_event_thread,
                                jboolean has_stack_trace,
-                               jbyteArray payload,
-                               JavaThread* const thread);
+                               jbyteArray payload);
 private:
   JfrAsyncEvent(long event_id, bool has_duration, bool has_event_thread, bool has_stack_trace, typeArrayOop payloadOop);
   ~JfrAsyncEvent();

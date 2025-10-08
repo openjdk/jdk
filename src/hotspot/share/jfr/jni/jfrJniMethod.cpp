@@ -463,6 +463,8 @@ JVM_ENTRY_NO_ENV(jlongArray, jfr_drain_stale_method_tracer_ids(JNIEnv* env, jcla
   return JfrMethodTracer::drain_stale_class_ids(thread);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_send_asysnc_event(JNIEnv* env, jclass jvm, jobject target, jlong eventId, jboolean hasDuration, jboolean hasEventThread, jboolean hasStackTrace, jbyteArray payload))
-  JfrAsyncEvent::send_async_event(target, eventId, hasDuration, hasEventThread, hasStackTrace, payload, thread);
-JVM_END
+NO_TRANSITION(void, jfr_send_asysnc_event(JNIEnv* env, jclass jvm, jobject target, jlong eventId, jboolean hasDuration, jboolean hasEventThread, jboolean hasStackTrace, jbyteArray payload))
+  jobject target_ref = env->NewGlobalRef(target);
+  JfrAsyncEvent::send_async_event(target_ref, eventId, hasDuration, hasEventThread, hasStackTrace, payload);
+  env->DeleteLocalRef(target);
+NO_TRANSITION_END

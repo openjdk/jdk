@@ -36,6 +36,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -52,7 +53,7 @@ private:
   void*          _context;  // Callback context
 
 public:
-  JfrAsyncEventRequest(JavaThread* thread, jobject target, SampleCallback callback, void* context);
+  JfrAsyncEventRequest(jobject target, SampleCallback callback, void* context);
   virtual ~JfrAsyncEventRequest();
 
   jobject target() const { return _target; }
@@ -60,9 +61,8 @@ public:
   void* context() const { return _context; }
 };
 
-JfrAsyncEventRequest::JfrAsyncEventRequest(JavaThread* thread, jobject target, SampleCallback callback, void* context) :
-   _callback(callback), _context(context) {
-  _target = JfrJavaSupport::global_jni_handle(target, thread);
+JfrAsyncEventRequest::JfrAsyncEventRequest(jobject target, SampleCallback callback, void* context) :
+   _target(target), _callback(callback), _context(context) {
 }
 
 JfrAsyncEventRequest::~JfrAsyncEventRequest() {
@@ -256,25 +256,39 @@ void JfrSamplerThread::run() {
 
 void JfrSamplerThread::drain_async_event_queue() {
   assert_lock_strong(JfrAsyncEventRequest_lock);
-  ThreadsListHandle tlh;
+
+  // Make a copy of current requests
+  ResourceMark rm;
+  GrowableArray<const JfrAsyncEventRequest*> requests;
   for (int index = 0; index < _async_request_queue.length(); index++) {
     const JfrAsyncEventRequest* req = _async_request_queue.at(index);
-    JavaThread* jt;
-
-    if (tlh.cv_internal_thread_to_JavaThread(req->target(), &jt, nullptr)) {
-      JavaThreadState stat = jt->thread_state();
-      if (stat == _thread_in_Java) {
-        sample_java_thread(jt, req->callback(), req->context());
-      } else if (stat == _thread_in_native || stat == _thread_blocked) {
-        sample_native_thread(jt, req->callback(), req->context());
-      }
-    } else {
-      // The thread is no longer alive
-      req->callback()(SKIP_EVENT, nullptr, nullptr, 0, 0, req->context());
-    }
-    delete req;
+    requests.append(req);
   }
   _async_request_queue.clear();
+
+  {
+    MutexUnlocker unlocker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
+    ThreadsListHandle tlh;
+    for (int index = 0; index < requests.length(); index++) {
+      const JfrAsyncEventRequest* req = requests.at(index);
+      oop thread_oop = JNIHandles::resolve_non_null(req->target());
+      assert(thread_oop != nullptr, "invariant");
+      JavaThread* jt = java_lang_Thread::thread_acquire(thread_oop);
+
+      if (tlh.includes(jt)) {
+        JavaThreadState stat = jt->thread_state();
+        if (stat == _thread_in_Java) {
+          sample_java_thread(jt, req->callback(), req->context());
+        } else if (stat == _thread_in_native || stat == _thread_blocked) {
+          sample_native_thread(jt, req->callback(), req->context());
+        }
+      } else {
+        // The thread is no longer alive
+        req->callback()(SKIP_EVENT, nullptr, nullptr, 0, 0, req->context());
+      }
+      delete req;
+    }
+  }
 }
 
 JavaThread* JfrSamplerThread::next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current) {
@@ -457,8 +471,8 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt, SampleCallback callb
 }
 
 
-void JfrThreadSampler::sample_thread(JavaThread* jt, jobject target, SampleCallback callback, void* context) {
-  JfrAsyncEventRequest* request = new JfrAsyncEventRequest(jt, target, callback, context);
+void JfrThreadSampler::sample_thread(jobject target, SampleCallback callback, void* context) {
+  JfrAsyncEventRequest* request = new JfrAsyncEventRequest(target, callback, context);
   _sampler_thread->enqueue_request(request);
 }
 
