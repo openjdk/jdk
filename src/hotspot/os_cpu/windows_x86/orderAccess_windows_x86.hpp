@@ -27,14 +27,17 @@
 
 // Included in orderAccess.hpp header file.
 
-#include "utilities/globalDefinitions.hpp"
-
 #include <intrin.h>
 
 // Compiler version last used for testing: Microsoft Visual Studio 2010
 // Please update this information when this file changes
 
 // Implementation of class OrderAccess.
+
+// A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions
+inline void compiler_barrier() {
+  _ReadWriteBarrier();
+}
 
 inline void OrderAccess::loadload()   { compiler_barrier(); }
 inline void OrderAccess::storestore() { compiler_barrier(); }

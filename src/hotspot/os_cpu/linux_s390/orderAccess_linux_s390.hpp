@@ -28,7 +28,7 @@
 
 // Included in orderAccess.hpp header file.
 
-#include "utilities/globalDefinitions.hpp"
+#include "runtime/vm_version.hpp"
 
 // Implementation of class OrderAccess.
 
@@ -55,7 +55,7 @@
 // is needed.
 
 // A compiler barrier, forcing the C++ compiler to invalidate all memory assumptions.
-#define inlasm_compiler_barrier() compiler_barrier()
+#define inlasm_compiler_barrier() __asm__ volatile ("" : : : "memory");
 // "bcr 15, 0" is used as two way memory barrier.
 #define inlasm_zarch_sync() __asm__ __volatile__ ("bcr 15, 0" : : : "memory");
 
