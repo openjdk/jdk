@@ -31,7 +31,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "utilities/growableArray.hpp"
 
 class CardTableRS;
@@ -103,10 +102,6 @@ private:
   bool _is_heap_almost_full;
 
   void do_full_collection(bool clear_all_soft_refs) override;
-
-  // Does the "cause" of GC indicate that
-  // we absolutely __must__ clear soft refs?
-  bool must_clear_all_soft_refs();
 
   bool is_young_gc_safe() const;
 
@@ -227,6 +222,7 @@ private:
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
   HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   MemoryPool* _eden_pool;
