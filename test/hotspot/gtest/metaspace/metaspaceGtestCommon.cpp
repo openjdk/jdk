@@ -25,7 +25,9 @@
 
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestRangeHelpers.hpp"
+#include "memory/metaspace/metaspaceZapper.hpp"
 #include "runtime/os.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 void zap_range(MetaWord* p, size_t word_size) {
   for (MetaWord* pzap = p; pzap < p + word_size; pzap += os::vm_page_size() / BytesPerWord) {
@@ -95,3 +97,14 @@ void check_marked_range(const MetaWord* p, size_t word_size) {
   check_marked_range(p, word_size, pattern);
 }
 
+// using metaspace zapper
+
+#ifdef ASSERT
+// Helper function checks if region x is zapped
+void check_metaspace_zap(const MetaWord* start, size_t size) {
+  size_t interval = MAX2((size_t)1, size / 256);
+  for (const MetaWord* p = start; p < start + size; p += interval) {
+    ASSERT_TRUE(metaspace::Zapper::is_zapped_location(p));
+  }
+}
+#endif
