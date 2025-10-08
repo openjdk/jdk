@@ -1008,7 +1008,65 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
   return ReductionNode::auto_vectorization_requires_strict_order(vopc);
 }
 
-// TODO: description?
+// Having ReductionNodes in the loop is expensive. They need to recursively
+// fold together the vector values, for every vectorized loop iteration. If
+// we encounter the following pattern, we can vector accumulate the values
+// inside the loop, and only have a single UnorderedReduction after the loop.
+//
+// Note: UnorderedReduction represents a ReductionNode which does not require
+// calculating in strict order.
+//
+// CountedLoop     init
+//          |        |
+//          +------+ | +------------------------+
+//                 | | |                        |
+//                PhiNode (s)                   |
+//                  |                           |
+//                  |          Vector           |
+//                  |            |              |
+//               UnorderedReduction (first_red) |
+//                  |                           |
+//                 ...         Vector           |
+//                  |            |              |
+//               UnorderedReduction (last_red)  |
+//                       |                      |
+//                       +----------------------+
+//
+// We patch the graph to look like this:
+//
+// CountedLoop   identity_vector
+//         |         |
+//         +-------+ | +---------------+
+//                 | | |               |
+//                PhiNode (v)          |
+//                   |                 |
+//                   |         Vector  |
+//                   |           |     |
+//                 VectorAccumulator   |
+//                   |                 |
+//                  ...        Vector  |
+//                   |           |     |
+//      init       VectorAccumulator   |
+//        |          |     |           |
+//     UnorderedReduction  +-----------+
+//
+// We turned the scalar (s) Phi into a vectorized one (v). In the loop, we
+// use vector_accumulators, which do the same reductions, but only element
+// wise. This is a single operation per vector_accumulator, rather than many
+// for a UnorderedReduction. We can then reduce the last vector_accumulator
+// after the loop, and also reduce the init value into it.
+//
+// We can not do this with all reductions. Some reductions do not allow the
+// reordering of operations (for example float addition/multiplication require
+// strict order).
+//
+// Note: we must perform this optimization already during auto vectorization,
+//       before we evaluate the cost-model. Without this optimization, we may
+//       still have expensive reduction nodes in the loop which can make
+//       vectorization unprofitable. Only with the optimization does vectorization
+//       become profitable, since the expensive reduction node is moved
+//       outside the loop, and instead cheaper element-wise vector accumulations
+//       are performed inside the loop.
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
   int sopc     = scalar_opcode();
   uint vlen    = vector_length();
@@ -1106,12 +1164,11 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     current_red = scalar_input->isa_ReductionVector();
   }
 
+  // All checks were successful. Edit the vtransform graph now.
+  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
   TRACE_OPTIMIZE(
     tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
   )
-
-  // All checks were successful. Edit the vtransform graph now.
-  PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
 
   // Create a vector of identity values.
   Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
