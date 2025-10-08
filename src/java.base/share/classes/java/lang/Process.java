@@ -177,8 +177,7 @@ public abstract class Process implements Closeable {
     public Process() {}
 
     /**
-     * Close all writer and reader streams and terminate the process.
-     * The streams are closed immediately and the process is terminated without waiting.
+     * Close all writer and reader streams immediately and wait for the process to terminate.
      * This method is idempotent, if this {@code Process} has already been closed
      * invoking this method has no effect.
      * <p>
@@ -186,28 +185,21 @@ public abstract class Process implements Closeable {
      * calling this method. The contents of streams that have not been read to end of stream
      * are lost, they are discarded or ignored.
      * <p>
-     * If the process should be allowed to run to completion or the exit value of the process
-     * is of interest, then the caller must {@linkplain #waitFor() wait} for the process
-     * to terminate before calling this method.
-     * Calling {@link #waitFor() waitFor} before calling {@code close} or exiting
-     * the try-with-resources block allows the process time to clean up and exit normally.
+     * If the process exit value of the process is of interest, then the caller must
+     * {@linkplain #waitFor() wait} for the process to terminate before calling this method.
      * <p>
      * Streams should be closed when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
      * If an {@code IOException} occurs when closing a stream it is thrown
-     * by this method after the process is terminated. Additional {@code IOExceptions}
+     * when this method returns. Additional {@code IOExceptions}
      * thrown by closing the remaining streams, if any, are added to the first
      * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
-     * The process is {@linkplain #destroy destroyed}.
-     * This is a no-op if the process has already terminated.
-     * On some platforms, {@linkplain #supportsNormalTermination() normal termination}
-     * is not available and the process is {@linkplain #destroyForcibly() forcibly destroyed}.
-     * Calling {@linkplain #waitFor() waitFor} after
-     * {@linkplain #close() close} or after the try-with-resources block exits
-     * can verify that the process has been terminated.
-     * The status returned may be from normal termination or the result of
-     * {@link #destroy() destroying the process}.
+     * After the streams are closed this method {@linkplain #waitFor() waits for} the
+     * process to terminate. If interrupted while {@linkplain #waitFor waiting for termination}
+     * the process is {@linkplain #destroyForcibly() forcibly destroyed}.
+     * The interrupt status will be re-asserted before this method returns and
+     * any {@code IOExceptions} are thrown.
      * <p>
      * Try-with-resources example to write text to a process, read back the
      * response, and close the streams and process:
@@ -233,7 +225,15 @@ public abstract class Process implements Closeable {
             ioe = quietClose(inputReader != null ? inputReader : getInputStream(), ioe);
             ioe = quietClose(errorReader != null ? errorReader : getErrorStream(), ioe);
 
-            destroy();      // no-op if process is not alive
+            try {
+                // Wait for process to terminate normally.
+                waitFor();
+            } catch (InterruptedException e) {
+                // Waiting interrupted; forcibly destroy the process
+                destroyForcibly();
+                // Re-assert the interrupt
+                Thread.currentThread().interrupt();
+            }
             if (ioe != null) {
                 throw ioe;
             }
