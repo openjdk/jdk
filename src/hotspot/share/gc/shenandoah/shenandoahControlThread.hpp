@@ -33,8 +33,6 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahControlThread: public ShenandoahController {
-  friend class VMStructs;
-
 private:
   typedef enum {
     none,

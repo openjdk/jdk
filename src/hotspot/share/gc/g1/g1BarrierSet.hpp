@@ -62,7 +62,6 @@ class Thread;
 // cards.
 //
 class G1BarrierSet: public CardTableBarrierSet {
-  friend class VMStructs;
  private:
   BufferNode::Allocator _satb_mark_queue_buffer_allocator;
   G1SATBMarkQueueSet _satb_mark_queue_set;
