@@ -27,7 +27,14 @@
  * @summary Compilers might not generate handlers for recursive exceptions
  *
  * @compile IllegalAccessInCatch.jasm
- * @run main/othervm -Xbatch TestAccessErrorInCatch
+ * @run main/othervm -Xbatch
+ *   -XX:CompileCommand=compileonly,IllegalAccessInCatch*::test
+ *   -XX:-TieredCompilation
+ *   TestAccessErrorInCatch
+ * @run main/othervm -Xbatch
+ *   -XX:CompileCommand=compileonly,IllegalAccessInCatch*::test
+ *   -XX:TieredStopAtLevel=3
+ *   TestAccessErrorInCatch
  */
 
 import java.lang.invoke.MethodHandle;
