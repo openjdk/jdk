@@ -32,6 +32,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/safepointVerifiers.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/macros.hpp"
 
@@ -634,6 +635,39 @@ class SharedRuntime: AllStatic {
   static address nof_inlined_interface_calls_addr()     { return (address)&_nof_inlined_interface_calls; }
   static void print_call_statistics(uint64_t comp_total);
   static void print_ic_miss_histogram();
+
+#ifdef COMPILER2
+  // Runtime methods for printf-style debug nodes
+  static void debug_print_value(jboolean x);
+  static void debug_print_value(jbyte x);
+  static void debug_print_value(jshort x);
+  static void debug_print_value(jchar x);
+  static void debug_print_value(jint x);
+  static void debug_print_value(jlong x);
+  static void debug_print_value(jfloat x);
+  static void debug_print_value(jdouble x);
+  static void debug_print_value(oopDesc* x);
+
+  template <typename T, typename... Rest>
+  static void debug_print_rec(T arg, Rest... args) {
+    debug_print_value(arg);
+    debug_print_rec(args...);
+  }
+
+  static void debug_print_rec() {}
+
+  // template is required here as we need to know the exact signature at compile-time
+  template <typename... TT>
+  static void debug_print(const char *str, TT... args) {
+    // these three lines are the manual expansion of JRT_LEAF ... JRT_END, does not work well with templates
+    DEBUG_ONLY(NoHandleMark __hm;)
+    os::verify_stack_alignment();
+    DEBUG_ONLY(NoSafepointVerifier __nsv;)
+
+    tty->print_cr("%s", str);
+    debug_print_rec(args...);
+  }
+#endif // COMPILER2
 
 #endif // PRODUCT
 
