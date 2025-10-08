@@ -2568,8 +2568,8 @@ Java HotSpot VM.
 
 `-XX:MaxRAM=`*size*
 :   Sets the maximum amount of memory that the JVM may use for the Java heap
-    before applying ergonomics heuristics. The default value is the maximum
-    amount of available memory to the JVM process or 128 GB, whichever is lower.
+    before applying ergonomics heuristics. The default value is the amount of
+    available memory to the JVM process.
 
     The maximum amount of available memory to the JVM process is the minimum
     of the machine's physical memory and any constraints set by the environment
