@@ -6295,7 +6295,7 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
  * This approach works for Windows AArch64 as well.
  */
 bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
-                                            char *buf, int buf_size, address& lastpc)
+                                            char* buf, int buf_size, address& lastpc)
 {
   CONTEXT ctx;
   if (context != nullptr) {
@@ -6360,7 +6360,7 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
     }
 
     PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
-    if (!p) {
+    if (p == nullptr) {
       // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
       lastpc = lastpc_internal;
       break;
