@@ -148,7 +148,7 @@ import compiler.lib.ir_framework.TestFramework;
  * {@link Template#make(String, Function)}. For each number of arguments there is an implementation
  * (e.g. {@link Template.TwoArgs} for two arguments). This allows the use of generics for the
  * {@link Template} argument types which enables type checking of the {@link Template} arguments.
- *  It is currently only allowed to use up to three arguments.
+ * It is currently only allowed to use up to three arguments.
  *
  * <p>
  * A {@link Template} can be rendered to a {@link String} (e.g. {@link Template.ZeroArgs#render()}).
@@ -176,6 +176,8 @@ import compiler.lib.ir_framework.TestFramework;
  * {@code #{name}}.
  *
  * <p>
+ * TODO: consider talking about scopes first, and inserting scope instead of template?
+ *       Maybe just insertion of a scope, but not details of scope. Details below.
  * A {@link TemplateToken} cannot just be used in {@link Template#scope}, but it can also be
  * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#anchor}ed earlier (in some outer scope of the code).
  * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
@@ -195,6 +197,7 @@ import compiler.lib.ir_framework.TestFramework;
  * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
  *
  * <p>
+ * TODO: make sure to talk about scopes in relevant ways. Also add missing methods.
  * Code generation can involve keeping track of fields and variables, as well as the scopes in which they
  * are available, and if they are mutable or immutable. We model fields and variables with {@link DataName}s,
  * which we can add to the current scope with {@link #addDataName}. We can access the {@link DataName}s with
@@ -211,6 +214,7 @@ import compiler.lib.ir_framework.TestFramework;
  * are not concerned about mutability.
  *
  * <p>
+ * TODO: rework this, no longer accurate.
  * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
  * relevant scopes, as well as the execution order of the {@link Template} lambdas and the evaluation
  * of the {@link Template#scope} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
@@ -228,6 +232,7 @@ import compiler.lib.ir_framework.TestFramework;
  * Let us look at the following example to better understand the execution order.
  *
  * <p>
+ * TODO: probably remove the example. Not sure if we need something else here?
  * {@snippet lang=java :
  * var testTemplate = Template.make(() -> scope(
  *     // The lambda has just been invoked.
@@ -283,8 +288,6 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param function The {@link Supplier} that creates the {@link NestingToken}.
      */
-    // TODO: consider allowing different nesting tokens, to allow escaping names. hashtags
-    // should be local, and setFuelCost as well.
     record ZeroArgs(Supplier<NestingToken> function) implements Template {
         NestingToken instantiate() {
             return function.get();
@@ -594,9 +597,21 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Creates a {@link NestingToken} from a list of tokens, which can be {@link String}s,
-     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}), any {@link Token},
-     * or {@link List}s of any of these.
+     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * {@link DataName}s and {@link StructuralName}s, as well as hashtag-replacements and
+     * {@link setFuelCost}. This means that any such name, hashtag-replacement or
+     * {@link setFuelCost} declared inside the scope is local and does not escape to outer
+     * scopes.
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is transparent for some or all of the above, consider
+     * using {@link flat}, {@link nameScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     *
+     * <p>
+     * The most common use of {@link scope} is in the construction of templates:
      *
      * <p>
      * {@snippet lang=java :
@@ -610,33 +625,140 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
+     * <p>
+     * Note that {@code Template.make} always implicitly are non-transparent to
+     * hashtag-replacements and {@link setFuelCost}, but they can be transparent
+     * for {@link DataName}s and {@link StructuralName}s. It is recommended to
+     * use {@link scope} by default for {@code Template.make} since in most cases
+     * template scopes align with code scopes that are non-transparent for fields,
+     * variables, etc. In rare cases where the scope of the template needs to be
+     * transparent (e.g. because we need to insert a variable or field into an
+     * outer scope), it is recommended to use {@link flat}.
+     *
+     * <p>
+     * We can also use nested scopes inside of templates:
+     *
+     * <p>
+     * {@snippet lang=java :
+     * var template = Template.make(() -> scope(
+     *     // CODE1: some code in the outer scope
+     *     scope(
+     *       // CODE2: some code in the inner scope. Names, hashtags and setFuelCost
+     *       //        does not escape the inner scope.
+     *     ),
+     *     // CODE3: more code in the outer scope, names and hashtags from CODE2 are
+     *     //        not available any more because of the non-transparent "scope".
+     *     flat(
+     *       // CODE4: some code in the inner "flat" scope. Names, hashtags and setFuelCost
+     *       //        escape the "flat" scope and are still available after the "flat"
+     *       //        scope closes.
+     *     )
+     *     // CODE5: we still have access to names and hashtags from CODE4.
+     * ));
+     * }
+     *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
      * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    // TODO: fix documentation, examples. hashtag, names, setFuel
     static NestingToken scope(Object... tokens) {
         return new NestingToken.Scope(TokenParser.parse(tokens));
     }
 
-    // TODO: document
+    /**
+     * Creates a {@link NestingToken} which represents a scope that is transparent for
+     * {@link DataName}s and {@link StructuralName}s, as well as hashtag-replacements and
+     * {@link setFuelCost}. This means that any such name, hashtag-replacement or
+     * {@link setFuelCost} declared inside the scope escapes that scope and is still
+     * available in the outer scope.
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is non-transparent for some or all of the above, consider
+     * using {@link scope}, {@link nameScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
     static NestingToken flat(Object... tokens) {
         return new NestingToken.Flat(TokenParser.parse(tokens));
     }
 
-    // TODO: document
+    /**
+     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * {@link DataName}s and {@link StructuralName}s, but transparent for hashtag-replacements
+     * and {@link setFuelCost}.
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * If you require a scope that is non-transparent for some or all of the above, consider
+     * using {@link scope}, {@link flat}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
     static NestingToken nameScope(Object... tokens) {
         return new NestingToken.NameScope(TokenParser.parse(tokens));
     }
 
-    // TODO: document
+    /**
+     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * hashtag-replacements, but transparent for {@link DataName}s and {@link StructuralName}s
+     * and {@link setFuelCost}.
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * TODO: example
+     *
+     * <p>
+     * If you require a scope that is non-transparent for some or all of the above, consider
+     * using {@link scope}, {@link flat}, {@link nameScope}, {@link setFuelCostScope}.
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
     static NestingToken hashtagScope(Object... tokens) {
         return new NestingToken.HashtagScope(TokenParser.parse(tokens));
     }
 
-    // TODO: document
+    /**
+     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * {@link setFuelCost}. but transparent for {@link DataName}s and {@link StructuralName}s
+     * and hashtag-replacements.
+     * The scope is formed from a list of tokens, which can be {@link String}s,
+     * boxed primitive types (for example {@link Integer} or auto-boxed {@code int}),
+     * any {@link Token}, or {@link List}s of any of these.
+     *
+     * <p>
+     * TODO: example
+     *
+     * <p>
+     * If you require a scope that is non-transparent for some or all of the above, consider
+     * using {@link scope}, {@link flat}, {@link nameScope}, {@link setFuelCostScope}.
+     *
+     * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
+     *               (for example {@link Integer}), any {@link Token}, or {@link List}s
+     *               of any of these.
+     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
+     */
     static NestingToken setFuelCostScope(Object... tokens) {
         return new NestingToken.SetFuelCostScope(TokenParser.parse(tokens));
     }
@@ -764,6 +886,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
+     * TODO: talk about scopes, why useful.
      * Changes the amount of fuel used for the current Template, where the default is
      * {@link Template#DEFAULT_FUEL_COST}.
      *

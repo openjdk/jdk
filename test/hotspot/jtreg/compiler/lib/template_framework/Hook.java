@@ -24,6 +24,7 @@
 package compiler.lib.template_framework;
 
 /**
+ * TODO: ensure we talk about scopes, especially for insertion.
  * {@link Hook}s can be {@link #anchor}ed for a certain scope in a Template, and all nested
  * Templates in this scope, and then from within this scope, any Template can
  * {@link #insert} code to where the {@link Hook} was {@link #anchor}ed. This can be useful to reach
