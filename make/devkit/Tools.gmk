@@ -259,7 +259,7 @@ define DownloadVerify
 endef
 
 # Download and unpack all source packages
-$(foreach dep,$(DEPENDENCIES),$(eval $(call DownloadVerifyUnpack,$(dep))))
+$(foreach dep,$(DEPENDENCIES),$(eval $(call DownloadVerify,$(dep))))
 
 ################################################################################
 # Unpack RPMS
