@@ -626,7 +626,7 @@ this issue for each header.
 * Memory allocation. HotSpot requires explicit control over where allocations
 occur. The C++98/03 `std::allocator` class is too limited to support our
 usage. But changes to the allocator concept in more recent Standards removed
-some of the limitations, supporting statefull allocators. HotSpot may, in the
+some of the limitations, supporting stateful allocators. HotSpot may, in the
 future, provide standard-conforming allocators that are integrated with
 HotSpot's existing allocation mechanisms.
 
@@ -643,7 +643,7 @@ bases suggests this isn't a significant problem, so long as Standard Library
 names are namespace-qualified. It is tempting to bring the Standard Library
 names into scope via a `using std;` directive. Doing so makes writing code
 using those names easier, since the qualifiers don't need to be included. But
-there are reasons not to do that.
+there are several reasons not to do that.
 
     * There is a risk of future name collisions. Additional Standard Library
     headers may be included, adding to the list of names being used. Also,
@@ -1954,20 +1954,40 @@ should need to know about this feature.  But if someone does come up with a
 good use-case, it's likely that the alternatives are significantly worse,
 because pack manipulation without this can be complicated.
 
-* `<tuple>` - Prefer named access to class objects, rather than indexed access
+* [`<tuple>`](https://en.cppreference.com/w/cpp/header/tuple.html) &mdash;
+Prefer named access to class objects, rather than indexed access
 to anonymous heterogeneous sequences.  In particular, a standard-layout
 class is preferred to a tuple.
 
 * `std::invoke<>()`
 ([n4169](http://wg21.link/n4169))
 
-* `<chrono>`
+* [`<chrono>`](https://en.cppreference.com/w/cpp/header/chrono.html) &mdash;
+The argument for chrono is that our existing APIs aren't serving us well.
+chrono provides strong type safety. We've had multiple cases of mistakes like
+a double seconds being treated as double milliseconds or vice versa, and other
+similar errors. But it would be a large effort to adopt chrono. We'd also need
+to decide whether to use the predefined clocks or hook up chrono to our
+clocks. It may be that using the predefined clocks is fine, but it's a
+question that needs careful study.
 
-* `<initializer_list>`
+* [`<initializer_list>`](https://en.cppreference.com/w/cpp/header/initializer_list.html) &mdash;
+The potential ambiguity between some forms of direct initialization and
+initializer list initialization, and the resolution of that ambiguity, is
+unfortunate.
 
-* `<ratio>`
+* [`<ratio>`](https://en.cppreference.com/w/cpp/header/ratio.html) &mdash;
+`<ratio>` is a *compile-time* rational arithmetic package. It's also fixed
+(though parameterized) precision. It's not a general purpose rational
+arithmetic facility. It appears to have started out as an implementation
+detail of chrono, and was extracted and promoted to a public facility in the
+belief that it has broader utility.
 
-* `<system_error>`
+* [`<system_error>`](https://en.cppreference.com/w/cpp/header/system_error.html) &mdash;
+We don't really have a generally agreed upon mechanism for managing
+errors. Instead, we have a plethora of bespoke ad hoc mechanisms. Managing
+errors is a topic of substantial discussion. `<system_error>` might end up
+being a part of a result from that discussion.
 
 
 [ADL]: https://en.cppreference.com/w/cpp/language/adl

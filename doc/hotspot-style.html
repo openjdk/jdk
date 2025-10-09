@@ -711,7 +711,7 @@ for each header.</p></li>
 allocations occur. The C++98/03 <code>std::allocator</code> class is too
 limited to support our usage. But changes to the allocator concept in
 more recent Standards removed some of the limitations, supporting
-statefull allocators. HotSpot may, in the future, provide
+stateful allocators. HotSpot may, in the future, provide
 standard-conforming allocators that are integrated with HotSpot's
 existing allocation mechanisms.</p></li>
 <li><p>Implementation vagaries. Bugs, or simply different implementation
@@ -728,7 +728,7 @@ problem, so long as Standard Library names are namespace-qualified. It
 is tempting to bring the Standard Library names into scope via a
 <code>using std;</code> directive. Doing so makes writing code using
 those names easier, since the qualifiers don't need to be included. But
-there are reasons not to do that.</p>
+there are several reasons not to do that.</p>
 <ul>
 <li><p>There is a risk of future name collisions. Additional Standard
 Library headers may be included, adding to the list of names being used.
@@ -1953,16 +1953,43 @@ that developers should need to know about this feature. But if someone
 does come up with a good use-case, it's likely that the alternatives are
 significantly worse, because pack manipulation without this can be
 complicated.</p></li>
-<li><p><code>&lt;tuple&gt;</code> - Prefer named access to class
-objects, rather than indexed access to anonymous heterogeneous
-sequences. In particular, a standard-layout class is preferred to a
-tuple.</p></li>
+<li><p><a
+href="https://en.cppreference.com/w/cpp/header/tuple.html"><code>&lt;tuple&gt;</code></a>
+— Prefer named access to class objects, rather than indexed access to
+anonymous heterogeneous sequences. In particular, a standard-layout
+class is preferred to a tuple.</p></li>
 <li><p><code>std::invoke&lt;&gt;()</code> (<a
 href="http://wg21.link/n4169">n4169</a>)</p></li>
-<li><p><code>&lt;chrono&gt;</code></p></li>
-<li><p><code>&lt;initializer_list&gt;</code></p></li>
-<li><p><code>&lt;ratio&gt;</code></p></li>
-<li><p><code>&lt;system_error&gt;</code></p></li>
+<li><p><a
+href="https://en.cppreference.com/w/cpp/header/chrono.html"><code>&lt;chrono&gt;</code></a>
+— The argument for chrono is that our existing APIs aren't serving us
+well. chrono provides strong type safety. We've had multiple cases of
+mistakes like a double seconds being treated as double milliseconds or
+vice versa, and other similar errors. But it would be a large effort to
+adopt chrono. We'd also need to decide whether to use the predefined
+clocks or hook up chrono to our clocks. It may be that using the
+predefined clocks is fine, but it's a question that needs careful
+study.</p></li>
+<li><p><a
+href="https://en.cppreference.com/w/cpp/header/initializer_list.html"><code>&lt;initializer_list&gt;</code></a>
+— The potential ambiguity between some forms of direct initialization
+and initializer list initialization, and the resolution of that
+ambiguity, is unfortunate.</p></li>
+<li><p><a
+href="https://en.cppreference.com/w/cpp/header/ratio.html"><code>&lt;ratio&gt;</code></a>
+— <code>&lt;ratio&gt;</code> is a <em>compile-time</em> rational
+arithmetic package. It's also fixed (though parameterized) precision.
+It's not a general purpose rational arithmetic facility. It appears to
+have started out as an implementation detail of chrono, and was
+extracted and promoted to a public facility in the belief that it has
+broader utility.</p></li>
+<li><p><a
+href="https://en.cppreference.com/w/cpp/header/system_error.html"><code>&lt;system_error&gt;</code></a>
+— We don't really have a generally agreed upon mechanism for managing
+errors. Instead, we have a plethora of bespoke ad hoc mechanisms.
+Managing errors is a topic of substantial discussion.
+<code>&lt;system_error&gt;</code> might end up being a part of a result
+from that discussion.</p></li>
 </ul>
 </body>
 </html>
