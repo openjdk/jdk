@@ -78,9 +78,9 @@ public class TestEagerReclaimHumongousRegions {
      * Run the helper VM, passing configuration arguments, simulating an application allocating some kind of humongous object at a
      * point during the induced concurrent mark, and executing a young gc.
      *
-     * @param useTypeArray The allocated humongous object should be a typeArray, otherwise an objArray.
-     * @param keepReference Remove the reference to the allocated object after reaching the given phase or not.
-     * @param allocateAfter Allocate the humongous objects before or after reaching the given phase.
+     * @param type Whether the allocated humongous object should be a typeArray, or an objArray.
+     * @param refPolicy Drop the reference to the allocated object after reaching the given phase or keep.
+     * @param timing Allocate the humongous objects before or after reaching the given phase.
      * @param phase The phase during concurrent mark to reach before triggering a young garbage collection.
      * @return Returns the stdout of the VM.
      */
