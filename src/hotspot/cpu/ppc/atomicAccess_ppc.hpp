@@ -116,12 +116,13 @@ inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_va
   pre_membar(order);
 
   __asm__ __volatile__ (
-    "1: lwarx   %0,  0, %2    \n"
-    "   add     %0, %0, %1    \n"
-    "   stwcx.  %0,  0, %2    \n"
-    "   bne-    1b            \n"
-    : /*%0*/"=&r" (result)
-    : /*%1*/"r" (add_value), /*%2*/"r" (dest)
+    "1: lwarx   %[result], 0, %[dest]                 \n"
+    "   add     %[result], %[result], %[add_value]    \n"
+    "   stwcx.  %[result], 0, %[dest]                 \n"
+    "   bne-    1b                                    \n"
+    : [result]     "=&r"  (result)
+    : [add_value]  "r"    (add_value),
+      [dest]       "r"    (dest)
     : "cc", "memory" );
 
   post_membar(order);
@@ -142,12 +143,13 @@ inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_va
   pre_membar(order);
 
   __asm__ __volatile__ (
-    "1: ldarx   %0,  0, %2    \n"
-    "   add     %0, %0, %1    \n"
-    "   stdcx.  %0,  0, %2    \n"
-    "   bne-    1b            \n"
-    : /*%0*/"=&r" (result)
-    : /*%1*/"r" (add_value), /*%2*/"r" (dest)
+    "1: ldarx   %[result], 0, %[dest]                 \n"
+    "   add     %[result], %[result], %[add_value]    \n"
+    "   stdcx.  %[result], 0, %[dest]                 \n"
+    "   bne-    1b                                    \n"
+    : [result]     "=&r"  (result)
+    : [add_value]  "r"    (add_value),
+      [dest]       "r"    (dest)
     : "cc", "memory" );
 
   post_membar(order);
