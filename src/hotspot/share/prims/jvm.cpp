@@ -1326,13 +1326,10 @@ JVM_ENTRY(jclass, JVM_GetDeclaringClass(JNIEnv *env, jclass ofClass))
   if (!klass->is_instance_klass()) {
     return nullptr;
   }
-  InstanceKlass* k = InstanceKlass::cast(klass);
-
-  // Ensure class is linked
-  k->link_class(CHECK_NULL);
 
   bool inner_is_member = false;
-  Klass* outer_klass = k->compute_enclosing_class(&inner_is_member, CHECK_NULL);
+  Klass* outer_klass
+    = InstanceKlass::cast(klass)->compute_enclosing_class(&inner_is_member, CHECK_NULL);
   if (outer_klass == nullptr)  return nullptr;  // already a top-level class
   if (!inner_is_member)  return nullptr;     // a hidden class (inside a method)
   return (jclass) JNIHandles::make_local(THREAD, outer_klass->java_mirror());
@@ -1350,10 +1347,6 @@ JVM_ENTRY(jstring, JVM_GetSimpleBinaryName(JNIEnv *env, jclass cls))
     return nullptr;
   }
   InstanceKlass* k = InstanceKlass::cast(klass);
-
-  // Ensure class is linked
-  k->link_class(CHECK_NULL);
-
   int ooff = 0, noff = 0;
   if (k->find_inner_classes_attr(&ooff, &noff, THREAD)) {
     if (noff != 0) {
