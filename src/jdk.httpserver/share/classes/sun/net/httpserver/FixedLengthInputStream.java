@@ -56,6 +56,7 @@ class FixedLengthInputStream extends LeftOverInputStream {
         if (len > remaining) {
             len = (int)remaining;
         }
+        sendInterimResponseIfNeeded();
         int n = in.read(b, off, len);
         if (n > -1) {
             remaining -= n;

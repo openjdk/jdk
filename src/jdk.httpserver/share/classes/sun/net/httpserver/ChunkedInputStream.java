@@ -114,6 +114,7 @@ class ChunkedInputStream extends LeftOverInputStream {
         if (eof) {
             return -1;
         }
+        sendInterimResponseIfNeeded();
         if (needToReadHeader) {
             remaining = readChunkHeader();
             if (remaining == 0) {

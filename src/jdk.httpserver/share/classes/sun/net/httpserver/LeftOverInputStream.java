@@ -26,8 +26,6 @@
 package sun.net.httpserver;
 
 import java.io.*;
-import com.sun.net.httpserver.*;
-import com.sun.net.httpserver.spi.*;
 
 /**
  * a (filter) input stream which can tell us if bytes are "left over"
@@ -124,6 +122,16 @@ abstract class LeftOverInputStream extends FilterInputStream {
         }
 
         return n - remaining;
+    }
+
+    /* check if client sent an Expect 100 Continue.
+     * In that case, need to send an interim response.
+     */
+    protected void sendInterimResponseIfNeeded() throws IOException {
+        if (t.send100 && t.rcode == -1) {
+            t.send100 = false;
+            t.sendResponseHeaders(100, -1);
+        }
     }
 
     /**
