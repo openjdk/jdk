@@ -29,13 +29,13 @@
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "oops/trainingData.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 
 class ArchiveHeapInfo;
 class DumpRegion;
 class FileMapInfo;
+class KlassTrainingData;
 class outputStream;
 
 // Write detailed info to a mapfile to analyze contents of the AOT cache/CDS archive.

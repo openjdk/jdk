@@ -432,7 +432,7 @@ void AOTMapLogger::log_symbol(Symbol* s, address requested_addr, const char* typ
                       s->as_quoted_ascii());
 }
 void AOTMapLogger::log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name,
-                              int bytes, Thread* current) {
+                                           int bytes, Thread* current) {
   ResourceMark rm(current);
   if (ktd->has_holder()) {
     log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
