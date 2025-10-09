@@ -55,7 +55,7 @@
 #include <grp.h>
 
 #ifdef __linux__
-#include <stdint.h>
+#include <stdint.h> // For uint_XX_t types used in statx support
 #include <sys/syscall.h>
 #include <sys/sysmacros.h> // makedev macros
 #endif
