@@ -776,7 +776,9 @@ public class LocaleEnhanceTest {
         var bldr = new Builder();
         bldr.setLanguageTag("en-US");
         assertDoesNotThrow(() -> bldr.setLanguageTag(tag));
-        assertEquals(tag + " did not clear the builder", empty.build(), bldr.build());
+        assertEquals("Setting a %s language tag did not clear the builder"
+                .formatted(tag == null ? "null" : "empty"),
+                empty.build(), bldr.build());
     }
 
     @Test
