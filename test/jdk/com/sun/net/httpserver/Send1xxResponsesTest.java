@@ -96,7 +96,7 @@ public class Send1xxResponsesTest {
 
     @Test
     public void testManualContinue() throws Exception {
-        System.out.println("testAutoContinue()");
+        System.out.println("testManualContinue()");
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         String replyMsg = "Here is my reply!";
