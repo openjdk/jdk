@@ -1311,6 +1311,7 @@ class ZRendezvousGCThreads: public VM_Operation {
 
   void doit() {
     // Light weight "handshake" of the GC threads
+    SuspendibleThreadSet::synchronize_begin();
     SuspendibleThreadSet::synchronize();
     SuspendibleThreadSet::desynchronize();
   };
