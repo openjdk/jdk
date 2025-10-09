@@ -41,7 +41,7 @@ public class SafepointTest {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:safepoint=trace",
                                                                              InnerClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Safepoint synchronization begins");
+        output.shouldContain("Safepoint synchronization initiated");
         output.shouldHaveExitValue(0);
     }
 

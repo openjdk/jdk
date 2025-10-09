@@ -965,7 +965,7 @@ void SafepointTracing::begin(VM_Operation::VMOp_Type type) {
   _last_safepoint_end_time_ns = 0;
 
   RuntimeService::record_safepoint_begin(_last_app_time_ns);
-  log_debug(safepoint)("Safepoint synchronization begins");
+  log_debug(safepoint)("Safepoint synchronization initiated");
 }
 
 void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps) {
@@ -974,7 +974,7 @@ void SafepointTracing::synchronized(int nof_threads, int nof_running, int traps)
   _nof_running = nof_running;
   _page_trap   = traps;
   RuntimeService::record_safepoint_synchronized(_last_safepoint_sync_time_ns - _last_safepoint_begin_time_ns);
-  log_debug(safepoint)("Safepoint synchronization finished");
+  log_debug(safepoint)("Safepoint synchronization complete");
 }
 
 void SafepointTracing::leave() {
