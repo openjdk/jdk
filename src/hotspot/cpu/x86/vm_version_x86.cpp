@@ -1340,7 +1340,8 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (supports_evex() && supports_avx512bw()) {
+  if (UseSHA && supports_evex() && supports_avx512bw()) {
+      // Matches the documented and tested behavior: the -UseSHA option disables all SHA intrinsics.
       if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
           UseSHA3Intrinsics = true;
       }
