@@ -938,6 +938,8 @@ public:
 
   static bool is_intel_cascade_lake();
 
+  static bool is_intel_darkmont();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();

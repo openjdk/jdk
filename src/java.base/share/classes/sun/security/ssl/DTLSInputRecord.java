@@ -807,8 +807,11 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
 
             // buffer this fragment
             if (hsf.handshakeType == SSLHandshake.FINISHED.id) {
-                // Need no status update.
-                bufferedFragments.add(hsf);
+                // Make sure it's not a retransmitted message
+                if (hsf.recordEpoch > handshakeEpoch) {
+                    bufferedFragments.add(hsf);
+                    flightIsReady = holes.isEmpty();
+                }
             } else {
                 bufferFragment(hsf);
             }

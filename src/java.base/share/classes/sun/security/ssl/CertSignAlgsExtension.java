@@ -36,6 +36,11 @@ import sun.security.ssl.SignatureAlgorithmsExtension.SignatureSchemesSpec;
 
 /**
  * Pack of the "signature_algorithms_cert" extensions.
+ * <p>
+ * Note: Per RFC 8446, if no "signature_algorithms_cert" extension is
+ *       present, then the "signature_algorithms" extension also applies to
+ *       signatures appearing in certificates.
+ *       See {@code SignatureAlgorithmsExtension} for details.
  */
 final class CertSignAlgsExtension {
     static final HandshakeProducer chNetworkProducer =
