@@ -89,14 +89,22 @@ void SuspendibleThreadSet::yield_slow() {
   }
 }
 
-void SuspendibleThreadSet::synchronize() {
+void SuspendibleThreadSet::synchronize_begin() {
   if (ConcGCYieldTimeout > 0) {
     _suspend_all_start = os::elapsedTime();
   }
+
   {
     MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
     assert(!should_yield(), "Only one at a time");
     AtomicAccess::store(&_suspend_all, true);
+  }
+}
+
+void SuspendibleThreadSet::synchronize() {
+  assert(AtomicAccess::load(&_suspend_all), "synchronize must have begun.");
+  {
+    MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
     if (is_synchronized()) {
       return;
     }

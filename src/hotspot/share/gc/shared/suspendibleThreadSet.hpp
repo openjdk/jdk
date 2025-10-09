@@ -68,7 +68,10 @@ public:
     }
   }
 
-  // Returns when all threads in the set are suspended.
+  // begin to synchronize suspendible threads,
+  static void synchronize_begin();
+
+  // synchronize all suspendible threads
   static void synchronize();
 
   // Resumes all suspended threads in the set.
