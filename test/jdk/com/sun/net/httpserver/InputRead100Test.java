@@ -70,6 +70,7 @@ public class InputRead100Test {
                     byte[] reply = "Here is my reply!".getBytes(UTF_8);
                     try {
                         msg.getRequestBody().readAllBytes();
+                        msg.sendResponseHeaders(100, -1);
                         msg.sendResponseHeaders(200, reply.length);
                         msg.getResponseBody().write(reply);
                         msg.getResponseBody().close();
@@ -101,6 +102,7 @@ public class InputRead100Test {
                     byte[] reply = "Here is my reply!".getBytes(UTF_8);
                     try {
                         msg.sendResponseHeaders(100, -1);
+                        msg.sendResponseHeaders(100, -1);
                         msg.getRequestBody().readAllBytes();
                         msg.sendResponseHeaders(200, reply.length);
                         msg.getResponseBody().write(reply);
@@ -126,6 +128,7 @@ public class InputRead100Test {
         PrintWriter writer = null;
         BufferedReader reader = null;
         boolean foundContinue = false;
+        boolean foundSecondContinue = false;
 
         final String CRLF = "\r\n";
         try {
@@ -150,16 +153,19 @@ public class InputRead100Test {
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             String line = reader.readLine();
             for (; line != null; line = reader.readLine()) {
-                if (line.isEmpty()) {
+                if (line.isEmpty() && foundSecondContinue) {
                     break;
+                }
+                if (foundContinue && line.startsWith("HTTP/1.1 100")) {
+                    foundSecondContinue = true;
                 }
                 System.out.println("interim response \"" + line + "\"");
                 if (line.startsWith("HTTP/1.1 100")) {
                     foundContinue = true;
                 }
             }
-            if (!foundContinue) {
-                throw new IOException("Did not receive 100 continue from server");
+            if (!foundSecondContinue) {
+                throw new IOException("Did not receive two 100 continue from server");
             }
             writer.print(body);
             writer.flush();
@@ -172,9 +178,6 @@ public class InputRead100Test {
                     break;
                 }
                 System.out.println("final response \"" + line + "\"");
-                if (foundContinue && line.startsWith("HTTP/1.1 100")) {
-                    System.out.println("continue response sent twice");
-                }
             }
             System.out.println("Client finished reading from server");
         } finally {
