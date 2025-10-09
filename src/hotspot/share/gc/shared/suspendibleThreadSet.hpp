@@ -41,8 +41,8 @@ class SuspendibleThreadSet : public AllStatic {
   friend class SuspendibleThreadSetLeaver;
 
 private:
-  static volatile uint          _nthreads;
-  static volatile uint          _nthreads_stopped;
+  static volatile uint _nthreads;
+  static volatile uint _nthreads_stopped;
   static volatile bool _suspend_all;
   static double        _suspend_all_start;
 

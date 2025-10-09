@@ -28,8 +28,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/semaphore.hpp"
 
-volatile uint          SuspendibleThreadSet::_nthreads          = 0;
-volatile uint          SuspendibleThreadSet::_nthreads_stopped  = 0;
+volatile uint SuspendibleThreadSet::_nthreads          = 0;
+volatile uint SuspendibleThreadSet::_nthreads_stopped  = 0;
 volatile bool SuspendibleThreadSet::_suspend_all       = false;
 double        SuspendibleThreadSet::_suspend_all_start = 0.0;
 
