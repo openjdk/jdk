@@ -205,7 +205,10 @@ public class ThreadDumper {
                 // park blocker
                 Object parkBlocker = snapshot.parkBlocker();
                 if (parkBlocker != null) {
-                    writer.println("    - parking to wait for " + decorateObject(parkBlocker));
+                    String suffix = (snapshot.parkBlockerOwner() instanceof Thread owner)
+                            ? ", owner #"  + owner.threadId()
+                            : "";
+                    writer.println("    - parking to wait for " + decorateObject(parkBlocker) + suffix);
                 }
 
                 // blocked on monitor enter or Object.wait
@@ -335,6 +338,9 @@ public class ThreadDumper {
             // parkBlocker is an object to allow for exclusiveOwnerThread in the future
             jsonWriter.startObject("parkBlocker");
             jsonWriter.writeProperty("object", Objects.toIdentityString(parkBlocker));
+            if (snapshot.parkBlockerOwner() instanceof Thread owner) {
+                jsonWriter.writeProperty("owner", owner.threadId());
+            }
             jsonWriter.endObject();
         }
 

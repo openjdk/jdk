@@ -1565,6 +1565,9 @@ const int ObjectAlignmentInBytes = 8;
           "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
                                                                             \
+  product(bool, NMethodRelocation, false, EXPERIMENTAL,                     \
+          "Enables use of experimental function nmethod::relocate()")       \
+                                                                            \
   /* interpreter debugging */                                               \
   develop(intx, BinarySwitchThreshold, 5,                                   \
           "Minimal number of lookupswitch entries for rewriting to binary " \
@@ -2000,9 +2003,6 @@ const int ObjectAlignmentInBytes = 8;
           "Minimal number of elements in a sorted collection to prefer"     \
           "binary search over simple linear search." )                      \
                                                                             \
-  product(bool, UseClassMetaspaceForAllClasses, false, DIAGNOSTIC,          \
-          "Use the class metaspace for all classes including "              \
-          "abstract and interface classes.")                                \
 
 // end of RUNTIME_FLAGS
 
