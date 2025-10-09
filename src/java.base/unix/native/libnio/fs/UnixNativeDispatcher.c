@@ -25,7 +25,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -56,6 +55,7 @@
 #include <grp.h>
 
 #ifdef __linux__
+#include <stdint.h>
 #include <sys/syscall.h>
 #include <sys/sysmacros.h> // makedev macros
 #endif
