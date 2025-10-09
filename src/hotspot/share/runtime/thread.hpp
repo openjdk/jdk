@@ -571,16 +571,11 @@ protected:
 
  private:
   volatile int _jvmti_env_iteration_count;
-  volatile int _jvmti_event_callback_depth;
 
  public:
   void entering_jvmti_env_iteration()            { ++_jvmti_env_iteration_count; }
   void leaving_jvmti_env_iteration()             { --_jvmti_env_iteration_count; }
   bool is_inside_jvmti_env_iteration()           { return _jvmti_env_iteration_count > 0; }
-
-  void enter_jvmti_event_callback()              { AtomicAccess::inc(&_jvmti_event_callback_depth); }
-  void leave_jvmti_event_callback()              { AtomicAccess::dec(&_jvmti_event_callback_depth); }
-  int current_jvmti_event_callback_depth() const { return AtomicAccess::load(&_jvmti_event_callback_depth); }
 
   // Code generation
   static ByteSize exception_file_offset()        { return byte_offset_of(Thread, _exception_file); }
