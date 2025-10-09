@@ -42,16 +42,13 @@ final class ShellScriptResource {
     }
 
     void saveInFolder(Path folder) throws IOException {
-        // Shell scripts might not have default
-        if (resource.saveToFile((Path)null) == null) {
-            Log.verbose(I18N.format("message.no-default-resource",
-                resource.getPublicName(), resource.getCategory(),
-                resource.getPublicName()));
-            return;
-        }
-
         Path dstFile = folder.resolve(publicFileName);
         resource.saveToFile(dstFile);
+
+        if (!Files.exists(dstFile)) {
+            // No script file created.
+            return;
+        }
 
         Files.setPosixFilePermissions(dstFile, Stream.of(execPerms, Set.of(
             PosixFilePermission.OWNER_READ,

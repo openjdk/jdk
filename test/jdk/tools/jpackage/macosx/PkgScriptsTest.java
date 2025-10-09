@@ -21,7 +21,22 @@
  * questions.
  */
 
- /*
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.TKit;
+
+/*
  * @test
  * @summary jpackage with --type pkg --resource-dir Scripts
  * @library /test/jdk/tools/jpackage/helpers
@@ -33,31 +48,6 @@
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=PkgScriptsTest
  */
-
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Stream;
-
-import jdk.jpackage.internal.util.PathUtils;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
-
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.Annotations.ParameterSupplier;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Executor;
-
 public class PkgScriptsTest {
 
     public static Collection<?> input() {
@@ -84,6 +74,8 @@ public class PkgScriptsTest {
             return new CustomInstallScript(responseDir, role);
         }).toList();
 
+        var noScriptRoles = noScriptRoles(customScripts);
+
         new PackageTest()
             .forTypes(PackageType.MAC_PKG)
             .configureHelloApp()
@@ -92,13 +84,18 @@ public class PkgScriptsTest {
                 customScripts.forEach(customScript -> {
                     customScript.createFor(cmd);
                 });
+                // Verify jpackage logs script resources user can customize.
+                noScriptRoles.stream().map(role -> {
+                    return JPackageStringBundle.MAIN.cannedFormattedString(
+                            "message.no-default-resource",
+                            String.format("[%s]", role.resourceCategory()),
+                            role.scriptName());
+                }).forEach(cmd::validateOutput);
             }).addInstallVerifier(cmd -> {
                 customScripts.forEach(customScript -> {
                     customScript.verify(cmd);
                 });
                 if (cmd.isPackageUnpacked()) {
-                    var noScriptRoles = new HashSet<>(Set.of(customScriptRoles));
-                    customScripts.stream().map(CustomInstallScript::role).forEach(noScriptRoles::remove);
                     noScriptRoles.forEach(role -> {
                         role.verifyExists(cmd, false);
                     });
@@ -113,6 +110,11 @@ public class PkgScriptsTest {
 
         String scriptName() {
             return name().toLowerCase();
+        }
+
+        String resourceCategory() {
+            return JPackageStringBundle.MAIN.cannedFormattedString(
+                    String.format("resource.pkg-%s-script", scriptName())).getValue();
         }
 
         Path pathInUnpackedPackage(JPackageCommand cmd) {
@@ -164,5 +166,11 @@ public class PkgScriptsTest {
         private Path responseFilePath(JPackageCommand cmd) {
             return Path.of(cmd.getArgumentValue("--resource-dir")).resolve(role.scriptName());
         }
+    }
+
+    private static Set<PkgInstallScript> noScriptRoles(Collection<CustomInstallScript> customScripts) {
+        var noScriptRoles = new HashSet<>(Set.of(PkgInstallScript.values()));
+        customScripts.stream().map(CustomInstallScript::role).forEach(noScriptRoles::remove);
+        return noScriptRoles;
     }
 }

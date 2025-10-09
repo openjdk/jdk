@@ -78,7 +78,6 @@ class ScriptRunner {
         Path scriptPath = env.configDir().resolve(scriptName);
         env.createResource(null)
                 .setCategory(I18N.getString(resourceCategoryId))
-                .setPublicName(scriptName)
                 .saveToFile(scriptPath);
         if (!Files.exists(scriptPath)) {
             return;
