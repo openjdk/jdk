@@ -114,7 +114,7 @@ public class TestSerialGCWithCDS {
                               small1,
                               small2,
                               coops,
-			      "-XX:-AOTStreamableObjects",
+                              "-XX:-AOTStreamableObjects",
                               "-Xlog:cds");
         out.shouldContain("Dumping shared data to file:");
         out.shouldHaveExitValue(0);

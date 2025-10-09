@@ -103,7 +103,7 @@ public class TestZGCWithAOTHeap {
         }
 
         // Regardless of which GC dumped the heap, there will be an object archive, either
-        // created with mapping if dumped with G1, or streaming if dumped with parallel GC. 
+        // created with mapping if dumped with G1, or streaming if dumped with parallel GC.
         // At exec time, try to load them into a small ZGC heap that may be too small.
         System.out.println("2. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream);
         out = TestCommon.exec(helloJar,
@@ -122,7 +122,7 @@ public class TestZGCWithAOTHeap {
         }
         out.shouldNotHaveFatalError();
 
-	if (shouldStream) {
+        if (shouldStream) {
             System.out.println("3. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream + ", " + eagerLoading);
             out = TestCommon.exec(helloJar,
                                   execGC,

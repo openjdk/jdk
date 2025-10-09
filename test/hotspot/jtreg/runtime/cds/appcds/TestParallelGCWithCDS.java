@@ -122,7 +122,7 @@ public class TestParallelGCWithCDS {
         out.shouldHaveExitValue(0);
 
         // Regardless of which GC dumped the heap, there will be an object archive, either
-        // created with mapping if dumped with G1, or streaming if dumped with parallel GC. 
+        // created with mapping if dumped with G1, or streaming if dumped with parallel GC.
         // At exec time, try to load them into a small ParallelGC heap that may be too small.
         System.out.println("2. Exec with " + execGC);
         out = TestCommon.exec(helloJar,

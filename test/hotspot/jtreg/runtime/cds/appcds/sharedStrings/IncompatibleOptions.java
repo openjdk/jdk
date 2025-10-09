@@ -102,7 +102,7 @@ public class IncompatibleOptions {
         testDump(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
         testExec(1, "-XX:+UseG1GC", "-XX:-UseCompressedOops", null, false);
 
-	// Try with ZGC
+        // Try with ZGC
         if (GC.Z.isSupported()) {
             testDump(2, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
             testExec(2, "-XX:+UseZGC", "-XX:-UseCompressedOops", null, false);
