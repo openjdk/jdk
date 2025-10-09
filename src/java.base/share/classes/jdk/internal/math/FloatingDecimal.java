@@ -820,7 +820,7 @@ public class FloatingDecimal {
                 if (isExact) {  // v and fl are mathematically equal.
                     int ef = (d[0] < '9' ? MAX_DECIMAL_DIGITS + 1 : MAX_DECIMAL_DIGITS) - n;
                     if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {  // e.g., x = .89e38
-                        /* Relies on left-to-right order of operations. */
+                        /* Relies on left-to-right evaluation. */
                         v = v * SMALL_10_POW[ef] * SMALL_10_POW[ep - ef];
                         return isNegative ? -v : v;
                     }
@@ -828,10 +828,11 @@ public class FloatingDecimal {
             }
 
             double v = highPrecisionDoubleValue(fl);
-            long bits = Double.doubleToRawLongBits(v) ^ DoubleConsts.SIGN_BIT_MASK;
-            if (bits < 0) {
+            long bits = Double.doubleToRawLongBits(v);
+            if (bits >= 0) {
                 return isNegative ? -v : v;
             }
+            bits ^= DoubleConsts.SIGN_BIT_MASK;
 
             /* Split the double represented by bits into c 2^q. */
             int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
@@ -840,13 +841,14 @@ public class FloatingDecimal {
             long cr = 4 * (bits & DoubleConsts.SIGNIF_BIT_MASK | (be != 0 ? DoubleToDecimal.C_MIN : 0)) + 2;
             long s = 4;  // step
 
-            FDBigInteger lhs =
-                    valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0)).makeImmutable();
+            FDBigInteger lhs = valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0))
+                    .makeImmutable();
             FDBigInteger rhs = new FDBigInteger(fl, d, nl, n)
-                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0)).makeImmutable();
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0))
+                    .makeImmutable();
 
             int cmp = lhs.mult(cr).cmp(rhs);
-            if (cmp < 0) {
+            if (cmp <= 0) {
                 while (cmp < 0) {
                     bits += 1;
                     if (cr != (1L << DoubleToDecimal.P + 2) - 2) {
@@ -859,7 +861,7 @@ public class FloatingDecimal {
                 }
                 // vr ≥ x
                 v = Double.longBitsToDouble(bits + (cmp != 0 ? 0 : bits & 0b1));
-            } else if (cmp > 0) {
+            } else {
                 while (cmp > 0) {
                     bits -= 1;
                     if (qr == DoubleToDecimal.Q_MIN - 2 ||
@@ -873,8 +875,6 @@ public class FloatingDecimal {
                 }
                 // vr ≤ x
                 v = Double.longBitsToDouble(bits + (cmp != 0 ? 1 : bits & 0b1));
-            } else {
-                v = Double.longBitsToDouble(bits + (bits & 0b1));
             }
             return isNegative ? -v : v;
         }
@@ -1055,7 +1055,7 @@ public class FloatingDecimal {
                     v = ep >= 0 ? v * SINGLE_SMALL_10_POW[ep] : v / SINGLE_SMALL_10_POW[-ep];
                     return isNegative ? -v : v;
                 }
-                /* As in doubleValue(), but here 10^8 < 2^P. */
+                /* As in doubleValue(), but here 10^8 < 2^P and nothing more. */
                 if (isExact) {
                     int ef = 8 - n;
                     if (ef >= 0 && ep - ef <= SINGLE_MAX_SMALL_TEN) {
@@ -1066,25 +1066,26 @@ public class FloatingDecimal {
             }
 
             float v = highPrecisionFloatValue(fl);
-            int bits = Float.floatToRawIntBits(v) ^ FloatConsts.SIGN_BIT_MASK;
-            if (bits < 0) {
+            int bits = Float.floatToRawIntBits(v);
+            if (bits >= 0) {
                 return isNegative ? -v : v;
             }
-
+            bits ^= FloatConsts.SIGN_BIT_MASK;
 
             int be = (bits & FloatConsts.EXP_BIT_MASK) >>> FloatConsts.SIGNIFICAND_WIDTH - 1;
             int qr = be - (FloatConsts.EXP_BIAS + FloatConsts.SIGNIFICAND_WIDTH - 1)
                     - (be != 0 ? 2 : 1);
             int cr = 4 * (bits & FloatConsts.SIGNIF_BIT_MASK | (be != 0 ? FloatToDecimal.C_MIN : 0)) + 2;
-            int s = 4;  // step
+            int s = 4;
 
-            FDBigInteger lhs =
-                    valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0)).makeImmutable();
+            FDBigInteger lhs = valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0))
+                    .makeImmutable();
             FDBigInteger rhs = new FDBigInteger(fl, d, nl, n)
-                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0)).makeImmutable();
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0))
+                    .makeImmutable();
 
             int cmp = lhs.mult(cr).cmp(rhs);
-            if (cmp < 0) {
+            if (cmp <= 0) {
                 while (cmp < 0) {
                     bits += 1;
                     if (cr != (1 << FloatToDecimal.P + 2) - 2) {
@@ -1097,7 +1098,7 @@ public class FloatingDecimal {
                 }
                 // vr ≥ x
                 v = Float.intBitsToFloat(bits + (cmp != 0 ? 0 : bits & 0b1));
-            } else if (cmp > 0) {
+            } else {
                 while (cmp > 0) {
                     bits -= 1;
                     if (qr == FloatToDecimal.Q_MIN - 2 ||
@@ -1111,8 +1112,6 @@ public class FloatingDecimal {
                 }
                 // vr ≤ x
                 v = Float.intBitsToFloat(bits + (cmp != 0 ? 1 : bits & 0b1));
-            } else {
-                v = Float.intBitsToFloat(bits + (bits & 0b1));
             }
             return isNegative ? -v : v;
         }

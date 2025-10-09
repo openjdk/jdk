@@ -81,6 +81,7 @@ public class FDBigInteger {
                     25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25,
                     25L * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 25 * 5,  // 5^27
                 };
+
             int[] small5pow = {
                     1,
                     5,
@@ -410,7 +411,7 @@ public class FDBigInteger {
      *
      * @return Number of {@code int}s required to represent this {@link FDBigInteger}.
      */
-    public int size() {
+    private int size() {
         return nWords + offset;
     }
 
@@ -463,7 +464,7 @@ public class FDBigInteger {
         // right. If not, then we're only off by a little and
         // will re-add.
         long q = (this.data[this.nWords - 1] & LONG_MASK) / (S.data[S.nWords - 1] & LONG_MASK);
-        long diff = multDiffMe(q, S);
+        long diff = multSub(q, S);
         if (diff != 0L) {
             //@ assert q != 0;
             //@ assert this.offset == \old(Math.min(this.offset, S.offset));
@@ -555,16 +556,21 @@ public class FDBigInteger {
         FDBigInteger res = this;
         if (e5 != 0) {
             int[] r;
-            int extraSize = e2 != 0 ? 1 : 0;
+            int extraSize = e2 != 0 ? 1 : 0;  // accounts for e2 % 32 shift bits
             if (e5 < SMALL_5_POW.length) {
                 r = new int[nWords + 1 + extraSize];
                 mult(data, nWords, SMALL_5_POW[e5], r);
                 res = new FDBigInteger(r, offset);
+            } else if (e5 < LONG_5_POW.length) {
+                long p5 = LONG_5_POW[e5];
+                r = new int[nWords + 2 + extraSize];
+                mult(data, nWords, (int) p5, (int) (p5 >>> 32), r);
+                res = new FDBigInteger(r, offset);
             } else {
                 FDBigInteger pow5 = pow5(e5);
-                r = new int[nWords + pow5.size() + extraSize];
+                r = new int[nWords + pow5.nWords + extraSize];
                 mult(data, nWords, pow5.data, pow5.nWords, r);
-                res = new FDBigInteger(r, offset + pow5.offset);
+                res = new FDBigInteger(r, offset);
             }
         }
         return res.leftShift(e2);
@@ -748,7 +754,7 @@ public class FDBigInteger {
      * @return This {@link FDBigInteger} multiplied by an integer.
      */
     public FDBigInteger mult(int v) {
-        if (nWords == 0) {
+        if (nWords == 0 || v == 0) {
             return this;
         }
         int[] r = new int[nWords + 1];
@@ -757,7 +763,7 @@ public class FDBigInteger {
     }
 
     public FDBigInteger mult(long v) {
-        if (nWords == 0) {
+        if (nWords == 0 || v == 0) {
             return this;
         }
         int[] r = new int[nWords + 2];
@@ -772,18 +778,6 @@ public class FDBigInteger {
      * @return The product of this and the parameter {@link FDBigInteger}s.
      */
     private FDBigInteger mult(FDBigInteger other) {
-        if (this.nWords == 0) {
-            return this;
-        }
-        if (this.size() == 1) {
-            return other.mult(data[0]);
-        }
-        if (other.nWords == 0) {
-            return other;
-        }
-        if (other.size() == 1) {
-            return this.mult(other.data[0]);
-        }
         int[] r = new int[nWords + other.nWords];
         mult(this.data, this.nWords, other.data, other.nWords, r);
         return new FDBigInteger(r, this.offset + other.offset);
@@ -862,7 +856,7 @@ public class FDBigInteger {
      * @param S The {@link FDBigInteger} parameter.
      * @return {@code this - q*S}.
      */
-    private long multDiffMe(long q, FDBigInteger S) {
+    private long multSub(long q, FDBigInteger S) {
         long diff = 0L;
         if (q != 0) {
             int deltaSize = S.offset - this.offset;
@@ -931,12 +925,13 @@ public class FDBigInteger {
     private static void mult(int[] src, int srcLen, int value, int[] dst) {
         long v = value & LONG_MASK;
         long carry = 0;
-        for (int i = 0; i < srcLen; i++) {
+        int i = 0;
+        for (; i < srcLen; i++) {
             long product = v * (src[i] & LONG_MASK) + carry;
             dst[i] = (int) product;
             carry = product >>> 32;
         }
-        dst[srcLen] = (int) carry;
+        dst[i] = (int) carry;
     }
 
     /**
@@ -952,20 +947,23 @@ public class FDBigInteger {
     private static void mult(int[] src, int srcLen, int v0, int v1, int[] dst) {
         long v = v0 & LONG_MASK;
         long carry = 0;
-        for (int j = 0; j < srcLen; j++) {
+        int j = 0;
+        for (; j < srcLen; j++) {
             long product = v * (src[j] & LONG_MASK) + carry;
             dst[j] = (int) product;
             carry = product >>> 32;
         }
-        dst[srcLen] = (int) carry;
+        dst[j] = (int) carry;
+
         v = v1 & LONG_MASK;
         carry = 0;
-        for (int j = 0; j < srcLen; j++) {
-            long product = (dst[j + 1] & LONG_MASK) + v * (src[j] & LONG_MASK) + carry;
-            dst[j + 1] = (int) product;
+        j = 1;
+        for (; j <= srcLen; j++) {
+            long product = (dst[j] & LONG_MASK) + v * (src[j - 1] & LONG_MASK) + carry;
+            dst[j] = (int) product;
             carry = product >>> 32;
         }
-        dst[srcLen + 1] = (int) carry;
+        dst[j] = (int) carry;
     }
 
     /*
@@ -973,6 +971,8 @@ public class FDBigInteger {
      * The size just serves for the conversions.
      * It is filled lazily, except for the entries with exponent
      * 2 (MAX_FIVE_POW - 1) and 3 (MAX_FIVE_POW - 1).
+     *
+     * Access must be synchronized for thread-safety.
      */
     private static final FDBigInteger[] LARGE_POW_5_CACHE;
 
@@ -1016,8 +1016,10 @@ public class FDBigInteger {
             return "0";
         }
         StringBuilder sb = new StringBuilder(8 * (size()));
-        for (int i = nWords - 1; i >= 0; i--) {
-            String subStr = Integer.toHexString(data[i]);
+        int i = nWords - 1;
+        sb.append(Integer.toHexString(data[i--]));
+        while (i >= 0) {
+            String subStr = Integer.toHexString(data[i--]);
             sb.repeat('0', 8 - subStr.length()).append(subStr);
         }
         return sb.repeat('0', 8 * offset).toString();
@@ -1025,13 +1027,18 @@ public class FDBigInteger {
 
     // for debugging ...
     /**
-     * Converts this {@link FDBigInteger} to a {@code byte[]} for use in
-     * {@link java.math.BigInteger} constructor.
+     * Converts this {@link FDBigInteger} to a {@code byte[]} suitable
+     * for use in {@link java.math.BigInteger#BigInteger(byte[])}.
      *
      * @return The {@code byte[]} representation.
      */
+    /*
+     * A toBigInteger() method would be more convenient, but it would
+     * introduce a dependency on java.math, which is not desirable in such
+     * a basic layer like this one used in java.lang, javac, and other tools.
+     */
     public byte[] toByteArray() {
-        byte[] magnitude = new byte[4 * size() + 1];
+        byte[] magnitude = new byte[4 * size() + 1];  // +1 for the "sign" byte
         for (int i = 0, j = magnitude.length - 4 * offset; i < nWords; i += 1, j -= 4) {
             int w = data[i];
             magnitude[j - 1] = (byte) w;
