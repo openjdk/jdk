@@ -91,18 +91,26 @@ public final class ErrorTest {
             return appImageCmd.outputBundle().toString();
         }),
         INVALID_MAC_RUNTIME_BUNDLE(toFunction(cmd -> {
-            // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib"
-            final Path root = TKit.createTempDirectory("invalid-runtime-bundle");
+            // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib".
+            final Path root = TKit.createTempDirectory("mac-invalid-runtime-bundle");
             Files.createDirectories(root.resolve("Contents/Home"));
             Files.createFile(root.resolve("Contents/Info.plist"));
             Files.createDirectories(root.resolve("Contents/MacOS"));
             Files.createFile(root.resolve("Contents/MacOS/libjli.dylib"));
             return root.toString();
         })),
+        INVALID_MAC_RUNTIME_IMAGE(toFunction(cmd -> {
+            // Has some files in the "lib" subdirectory, but doesn't have the "lib/libjli.dylib" file.
+            final Path root = TKit.createTempDirectory("mac-invalid-runtime-image");
+            Files.createDirectories(root.resolve("lib"));
+            Files.createFile(root.resolve("lib/foo"));
+            return root.toString();
+        })),
         EMPTY_DIR(toFunction(cmd -> {
             return TKit.createTempDirectory("empty-dir");
         })),
-        ADD_LAUNCHER_PROPERTY_FILE;
+        ADD_LAUNCHER_PROPERTY_FILE,
+        ;
 
         private Token() {
             this.valueSupplier = Optional.empty();
@@ -729,34 +737,48 @@ public final class ErrorTest {
         var runtimeWithBinDirErrAdvice = JPackageStringBundle.MAIN.cannedFormattedString(
                 "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
 
-        var runtimeBundleWithoutJliLibErr = JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
-                    return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.INVALID_MAC_RUNTIME_BUNDLE.token()), "Contents/Home/lib/**/libjli.dylib");
-
-        var runtimeDirWithoutJliLibErr = JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
-                    return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.EMPTY_DIR.token()), "lib/**/libjli.dylib");
-
         Stream.of(
                 testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
                         .errors(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
         ).map(TestSpec.Builder::create).forEach(accumulator);
 
-        for (var mutator : List.<Consumer<TestSpec.Builder>>of(builder -> {
-            builder.addArgs("--runtime-image", Token.INVALID_MAC_RUNTIME_BUNDLE.token()).errors(runtimeBundleWithoutJliLibErr);
-        }, builder -> {
-            builder.addArgs("--runtime-image", Token.EMPTY_DIR.token()).errors(runtimeDirWithoutJliLibErr);
-        })) {
+        Stream.of(
+                Token.INVALID_MAC_RUNTIME_BUNDLE,
+                Token.EMPTY_DIR,
+                Token.INVALID_MAC_RUNTIME_IMAGE
+        ).map(MissingRuntimeFileError::missingLibjli).forEach(mapper -> {
             Stream.of(
                     testSpec(),
                     testSpec().nativeType(),
                     testSpec().nativeType().noAppDesc()
-            ).map(testSpec -> {
-                mutator.accept(testSpec);
-                return testSpec;
-            }).map(TestSpec.Builder::create).forEach(accumulator);
+            ).map(mapper::applyTo).map(TestSpec.Builder::create).forEach(accumulator);
+        });
+    }
+
+    private record MissingRuntimeFileError(Token runtimeDir, String missingFile) {
+
+        MissingRuntimeFileError {
+            Objects.requireNonNull(runtimeDir);
+            Objects.requireNonNull(missingFile);
+        }
+
+        static MissingRuntimeFileError missingLibjli(Token runtimeDir) {
+            if (runtimeDir == Token.INVALID_MAC_RUNTIME_BUNDLE) {
+                return new MissingRuntimeFileError(runtimeDir, "Contents/Home/lib/**/libjli.dylib");
+            } else {
+                return new MissingRuntimeFileError(runtimeDir, "lib/**/libjli.dylib");
+            }
+        }
+
+        TestSpec.Builder applyTo(TestSpec.Builder builder) {
+            return builder.addArgs("--runtime-image", runtimeDir.token()).errors(expectedErrorMsg());
+        }
+
+        private CannedFormattedString expectedErrorMsg() {
+            return JPackageStringBundle.MAIN.cannedFormattedString(
+                    "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
+                        return Path.of(cmd.getArgumentValue("--runtime-image"));
+                    }, runtimeDir.token()), missingFile);
         }
     }
 
