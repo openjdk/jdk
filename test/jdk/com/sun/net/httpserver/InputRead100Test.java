@@ -53,6 +53,7 @@ import static java.nio.charset.StandardCharsets.*;
 public class InputRead100Test {
     private static final String someContext = "/context";
 
+    private static final String someContext = "/context";
     static {
         Logger.getLogger("").setLevel(Level.ALL);
         Logger.getLogger("").getHandlers()[0].setLevel(Level.ALL);
@@ -173,6 +174,9 @@ public class InputRead100Test {
                     break;
                 }
                 System.out.println("final response \"" + line + "\"");
+                if (foundContinue && line.startsWith("HTTP/1.1 100")) {
+                    throw new IOException("continue response sent twice");
+                }
             }
             System.out.println("Client finished reading from server");
         } finally {
