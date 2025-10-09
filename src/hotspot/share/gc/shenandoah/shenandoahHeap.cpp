@@ -201,7 +201,7 @@ jint ShenandoahHeap::initialize() {
   assert(num_min_regions <= _num_regions, "sanity");
   _minimum_size = num_min_regions * reg_size_bytes;
 
-  _soft_max_size = SoftMaxHeapSize;
+  _soft_max_size = clamp(SoftMaxHeapSize, min_capacity(), max_capacity());
 
   _committed = _initial_size;
 
