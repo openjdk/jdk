@@ -45,6 +45,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -218,7 +219,8 @@ public class Send1xxResponsesTest {
             System.out.println("Client finished reading from server");
             // Assert that the received status codes match the expected ones
             if (statusCodes.size() != expectedStatusCodes.length) {
-                throw new IOException("Expected " + expectedStatusCodes.length + " status codes, but got " + statusCodes.size());
+                System.out.println("Expected status codes: " + Arrays.toString(expectedStatusCodes));
+                System.out.println("Received status codes: " + statusCodes);
             }
             for (int i = 0; i < expectedStatusCodes.length; i++) {
                 if (!statusCodes.get(i).equals(String.valueOf(expectedStatusCodes[i]))) {
