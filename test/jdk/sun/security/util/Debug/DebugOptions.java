@@ -128,16 +128,18 @@ public class DebugOptions {
 
         final String formattedParam = makeFirstAndLastLetterUppercase(paramVal);
 
-        final String nonsenseParam = formattedParam.substring(0,formattedParam.length()-2) +
+        final String nonsenseParam = "NONSENSE" +
+                                     formattedParam.substring(0, formattedParam.length() - 2) +
                                      "NONSENSE" +
-                                     formattedParam.substring(formattedParam.length()-2);
+                                     formattedParam.substring(formattedParam.length() - 2) +
+                                     "NONSENSE";
 
         System.out.printf("Executing: {%s%s DebugOptions}%n",
                 paramName,
                 nonsenseParam);
 
         final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
-                paramName + "NONSENSE" + nonsenseParam + "NONSENSE",
+                paramName + nonsenseParam,
                 "DebugOptions");
 
         // shouldn't fail, but shouldn't give 'properties:' back
