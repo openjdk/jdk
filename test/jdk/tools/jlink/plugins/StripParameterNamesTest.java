@@ -32,13 +32,13 @@ import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 import java.util.spi.ToolProvider;
 
+import jdk.test.lib.util.FileUtils;
 import tests.JImageGenerator;
 import tests.JImageGenerator.InMemorySourceFile;
 import tests.Result;
@@ -48,20 +48,22 @@ import tests.Result;
  * @summary Test jlink strip debug plugins handle method parameter names.
  * @bug 8347007
  * @library ../../lib
+ * @library /test/lib
  * @modules java.base/jdk.internal.jimage
  *          jdk.jlink/jdk.tools.jlink.internal
  *          jdk.jlink/jdk.tools.jlink.plugin
  *          jdk.jlink/jdk.tools.jmod
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
- * @build tests.*
+ * @build jdk.test.lib.util.FileUtils
+ *        tests.*
  * @run junit/othervm StripParameterNamesTest
  */
 public class StripParameterNamesTest {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
             .orElseThrow(() -> new RuntimeException("javac tool not found"));
 
-    private static Path src = Paths.get("src").toAbsolutePath();
+    private static Path src = Path.of("src").toAbsolutePath();
     private static List<Jmod> testJmods = new ArrayList<>();
 
     record Jmod(Path moduleDir, boolean withDebugInfo, boolean withParameterNames) {}
@@ -103,7 +105,7 @@ public class StripParameterNamesTest {
 
     @AfterEach
     public void cleanup() throws IOException {
-        rmdir(Paths.get("img"));
+        FileUtils.deleteFileTreeWithRetry(Path.of("img"));
     }
 
     static void report(String command, List<String> args) {
@@ -113,23 +115,6 @@ public class StripParameterNamesTest {
     static void javac(List<String> args) {
         report("javac", args);
         JAVAC_TOOL.run(System.out, System.err, args.toArray(new String[0]));
-    }
-    /**
-     * Recursively remove a Directory
-     *
-     * @param dir Directory to delete
-     * @throws IOException If an error occurs
-     */
-    static void rmdir(Path dir) throws IOException {
-        // Nothing to do if the file does not exist
-        if (!Files.exists(dir)) {
-            return;
-        }
-        try (Stream<Path> walk = Files.walk(dir)) {
-            walk.sorted(Comparator.reverseOrder())
-                    .map(Path::toFile)
-                    .forEach(File::delete);
-        }
     }
 
     /**
@@ -149,7 +134,7 @@ public class StripParameterNamesTest {
             dirName += "p";
         }
 
-        Path moduleDir = Paths.get(dirName).toAbsolutePath();
+        Path moduleDir = Path.of(dirName).toAbsolutePath();
 
         options.add("-d");
         options.add(moduleDir.toString());
@@ -198,7 +183,7 @@ public class StripParameterNamesTest {
     @ParameterizedTest
     @FieldSource("testJmods")
     public void testDefaultBehavior(Jmod jmod) throws Exception {
-        var imageDir = Paths.get("img");
+        var imageDir = Path.of("img");
         buildImage(jmod.moduleDir(), imageDir)
             .assertSuccess();
         var hasParameter = jmod.withParameterNames();
@@ -208,7 +193,7 @@ public class StripParameterNamesTest {
     @ParameterizedTest
     @FieldSource("testJmods")
     public void testStripDebug(Jmod jmod) throws Exception {
-        var imageDir = Paths.get("img");
+        var imageDir = Path.of("img");
         buildImage(jmod.moduleDir(), imageDir,
                 "--strip-debug")
             .assertSuccess();
@@ -217,11 +202,22 @@ public class StripParameterNamesTest {
     }
 
     @Test
-    public void testWithoutStripParameterName() throws Exception {
-        var imageDir = Paths.get("img");
+    public void testBothStripOptions() throws Exception {
+        var imageDir = Path.of("img");
         var jmod = testJmods.get(0);
         buildImage(jmod.moduleDir(), imageDir,
                 "--strip-debug", "--strip-java-debug-attributes")
+            .assertSuccess();
+        assertHasParameterNames(imageDir, jmod.withParameterNames());
+    }
+
+    @ParameterizedTest
+    @FieldSource("testJmods")
+    public void testOnlyStripJavaDebugAttributes() throws Exception {
+        var imageDir = Path.of("img");
+        var jmod = testJmods.get(0);
+        buildImage(jmod.moduleDir(), imageDir,
+                "--strip-java-debug-attributes")
             .assertSuccess();
         assertHasParameterNames(imageDir, jmod.withParameterNames());
     }

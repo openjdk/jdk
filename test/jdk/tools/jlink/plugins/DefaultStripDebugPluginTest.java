@@ -73,6 +73,7 @@ public class DefaultStripDebugPluginTest {
         }
     }
 
+    // Disable embedded strip Java plugin, with native plugin present.
     public void testOnlyNativePlugin() {
         MockStripPlugin javaPlugin = new MockStripPlugin(false);
         MockStripPlugin nativePlugin = new MockStripPlugin(true);
@@ -91,6 +92,7 @@ public class DefaultStripDebugPluginTest {
         }
     }
 
+    // Disable embedded strip Java plugin, and without native plugin present.
     public void testNoOperation() {
         MockStripPlugin javaPlugin = new MockStripPlugin(false);
         TestNativeStripPluginFactory nativeFactory =
@@ -111,6 +113,8 @@ public class DefaultStripDebugPluginTest {
         DefaultStripDebugPluginTest test = new DefaultStripDebugPluginTest();
         test.testNoNativeStripPluginPresent();
         test.testWithNativeStripPresent();
+        test.testOnlyNativePlugin();
+        test.testNoOperation();
     }
 
     public static class MockStripPlugin implements Plugin {
