@@ -72,7 +72,7 @@ public class Send1xxResponsesTest {
                 someContext,
                 msg -> {
                     System.err.println("Handling request: " + msg.getRequestURI());
-                    byte[] reply = "Here is my reply!".getBytes(UTF_8);
+                    byte[] reply = replyMsg.getBytes(UTF_8);
                     try {
                         msg.getRequestBody().readAllBytes();
                         msg.sendResponseHeaders(200, reply.length);
