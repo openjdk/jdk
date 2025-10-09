@@ -220,7 +220,7 @@ download-rpms:
 ################################################################################
 # Unpack source packages
 
-# Generate downloading + unpacking of sources.
+# Generate downloading + checksum verification of sources.
 define DownloadVerify
   # Allow override
   $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)_URL))))
