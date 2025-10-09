@@ -709,7 +709,9 @@ public class Flow {
                         if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                             log.error(tree, Errors.NotExhaustiveStatement);
                         } else {
-                            log.error(tree, Errors.NotExhaustiveStatementDetails(exhaustivenessResult.notExhaustiveDetails().stream().collect(Collectors.joining("\n"))));
+                            List<JCDiagnostic> details =
+                                    convertNotExhaustiveDetails(exhaustivenessResult);
+                            log.error(tree, Errors.NotExhaustiveStatementDetails(details));
                         }
                     }
                 }
@@ -756,13 +758,23 @@ public class Flow {
                     if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                         log.error(tree, Errors.NotExhaustive);
                     } else {
-                        log.error(tree, Errors.NotExhaustiveDetails(exhaustivenessResult.notExhaustiveDetails().stream().collect(Collectors.joining("\n"))));
+                        List<JCDiagnostic> details =
+                                convertNotExhaustiveDetails(exhaustivenessResult);
+                        log.error(tree, Errors.NotExhaustiveDetails(details));
                     }
                 }
             }
 
             alive = prevAlive;
             alive = alive.or(resolveYields(tree, prevPendingExits));
+        }
+
+        private List<JCDiagnostic> convertNotExhaustiveDetails(ExhaustivenessResult exhaustivenessResult) {
+            return exhaustivenessResult.notExhaustiveDetails()
+                                       .stream()
+                                       .sorted()
+                                       .map(detail -> diags.fragment(Fragments.NotExhaustiveDetail(detail)))
+                                       .collect(List.collector());
         }
 
         public void visitTry(JCTry tree) {

@@ -35,10 +35,12 @@
 
 import com.sun.tools.javac.api.ClientCodeWrapper.DiagnosticSourceUnwrapper;
 import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -365,13 +367,13 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                            case Triple(B _, _, _) -> 0;
                            case Triple(_, A _, _) -> 0;
                            case Triple(_, _, A _) -> 0;
-//                           case Triple(A p, C(Nested _, NestedBaseA _), _) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseA _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseB _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseC _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseA _)) -> 0;
-                           case Triple(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseB _)) -> 0;
-//                           case Path(A p, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseC _)) -> 0;
+//                           case Triple(A _, C(Nested _, NestedBaseA _), _) -> 0;
+                           case Triple(A _, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseA _)) -> 0;
+                           case Triple(A _, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseB _)) -> 0;
+                           case Triple(A _, C(Nested _, NestedBaseB _), C(Nested _, NestedBaseC _)) -> 0;
+                           case Triple(A _, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseA _)) -> 0;
+                           case Triple(A _, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseB _)) -> 0;
+//                           case Path(A _, C(Nested _, NestedBaseC _), C(Nested _, NestedBaseC _)) -> 0;
                        };
                    }
                    record Triple(Base c1, Base c2, Base c3) {}
@@ -517,7 +519,10 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                         d = uw.d;
                     }
                     if (d instanceof JCDiagnostic diag) {
-                        missingPatterns.addAll(List.of(((String) diag.getArgs()[0]).split("\n")));
+                        ((Collection<JCDiagnostic>) diag.getArgs()[0])
+                                .stream()
+                                .map(fragment -> (String) fragment.getArgs()[0])
+                                .forEach(missingPatterns::add);
                     }
                 }
             })
