@@ -805,11 +805,6 @@ public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
   G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
-  G1CardSet* young_regions_cardset() { return _young_regions_cset_group.card_set(); };
-
-  G1MonotonicArenaMemoryStats young_regions_card_set_memory_stats() { return _young_regions_cset_group.card_set_memory_stats(); }
-
-  void prepare_group_cardsets_for_scan();
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();

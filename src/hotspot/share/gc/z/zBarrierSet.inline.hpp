@@ -28,10 +28,9 @@
 
 #include "gc/shared/accessBarrierSupport.inline.hpp"
 #include "gc/z/zAddress.inline.hpp"
-#include "gc/z/zBarrier.inline.hpp"
-#include "gc/z/zIterator.inline.hpp"
+#include "gc/z/zHeap.hpp"
 #include "gc/z/zNMethod.hpp"
-#include "memory/iterator.inline.hpp"
+#include "oops/objArrayOop.hpp"
 #include "utilities/debug.hpp"
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -68,21 +67,21 @@ inline zaddress ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrie
   if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
     if (HasDecorator<decorators, ON_STRONG_OOP_REF>::value) {
       // Load barriers on strong oop refs don't keep objects alive
-      return ZBarrier::load_barrier_on_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_oop_field_preloaded(p, o);
     } else if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value) {
-      return ZBarrier::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(p, o);
+      return ZBarrierSet::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(p, o);
     } else {
       assert((HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value), "Must be");
-      return ZBarrier::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(p, o);
+      return ZBarrierSet::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(p, o);
     }
   } else {
     if (HasDecorator<decorators, ON_STRONG_OOP_REF>::value) {
-      return ZBarrier::load_barrier_on_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_oop_field_preloaded(p, o);
     } else if (HasDecorator<decorators, ON_WEAK_OOP_REF>::value) {
-      return ZBarrier::load_barrier_on_weak_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_weak_oop_field_preloaded(p, o);
     } else {
       assert((HasDecorator<decorators, ON_PHANTOM_OOP_REF>::value), "Must be");
-      return ZBarrier::load_barrier_on_phantom_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_phantom_oop_field_preloaded(p, o);
     }
   }
 }
@@ -97,21 +96,21 @@ inline zaddress ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::load_barrie
   if (HasDecorator<decorators, AS_NO_KEEPALIVE>::value) {
     if (decorators_known_strength & ON_STRONG_OOP_REF) {
       // Load barriers on strong oop refs don't keep objects alive
-      return ZBarrier::load_barrier_on_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_oop_field_preloaded(p, o);
     } else if (decorators_known_strength & ON_WEAK_OOP_REF) {
-      return ZBarrier::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(p, o);
+      return ZBarrierSet::no_keep_alive_load_barrier_on_weak_oop_field_preloaded(p, o);
     } else {
       assert(decorators_known_strength & ON_PHANTOM_OOP_REF, "Must be");
-      return ZBarrier::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(p, o);
+      return ZBarrierSet::no_keep_alive_load_barrier_on_phantom_oop_field_preloaded(p, o);
     }
   } else {
     if (decorators_known_strength & ON_STRONG_OOP_REF) {
-      return ZBarrier::load_barrier_on_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_oop_field_preloaded(p, o);
     } else if (decorators_known_strength & ON_WEAK_OOP_REF) {
-      return ZBarrier::load_barrier_on_weak_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_weak_oop_field_preloaded(p, o);
     } else {
       assert(decorators_known_strength & ON_PHANTOM_OOP_REF, "Must be");
-      return ZBarrier::load_barrier_on_phantom_oop_field_preloaded(p, o);
+      return ZBarrierSet::load_barrier_on_phantom_oop_field_preloaded(p, o);
     }
   }
 }
@@ -126,7 +125,7 @@ inline zpointer ZBarrierSet::store_good(oop obj) {
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_heap_with_healing(zpointer* p) {
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
-    ZBarrier::store_barrier_on_heap_oop_field(p, true /* heal */);
+    ZBarrierSet::store_barrier_on_heap_oop_field(p, true /* heal */);
   } else {
     assert(false, "Should not be used on uninitialized memory");
   }
@@ -135,21 +134,21 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_h
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_heap_without_healing(zpointer* p) {
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
-    ZBarrier::store_barrier_on_heap_oop_field(p, false /* heal */);
+    ZBarrierSet::store_barrier_on_heap_oop_field(p, false /* heal */);
   }
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::no_keep_alive_store_barrier_heap(zpointer* p) {
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
-    ZBarrier::no_keep_alive_store_barrier_on_heap_oop_field(p);
+    ZBarrierSet::no_keep_alive_store_barrier_on_heap_oop_field(p);
   }
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_native_with_healing(zpointer* p) {
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
-    ZBarrier::store_barrier_on_native_oop_field(p, true /* heal */);
+    ZBarrierSet::store_barrier_on_native_oop_field(p, true /* heal */);
   } else {
     assert(false, "Should not be used on uninitialized memory");
   }
@@ -158,7 +157,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_n
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::store_barrier_native_without_healing(zpointer* p) {
   if (!HasDecorator<decorators, IS_DEST_UNINITIALIZED>::value) {
-    ZBarrier::store_barrier_on_native_oop_field(p, false /* heal */);
+    ZBarrierSet::store_barrier_on_native_oop_field(p, false /* heal */);
   }
 }
 
@@ -325,7 +324,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 inline zaddress ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_copy_one_barriers(zpointer* dst, zpointer* src) {
   store_barrier_heap_without_healing(dst);
 
-  return ZBarrier::load_barrier_on_oop_field(src);
+  return ZBarrierSet::load_barrier_on_oop_field(src);
 }
 
 template <DecoratorSet decorators, typename BarrierSetT>
@@ -402,31 +401,6 @@ inline bool ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_i
   return oop_arraycopy_in_heap_no_check_cast(dst, src, length);
 }
 
-class ZColorStoreGoodOopClosure : public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p_) {
-    volatile zpointer* const p = (volatile zpointer*)p_;
-    const zpointer ptr = ZBarrier::load_atomic(p);
-    const zaddress addr = ZPointer::uncolor(ptr);
-    AtomicAccess::store(p, ZAddress::store_good(addr));
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
-class ZLoadBarrierOopClosure : public BasicOopIterateClosure {
-public:
-  virtual void do_oop(oop* p) {
-    ZBarrier::load_barrier_on_oop_field((zpointer*)p);
-  }
-
-  virtual void do_oop(narrowOop* p) {
-    ShouldNotReachHere();
-  }
-};
-
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(oop src, oop dst, size_t size) {
   check_is_valid_zaddress(src);
@@ -443,17 +417,13 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::clone_in_heap(o
   }
 
   // Fix the oops
-  ZLoadBarrierOopClosure cl;
-  ZIterator::oop_iterate(src, &cl);
+  ZBarrierSet::load_barrier_all(src, size);
 
   // Clone the object
   Raw::clone_in_heap(src, dst, size);
 
-  assert(dst->is_typeArray() || ZHeap::heap()->is_young(to_zaddress(dst)), "ZColorStoreGoodOopClosure is only valid for young objects");
-
   // Color store good before handing out
-  ZColorStoreGoodOopClosure cl_sg;
-  ZIterator::oop_iterate(dst, &cl_sg);
+  ZBarrierSet::color_store_good_all(dst, size);
 }
 
 //

@@ -99,12 +99,21 @@ void G1CollectionSet::initialize(uint max_region_length) {
   _candidates.initialize(max_region_length);
 }
 
+void G1CollectionSet::abandon() {
+  _g1h->young_regions_cset_group()->clear(true /* uninstall_cset_group */);
+  clear();
+  abandon_all_candidates();
+
+  stop_incremental_building();
+}
+
 void G1CollectionSet::abandon_all_candidates() {
   _candidates.clear();
   _initial_old_region_length = 0;
 }
 
 void G1CollectionSet::prepare_for_scan () {
+  _g1h->young_regions_cset_group()->card_set()->reset_table_scanner_for_groups();
   _groups.prepare_for_scan();
 }
 
@@ -127,12 +136,15 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
   _g1h->old_set_remove(hr);
 }
 
-void G1CollectionSet::start_incremental_building() {
+void G1CollectionSet::start() {
   assert(_regions_cur_length == 0, "Collection set must be empty before starting a new collection set.");
   assert(groups_cur_length() == 0, "Collection set groups must be empty before starting a new collection set.");
   assert(_optional_groups.length() == 0, "Collection set optional gorups must be empty before starting a new collection set.");
 
   continue_incremental_building();
+
+  G1CSetCandidateGroup* young_group = _g1h->young_regions_cset_group();
+  young_group->clear();
 }
 
 void G1CollectionSet::continue_incremental_building() {

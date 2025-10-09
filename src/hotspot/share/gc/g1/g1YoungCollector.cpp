@@ -52,6 +52,7 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -548,7 +549,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Ticks start = Ticks::now();
     rem_set()->prepare_for_scan_heap_roots();
 
-    _g1h->prepare_group_cardsets_for_scan();
+    _g1h->collection_set()->prepare_for_scan();
 
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
@@ -558,7 +559,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_cset_group()->card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
@@ -792,7 +793,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
 
   Ticks start_processing = Ticks::now();
   {
-    G1RootProcessor root_processor(_g1h, num_workers);
+    G1RootProcessor root_processor(_g1h, num_workers > 1 /* is_parallel */);
     G1EvacuateRegionsTask g1_par_task(_g1h,
                                       per_thread_states,
                                       task_queues(),
