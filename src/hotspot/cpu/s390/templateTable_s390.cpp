@@ -2360,7 +2360,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label resolved, clinit_barrier_slow;
+  Label Lresolved, Lclinit_barrier_slow;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2375,18 +2375,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
 
   __ load_method_entry(Rcache, index);
   __ z_cli(Address(Rcache, bc_offset), code);
-  __ z_bre(resolved);
-
-  // Resolve first time through
-  // Class initialization barrier slow path lands here as well.
-  __ bind(clinit_barrier_slow);
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
-
-  // Update registers with resolved info.
-  __ load_method_entry(Rcache, index);
-  __ bind(resolved);
+  __ z_brne(Lclinit_barrier_slow);
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
@@ -2394,8 +2383,20 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
     const Register klass  = Z_R1_scratch;
     __ z_lg(method, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, Z_thread, nullptr /*L_fast_path*/, &clinit_barrier_slow);
+    __ clinit_barrier(klass, Z_thread, &Ldone, /*L_slow_path*/ nullptr);
   }
+
+  // Resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(Lclinit_barrier_slow);
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ load_const_optimized(Z_ARG2, (int)code);
+  __ call_VM(noreg, entry, Z_ARG2);
+
+  // Update registers with resolved info.
+  __ load_method_entry(Rcache, index);
+
+  __ bind(Ldone);
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_method");
 }
@@ -2408,8 +2409,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   assert_different_registers(cache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  NearLabel resolved;
-  Label L_clinit_barrier_slow;
+  Label Label Lclinit_barrier_slow, Ldone;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2423,19 +2423,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
                                                  in_bytes(ResolvedFieldEntry::put_code_offset()) ;
 
   __ z_cli(Address(cache, code_offset), code);
-  __ z_bre(resolved);
-
-  // resolve first time through
-  // Class initialization barrier slow path lands here as well.
-  __ bind(L_clinit_barrier_slow);
-  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
-  __ load_const_optimized(Z_ARG2, (int)code);
-  __ call_VM(noreg, entry, Z_ARG2);
-
-  // Update registers with resolved info.
-  __ load_field_entry(cache, index);
-
-  __ bind(resolved);
+  __ z_brne(Lclinit_barrier_slow);
 
   // Class initialization barrier for static fields
   if (VM_Version::supports_fast_class_init_checks() &&
@@ -2443,8 +2431,20 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
     const Register field_holder = index;
 
     __ load_sized_value(field_holder, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
-    __ clinit_barrier(field_holder, Z_thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(field_holder, Z_thread, &Ldone, /*L_slow_path*/ nullptr);
   }
+
+  // resolve first time through
+  // Class initialization barrier slow path lands here as well.
+  __ bind(Lclinit_barrier_slow);
+  address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
+  __ load_const_optimized(Z_ARG2, (int)code);
+  __ call_VM(noreg, entry, Z_ARG2);
+
+  // Update registers with resolved info.
+  __ load_field_entry(cache, index);
+
+  __ bind(Ldone);
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_field");
 }
