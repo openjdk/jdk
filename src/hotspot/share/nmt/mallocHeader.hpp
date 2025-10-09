@@ -159,7 +159,7 @@ public:
       }
     #else
       inline AltCanaryType alt_canary() const { return _alt_canary; }
-      inline void set_alt_canary(AltCanaryType value) { return _alt_canary = value; }
+      inline void set_alt_canary(AltCanaryType value) { _alt_canary = value; }
     #endif // INCLUDE_ASAN
   #endif // _LP64
   #if INCLUDE_ASAN
