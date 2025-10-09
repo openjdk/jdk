@@ -171,7 +171,7 @@ public class Send1xxResponsesTest {
                 }
             }
             if (!foundThirdContinue) {
-                throw new IOException("Did not receive two 100 continue from server");
+                throw new IOException("Did not receive three 100 continue from server");
             }
             writer.print(body);
             writer.flush();
