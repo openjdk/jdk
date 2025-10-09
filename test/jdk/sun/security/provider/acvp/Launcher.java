@@ -121,7 +121,7 @@ public class Launcher {
             archivePath = ArtifactResolver.fetchOne(ACVP_SERVER_TESTS.class);
         } catch (IOException e) {
             if (e.getMessage().contains("Cannot find the artifact ACVP-Server")) {
-                throw new SkippedException("ACVP-Server not available, skip test.");
+                throw new SkippedException("ACVP-Server not available.");
             }
         }
         System.out.println("Data path: " + archivePath);
