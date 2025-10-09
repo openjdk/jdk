@@ -52,8 +52,6 @@ import static java.nio.charset.StandardCharsets.*;
 
 public class InputRead100Test {
     private static final String someContext = "/context";
-
-    private static final String someContext = "/context";
     static {
         Logger.getLogger("").setLevel(Level.ALL);
         Logger.getLogger("").getHandlers()[0].setLevel(Level.ALL);
