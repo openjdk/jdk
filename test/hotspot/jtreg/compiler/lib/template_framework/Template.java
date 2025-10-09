@@ -664,7 +664,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static NestingToken scope(Object... tokens) {
-        return new NestingToken.Scope(TokenParser.parse(tokens));
+        return new NestingToken.Impl(TokenParser.parse(tokens), true, true, true);
     }
 
     /**
@@ -688,7 +688,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static NestingToken flat(Object... tokens) {
-        return new NestingToken.Flat(TokenParser.parse(tokens));
+        return new NestingToken.Impl(TokenParser.parse(tokens), false, false, false);
     }
 
     /**
@@ -710,7 +710,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static NestingToken nameScope(Object... tokens) {
-        return new NestingToken.NameScope(TokenParser.parse(tokens));
+        return new NestingToken.Impl(TokenParser.parse(tokens), true, false, false);
     }
 
     /**
@@ -751,7 +751,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static NestingToken hashtagScope(Object... tokens) {
-        return new NestingToken.HashtagScope(TokenParser.parse(tokens));
+        return new NestingToken.Impl(TokenParser.parse(tokens), false, true, false);
     }
 
     /**
@@ -802,7 +802,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
     static NestingToken setFuelCostScope(Object... tokens) {
-        return new NestingToken.SetFuelCostScope(TokenParser.parse(tokens));
+        return new NestingToken.Impl(TokenParser.parse(tokens), false, false, true);
     }
 
     /**
