@@ -541,7 +541,7 @@ final class SessionTicketExtension {
 
         @Override
         public void absent(ConnectionContext context,
-                HandshakeMessage message) throws IOException {
+                HandshakeMessage message) {
             ClientHandshakeContext chc = (ClientHandshakeContext) context;
 
             // Disable stateless resumption if server doesn't send the extension.
