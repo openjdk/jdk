@@ -827,12 +827,10 @@ public class TestTutorial {
     // field and variable names, and immediately returns the comma separated
     // list of the names. We can use that to visualize the available names
     // at any point.
-    public static String listNames() {
-        return "{" + String.join(", ", dataNames(MUTABLE).exactOf(myInt).toList()
-                                       .stream().map(DataName::name).toList()) + "}";
-    }
+    // TODO: fix comments above, maybe redesign the whole thing?
 
     // Even simpler: count the available variables and return the count immediately.
+    // TODO: also this is not great now
     public static Object countNames() {
         // Well, sort of immediately: we have to wrap it in a "scope", which turns
         // it from a value in a lambda argument into tokens and eventually code.
@@ -844,12 +842,18 @@ public class TestTutorial {
     // templateClass, then going to templateMain and last to templateInner.
     public static String generateWithDataNamesAndScopes1() {
 
+        var templateListNames = Template.make(() -> scope(
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> scope(
+                "{", String.join(", ", list.stream().map(DataName::name).toList()), "}"
+            ))
+        ));
+
         var templateInner = Template.make(() -> scope(
             // We just got called from the templateMain. All tokens from there
             // are already evaluated, so "v1" is now available:
-            let("l1", listNames()),
+            "String s = \"", templateListNames.asToken(), "\";\n",
             """
-            if (!"{v1}".equals("#l1")) { throw new RuntimeException("l1 should have been '{v1}' but was '#l1'"); }
+            "if (!"{v1}".equals(s)) { throw new RuntimeException("l1 should have been '{v1}' but was '" + s + "'"); }
             """
         ));
 
@@ -909,6 +913,12 @@ public class TestTutorial {
     // bottom-up, starting at templateClass.
     public static String generateWithDataNamesAndScopes2() {
 
+        var templateListNames = Template.make(() -> scope(
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> scope(
+                "{", String.join(", ", list.stream().map(DataName::name).toList()), "}"
+            ))
+        ));
+
         var templateFields = Template.make(() -> scope(
             // We were just called from templateMain. But the code is not
             // generated into the main scope, rather into the class scope
@@ -958,9 +968,9 @@ public class TestTutorial {
             // We just got called from the templateMain. All tokens from there
             // are already evaluated, so there should be some fields available.
             // We can see field "f1".
-            let("l1", listNames()),
+            "String s = \"", templateListNames.asToken(), "\";\n",
             """
-            if (!"{f1}".equals("#l1")) { throw new RuntimeException("l1 should have been '{f1}' but was '#l1'"); }
+            "if (!"{v1}".equals(s)) { throw new RuntimeException("l1 should have been '{v1}' but was '" + s + "'"); }
             """
             // Now go and have a look at templateFields, to understand how that
             // field was added, and why not any others.

@@ -96,7 +96,7 @@ public final class TestFrameworkClass {
             public class #className {
             // --- CLASS_HOOK insertions start ---
             """,
-            Hooks.CLASS_HOOK.anchor(
+            Hooks.CLASS_HOOK.anchor(scope(
             """
             // --- CLASS_HOOK insertions end   ---
                 public static void main(String[] vmFlags) {
@@ -108,7 +108,7 @@ public final class TestFrameworkClass {
             // --- LIST OF TESTS start ---
             """,
             testTemplateTokens
-            ),
+            )),
             """
             // --- LIST OF TESTS end   ---
             }
