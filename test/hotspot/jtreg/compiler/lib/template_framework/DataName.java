@@ -210,6 +210,33 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * of the contained {@link DataName}s, and making a hashtag replacement for both
          * the name and type of the {@link DataName}, in the current scope.
          *
+         * <p>
+         * Note, that the following two do the equivalent:
+         *
+         * <p>
+         * {@snippet lang=java :
+         * var template = Template.make(() -> scope(
+         *     dataNames(MUTABLE).subtypeOf(type).sampleAndLetAs("name", "type"),
+         *     """
+         *     #name #type
+         *     """
+         * ));
+         * }
+         *
+         * <p>
+         * {@snippet lang=java :
+         * var template = Template.make(() -> scope(
+         *     dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> flat(
+         *         // The "let" hashtag definitions escape the "flat" scope.
+         *         let("name", dn.name()),
+         *         let("type", dn.type())
+         *     )),
+         *     """
+         *     #name #type
+         *     """
+         * ));
+         * }
+         *
          * @param name the key of the hashtag replacement for the {@link DataName} name.
          * @param type the key of the hashtag replacement for the {@link DataName} type.
          * @return a token that represents the sampling and hashtag replacement definition.
@@ -224,6 +251,32 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * Samples a random {@link DataName} from the filtered set, according to the weights
          * of the contained {@link DataName}s, and making a hashtag replacement for the
          * name of the {@link DataName}, in the current scope.
+         *
+         * <p>
+         * Note, that the following two do the equivalent:
+         *
+         * <p>
+         * {@snippet lang=java :
+         * var template = Template.make(() -> scope(
+         *     dataNames(MUTABLE).subtypeOf(type).sampleAndLetAs("name"),
+         *     """
+         *     #name
+         *     """
+         * ));
+         * }
+         *
+         * <p>
+         * {@snippet lang=java :
+         * var template = Template.make(() -> scope(
+         *     dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> flat(
+         *         // The "let" hashtag definition escape the "flat" scope.
+         *         let("name", dn.name())
+         *     )),
+         *     """
+         *     #name
+         *     """
+         * ));
+         * }
          *
          * @param name the key of the hashtag replacement for the {@link DataName} name.
          * @return a token that represents the sampling and hashtag replacement definition.
@@ -276,10 +329,40 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
             return new NamesToListToken(predicate(), function);
         }
 
+        /**
+         * Calls the provided {@code function} for each {@link DataName}s in the filtered set,
+         * making each of these {@link DataName}s available to a separate inner scope.
+         *
+         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         *                 for each of the {@link DataName}s in the filtereds set.
+         * @return The token representing the for-each execution and the respective inner scopes.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public Token forEach(Function<DataName, NestingToken> function) {
             return new NameForEachToken<DataName>(predicate(), null, null, function);
         }
 
+        /**
+         * Calls the provided {@code function} for each {@link DataName}s in the filtered set,
+         * making each of these {@link DataName}s available to a separate inner scope, and additionally
+         * setting hashtag replacements for the {@code name} and {@code type} of the respective
+         * {@link DataName}s.
+         *
+         * <p>
+         * Note, to avoid duplication of the {@code name} and {@code type}
+         * hashtag replacements, the scope created by the provided {@code function} should be
+         * non-transparent to hashtag replacements, for example {@link Template#scope} or
+         * {@link Template#hashtagScope}.
+         *
+         * @param name the key of the hashtag replacement for each individual {@link DataName} name.
+         * @param type the key of the hashtag replacement for each individual {@link DataName} type.
+         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         *                 for each of the {@link DataName}s in the filtereds set.
+         * @return The token representing the for-each execution and the respective inner scopes.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public Token forEach(String name, String type, Function<DataName, NestingToken> function) {
             return new NameForEachToken<DataName>(predicate(), name, type, function);
         }

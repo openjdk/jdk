@@ -1847,7 +1847,10 @@ public class TestTemplate {
                 "int #v5 = x + 5;\n"
             )),
             dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).forEach("name", "type", dn -> scope(
-                "available: #name #type.\n"
+                "available1: #name #type.\n"
+            )),
+            dataNames(MUTABLE_OR_IMMUTABLE).exactOf(myInt).forEach("name", "type", dn -> hashtagScope(
+                "available2: #name #type.\n"
             )),
             // Check that hashtags escape correctly too.
             "hashtag v2: #v2.\n",
@@ -1866,10 +1869,14 @@ public class TestTemplate {
             int c = x + 3;
             int d = x + 4;
             int e = x + 5;
-            available: x int.
-            available: b int.
-            available: d int.
-            available: e int.
+            available1: x int.
+            available1: b int.
+            available1: d int.
+            available1: e int.
+            available2: x int.
+            available2: b int.
+            available2: d int.
+            available2: e int.
             hashtag v2: b.
             hashtag v3: c.
             hashtag v5: e.

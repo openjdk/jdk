@@ -248,10 +248,40 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
             return new NamesToListToken(predicate(), function);
         }
 
+        /**
+         * Calls the provided {@code function} for each {@link StructuralName}s in the filtered set,
+         * making each of these {@link StructuralName}s available to a separate inner scope.
+         *
+         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         *                 for each of the {@link StructuralName}s in the filtereds set.
+         * @return The token representing the for-each execution and the respective inner scopes.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public Token forEach(Function<StructuralName, NestingToken> function) {
             return new NameForEachToken<StructuralName>(predicate(), null, null, function);
         }
 
+        /**
+         * Calls the provided {@code function} for each {@link StructuralName}s in the filtered set,
+         * making each of these {@link StructuralName}s available to a separate inner scope, and additionally
+         * setting hashtag replacements for the {@code name} and {@code type} of the respective
+         * {@link StructuralName}s.
+         *
+         * <p>
+         * Note, to avoid duplication of the {@code name} and {@code type}
+         * hashtag replacements, the scope created by the provided {@code function} should be
+         * non-transparent to hashtag replacements, for example {@link Template#scope} or
+         * {@link Template#hashtagScope}.
+         *
+         * @param name the key of the hashtag replacement for each individual {@link StructuralName} name.
+         * @param type the key of the hashtag replacement for each individual {@link StructuralName} type.
+         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         *                 for each of the {@link StructuralName}s in the filtereds set.
+         * @return The token representing the for-each execution and the respective inner scopes.
+         * @throws UnsupportedOperationException If the type was not constrained with either of
+         *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
+         */
         public Token forEach(String name, String type, Function<StructuralName, NestingToken> function) {
             return new NameForEachToken<StructuralName>(predicate(), name, type, function);
         }
