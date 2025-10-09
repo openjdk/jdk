@@ -221,7 +221,7 @@ download-rpms:
 # Unpack source packages
 
 # Generate downloading + unpacking of sources.
-define DownloadVerifyUnpack
+define DownloadVerify
   # Allow override
   $(1)_DIRNAME ?= $(basename $(basename $(notdir $($(1)_URL))))
   $(1)_DIR = $(abspath $(SRCDIR)/$$($(1)_DIRNAME))
