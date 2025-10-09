@@ -210,6 +210,9 @@ class JvmtiExport : public AllStatic {
   // dependency information is complete or not.
   static bool _all_dependencies_are_recorded;
 
+  // This field is used to wait until there are any events in callback.
+  volatile static int   _current_events_count;
+
   static void post_method_exit_inner(JavaThread* thread,
                                      methodHandle& mh,
                                      JvmtiThreadState *state,
@@ -415,6 +418,9 @@ class JvmtiExport : public AllStatic {
       record_vm_internal_object_allocation(object);
     }
   }
+  static void inc_current_event_count() { AtomicAccess::inc(&_current_events_count); }
+  static void dec_current_event_count() { AtomicAccess::dec(&_current_events_count); }
+  static int  current_event_count() { return AtomicAccess::load(&_current_events_count); }
 
   // Used by C2 to deoptimize allocation intrinsics and post vm_object_alloc
   static int _should_notify_object_alloc;
