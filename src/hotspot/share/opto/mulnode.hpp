@@ -279,7 +279,6 @@ public:
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-
   virtual const Type* Value(PhaseGVN* phase) const;
   const Type *bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
@@ -291,7 +290,6 @@ class LShiftLNode : public LShiftNode {
 public:
   LShiftLNode(Node *in1, Node *in2) : LShiftNode(in1,in2) {}
   virtual int Opcode() const;
-
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
