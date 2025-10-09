@@ -25,7 +25,10 @@ package compiler.lib.template_framework;
 
 import java.util.function.Function;
 
-// TODO: documentation
+/**
+ * Represents the counting of {@link Name}s, and the function that is called
+ * to create an inner scope given the count.
+ */
 record NameCountToken(
         NameSet.Predicate predicate,
         Function<Integer, NestingToken> function) implements Token {

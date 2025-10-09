@@ -26,6 +26,7 @@ package compiler.lib.template_framework;
 import java.util.function.Function;
 import java.util.List;
 
+// TODO: desc
 record NamesToListToken<N>(
         NameSet.Predicate predicate,
         Function<List<N>, NestingToken> function) implements Token {

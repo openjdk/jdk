@@ -25,7 +25,10 @@ package compiler.lib.template_framework;
 
 import java.util.function.Function;
 
-// TODO: documentation
+/**
+ * Represents the check if there is any name and the function that is to
+ * be called given the boolean value (true iff there are any names).
+ */
 record NameHasAnyToken(
         NameSet.Predicate predicate,
         Function<Boolean, NestingToken> function) implements Token {

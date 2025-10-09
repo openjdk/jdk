@@ -25,8 +25,12 @@ package compiler.lib.template_framework;
 
 import java.util.function.Function;
 
-// TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
-// TODO: documentation about lambda and hashtag, maybe also an assert?
+/**
+ * Represents the sampling of {@link Name}s, and the function that is called given
+ * the sampled name, as well as the (optional) hashtag replacement keys for the
+ * name and type of the sampled name, which are then available in the inner scope
+ * created by the provided function.
+ */
 record NameSampleToken<N>(
         NameSet.Predicate predicate,
         String name,

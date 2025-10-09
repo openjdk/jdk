@@ -32,20 +32,22 @@ import java.util.List;
  * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
  * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addStructuralName}/
  * {@link Template#addDataName}. {@link Hook}s can be added to a frame, which allows code to be inserted at that
- * location later. When a {@link Hook} is {@link Hook#anchor}ed, it separates the Template into an outer and inner
- * {@link CodeFrame}, ensuring that names that are added inside the inner frame are only available inside that frame.
+ * location later.
  *
  * <p>
- * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
- * Template.
- * TODO: is that still accurate? And below?
+ * The {@link CodeFrame} thus implements the {@link Name} non-transparency aspect of {@link NestingToken}.
  *
  * <p>
- * For simple Template nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.
- * However, when using {@link Hook#insert}, we simply nest {@link TemplateFrame}s, going further "in",
- * but we jump to an outer {@link CodeFrame}, ensuring that we insert {@link Code} at the outer frame,
- * and operating on the names of the outer frame. Once the {@link Hook#insert}ion is complete, we jump
- * back to the caller {@link TemplateFrame} and {@link CodeFrame}.
+ * The {@link CodeFrame}s are nested relative to the order of the final rendered code. This can
+ * diverge from the nesting order of the {@link Template} when using {@link Hook#insert}, where
+ * the execution jumps from the current (caller) {@link CodeFrame} scope to the scope of the
+ * {@link Hook#anchor}. This ensures that the {@link Name}s of the anchor scope are accessed,
+ * and not of the ones from the caller scope. Once the {@link Hook#insert}ion is complete, we
+ * jump back to the caller {@link CodeFrame}.
+ *
+ * <p>
+ * Note, that {@link CodeFrame}s and {@link TemplateFrame}s often go together, but can also
+ * diverge.
  */
 class CodeFrame {
     public final CodeFrame parent;

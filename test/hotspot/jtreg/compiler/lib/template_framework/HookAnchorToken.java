@@ -25,4 +25,7 @@ package compiler.lib.template_framework;
 
 import java.util.List;
 
+/**
+ * Represents the {@link Hook#anchor} with its inner scope.
+ */
 record HookAnchorToken(Hook hook, NestingToken innerScope) implements Token {}

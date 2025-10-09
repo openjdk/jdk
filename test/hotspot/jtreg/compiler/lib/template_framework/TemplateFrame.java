@@ -40,7 +40,14 @@ import java.util.Map;
  * nesting templates too deeply.
  *
  * <p>
- * See also {@link CodeFrame} for more explanations about the frames.
+ * The {@link TemplateFrame} thus implements the hashtag and {@link Template#setFuelCost}
+ * non-transparency aspect of {@link NestingToken}.
+ *
+ * <p>
+ * See also {@link CodeFrame} for more explanations about the frames. Note, that while
+ * {@link TemplateFrame} always nests inward, even with {@link Hook#insert}, the
+ * {@link CodeFrame} can also jump to the {@link Hook#anchor} {@link CodeFrame} when
+ * using {@link Hook#insert}.
  */
 class TemplateFrame {
     final TemplateFrame parent;

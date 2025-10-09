@@ -25,8 +25,10 @@ package compiler.lib.template_framework;
 
 import java.util.function.Function;
 
-// TODO: can we even somehow get a generic arg for the sample output, and make function more specific?
-// TODO: documentation about lambda and hashtag, maybe also an assert?
+/**
+ * Represents the for-each execution of the provided function and (optional) hashtag replacement
+ * keys for name and type of each name.
+ */
 record NameForEachToken<N>(
         NameSet.Predicate predicate,
         String name,

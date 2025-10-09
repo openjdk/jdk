@@ -25,7 +25,11 @@ package compiler.lib.template_framework;
 
 import java.util.function.Function;
 
-// TODO: desc
+/**
+ * Represents a let (aka hashtag) definition. The hashtag replacement is active for the
+ * scope ({@link NestingToken}) that the {@code function} creates, but can escape that
+ * scope if it is transparent to hashtags.
+ */
 record LetToken<T>(String key, T value, Function<T, NestingToken> function) implements Token {
 
     NestingToken getNestingToken() {
