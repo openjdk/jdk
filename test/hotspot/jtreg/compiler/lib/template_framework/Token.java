@@ -43,5 +43,5 @@ public sealed interface Token permits StringToken,
                                       NameHasAnyToken,
                                       LetToken,
                                       NestingToken,
-                                      NestingToken.Impl,
+                                      NestingTokenImpl,
                                       SetFuelCostToken {}

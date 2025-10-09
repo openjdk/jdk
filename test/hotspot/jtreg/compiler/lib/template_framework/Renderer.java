@@ -265,7 +265,7 @@ final class Renderer {
         preamble.run();
 
         // Now render the nested code.
-        if (!(nt instanceof NestingToken.Impl(List<Token> tokens, _, _, _))) {
+        if (!(nt instanceof NestingTokenImpl(List<Token> tokens, _, _, _))) {
             throw new RuntimeException("Internal error: could not unpack tokens.");
         }
         renderTokenList(tokens);

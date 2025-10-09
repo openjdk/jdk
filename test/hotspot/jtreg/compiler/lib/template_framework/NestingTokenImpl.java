@@ -26,11 +26,10 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * A {@link NestingToken} represents a scope in a {@link Template}, which can be
- * created with {@link Template#scope}, {@link Template#flat}, and other related methods.
+ * Note: we want the tokens to be package private, so we create this Impl
+ *       record.
  */
-public sealed interface NestingToken extends Token permits NestingTokenImpl {
-    boolean nestedNamesAreLocal();
-    boolean nestedHashtagsAreLocal();
-    boolean nestedSetFuelCostAreLocal();
-}
+record NestingTokenImpl(List<Token> tokens,
+                        boolean nestedNamesAreLocal,
+                        boolean nestedHashtagsAreLocal,
+                        boolean nestedSetFuelCostAreLocal) implements NestingToken, Token {}
