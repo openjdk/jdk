@@ -31,7 +31,6 @@
  * @run main NewClassTypeAnnotation
  */
 import com.sun.source.tree.NewClassTree;
-import com.sun.source.tree.Tree;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.source.util.TreePathScanner;
@@ -91,6 +90,7 @@ public class NewClassTypeAnnotation extends TestRunner {
 
                   public void testMethod() {
                     new Test<@TypeAnnotation String>();
+                    new Test<@TypeAnnotation String>() {};
                   }
                 }
                 """);
@@ -112,11 +112,7 @@ public class NewClassTypeAnnotation extends TestRunner {
             @Override
             public Void visitNewClass(final NewClassTree node, final Void unused) {
                 TypeMirror type = trees.getTypeMirror(getCurrentPath());
-                System.err.println(">>> " + type);
-                for (Tree t : getCurrentPath()) {
-                    System.err.println(t);
-                }
-                actual.add(String.format("Expression: %s, Type: %s", node, type));
+                actual.add(String.format("Type: %s", type));
                 return null;
             }
         }
@@ -144,8 +140,8 @@ public class NewClassTypeAnnotation extends TestRunner {
 
         List<String> expected =
                 List.of(
-                        "Expression: new Test<@TypeAnnotation String>(), Type:"
-                                + " test.Test<java.lang.@test.Test.TypeAnnotation String>");
+                        "Type: test.Test<java.lang.@test.Test.TypeAnnotation String>",
+                        "Type: <anonymous test.Test<java.lang.@test.Test.TypeAnnotation String>>");
         if (!expected.equals(actual)) {
             throw new AssertionError("expected: " + expected + ", actual: " + actual);
         }

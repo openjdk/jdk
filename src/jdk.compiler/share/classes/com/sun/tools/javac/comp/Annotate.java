@@ -330,6 +330,13 @@ public class Annotate {
                 c = tmp;
             }
 
+            if (env.info.isAnonymousNewClass) {
+                // Annotations on anonymous class instantations should be attributed,
+                // but not attached to the enclosing element. They will be visited
+                // separately and attached to the synthetic class declaration.
+                continue;
+            }
+
             Assert.checkNonNull(c, "Failed to create annotation");
 
             if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
@@ -1075,6 +1082,7 @@ public class Annotate {
     private class TypeAnnotate extends TreeScanner {
         private final Env<AttrContext> env;
         private final Symbol sym;
+        private boolean isAnonymousNewClass = false;
 
         public TypeAnnotate(Env<AttrContext> env, Symbol sym) {
 
@@ -1144,11 +1152,13 @@ public class Annotate {
         public void visitNewClass(JCNewClass tree) {
             scan(tree.encl);
             scan(tree.typeargs);
-            if (tree.def == null) {
+            try {
+                env.info.isAnonymousNewClass = tree.def != null;
                 scan(tree.clazz);
+            } finally {
+                env.info.isAnonymousNewClass = false;
             }
             scan(tree.args);
-            // the anonymous class instantiation if any will be visited separately.
         }
 
         @Override
