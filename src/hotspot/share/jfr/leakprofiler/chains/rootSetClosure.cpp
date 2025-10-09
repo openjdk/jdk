@@ -22,9 +22,9 @@
  *
  */
 
-#include "code/nmethod.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
