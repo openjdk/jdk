@@ -150,6 +150,8 @@ public class Send1xxResponsesTest {
             writer.print("Expect: 100-continue" + CRLF);
             writer.print(CRLF); // Important, else the server will expect that
             // there's more into the request.
+            writer.print(body);
+            System.out.println("Client wrote body to socket: " + socket);
             writer.flush();
             System.out.println("Client wrote request to socket: " + socket);
             System.out.println("Client read 100 Continue response from server and headers");
@@ -173,9 +175,6 @@ public class Send1xxResponsesTest {
             if (!foundThirdContinue) {
                 throw new IOException("Did not receive three 100 continue from server");
             }
-            writer.print(body);
-            writer.flush();
-            System.out.println("Client wrote body to socket: " + socket);
 
             System.out.println("Client start reading from server:");
             line = reader.readLine();
