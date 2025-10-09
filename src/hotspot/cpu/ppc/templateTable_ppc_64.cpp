@@ -2191,24 +2191,25 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ lbz(Rscratch, bytecode_offset, Rcache);
   // Acquire by cmp-br-isync (see below).
   __ cmpdi(CR0, Rscratch, (int)code);
-  __ bne(CR0, Lclinit_barrier_slow);
-
-  __ isync(); // Order load wrt. succeeding loads.
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     const Register method = Rscratch;
     const Register klass  = Rscratch;
 
+    __ bne(CR0, Lclinit_barrier_slow);
+
+    __ isync(); // Order load wrt. succeeding loads.
+
     __ ld(method, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
     __ load_method_holder(klass, method);
     __ clinit_barrier(klass, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
+    __ bind(Lclinit_barrier_slow);
   } else {
-    __ b(Ldone);
+    __ beq(CR0, Ldone);
   }
 
   // Class initialization barrier slow path lands here as well.
-  __ bind(Lclinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
   __ call_VM(noreg, entry, R4_ARG2);
@@ -2236,9 +2237,6 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
                                          : in_bytes(ResolvedFieldEntry::put_code_offset());
   __ lbz(R0, code_offset, Rcache);
   __ cmpwi(CR0, R0, (int)code); // have we resolved this bytecode?
-  __ bne(CR0, Lclinit_barrier_slow);
-
-  __ isync(); // Order load wrt. succeeding loads.
 
   if (VM_Version::supports_fast_class_init_checks() &&
       (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
@@ -2247,15 +2245,19 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
     // InterpreterRuntime::resolve_get_put sets field_holder and finally release-stores put_code.
     // We have seen the released put_code above and will read the corresponding field_holder and init_state
     // (ordered by compare-branch-isync).
+    __ bne(CR0, Lclinit_barrier_slow);
+
+    __ isync(); // Order load wrt. succeeding loads.
+
     __ ld(field_holder, ResolvedFieldEntry::field_holder_offset(), Rcache);
     __ clinit_barrier(field_holder, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
+    __ bind(Lclinit_barrier_slow);
   } else {
-    __ b(Ldone);
+    __ beq(CR0, Ldone);
   }
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(Lclinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
   __ call_VM(noreg, entry, R4_ARG2);

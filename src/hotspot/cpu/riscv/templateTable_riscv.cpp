@@ -2185,21 +2185,20 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
   __ mv(t0, (int) code);
-  __ bne(temp, t0, Lclinit_barrier_slow);  // have we resolved this bytecode?
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
+    __ bne(temp, t0, Lclinit_barrier_slow);  // have we resolved this bytecode?
     __ ld(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(temp, temp);
     __ clinit_barrier(temp, t0, &Ldone, /*L_slow_path*/ nullptr);
+    __ bind(Lclinit_barrier_slow);
   } else {
-    __ j(Ldone);
+    __ beq(temp, t0, Ldone);  // have we resolved this bytecode?
   }
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(Lclinit_barrier_slow);
-
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mv(temp, (int) code);
   __ call_VM(noreg, entry, temp);
@@ -2237,22 +2236,22 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ lbu(temp, Address(temp, 0));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ mv(t0, (int) code);  // have we resolved this bytecode?
-  __ bne(temp, t0, Ldone);
 
   // Class initialization barrier for static fields
   if (VM_Version::supports_fast_class_init_checks() &&
       (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
     const Register field_holder = temp;
 
+    __ bne(temp, t0, Lclinit_barrier_slow);
     __ ld(field_holder, Address(Rcache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
     __ clinit_barrier(field_holder, t0, &Ldone, /*L_slow_path*/ nullptr);
+    __ bind(Lclinit_barrier_slow);
   } else {
-    __ j(Ldone);
+    __ beq(temp, t0, Ldone);
   }
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(Lclinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ mv(temp, (int) code);
   __ call_VM(noreg, entry, temp);
