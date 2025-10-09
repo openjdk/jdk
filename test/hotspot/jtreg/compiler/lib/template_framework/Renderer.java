@@ -243,9 +243,13 @@ final class Renderer {
     }
 
     private void renderNestingToken(NestingToken nt, Runnable preamble) {
+        if (!(nt instanceof NestingTokenImpl nti)) {
+            throw new RuntimeException("Internal error: could not unpack NestingTokenImpl.");
+        }
+
         // We need the CodeFrame for local names.
         CodeFrame outerCodeFrame = currentCodeFrame;
-        if (nt.nestedNamesAreLocal()) {
+        if (nti.nestedNamesAreLocal()) {
             currentCodeFrame = CodeFrame.make(currentCodeFrame, false);
         }
 
@@ -254,10 +258,10 @@ final class Renderer {
         // replacement as the outer frame. And we need to be able to allow
         // local setFuelCost definitions.
         TemplateFrame innerTemplateFrame = null;
-        if (nt.nestedHashtagsAreLocal() || nt.nestedSetFuelCostAreLocal()) {
+        if (nti.nestedHashtagsAreLocal() || nti.nestedSetFuelCostAreLocal()) {
             innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
-                                                              !nt.nestedHashtagsAreLocal(),
-                                                              !nt.nestedSetFuelCostAreLocal());
+                                                              !nti.nestedHashtagsAreLocal(),
+                                                              !nti.nestedSetFuelCostAreLocal());
             currentTemplateFrame = innerTemplateFrame;
         }
 
@@ -265,12 +269,9 @@ final class Renderer {
         preamble.run();
 
         // Now render the nested code.
-        if (!(nt instanceof NestingTokenImpl(List<Token> tokens, _, _, _))) {
-            throw new RuntimeException("Internal error: could not unpack tokens.");
-        }
-        renderTokenList(tokens);
+        renderTokenList(nti.tokens());
 
-        if (nt.nestedHashtagsAreLocal() || nt.nestedSetFuelCostAreLocal()) {
+        if (nti.nestedHashtagsAreLocal() || nti.nestedSetFuelCostAreLocal()) {
             if (currentTemplateFrame != innerTemplateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
             }
@@ -279,7 +280,7 @@ final class Renderer {
 
         // Tear down CodeFrame nesting. If no nesting happened, the code is already
         // in the currendCodeFrame.
-        if (nt.nestedNamesAreLocal()) {
+        if (nti.nestedNamesAreLocal()) {
             outerCodeFrame.addCode(currentCodeFrame.getCode());
             currentCodeFrame = outerCodeFrame;
         }
@@ -290,7 +291,7 @@ final class Renderer {
             case StringToken(String s) -> {
                 renderStringWithDollarAndHashtagReplacements(s);
             }
-            case HookAnchorToken(Hook hook, NestingToken innerScope) -> {
+            case HookAnchorToken(Hook hook, NestingTokenImpl innerScope) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. If the nested names
