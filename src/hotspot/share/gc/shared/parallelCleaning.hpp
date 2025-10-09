@@ -33,14 +33,13 @@
 class CodeCacheUnloadingTask {
 
   const bool                _unloading_occurred;
-  const uint                _num_workers;
 
   // Variables used to claim nmethods.
   nmethod* _first_nmethod;
   nmethod* volatile _claimed_nmethod;
 
 public:
-  CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred);
+  CodeCacheUnloadingTask(bool unloading_occurred);
   ~CodeCacheUnloadingTask();
 
 private:
