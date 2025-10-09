@@ -21,7 +21,44 @@
  * questions.
  */
 
- /**
+import static java.util.Map.entry;
+import static jdk.jpackage.internal.util.PListWriter.writeDict;
+import static jdk.jpackage.internal.util.PListWriter.writePList;
+import static jdk.jpackage.internal.util.PListWriter.writeString;
+import static jdk.jpackage.internal.util.XmlUtils.createXml;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
+import jdk.jpackage.internal.util.PListReader;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageStringBundle;
+import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
+import jdk.jpackage.test.RunnablePackageTest.Action;
+import jdk.jpackage.test.TKit;
+
+/**
  * Test --resource-dir with custom "Info.plist" for the top-level bundle
  * and "Runtime-Info.plist" for the embedded runtime bundle
  */
@@ -38,220 +75,299 @@
  * @run main/othervm/timeout=1440 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=CustomInfoPListTest
  */
-
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageStringBundle;
-import jdk.jpackage.test.PackageType;
-
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.concurrent.Executor;
-
-import javax.xml.stream.XMLOutputFactory;
-
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
-
-import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.internal.util.PListReader;
-
-import static jdk.jpackage.internal.util.PListWriter.writePList;
-import static jdk.jpackage.internal.util.PListWriter.writeDict;
-import static jdk.jpackage.internal.util.PListWriter.writeString;
-import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
-
 public class CustomInfoPListTest {
 
-    private static final String APP_PLIST_KEY = "CustomAppPList";
-    private static final String EMBEDDED_RUNTIME_PLIST_KEY = "CustomEmbeddedRuntimePList";
-    private static final String RUNTIME_PLIST_KEY = "CustomRuntimePList";
-
-    private static final Map<String, String> appKeyValue = new HashMap<>();
-    private static final Map<String, String> embeddedRuntimeKeyValue = new HashMap<>();
-    private static final Map<String, String> runtimeKeyValue = new HashMap<>();
-
-    private static final List<String> faKeysAndValues = new ArrayList<>();
-
-    static {
-        appKeyValue.put("CFBundleExecutable", "AppCustomInfoPListTest");
-        appKeyValue.put("CFBundleIconFile", "AppCustomInfoPListTest.icns");
-        appKeyValue.put("CFBundleIdentifier", "Hello");
-        appKeyValue.put("CFBundleName", "AppCustomInfoPListTest");
-        appKeyValue.put("CFBundleShortVersionString", "1.0");
-        appKeyValue.put("LSApplicationCategoryType", "public.app-category.utilities");
-        appKeyValue.put("CFBundleVersion", "1.0");
-        appKeyValue.put("NSHumanReadableCopyright", JPackageStringBundle.MAIN.cannedFormattedString(
-                "param.copyright.default", new Date()).getValue());
-
-        embeddedRuntimeKeyValue.put("CFBundleIdentifier", "Hello");
-        embeddedRuntimeKeyValue.put("CFBundleName", "AppCustomInfoPListTest");
-        embeddedRuntimeKeyValue.put("CFBundleShortVersionString", "1.0");
-        embeddedRuntimeKeyValue.put("CFBundleVersion", "1.0");
-
-        runtimeKeyValue.put("CFBundleIdentifier", "foo");
-        runtimeKeyValue.put("CFBundleName", "foo");
-        runtimeKeyValue.put("CFBundleShortVersionString", "1.0");
-        runtimeKeyValue.put("CFBundleVersion", "1.0");
-
-        faKeysAndValues.add("CFBundleDocumentTypes");
-        faKeysAndValues.add("LSItemContentTypes");
-        faKeysAndValues.add("Hello.foo");
-        faKeysAndValues.add("UTTypeDescription");
-        faKeysAndValues.add("CFBundleTypeName");
-        faKeysAndValues.add("bar");
-    }
-
-    // We do not need full and valid Info.plist for testing
-    private static void createInfoPListFile(String key, Path plistFile) {
-        try {
-            XmlUtils.createXml(plistFile, xml -> {
-                writePList(xml, toXmlConsumer(() -> {
-                    writeDict(xml, toXmlConsumer(() -> {
-                        writeString(xml, "CustomInfoPListTestKey", key);
-                        if (key.equals(APP_PLIST_KEY)) {
-                            // Application
-                            writeString(xml, "CFBundleExecutable", "DEPLOY_LAUNCHER_NAME");
-                            writeString(xml, "CFBundleIconFile", "DEPLOY_ICON_FILE");
-                            writeString(xml, "CFBundleIdentifier", "DEPLOY_BUNDLE_IDENTIFIER");
-                            writeString(xml, "CFBundleName", "DEPLOY_BUNDLE_NAME");
-                            writeString(xml, "CFBundleShortVersionString", "DEPLOY_BUNDLE_SHORT_VERSION");
-                            writeString(xml, "LSApplicationCategoryType", "DEPLOY_APP_CATEGORY");
-                            writeString(xml, "CFBundleVersion", "DEPLOY_BUNDLE_CFBUNDLE_VERSION");
-                            writeString(xml, "NSHumanReadableCopyright", "DEPLOY_BUNDLE_COPYRIGHT");
-                            writeString(xml, "CustomInfoPListFA", "DEPLOY_FILE_ASSOCIATIONS");
-                        } else if (key.equals(EMBEDDED_RUNTIME_PLIST_KEY) || key.equals(RUNTIME_PLIST_KEY)) {
-                            // Embedded runtime and runtime
-                            writeString(xml, "CFBundleIdentifier", "CF_BUNDLE_IDENTIFIER");
-                            writeString(xml, "CFBundleName", "CF_BUNDLE_NAME");
-                            writeString(xml, "CFBundleShortVersionString", "CF_BUNDLE_SHORT_VERSION_STRING");
-                            writeString(xml, "CFBundleVersion", "CF_BUNDLE_VERSION");
-                        }
-                    }));
-                }));
-            });
-        } catch (IOException ex) {
-            throw new UncheckedIOException(ex);
-        }
-    }
-
-    private static String getResourceDirWithCustomInfoPList(
-                String key, boolean includeMainPList, boolean includeRuntimePList) {
-        final Path resources = TKit.createTempDirectory("resources");
-        if (includeMainPList) {
-            createInfoPListFile(key, resources.resolve("Info.plist"));
-        }
-        if (includeRuntimePList) {
-            createInfoPListFile(EMBEDDED_RUNTIME_PLIST_KEY, resources.resolve("Runtime-Info.plist"));
-        }
-        return resources.toString();
-    }
-
-    private static void validateInfoPListFileKey(PListReader plistFile, Optional<String> key) {
-        if (key.isPresent()) {
-            TKit.assertEquals(key.get(), plistFile.queryValue("CustomInfoPListTestKey"), String.format(
-                    "Check value of %s plist key", "CustomInfoPListTestKey"));
-        } else {
-            boolean exceptionThrown = false;
-            try {
-                plistFile.queryValue("CustomInfoPListTestKey");
-            } catch (NoSuchElementException ex) {
-                exceptionThrown = true;
-            }
-            TKit.assertTrue(exceptionThrown, "NoSuchElementException exception not thrown");
-        }
-    }
-
-    private static void validateInfoPList(PListReader plistFile, Map<String, String> values) {
-        values.forEach((key, value) -> {
-            TKit.assertEquals(value, plistFile.queryValue(key), String.format(
-                    "Check value of %s plist key", key));
-        });
-    }
-
-    // For FA check that main keys and values are present
-    private static void validateInfoPListFA(PListReader plistFile, List<String> values) {
-        String faXml = plistFile.queryValue("CustomInfoPListFA");
-        values.forEach(value -> {
-            TKit.assertTrue(faXml.contains(value), String.format(
-                "Check FA key/value is present [%s]", value));
-        });
-    }
-
     @Test
-    @Parameter({"TRUE", "FALSE"})
-    @Parameter({"FALSE", "TRUE"})
-    @Parameter({"TRUE", "TRUE"})
-    public void testApp(boolean includeMainPList, boolean includeRuntimePList) {
-        final Path propFile = TKit.workDir().resolve("fa.properties");
-        TKit.createPropertiesFile(propFile, Map.of(
-                "mime-type", "application/x-jpackage-foo",
-                "extension", "foo",
-                "description", "bar"
-            ));
-
-        JPackageCommand cmd = JPackageCommand.helloAppImage()
-                .addArguments("--resource-dir",
-                        getResourceDirWithCustomInfoPList(APP_PLIST_KEY,
-                                includeMainPList, includeRuntimePList))
-                .addArguments("--file-associations", propFile);
-
+    @ParameterSupplier("customPLists")
+    public void testAppImage(TestConfig cfg) throws Throwable {
+        var cmd = cfg.init(JPackageCommand.helloAppImage());
+        var verifier = cfg.createPListFilesVerifier(cmd.executePrerequisiteActions());
         cmd.executeAndAssertHelloAppImageCreated();
-
-        var appPList = MacHelper.readPListFromAppImage(cmd.outputBundle());
-        if (includeMainPList) {
-            validateInfoPListFileKey(appPList, Optional.of(APP_PLIST_KEY));
-            validateInfoPList(appPList, appKeyValue);
-            validateInfoPListFA(appPList, faKeysAndValues);
-        } else {
-            validateInfoPListFileKey(appPList, Optional.empty());
-        }
-
-        var runtimePList = MacHelper.readPListFromEmbeddedRuntime(cmd.outputBundle());
-        if (includeRuntimePList) {
-            validateInfoPListFileKey(runtimePList, Optional.of(EMBEDDED_RUNTIME_PLIST_KEY));
-            validateInfoPList(runtimePList, embeddedRuntimeKeyValue);
-        } else {
-            validateInfoPListFileKey(runtimePList, Optional.empty());
-        }
+        verifier.accept(cmd);
     }
 
     @Test
-    public void testRuntime() throws IOException {
-        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
+    @ParameterSupplier("customPLists")
+    public void testNativePackage(TestConfig cfg) {
+        List<ThrowingConsumer<JPackageCommand>> verifier = new ArrayList<>();
+        new PackageTest().configureHelloApp().addInitializer(cmd -> {
+            cfg.init(cmd.setFakeRuntime());
+        }).addRunOnceInitializer(() -> {
+            verifier.add(cfg.createPListFilesVerifier(JPackageCommand.helloAppImage().executePrerequisiteActions()));
+        }).addInstallVerifier(cmd -> {
+            verifier.get(0).accept(cmd);
+        }).run(Action.CREATE_AND_UNPACK);
+    }
 
-        final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
+    @Test
+    public void testRuntime() {
+        final Path runtimeImage[] = new Path[1];
 
-        var cmd = new JPackageCommand()
-                .useToolProvider(true)
-                .ignoreDefaultRuntime(true)
-                .dumpOutput(true)
-                .setPackageType(PackageType.MAC_DMG)
-                .setArgumentValue("--name", "foo")
-                .addArguments("--runtime-image", runtimeImage)
-                .addArguments("--resource-dir",
-                    getResourceDirWithCustomInfoPList(RUNTIME_PLIST_KEY, true, false))
-                .addArguments("--dest", runtimeBundleWorkDir);
+        var cfg = new TestConfig(Set.of(CustomPListType.RUNTIME));
 
-        cmd.execute();
+        new PackageTest().addRunOnceInitializer(() -> {
+            runtimeImage[0] = JPackageCommand.createInputRuntimeImage();
+        }).addInitializer(cmd -> {
+            cmd.ignoreDefaultRuntime(true)
+                    .removeArgumentWithValue("--input")
+                    .setArgumentValue("--runtime-image", runtimeImage[0]);
+            cfg.init(cmd);
+        }).addInstallVerifier(cmd -> {
+            cfg.createPListFilesVerifier(cmd).accept(cmd);
+        }).run(Action.CREATE_AND_UNPACK);
+    }
 
-        MacHelper.withExplodedDmg(cmd, dmgImage -> {
-            if (dmgImage.endsWith(cmd.appInstallationDirectory().getFileName())) {
-                var runtimePList = MacHelper.readPListFromAppImage(dmgImage);
-                validateInfoPListFileKey(runtimePList, Optional.of(RUNTIME_PLIST_KEY));
-                validateInfoPList(runtimePList, runtimeKeyValue);
+    public static Collection<Object[]> customPLists() {
+        return Stream.of(
+                Set.of(CustomPListType.APP),
+                Set.of(CustomPListType.APP_WITH_FA),
+                Set.of(CustomPListType.EMBEDDED_RUNTIME),
+                Set.of(CustomPListType.APP, CustomPListType.EMBEDDED_RUNTIME)
+        ).map(TestConfig::new).map(cfg -> {
+            return new Object[] { cfg };
+        }).toList();
+    }
+
+    private static List<String> toStringList(PListReader plistReader) {
+        return MacHelper.flatMapPList(plistReader).entrySet().stream().sorted(Comparator.comparing(Map.Entry::getKey)).map(e -> {
+            return String.format("%s: %s", e.getKey(), e.getValue());
+        }).toList();
+    }
+
+
+    public record TestConfig(Set<CustomPListType> customPLists) {
+
+        public TestConfig {
+            Objects.requireNonNull(customPLists);
+            if (customPLists.isEmpty()) {
+                throw new IllegalArgumentException();
             }
-        });
+        }
+
+        @Override
+        public String toString() {
+            return customPLists.stream()
+                    .sorted(Comparator.comparing(CustomPListType::role))
+                    .map(CustomPListType::toString)
+                    .collect(Collectors.joining("+"));
+        }
+
+        JPackageCommand init(JPackageCommand cmd) throws IOException {
+            if (customPLists.contains(CustomPListType.APP_WITH_FA)) {
+                final Path propFile = TKit.createTempFile("fa.properties");
+                var map = Map.ofEntries(
+                        entry("mime-type", "application/x-jpackage-foo"),
+                        entry("extension", "foo"),
+                        entry("description", "bar")
+                );
+                TKit.createPropertiesFile(propFile, map);
+                cmd.setArgumentValue("--file-associations", propFile);
+            }
+
+            cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
+            for (var customPList : customPLists) {
+                customPList.createInputPListFile(cmd);
+            }
+            return cmd;
+        }
+
+        ThrowingConsumer<JPackageCommand> createPListFilesVerifier(JPackageCommand cmd) throws IOException {
+            ThrowingConsumer<JPackageCommand> defaultVerifier = otherCmd -> {
+                for (var customPList : customPLists) {
+                    customPList.verifyPListFile(otherCmd);
+                }
+            };
+
+            var defaultPListFiles = CustomPListType.defaultRoles(customPLists);
+
+            if (defaultPListFiles.isEmpty()) {
+                return defaultVerifier;
+            } else {
+                var vanillaCmd = new JPackageCommand().setFakeRuntime()
+                        .addArguments(cmd.getAllArguments())
+                        .setPackageType(PackageType.IMAGE)
+                        .removeArgumentWithValue("--resource-dir")
+                        .setArgumentValue("--dest", TKit.createTempDirectory("vanilla"));
+                vanillaCmd.executeIgnoreExitCode().assertExitCodeIsZero();
+
+                return otherCmd -> {
+                    defaultVerifier.accept(otherCmd);
+                    for (var defaultPListFile : defaultPListFiles) {
+                        final var expectedPListPath = defaultPListFile.path(vanillaCmd);
+                        final var expectedPList = MacHelper.readPList(expectedPListPath);
+
+                        final var actualPListPath = defaultPListFile.path(otherCmd);
+                        final var actualPList = MacHelper.readPList(actualPListPath);
+
+                        var expected = toStringList(expectedPList);
+                        var actual = toStringList(actualPList);
+
+                        TKit.assertStringListEquals(expected, actual, String.format(
+                                "Check contents of [%s] and [%s] plist files are the same", expectedPListPath, actualPListPath));
+                    }
+                };
+            }
+        }
+    }
+
+
+    private enum PListRole {
+        MAIN,
+        EMBEDDED_RUNTIME,
+        ;
+
+        Path path(JPackageCommand cmd) {
+            final Path bundleRoot;
+            if (cmd.isRuntime() || this == EMBEDDED_RUNTIME) {
+                bundleRoot = cmd.appRuntimeDirectory();
+            } else {
+                bundleRoot = cmd.appLayout().contentDirectory().getParent();
+            }
+            return bundleRoot.resolve("Contents/Info.plist");
+        }
+    }
+
+
+    private enum CustomPListType {
+        APP(
+                CustomPListFactory.PLIST_INPUT::writeAppPlist,
+                CustomPListFactory.PLIST_OUTPUT::writeAppPlist,
+                "Info.plist"),
+
+        APP_WITH_FA(APP),
+
+        EMBEDDED_RUNTIME(
+                CustomPListFactory.PLIST_INPUT::writeEmbeddedRuntimePlist,
+                CustomPListFactory.PLIST_OUTPUT::writeEmbeddedRuntimePlist,
+                "Runtime-Info.plist"),
+
+        RUNTIME(
+                CustomPListFactory.PLIST_INPUT::writeRuntimePlist,
+                CustomPListFactory.PLIST_OUTPUT::writeRuntimePlist,
+                "Info.plist"),
+        ;
+
+        private CustomPListType(
+                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter> inputPlistWriter,
+                ThrowingBiConsumer<JPackageCommand, XMLStreamWriter> outputPlistWriter,
+                String outputPlistFilename) {
+            this.inputPlistWriter = ThrowingBiConsumer.toBiConsumer(inputPlistWriter);
+            this.outputPlistWriter = ThrowingBiConsumer.toBiConsumer(outputPlistWriter);
+            this.outputPlistFilename = outputPlistFilename;
+        }
+
+        private CustomPListType(CustomPListType other) {
+            this.inputPlistWriter = other.inputPlistWriter;
+            this.outputPlistWriter = other.outputPlistWriter;
+            this.outputPlistFilename = other.outputPlistFilename;
+        }
+
+        void createInputPListFile(JPackageCommand cmd) throws IOException {
+            createXml(Path.of(cmd.getArgumentValue("--resource-dir")).resolve(outputPlistFilename), xml -> {
+                inputPlistWriter.accept(cmd, xml);
+            });
+        }
+
+        void verifyPListFile(JPackageCommand cmd) throws IOException {
+            final var expectedPList = new PListReader(createXml(xml -> {
+                    outputPlistWriter.accept(cmd, xml);
+                }).getNode());
+
+            final var actualPListPath = role().path(cmd);
+            final var actualPList = MacHelper.readPList(actualPListPath);
+
+            var expected = toStringList(expectedPList);
+            var actual = toStringList(actualPList);
+
+            TKit.assertStringListEquals(expected, actual, String.format("Check contents of [%s] plist file is as expected", actualPListPath));
+        }
+
+        PListRole role() {
+            if (this == EMBEDDED_RUNTIME) {
+                return PListRole.EMBEDDED_RUNTIME;
+            } else {
+                return PListRole.MAIN;
+            }
+        }
+
+        static Set<PListRole> defaultRoles(Collection<CustomPListType> customPLists) {
+            var result = new HashSet<>(Set.of(PListRole.values()));
+            customPLists.stream().<PListRole>mapMulti((customPList, acc) -> {
+                if (customPList == CustomPListType.RUNTIME) {
+                    List.of(PListRole.values()).forEach(acc::accept);
+                } else {
+                    acc.accept(customPList.role());
+                }
+            }).forEach(result::remove);
+            return Collections.unmodifiableSet(result);
+        }
+
+        private final BiConsumer<JPackageCommand, XMLStreamWriter> inputPlistWriter;
+        private final BiConsumer<JPackageCommand, XMLStreamWriter> outputPlistWriter;
+        private final String outputPlistFilename;
+    }
+
+
+    private enum CustomPListFactory {
+        PLIST_INPUT,
+        PLIST_OUTPUT,
+        ;
+
+        private void writeAppPlist(JPackageCommand cmd, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            writePList(xml, toXmlConsumer(() -> {
+                writeDict(xml, toXmlConsumer(() -> {
+                    writeString(xml, "CustomAppProperty", "App");
+                    writeString(xml, "CFBundleExecutable", value("DEPLOY_LAUNCHER_NAME", cmd.name()));
+                    writeString(xml, "CFBundleIconFile", value("DEPLOY_ICON_FILE", cmd.name() + ".icns"));
+                    writeString(xml, "CFBundleIdentifier", value("DEPLOY_BUNDLE_IDENTIFIER", "Hello"));
+                    writeString(xml, "CFBundleName", value("DEPLOY_BUNDLE_NAME", cmd.name()));
+                    writeString(xml, "CFBundleShortVersionString", value("DEPLOY_BUNDLE_SHORT_VERSION", cmd.version()));
+                    writeString(xml, "LSApplicationCategoryType", value("DEPLOY_APP_CATEGORY", "public.app-category.utilities"));
+                    writeString(xml, "CFBundleVersion", value("DEPLOY_BUNDLE_CFBUNDLE_VERSION", cmd.version()));
+                    writeString(xml, "NSHumanReadableCopyright", value("DEPLOY_BUNDLE_COPYRIGHT",
+                            JPackageStringBundle.MAIN.cannedFormattedString("param.copyright.default", new Date()).getValue()));
+                    if (cmd.hasArgument("--file-associations")) {
+                        if (this == PLIST_INPUT) {
+                            xml.writeCharacters("DEPLOY_FILE_ASSOCIATIONS");
+                        } else {
+                            MacHelper.writeFaPListFragment(cmd, xml);
+                        }
+                    }
+                }));
+            }));
+        }
+
+        void writeEmbeddedRuntimePlist(JPackageCommand cmd, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            writePList(xml, toXmlConsumer(() -> {
+                writeDict(xml, toXmlConsumer(() -> {
+                    writeString(xml, "CustomEmbeddedRuntimeProperty", "Embedded runtime");
+                    writeString(xml, "CFBundleIdentifier", value("CF_BUNDLE_IDENTIFIER", "Hello"));
+                    writeString(xml, "CFBundleName", value("CF_BUNDLE_NAME", cmd.name()));
+                    writeString(xml, "CFBundleShortVersionString", value("CF_BUNDLE_SHORT_VERSION_STRING", cmd.version()));
+                    writeString(xml, "CFBundleVersion", value("CF_BUNDLE_VERSION", cmd.version()));
+                }));
+            }));
+        }
+
+        void writeRuntimePlist(JPackageCommand cmd, XMLStreamWriter xml) throws XMLStreamException, IOException {
+            writePList(xml, toXmlConsumer(() -> {
+                writeDict(xml, toXmlConsumer(() -> {
+                    writeString(xml, "CustomRuntimeProperty", "Runtime");
+                    writeString(xml, "CFBundleIdentifier", value("CF_BUNDLE_IDENTIFIER", cmd.name()));
+                    writeString(xml, "CFBundleName", value("CF_BUNDLE_NAME", cmd.name()));
+                    writeString(xml, "CFBundleShortVersionString", value("CF_BUNDLE_SHORT_VERSION_STRING", cmd.version()));
+                    writeString(xml, "CFBundleVersion", value("CF_BUNDLE_VERSION", cmd.version()));
+                    writeString(xml, "CustomInfoPListFA", "DEPLOY_FILE_ASSOCIATIONS");
+                }));
+            }));
+        }
+
+        private String value(String input, String output) {
+            if (this == PLIST_INPUT) {
+                return input;
+            } else {
+                return output;
+            }
+        }
     }
 }

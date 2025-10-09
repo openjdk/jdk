@@ -313,7 +313,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // an error by PackageTest.
             createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("bin", "bulk")));
 
-            cmd.addArguments("--runtime-image", fakeRuntimeDir);
+            cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
         });
 
         return this;
