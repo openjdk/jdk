@@ -469,7 +469,7 @@
                                                                             \
   product(size_t, SoftMaxHeapSize, 0, MANAGEABLE,                           \
           "Soft limit for maximum heap size (in bytes)")                    \
-          constraint(SoftMaxHeapSizeConstraintFunc,AfterErgo)               \
+          constraint(SoftMaxHeapSizeConstraintFunc,AfterMemoryInit)         \
                                                                             \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \
