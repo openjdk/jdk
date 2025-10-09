@@ -219,7 +219,7 @@ public class Send1xxResponsesTest {
             System.out.println("Client finished reading from server");
             // Assert that the received status codes match the expected ones
             if (statusCodes.size() != expectedStatusCodes.length) {
-                throw new IOException("Expected status codes: " + Arrays.toString(expectedStatusCodes)) + "\nReceived status codes: " + statusCodes);
+                throw new IOException("Expected status codes: " + Arrays.toString(expectedStatusCodes) + "\nReceived status codes: " + statusCodes);
             }
             for (int i = 0; i < expectedStatusCodes.length; i++) {
                 if (!statusCodes.get(i).equals(String.valueOf(expectedStatusCodes[i]))) {
@@ -228,8 +228,6 @@ public class Send1xxResponsesTest {
                 }
             }
         } finally {
-            // give time to the server to try & drain its input stream
-            Thread.sleep(500);
             // closes the client outputstream while the server is draining
             // it
             if (writer != null) {
