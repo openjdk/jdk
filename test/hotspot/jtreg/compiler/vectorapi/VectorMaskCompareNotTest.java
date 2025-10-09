@@ -30,7 +30,7 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8354242 8368205
+ * @bug 8354242
  * @key randomness
  * @library /test/lib /
  * @requires vm.opt.MaxVectorSize == "null" | vm.opt.MaxVectorSize >= 16
