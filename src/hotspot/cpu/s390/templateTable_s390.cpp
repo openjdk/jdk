@@ -2384,6 +2384,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
     __ z_lg(method, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
     __ clinit_barrier(klass, Z_thread, &Ldone, /*L_slow_path*/ nullptr);
+  } else {
+    __ z_bru(Ldone);
   }
 
   // Resolve first time through
@@ -2432,6 +2434,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
 
     __ load_sized_value(field_holder, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
     __ clinit_barrier(field_holder, Z_thread, &Ldone, /*L_slow_path*/ nullptr);
+  } else {
+    __ z_bru(Ldone);
   }
 
   // resolve first time through

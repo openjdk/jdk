@@ -2203,6 +2203,8 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
     __ ld(method, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
     __ load_method_holder(klass, method);
     __ clinit_barrier(klass, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
+  } else {
+    __ b(Ldone);
   }
 
   // Class initialization barrier slow path lands here as well.
@@ -2247,6 +2249,8 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
     // (ordered by compare-branch-isync).
     __ ld(field_holder, ResolvedFieldEntry::field_holder_offset(), Rcache);
     __ clinit_barrier(field_holder, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
+  } else {
+    __ b(Ldone);
   }
 
   // resolve first time through
