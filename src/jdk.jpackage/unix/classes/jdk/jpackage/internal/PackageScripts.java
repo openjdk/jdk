@@ -87,22 +87,6 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         });
     }
 
-    void logNoMainScripts() {
-        scripts.values().stream().map(
-                ShellScriptResource::getResource).forEach(overridableResource -> {
-            try {
-                if (overridableResource.saveToStream(null) == null) {
-                    final var publicName = overridableResource.getPublicName().toString();
-                    final var printableCategory = overridableResource.getPrintableCategory();
-                    Log.verbose(I18N.format("message.no-default-resource",
-                        publicName, printableCategory, publicName));
-                }
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
-        });
-    }
-
     void saveInFolder(Path folder) throws IOException {
         for (var script : scripts.values()) {
             script.saveInFolder(folder);

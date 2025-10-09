@@ -265,6 +265,8 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
 
         if (scriptsRoot().isEmpty()) {
             disabledTasks.add(PkgPackageTaskID.PREPARE_MAIN_SCRIPTS);
+        } else {
+            disabledTasks.add(PkgPackageTaskID.LOG_NO_MAIN_SCRIPTS);
         }
 
         for (final var taskID : disabledTasks) {
@@ -361,10 +363,11 @@ record MacPkgPackager(BuildEnv env, MacPkgPackage pkg, Optional<Services> servic
                 .saveInFolder(scriptsRoot);
     }
 
-    private void logNoMainScripts() {
+    private void logNoMainScripts() throws IOException {
+        // Should not create any files, but merely log what files the user
+        // should add to the resource directory to customize install scripts.
         MacPkgInstallerScripts.createAppScripts()
-                .setResourceDir(env)
-                .logNoMainScripts();
+                .saveInFolder(env.configDir().resolve("scripts"));
     }
 
     private void prepareDistributionXMLFile() throws IOException {

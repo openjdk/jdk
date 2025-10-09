@@ -44,6 +44,9 @@ final class ShellScriptResource {
     void saveInFolder(Path folder) throws IOException {
         // Shell scripts might not have default
         if (resource.saveToFile((Path)null) == null) {
+            Log.verbose(I18N.format("message.no-default-resource",
+                resource.getPublicName(), resource.getCategory(),
+                resource.getPublicName()));
             return;
         }
 
