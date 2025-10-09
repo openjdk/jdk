@@ -677,9 +677,11 @@ address SharedRuntime::get_poll_stub(address pc) {
            "polling page safepoint stub not created yet");
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
-  log_trace(safepoint)("Polling page exception: thread = " INTPTR_FORMAT ", pc = "
+  log_trace(safepoint)("Polling page exception: thread = " INTPTR_FORMAT " [%d], pc = "
                        INTPTR_FORMAT " (%s), stub = " INTPTR_FORMAT,
-                       p2i(Thread::current()), p2i(pc),
+                       p2i(Thread::current()),
+                       Thread::current()->osthread()->thread_id(),
+                       p2i(pc),
                        at_poll_return ? "return" : "loop",
                        p2i(stub));
   return stub;

@@ -242,14 +242,16 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     while (cur_tss != nullptr) {
       assert(cur_tss->is_running(), "Illegal initial state");
       if (thread_not_running(cur_tss)) {
-        log_trace(safepoint)("Thread " INTPTR_FORMAT " is now blocked", p2i(cur_tss->thread()));
+        log_trace(safepoint)("Thread " INTPTR_FORMAT " [%d] is now blocked",
+                             p2i(cur_tss->thread()), cur_tss->thread()->osthread()->thread_id());
         --still_running;
         *p_prev = nullptr;
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
       } else {
-        log_trace(safepoint)("Thread " INTPTR_FORMAT " is still running", p2i(cur_tss->thread()));
+        log_trace(safepoint)("Thread " INTPTR_FORMAT " [%d] is still running",
+                             p2i(cur_tss->thread()), cur_tss->thread()->osthread()->thread_id());
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
         cur_tss = cur_tss->get_next();
@@ -556,7 +558,8 @@ void SafepointSynchronize::block(JavaThread *thread) {
   // Threads shouldn't block if they are in the middle of printing, but...
   ttyLocker::break_tty_lock_for_safepoint(os::current_thread_id());
 
-  log_trace(safepoint)("Blocking thread " INTPTR_FORMAT, p2i(thread));
+  log_trace(safepoint)("Blocking thread " INTPTR_FORMAT " [%d]",
+                       p2i(thread), thread->osthread()->thread_id());
 
   // Only bail from the block() call if the thread is gone from the
   // thread list; starting to exit should still block.
@@ -602,7 +605,8 @@ void SafepointSynchronize::block(JavaThread *thread) {
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 
-  log_trace(safepoint)("Unblocking thread " INTPTR_FORMAT, p2i(thread));
+  log_trace(safepoint)("Unblocking thread " INTPTR_FORMAT " [%d]",
+                       p2i(thread), thread->osthread()->thread_id());
 }
 
 // ------------------------------------------------------------------------------------------------------
