@@ -141,25 +141,25 @@ class MallocHeader {
 public:
   using CanaryType = uint16_t;
   #ifndef _LP64
-    using AltCanarayType = uint32_t;
+    using AltCanaryType = uint32_t;
     #if INCLUDE_ASAN
-      inline AltCanarayType alt_canary() const {
-        ASAN_UNPOISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanarayType));
-        AltCanarayType ac = _alt_canary;
+      inline AltCanaryType alt_canary() const {
+        ASAN_UNPOISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanaryType));
+        AltCanaryType ac = _alt_canary;
         if (_poisoned) {
-          ASAN_POISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanarayType));
+          ASAN_POISON_MEMORY_REGION(&_alt_canary, sizeof(AltCanaryType));
         }
         return ac;
       }
-      inline void set_alt_canary(AltCanarayType value) {
+      inline void set_alt_canary(AltCanaryType value) {
         bool poisoned_before = _poisoned;
         set_poisoned(false);
         _alt_canary = value;
         set_poisoned(poisoned_before);
       }
     #else
-      inline AltCanarayType alt_canary() const { return _alt_canary; }
-      inline void set_alt_canary() { return _alt_canary = value; }
+      inline AltCanaryType alt_canary() const { return _alt_canary; }
+      inline void set_alt_canary(AltCanaryType value) { return _alt_canary = value; }
     #endif // INCLUDE_ASAN
   #endif // _LP64
   #if INCLUDE_ASAN
