@@ -380,9 +380,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // not cause correctness issues.
       // There is no difference between scanning cards covering an effectively
       // dead humongous object vs. some other objects in reallocated regions.
-
-      // All regions that were allocated before marking have a TAMS != bottom.
-      bool allocated_after_mark_start = region->bottom() == _g1h->concurrent_mark()->top_at_mark_start(region);
+      //
       // TAMSes are only reset after completing the entire mark cycle, during
       // bitmap clearing. It is worth to not wait until then, and allow reclamation
       // outside of actual (concurrent) SATB marking.
@@ -396,9 +394,16 @@ class G1PrepareEvacuationTask : public WorkerTask {
       //
       // After the pause, having reclaimed h, obviously the mutator can't fetch
       // the reference from h any more.
-      bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
-      return (obj->is_typeArray() || (G1EagerReclaimWithRefs && (allocated_after_mark_start || !mark_in_progress))) &&
-             _g1h->is_potential_eager_reclaim_candidate(region);
+      if (!obj->is_typeArray()) {
+        // All regions that were allocated before marking have a TAMS != bottom.
+        bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
+        bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
+
+        if (allocated_before_mark_start && mark_in_progress) {
+          return false;
+        }
+      }
+      return _g1h->is_potential_eager_reclaim_candidate(region);
     }
 
   public:

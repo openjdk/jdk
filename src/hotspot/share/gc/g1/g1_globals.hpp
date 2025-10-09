@@ -296,9 +296,6 @@
           "otherwise eligible for eager reclaim may have to be a candidate "\
           "for eager reclaim. Will be selected ergonomically by default.")  \
                                                                             \
-  product(bool, G1EagerReclaimWithRefs, true, DIAGNOSTIC,                   \
-          "Allow eager reclaim of non-typeArray humongous objects.")        \
-                                                                            \
   product(size_t, G1RebuildRemSetChunkSize, 256 * K, EXPERIMENTAL,          \
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \
