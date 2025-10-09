@@ -31,7 +31,7 @@
  * @test id=preferIPv6
  * @bug 8349670
  * @summary Test 100 continue response handling ipv6
- * @run junit/othervm -Djava.net.preferIPv6Addresses=true InputRead100Test
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true Send1xxResponsesTest
  */
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -50,7 +50,7 @@ import org.junit.jupiter.api.Test;
 
 import static java.nio.charset.StandardCharsets.*;
 
-public class InputRead100Test {
+public class Send1xxResponsesTest {
     private static final String someContext = "/context";
     static {
         Logger.getLogger("").setLevel(Level.ALL);
@@ -70,6 +70,7 @@ public class InputRead100Test {
                     byte[] reply = "Here is my reply!".getBytes(UTF_8);
                     try {
                         msg.getRequestBody().readAllBytes();
+                        msg.sendResponseHeaders(100, -1);
                         msg.sendResponseHeaders(100, -1);
                         msg.sendResponseHeaders(200, reply.length);
                         msg.getResponseBody().write(reply);
@@ -103,6 +104,7 @@ public class InputRead100Test {
                     try {
                         msg.sendResponseHeaders(100, -1);
                         msg.sendResponseHeaders(100, -1);
+                        msg.sendResponseHeaders(100, -1);
                         msg.getRequestBody().readAllBytes();
                         msg.sendResponseHeaders(200, reply.length);
                         msg.getResponseBody().write(reply);
@@ -129,6 +131,7 @@ public class InputRead100Test {
         BufferedReader reader = null;
         boolean foundContinue = false;
         boolean foundSecondContinue = false;
+        boolean foundThirdContinue = false;
 
         final String CRLF = "\r\n";
         try {
@@ -153,18 +156,21 @@ public class InputRead100Test {
             reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             String line = reader.readLine();
             for (; line != null; line = reader.readLine()) {
-                if (line.isEmpty() && foundSecondContinue) {
+                if (line.isEmpty() && foundThirdContinue) {
                     break;
                 }
-                if (foundContinue && line.startsWith("HTTP/1.1 100")) {
+                System.out.println("interim response \"" + line + "\"");
+                if (foundSecondContinue && line.startsWith("HTTP/1.1 100")) {
+                    foundThirdContinue = true;
+                }
+                else if (foundContinue && line.startsWith("HTTP/1.1 100")) {
                     foundSecondContinue = true;
                 }
-                System.out.println("interim response \"" + line + "\"");
-                if (line.startsWith("HTTP/1.1 100")) {
+                else if (line.startsWith("HTTP/1.1 100")) {
                     foundContinue = true;
                 }
             }
-            if (!foundSecondContinue) {
+            if (!foundThirdContinue) {
                 throw new IOException("Did not receive two 100 continue from server");
             }
             writer.print(body);
