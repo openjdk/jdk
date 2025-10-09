@@ -722,11 +722,27 @@ public sealed interface Template permits Template.ZeroArgs,
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * TODO: example
-     *
-     * <p>
      * If you require a scope that is non-transparent for some or all of the above, consider
      * using {@link scope}, {@link flat}, {@link nameScope}, {@link setFuelCostScope}.
+     *
+     * <p>
+     * Keeping hashtag-replacements local but letting {@link DataName}s escape can be
+     * useful in cases like the following, where we may want to reuse the hashtag
+     * multiple times:
+     *
+     * <p>
+     * {@snippet lang=java :
+     * var template = Template.make(() -> scope(
+     *     List.of("a", "b", "c").stream().map(name -> hashtagScope(
+     *         let("name", name), // assumes values: a, b, c
+     *         addDataName(name, PrimitiveType.INTS, MUTABLE), // escapes
+     *         """
+     *         int #name = 42;
+     *         """
+     *     ))
+     *     // We still have access to the three DataNames.
+     * ));
+     * }
      *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
@@ -747,11 +763,37 @@ public sealed interface Template permits Template.ZeroArgs,
      * any {@link Token}, or {@link List}s of any of these.
      *
      * <p>
-     * TODO: example
-     *
-     * <p>
      * If you require a scope that is non-transparent for some or all of the above, consider
      * using {@link scope}, {@link flat}, {@link nameScope}, {@link setFuelCostScope}.
+     *
+     * <p>
+     * In some cases, it can be helpful to have different {@link setFuelCost} within
+     * a single template, depending on the code nesting depth. Example:
+     *
+     * <p>
+     * {@snippet lang=java :
+     * var template = Template.make(() -> scope(
+     *     setFuelCost(1),
+     *     // CODE1: some shallow code, allowing recursive template uses here
+     *     //        to use more fuel.
+     *     """
+     *     for (int i = 0; i < 1000; i++) {
+     *     """,
+     *     setFuelCostScope(
+     *         setFuelCost(100)
+     *         // CODE2: with the for-loop, we already have a deeper nesting
+     *         //        depth, and recursive template uses should not get
+     *         //        as much fuel as in CODE1.
+     *     )
+     *     """
+     *     }
+     *     """
+     *     // CODe3: we are back in the outer scope of CODE1, and can use
+     *     //        more fuel again in nested template uses. setFuelCost
+     *     //        automatically restored to what was set before the
+     *     //        inner scope.
+     * ));
+     * }
      *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
@@ -784,6 +826,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param name The {@link String} name of the name.
      * @return The dollar replacement for the {@code 'name'}.
      */
+    // TODO: we may have to make this a token based thing too!
     static String $(String name) {
         return Renderer.getCurrent().$(name);
     }
