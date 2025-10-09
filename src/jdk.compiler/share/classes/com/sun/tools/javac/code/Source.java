@@ -277,6 +277,7 @@ public enum Source {
         JAVA_BASE_TRANSITIVE(JDK25, Fragments.FeatureJavaBaseTransitive, DiagKind.PLURAL),
         PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
         ERASE_POLY_SIG_RETURN_TYPE(JDK24),
+        CAPTURE_MREF_RETURN_TYPE(JDK26),
         ;
 
         enum DiagKind {
