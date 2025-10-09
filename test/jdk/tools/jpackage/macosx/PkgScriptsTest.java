@@ -146,11 +146,11 @@ public class PkgScriptsTest {
         }
 
         void createFor(JPackageCommand cmd) {
-            Path scriptOutputFile = responseFilePath(cmd).toAbsolutePath();
-            TKit.assertPathExists(scriptOutputFile, false);
-            TKit.createTextFile(scriptOutputFile, Stream.of(
+            var responseFile = responseFilePath(cmd);
+            TKit.assertPathExists(responseFile, false);
+            TKit.createTextFile(Path.of(cmd.getArgumentValue("--resource-dir")).resolve(role.scriptName()), Stream.of(
                     "#!/usr/bin/env sh",
-                    String.format("touch \"%s\"", scriptOutputFile),
+                    String.format("touch \"%s\"", responseFile.toAbsolutePath()),
                     "exit 0"
             ));
         }
@@ -164,7 +164,7 @@ public class PkgScriptsTest {
         }
 
         private Path responseFilePath(JPackageCommand cmd) {
-            return Path.of(cmd.getArgumentValue("--resource-dir")).resolve(role.scriptName());
+            return responseDir.resolve(role.scriptName());
         }
     }
 

@@ -311,7 +311,7 @@ final class OverridableResource {
                     .orElseGet(() -> {
                         return resourceName(dest);
                     });
-            Log.verbose(I18N.format("message.no-default-resource", 
+            Log.verbose(I18N.format("message.no-default-resource",
                     getPrintableCategory(), resourceName));
         }
     }
