@@ -1626,10 +1626,16 @@ bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
       // These are cases that all have associative operations, which can
       // thus be reordered, allowing non-strict order reductions.
       return false;
-    default:
+    case Op_AddReductionVF:
+    case Op_MulReductionVF:
+    case Op_AddReductionVD:
+    case Op_MulReductionVD:
       // Floating-point addition and multiplication are non-associative,
       // so AddReductionVF/D and MulReductionVF/D require strict ordering
       // in auto-vectorization.
+      return true;
+    default:
+      assert(false, "not handled: %s", NodeClassNames[vopc]);
       return true;
   }
 }
