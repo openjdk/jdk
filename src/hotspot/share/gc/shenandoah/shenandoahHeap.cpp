@@ -2699,6 +2699,10 @@ bool ShenandoahHeap::is_uncommit_in_progress() {
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
   StackWatermarkSet::safepoint_synchronize_begin();
+  SuspendibleThreadSet::synchronize_begin();
+}
+
+void ShenandoahHeap::safepoint_synchronize() {
   SuspendibleThreadSet::synchronize();
 }
 

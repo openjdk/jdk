@@ -335,6 +335,10 @@ void ZCollectedHeap::safepoint_synchronize_begin() {
   StackWatermarkSet::safepoint_synchronize_begin();
   ZGeneration::young()->synchronize_relocation();
   ZGeneration::old()->synchronize_relocation();
+  SuspendibleThreadSet::synchronize_begin();
+}
+
+void ZCollectedHeap::safepoint_synchronize() {
   SuspendibleThreadSet::synchronize();
 }
 

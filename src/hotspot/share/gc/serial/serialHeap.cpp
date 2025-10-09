@@ -147,6 +147,12 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
 
 void SerialHeap::safepoint_synchronize_begin() {
   if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize_begin();
+  }
+}
+
+void SerialHeap::safepoint_synchronize() {
+  if (UseStringDeduplication) {
     SuspendibleThreadSet::synchronize();
   }
 }

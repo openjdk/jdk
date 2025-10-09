@@ -122,7 +122,9 @@ void SuspendibleThreadSet::synchronize() {
   // being signaled until we get back here again for some later
   // synchronize call.  Hence, there is no need to re-check for
   // is_synchronized after the wait; it will always be true there.
+  log_trace(safepoint)("Waiting for %d  GC threads to block", _nthreads - _nthreads_stopped);
   _synchronize_wakeup->wait();
+  log_trace(safepoint)("All GC threads have been blocked");
 
 #ifdef ASSERT
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);

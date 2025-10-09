@@ -373,6 +373,7 @@ void SafepointSynchronize::begin() {
 
   // Will spin until all threads are safe.
   int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
+  Universe::heap()->safepoint_synchronize();
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
