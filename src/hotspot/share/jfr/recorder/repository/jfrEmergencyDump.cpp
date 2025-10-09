@@ -585,7 +585,7 @@ static bool guard_reentrancy() {
     return tid != max_julong;
   }
   // Recursive case
-  assert(JFR_JVM_THREAD_ID(Thread::current()) == shutdown_tid, "invariant");
+  assert(JFR_JVM_THREAD_ID(Thread::current_or_null_safe()) == shutdown_tid, "invariant");
   return false;
 }
 
