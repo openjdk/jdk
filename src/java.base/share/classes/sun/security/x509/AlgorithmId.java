@@ -144,7 +144,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
          */
         if (params.tag == DerValue.tag_Null) {
             if (params.length() != 0) {
-                throw new IOException("Invalid ASN.1 NULL in AlgorithmId parameters: non-zero length");
+                throw new IOException("Invalid ASN.1 NULL in AlgorithmId parameters: " +
+                        "non-zero length");
             }
             // Canonicalize to "no parameters" representation for consistency
             this.encodedParams = null;
