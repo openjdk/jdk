@@ -3329,6 +3329,18 @@ InstanceKlass* InstanceKlass::compute_enclosing_class(bool* inner_is_member, TRA
   // If no inner class attribute found for this class.
   if (nullptr == outer_klass) return nullptr;
 
+  // Wait until also outer_klass gets fully loaded.
+  InstanceKlass* pool_holder = outer_klass->constants()->pool_holder();
+  ClassLoaderData* loader_data = pool_holder->class_loader_data();
+  if (loader_data == nullptr) {
+    HandleMark hm(THREAD);
+    Handle h_init_lock(THREAD, pool_holder->init_lock());
+    ObjectLocker ol(h_init_lock, THREAD);
+
+    loader_data = pool_holder->class_loader_data();
+    assert(loader_data != nullptr, "class still has not been loaded");
+  }
+
   // Throws an exception if outer klass has not declared k as an inner klass
   // We need evidence that each klass knows about the other, or else
   // the system could allow a spoof of an inner class to gain access rights.
