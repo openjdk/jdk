@@ -22,11 +22,11 @@
  *
  */
 
+#include "code/nmethod.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
@@ -61,8 +61,6 @@ void RootSetClosure<Delegate>::do_oop(narrowOop* ref) {
   }
 }
 
-class RootSetClosureMarkScope : public MarkScope {};
-
 template <typename Delegate>
 class RawRootClosure : public OopClosure {
   Delegate* _delegate;
@@ -89,7 +87,7 @@ public:
 
 template <typename Delegate>
 void RootSetClosure<Delegate>::process() {
-  RootSetClosureMarkScope mark_scope;
+  NMethodMarkingScope nmethod_marking_scope;
 
   CLDToOopClosure cldt_closure(this, ClassLoaderData::_claim_none);
   ClassLoaderDataGraph::always_strong_cld_do(&cldt_closure);
