@@ -262,15 +262,15 @@ char* VM_Version::os_uarch_additional_features() {
     mode = VM_MBARE;
   }
   fclose(f);
-  non_ext_SATP.enable_feature(mode);
+  satp_mode.enable_feature(mode);
   return ret;
 }
 
 void VM_Version::vendor_features() {
-  if (!non_ext_VendorId.enabled()) {
+  if (!mvendorid.enabled()) {
     return;
   }
-  switch (non_ext_VendorId.value()) {
+  switch (mvendorid.value()) {
     case RIVOS:
     rivos_features();
     break;
@@ -302,12 +302,12 @@ void VM_Version::rivos_features() {
 
   ext_Zvfh.enable_feature();
 
-  non_ext_UnalignedScalar.enable_feature(MISALIGNED_SCALAR_FAST);
-  non_ext_SATP.enable_feature(VM_SV48);
+  unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
+  satp_mode.enable_feature(VM_SV48);
 
   // Features dependent on march/mimpid.
   // I.e. march.value() and mimplid.value()
-  if (non_ext_ImpId.value() > 0x100) {
+  if (mimpid.value() > 0x100) {
     ext_Zacas.enable_feature();
     ext_Zihintpause.enable_feature();
   }

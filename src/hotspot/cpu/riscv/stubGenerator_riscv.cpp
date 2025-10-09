@@ -683,7 +683,7 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     if (UseBlockZeroing) {
-      int zicboz_block_size = VM_Version::non_ext_ZicbozBlockSize.value();
+      int zicboz_block_size = VM_Version::zicboz_block_size.value();
       // Ensure count >= 2 * zicboz_block_size so that it still deserves
       // a cbo.zero after alignment.
       Label small;

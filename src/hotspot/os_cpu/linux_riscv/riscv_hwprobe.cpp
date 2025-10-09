@@ -168,13 +168,13 @@ void RiscvHwprobe::add_features_from_query_result() {
   assert(rw_hwprobe_completed, "hwprobe not init yet.");
 
   if (is_valid(RISCV_HWPROBE_KEY_MVENDORID)) {
-    VM_Version::non_ext_VendorId.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
+    VM_Version::mvendorid.enable_feature(query[RISCV_HWPROBE_KEY_MVENDORID].value);
   }
   if (is_valid(RISCV_HWPROBE_KEY_MARCHID)) {
-    VM_Version::non_ext_ArchId.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
+    VM_Version::marchid.enable_feature(query[RISCV_HWPROBE_KEY_MARCHID].value);
   }
   if (is_valid(RISCV_HWPROBE_KEY_MIMPID)) {
-    VM_Version::non_ext_ImpId.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
+    VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
   }
   if (is_set(RISCV_HWPROBE_KEY_BASE_BEHAVIOR, RISCV_HWPROBE_BASE_BEHAVIOR_IMA)) {
     VM_Version::ext_i.enable_feature();
@@ -271,18 +271,18 @@ void RiscvHwprobe::add_features_from_query_result() {
   // to RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF. Keep it there for backward
   // compatibility with old kernels.
   if (is_valid(RISCV_HWPROBE_KEY_CPUPERF_0)) {
-    VM_Version::non_ext_UnalignedScalar.enable_feature(
+    VM_Version::unaligned_scalar.enable_feature(
        query[RISCV_HWPROBE_KEY_CPUPERF_0].value & RISCV_HWPROBE_MISALIGNED_MASK);
   } else if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF)) {
-    VM_Version::non_ext_UnalignedScalar.enable_feature(
+    VM_Version::unaligned_scalar.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_SCALAR_PERF].value);
   }
 
   if (is_valid(RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF)) {
-    VM_Version::non_ext_UnalignedVector.enable_feature(
+    VM_Version::unaligned_vector.enable_feature(
        query[RISCV_HWPROBE_KEY_MISALIGNED_VECTOR_PERF].value);
   }
   if (is_valid(RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE)) {
-    VM_Version::non_ext_ZicbozBlockSize.enable_feature(query[RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE].value);
+    VM_Version::zicboz_block_size.enable_feature(query[RISCV_HWPROBE_KEY_ZICBOZ_BLOCK_SIZE].value);
   }
 }

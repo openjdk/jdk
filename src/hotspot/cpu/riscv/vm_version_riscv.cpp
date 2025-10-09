@@ -41,14 +41,14 @@ RV_EXT_FEATURE_FLAGS(DEF_RV_EXT_FEATURE)
 #undef DEF_RV_EXT_FEATURE
 
 #define DEF_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-VM_Version::non_ext_##PRETTY##RVNonExtFeatureValue VM_Version::non_ext_##PRETTY;
+VM_Version::PRETTY##RVNonExtFeatureValue VM_Version::PRETTY;
 RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
 #undef DEF_RV_NON_EXT_FEATURE
 
 #define ADD_RV_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
      &VM_Version::ext_##PRETTY,
 #define ADD_RV_NON_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-     &VM_Version::non_ext_##PRETTY,
+     &VM_Version::PRETTY,
  VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
  RV_EXT_FEATURE_FLAGS(ADD_RV_EXT_FEATURE_IN_LIST)
  RV_NON_EXT_FEATURE_FLAGS(ADD_RV_NON_EXT_FEATURE_IN_LIST)
@@ -86,11 +86,11 @@ void VM_Version::common_initialize() {
   setup_cpu_available_features();
 
   // check if satp.mode is supported, currently supports up to SV48(RV64)
-  if (non_ext_SATP.value() > VM_SV48 || non_ext_SATP.value() < VM_MBARE) {
+  if (satp_mode.value() > VM_SV48 || satp_mode.value() < VM_MBARE) {
     vm_exit_during_initialization(
       err_msg(
          "Unsupported satp mode: SV%d. Only satp modes up to sv48 are supported for now.",
-         (int)non_ext_SATP.value()));
+         (int)satp_mode.value()));
   }
 
   if (UseRVA20U64) {
@@ -105,9 +105,9 @@ void VM_Version::common_initialize() {
 
   // Enable vendor specific features
 
-  if (non_ext_VendorId.enabled()) {
+  if (mvendorid.enabled()) {
     // Rivos
-    if (non_ext_VendorId.value() == RIVOS) {
+    if (mvendorid.value() == RIVOS) {
       if (FLAG_IS_DEFAULT(UseConservativeFence)) {
         FLAG_SET_DEFAULT(UseConservativeFence, false);
       }
@@ -160,7 +160,7 @@ void VM_Version::common_initialize() {
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
-      non_ext_UnalignedScalar.value() != MISALIGNED_SCALAR_FAST);
+      unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
   }
 
   if (!AvoidUnalignedAccesses) {
@@ -175,12 +175,12 @@ void VM_Version::common_initialize() {
   // This machine has fast unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      (non_ext_UnalignedScalar.value() == MISALIGNED_SCALAR_FAST));
+      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector,
-      non_ext_UnalignedVector.value() != MISALIGNED_VECTOR_FAST);
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
 #ifdef __riscv_ztso
@@ -199,13 +199,13 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz && non_ext_ZicbozBlockSize.enabled() && non_ext_ZicbozBlockSize.value() > 0) {
-    assert(is_power_of_2(non_ext_ZicbozBlockSize.value()), "Sanity");
+  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
     if (FLAG_IS_DEFAULT(BlockZeroingLowLimit)) {
-      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * non_ext_ZicbozBlockSize.value());
+      FLAG_SET_DEFAULT(BlockZeroingLowLimit, 4 * zicboz_block_size.value());
     }
   } else if (UseBlockZeroing) {
     warning("Block zeroing is not available");

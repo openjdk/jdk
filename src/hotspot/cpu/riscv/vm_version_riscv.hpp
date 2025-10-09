@@ -279,26 +279,26 @@ class VM_Version : public Abstract_VM_Version {
   //
   #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                       \
   /* Id for microarch. Mvendorid plus marchid uniquely identify the microarch. */              \
-  decl(ArchId          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  decl(marchid          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
   /* A unique encoding of the version of the processor implementation. */                      \
-  decl(ImpId           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  decl(mimpid           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
   /* SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64 */                  \
-  decl(SATP            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  decl(satp_mode            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                     \
   /* Performance of misaligned scalar accesses (unknown, emulated, slow, fast, unsupported) */ \
-  decl(UnalignedScalar ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  decl(unaligned_scalar ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
   /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
-  decl(UnalignedVector ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  decl(unaligned_vector ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
   /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
-  decl(VendorId        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
-  decl(ZicbozBlockSize ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                          \
+  decl(mvendorid        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
+  decl(zicboz_block_size ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
 
-  #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)                        \
-  struct non_ext_##PRETTY##RVNonExtFeatureValue : public RVNonExtFeatureValue {                \
-    non_ext_##PRETTY##RVNonExtFeatureValue() :                                                 \
+  #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)            \
+  struct PRETTY##RVNonExtFeatureValue : public RVNonExtFeatureValue {              \
+    PRETTY##RVNonExtFeatureValue() :                                               \
       RVNonExtFeatureValue(#PRETTY, LINUX_BIT, FSTRING) {}                         \
     FLAGF;                                                                         \
   };                                                                               \
-  static non_ext_##PRETTY##RVNonExtFeatureValue non_ext_##PRETTY;                  \
+  static PRETTY##RVNonExtFeatureValue PRETTY;                                      \
 
   RV_NON_EXT_FEATURE_FLAGS(DECLARE_RV_NON_EXT_FEATURE)
   #undef DECLARE_RV_NON_EXT_FEATURE
