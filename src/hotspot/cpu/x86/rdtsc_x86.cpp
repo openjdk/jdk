@@ -163,6 +163,7 @@ static bool ergonomics() {
     // Warn if unable to support command-line flag
     if (UseFastUnorderedTimeStamps && !VM_Version::supports_tsc()) {
       warning("Ignoring UseFastUnorderedTimeStamps, hardware does not support normal tsc");
+      FLAG_SET_ERGO(UseFastUnorderedTimeStamps, false);
     }
   }
 
@@ -173,6 +174,23 @@ bool Rdtsc::initialize() {
   precond(AtomicAccess::xchg(&_initalized, 1) == 0);
   assert(0 == _tsc_frequency, "invariant");
   assert(0 == _epoch, "invariant");
+
+  if (!FLAG_IS_DEFAULT(UseFastUnorderedTimeStamps) && !UseFastUnorderedTimeStamps) {
+    // Explicitly disabled
+    return false;
+  }
+
+  if (!Rdtsc::is_supported()) {
+    if (UseFastUnorderedTimeStamps) {
+      // If invariant TSC is not supported we only attempt to use rdtsc if the
+      // user explicitly specifies UseFastUnorderedTimeStamps
+      assert(!FLAG_IS_DEFAULT(UseFastUnorderedTimeStamps), "Unexpected default value");
+    } else {
+      // Invariant TSC is not supported, do not use rdtsc
+      return false;
+    }
+  }
+
   bool result = initialize_elapsed_counter(); // init hw
   if (result) {
     result = ergonomics(); // check logical state
