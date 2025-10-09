@@ -284,7 +284,9 @@ void report_java_out_of_memory(const char* message) {
 
     if (ExitOnOutOfMemoryError) {
       tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
-      os::_exit(3); // quick exit with no cleanup hooks run
+      // Gracefully exit with no cleanup hooks run.
+      before_exit(JavaThread::current(), /* halt = */ true);
+      vm_exit(3);
     }
   }
 }
