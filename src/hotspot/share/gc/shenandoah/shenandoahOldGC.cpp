@@ -49,7 +49,7 @@ void ShenandoahOldGC::op_final_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_old_generation);
   }
 
   if (!heap->cancelled_gc()) {
