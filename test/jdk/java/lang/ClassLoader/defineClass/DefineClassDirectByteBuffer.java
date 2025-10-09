@@ -39,28 +39,90 @@ import java.nio.channels.*;
 import java.io.*;
 import java.security.ProtectionDomain;
 import java.util.HexFormat;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class DefineClassDirectByteBuffer {
-
+    // this is for the trusted/biltin classloader
     private static final String mode = System.getProperty("mode", "Direct");
 
+    public static final int ARRAY_BUFFER = 0;
+    public static final int ARRAY_BUFFER_READONLY = 1;
+    public static final int DIRECT_BUFFER = 2;
+    public static final int DIRECT_BUFFER_READONLY = 3;
+
+
     // -------- untrusted path (custom loader) --------
-    @Test
-    void testDefineClassWithCustomLoaderHeapBuffer() throws Exception {
-        CustomClassLoader loader = new CustomClassLoader();
-        Class<?> clazz = loader.defineClassFromHeapBuffer();
-        assertInvocating(clazz);
+    static Stream<Arguments> bufferTypes() {
+        return Stream.of(
+                arguments(ARRAY_BUFFER, 0, false),
+                arguments(ARRAY_BUFFER_READONLY, 0, true),
+                arguments(DIRECT_BUFFER, 0, false),
+                arguments(DIRECT_BUFFER_READONLY, 0, false),
+                arguments(ARRAY_BUFFER, 16, false),
+                arguments(ARRAY_BUFFER_READONLY, 16, true),
+                arguments(DIRECT_BUFFER, 16, false),
+                arguments(DIRECT_BUFFER_READONLY, 16, false)
+        );
     }
 
-    @Test
-    void testDefineClassWithCustomLoaderDirectBuffer() throws Exception {
+    @ParameterizedTest()
+    @MethodSource("bufferTypes")
+    void testDefineClassWithCustomLoaderByteBuffer(int type, int pos,  boolean posAtLimit) throws Exception {
         CustomClassLoader loader = new CustomClassLoader();
-        Class<?> clazz = loader.defineClassFromDirectBuffer();
-        assertInvocating(clazz);
+        byte[] classBytes = getTestClassBytes();
+        if (pos != 0) {
+            byte[] newBytes = new byte[classBytes.length + pos];
+            System.arraycopy(classBytes, 0, newBytes, pos, classBytes.length);
+            classBytes = newBytes;
+        }
+        switch (type) {
+            case ARRAY_BUFFER -> {
+                var bb = ByteBuffer.wrap(classBytes).position(pos);
+                Class<?> clazz = loader.defineClassFromByteBuffer(bb);
+                assertInvocating(clazz);
+                assertEquals(posAtLimit, bb.position() == bb.limit());
+            }
+            case ARRAY_BUFFER_READONLY -> {
+                var bb = ByteBuffer.wrap(classBytes).position(pos).asReadOnlyBuffer();
+                Class<?> clazz = loader.defineClassFromByteBuffer(bb);
+                assertInvocating(clazz);
+                assertEquals(posAtLimit, bb.position() == bb.limit());
+            }
+            case DIRECT_BUFFER -> {
+                try (Arena arena = Arena.ofConfined()) {
+                    var bb = arena.allocate(classBytes.length)
+                            .asByteBuffer()
+                            .put(classBytes)
+                            .flip()
+                            .position(pos);
+                    Class<?> clazz = loader.defineClassFromByteBuffer(bb);
+                    assertInvocating(clazz);
+                    assertEquals(posAtLimit, bb.position() == bb.limit());
+                }
+            }
+            case DIRECT_BUFFER_READONLY -> {
+                try (Arena arena = Arena.ofConfined()) {
+                    var bb = arena.allocate(classBytes.length)
+                            .asByteBuffer()
+                            .put(classBytes)
+                            .flip()
+                            .position(pos)
+                            .asReadOnlyBuffer();
+                    Class<?> clazz = loader.defineClassFromByteBuffer(bb);
+                    assertInvocating(clazz);
+                    assertEquals(posAtLimit, bb.position() == bb.limit());
+                }
+            }
+        }
     }
 
     // -------- trusted path (BuiltinClassLoader) --------
@@ -100,19 +162,8 @@ public class DefineClassDirectByteBuffer {
     }
 
     private static class CustomClassLoader extends ClassLoader {
-        Class<?> defineClassFromHeapBuffer() throws Exception {
-            byte[] classBytes = getTestClassBytes();
-            ByteBuffer bb = ByteBuffer.wrap(classBytes);
+        Class<?> defineClassFromByteBuffer(ByteBuffer bb) throws Exception {
             return defineClass(null, bb, null);
-        }
-
-        Class<?> defineClassFromDirectBuffer() throws Exception {
-            byte[] classBytes = getTestClassBytes();
-            try (Arena arena = Arena.ofConfined()) {
-                var bb = arena.allocate(classBytes.length).asByteBuffer();
-                bb.put(classBytes).flip();
-                return defineClass(null, bb, null);
-            }
         }
     }
 
