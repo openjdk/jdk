@@ -826,7 +826,6 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param name The {@link String} name of the name.
      * @return The dollar replacement for the {@code 'name'}.
      */
-    // TODO: we may have to make this a token based thing too!
     static String $(String name) {
         return Renderer.getCurrent().$(name);
     }
@@ -929,7 +928,6 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * TODO: talk about scopes, why useful.
      * Changes the amount of fuel used for the current Template, where the default is
      * {@link Template#DEFAULT_FUEL_COST}.
      *
@@ -941,8 +939,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link DataName} in the current scope, that is the innermost of either
-     * {@link Template#scope} or {@link Hook#anchor}.
+     * Add a {@link DataName} in the current {@link scope}.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -967,8 +964,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link DataName} in the current scope, that is the innermost of either
-     * {@link Template#scope} or {@link Hook#anchor}, with a {@code weight} of 1.
+     * Add a {@link DataName} in the current {@link scope}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link DataName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link DataName}.
@@ -992,8 +988,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link StructuralName} in the current scope, that is the innermost of either
-     * {@link Template#scope} or {@link Hook#anchor}.
+     * Add a {@link StructuralName} in the current {@link scope}.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
@@ -1010,8 +1005,7 @@ public sealed interface Template permits Template.ZeroArgs,
     }
 
     /**
-     * Add a {@link StructuralName} in the current scope, that is the innermost of either
-     * {@link Template#scope} or {@link Hook#anchor}, with a {@code weight} of 1.
+     * Add a {@link StructuralName} in the current {@link scope}, with a {@code weight} of 1.
      *
      * @param name The name of the {@link StructuralName}, i.e. the {@link String} used in code.
      * @param type The type of the {@link StructuralName}.
