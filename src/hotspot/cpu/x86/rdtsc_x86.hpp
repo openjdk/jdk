@@ -45,11 +45,6 @@ class Rdtsc : AllStatic {
 
   static jlong set_epoch();
 
-  static void do_time_measurements(volatile jlong& time_base,
-                                   volatile jlong& time_fast,
-                                   volatile jlong& time_base_elapsed,
-                                   volatile jlong& time_fast_elapsed);
-
   static jlong initialize_frequency();
   static bool  initialize_elapsed_counter();
   static bool  initialize();
