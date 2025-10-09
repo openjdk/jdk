@@ -219,8 +219,7 @@ public class Send1xxResponsesTest {
             System.out.println("Client finished reading from server");
             // Assert that the received status codes match the expected ones
             if (statusCodes.size() != expectedStatusCodes.length) {
-                System.out.println("Expected status codes: " + Arrays.toString(expectedStatusCodes));
-                System.out.println("Received status codes: " + statusCodes);
+                throw new IOException("Expected status codes: " + Arrays.toString(expectedStatusCodes)) + "\nReceived status codes: " + statusCodes);
             }
             for (int i = 0; i < expectedStatusCodes.length; i++) {
                 if (!statusCodes.get(i).equals(String.valueOf(expectedStatusCodes[i]))) {
