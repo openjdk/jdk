@@ -135,14 +135,18 @@ public class AlgorithmId implements Serializable, DerEncoder {
         }
 
         /*
-         * Follow parse(DerValue) behavior: if the DerValue is an ASN.1 NULL,
-         * validate it and canonicalize to "no parameters" (encodedParams == null).
+         * If the parameters field explicitly contains an ASN.1 NULL, treat it as
+         * "no parameters" rather than storing a literal NULL encoding.
+         *
+         * This canonicalization ensures consistent encoding/decoding behavior:
+         *  - Algorithms that omit parameters and those that encode explicit NULL
+         *   are treated equivalently (encodedParams == null).
          */
         if (params.tag == DerValue.tag_Null) {
             if (params.length() != 0) {
-                throw new IOException("invalid NULL");
+                throw new IOException("Invalid ASN.1 NULL in AlgorithmId parameters: non-zero length");
             }
-            // canonicalize: treat as absent parameters
+            // Canonicalize to "no parameters" representation for consistency
             this.encodedParams = null;
             this.algParams = null;
             return;
