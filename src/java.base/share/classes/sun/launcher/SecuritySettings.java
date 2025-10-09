@@ -137,7 +137,7 @@ public final class SecuritySettings {
                 ostream.println(THREEINDENT + s);
             }
 
-            ostream.println("\n" + TWOINDENT + "Enabled Groups:");
+            ostream.println("\n" + TWOINDENT + "Enabled Named Groups:");
             String [] groups = ssls.getSSLParameters().getNamedGroups();
             if (groups == null) {
                 ostream.println(THREEINDENT + "<none>");

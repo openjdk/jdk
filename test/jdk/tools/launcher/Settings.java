@@ -83,7 +83,7 @@ public class Settings extends TestHelper {
     private static final String TIMEZONE_SETTINGS = "default timezone";
     private static final String TZDATA_SETTINGS = "tzdata version";
     private static final String ERR_MSG = "Unrecognized showSettings option:";
-    private static final String ENABLED_GROUPS_SETTINGS = "Enabled Groups:";
+    private static final String ENABLED_GROUPS_SETTINGS = "Enabled Named Groups:";
 
     /*
      * "all" should print verbose settings
