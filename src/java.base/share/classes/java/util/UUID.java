@@ -204,13 +204,9 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @return a {@code UUID} constructed using the given {@code timestamp}
      *
-     * @throws IllegalArgumentException if the timestamp is negative or greater than {@code 281474976710655L}
-     *
-     * @spec https://www.rfc-editor.org/rfc/rfc9562.html
-     *       RFC 9562 Universally Unique IDentifiers (UUIDs)
+     * @throws IllegalArgumentException if the timestamp is negative or greater than {@code (1L << 48) - 1}
      *
      * @since 26
-     *
      */
     public static UUID epochMillis(long timestamp) {
         if ((timestamp >> 48) != 0) {
