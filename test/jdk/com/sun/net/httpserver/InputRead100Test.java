@@ -53,14 +53,13 @@ import static java.nio.charset.StandardCharsets.*;
 public class InputRead100Test {
     private static final String someContext = "/context";
 
-    private static final String someContext = "/context";
     static {
         Logger.getLogger("").setLevel(Level.ALL);
         Logger.getLogger("").getHandlers()[0].setLevel(Level.ALL);
     }
 
     @Test
-    public void testAutoContinue() throws Exception {
+    public static void testContinue() throws Exception {
         System.out.println("testContinue()");
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
@@ -71,38 +70,6 @@ public class InputRead100Test {
                     System.err.println("Handling request: " + msg.getRequestURI());
                     byte[] reply = "Here is my reply!".getBytes(UTF_8);
                     try {
-                        msg.getRequestBody().readAllBytes();
-                        msg.sendResponseHeaders(200, reply.length);
-                        msg.getResponseBody().write(reply);
-                        msg.getResponseBody().close();
-                    } finally {
-                        System.err.println("Request handled: " + msg.getRequestURI());
-                    }
-                });
-            server.start();
-            System.out.println("Server started at port " + server.getAddress().getPort());
-
-            runRawSocketHttpClient(loopback, server.getAddress().getPort(), 0);
-        } finally {
-            System.out.println("shutting server down");
-            server.stop(0);
-        }
-        System.out.println("Server finished.");
-    }
-
-    @Test
-    public void testManualContinue() throws Exception {
-        System.out.println("testAutoContinue()");
-        InetAddress loopback = InetAddress.getLoopbackAddress();
-        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
-        try {
-            server.createContext(
-                someContext,
-                msg -> {
-                    System.err.println("Handling request: " + msg.getRequestURI());
-                    byte[] reply = "Here is my reply!".getBytes(UTF_8);
-                    try {
-                        msg.sendResponseHeaders(100, -1);
                         msg.getRequestBody().readAllBytes();
                         msg.sendResponseHeaders(200, reply.length);
                         msg.getResponseBody().write(reply);

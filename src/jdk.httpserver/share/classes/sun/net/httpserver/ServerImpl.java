@@ -857,6 +857,18 @@ class ServerImpl {
                         sslContext, protocol, ctx, rawin
                     );
                 }
+                /* check if client sent an Expect 100 Continue.
+                 * In that case, need to send an interim response.
+                 * In future API may be modified to allow app to
+                 * be involved in this process.
+                 */
+                String exp = headers.getFirst("Expect");
+                if (exp != null && exp.equalsIgnoreCase ("100-continue")) {
+                    logReply (100, requestLine, null);
+                    sendReply (
+                        Code.HTTP_CONTINUE, false, null
+                    );
+                }
                 /* uf is the list of filters seen/set by the user.
                  * sf is the list of filters established internally
                  * and which are not visible to the user. uc and sc

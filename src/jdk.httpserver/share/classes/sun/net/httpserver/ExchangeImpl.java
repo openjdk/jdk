@@ -56,7 +56,6 @@ class ExchangeImpl {
     boolean close;
     boolean closed;
     boolean http10 = false;
-    boolean send100;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -95,7 +94,6 @@ class ExchangeImpl {
         /* ros only used for headers, body written directly to stream */
         this.ros = req.outputStream();
         this.ris = req.inputStream();
-        this.send100 = "100-continue".equals(reqHdrs.getFirst("Expect"));
         server = getServerImpl();
         server.startExchange();
     }
@@ -255,7 +253,7 @@ class ExchangeImpl {
                 o.setWrappedStream(new UndefLengthOutputStream (this, ros));
                 close = true;
             } else if (informational) {
-                send100 = false;
+                // no body for informational responses
             } else {
                 rspHdrs.set ("Transfer-encoding", "chunked");
                 o.setWrappedStream (new ChunkedOutputStream (this, ros));
