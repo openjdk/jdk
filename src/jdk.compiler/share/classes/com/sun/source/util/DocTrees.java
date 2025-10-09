@@ -42,6 +42,9 @@ import javax.tools.JavaCompiler.CompilationTask;
 import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EntityTree;
+import com.sun.source.doctree.NoteTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
+import com.sun.source.doctree.UnknownInlineTagTree;
 import com.sun.source.tree.CompilationUnitTree;
 
 /**
@@ -259,14 +262,23 @@ public abstract class DocTrees extends Trees {
     public abstract void setBreakIterator(BreakIterator breakIterator);
 
     /**
-     * {@return a set of tag names that represent custom {@code @note} tags}
+     * {@return the tag names of known custom tags}
+     *
+     * @see #setCustomTags(Set)
+     *
+     * @since 26
      */
     public abstract Set<String> getCustomTags();
 
     /**
-     * Sets the tag names that represent custom {@code @note} tags.
+     * Sets the tag names of known custom tags. Known custom tags are represented
+     * as instances of {@link NoteTree} when returned by methods in this class,
+     * instead of {@link UnknownBlockTagTree} or {@link UnknownInlineTagTree}.
      *
-     * @param customTags a set of tag names that represent custom note tags
+     * @param customTags a set of tag names of known custom tags
+     * @see #getCustomTags()
+     *
+     * @since 26
      */
     public abstract void setCustomTags(Set<String> customTags);
 

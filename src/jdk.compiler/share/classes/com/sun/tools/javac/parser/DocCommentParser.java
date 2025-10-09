@@ -2134,7 +2134,7 @@ public class DocCommentParser {
                 }
             },
 
-            // {@note [attributes] body}
+            // @note [attributes] body
             new TagParser(TagParser.Kind.EITHER, DCTree.Kind.NOTE) {
                 @Override
                 public DCTree parse(int pos, Kind kind, String tagName) throws ParseException {

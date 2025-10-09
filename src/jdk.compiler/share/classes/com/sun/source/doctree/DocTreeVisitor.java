@@ -228,6 +228,8 @@ public interface DocTreeVisitor<R,P> {
      * @param node the node being visited
      * @param p a parameter value
      * @return a result value
+     *
+     * @since 26
      */
     R visitNote(NoteTree node, P p);
 

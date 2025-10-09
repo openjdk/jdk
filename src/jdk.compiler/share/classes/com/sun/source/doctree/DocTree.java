@@ -164,6 +164,8 @@ public interface DocTree {
         /**
          * Used for instances of {@link NoteTree}
          * representing an {@code @note} tag.
+         *
+         * @since 26
          */
         NOTE("note"),
 
