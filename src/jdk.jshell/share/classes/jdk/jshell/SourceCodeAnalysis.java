@@ -480,6 +480,18 @@ public abstract class SourceCodeAnalysis {
          * @return the javadoc, or null if not found or not requested
          */
         String javadoc();
+
+        /**
+         * If this {@code Documentation} is created for a method invocation,
+         * return the current parameter index.
+         *
+         * @implNote the default implementation returns {@code -1}
+         * @return the active parameter index, or {@code -1} if not available
+         * @since 26
+         */
+        default int activeParameterIndex() {
+            return -1;
+        }
     }
 
     /**

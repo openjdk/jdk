@@ -1844,6 +1844,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             Stream<Element> elements;
             Iterable<Pair<ExecutableElement, ExecutableType>> candidates;
             List<? extends ExpressionTree> arguments;
+            int parameterIndex = -1;
 
             if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION || tp.getLeaf().getKind() == Kind.NEW_CLASS) {
                 if (tp.getLeaf().getKind() == Kind.METHOD_INVOCATION) {
@@ -1868,6 +1869,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
 
                 elements = Util.stream(candidates).map(method -> method.fst);
+
+                if (prevPath != null) {
+                    parameterIndex = arguments.indexOf(prevPath.getLeaf());
+                }
             } else if (tp.getLeaf().getKind() == Kind.IDENTIFIER || tp.getLeaf().getKind() == Kind.MEMBER_SELECT) {
                 Element el = at.trees().getElement(tp);
 
@@ -1905,7 +1910,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             List<Documentation> result = Collections.emptyList();
 
             try (JavadocHelper helper = JavadocHelper.create(at.task, findSources())) {
-                result = elements.map(el -> constructDocumentation(at, helper, el, computeJavadoc))
+                int parameterIndexFin = parameterIndex;
+                result = elements.map(el -> constructDocumentation(at, helper, el, parameterIndexFin, computeJavadoc))
                                  .filter(Objects::nonNull)
                                  .toList();
             } catch (IOException ex) {
@@ -1916,7 +1922,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         });
     }
 
-    private Documentation constructDocumentation(AnalyzeTask at, JavadocHelper helper, Element el, boolean computeJavadoc) {
+    private Documentation constructDocumentation(AnalyzeTask at, JavadocHelper helper, Element el, int parameterIndex, boolean computeJavadoc) {
         String javadoc = null;
         try {
             if (hasSyntheticParameterNames(el)) {
@@ -1929,7 +1935,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             proc.debug(ex, "SourceCodeAnalysisImpl.element2String(..., " + el + ")");
         }
         String signature = Util.expunge(elementHeader(at, el, !hasSyntheticParameterNames(el), true));
-        return new DocumentationImpl(signature,  javadoc);
+        return new DocumentationImpl(signature, javadoc, parameterIndex);
     }
 
     public void close() {
@@ -1942,27 +1948,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    private static final class DocumentationImpl implements Documentation {
-
-        private final String signature;
-        private final String javadoc;
-
-        public DocumentationImpl(String signature, String javadoc) {
-            this.signature = signature;
-            this.javadoc = javadoc;
-        }
-
-        @Override
-        public String signature() {
-            return signature;
-        }
-
-        @Override
-        public String javadoc() {
-            return javadoc;
-        }
-
-    }
+    private record DocumentationImpl(String signature, String javadoc, int activeParameterIndex) implements Documentation {}
 
     private boolean isEmptyArgumentsContext(List<? extends ExpressionTree> arguments) {
         if (arguments.size() == 1) {
