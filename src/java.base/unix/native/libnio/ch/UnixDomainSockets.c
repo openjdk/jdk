@@ -41,6 +41,14 @@
 #include "nio_util.h"
 #include "nio.h"
 
+#include "Net.h"
+
+/* 2 bytes to allow for null at end of string and null at start of string
+ * for abstract name
+ */
+#define MAX_UNIX_DOMAIN_PATH_LEN \
+        (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
+
 /* Subtle platform differences in how unnamed sockets (empty path)
  * are returned from getsockname()
  */

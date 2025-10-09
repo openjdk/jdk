@@ -38,6 +38,12 @@
 #include "sun_nio_ch_Net.h"
 #include "sun_nio_ch_PollArrayWrapper.h"
 
+/* 2 bytes to allow for null at end of string and null at start of string
+ * for abstract name
+ */
+#define MAX_UNIX_DOMAIN_PATH_LEN \
+        (int)(sizeof(((struct sockaddr_un *)0)->sun_path)-2)
+
 /* The winsock provider ID of the Microsoft AF_UNIX implementation */
 static GUID MS_PROVIDER_ID  = {0xA00943D9,0x9C2E,0x4633,{0x9B,0x59,0,0x57,0xA3,0x16,0x09,0x94}};
 

@@ -76,6 +76,6 @@ class DatagramDispatcher extends NativeDispatcher {
         throws IOException;
 
     static {
-        IOUtil.load();
+        NIOUtil.load();
     }
 }

@@ -108,7 +108,7 @@ class SourceChannelImpl
         if (!forcedNonBlocking && Thread.currentThread().isVirtual()) {
             synchronized (stateLock) {
                 ensureOpen();
-                IOUtil.configureBlocking(fd, false);
+                NIOUtil.configureBlocking(fd, false);
                 forcedNonBlocking = true;
             }
         }
@@ -211,7 +211,7 @@ class SourceChannelImpl
                 ensureOpen();
                 // do nothing if virtual thread has forced the socket to be non-blocking
                 if (!forcedNonBlocking) {
-                    IOUtil.configureBlocking(fd, block);
+                    NIOUtil.configureBlocking(fd, block);
                 }
             }
         } finally {
