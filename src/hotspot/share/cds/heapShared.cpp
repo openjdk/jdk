@@ -384,7 +384,8 @@ void HeapShared::initialize_writing_mode() {
     // not dumping an archive.
     if (FLAG_IS_CMDLINE(AOTStreamableObjects)) {
       log_info(cds)("-XX:%cAOTStreamableObjects was specified, "
-                    "AOTStreamableObjects is only used for dumping",
+                    "AOTStreamableObjects is only used for writing "
+                    "the AOT cache.",
                     AOTStreamableObjects ? '+' : '-');
     }
     _heap_write_mode = HeapArchiveMode::_none;
