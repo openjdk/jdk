@@ -22,10 +22,11 @@
  */
 
 /* @test
- * @summary Basic tests for making sure StableValue publishes values safely
+ * @summary Basic tests for making sure ComputedConstant publishes values safely
  * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.lang
  * @enablePreview
- * @run junit StableValuesSafePublicationTest
+ * @run junit LazyConstantSafePublicationTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -36,30 +37,32 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.lang.LazyConstant;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class StableValuesSafePublicationTest {
+final class LazyConstantSafePublicationTest {
 
     private static final int SIZE = 100_000;
     private static final int THREADS = Runtime.getRuntime().availableProcessors();
-    private static final StableValue<Holder>[] STABLES = stables();
+    private static final AtomicReference<LazyConstant<Holder>[]> CONSTANTS = new AtomicReference<>();
 
-    static StableValue<Holder>[] stables() {
+    static LazyConstant<Holder>[] constants() {
         @SuppressWarnings("unchecked")
-        StableValue<Holder>[] stables = (StableValue<Holder>[]) new StableValue[SIZE];
+        LazyConstant<Holder>[] constants = (LazyConstant<Holder>[]) new LazyConstant[SIZE];
         for (int i = 0; i < SIZE; i++) {
-            stables[i] = StableValue.of();
+            constants[i] = LazyConstant.of(Holder::new);
         }
-        return stables;
+        return constants;
     }
 
     static final class Holder {
         // These are non-final fields but should be seen
-        // fully initialized thanks to the HB properties of StableValue.
+        // fully initialized thanks to the HB properties of ComputedConstants.
         int a, b, c, d, e;
 
         Holder() {
@@ -70,16 +73,16 @@ final class StableValuesSafePublicationTest {
     static final class Consumer implements Runnable {
 
         final int[] observations = new int[SIZE];
-        final StableValue<Holder>[] stables = STABLES;
+        final LazyConstant<Holder>[] constants = CONSTANTS.get();
         int i = 0;
 
         @Override
         public void run() {
             for (; i < SIZE; i++) {
-                StableValue<Holder> s = stables[i];
+                LazyConstant<Holder> s = constants[i];
                 Holder h;
-                // Wait until the StableValue has a holder value
-                while ((h = s.orElse(null)) == null) {}
+                // Wait until the ComputedConstant has a holder value
+                while ((h = s.orElse(null)) == null) { Thread.onSpinWait();}
                 int a = h.a;
                 int b = h.b;
                 int c = h.c;
@@ -92,15 +95,15 @@ final class StableValuesSafePublicationTest {
 
     static final class Producer implements Runnable {
 
-        final StableValue<Holder>[] stables = STABLES;
+        final LazyConstant<Holder>[] constants = CONSTANTS.get();
 
         @Override
         public void run() {
-            StableValue<Holder> s;
+            LazyConstant<Holder> s;
             long deadlineNs = System.nanoTime();
             for (int i = 0; i < SIZE; i++) {
-                s = stables[i];
-                s.trySet(new Holder());
+                s = constants[i];
+                s.get();
                 deadlineNs += 1000;
                 while (System.nanoTime() < deadlineNs) {
                     Thread.onSpinWait();
@@ -110,7 +113,9 @@ final class StableValuesSafePublicationTest {
     }
 
     @Test
-    void main() {
+    void mainTest() {
+        CONSTANTS.set(constants());
+
         List<Consumer> consumers = IntStream.range(0, THREADS)
                 .mapToObj(_ -> new Consumer())
                 .toList();
@@ -163,11 +168,11 @@ final class StableValuesSafePublicationTest {
                     }
                     if (System.nanoTime() > deadline) {
                         long nonNulls = CompletableFuture.supplyAsync(() ->
-                                Stream.of(STABLES)
+                                Stream.of(CONSTANTS.get())
                                         .map(s -> s.orElse(null))
                                         .filter(Objects::nonNull)
                                         .count(), Executors.newSingleThreadExecutor()).join();
-                        fail("Giving up! Set stables seen by a new thread: " + nonNulls);
+                        fail("Giving up! Set lazy constants seen by a new thread: " + nonNulls);
                     }
                 }
             }
@@ -175,5 +180,4 @@ final class StableValuesSafePublicationTest {
             fail(ie);
         }
     }
-
 }
