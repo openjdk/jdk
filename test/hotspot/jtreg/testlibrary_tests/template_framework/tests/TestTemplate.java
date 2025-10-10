@@ -21,6 +21,8 @@
  * questions.
  */
 
+// TODO: isAnchored, insert scopes
+
 /*
  * @test
  * @bug 8344942
@@ -464,18 +466,23 @@ public class TestTemplate {
     public static void testHookIsAnchored() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make(() -> scope("isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n"));
+        var template0 = Template.make(() -> scope("t0 isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n"));
 
         var template1 = Template.make(() -> scope("Hello\n", template0.asToken()));
 
         var template2 = Template.make(() -> scope(
             "{\n",
+            "t2 isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n",
             template0.asToken(),
             hook1.anchor(scope(
                 "World\n",
+                "t2 isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n",
                 template0.asToken(),
-                hook1.insert(template1.asToken())
+                hook1.insert(template1.asToken()),
+                hook1.insert(scope("Beautiful\n", template0.asToken())),
+                "t2 isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n"
             )),
+            "t2 isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n",
             template0.asToken(),
             "}"
         ));
@@ -484,12 +491,18 @@ public class TestTemplate {
         String expected =
             """
             {
-            isAnchored: false
+            t2 isAnchored: false
+            t0 isAnchored: false
             Hello
-            isAnchored: true
+            t0 isAnchored: true
+            Beautiful
+            t0 isAnchored: true
             World
-            isAnchored: true
-            isAnchored: false
+            t2 isAnchored: true
+            t0 isAnchored: true
+            t2 isAnchored: true
+            t2 isAnchored: false
+            t0 isAnchored: false
             }""";
         checkEQ(code, expected);
     }
