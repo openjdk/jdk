@@ -159,7 +159,6 @@ void VM_Version::common_initialize() {
   }
 
   if (UseUnalignedAccesses) {
-
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
