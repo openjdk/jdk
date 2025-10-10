@@ -676,7 +676,7 @@ bool CgroupSubsystem::memory_limit_in_bytes(physical_memory_size_type upper_boun
   CachingCgroupController<CgroupMemoryController>* contrl = memory_controller();
   CachedMetric* memory_limit = contrl->metrics_cache();
   if (!memory_limit->should_check_metric()) {
-    value = memory_limit->value(); 
+    value = memory_limit->value();
     return true;
   }
   physical_memory_size_type mem_limit = 0;

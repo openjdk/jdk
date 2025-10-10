@@ -349,7 +349,7 @@ bool CgroupV1MemoryController::memory_max_usage_in_bytes(physical_memory_size_ty
 
 bool CgroupV1MemoryController::rss_usage_in_bytes(physical_memory_size_type& result) {
   physical_memory_size_type rss = 0;
-  
+
   if (!reader()->read_numerical_key_value("/memory.stat", "rss", rss)) {
     return false;
   }
@@ -452,13 +452,13 @@ char* CgroupV1Subsystem::cpu_cpuset_memory_nodes() {
  * result reference.
  *
  * return:
- *   true if the value was set in the result reference 
+ *   true if the value was set in the result reference
  *   false on failure to read the number from the file
  *   and the result reference has not been touched.
  */
 bool CgroupV1CpuController::cpu_quota(int& result) {
   uint64_t quota = 0;
-  
+
   // intentionally not using the macro so as to not log a
   // negative value as a large unsiged int
   if (!reader()->read_number("/cpu.cfs_quota_us", quota)) {

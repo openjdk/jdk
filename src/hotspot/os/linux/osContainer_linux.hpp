@@ -33,7 +33,6 @@
 // Some cgroup interface files define the value 'max' for unlimited.
 // Define this constant value to indicate this value.
 const uint64_t value_unlimited = std::numeric_limits<uint64_t>::max();
-const uint64_t value_unused = 0;
 
 // 20ms timeout between re-reads of memory limit and _active_processor_count.
 #define OSCONTAINER_CACHE_TIMEOUT (NANOSECS_PER_SEC/50)
@@ -41,9 +40,10 @@ const uint64_t value_unused = 0;
 // Carrier object for print_container_helper()
 class MetricResult: public StackObj {
   private:
+    static const uint64_t value_unused = 0;
     bool _success = false;
     physical_memory_size_type _value = value_unused;
-  public: 
+  public:
     void set_value(physical_memory_size_type val) {
       // having a value means success
       _success = true;

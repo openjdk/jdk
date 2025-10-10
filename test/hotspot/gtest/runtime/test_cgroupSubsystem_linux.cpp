@@ -275,7 +275,7 @@ TEST(cgroupTest, read_number_tests) {
   // Some interface files have numbers as well as the string
   // 'max', which means unlimited.
   uint64_t result = 0;
-  uint64_t unlimited = SIZE_MAX;
+  uint64_t unlimited = std::numeric_limits<uint64_t>::max();
   fill_file(test_file, "max\n");
   ok = controller->read_number_handle_max(base_with_slash, result);
   EXPECT_TRUE(ok) << "Number parsing for 'max' string should have been successful";

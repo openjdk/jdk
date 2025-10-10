@@ -78,7 +78,7 @@ int CgroupUtil::get_updated_cpu_limit(CgroupCpuController* cpu,
                                      int upper_bound) {
   assert(lowest > 0 && lowest <= upper_bound, "invariant");
   int cpu_limit_val = -1;
-  if (CgroupUtil::processor_count(cpu, upper_bound, cpu_limit_val) && cpu_limit_val != -1) {
+  if (CgroupUtil::processor_count(cpu, upper_bound, cpu_limit_val) && cpu_limit_val != upper_bound) {
     assert(cpu_limit_val <= upper_bound, "invariant");
     if (lowest > cpu_limit_val) {
       return cpu_limit_val;
