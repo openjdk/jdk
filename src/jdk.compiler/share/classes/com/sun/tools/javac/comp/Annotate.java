@@ -330,14 +330,14 @@ public class Annotate {
                 c = tmp;
             }
 
+            Assert.checkNonNull(c, "Failed to create annotation");
+
             if (env.info.isAnonymousNewClass) {
                 // Annotations on anonymous class instantiations should be attributed,
                 // but not attached to the enclosing element. They will be visited
                 // separately and attached to the synthetic class declaration.
                 continue;
             }
-
-            Assert.checkNonNull(c, "Failed to create annotation");
 
             if (a.type.isErroneous() || a.type.tsym.isAnnotationType()) {
                 if (annotated.containsKey(a.type.tsym)) {
