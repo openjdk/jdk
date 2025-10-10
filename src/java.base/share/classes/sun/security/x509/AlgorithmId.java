@@ -188,10 +188,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
         bytes.putOID(algid);
 
         if (encodedParams == null) {
-            // MessageDigest algorithms usually have a NULL parameters even
-            // if most RFCs suggested absent.
-            // RSA key and signature algorithms and HmacSHA* algorithms requires
-            // the NULL parameters to be present, see A.1 and A.2.4 of RFC 8017.
             if (OIDS_REQUIRING_NULL.contains(algid)) {
                 bytes.putNull();
             } else {
@@ -647,9 +643,15 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier MGF1_oid =
             ObjectIdentifier.of(KnownOIDs.MGF1);
 
-    // Set of OIDs that must explicitly encode a NULL parameter
+    /* Set of OIDs that must explicitly encode a NULL parameter in AlgorithmIdentifier.
+     * References:
+         - RFC 8017 (PKCS #1) §A.1, §A.2.4: RSA key and signature algorithms
+         - RFC 9879 (HMAC) §4: HMAC algorithm identifiers
+         - RFC 9688 (HMAC with SHA-3) §4.3: HMAC-SHA3 algorithms MUST omit parameters
+     */
     private static final Set<ObjectIdentifier> OIDS_REQUIRING_NULL = Set.of(
-            // Hash algorithms
+            // MessageDigest algorithms usually have a NULL parameters even
+            // if most RFCs suggested absent.
             ObjectIdentifier.of(KnownOIDs.MD2),
             ObjectIdentifier.of(KnownOIDs.MD5),
             ObjectIdentifier.of(KnownOIDs.SHA_1),
@@ -664,10 +666,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
             ObjectIdentifier.of(KnownOIDs.SHA3_384),
             ObjectIdentifier.of(KnownOIDs.SHA3_512),
 
-            // RSA encryption
+            //--- RSA key and signature algorithms (RFC 8017 §A.1, §A.2.4)
             ObjectIdentifier.of(KnownOIDs.RSA),
-
-            // RSA signatures
             ObjectIdentifier.of(KnownOIDs.SHA1withRSA),
             ObjectIdentifier.of(KnownOIDs.SHA224withRSA),
             ObjectIdentifier.of(KnownOIDs.SHA256withRSA),
