@@ -86,7 +86,7 @@ private:
 public:
   ZVirtualMemoryManager(size_t max_capacity);
 
-  void initialize_partitions(ZVirtualMemoryReserver* reserver, size_t size_for_partitions);
+  zoffset_end initialize_partitions(ZVirtualMemoryReserver* reserver, size_t size_for_partitions);
 
   bool is_initialized() const;
   bool is_multi_partition_enabled() const;

@@ -265,7 +265,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
   const size_t size_for_partitions = MIN2(reserved, desired_for_partitions);
 
   // Divide size_for_partitions virtual memory over the NUMA nodes
-  initialize_partitions(&reserver, size_for_partitions);
+  const zoffset_end max_offset = initialize_partitions(&reserver, size_for_partitions);
   size_t unreserved = 0;
 
   // Set up multi-partition or unreserve the surplus memory
@@ -276,6 +276,9 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
   } else {
     // Failed to reserve enough memory for multi-partition, unreserve unused memory
     unreserved = reserver.unreserve_all();
+
+    // Set ZAddressOffsetMax to the highest address end used by initialize_partitions
+    ZAddressOffsetMax = untype(max_offset);
   }
 
   assert(reserver.is_empty(), "Must have handled all reserved memory");
@@ -285,12 +288,16 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
                        (requested == desired ? "Unrestricted" : "Restricted"),
                        (reserved == desired ? "Complete" : ((reserved < desired_for_partitions) ? "Degraded"  : "NUMA-Degraded")));
   log_info_p(gc, init)("Reserved Space Size: " EXACTFMT, EXACTFMTARGS(reserved - unreserved));
+  log_debug_p(gc, init)("Reserved Space Span: " RANGE2EXACTFMT,
+                        untype(lowest_available_address(0)) | ZAddressHeapBase,
+                        ZAddressOffsetMax | ZAddressHeapBase,
+                        EXACTFMTARGS(ZAddressOffsetMax - untype(lowest_available_address(0))));
 
   // Successfully initialized
   _initialized = true;
 }
 
-void ZVirtualMemoryManager::initialize_partitions(ZVirtualMemoryReserver* reserver, size_t size_for_partitions) {
+zoffset_end ZVirtualMemoryManager::initialize_partitions(ZVirtualMemoryReserver* reserver, size_t size_for_partitions) {
   precond(is_aligned(size_for_partitions, ZGranuleSize));
 
   // If the capacity consist of less granules than the number of partitions
@@ -300,6 +307,7 @@ void ZVirtualMemoryManager::initialize_partitions(ZVirtualMemoryReserver* reserv
   const uint32_t ignore_count = ZNUMA::count() - first_empty_numa_id;
 
   // Install reserved memory into registry(s)
+  zoffset_end max_zoffset_end;
   uint32_t numa_id;
   ZPerNUMAIterator<ZVirtualMemoryRegistry> iter(&_partition_registries);
   for (ZVirtualMemoryRegistry* registry; iter.next(&registry, &numa_id);) {
@@ -312,7 +320,12 @@ void ZVirtualMemoryManager::initialize_partitions(ZVirtualMemoryReserver* reserv
 
     // Transfer reserved memory
     reserver->initialize_partition_registry(registry, reserved_for_partition);
+
+    // Keep track of the largest offset used for the partitions
+    max_zoffset_end = registry->peak_high_address_end();
   }
+
+  return max_zoffset_end;
 }
 
 bool ZVirtualMemoryManager::is_initialized() const {
