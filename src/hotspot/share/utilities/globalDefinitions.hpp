@@ -26,8 +26,8 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
-#include "utilities/compilerWarnings.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
 #include "utilities/macros.hpp"
