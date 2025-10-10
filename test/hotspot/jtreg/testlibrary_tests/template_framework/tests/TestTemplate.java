@@ -168,7 +168,8 @@ public class TestTemplate {
         testNestedScopes1();
         testNestedScopes2();
         testTemplateScopes();
-        testHookAndScopes();
+        testHookAndScopes1();
+        testHookAndScopes2();
 
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -1820,8 +1821,20 @@ public class TestTemplate {
         var hook1 = new Hook("Hook1");
         var hook2 = new Hook("Hook2");
 
-        // It is safe in separate Hook scopes.
+        // It is safe in separate scopes.
         var template1 = Template.make(() -> scope(
+            scope(
+                addDataName("name1", myInt, MUTABLE)
+            ),
+            scope(
+                addDataName("name1", myInt, MUTABLE)
+            ),
+            nameScope(
+                addDataName("name1", myInt, MUTABLE)
+            ),
+            nameScope(
+                addDataName("name1", myInt, MUTABLE)
+            ),
             hook1.anchor(scope(
                 addDataName("name1", myInt, MUTABLE)
             )),
@@ -2809,7 +2822,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testHookAndScopes() {
+    public static void testHookAndScopes1() {
         Hook hook1 = new Hook("Hook1");
 
         var listNamesTemplate = Template.make(() -> scope(
@@ -3002,6 +3015,136 @@ public class TestTemplate {
             after nameScope:
             {x2a, x2c, x3a, x3c}
             flat4: abcde
+            """;
+        checkEQ(code, expected);
+    }
+
+    public static void testHookAndScopes2() {
+        Hook hook1 = new Hook("Hook1");
+
+        var listNamesTemplate = Template.make(() -> scope(
+            "{",
+            structuralNames().exactOf(myStructuralTypeA).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
+            "}\n"
+        ));
+
+        var template = Template.make(() -> scope(
+            "scope:\n",
+            hook1.anchor(scope(
+                let("local0", "scope garbage"),
+                let("local1", "LOCAL1"),
+                addStructuralName("x1a", myStructuralTypeA),
+
+                "scope before insert scope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(scope(
+                    let("local2", "insert scope garbage"),
+                    let("name", "x1b"),
+                    addStructuralName("x1b", myStructuralTypeA), // does NOT escape to anchor scope
+                    "inserted scope: #name\n",
+                    "local1: #local1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "scope after insert scope:\n",
+                listNamesTemplate.asToken(),
+
+                "scope before insert flat:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(flat(
+                    let("nameFlat", "x1c"), // escapes to caller
+                    addStructuralName("x1c", myStructuralTypeA), // escapes to anchor scope
+                    "inserted flat: #nameFlat\n",
+                    "local1: #local1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "scope after insert flat:\n",
+                "nameFlat: #nameFlat\n",
+                listNamesTemplate.asToken(),
+
+                "scope before insert nameScope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(nameScope(
+                    let("nameNameScope", "x1d"), // escapes to caller
+                    addStructuralName("x1d", myStructuralTypeA), // does NOT escape to anchor scope
+                    "inserted nameScope: #nameNameScope\n",
+                    "local1: #local1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "scope after insert nameScope:\n",
+                "nameNameScope: #nameNameScope\n",
+                listNamesTemplate.asToken(),
+
+                "scope before insert hashtagScope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(hashtagScope(
+                    let("local2", "insert hashtagScope garbage"),
+                    let("name", "x1e"), // escapes to caller
+                    addStructuralName("x1e", myStructuralTypeA), // escapes to anchor scope
+                    "inserted hashtagScope: #name\n",
+                    "local1: #local1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "scope after insert hashtagScope:\n",
+                listNamesTemplate.asToken(),
+
+                "scope insert probe.\n",
+                hook1.insert(scope(
+                    "inserted probe:\n",
+                    listNamesTemplate.asToken()
+                ))
+            )),
+            "after scope:\n",
+            listNamesTemplate.asToken(),
+
+            let("name", "name garbage"),
+            let("local0", "outer garbage 0"),
+            let("local1", "outer garbage 1"),
+            let("local2", "outer garbage 2"),
+            let("nameFlat", "outer garbage nameFlat"),
+            let("nameNameScope", "outer garbage nameNameScope")
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            scope:
+            inserted scope: x1b
+            local1: LOCAL1
+            {x1b}
+            inserted flat: x1c
+            local1: LOCAL1
+            {x1c}
+            inserted nameScope: x1d
+            local1: LOCAL1
+            {x1c, x1d}
+            inserted hashtagScope: x1e
+            local1: LOCAL1
+            {x1c, x1e}
+            inserted probe:
+            {x1c, x1e}
+            scope before insert scope:
+            {x1a}
+            scope after insert scope:
+            {x1a}
+            scope before insert flat:
+            {x1a}
+            scope after insert flat:
+            nameFlat: x1c
+            {x1c, x1a}
+            scope before insert nameScope:
+            {x1c, x1a}
+            scope after insert nameScope:
+            nameNameScope: x1d
+            {x1c, x1a}
+            scope before insert hashtagScope:
+            {x1c, x1a}
+            scope after insert hashtagScope:
+            {x1c, x1e, x1a}
+            scope insert probe.
+            after scope:
+            {}
             """;
         checkEQ(code, expected);
     }
