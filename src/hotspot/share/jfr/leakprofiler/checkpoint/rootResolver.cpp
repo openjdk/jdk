@@ -24,7 +24,6 @@
 
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
-#include "code/nmethod.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
@@ -326,8 +325,6 @@ bool ReferenceToThreadRootClosure::do_thread_roots(JavaThread* jt) {
 }
 
 void RootResolver::resolve(RootCallback& callback) {
-  NMethodMarkingScope nmethod_marking_scope;
-
   // thread local roots
   ReferenceToThreadRootClosure rtrc(callback);
   if (rtrc.complete()) {
