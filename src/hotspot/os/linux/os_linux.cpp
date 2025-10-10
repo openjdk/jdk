@@ -2545,7 +2545,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported && i > 0) {
     st->print_cr("%d", i);
   } else {
-    st->print_cr("no quota or unavailable");
+    st->print_cr("%s", !supported ? "not supported" : "no quota");
   }
 
   supported = OSContainer::cpu_period(i);
@@ -2553,7 +2553,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported && i > 0) {
     st->print_cr("%d", i);
   } else {
-    st->print_cr("no period or unavailable");
+    st->print_cr("%s", !supported ? "not supported" : "no period");
   }
 
   supported = OSContainer::cpu_shares(i);
@@ -2561,7 +2561,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported && i > 0) {
     st->print_cr("%d", i);
   } else {
-    st->print_cr("no shares or unavailable");
+    st->print_cr("%s", !supported ? "not supported" : "no shares");
   }
 
   uint64_t j = 0;
@@ -2570,7 +2570,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported && j > 0) {
     st->print_cr(UINT64_FORMAT, j);
   } else {
-    st->print_cr("unavailable");
+    st->print_cr("%s", !supported ? "not supported" : "no usage");
   }
 
   MetricResult memory_limit;
@@ -2629,7 +2629,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported && j > 0) {
     st->print_cr(UINT64_FORMAT, j);
   } else {
-    st->print_cr("unlimited or unavailable");
+    st->print_cr("%s", !supported ? "not supported" : "unlimited");
   }
 
   supported = OSContainer::pids_current(j);
@@ -2637,7 +2637,7 @@ bool os::Linux::print_container_info(outputStream* st) {
   if (supported && j > 0) {
     st->print_cr(UINT64_FORMAT, j);
   } else {
-    st->print_cr("unavailable");
+    st->print_cr("%s", !supported ? "not supported" : "no current tasks");
   }
 
   return true;
