@@ -84,12 +84,22 @@ public record Hook(String name) {
      * This could be in the same Template, or one nested further out.
      *
      * @param templateToken The Template with applied arguments to be inserted at the {@link Hook}.
-     * @return The {@link Token} which when used inside a {@link Template#scope} performs the code insertion into the {@link Hook}.
+     * @return The {@link Token} which represents the code insertion into the {@link Hook}.
      */
     public Token insert(TemplateToken templateToken) {
-        return new HookInsertToken(this, templateToken);
+        return new HookInsertToken(this, Template.flat(templateToken));
     }
-    // TODO: consider allowing use of scope directly!
+
+    /**
+     * Inserts a scope ({@link NestingToken}) to the innermost location where this {@link Hook} was {@link #anchor}ed.
+     * This could be in the same Template, or one nested further out.
+     *
+     * @param nestingToken The scope to be inserted at the {@link Hook}.
+     * @return The {@link Token} which represents the code insertion into the {@link Hook}.
+     */
+    public Token insert(NestingToken nestingToken) {
+        return new HookInsertToken(this, nestingToken);
+    }
 
     /**
      * Checks if the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope.

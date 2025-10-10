@@ -130,7 +130,8 @@ public class TestTemplate {
         testWithTwoArguments();
         testWithThreeArguments();
         testNestedTemplates();
-        testHookSimple();
+        testHookSimple1();
+        testHookSimple2();
         testHookIsAnchored();
         testHookNested();
         testHookWithNestedTemplates();
@@ -409,7 +410,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    public static void testHookSimple() {
+    public static void testHookSimple1() {
         var hook1 = new Hook("Hook1");
 
         var template1 = Template.make(() -> scope("Hello\n"));
@@ -421,6 +422,32 @@ public class TestTemplate {
                 // Note: "Hello" from the template below will be inserted
                 // above "World" above.
                 hook1.insert(template1.asToken())
+            )),
+            "}"
+        ));
+
+        String code = template2.render();
+        String expected =
+            """
+            {
+            Hello
+            World
+            }""";
+        checkEQ(code, expected);
+    }
+
+    public static void testHookSimple2() {
+        var hook1 = new Hook("Hook1");
+
+        var template2 = Template.make(() -> scope(
+            "{\n",
+            hook1.anchor(scope(
+                "World\n",
+                // Note: "Hello" from the scope below will be inserted
+                // above "World" above.
+                hook1.insert(scope(
+                    "Hello\n"
+                ))
             )),
             "}"
         ));

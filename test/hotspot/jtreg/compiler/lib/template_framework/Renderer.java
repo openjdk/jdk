@@ -312,20 +312,20 @@ final class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookInsertToken(Hook hook, TemplateToken templateToken) -> {
+            case HookInsertToken(Hook hook, NestingTokenImpl nestingToken) -> {
                 // Switch to hook CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
                 // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
-                // by the TemplateToken can be collected, and hook insertions from it can still
-                // be made to the hookCodeFrame before the code from the TemplateToken is added to
+                // by the nestingToken can be collected, and hook insertions from it can still
+                // be made to the hookCodeFrame before the code from the nestingToken is added to
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
-                // the hookCodeFrame, and are not limited to the CodeFrame for the TemplateToken.
+                // the hookCodeFrame, and are not limited to the CodeFrame for the nestingToken.
                 currentCodeFrame = CodeFrame.make(hookCodeFrame, true);
 
-                renderTemplateToken(templateToken);
+                renderNestingToken(nestingToken, () -> {});
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
