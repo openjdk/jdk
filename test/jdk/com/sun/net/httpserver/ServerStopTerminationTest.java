@@ -124,13 +124,14 @@ public class ServerStopTerminationTest {
 
         // Complete the exchange one second into the future
         final Duration exchangeDuration = Duration.ofSeconds(1);
+        final long startTime = System.nanoTime(); // taking custom start time just in case
         completeExchange(exchangeDuration);
         log("Complete Exchange triggered");
 
         // Time the shutdown sequence
         final Duration delayDuration = Duration.ofSeconds(Utils.adjustTimeout(20));
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
-        final long elapsed = timeShutdown(delayDuration);
+        final long elapsed = timeShutdown(delayDuration, startTime);
         log("Shutdown complete");
 
         // The shutdown should take at least as long as the exchange duration
