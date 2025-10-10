@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.List;
+
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -128,6 +129,7 @@ class VMManagementImpl implements VMManagement {
     public native boolean getVerboseClass();
 
     // Memory Subsystem
+    public native long getGcCpuTime();
     public native boolean getVerboseGC();
 
     // Runtime Subsystem
