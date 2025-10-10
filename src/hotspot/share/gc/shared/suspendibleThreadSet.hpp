@@ -47,9 +47,9 @@ private:
   static double        _suspend_all_start;
 
 
-  static bool nthreads() { return AtomicAccess::load(&_nthreads); }
+  static uint nthreads() { return AtomicAccess::load(&_nthreads); }
 
-  static bool nthread_stoped() { return AtomicAccess::load(&_nthreads_stopped); }
+  static uint nthread_stoped() { return AtomicAccess::load(&_nthreads_stopped); }
 
   static bool is_synchronized();
 
