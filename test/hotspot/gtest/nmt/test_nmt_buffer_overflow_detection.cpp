@@ -165,6 +165,10 @@ TEST_VM(NMT, test_realloc) {
 }
 #else
 TEST_VM(NMT_ASAN, poisoned_memory_access) {
+  if (MemTracker::enabled()) {
+    tty->print_cr("skipped.");
+    return;
+  }
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
 
