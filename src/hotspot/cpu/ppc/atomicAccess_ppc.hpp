@@ -244,6 +244,8 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
   // specified otherwise (see atomicAccess.hpp).
 
+  const unsigned int masked_compare_val  = ((unsigned int)(unsigned char)compare_value),
+
   unsigned int old_value;
 
   pre_membar(order);
@@ -251,12 +253,12 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   __asm__ __volatile__ (
     /* simple guard */
     "   lbz     %[old_value], 0(%[dest])                  \n"
-    "   cmpw    %[compare_value], %[old_value]            \n"
+    "   cmpw    %[masked_compare_val], %[old_value]       \n"
     "   bne-    2f                                        \n"
     /* atomic loop */
     "1:                                                   \n"
     "   lbarx   %[old_value], 0, %[dest]                  \n"
-    "   cmpw    %[compare_value], %[old_value]            \n"
+    "   cmpw    %[masked_compare_val], %[old_value]       \n"
     "   bne-    2f                                        \n"
     "   stbcx.  %[exchange_value], 0, %[dest]             \n"
     "   bne-    1b                                        \n"
@@ -266,10 +268,10 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
     : [old_value]       "=&r"   (old_value),
                         "=m"    (*dest)
     /* in */
-    : [dest]            "b"     (dest),
-      [compare_value]   "r"     (compare_value),
-      [exchange_value]  "r"     (exchange_value),
-                        "m"     (*dest)
+    : [dest]                   "b"     (dest),
+      [masked_compare_value]   "r"     (masked_compare_value),
+      [exchange_value]         "r"     (exchange_value),
+                               "m"     (*dest)
     /* clobber */
     : "cc",
       "memory"
