@@ -170,6 +170,7 @@ public class TestTemplate {
         testTemplateScopes();
         testHookAndScopes1();
         testHookAndScopes2();
+        testHookAndScopes3();
 
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -3145,6 +3146,142 @@ public class TestTemplate {
             scope insert probe.
             after scope:
             {}
+            """;
+        checkEQ(code, expected);
+    }
+
+    // Analogue to testHookAndScopes2, but with "flat" instead of "scope".
+    public static void testHookAndScopes3() {
+        Hook hook1 = new Hook("Hook1");
+
+        var listNamesTemplate = Template.make(() -> scope(
+            "{",
+            structuralNames().exactOf(myStructuralTypeA).toList(list -> scope(
+                String.join(", ", list.stream().map(StructuralName::name).toList())
+            )),
+            "}\n"
+        ));
+
+        var template = Template.make(() -> scope(
+            "flat:\n",
+            hook1.anchor(flat(
+                let("global0", "flat garbage"),
+                let("global1", "GLOBAL1"),
+                addStructuralName("x1a", myStructuralTypeA),
+
+                "flat before insert scope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(scope(
+                    let("local2", "insert scope garbage"),
+                    let("name", "x1b"),
+                    addStructuralName("x1b", myStructuralTypeA), // does NOT escape to anchor scope
+                    "inserted scope: #name\n",
+                    "global1: #global1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "flat after insert scope:\n",
+                listNamesTemplate.asToken(),
+
+                "flat before insert flat:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(flat(
+                    let("nameFlat", "x1c"), // escapes to caller
+                    addStructuralName("x1c", myStructuralTypeA), // escapes to anchor scope
+                    "inserted flat: #nameFlat\n",
+                    "global1: #global1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "flat after insert flat:\n",
+                "nameFlat: #nameFlat\n",
+                listNamesTemplate.asToken(),
+
+                "flat before insert nameScope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(nameScope(
+                    let("nameNameScope", "x1d"), // escapes to caller
+                    addStructuralName("x1d", myStructuralTypeA), // does NOT escape to anchor scope
+                    "inserted nameScope: #nameNameScope\n",
+                    "global1: #global1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "flat after insert nameScope:\n",
+                "nameNameScope: #nameNameScope\n",
+                listNamesTemplate.asToken(),
+
+                "flat before insert hashtagScope:\n",
+                listNamesTemplate.asToken(),
+                hook1.insert(hashtagScope(
+                    let("local2", "insert hashtagScope garbage"),
+                    let("name", "x1e"), // escapes to caller
+                    addStructuralName("x1e", myStructuralTypeA), // escapes to anchor scope
+                    "inserted hashtagScope: #name\n",
+                    "global1: #global1\n",
+                    listNamesTemplate.asToken()
+                )),
+                "flat after insert hashtagScope:\n",
+                listNamesTemplate.asToken(),
+
+                "flat insert probe.\n",
+                hook1.insert(scope(
+                    "inserted probe:\n",
+                    listNamesTemplate.asToken()
+                ))
+            )),
+            "after flat:\n",
+            listNamesTemplate.asToken(),
+            """
+            global0: #global0
+            global1: #global1
+            nameFlat: #nameFlat
+            nameNameScope: #nameNameScope
+            """,
+            let("name", "name garbage"),
+            let("local2", "outer garbage 2")
+        ));
+
+        String code = template.render();
+        String expected =
+            """
+            flat:
+            inserted scope: x1b
+            global1: GLOBAL1
+            {x1a, x1b}
+            inserted flat: x1c
+            global1: GLOBAL1
+            {x1a, x1c}
+            inserted nameScope: x1d
+            global1: GLOBAL1
+            {x1a, x1c, x1d}
+            inserted hashtagScope: x1e
+            global1: GLOBAL1
+            {x1a, x1c, x1e}
+            inserted probe:
+            {x1a, x1c, x1e}
+            flat before insert scope:
+            {x1a}
+            flat after insert scope:
+            {x1a}
+            flat before insert flat:
+            {x1a}
+            flat after insert flat:
+            nameFlat: x1c
+            {x1a, x1c}
+            flat before insert nameScope:
+            {x1a, x1c}
+            flat after insert nameScope:
+            nameNameScope: x1d
+            {x1a, x1c}
+            flat before insert hashtagScope:
+            {x1a, x1c}
+            flat after insert hashtagScope:
+            {x1a, x1c, x1e}
+            flat insert probe.
+            after flat:
+            {x1a, x1c, x1e}
+            global0: flat garbage
+            global1: GLOBAL1
+            nameFlat: x1c
+            nameNameScope: x1d
             """;
         checkEQ(code, expected);
     }
