@@ -192,7 +192,15 @@ public class TestEagerReclaimHumongousRegions {
 
 class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final int M = 1024 * 1024;
+    private static final int SIZE = 1024 * 1024;
+
+    private static Object allocateHumongousObj(boolean useTypeArray) {
+        if (useTypeArray) {
+            return new int[SIZE];
+        } else {
+            return new Object[SIZE];
+        }
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length != 4) {
@@ -208,7 +216,7 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
 
         Object largeObj = null; // Allocated humongous object.
         if (!allocateAfter) {
-          largeObj = useTypeArray ? new int[M] : new Object[M];
+          largeObj = allocateHumongousObj(useTypeArray);
         }
 
         WB.concurrentGCAcquireControl();
@@ -217,7 +225,7 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
         System.out.println("Phase " + phase + " reached");
 
         if (allocateAfter) {
-          largeObj = useTypeArray ? new int[M] : new Object[M];
+          largeObj = allocateHumongousObj(useTypeArray);
         }
 
         if (!keepReference) {

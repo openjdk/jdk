@@ -356,7 +356,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // Non-typeArrays that were allocated before marking are excluded from
       // eager reclaim during marking.  One issue is the problem described
       // above with scrubbing the mark stack, but there is also a problem
-      // causing objects being collected incorrectly:
+      // causing these humongous objects being collected incorrectly:
       //
       // E.g. if the mutator is running, we may have objects o1 and o2 in the same
       // region, where o1 has already been scanned and o2 is only reachable by
@@ -388,7 +388,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // mark_in_progress() at the end of that GC: no mutator is running that can
       // sneakily install a new reference to the potentially reclaimed humongous
       // object.
-      // During (concurrent start) GC the situation described above where we
+      // During the concurrent start pause the situation described above where we
       // miss a reference can not happen. No mutator is modifying the object
       // graph to install such an overlooked reference.
       //
