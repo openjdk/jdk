@@ -21,8 +21,6 @@
  * questions.
  */
 
-// TODO: isAnchored, insert scopes, anchor and escaping things?
-
 /*
  * @test
  * @bug 8344942
