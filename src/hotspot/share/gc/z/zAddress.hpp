@@ -30,8 +30,8 @@
 
 // One bit that denotes where the heap start. All uncolored
 // oops have this bit set, plus an offset within the heap.
-extern uintptr_t  ZAddressHeapBase;
-extern uintptr_t  ZAddressHeapBaseShift;
+extern uintptr_t ZAddressHeapBase;
+extern size_t    ZAddressHeapBaseShift;
 
 // Describes the maximal offset inside the heap.
 extern size_t    ZAddressOffsetBits;

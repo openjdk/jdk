@@ -30,8 +30,8 @@
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"
 
+uintptr_t  ZAddressHeapBase;
 size_t     ZAddressHeapBaseShift;
-size_t     ZAddressHeapBase;
 
 size_t     ZAddressOffsetBits;
 uintptr_t  ZAddressOffsetMask;
