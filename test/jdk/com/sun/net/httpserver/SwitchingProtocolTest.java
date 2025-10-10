@@ -78,7 +78,7 @@ public class SwitchingProtocolTest {
             server.createContext(
                 someContext,
                 msg -> {
-                	byte[] reply = RESPONSE_BODY.getBytes(UTF_8);
+                    byte[] reply = RESPONSE_BODY.getBytes(UTF_8);
                     System.err.println("Handling request: " + msg.getRequestURI());
                     try {
                         msg.sendResponseHeaders(msgCode, -1);
