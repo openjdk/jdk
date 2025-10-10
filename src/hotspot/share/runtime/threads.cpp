@@ -446,6 +446,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
+  // Deferred "static" initialization
+  NonJavaThread::init();
+
   // Initialize library-based TLS
   ThreadLocalStorage::init();
 
