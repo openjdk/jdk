@@ -85,7 +85,7 @@ void OSContainer::init() {
     //  1.) On a physical Linux system without any limit
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
     any_mem_cpu_limit_present = memory_limit_in_bytes() > 0 ||
-                                os::Linux::active_processor_count() != active_processor_count();
+                                os::Linux::active_processor_count() != ceilf(active_processor_count());
     if (any_mem_cpu_limit_present) {
       reason = " because either a cpu or a memory limit is present";
     } else {
@@ -122,7 +122,7 @@ bool OSContainer::available_memory_in_container(julong& value) {
 
 jlong OSContainer::memory_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
-  julong phys_mem = static_cast<julong>(os::Linux::physical_memory());
+  julong phys_mem = static_cast<julong>(os::machine_physical_memory());
   return cgroup_subsystem->memory_limit_in_bytes(phys_mem);
 }
 
@@ -187,7 +187,7 @@ char * OSContainer::cpu_cpuset_memory_nodes() {
   return cgroup_subsystem->cpu_cpuset_memory_nodes();
 }
 
-int OSContainer::active_processor_count() {
+double OSContainer::active_processor_count() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->active_processor_count();
 }

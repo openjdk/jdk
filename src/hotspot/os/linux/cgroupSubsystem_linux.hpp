@@ -162,9 +162,10 @@ class CgroupController: public CHeapObj<mtInternal> {
     static jlong limit_from_str(char* limit_str);
 };
 
+template <typename MetricType>
 class CachedMetric : public CHeapObj<mtInternal>{
   private:
-    volatile jlong _metric;
+    volatile MetricType _metric;
     volatile jlong _next_check_counter;
   public:
     CachedMetric() {
@@ -174,8 +175,8 @@ class CachedMetric : public CHeapObj<mtInternal>{
     bool should_check_metric() {
       return os::elapsed_counter() > _next_check_counter;
     }
-    jlong value() { return _metric; }
-    void set_value(jlong value, jlong timeout) {
+    MetricType value() { return _metric; }
+    void set_value(MetricType value, jlong timeout) {
       _metric = value;
       // Metric is unlikely to change, but we want to remain
       // responsive to configuration changes. A very short grace time
@@ -186,19 +187,19 @@ class CachedMetric : public CHeapObj<mtInternal>{
     }
 };
 
-template <class T>
+template <class T, typename MetricType>
 class CachingCgroupController : public CHeapObj<mtInternal> {
   private:
     T* _controller;
-    CachedMetric* _metrics_cache;
+    CachedMetric<MetricType>* _metrics_cache;
 
   public:
     CachingCgroupController(T* cont) {
       _controller = cont;
-      _metrics_cache = new CachedMetric();
+      _metrics_cache = new CachedMetric<MetricType>();
     }
 
-    CachedMetric* metrics_cache() { return _metrics_cache; }
+    CachedMetric<MetricType>* metrics_cache() { return _metrics_cache; }
     T* controller() { return _controller; }
 };
 
@@ -252,7 +253,7 @@ class CgroupMemoryController: public CHeapObj<mtInternal> {
 class CgroupSubsystem: public CHeapObj<mtInternal> {
   public:
     jlong memory_limit_in_bytes(julong upper_bound);
-    int active_processor_count();
+    double active_processor_count();
 
     virtual jlong pids_max() = 0;
     virtual jlong pids_current() = 0;
@@ -261,8 +262,8 @@ class CgroupSubsystem: public CHeapObj<mtInternal> {
     virtual char * cpu_cpuset_cpus() = 0;
     virtual char * cpu_cpuset_memory_nodes() = 0;
     virtual const char * container_type() = 0;
-    virtual CachingCgroupController<CgroupMemoryController>* memory_controller() = 0;
-    virtual CachingCgroupController<CgroupCpuController>* cpu_controller() = 0;
+    virtual CachingCgroupController<CgroupMemoryController, jlong>* memory_controller() = 0;
+    virtual CachingCgroupController<CgroupCpuController, double>* cpu_controller() = 0;
     virtual CgroupCpuacctController* cpuacct_controller() = 0;
 
     int cpu_quota();
