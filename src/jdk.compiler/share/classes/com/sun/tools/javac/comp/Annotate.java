@@ -331,7 +331,7 @@ public class Annotate {
             }
 
             if (env.info.isAnonymousNewClass) {
-                // Annotations on anonymous class instantations should be attributed,
+                // Annotations on anonymous class instantiations should be attributed,
                 // but not attached to the enclosing element. They will be visited
                 // separately and attached to the synthetic class declaration.
                 continue;
@@ -1082,7 +1082,6 @@ public class Annotate {
     private class TypeAnnotate extends TreeScanner {
         private final Env<AttrContext> env;
         private final Symbol sym;
-        private boolean isAnonymousNewClass = false;
 
         public TypeAnnotate(Env<AttrContext> env, Symbol sym) {
 
@@ -1159,6 +1158,7 @@ public class Annotate {
                 env.info.isAnonymousNewClass = false;
             }
             scan(tree.args);
+            // the anonymous class instantiation if any will be visited separately.
         }
 
         @Override
