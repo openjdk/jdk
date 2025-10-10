@@ -2559,6 +2559,7 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
     log_debug(gc, verify)("Marking state");
     _verifier->verify_marking_state();
   }
+  _verifier->verify_free_regions_card_tables_clean();
 
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
