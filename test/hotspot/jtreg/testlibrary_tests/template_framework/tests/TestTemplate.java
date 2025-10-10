@@ -21,7 +21,7 @@
  * questions.
  */
 
-// TODO: isAnchored, insert scopes
+// TODO: isAnchored, insert scopes, anchor and escaping things?
 
 /*
  * @test
@@ -522,20 +522,25 @@ public class TestTemplate {
                 template1.asToken("two"),
                 hook1.insert(template1.asToken("intoHook1a")),
                 hook1.insert(template1.asToken("intoHook1b")),
+                hook1.insert(scope("y 1 y\n")),
+                hook1.insert(scope("y 2 y\n")),
                 template1.asToken("three"),
                 hook1.anchor(scope(
                     template1.asToken("four"),
                     hook1.insert(template1.asToken("intoHook1c")),
+                    hook1.insert(scope("y 3 y\n")),
                     template1.asToken("five")
                 )),
                 template1.asToken("six"),
                 hook1.anchor(scope()), // empty
                 template1.asToken("seven"),
                 hook1.insert(template1.asToken("intoHook1d")),
+                hook1.insert(scope("y 4 y\n")),
                 template1.asToken("eight"),
                 hook1.anchor(scope(
                     template1.asToken("nine"),
                     hook1.insert(template1.asToken("intoHook1e")),
+                    hook1.insert(scope("y 5 y\n")),
                     template1.asToken("ten")
                 )),
                 template1.asToken("eleven")
@@ -550,17 +555,22 @@ public class TestTemplate {
             zero
             x intoHook1a x
             x intoHook1b x
+            y 1 y
+            y 2 y
             x intoHook1d x
+            y 4 y
             x one x
             x two x
             x three x
             x intoHook1c x
+            y 3 y
             x four x
             x five x
             x six x
             x seven x
             x eight x
             x intoHook1e x
+            y 5 y
             x nine x
             x ten x
             x eleven x
@@ -1355,8 +1365,19 @@ public class TestTemplate {
                 "more\n",
                 template2.asToken($("name"), myInt), // name_1 escapes
                 "more\n",
+                template1.asToken(),
+                "extra\n",
+                hook1.insert(scope(
+                    addDataName($("extra1"), myInt, MUTABLE), // does not escape
+                    "$extra1 = 666\n"
+                )),
+                hook1.insert(flat(
+                    addDataName($("extra2"), myInt, MUTABLE), // escapes
+                    "$extra2 = 42\n"
+                )),
                 template1.asToken()
             )),
+            // But no names escape to down here, because the anchor scope is "scope".
             "final:\n",
             template1.asToken(),
             "}\n"
@@ -1369,6 +1390,8 @@ public class TestTemplate {
             [false, 0, names: {}]
             define int name_4
             [true, 1, names: {name_4}]
+            extra1_1 = 666
+            extra2_1 = 42
             [false, 0, names: {}]
             something
             <
@@ -1381,6 +1404,8 @@ public class TestTemplate {
             [true, 2, names: {name_4, name_1}]
             more
             [true, 2, names: {name_4, name_1}]
+            extra
+            [true, 3, names: {name_4, extra2_1, name_1}]
             final:
             [false, 0, names: {}]
             }
