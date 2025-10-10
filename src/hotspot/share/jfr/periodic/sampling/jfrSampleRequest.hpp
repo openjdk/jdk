@@ -33,17 +33,17 @@
 class JavaThread;
 class JfrThreadLocal;
 
-enum JfrSampleCallbackReason {
+enum JfrAsyncCallbackReason {
   COMMIT_EVENT,   // Sample succeeded, callback to commit the event
   ABORT_EVENT    // Sample failed, abort
 };
 
-typedef void (*SampleCallback)(JfrSampleCallbackReason reason,
-                               const JfrTicks* start_time,
-                               const JfrTicks* end_time,
-                               traceid sid,
-                               traceid tid,
-                               void* context);
+typedef void (*AsyncCallback)(JfrAsyncCallbackReason reason,
+                              void* context,
+                              const JfrTicks* start_time,
+                              const JfrTicks* end_time,
+                              traceid sid,
+                              traceid tid);
 enum JfrSampleResult {
   THREAD_SUSPENSION_ERROR,
   WRONG_THREAD_STATE,
@@ -72,24 +72,25 @@ struct JfrSampleRequest {
   void* _sample_pc;
   void* _sample_bcp;
   JfrTicks _sample_ticks;
+  // Asynchronous event support
+  AsyncCallback _callback;
   void* _context;
-  SampleCallback _callback;
 
-  JfrSampleRequest(void* context = nullptr, SampleCallback func = nullptr) :
+  JfrSampleRequest(AsyncCallback callback = nullptr, void* context = nullptr) :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
     _sample_ticks(),
-    _context(context),
-    _callback(func){}
+    _callback(callback),
+    _context(context) { }
 
   JfrSampleRequest(const JfrTicks& ticks) :
     _sample_sp(nullptr),
     _sample_pc(nullptr),
     _sample_bcp(nullptr),
     _sample_ticks(ticks),
-    _context(nullptr),
-    _callback(nullptr) {}
+    _callback(nullptr),
+    _context(nullptr) { }
 };
 
 typedef GrowableArrayCHeap<JfrSampleRequest, mtTracing> JfrSampleRequestQueue;
@@ -99,7 +100,7 @@ class JfrSampleRequestBuilder : AllStatic {
   static JfrSampleResult build_java_sample_request(const void* ucontext,
                                                    JfrThreadLocal* tl,
                                                    JavaThread* jt,
-                                                   SampleCallback callback,
+                                                   AsyncCallback callback,
                                                    void* context);
   static void build_cpu_time_sample_request(JfrSampleRequest &request,
                                             void* ucontext,

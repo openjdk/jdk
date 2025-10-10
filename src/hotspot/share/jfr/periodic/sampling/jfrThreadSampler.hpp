@@ -49,7 +49,7 @@ class JfrThreadSampler : public JfrCHeapObj {
   static void set_native_sample_period(int64_t period_millis);
 
   // Sample a single java thread
-  static void sample_thread(JavaThread* const jt, jobject target, SampleCallback callback, void* context);
+  static void sample_thread(JavaThread* const jt, jobject target, AsyncCallback callback, void* context);
 };
 
 #endif // SHARE_JFR_PERIODIC_SAMPLING_JFRTHREADSAMPLER_HPP

@@ -60,12 +60,12 @@ private:
   jbyte* payload()        const { return _payload; }
 
   // Callback
-  static void async_event_callback(JfrSampleCallbackReason reason,
+  static void async_event_callback(JfrAsyncCallbackReason reason,
+                                    void *context,
                                     const JfrTicks* start_time,
                                     const JfrTicks* end_time,
                                     traceid sid,
-                                    traceid tid,
-                                    void* context);
+                                    traceid tid);
   static bool write_sized_event(JfrBuffer* buffer,
                                 Thread* thread,
                                 const JfrTicks* start_time,

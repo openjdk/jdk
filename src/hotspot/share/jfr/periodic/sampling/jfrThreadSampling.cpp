@@ -294,7 +294,7 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   assert(sid != 0, "invariant");
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
   if (request._callback != nullptr) {
-    request._callback(COMMIT_EVENT, &request._sample_ticks, &now, sid, tid, request._context);
+    request._callback(COMMIT_EVENT, request._context, &request._sample_ticks, &now, sid, tid);
   } else {
     send_sample_event<EventExecutionSample>(request._sample_ticks, now, sid, tid);
   }
@@ -400,11 +400,11 @@ static void drain_all_enqueued_requests(const JfrTicks& now, JfrThreadLocal* tl,
 
 // Only entered by the JfrSampler thread.
 bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaThread* jt, Thread* sampler_thread,
-  SampleCallback callback, void* context) {
+  AsyncCallback callback, void* context) {
   assert(tl != nullptr, "invairant");
   assert(jt != nullptr, "invariant");
   assert(sampler_thread != nullptr, "invariant");
-//  assert(sampler_thread->is_JfrSampler_thread(), "invariant");
+  assert(sampler_thread->is_JfrSampler_thread(), "invariant");
   assert(tl == jt->jfr_thread_local(), "invariant");
   assert(jt != sampler_thread, "only asynchronous processing of native samples");
   assert(jt->has_last_Java_frame(), "invariant");
@@ -442,7 +442,7 @@ bool JfrThreadSampling::process_native_sample_request(JfrThreadLocal* tl, JavaTh
 
   assert(tl->sample_state() == NO_SAMPLE, "invariant");
   if (callback != nullptr) {
-    callback(COMMIT_EVENT, &start_time, &start_time, sid, tid, context);
+    callback(COMMIT_EVENT, context, &start_time, &start_time, sid, tid);
   } else {
     send_sample_event<EventNativeMethodSample>(start_time, start_time, sid, tid);
   }

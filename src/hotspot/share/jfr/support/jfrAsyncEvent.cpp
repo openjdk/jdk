@@ -49,12 +49,12 @@ JfrAsyncEvent::~JfrAsyncEvent() {
   os::free(_payload);
 }
 
-void JfrAsyncEvent::async_event_callback(JfrSampleCallbackReason reason,
+void JfrAsyncEvent::async_event_callback(JfrAsyncCallbackReason reason,
+                                         void* context,
                                          const JfrTicks* start_time,
                                          const JfrTicks* end_time,
                                          traceid sid,
-                                         traceid tid,
-                                         void* context) {
+                                         traceid tid) {
   assert(context != nullptr, "invariant");
   JfrAsyncEvent* event = (JfrAsyncEvent*)context;
 

@@ -49,19 +49,22 @@
 class JfrAsyncEventRequest : public CHeapObj<mtTracing> {
 private:
   jobject        _target;
-  SampleCallback _callback;
+  AsyncCallback  _callback;
   void*          _context;  // Callback context
 
 public:
-  JfrAsyncEventRequest(JavaThread* const jt, jobject target, SampleCallback callback, void* context);
+  JfrAsyncEventRequest(JavaThread* const jt, jobject target, AsyncCallback callback, void* context);
   virtual ~JfrAsyncEventRequest();
 
-  jobject target() const { return _target; }
-  SampleCallback callback() const { return _callback; }
-  void* context() const { return _context; }
+  jobject target()         const { return _target; }
+  AsyncCallback callback() const { return _callback; }
+  void* context()          const { return _context; }
 };
 
-JfrAsyncEventRequest::JfrAsyncEventRequest(JavaThread* const jt, jobject target, SampleCallback callback, void* context) :
+JfrAsyncEventRequest::JfrAsyncEventRequest(JavaThread* const jt,
+                                           jobject target,
+                                           AsyncCallback callback,
+                                           void* context) :
    _callback(callback), _context(context) {
    _target = JfrJavaSupport::global_jni_handle(target, jt);
 }
@@ -103,8 +106,8 @@ class JfrSamplerThread : public NonJavaThread {
   void disenroll();
   void set_java_period(int64_t period_millis);
   void set_native_period(int64_t period_millis);
-  bool sample_java_thread(JavaThread* jt, SampleCallback callback, void* context);
-  bool sample_native_thread(JavaThread* jt, SampleCallback callback, void* context);
+  bool sample_java_thread(JavaThread* jt, AsyncCallback callback, void* context);
+  bool sample_native_thread(JavaThread* jt, AsyncCallback callback, void* context);
 
   void enqueue_request(const JfrAsyncEventRequest* req);
   void drain_async_event_queue();
@@ -229,6 +232,7 @@ void JfrSamplerThread::run() {
     {
       MonitorLocker locker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
       while(sleep_to_next > 0 && !locker.wait(sleep_to_next)) {
+        // wakeup before timeout, likely there are async events, process them.
         drain_async_event_queue();
         now_ms = get_monotonic_ms();
         next_j = java_period_millis + (last_java_ms - now_ms);
@@ -261,7 +265,8 @@ void JfrSamplerThread::drain_async_event_queue() {
     return;
   }
 
-  // Make a snapshot
+  // Make a snapshot, so we don't block request threads while processing
+  // the existing events
   ResourceMark rm;
   GrowableArray<const JfrAsyncEventRequest*> requests;
   for (int index = 0; index < _async_request_queue.length(); index++) {
@@ -271,6 +276,7 @@ void JfrSamplerThread::drain_async_event_queue() {
   _async_request_queue.clear();
 
   {
+    // We don't need the lock to process the snapshot
     MutexUnlocker unlocker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
     ThreadsListHandle tlh;
     for (int index = 0; index < requests.length(); index++) {
@@ -286,7 +292,6 @@ void JfrSamplerThread::drain_async_event_queue() {
         JavaThread* jt = java_lang_Thread::thread_acquire(thread_oop);
         if (jt != nullptr && tlh.includes(jt)) {
           JavaThreadState stat = jt->thread_state();
-
           if (stat == _thread_in_Java) {
             success = sample_java_thread(jt, req->callback(), req->context());
           } else if (stat == _thread_in_native || stat == _thread_blocked) {
@@ -296,7 +301,7 @@ void JfrSamplerThread::drain_async_event_queue() {
       }
 
       if (!success) {
-        req->callback()(ABORT_EVENT, nullptr, nullptr, 0, 0, req->context());
+        req->callback()(ABORT_EVENT, req->context(), nullptr, nullptr, 0, 0);
       }
     }
 
@@ -356,10 +361,10 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
     }
     bool success;
     if (JAVA_SAMPLE == type) {
-      success = sample_java_thread(current, nullptr, nullptr);
+      success = sample_java_thread(current, nullptr /* callback */, nullptr /* context */);
     } else {
       assert(type == NATIVE_SAMPLE, "invariant");
-      success = sample_native_thread(current, nullptr, nullptr);
+      success = sample_native_thread(current, nullptr /* callback */, nullptr /* context */);
     }
     if (success) {
       num_samples++;
@@ -382,11 +387,11 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
 class OSThreadSampler : public SuspendedThreadTask {
  private:
   JfrSampleResult _result;
-  SampleCallback _callback;
+  AsyncCallback  _callback;
   void*          _context;
 
  public:
-  OSThreadSampler(JavaThread* jt, SampleCallback callback, void* context) :
+  OSThreadSampler(JavaThread* jt, AsyncCallback callback, void* context) :
     SuspendedThreadTask(jt), _result(THREAD_SUSPENSION_ERROR),
     _callback(callback), _context(context) {}
   void request_sample() {
@@ -408,7 +413,7 @@ class OSThreadSampler : public SuspendedThreadTask {
 
 // Sampling a thread in state _thread_in_Java
 // involves a platform-specific thread suspend and CPU context retrieval.
-bool JfrSamplerThread::sample_java_thread(JavaThread* jt, SampleCallback callback, void* data) {
+bool JfrSamplerThread::sample_java_thread(JavaThread* jt, AsyncCallback callback, void* data) {
   if (jt->thread_state() != _thread_in_Java) {
     return false;
   }
@@ -439,7 +444,7 @@ static JfrSamplerThread* _sampler_thread = nullptr;
 // We can sample a JavaThread running in state _thread_in_native and _thread_blocked
 // without thread suspension and CPU context retrieval,
 // if we carefully order the loads of the thread state.
-bool JfrSamplerThread::sample_native_thread(JavaThread* jt, SampleCallback callback, void* context) {
+bool JfrSamplerThread::sample_native_thread(JavaThread* jt, AsyncCallback callback, void* context) {
   if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_blocked) {
     return false;
   }
@@ -487,7 +492,7 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt, SampleCallback callb
   return JfrThreadSampling::process_native_sample_request(tl, jt, Thread::current(), callback, context);
 }
 
-void JfrThreadSampler::sample_thread(JavaThread* const jt, jobject target, SampleCallback callback, void* context) {
+void JfrThreadSampler::sample_thread(JavaThread* const jt, jobject target, AsyncCallback callback, void* context) {
   JfrAsyncEventRequest* request = new JfrAsyncEventRequest(jt, target, callback, context);
   _sampler_thread->enqueue_request(request);
 }

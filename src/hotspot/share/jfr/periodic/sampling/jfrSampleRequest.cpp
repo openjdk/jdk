@@ -285,7 +285,7 @@ static inline JfrSampleResult set_unbiased_java_sample(JfrSampleRequest& request
 JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const void* ucontext,
                                                                    JfrThreadLocal* tl,
                                                                    JavaThread* jt,
-                                                                   SampleCallback callback,
+                                                                   AsyncCallback callback,
                                                                    void* context) {
   assert(ucontext != nullptr, "invariant");
   assert(tl != nullptr, "invariant");
@@ -293,10 +293,7 @@ JfrSampleResult JfrSampleRequestBuilder::build_java_sample_request(const void* u
   assert(jt != nullptr, "invariant");
   assert(jt->thread_state() == _thread_in_Java, "invariant");
 
-  JfrSampleRequest request;
-
-  request._callback = callback;
-  request._context = context;
+  JfrSampleRequest request(callback, context);
 
   // Prioritize the ljf, if one exists.
   request._sample_sp = jt->last_Java_sp();
