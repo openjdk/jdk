@@ -32,7 +32,7 @@ package compiler.loopopts;
  *          allocations while building the ideal Loop tree in preparation for
  *          the verification.
  *
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit::test
  *      -XX:-TieredCompilation -Xcomp -XX:CompileCommand=dontinline,*::*
  *      -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 -XX:+VerifyLoopOptimizations
