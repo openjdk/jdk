@@ -61,6 +61,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -75,6 +76,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -1102,6 +1104,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             // is aborted.
             PendingRequest pending = new PendingRequest(id, requestImpl, mexCf, mex, this);
             res = registerPending(pending, res);
+            res = translateSendAsyncExecFailure(res);
 
             if (exchangeExecutor != null) {
                 // makes sure that any dependent actions happen in the CF default
@@ -1119,6 +1122,32 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             debugCompleted("ClientImpl (async)", start, userRequest);
             throw t;
         }
+    }
+
+    /**
+     * {@return a new {@code CompletableFuture} wrapping the
+     * {@link #sendAsync(HttpRequest, BodyHandler, PushPromiseHandler, Executor) sendAsync()}
+     * execution failures with, as per specification, {@link IOException}, if necessary}
+     */
+    private static <T> CompletableFuture<HttpResponse<T>> translateSendAsyncExecFailure(
+            CompletableFuture<HttpResponse<T>> responseFuture) {
+            return responseFuture
+                    .handle((response, exception) -> {
+                        if (exception == null) {
+                            return MinimalFuture.completedFuture(response);
+                        }
+                        var unwrappedException = exception instanceof CompletionException
+                                || exception instanceof ExecutionException
+                                ? exception.getCause()
+                                : exception;
+                        // Except `Error`s, wrap failures inside an `IOException`.
+                        // This is required to comply with the specification of `HttpClient::sendAsync`.
+                        var translatedException = unwrappedException instanceof Error
+                                ? unwrappedException
+                                : Utils.toIOException(exception);
+                        return MinimalFuture.<HttpResponse<T>>failedFuture(translatedException);
+                    })
+                    .thenCompose(Function.identity());
     }
 
     // Main loop for this client's selector
