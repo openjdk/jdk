@@ -163,7 +163,7 @@ import java.util.function.Supplier;
  * lazy constant may block indefinitely; no timeouts or cancellations are provided.
  *
  * <h2 id="performance">Performance</h2>
- * As a lazy constant can never change after it has been initialized. Therefore,
+ * A lazy constant can never change after it has been initialized. Therefore,
  * a JVM implementation may, for an initialized lazy constant, elide all future reads
  * of that lazy constant, and instead directly use any constant that it has previously
  * observed. This is true if the reference to the lazy constant is a VM constant
