@@ -514,6 +514,8 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   unsigned insn = *(unsigned*)insn_addr;
   assert(nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
 
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
+
   // OOPs are either narrow (32 bits) or wide (48 bits).  We encode
   // narrow OOPs by setting the upper 16 bits in the first
   // instruction.
@@ -542,6 +544,8 @@ int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
   NativeInstruction *insn = nativeInstruction_at(insn_addr);
   assert(Instruction_aarch64::extract(insn->encoding(), 31, 21) == 0b11010010101 &&
          nativeInstruction_at(insn_addr+4)->is_movk(), "wrong insns in patch");
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   Instruction_aarch64::patch(insn_addr, 20, 5, n >> 16);
   Instruction_aarch64::patch(insn_addr+4, 20, 5, n & 0xffff);
