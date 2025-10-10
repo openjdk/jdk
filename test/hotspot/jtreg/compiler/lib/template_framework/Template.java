@@ -790,6 +790,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The dollar replacement for the {@code 'name'}.
      */
     static String $(String name) {
+        // Note, since the dollar replacements do not change during a template
+        // and the retrieval has no side effects, we can return the value immediately,
+        // and do not need a token.
         return Renderer.getCurrent().$(name);
     }
 
@@ -887,6 +890,9 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The amount of fuel left for nested Template use.
      */
     static float fuel() {
+        // Note, since the fuel amount does not change during a template
+        // and the retrieval has no side effects, we can return the value immediately,
+        // and do not need a token.
         return Renderer.getCurrent().fuel();
     }
 
