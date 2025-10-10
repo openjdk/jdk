@@ -26,45 +26,61 @@ package compiler.lib.template_framework;
 import java.util.function.Function;
 
 /**
- * TODO: ensure we talk about scopes, especially for insertion.
- * {@link Hook}s can be {@link #anchor}ed for a certain scope in a Template, and all nested
- * Templates in this scope, and then from within this scope, any Template can
- * {@link #insert} code to where the {@link Hook} was {@link #anchor}ed. This can be useful to reach
- * "back" or to some outer scope, e.g. while generating code for a method, one can reach out
- * to the class scope to insert fields.
+ * A {@link Hook} can be {@link #anchor}ed for a certain scope ({@link NestingToken}), and that
+ * anchoring stays active for any nested scope or nested {@link Template}. With {@link #insert},
+ * one can insert a template ({@link TemplateToken}) or scope ({@link NestingToken}) to where the
+ * {@link Hook} was {@link #anchor}'ed. If the hook was anchored for multiple outer scopes, the
+ * innermost is chosen for insertion.
  *
  * <p>
+ * This can be useful to reach "back" or to some outer scope, e.g. while generating code for a
+ * method, one can reach out to the class scope to insert fields. Or one may want to reach back
+ * to the beginning of a method to insert local variables that should be live for the whole method.
+ *
+ * <p>
+ * The choice of {@link NestingToken} is very important and powerful.
+ * For example, if you want to insert a {@link DataName} to the scope of an anchor,
+ * it is important that the scope of the insertion is transparent for {@link DataName}s,
+ * e.g. using {@link Template#flat}. In most cases, we want {@link DataName}s to escape
+ * the inserted scope but not the anchor scope, so the anchor scope should be
+ * non-transparent for {@link DataName}s, e.g. using {@link Template#scope}.
  * Example:
+ *
+ * <p>
  * {@snippet lang=java :
  * var myHook = new Hook("MyHook");
  *
- * var template1 = Template.make("name", (String name) -> scope(
- *     """
- *     public static int #name = 42;
- *     """
- * ));
- *
- * var template2 = Template.make(() -> scope(
+ * var template = Template.make(() -> scope(
  *     """
  *     public class Test {
  *     """,
  *     // Anchor the hook here.
- *     myHook.anchor(
+ *     myHook.anchor(scope(
  *         """
  *         public static void main(String[] args) {
  *         System.out.println("$field: " + $field)
  *         """,
- *         // Reach out to where the hook was anchored, and insert the code of template1.
- *         myHook.insert(template1.asToken($("field"))),
+ *         // Reach out to where the hook was anchored, and insert some code.
+ *         myHook.insert(flat(
+ *             // The field (DataName) escapes because the inserted scope is "flat"
+ *             addDataName($("field"), Primitives.INTS, MUTABLE),
+ *             """
+ *             public static int $field = 42;
+ *             """
+ *         )),
  *         """
  *         }
  *         """
- *     ),
+ *     )),
  *     """
  *     }
  *     """
  * ));
  * }
+ *
+ * <p>
+ * Similarly, it may or may not be desirable for hashtag replacements to escape
+ * an insertion scope or an anchoring scope.
  *
  * @param name The name of the Hook, for debugging purposes only.
  */

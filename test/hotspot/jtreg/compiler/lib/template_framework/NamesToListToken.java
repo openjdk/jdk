@@ -26,7 +26,10 @@ package compiler.lib.template_framework;
 import java.util.function.Function;
 import java.util.List;
 
-// TODO: desc
+/**
+ * Represents the {@code toList} on a filtered name set, including the collection of the
+ * names and the creation of the inner scope with the function.
+ */
 record NamesToListToken<N>(
         NameSet.Predicate predicate,
         Function<List<N>, NestingToken> function) implements Token {

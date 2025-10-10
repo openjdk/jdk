@@ -23,5 +23,7 @@
 
 package compiler.lib.template_framework;
 
-// TODO: documentation
+/**
+ * Represents the setting of the fuel cost in the current scope.
+ */
 record SetFuelCostToken(float fuelCost) implements Token {}
