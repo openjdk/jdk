@@ -37,6 +37,8 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
@@ -949,12 +951,12 @@ class UnixPath implements Path {
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // internal path bytes equal the internal path bytes of the current
-            // element, or whose string representation is equal to that of the
-            // current element ignoring case and whose key is equal to the key
-            // of the current element
+            // element, or whose key is equal to the key  of the current element
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
             String elementName = element.toString();
             try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
+                // compare path bytes until a match is found
+                List<Path> notMatched = new ArrayList<Path>();
                 boolean found = false;
                 for (Path entry : entries) {
                     Path name = entry.getFileName();
@@ -962,7 +964,15 @@ class UnixPath implements Path {
                         found = true;
                         path = path.resolve(entry);
                         break;
-                    } else if (name.toString().equalsIgnoreCase(elementName)) {
+                    } else {
+                        notMatched.add(entry);
+                    }
+                }
+
+                // if no path match found, compare file keys
+                if (!found) {
+                    for (Path entry : notMatched) {
+                        Path name = entry.getFileName();
                         UnixPath p = path.resolve(name);
                         UnixFileAttributes attributes = null;
                         try {
