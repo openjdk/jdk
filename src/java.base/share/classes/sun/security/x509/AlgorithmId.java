@@ -682,11 +682,15 @@ public class AlgorithmId implements Serializable, DerEncoder {
             ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA),
             ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA),
 
-            // HMACs
+            // HMACs per RFC 9879 (Section 4): these require explicit NULL parameters
+            // Note: HMAC-SHA3 algorithms (RFC 9688 §4.3) MUST omit parameters,
+            // so they are intentionally excluded from this list.
             ObjectIdentifier.of(KnownOIDs.HmacSHA1),
             ObjectIdentifier.of(KnownOIDs.HmacSHA224),
             ObjectIdentifier.of(KnownOIDs.HmacSHA256),
             ObjectIdentifier.of(KnownOIDs.HmacSHA384),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA512)
+            ObjectIdentifier.of(KnownOIDs.HmacSHA512),
+            ObjectIdentifier.of(KnownOIDs.HmacSHA512$224),
+            ObjectIdentifier.of(KnownOIDs.HmacSHA512$256)
     );
 }

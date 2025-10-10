@@ -72,6 +72,8 @@ public class NullParams {
         test("HmacSHA256", true);
         test("HmacSHA384", true);
         test("HmacSHA512", true);
+        test("HmacSHA512/224", true);
+        test("HmacSHA512/256", true);
 
         // Full old list: must be absent
         test("SHA1withECDSA", false);
