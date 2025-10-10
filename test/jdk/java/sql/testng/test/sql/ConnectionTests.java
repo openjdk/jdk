@@ -52,6 +52,7 @@ public class ConnectionTests extends BaseTest {
         }
         maxIdentifier = s.toString();
     }
+
     /*
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
@@ -69,7 +70,6 @@ public class ConnectionTests extends BaseTest {
     @Test(expectedExceptions = NullPointerException.class)
     public void test01() throws SQLException {
         conn.enquoteLiteral(null);
-
     }
 
     /*
@@ -78,7 +78,6 @@ public class ConnectionTests extends BaseTest {
     @Test(dataProvider = "validIdentifierValues")
     public void test02(String s, boolean alwaysQuote, String expected) throws SQLException {
         assertEquals(conn.enquoteIdentifier(s, alwaysQuote), expected);
-
     }
 
     /*
@@ -89,7 +88,6 @@ public class ConnectionTests extends BaseTest {
             expectedExceptions = SQLException.class)
     public void test03(String s, boolean alwaysQuote) throws SQLException {
         conn.enquoteIdentifier(s, alwaysQuote);
-
     }
 
     /*
