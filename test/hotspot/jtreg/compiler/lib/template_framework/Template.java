@@ -176,12 +176,33 @@ import compiler.lib.ir_framework.TestFramework;
  * {@code #{name}}.
  *
  * <p>
- * TODO: consider talking about scopes first, and inserting scope instead of template?
- *       Maybe just insertion of a scope, but not details of scope. Details below.
- * A {@link TemplateToken} cannot just be used in {@link Template#scope}, but it can also be
- * {@link Hook#insert}ed to where a {@link Hook} was {@link Hook#anchor}ed earlier (in some outer scope of the code).
- * For example, while generating code in a method, one can reach out to the scope of the class, and insert a
- * new field, or define a utility method.
+ * Code generation can involve keeping track of fields and variables, as well as the scopes in which they
+ * are available, and if they are mutable or immutable. We model fields and variables with {@link DataName}s,
+ * which we can add to the current scope with {@link #addDataName}. We can access the {@link DataName}s with
+ * {@link #dataNames}. We can filter for {@link DataName}s of specific {@link DataName.Type}s, and then
+ * we can call {@link DataName.FilteredSet#count}, {@link DataName.FilteredSet#sample},
+ * {@link DataName.FilteredSet#toList}, etc. There are many use-cases for this mechanism, especially
+ * facilitating communication between the code of outer and inner {@link Template}s. Especially for fuzzing,
+ * it may be useful to be able to add fields and variables, and sample them randomly, to create a random data
+ * flow graph.
+ *
+ * <p>
+ * Similarly, we may want to model method and class names, and possibly other structural names. We model
+ * these names with {@link StructuralName}, which works analogously to {@link DataName}, except that they
+ * are not concerned about mutability.
+ *
+ * <p>
+ * Code generation can involve keeping track of scopes in the code (e.g. liveness and availability of
+ * {@link DataNames}) and of the hashtag replacements in the templates. The {@link NestingToken} serves
+ * this purpose, and allows the definition of transparent scopes (e.g. {@link #flat}) and non-transparent
+ * scopes (e.g. {#link #scope}).
+ *
+ * <p>
+ * In some cases, we may be deeper nested in templates and scopes, and would like to reach "back" or
+ * to outer scopes. This is possible with {@link Hook#anchor}ing in some outer scope, and later
+ * {@link Hook#insert}ing from an inner scope to the scope of the anchoring. For example, while
+ * generating code in a method, one can reach out to the scope of the class, and insert a new field,
+ * or define a utility method.
  *
  * <p>
  * A {@link TemplateBinding} allows the recursive use of Templates. With the indirection of such a binding,
@@ -197,21 +218,18 @@ import compiler.lib.ir_framework.TestFramework;
  * supposed to terminate once the {@link #fuel} is depleted (i.e. reaches zero).
  *
  * <p>
- * TODO: make sure to talk about scopes in relevant ways. Also add missing methods.
- * Code generation can involve keeping track of fields and variables, as well as the scopes in which they
- * are available, and if they are mutable or immutable. We model fields and variables with {@link DataName}s,
- * which we can add to the current scope with {@link #addDataName}. We can access the {@link DataName}s with
- * {@link #dataNames}. We can filter for {@link DataName}s of specific {@link DataName.Type}s, and then
- * we can call {@link DataName.FilteredSet#count}, {@link DataName.FilteredSet#sample},
- * {@link DataName.FilteredSet#toList}, etc. There are many use-cases for this mechanism, especially
- * facilitating communication between the code of outer and inner {@link Template}s. Especially for fuzzing,
- * it may be useful to be able to add fields and variables, and sample them randomly, to create a random data
- * flow graph.
- *
- * <p>
- * Similarly, we may want to model method and class names, and possibly other structural names. We model
- * these names with {@link StructuralName}, which works analogously to {@link DataName}, except that they
- * are not concerned about mutability.
+ * A note from the implementor to the user: We have decided to implement the Template Framework using
+ * a functional (lambdas) and data-oriented (tokens) model. The consequence is that there are three
+ * orders in template rendering: (1) the execution order in lambdas, where we usually assemble the
+ * tokens and pass them to some scope ({@link NestingToken}) as arguments. (2) the token evaluation
+ * order, which occurs in the order of how tokens are listed in a scope. In almost all cases, this
+ * is the same order as execution in lambdas. To keep the lambda and token order in sync, most of the
+ * queries about the state of code generation, such as {@link DataName}s and {@link Hook}s cannot
+ * return the values immediately, but have to be expressed as tokens. If we had a mix of tokens and
+ * immediate queries, then the immediate queries would "float" by the tokens, because the immediate
+ * queries are executed during the lambda execution, but the tokens are only executed later. Having
+ * to express everything as tokens can be a little more cumbersome, but ensures that reasoning about
+ * execution order is relatively straight forward. (3) the final code order, ... hook?
  *
  * <p>
  * TODO: rework this, no longer accurate.
