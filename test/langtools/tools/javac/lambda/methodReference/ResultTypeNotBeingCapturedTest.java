@@ -40,10 +40,10 @@ class ResultTypeNotBeingCapturedTest {
     static <R> X<R> create(Supplier<? extends R> supplier) {return null;}
 
     static X<X<?>> methodRef() {
-        var s = (String)create(ResultTypeNotBeingCapturedTest::makeX);
+        return create(ResultTypeNotBeingCapturedTest::makeX).self();
     }
 
     static X<X<?>> lambda() {
-        var s = (String)create(() -> makeX());
+        return create(() -> makeX()).self();
     }
 }
