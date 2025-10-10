@@ -159,6 +159,7 @@ void VM_Version::common_initialize() {
   }
 
   if (UseUnalignedAccesses) {
+
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
@@ -170,7 +171,12 @@ void VM_Version::common_initialize() {
   // This machine has fast unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses) && unaligned_access.enabled()) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      unaligned_access.value() == MISALIGNED_FAST);
+      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
 #ifdef __riscv_ztso
@@ -203,13 +209,8 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled() && FLAG_IS_DEFAULT(UseRVV)) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
+    // read vector length from vector CSR vlenb
+    _initial_vector_length = cpu_vector_length();
   }
 
   // Misc Intrinsics that could depend on RVV.
@@ -228,36 +229,6 @@ void VM_Version::common_initialize() {
   if (UseCRC32CIntrinsics) {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbb, false);
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    warning("Cannot enable UseZvbc on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbc, false);
-  }
-
-  // UseZvkn (depends on RVV).
-  if (UseZvkn && !UseRVV) {
-    warning("Cannot enable UseZvkn on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvkn, false);
-  }
-
-  // UseZvfh (depends on RVV)
-  if (UseZvfh) {
-    if (!UseRVV) {
-      warning("Cannot enable UseZvfh on cpu without RVV support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
-    if (!UseZfh) {
-      warning("Cannot enable UseZvfh on cpu without Zfh support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
   }
 }
 

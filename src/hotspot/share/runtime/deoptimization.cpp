@@ -589,12 +589,7 @@ Deoptimization::UnrollBlock* Deoptimization::fetch_unroll_info_helper(JavaThread
   // Verify we have the right vframeArray
   assert(cb->frame_size() >= 0, "Unexpected frame size");
   intptr_t* unpack_sp = stub_frame.sp() + cb->frame_size();
-
-  // If the deopt call site is a MethodHandle invoke call site we have
-  // to adjust the unpack_sp.
-  nmethod* deoptee_nm = deoptee.cb()->as_nmethod_or_null();
-  if (deoptee_nm != nullptr && deoptee_nm->is_method_handle_return(deoptee.pc()))
-    unpack_sp = deoptee.unextended_sp();
+  assert(unpack_sp == deoptee.unextended_sp(), "must be");
 
 #ifdef ASSERT
   assert(cb->is_deoptimization_stub() ||
