@@ -161,6 +161,7 @@ public class ServerStopTerminationTest {
         // Complete the exchange 10 second into the future.
         // Runs in parallel, so won't block the server stop
         final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(10));
+        final long startTime = System.nanoTime(); // taking custom start time just in case
         completeExchange(exchangeDuration);
         log("Complete Exchange triggered");
 
@@ -168,7 +169,7 @@ public class ServerStopTerminationTest {
         // Time the shutdown sequence
         final Duration delayDuration = Duration.ofSeconds(1);
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
-        final long elapsed = timeShutdown(delayDuration);
+        final long elapsed = timeShutdown(delayDuration, startTime);
         log("Shutdown complete");
 
 
@@ -277,7 +278,14 @@ public class ServerStopTerminationTest {
      */
     private long timeShutdown(Duration delayDuration) {
         final long startTime = System.nanoTime();
+        return timeShutdown(delayDuration, startTime);
+    }
 
+    /**
+     * This allows passing a custom start time
+     */
+    private long timeShutdown(Duration delayDuration,
+                              long startTime) {
         server.stop((int) delayDuration.toSeconds());
         return System.nanoTime() - startTime;
     }
