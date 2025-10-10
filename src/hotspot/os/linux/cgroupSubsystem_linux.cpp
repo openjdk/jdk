@@ -737,7 +737,7 @@ bool CgroupController::read_number(const char* filename, uint64_t& result) {
   if (!is_ok) {
     return false;
   }
-  int matched = sscanf(buf, "%zu", &result);
+  int matched = sscanf(buf, UINT64_FORMAT, &result);
   if (matched == 1) {
     return true;
   }

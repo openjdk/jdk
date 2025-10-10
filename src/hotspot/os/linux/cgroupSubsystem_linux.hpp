@@ -77,7 +77,7 @@
     log_trace(os, container)(log_string " failed: -2");                               \
     return false;                                                                     \
   }                                                                                   \
-  log_trace(os, container)(log_string " is: %zu", retval);                            \
+  log_trace(os, container)(log_string " is: " UINT64_FORMAT, retval);                 \
   return true;                                                                        \
 }
 
