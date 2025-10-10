@@ -293,7 +293,7 @@ HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
 
 bool HeapShared::is_archived_heap_in_use() {
   if (HeapShared::is_loading_streaming_mode()) {
-    return AOTStreamedHeapLoader::is_loaded();
+    return AOTStreamedHeapLoader::is_in_use();
   } else {
     return AOTMappedHeapLoader::is_in_use();
   }

@@ -136,7 +136,7 @@ private:
   static int* _roots_archive;
   static OopHandle _roots;
   static BitMapView _oopmap;
-  static bool _is_loaded;
+  static bool _is_in_use;
   static bool _allow_gc;
   static bool _objects_are_handles;
   static int _previous_batch_last_object_index;
@@ -233,7 +233,7 @@ public:
   static void clear_root(int index);
   static void materialize_objects();
   static void finish_materialize_objects();
-  static bool is_loaded() { return _is_loaded; }
+  static bool is_in_use() { return _is_in_use; }
 
   static AOTMapLogger::OopDataIterator* oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end);
 };

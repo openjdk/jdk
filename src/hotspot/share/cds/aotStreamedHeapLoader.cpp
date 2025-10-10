@@ -62,7 +62,7 @@ FileMapRegion* AOTStreamedHeapLoader::_bitmap_region;
 int* AOTStreamedHeapLoader::_roots_archive;
 OopHandle AOTStreamedHeapLoader::_roots;
 BitMapView AOTStreamedHeapLoader::_oopmap;
-bool AOTStreamedHeapLoader::_is_loaded;
+bool AOTStreamedHeapLoader::_is_in_use;
 int AOTStreamedHeapLoader::_previous_batch_last_object_index;
 int AOTStreamedHeapLoader::_current_batch_last_object_index;
 int AOTStreamedHeapLoader::_current_root_index;
@@ -913,11 +913,6 @@ void AOTStreamedHeapLoader::enable_gc() {
 }
 
 void AOTStreamedHeapLoader::finish_materialize_objects() {
-  if (!_is_loaded) {
-    // No roots to materialize
-    return;
-  }
-
   Ticks start = Ticks::now();
 
   if (CDSConfig::is_using_full_module_graph()) {
@@ -959,7 +954,7 @@ void AOTStreamedHeapLoader::initialize() {
 
   assert(_heap_region->used() > 0, "empty heap archive?");
 
-  _is_loaded = true;
+  _is_in_use = true;
 
   // archived roots are at this offset in the stream.
   size_t roots_offset = FileMapInfo::current_info()->streamed_heap()->roots_offset();
@@ -1153,7 +1148,7 @@ AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* 
     }
   };
 
-  assert(_is_loaded, "printing before initial loading?");
+  assert(_is_in_use, "printing before initializing?");
 
   return new StreamedLoaderOopIterator(buffer_start, (int)info->streamed_heap()->num_archived_objects());
 }
