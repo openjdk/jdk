@@ -167,7 +167,6 @@ public class Main {
     char[] storepass; // keystore password
     boolean protectedPath; // protected authentication path
     String storetype; // keystore type
-    String realStoreType;
     String providerName; // provider name
     List<String> providers = null; // list of provider names
     List<String> providerClasses = null; // list of provider classes
@@ -241,7 +240,7 @@ public class Main {
     private boolean signerSelfSigned = false;
     private boolean allAliasesFound = true;
     private boolean hasMultipleManifests = false;
-    private boolean outdatedFormat = false;
+    private boolean weakKeyStore = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -1484,10 +1483,10 @@ public class Main {
             warnings.add(rb.getString("external.file.attributes.detected"));
         }
 
-        if (outdatedFormat) {
+        if (weakKeyStore) {
             warnings.add(String.format(rb.getString(
-                    "outdated.storetype.warning"),
-                    realStoreType, keystore));
+                    "jks.storetype.warning"),
+                    storetype, keystore));
         }
 
         if ((strict) && (!errors.isEmpty())) {
@@ -2408,16 +2407,6 @@ public class Main {
                         (rb.getString("Enter.Passphrase.for.keystore."));
             }
 
-            File storeFile = new File(keyStoreName);
-            if (storeFile.isFile()) {
-                KeyStore keyStore = KeyStore.getInstance(storeFile, storepass);
-                realStoreType = keyStore.getType();
-                if (realStoreType.equalsIgnoreCase("JKS")
-                        || realStoreType.equalsIgnoreCase("JCEKS")) {
-                    outdatedFormat = true;
-                }
-            }
-
             try {
                 if (nullStream) {
                     store.load(null, storepass);
@@ -2439,6 +2428,10 @@ public class Main {
                         if (is != null) {
                             is.close();
                         }
+                    }
+                    if (store.getType().equalsIgnoreCase("JKS")
+                            || store.getType().equalsIgnoreCase("JCEKS")) {
+                        weakKeyStore = true;
                     }
                 }
                 Enumeration<String> aliases = store.aliases();

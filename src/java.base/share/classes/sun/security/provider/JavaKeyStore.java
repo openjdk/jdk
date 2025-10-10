@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -788,6 +788,18 @@ public abstract sealed class JavaKeyStore extends KeyStoreSpi {
             if (debug != null) {
                 debug.println("JavaKeyStore load: private key count: " +
                     privateKeyCount + ". trusted key count: " + trustedKeyCount);
+            }
+
+            if (debug != null) {
+                String type = this.getClass().getSimpleName().
+                        toUpperCase(Locale.ROOT);
+                if (type.equals("JKS")){
+                    debug.println("WARNING: JKS uses outdated cryptographic "
+                            + "algorithms and will be removed in a future "
+                            + "release. Migrate to PKCS12 using:\n"
+                            + "keytool -importkeystore -srckeystore <keystore> "
+                            + "-destkeystore <keystore> -deststoretype pkcs12");
+                }
             }
 
             /*
