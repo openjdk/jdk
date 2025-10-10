@@ -26,10 +26,11 @@
  * @bug 4847239
  * @summary Verify directory parameter behavior in File.createTempFile(String,String,File)
  * @library /test/lib
- * @run junit/othervm TargetDirectory
+ * @run junit TargetDirectory
  */
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.io.CleanupMode;
 import org.junit.jupiter.api.condition.DisabledIf;
 
 import java.io.File;
@@ -47,11 +48,12 @@ import java.util.List;
 import java.util.Set;
 import jdk.test.lib.Platform;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TargetDirectory {
 
-    @TempDir
+    @TempDir(cleanup = CleanupMode.ALWAYS)
     Path tempDir;
 
     @Test
