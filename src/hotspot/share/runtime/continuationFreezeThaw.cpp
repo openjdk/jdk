@@ -42,7 +42,6 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -1627,14 +1626,11 @@ static void invalidate_jvmti_stack(JavaThread* thread) {
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
-    // JvmtiExport::has_frame_pops and JvmtiExport::continuation_yield_cleanup may safepoint
-    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+  if (JvmtiExport::has_frame_pops(thread)) {
+    int num_frames = num_java_frames(cont);
 
-    if (JvmtiExport::has_frame_pops(thread)) {
-      int num_frames = num_java_frames(cont);
-      JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
-    }
+    ContinuationWrapper::SafepointOp so(Thread::current(), cont);
+    JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
   }
   invalidate_jvmti_stack(thread);
 }
