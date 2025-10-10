@@ -2360,7 +2360,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label Lresolved, Lclinit_barrier_slow;
+  Label Lclinit_barrier_slow, Ldone;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
