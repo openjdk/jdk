@@ -39,6 +39,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compilerOracle.hpp"
 #include "compiler/directivesParser.hpp"
@@ -120,6 +121,7 @@
 #endif // INCLUDE_SERIALGC
 #if INCLUDE_ZGC
 #include "gc/z/zAddress.inline.hpp"
+#include "gc/z/zHeap.inline.hpp"
 #endif // INCLUDE_ZGC
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciEnv.hpp"
@@ -1547,19 +1549,23 @@ struct CodeBlobStub {
       name(os::strdup(blob->name())),
       size(blob->size()),
       blob_type(static_cast<jint>(WhiteBox::get_blob_type(blob))),
-      address((jlong) blob) { }
+      address((jlong) blob),
+      code_begin((jlong) blob->code_begin()),
+      is_nmethod((jboolean) blob->is_nmethod()) { }
   ~CodeBlobStub() { os::free((void*) name); }
   const char* const name;
   const jint        size;
   const jint        blob_type;
   const jlong       address;
+  const jlong       code_begin;
+  const jboolean    is_nmethod;
 };
 
 static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBlobStub* cb) {
   ResourceMark rm;
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, nullptr);
-  jobjectArray result = env->NewObjectArray(4, clazz, nullptr);
+  jobjectArray result = env->NewObjectArray(6, clazz, nullptr);
 
   jstring name = env->NewStringUTF(cb->name);
   CHECK_JNI_EXCEPTION_(env, nullptr);
@@ -1576,6 +1582,14 @@ static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBl
   obj = longBox(thread, env, cb->address);
   CHECK_JNI_EXCEPTION_(env, nullptr);
   env->SetObjectArrayElement(result, 3, obj);
+
+  obj = longBox(thread, env, cb->code_begin);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 4, obj);
+
+  obj = booleanBox(thread, env, cb->is_nmethod);
+  CHECK_JNI_EXCEPTION_(env, nullptr);
+  env->SetObjectArrayElement(result, 5, obj);
 
   return result;
 }
@@ -1624,6 +1638,44 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   env->SetObjectArrayElement(result, 4, entry_point);
 
   return result;
+WB_END
+
+WB_ENTRY(void, WB_RelocateNMethodFromMethod(JNIEnv* env, jobject o, jobject method, jint blob_type))
+  ResourceMark rm(THREAD);
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION(env);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = mh->code();
+  if (code != nullptr) {
+    MutexLocker ml_Compile_lock(Compile_lock);
+    CompiledICLocker ic_locker(code);
+    MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    code->relocate(static_cast<CodeBlobType>(blob_type));
+  }
+WB_END
+
+WB_ENTRY(void, WB_RelocateNMethodFromAddr(JNIEnv* env, jobject o, jlong addr, jint blob_type))
+  ResourceMark rm(THREAD);
+  CHECK_JNI_EXCEPTION(env);
+  void* address = (void*) addr;
+
+  if (address == nullptr) {
+    return;
+  }
+
+  MutexLocker ml_Compile_lock(Compile_lock);
+  MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+
+  // Verify that nmethod address is still valid
+  CodeBlob* blob = CodeCache::find_blob(address);
+  if (blob != nullptr && blob->is_nmethod()) {
+    nmethod* code = blob->as_nmethod();
+    if (code->is_in_use()) {
+      CompiledICLocker ic_locker(code);
+      code->relocate(static_cast<CodeBlobType>(blob_type));
+    }
+  }
 WB_END
 
 CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
@@ -2509,7 +2561,7 @@ WB_END
 
 // Available memory of the host machine (container-aware)
 WB_ENTRY(jlong, WB_HostAvailableMemory(JNIEnv* env, jobject o))
-  size_t avail_mem = 0;
+  physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
   return static_cast<jlong>(avail_mem);
@@ -2658,7 +2710,7 @@ WB_ENTRY(void, WB_WaitUnsafe(JNIEnv* env, jobject wb, jint time))
     os::naked_short_sleep(time);
 WB_END
 
-WB_ENTRY(void, WB_BusyWait(JNIEnv* env, jobject wb, jint time))
+WB_ENTRY(void, WB_BusyWaitCPUTime(JNIEnv* env, jobject wb, jint time))
   ThreadToNativeFromVM  ttn(thread);
   u8 start = os::current_thread_cpu_time();
   u8 target_duration = time * (u8)1000000;
@@ -2669,18 +2721,9 @@ WB_END
 
 WB_ENTRY(jboolean, WB_CPUSamplerSetOutOfStackWalking(JNIEnv* env, jobject wb, jboolean enable))
   #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE);
-    return JNI_TRUE;
+    return JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(enable == JNI_TRUE) ? JNI_TRUE : JNI_FALSE;
   #else
     return JNI_FALSE;
-  #endif
-WB_END
-
-WB_ENTRY(jlong, WB_CPUSamplerOutOfStackWalkingIterations(JNIEnv* env, jobject wb))
-  #if defined(ASSERT) && INCLUDE_JFR && defined(LINUX)
-    return (jlong)JfrCPUTimeThreadSampling::out_of_stack_walking_iterations();
-  #else
-    return 0;
   #endif
 WB_END
 
@@ -2915,6 +2958,9 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod0",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
+  {CC"relocateNMethodFromMethod0", CC"(Ljava/lang/reflect/Executable;I)V",
+                                                      (void*)&WB_RelocateNMethodFromMethod },
+  {CC"relocateNMethodFromAddr", CC"(JI)V",            (void*)&WB_RelocateNMethodFromAddr },
   {CC"allocateCodeBlob",   CC"(II)J",                 (void*)&WB_AllocateCodeBlob   },
   {CC"freeCodeBlob",       CC"(J)V",                  (void*)&WB_FreeCodeBlob       },
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
@@ -3037,9 +3083,8 @@ static JNINativeMethod methods[] = {
 
   {CC"isJVMTIIncluded", CC"()Z",                      (void*)&WB_IsJVMTIIncluded},
   {CC"waitUnsafe", CC"(I)V",                          (void*)&WB_WaitUnsafe},
-  {CC"busyWait", CC"(I)V",                            (void*)&WB_BusyWait},
+  {CC"busyWaitCPUTime", CC"(I)V",                     (void*)&WB_BusyWaitCPUTime},
   {CC"cpuSamplerSetOutOfStackWalking", CC"(Z)Z",      (void*)&WB_CPUSamplerSetOutOfStackWalking},
-  {CC"cpuSamplerOutOfStackWalkingIterations", CC"()J",(void*)&WB_CPUSamplerOutOfStackWalkingIterations},
   {CC"getLibcName",     CC"()Ljava/lang/String;",     (void*)&WB_GetLibcName},
 
   {CC"pinObject",       CC"(Ljava/lang/Object;)V",    (void*)&WB_PinObject},

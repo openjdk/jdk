@@ -343,7 +343,7 @@ void G1HeapVerifier::verify(VerifyOption vo) {
   G1VerifyCodeRootNMethodClosure blobsCl(&codeRootsCl);
 
   {
-    G1RootProcessor root_processor(_g1h, 1);
+    G1RootProcessor root_processor(_g1h, false /* is_parallel */);
     root_processor.process_all_roots(&rootsCl, &cldCl, &blobsCl);
   }
 

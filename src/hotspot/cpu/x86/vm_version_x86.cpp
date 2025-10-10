@@ -2093,6 +2093,10 @@ bool VM_Version::is_intel_cascade_lake() {
   return is_intel_skylake() && _stepping >= 5;
 }
 
+bool VM_Version::is_intel_darkmont() {
+  return is_intel() && is_intel_server_family() && (_model == 0xCC || _model == 0xDD);
+}
+
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.
 // The Intel platforms that supports the serialize instruction
@@ -2585,7 +2589,12 @@ void VM_Version::resolve_cpu_information_details(void) {
   _no_of_threads = os::processor_count();
 
   // find out number of threads per cpu package
-  int threads_per_package = threads_per_core() * cores_per_cpu();
+  int threads_per_package = _cpuid_info.tpl_cpuidB1_ebx.bits.logical_cpus;
+  if (threads_per_package == 0) {
+    // Fallback code to avoid div by zero in subsequent code.
+    // CPUID 0Bh (ECX = 1) might return 0 on older AMD processor (EPYC 7763 at least)
+    threads_per_package = threads_per_core() * cores_per_cpu();
+  }
 
   // use amount of threads visible to the process in order to guess number of sockets
   _no_of_sockets = _no_of_threads / threads_per_package;
@@ -2737,6 +2746,10 @@ size_t VM_Version::cpu_write_support_string(char* const buf, size_t buf_len) {
 
   if (supports_tscinv_bit()) {
       WRITE_TO_BUF("Invariant TSC");
+  }
+
+  if (supports_hybrid()) {
+      WRITE_TO_BUF("Hybrid Architecture");
   }
 
   return written;

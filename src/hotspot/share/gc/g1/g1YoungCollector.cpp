@@ -25,6 +25,7 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -506,7 +507,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Ticks start = Ticks::now();
     rem_set()->prepare_for_scan_heap_roots();
 
-    _g1h->prepare_group_cardsets_for_scan();
+    _g1h->collection_set()->prepare_for_scan();
 
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
@@ -516,7 +517,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_cset_group()->card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
@@ -750,7 +751,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
 
   Ticks start_processing = Ticks::now();
   {
-    G1RootProcessor root_processor(_g1h, num_workers);
+    G1RootProcessor root_processor(_g1h, num_workers > 1 /* is_parallel */);
     G1EvacuateRegionsTask g1_par_task(_g1h,
                                       per_thread_states,
                                       task_queues(),
@@ -793,14 +794,11 @@ public:
 };
 
 void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states) {
-  // To access the protected constructor/destructor
-  class G1MarkScope : public MarkScope { };
-
   Tickspan task_time;
 
   Ticks start_processing = Ticks::now();
   {
-    G1MarkScope code_mark_scope;
+    NMethodMarkingScope nmethod_marking_scope;
     G1EvacuateOptionalRegionsTask task(per_thread_states, task_queues(), workers()->active_workers());
     task_time = run_task_timed(&task);
     // See comment in evacuate_initial_collection_set() for the reason of the scope.
