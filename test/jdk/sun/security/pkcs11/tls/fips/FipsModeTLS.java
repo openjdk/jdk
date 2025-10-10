@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8029661 8325164 8368073 8368514 8368520
+ * @bug 8029661 8325164 8368073 8368514 8368520 8314323
  * @summary Test TLS 1.2 and TLS 1.3
  * @modules java.base/sun.security.internal.spec
  *          java.base/sun.security.util
@@ -35,7 +35,7 @@
  *      -Djdk.tls.client.enableSessionTicketExtension=false FipsModeTLS
  * @comment SunPKCS11 does not support (TLS1.2) SunTlsExtendedMasterSecret yet.
  *   Stateless resumption doesn't currently work with NSS-FIPS, see JDK-8368669
- * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 FipsModeTLS
+ * @run main/othervm/timeout=120 -Djdk.tls.client.protocols=TLSv1.3 -Djdk.tls.namedGroups=x25519,secp256r1,secp384r1,secp521r1,x448,ffdhe2048,ffdhe3072,ffdhe4096,ffdhe6144,ffdhe8192 FipsModeTLS
  */
 
 import java.io.File;
