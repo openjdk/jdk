@@ -808,7 +808,6 @@ JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
                                            CHECK_NULL);
 
   oop loader_oop = JNIHandles::resolve(loader);
-  oop from_class = JNIHandles::resolve(caller);
   Handle h_loader(THREAD, loader_oop);
 
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
