@@ -41,15 +41,10 @@ class SuspendibleThreadSet : public AllStatic {
   friend class SuspendibleThreadSetLeaver;
 
 private:
-  static volatile uint _nthreads;
-  static volatile uint _nthreads_stopped;
+  static uint          _nthreads;
+  static uint          _nthreads_stopped;
   static volatile bool _suspend_all;
   static double        _suspend_all_start;
-
-
-  static uint nthreads() { return AtomicAccess::load(&_nthreads); }
-
-  static uint nthread_stoped() { return AtomicAccess::load(&_nthreads_stopped); }
 
   static bool is_synchronized();
 

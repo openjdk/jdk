@@ -29,8 +29,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/semaphore.hpp"
 
-volatile uint SuspendibleThreadSet::_nthreads          = 0;
-volatile uint SuspendibleThreadSet::_nthreads_stopped  = 0;
+uint          SuspendibleThreadSet::_nthreads          = 0;
+uint          SuspendibleThreadSet::_nthreads_stopped  = 0;
 volatile bool SuspendibleThreadSet::_suspend_all       = false;
 double        SuspendibleThreadSet::_suspend_all_start = 0.0;
 
@@ -43,8 +43,8 @@ void SuspendibleThreadSet_init() {
 
 bool SuspendibleThreadSet::is_synchronized() {
   assert_lock_strong(STS_lock);
-  assert(nthread_stoped() <= nthreads(), "invariant");
-  return nthread_stoped() == nthreads();
+  assert(_nthreads_stopped <= _nthreads, "invariant");
+  return _nthreads_stopped == _nthreads;
 }
 
 void SuspendibleThreadSet::join() {
@@ -53,16 +53,16 @@ void SuspendibleThreadSet::join() {
   while (should_yield()) {
     ml.wait();
   }
-  AtomicAccess::inc(&_nthreads);
+  _nthreads++;
   DEBUG_ONLY(Thread::current()->set_suspendible_thread();)
 }
 
 void SuspendibleThreadSet::leave() {
   assert(Thread::current()->is_suspendible_thread(), "Thread not joined");
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
-  assert(nthreads() > 0, "Invalid");
+  assert(_nthreads > 0, "Invalid");
   DEBUG_ONLY(Thread::current()->clear_suspendible_thread();)
-  AtomicAccess::dec(&_nthreads);
+  _nthreads--;
   if (should_yield() && is_synchronized()) {
     // This leave completes a request, so inform the requestor.
     _synchronize_wakeup->signal();
@@ -73,7 +73,7 @@ void SuspendibleThreadSet::yield_slow() {
   assert(Thread::current()->is_suspendible_thread(), "Must have joined");
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   if (should_yield()) {
-    AtomicAccess::inc(&_nthreads_stopped);
+    _nthreads_stopped++;
     if (is_synchronized()) {
       if (ConcGCYieldTimeout > 0) {
         double now = os::elapsedTime();
@@ -85,8 +85,8 @@ void SuspendibleThreadSet::yield_slow() {
     while (should_yield()) {
       ml.wait();
     }
-    assert(nthread_stoped() > 0, "Invalid");
-    AtomicAccess::dec(&_nthreads_stopped);
+    assert(_nthreads_stopped > 0, "Invalid");
+    _nthreads_stopped--;
   }
 }
 
@@ -123,7 +123,7 @@ void SuspendibleThreadSet::synchronize() {
   // being signaled until we get back here again for some later
   // synchronize call.  Hence, there is no need to re-check for
   // is_synchronized after the wait; it will always be true there.
-  log_trace(safepoint)("Waiting for %d GC threads to block", nthreads() - nthread_stoped());
+  log_trace(safepoint)("Waiting for %d GC threads to block", _nthreads - _nthreads_stopped);
   _synchronize_wakeup->wait();
   log_trace(safepoint)("All GC threads have been blocked");
 
@@ -138,6 +138,7 @@ void SuspendibleThreadSet::desynchronize() {
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");
+  DEBUG_ONLY(OrderAccess::fence();)
   AtomicAccess::store(&_suspend_all, false);
   ml.notify_all();
 }
