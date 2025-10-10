@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,33 +22,21 @@
  *
  */
 
-#ifndef SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
-#define SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
-
-#include "oops/objArrayOop.hpp"
-
-#include "oops/arrayOop.hpp"
-#include "oops/oop.inline.hpp"
+#include "oops/access.inline.hpp"
+#include "oops/refArrayKlass.hpp"
 #include "oops/refArrayOop.inline.hpp"
+#include "oops/oop.inline.hpp"
 
-inline HeapWord* objArrayOopDesc::base() const { return (HeapWord*) arrayOopDesc::base(T_OBJECT); }
-
-inline objArrayOop objArrayOopDesc::cast(oop o) {
-  assert(o->is_objArray(), "Must be a objArray");
-  return (objArrayOop)o;
+oop refArrayOopDesc::replace_if_null(int index, oop exchange_value) {
+  ptrdiff_t offs;
+  if (UseCompressedOops) {
+    offs = refArrayOopDesc::obj_at_offset<narrowOop>(index);
+  } else {
+    offs = refArrayOopDesc::obj_at_offset<oop>(index);
+  }
+  return HeapAccess<IS_ARRAY>::oop_atomic_cmpxchg_at(as_oop(), offs, (oop)nullptr, exchange_value);
 }
 
-template <class T> T* objArrayOopDesc::obj_at_addr(int index) const {
-  assert(is_within_bounds(index), "index %d out of bounds %d", index, length());
-  return &((T*)base())[index];
+Klass* refArrayOopDesc::element_klass() {
+  return RefArrayKlass::cast(klass())->element_klass();
 }
-
-inline oop objArrayOopDesc::obj_at(int index) const {
-  return ((const refArrayOopDesc* )this)->obj_at(index);
-}
-
-inline void objArrayOopDesc::obj_at_put(int index, oop value) {
-  ((refArrayOopDesc* )this)->obj_at_put(index, value);
-}
-
-#endif // SHARE_OOPS_OBJARRAYOOP_INLINE_HPP
