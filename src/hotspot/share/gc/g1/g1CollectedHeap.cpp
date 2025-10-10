@@ -118,6 +118,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
+uintx G1CollectedHeap::_gc_overhead_counter = 0;
 size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
 // INVARIANTS/NOTES
@@ -467,8 +468,20 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
     log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu words",
                          Thread::current()->name(), word_size);
 
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
+
+    // Was the gc-overhead reached inside the safepoint? If so, this mutator
+    // should return null even when unsuccessfully scheduling a collection as well
+    // for global consistency.
+    if (gc_overhead_limit_exceeded()) {
+      return nullptr;
+    }
+
     // We can reach here if we were unsuccessful in scheduling a collection (because
-    // another thread beat us to it). In this case immeditealy retry the allocation
+    // another thread beat us to it). In this case immediately retry the allocation
     // attempt because another thread successfully performed a collection and possibly
     // reclaimed enough space. The first attempt (without holding the Heap_lock) is
     // here and the follow-on attempt will be at the start of the next loop
@@ -484,11 +497,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
         (try_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc, alloc)("%s:  Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
-    }
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
     }
   }
 
@@ -714,6 +722,17 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
     log_trace(gc, alloc)("%s: Unsuccessfully scheduled collection allocating %zu",
                          Thread::current()->name(), word_size);
 
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
+    }
+
+    // Was the gc-overhead reached inside the safepoint? If so, this mutator
+    // should return null as well for global consistency.
+    if (gc_overhead_limit_exceeded()) {
+      return nullptr;
+    }
+
     // We can reach here if we were unsuccessful in scheduling a collection (because
     // another thread beat us to it).
     // Humongous object allocation always needs a lock, so we wait for the retry
@@ -724,11 +743,6 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
         (try_count % QueuedAllocationWarningCount == 0)) {
       log_warning(gc, alloc)("%s: Retried allocation %u times for %zu words",
                              Thread::current()->name(), try_count, word_size);
-    }
-
-    if (is_shutting_down()) {
-      stall_for_vm_shutdown();
-      return nullptr;
     }
   }
 
@@ -955,25 +969,58 @@ void G1CollectedHeap::resize_heap_after_young_collection(size_t allocation_word_
   phase_times()->record_resize_heap_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
+void G1CollectedHeap::update_gc_overhead_limit_exceeded() {
+  assert(SafepointSynchronize::is_at_safepoint(), "precondition");
+
+  if (UseGCOverheadLimit) {
+    bool little_mutator_time = (_policy->analytics()->long_term_gc_time_ratio() * 100) >= GCTimeLimit;
+    double free_space_percent = percent_of(num_available_regions() * G1HeapRegion::GrainBytes, max_capacity());
+    bool little_free_space = free_space_percent < GCHeapFreeLimit;
+
+    log_debug(gc)("GC Overhead Limit: GC Time %f Free Space %f Counter %zu",
+                  (_policy->analytics()->long_term_gc_time_ratio() * 100),
+                  free_space_percent,
+                  _gc_overhead_counter);
+
+    if (little_mutator_time && little_free_space) {
+      _gc_overhead_counter++;
+      return;
+    } else {
+      _gc_overhead_counter = 0;
+    }
+  }
+}
+
+bool G1CollectedHeap::gc_overhead_limit_exceeded() {
+  return _gc_overhead_counter >= GCOverheadLimitThreshold;
+}
+
 HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
                                                             bool do_gc,
                                                             bool maximal_compaction,
                                                             bool expect_null_mutator_alloc_region) {
-  // Let's attempt the allocation first.
-  HeapWord* result =
-    attempt_allocation_at_safepoint(word_size,
-                                    expect_null_mutator_alloc_region);
-  if (result != nullptr) {
-    return result;
-  }
+  // Skip allocation if GC overhead has been exceeded to let the mutator run into
+  // an OOME. It can either exit "gracefully" or try to free up memory asap.
+  // For the latter situation, keep running GCs. If the mutator frees up enough
+  // memory quickly enough, the overhead(s) will go below the threshold(s) again
+  // and the VM may continue running.
+  if (!gc_overhead_limit_exceeded()) {
+    // Let's attempt the allocation first.
+    HeapWord* result =
+      attempt_allocation_at_safepoint(word_size,
+                                      expect_null_mutator_alloc_region);
+    if (result != nullptr) {
+      return result;
+    }
 
-  // In a G1 heap, we're supposed to keep allocation from failing by
-  // incremental pauses.  Therefore, at least for now, we'll favor
-  // expansion over collection.  (This might change in the future if we can
-  // do something smarter than full collection to satisfy a failed alloc.)
-  result = expand_and_allocate(word_size);
-  if (result != nullptr) {
-    return result;
+    // In a G1 heap, we're supposed to keep allocation from failing by
+    // incremental pauses.  Therefore, at least for now, we'll favor
+    // expansion over collection.  (This might change in the future if we can
+    // do something smarter than full collection to satisfy a failed alloc.)
+    result = expand_and_allocate(word_size);
+    if (result != nullptr) {
+      return result;
+    }
   }
 
   if (do_gc) {
@@ -996,6 +1043,10 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
 
 HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
   assert_at_safepoint_on_vm_thread();
+
+  // Update GC overhead limits after the initial garbage collection leading to this
+  // allocation attempt.
+  update_gc_overhead_limit_exceeded();
 
   // Attempts to allocate followed by Full GC.
   HeapWord* result =
@@ -1026,6 +1077,10 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
 
   if (result != nullptr) {
     return result;
+  }
+
+  if (gc_overhead_limit_exceeded()) {
+    log_info(gc)("GC Overhead Limit exceeded too often (%zu).", GCOverheadLimitThreshold);
   }
 
   // What else?  We might try synchronous finalization later.  If the total

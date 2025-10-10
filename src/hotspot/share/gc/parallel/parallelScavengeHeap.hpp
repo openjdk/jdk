@@ -88,7 +88,7 @@ class ParallelScavengeHeap : public CollectedHeap {
 
   WorkerThreads _workers;
 
-  uint _gc_overhead_counter;
+  uintx _gc_overhead_counter;
 
   bool _is_heap_almost_full;
 
