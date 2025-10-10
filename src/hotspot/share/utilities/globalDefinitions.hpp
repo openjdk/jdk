@@ -26,6 +26,7 @@
 #define SHARE_UTILITIES_GLOBALDEFINITIONS_HPP
 
 #include "classfile_constants.h"
+#include "utilities/checkedCast.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/forbiddenFunctions.hpp"
@@ -1252,6 +1253,39 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jint, juint)
 JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
+
+inline jlong java_shift_left(jlong lhs, jint rhs, BasicType bt) {
+  if (bt == T_INT) {
+    return java_shift_left(checked_cast<jint>(lhs), rhs);
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_shift_left(lhs, rhs);
+}
+
+inline jlong java_shift_right(jlong lhs, jint rhs, BasicType bt) {
+  if (bt == T_INT) {
+    return java_shift_right(checked_cast<jint>(lhs), rhs);
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_shift_right(lhs, rhs);
+}
+
+inline jlong java_shift_right_unsigned(jlong lhs, jint rhs, BasicType bt) {
+  if (bt == T_INT) {
+    return java_shift_right_unsigned(checked_cast<jint>(lhs), rhs);
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_shift_right_unsigned(lhs, rhs);
+}
+
+inline jlong java_negate(jlong v, BasicType bt) {
+  if (bt == T_INT) {
+    return java_negate(checked_cast<jint>(v));
+  }
+  assert(bt == T_LONG, "int or long only");
+  return java_negate(v);
+}
+
 
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.

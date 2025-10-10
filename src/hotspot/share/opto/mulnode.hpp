@@ -264,6 +264,10 @@ public:
     init_class_id(Class_LShift);
   }
 
+  const Type* ValueIL(PhaseGVN* phase, BasicType bt) const;
+  Node* IdentityIL(PhaseGVN* phase, BasicType bt);
+  Node* IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt);
+
   static LShiftNode* make(Node* in1, Node* in2, BasicType bt);
 };
 
@@ -358,11 +362,17 @@ public:
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
+class URShiftNode : public Node {
+public:
+  URShiftNode(Node* in1, Node* in2) : Node(nullptr, in1, in2) {}
+  static URShiftNode* make(Node* in1, Node* in2, BasicType bt);
+};
+
 //------------------------------URShiftBNode-----------------------------------
 // Logical shift right
-class URShiftBNode : public Node {
+class URShiftBNode : public URShiftNode {
 public:
-  URShiftBNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
+  URShiftBNode(Node *in1, Node *in2) : URShiftNode(in1,in2) {
     ShouldNotReachHere(); // only vector variant is used
   }
   virtual int Opcode() const;
@@ -370,9 +380,9 @@ public:
 
 //------------------------------URShiftSNode-----------------------------------
 // Logical shift right
-class URShiftSNode : public Node {
+class URShiftSNode : public URShiftNode {
 public:
-  URShiftSNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {
+  URShiftSNode(Node *in1, Node *in2) : URShiftNode(in1,in2) {
     ShouldNotReachHere(); // only vector variant is used
   }
   virtual int Opcode() const;
@@ -380,9 +390,9 @@ public:
 
 //------------------------------URShiftINode-----------------------------------
 // Logical shift right
-class URShiftINode : public Node {
+class URShiftINode : public URShiftNode {
 public:
-  URShiftINode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
+  URShiftINode(Node *in1, Node *in2) : URShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
@@ -393,9 +403,9 @@ public:
 
 //------------------------------URShiftLNode-----------------------------------
 // Logical shift right
-class URShiftLNode : public Node {
+class URShiftLNode : public URShiftNode {
 public:
-  URShiftLNode( Node *in1, Node *in2 ) : Node(nullptr,in1,in2) {}
+  URShiftLNode(Node *in1, Node *in2) : URShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
