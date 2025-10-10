@@ -628,6 +628,13 @@ void VM_Version::initialize() {
 
 #ifdef __APPLE__
   DefaultWXWriteMode = UseOldWX ? WXWrite : WXArmedForWrite;
+
+  if (TraceWXHealing) {
+    tty->print_cr("### TraceWXHealing is in use");
+  }
+  if (StressWXHealing) {
+    tty->print_cr("### StressWXHealing is in use");
+  }
 #endif
 
   // Sync SVE related CPU features with flags
