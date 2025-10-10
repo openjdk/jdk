@@ -325,7 +325,7 @@ public:
 
   static void vm_start();
   static void vm_init();
-  static void vm_death();
+  static void vm_stop_event_posting();
 
   static void trace_changed(JvmtiThreadState *state, jlong now_enabled, jlong changed);
   static void trace_changed(jlong now_enabled, jlong changed);
@@ -1056,7 +1056,7 @@ JvmtiEventControllerPrivate::vm_init() {
 
 
 void
-JvmtiEventControllerPrivate::vm_death() {
+JvmtiEventControllerPrivate::vm_stop_event_posting() {
   _execution_finished = true;
   JvmtiEventControllerPrivate::recompute_enabled();
 }
@@ -1219,7 +1219,7 @@ void
 JvmtiEventController::vm_stop_event_posting() {
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
-    JvmtiEventControllerPrivate::vm_death();
+    JvmtiEventControllerPrivate::vm_stop_event_posting();
   }
 
   const double start = os::elapsedTime();
