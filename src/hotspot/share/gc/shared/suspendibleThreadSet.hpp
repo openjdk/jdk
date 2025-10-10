@@ -43,6 +43,7 @@ class SuspendibleThreadSet : public AllStatic {
 private:
   static uint          _nthreads;
   static uint          _nthreads_stopped;
+  static volatile bool _has_synchronized;
   static volatile bool _suspend_all;
   static double        _suspend_all_start;
 
