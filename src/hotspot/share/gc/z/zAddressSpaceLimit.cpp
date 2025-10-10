@@ -25,10 +25,8 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddressSpaceLimit.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#include "utilities/ostream.hpp"
 
 size_t ZAddressSpaceLimit::heap() {
   // Allow the heap to occupy 50% of the address space
