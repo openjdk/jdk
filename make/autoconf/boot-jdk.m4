@@ -426,10 +426,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   UTIL_ADD_JVM_ARG_IF_OK([-Xlog:all=off:stdout],boot_jdk_jvmargs,[$JAVA])
   UTIL_ADD_JVM_ARG_IF_OK([-Xlog:all=warning:stderr],boot_jdk_jvmargs,[$JAVA])
 
-
-  # Otherwise optimistically use the system-wide one, if one is present
-  UTIL_ADD_JVM_ARG_IF_OK([-Xshare:auto],boot_jdk_jvmargs,[$JAVA])
-
   # Finally append user provided options to allow them to override.
   UTIL_ADD_JVM_ARG_IF_OK([$USER_BOOT_JDK_OPTIONS],boot_jdk_jvmargs,[$JAVA])
 
