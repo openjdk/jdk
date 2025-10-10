@@ -429,18 +429,22 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::get_field_type_by_offset
+//
+// This is essentially a shortcut for:
+//  get_field_type_by_offset(field_offset, is_static)->layout_type()
+// except this does not require allocating memory for a new ciField
 BasicType ciInstanceKlass::get_field_type_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
     for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
       ciField* field = _nonstatic_fields->at(i);
-      int  field_off = field->offset_in_bytes();
+      int field_off = field->offset_in_bytes();
       if (field_off == field_offset)
         return field->layout_type();
     }
     return T_ILLEGAL;
   }
 
-  // We avoid allocating a new ciField by obtaining the field type directly
+  // Avoid allocating a new ciField by obtaining the field type directly
   VM_ENTRY_MARK;
   InstanceKlass* k = get_instanceKlass();
   fieldDescriptor fd;
@@ -448,11 +452,12 @@ BasicType ciInstanceKlass::get_field_type_by_offset(int field_offset, bool is_st
     return T_ILLEGAL;
   }
 
+  // Reproduce the behavior of ciField::layout_type
   BasicType field_type = fd.field_type();
   if (is_reference_type(field_type)) {
     return T_OBJECT;
   }
-  return type2field[ciType::make(field_type)->basic_type()];
+  return type2field[make(field_type)->basic_type()];
 }
 
 // ------------------------------------------------------------------

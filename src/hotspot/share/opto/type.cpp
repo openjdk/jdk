@@ -3478,11 +3478,9 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
         } else if (klass() == ciEnv::current()->Class_klass() &&
                    _offset >= InstanceMirrorKlass::offset_of_static_fields()) {
           // Static fields
-          // ciField* field = nullptr;
           BasicType basic_elem_type = T_ILLEGAL;
           if (const_oop() != nullptr) {
             ciInstanceKlass* k = const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
-            // field = k->get_field_by_offset(_offset, true);
             basic_elem_type = k->get_field_type_by_offset(_offset, true);
           }
           if (basic_elem_type != T_ILLEGAL) {
@@ -3493,7 +3491,6 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
           }
         } else {
           // Instance fields which contains a compressed oop references.
-          // ciField* field = ik->get_field_by_offset(_offset, false);
           BasicType basic_elem_type = ik->get_field_type_by_offset(_offset, false);;
           if (basic_elem_type != T_ILLEGAL) {
             _is_ptr_to_narrowoop = UseCompressedOops && ::is_reference_type(basic_elem_type);
