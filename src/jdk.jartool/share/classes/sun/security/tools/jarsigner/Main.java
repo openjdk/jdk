@@ -1486,7 +1486,7 @@ public class Main {
         if (weakKeyStore) {
             warnings.add(String.format(rb.getString(
                     "jks.storetype.warning"),
-                    storetype, keystore));
+                    store.getType(), keystore));
         }
 
         if ((strict) && (!errors.isEmpty())) {
