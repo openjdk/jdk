@@ -68,7 +68,6 @@ extern bool is_vm_statically_linked();
  * string prior to JDK 1.6 was removed (partial initialization)
  */
 class JDK_Version {
-  friend class VMStructs;
   friend class Universe;
   friend void JDK_Version_init();
  private:
