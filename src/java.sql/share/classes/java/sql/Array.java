@@ -73,7 +73,7 @@ package java.sql;
  * @since 1.2
  */
 
-public interface Array  extends AutoCloseable {
+public interface Array extends AutoCloseable {
 
   /**
    * Retrieves the SQL type name of the elements in

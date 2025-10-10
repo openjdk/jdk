@@ -29,7 +29,7 @@ package java.sql;
 import java.security.*;
 
 /**
- *This class was only useful in conjunction with the {@link java.lang.SecurityManager},
+ * This class was only useful in conjunction with the {@link java.lang.SecurityManager},
  * which is no longer supported. There is no replacement for this class.
  *
  * @since 1.3

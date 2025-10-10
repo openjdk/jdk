@@ -30,7 +30,7 @@ import java.util.Properties;
 /**
  * <p>Driver properties for making a connection. The
  * {@code DriverPropertyInfo} class is of interest only to advanced programmers.
- * The method {@linkplain Driver#getPropertyInfo(String, Properties)} may be used
+ * The method {@link Driver#getPropertyInfo(String, Properties)} may be used
  * to discover Driver properties.
  *
  * @since 1.1

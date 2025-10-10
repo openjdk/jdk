@@ -202,13 +202,17 @@ public enum JDBCType implements SQLType {
      */
     TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE),
 
+    /* JDBC 4.5 Types */
+
     /**
      * Identifies the generic SQL type {@code DECFLOAT}.
+     * @since 26
      */
     DECFLOAT(Types.DECFLOAT),
 
     /**
      * Identifies the generic SQL type {@code DECFLOAT}.
+     * @since 26
      */
     JSON(Types.JSON);
 

@@ -177,7 +177,7 @@ import javax.xml.transform.Source;
  * The state moves from writable to not writable once close(), free() or any of the
  * writing APIs are called: setBinaryStream(), setCharacterStream(), setResult(), and setString().
  * Implementations may also change the state to not readable when this occurs.
- *<p>
+ * <p>
  * To release resources used by the {@code SQLXML} object, applications must call
  * either the {@link #free()} or the {@link #close()} method.  Any attempt to
  * invoke a method other than {@link #free()} or {@link #close()} after the

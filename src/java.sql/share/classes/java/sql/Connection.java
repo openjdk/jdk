@@ -1894,7 +1894,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * implementation of this method in order to meet the requirements of the
      * underlying datasource.
      * @param identifier a SQL identifier
-     * @return  true if  a simple SQL identifier, false otherwise
+     * @return  true if a simple SQL identifier, false otherwise
      * @throws NullPointerException if identifier is {@code null}
      * @throws SQLException if a database access error occurs
      *
