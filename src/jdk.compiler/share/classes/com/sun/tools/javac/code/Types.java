@@ -26,6 +26,7 @@
 package com.sun.tools.javac.code;
 
 import java.lang.ref.SoftReference;
+import java.lang.runtime.ExactConversionsSupport;
 import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Locale;
@@ -5054,14 +5055,25 @@ public class Types {
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Unconditionality">
-    /** Check unconditionality between any combination of reference or primitive types.
+    /** Check unconditionality between any combination of reference or primitive
+     *  types.
      *
-     *  Rules:
-     *    an identity conversion
-     *    a widening reference conversion
-     *    a widening primitive conversion (delegates to `checkUnconditionallyExactPrimitives`)
-     *    a boxing conversion
-     *    a boxing conversion followed by a widening reference conversion
+     *  The following are unconditionally exact regardless of the input
+     *  expression:
+     *
+     *    - an identity conversion
+     *    - a widening reference conversion
+     *    - an exact widening primitive conversion
+     *    - a boxing conversion
+     *    - a boxing conversion followed by a widening reference conversion
+     *
+     *  Additionally, the following can be unconditionally exact if the source
+     *  primitive is a constant expression and the conversions is exact for that
+     *  constant expression:
+     *
+     *    - a narrowing primitive conversion
+     *    - a widening and narrowing primitive conversion
+     *    - a widening primitive conversion that is not exact
      *
      *  @param source     Source primitive or reference type
      *  @param target     Target primitive or reference type
@@ -5071,28 +5083,80 @@ public class Types {
             return true;
         }
 
-        return target.isPrimitive()
-                ? isUnconditionallyExactPrimitives(source, target)
-                : isSubtype(boxedTypeOrType(erasure(source)), target);
+        if (target.isPrimitive()) {
+            if (source.isPrimitive() &&
+                ((source.getTag().isStrictSubRangeOf(target.getTag())) &&
+                        !((source.hasTag(BYTE) && target.hasTag(CHAR)) ||
+                          (source.hasTag(INT) && target.hasTag(FLOAT)) ||
+                          (source.hasTag(LONG) && (target.hasTag(DOUBLE) || target.hasTag(FLOAT)))))) return true;
+            else {
+                return false;
+            }
+        } else {
+            return isSubtype(boxedTypeOrType(erasure(source)), target);
+        }
     }
+    // where
+    public boolean isUnconditionallyExactConstantPrimitives(Type source, Type target) {
+        if (!(source.constValue() instanceof Number value) || !target.getTag().isNumeric()) return false;
 
-    /** Check unconditionality between primitive types.
-     *
-     *  - widening from one integral type to another,
-     *  - widening from one floating point type to another,
-     *  - widening from byte, short, or char to a floating point type,
-     *  - widening from int to double.
-     *
-     *  @param selectorType     Type of selector
-     *  @param targetType       Target type
-     */
-    public boolean isUnconditionallyExactPrimitives(Type selectorType, Type targetType) {
-        return isSameType(selectorType, targetType) ||
-                (selectorType.isPrimitive() && targetType.isPrimitive()) &&
-                ((selectorType.getTag().isStrictSubRangeOf(targetType.getTag())) &&
-                        !((selectorType.hasTag(BYTE) && targetType.hasTag(CHAR)) ||
-                          (selectorType.hasTag(INT)  && targetType.hasTag(FLOAT)) ||
-                          (selectorType.hasTag(LONG) && (targetType.hasTag(DOUBLE) || targetType.hasTag(FLOAT)))));
+        switch (source.getTag()) {
+            case BYTE:
+                switch (target.getTag()) {
+                    case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+                }
+                break;
+            case CHAR:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+                    case SHORT:     return ExactConversionsSupport.isIntToShortExact(value.intValue());
+                }
+                break;
+            case SHORT:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+                    case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+                }
+                break;
+            case INT:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isIntToByteExact(value.intValue());
+                    case CHAR:      return ExactConversionsSupport.isIntToCharExact(value.intValue());
+                    case SHORT:     return ExactConversionsSupport.isIntToShortExact(value.intValue());
+                    case FLOAT:     return ExactConversionsSupport.isIntToFloatExact(value.intValue());
+                }
+                break;
+            case FLOAT:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isFloatToByteExact(value.floatValue());
+                    case CHAR:      return ExactConversionsSupport.isFloatToCharExact(value.floatValue());
+                    case SHORT:     return ExactConversionsSupport.isFloatToShortExact(value.floatValue());
+                    case INT:       return ExactConversionsSupport.isFloatToIntExact(value.floatValue());
+                    case LONG:      return ExactConversionsSupport.isFloatToLongExact(value.floatValue());
+                }
+                break;
+            case LONG:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isLongToByteExact(value.longValue());
+                    case CHAR:      return ExactConversionsSupport.isLongToCharExact(value.longValue());
+                    case SHORT:     return ExactConversionsSupport.isLongToShortExact(value.longValue());
+                    case INT:       return ExactConversionsSupport.isLongToIntExact(value.longValue());
+                    case FLOAT:     return ExactConversionsSupport.isLongToFloatExact(value.longValue());
+                    case DOUBLE:    return ExactConversionsSupport.isLongToDoubleExact(value.longValue());
+                }
+                break;
+            case DOUBLE:
+                switch (target.getTag()) {
+                    case BYTE:      return ExactConversionsSupport.isDoubleToByteExact(value.doubleValue());
+                    case CHAR:      return ExactConversionsSupport.isDoubleToCharExact(value.doubleValue());
+                    case SHORT:     return ExactConversionsSupport.isDoubleToShortExact(value.doubleValue());
+                    case INT:       return ExactConversionsSupport.isDoubleToIntExact(value.doubleValue());
+                    case FLOAT:     return ExactConversionsSupport.isDoubleToFloatExact(value.doubleValue());
+                    case LONG:      return ExactConversionsSupport.isDoubleToLongExact(value.doubleValue());
+                }
+                break;
+        }
+        return true;
     }
     // </editor-fold>
 
