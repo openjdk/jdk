@@ -34,6 +34,10 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. SharedStringsHumongous
  */
+
+// The problem with humongous strings, or humongous objects in general, does not
+// exist with the streaming heap loader. Therefore, this test requres the mapping mode.
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;

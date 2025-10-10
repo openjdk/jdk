@@ -32,6 +32,10 @@
  * @run driver SharedStringsBasicPlus
  */
 
+// This test requires the vm.cds.write.mapped.java.heap specifically as it has expectations
+// about using the mechanism for dumping the entire string table, which the streaming solution
+// does not do.
+
 public class SharedStringsBasicPlus {
     public static void main(String[] args) throws Exception {
         SharedStringsUtils.run(args, SharedStringsBasicPlus::test);

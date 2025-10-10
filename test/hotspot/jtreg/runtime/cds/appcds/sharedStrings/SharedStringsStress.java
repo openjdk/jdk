@@ -30,6 +30,11 @@
  * @build HelloString
  * @run driver/timeout=2600 SharedStringsStress
  */
+
+// This test requires the vm.cds.write.mapped.java.heap specifically as it has expectations
+// about using the mechanism for dumping the entire string table, which the streaming solution
+// does not do.
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
