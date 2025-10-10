@@ -378,6 +378,10 @@ void HeapShared::initialize_writing_mode() {
 
   if (!CDSConfig::is_dumping_archive()) {
     assert(_heap_write_mode == HeapArchiveMode::_uninitialized, "already initialized?");
+
+    // We use FLAG_IS_CMDLINE below because we are specifically looking to warn
+    // a user that explicitly sets the flag on the command line for a JVM that is
+    // not dumping an archive.
     if (FLAG_IS_CMDLINE(AOTStreamableObjects)) {
       log_info(cds)("-XX:%cAOTStreamableObjects was specified, "
                     "AOTStreamableObjects is only used for dumping",
@@ -387,6 +391,10 @@ void HeapShared::initialize_writing_mode() {
     return;
   }
 
+  // The below check uses !FLAG_IS_DEFAULT instead of FLAG_IS_CMDLINE
+  // because the one step AOT cache creation transfers the AOTStreamableObjects
+  // flag value from the training JVM to the assembly JVM using an environment
+  // variable that sets the flag as ERGO in the assembly JVM.
   if (!FLAG_IS_DEFAULT(AOTStreamableObjects)) {
     // Mode explicitly selected
     if (AOTStreamableObjects) {
@@ -396,7 +404,7 @@ void HeapShared::initialize_writing_mode() {
 
     if (!UseG1GC) {
       log_warning(cds)("Heap archiving without streaming only supported for -XX:+UseG1GC");
-      FLAG_SET_ERGO(AOTStreamableObjects, false);
+      FLAG_SET_ERGO(AOTStreamableObjects, true);
       _heap_write_mode = HeapArchiveMode::_streaming;
       return;
     }
@@ -472,12 +480,10 @@ oop HeapShared::get_root(int index, bool clear) {
 }
 
 void HeapShared::finish_materialize_objects() {
-  if (!HeapShared::is_loading_streaming_mode()) {
-    return;
+  if (HeapShared::is_loading_streaming_mode()) {
+    // Finish materializing objects
+    AOTStreamedHeapLoader::finish_materialize_objects();
   }
-
-  // Materialize roots
-  AOTStreamedHeapLoader::finish_materialize_objects();
 }
 
 void HeapShared::clear_root(int index) {
