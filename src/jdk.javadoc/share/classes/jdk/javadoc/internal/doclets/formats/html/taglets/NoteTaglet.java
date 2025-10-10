@@ -78,10 +78,10 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
                 .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
                 .map(t -> (AttributeTree) t)
                 .collect(Collectors.toMap(at -> at.getName().toString(), NoteTaglet::stringValueOf));
-        var label = attr.getOrDefault("label", "Note");
+        var header = attr.getOrDefault("header", "Note:");
 
         return HtmlTree.of(HtmlTag.BLOCKQUOTE)
-                .add(HtmlTree.of(HtmlTag.STRONG).add(Text.of(label + ": ")))
+                .add(HtmlTree.of(HtmlTag.STRONG).add(Text.of(header)).add(" "))
                 .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
     }
 

@@ -1981,6 +1981,7 @@ public class DocCommentParser {
             return treeKind;
         }
 
+        // Overridden by parsers for bimodal tags with variable tag names
         DCTree parse(int pos, Kind kind, String name) throws ParseException {
             if (!name.equals(treeKind.tagName)) {
                 throw new IllegalArgumentException(name);
@@ -1988,6 +1989,7 @@ public class DocCommentParser {
             return parse(pos, kind);
         }
 
+        // Overridden by parsers for bimodal tags
         DCTree parse(int pos, Kind kind) throws ParseException {
             if (kind != this.kind && this.kind != Kind.EITHER) {
                 throw new IllegalArgumentException(kind.toString());
