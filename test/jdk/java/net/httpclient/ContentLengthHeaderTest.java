@@ -31,6 +31,7 @@
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @bug 8283544 8358942
  * @run testng/othervm
+ *          -Djdk.httpclient.allowRestrictedHeaders=content-length
  *          -Djdk.internal.httpclient.debug=true
  *          ContentLengthHeaderTest
  */
@@ -198,6 +199,22 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "bodies")
+    // A GET request with empty request body and explicitly added Content-length header
+    public void getWithZeroContentLength(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking GET with no request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("GET", HttpRequest.BodyPublishers.noBody())
+                .header("Content-length", "0")
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+        assertEquals(resp.body(), "Request completed");
     }
 
     @Test(dataProvider = "bodies")
