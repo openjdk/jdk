@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -890,8 +890,6 @@ printUsage(void)
  "                               everything    = 0xfff"));
 
     TTY_MESSAGE((
- "debugflags=flags             debug flags (bitmask)           none\n"
- "                               USE_ITERATE_THROUGH_HEAP 0x01\n"
  "\n"
  "Environment Variables\n"
  "---------------------\n"
@@ -1192,13 +1190,6 @@ parseOptions(char *options)
             }
             /*LINTED*/
             logflags = (unsigned)strtol(current, NULL, 0);
-        } else if (strcmp(buf, "debugflags") == 0) {
-            /*LINTED*/
-            if (!get_tok(&str, current, (int)(end - current), ',')) {
-                goto syntax_error;
-            }
-            /*LINTED*/
-            gdata->debugflags = (unsigned)strtol(current, NULL, 0);
         } else if ( strcmp(buf, "suspend")==0 ) {
             if ( !get_boolean(&str, &suspendOnInit) ) {
                 goto syntax_error;
