@@ -193,7 +193,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * Code generation can involve keeping track of scopes in the code (e.g. liveness and availability of
- * {@link DataNames}) and of the hashtag replacements in the templates. The {@link NestingToken} serves
+ * {@link DataName}s) and of the hashtag replacements in the templates. The {@link NestingToken} serves
  * this purpose, and allows the definition of transparent scopes (e.g. {@link #flat}) and non-transparent
  * scopes (e.g. {#link #scope}).
  *
@@ -222,73 +222,18 @@ import compiler.lib.ir_framework.TestFramework;
  * a functional (lambdas) and data-oriented (tokens) model. The consequence is that there are three
  * orders in template rendering: (1) the execution order in lambdas, where we usually assemble the
  * tokens and pass them to some scope ({@link NestingToken}) as arguments. (2) the token evaluation
- * order, which occurs in the order of how tokens are listed in a scope. In almost all cases, this
+ * order, which occurs in the order of how tokens are listed in a scope. By design, the token order
  * is the same order as execution in lambdas. To keep the lambda and token order in sync, most of the
  * queries about the state of code generation, such as {@link DataName}s and {@link Hook}s cannot
  * return the values immediately, but have to be expressed as tokens. If we had a mix of tokens and
  * immediate queries, then the immediate queries would "float" by the tokens, because the immediate
  * queries are executed during the lambda execution, but the tokens are only executed later. Having
- * to express everything as tokens can be a little more cumbersome, but ensures that reasoning about
- * execution order is relatively straight forward. (3) the final code order, ... hook?
+ * to express everything as tokens can be a little more cumbersome (e.g. sample requires a lambda
+ * that captures the {@link DataName}, and sample does not return the {@link DataName} directly).
+ * But this ensures that reasoning about execution order is relatively straight forward, namely in
+ * the order of the specified tokens. (3) the final code order is the same as the lambda and token
+ * order, except when using {@link Hook#insert}, which places the code at the innermost {@link Hook#anchor}.
  *
- * <p>
- * TODO: rework this, no longer accurate.
- * When working with {@link DataName}s and {@link StructuralName}s, it is important to be aware of the
- * relevant scopes, as well as the execution order of the {@link Template} lambdas and the evaluation
- * of the {@link Template#scope} tokens. When a {@link Template} is rendered, its lambda is invoked. In the
- * lambda, we generate the tokens, and create the {@link Template#scope}. Once the lambda returns, the
- * tokens are evaluated one by one. While evaluating the tokens, the {@link Renderer} might encounter a nested
- * {@link TemplateToken}, which in turn triggers the evaluation of that nested {@link Template}, i.e.
- * the evaluation of its lambda and later the evaluation of its tokens. It is important to keep in mind
- * that the lambda is always executed first, and the tokens are evaluated afterwards. A method like
- * {@code dataNames(MUTABLE).exactOf(type).count()} is a method that is executed during the evaluation
- * of the lambda. But a method like {@link #addDataName} returns a token, and does not immediately add
- * the {@link DataName}. This ensures that the {@link DataName} is only inserted when the tokens are
- * evaluated, so that it is inserted at the exact scope where we would expect it.
- *
- * <p>
- * Let us look at the following example to better understand the execution order.
- *
- * <p>
- * TODO: probably remove the example. Not sure if we need something else here?
- * {@snippet lang=java :
- * var testTemplate = Template.make(() -> scope(
- *     // The lambda has just been invoked.
- *     // We count the DataNames and assign the count to the hashtag replacement "c1".
- *     let("c1", dataNames(MUTABLE).exactOf(someType).count()),
- *     // We want to define a DataName "v1", and create a token for it.
- *     addDataName($("v1"), someType, MUTABLE),
- *     // We count the DataNames again, but the count does NOT change compared to "c1".
- *     // This is because the token for "v1" is only evaluated later.
- *     let("c2", dataNames(MUTABLE).exactOf(someType).count()),
- *     // Create a nested scope.
- *     METHOD_HOOK.anchor(
- *         // We want to define a DataName "v2", which is only valid inside this
- *         // nested scope.
- *         addDataName($("v2"), someType, MUTABLE),
- *         // The count is still not different to "c1".
- *         let("c3", dataNames(MUTABLE).exactOf(someType).count()),
- *         // We nest a Template. This creates a TemplateToken, which is later evaluated.
- *         // By the time the TemplateToken is evaluated, the tokens from above will
- *         // be already evaluated. Hence, "v1" and "v2" are added by then, and if the
- *         // "otherTemplate" were to count the DataNames, the count would be increased
- *         // by 2 compared to "c1".
- *         otherTemplate.asToken()
- *     ),
- *     // After closing the scope, "v2" is no longer available.
- *     // The count is still the same as "c1", since "v1" is still only a token.
- *     let("c4", dataNames(MUTABLE).exactOf(someType).count()),
- *     // We nest another Template. Again, this creates a TemplateToken, which is only
- *     // evaluated later. By that time, the token for "v1" is evaluated, and so the
- *     // nested Template would observe an increment in the count.
- *     anotherTemplate.asToken()
- *     // By this point, all methods are called, and the tokens generated.
- *     // The lambda returns the "scope", which is all of the tokens that we just
- *     // generated. After returning from the lambda, the tokens will be evaluated
- *     // one by one.
- * ));
- * }
-
  * <p>
  * More examples for these functionalities can be found in {@code TestTutorial.java}, {@code TestSimple.java},
  * and {@code TestAdvanced.java}, which all produce compilable Java code. Additional examples can be found in
