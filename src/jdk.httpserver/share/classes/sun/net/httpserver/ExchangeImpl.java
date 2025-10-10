@@ -29,6 +29,7 @@ import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.lang.System.Logger;
 import java.lang.System.Logger.Level;
 import java.text.*;
@@ -37,6 +38,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.stream.Stream;
 import com.sun.net.httpserver.*;
+
+import sun.net.NetProperties;
 
 class ExchangeImpl {
 
@@ -59,6 +62,9 @@ class ExchangeImpl {
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
+    private static final boolean perExchangeAttributes =
+        !Optional.ofNullable(NetProperties.get("jdk.httpserver.attributes")).orElse("")
+              .equals("context");
     static {
         String pattern = "EEE, dd MMM yyyy HH:mm:ss zzz";
         FORMATTER = DateTimeFormatter.ofPattern(pattern, Locale.US)
@@ -76,7 +82,7 @@ class ExchangeImpl {
     PlaceholderOutputStream uos_orig;
 
     boolean sentHeaders; /* true after response headers sent */
-    Map<String,Object> attributes;
+    final Map<String,Object> attributes;
     int rcode = -1;
     HttpPrincipal principal;
     ServerImpl server;
@@ -91,6 +97,9 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
+        this.attributes = perExchangeAttributes
+            ? new ConcurrentHashMap<>()
+            : getHttpContext().getAttributes();
         /* ros only used for headers, body written directly to stream */
         this.ros = req.outputStream();
         this.ris = req.inputStream();
@@ -361,26 +370,15 @@ class ExchangeImpl {
     }
 
     public Object getAttribute (String name) {
-        if (name == null) {
-            throw new NullPointerException ("null name parameter");
-        }
-        if (attributes == null) {
-            attributes = getHttpContext().getAttributes();
-        }
-        return attributes.get (name);
+        return attributes.get(Objects.requireNonNull(name, "null name parameter"));
     }
 
     public void setAttribute (String name, Object value) {
-        if (name == null) {
-            throw new NullPointerException ("null name parameter");
-        }
-        if (attributes == null) {
-            attributes = getHttpContext().getAttributes();
-        }
+        var key = Objects.requireNonNull(name, "null name parameter");
         if (value != null) {
-            attributes.put (name, value);
+            attributes.put(key, value);
         } else {
-            attributes.remove (name);
+            attributes.remove(key);
         }
     }
 

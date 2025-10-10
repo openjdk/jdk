@@ -71,7 +71,7 @@ public class ExchangeAttributeTest {
     public void testExchangeAttributes() throws Exception {
         var handler = new AttribHandler();
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
-        server.createContext("/", handler);
+        server.createContext("/", handler).getAttributes().put("attr", "context-val");
         server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -101,6 +101,7 @@ public class ExchangeAttributeTest {
         @java.lang.Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
+                assertNull(exchange.getAttribute("attr"));
                 exchange.setAttribute("attr", "val");
                 assertEquals("val", exchange.getAttribute("attr"));
                 exchange.setAttribute("attr", null);
