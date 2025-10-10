@@ -1704,3 +1704,15 @@ void InterpreterMacroAssembler::load_method_entry(Register cache, Register index
   add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
 }
+
+#ifdef ASSERT
+void InterpreterMacroAssembler::verify_field_offset(Register reg) {
+  // Verify the field offset falls after the header and Klass pointer. This is a cheap check which
+  // is able to detect a regression of JDK-8369506.
+  Label valid;
+  subs(zr, reg, oopDesc::base_offset_in_bytes());
+  br(Assembler::GE, valid);
+  stop("bad field offset");
+  bind(valid);
+}
+#endif
