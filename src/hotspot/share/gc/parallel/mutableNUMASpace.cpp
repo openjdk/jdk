@@ -356,15 +356,13 @@ void MutableNUMASpace::initialize(MemRegion mr,
       } else {
         new_region = MemRegion(bottom(), end());
       }
-    } else {
-      if (i < lgrp_spaces()->length() - 1) { // Middle chunks
-        MutableSpace *ps = lgrp_spaces()->at(i - 1)->space();
-        new_region = MemRegion(ps->end(),
-                               chunk_byte_size >> LogHeapWordSize);
-      } else { // Top chunk
-        MutableSpace *ps = lgrp_spaces()->at(i - 1)->space();
-        new_region = MemRegion(ps->end(), end());
-      }
+    } else if (i < lgrp_spaces()->length() - 1) { // Middle chunks
+      MutableSpace* ps = lgrp_spaces()->at(i - 1)->space();
+      new_region = MemRegion(ps->end(),
+                             chunk_byte_size >> LogHeapWordSize);
+    } else { // Top chunk
+      MutableSpace* ps = lgrp_spaces()->at(i - 1)->space();
+      new_region = MemRegion(ps->end(), end());
     }
     guarantee(region().contains(new_region), "Region invariant");
 

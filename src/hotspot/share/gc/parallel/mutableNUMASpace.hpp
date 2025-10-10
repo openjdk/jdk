@@ -125,9 +125,6 @@ class MutableNUMASpace : public MutableSpace {
   unsigned samples_count()                           { return _samples_count;     }
   void increment_samples_count()                     { ++_samples_count;          }
 
-  size_t _base_space_size;
-  void set_base_space_size(size_t v)                 { _base_space_size = v;      }
-
   // Bias region towards the lgrp.
   void bias_region(MemRegion mr, uint lgrp_id);
 
