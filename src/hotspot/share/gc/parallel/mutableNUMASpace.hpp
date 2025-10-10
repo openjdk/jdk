@@ -60,8 +60,6 @@
  */
 
 class MutableNUMASpace : public MutableSpace {
-  friend class VMStructs;
-
   class LGRPSpace : public CHeapObj<mtGC> {
     uint _lgrp_id;
     MutableSpace* _space;
