@@ -395,6 +395,11 @@ final class Renderer {
                 });
 
             }
+            case HookIsAnchoredToken hiat -> {
+                boolean isAnchored = currentCodeFrame.codeFrameForHook(hiat.hook()) != null;
+                NestingToken nt = hiat.getNestingToken(isAnchored);
+                renderNestingToken(nt, () -> {});
+            }
         }
     }
 
@@ -497,10 +502,6 @@ final class Renderer {
                 }
             }
         ));
-    }
-
-    boolean isAnchored(Hook hook) {
-        return currentCodeFrame.codeFrameForHook(hook) != null;
     }
 
     private CodeFrame codeFrameForHook(Hook hook) {

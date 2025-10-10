@@ -23,6 +23,8 @@
 
 package compiler.lib.template_framework;
 
+import java.util.function.Function;
+
 /**
  * TODO: ensure we talk about scopes, especially for insertion.
  * {@link Hook}s can be {@link #anchor}ed for a certain scope in a Template, and all nested
@@ -102,11 +104,13 @@ public record Hook(String name) {
     }
 
     /**
-     * Checks if the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope.
+     * Checks if the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope,
+     * and makes the boolean result available to an inner scope.
      *
-     * @return If the {@link Hook} was {@link Hook#anchor}ed for the current scope or an outer scope.
+     * @param function the function that generates the inner scope given the boolean result.
+     * @return the token that represents the check and inner scope.
      */
-    public boolean isAnchored() {
-        return Renderer.getCurrent().isAnchored(this);
+    public Token isAnchored(Function<Boolean, NestingToken> function) {
+        return new HookIsAnchoredToken(this, function);
     }
 }

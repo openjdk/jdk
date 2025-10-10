@@ -172,7 +172,6 @@ public class TestTemplate {
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
         expectRendererException(() -> $("name"),                          "A Template method such as");
         expectRendererException(() -> fuel(),                             "A Template method such as");
-        expectRendererException(() -> (new Hook("abc")).isAnchored(),     "A Template method such as");
         expectRendererException(() -> testFailingDollarName1(), "Is not a valid '$' name: ''.");
         expectRendererException(() -> testFailingDollarName2(), "Is not a valid '$' name: '#abc'.");
         expectRendererException(() -> testFailingDollarName3(), "Is not a valid '$' name: 'abc#'.");
@@ -465,7 +464,7 @@ public class TestTemplate {
     public static void testHookIsAnchored() {
         var hook1 = new Hook("Hook1");
 
-        var template0 = Template.make(() -> scope("isAnchored: ", hook1.isAnchored(), "\n"));
+        var template0 = Template.make(() -> scope("isAnchored: ", hook1.isAnchored(a -> scope(a)), "\n"));
 
         var template1 = Template.make(() -> scope("Hello\n", template0.asToken()));
 
