@@ -122,7 +122,7 @@ inline D AtomicAccess::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_va
     "   bne-    1b                                    \n"
     : [result]     "=&r"  (result)
     : [add_value]  "r"    (add_value),
-      [dest]       "r"    (dest)
+      [dest]       "b"    (dest)
     : "cc", "memory" );
 
   post_membar(order);
@@ -149,7 +149,7 @@ inline D AtomicAccess::PlatformAdd<8>::add_then_fetch(D volatile* dest, I add_va
     "   bne-    1b                                    \n"
     : [result]     "=&r"  (result)
     : [add_value]  "r"    (add_value),
-      [dest]       "r"    (dest)
+      [dest]       "b"    (dest)
     : "cc", "memory" );
 
   post_membar(order);
@@ -162,6 +162,7 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
                                                    T exchange_value,
                                                    atomic_memory_order order) const {
+  STATIC_ASSERT(4 == sizeof(T));
   // Note that xchg doesn't necessarily do an acquire
   // (see synchronizer.cpp).
 
@@ -178,12 +179,10 @@ inline T AtomicAccess::PlatformXchg<4>::operator()(T volatile* dest,
     /* exit */
     "2:                                                 \n"
     /* out */
-    : [old_value]       "=&r"   (old_value),
-                        "=m"    (*dest)
+    : [old_value]       "=&r"   (old_value)
     /* in */
     : [dest]            "b"     (dest),
-      [exchange_value]  "r"     (exchange_value),
-                        "m"     (*dest)
+      [exchange_value]  "r"     (exchange_value)
     /* clobber */
     : "cc",
       "memory"
@@ -216,12 +215,10 @@ inline T AtomicAccess::PlatformXchg<8>::operator()(T volatile* dest,
     /* exit */
     "2:                                                 \n"
     /* out */
-    : [old_value]       "=&r"   (old_value),
-                        "=m"    (*dest)
+    : [old_value]       "=&r"   (old_value)
     /* in */
     : [dest]            "b"     (dest),
-      [exchange_value]  "r"     (exchange_value),
-                        "m"     (*dest)
+      [exchange_value]  "r"     (exchange_value)
     /* clobber */
     : "cc",
       "memory"
@@ -244,7 +241,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
   // the cmpxchg, so it's really a 'fence_cmpxchg_fence' if not
   // specified otherwise (see atomicAccess.hpp).
 
-  const unsigned int masked_compare_val  = ((unsigned int)(unsigned char)compare_value),
+  const unsigned int masked_compare_val = (unsigned int)(unsigned char)compare_value;
 
   unsigned int old_value;
 
@@ -265,13 +262,11 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
     /* exit */
     "2:                                                   \n"
     /* out */
-    : [old_value]       "=&r"   (old_value),
-                        "=m"    (*dest)
+    : [old_value]       "=&r"   (old_value)
     /* in */
     : [dest]                   "b"     (dest),
       [masked_compare_value]   "r"     (masked_compare_value),
-      [exchange_value]         "r"     (exchange_value),
-                               "m"     (*dest)
+      [exchange_value]         "r"     (exchange_value)
     /* clobber */
     : "cc",
       "memory"
@@ -313,13 +308,11 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
     /* exit */
     "2:                                                 \n"
     /* out */
-    : [old_value]       "=&r"   (old_value),
-                        "=m"    (*dest)
+    : [old_value]       "=&r"   (old_value)
     /* in */
     : [dest]            "b"     (dest),
       [compare_value]   "r"     (compare_value),
-      [exchange_value]  "r"     (exchange_value),
-                        "m"     (*dest)
+      [exchange_value]  "r"     (exchange_value)
     /* clobber */
     : "cc",
       "memory"
@@ -361,13 +354,11 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
     /* exit */
     "2:                                                 \n"
     /* out */
-    : [old_value]       "=&r"   (old_value),
-                        "=m"    (*dest)
+    : [old_value]       "=&r"   (old_value)
     /* in */
     : [dest]            "b"     (dest),
       [compare_value]   "r"     (compare_value),
-      [exchange_value]  "r"     (exchange_value),
-                        "m"     (*dest)
+      [exchange_value]  "r"     (exchange_value)
     /* clobber */
     : "cc",
       "memory"
@@ -407,7 +398,7 @@ public:
       "   bne-    1b                                  \n"
       : [old_value]  "=&r"  (old_value),
         [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -429,7 +420,7 @@ public:
       "   bne-    1b                                  \n"
       : [old_value]  "=&r"  (old_value),
         [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -451,7 +442,7 @@ public:
       "   bne-    1b                                  \n"
       : [old_value]  "=&r"  (old_value),
         [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -472,7 +463,7 @@ public:
       "   stwcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
       : [result]  "=&r"  (result)
-      : [dest]    "r"    (dest),
+      : [dest]    "b"    (dest),
         [bits]    "r"    (bits)
       : "cc", "memory" );
 
@@ -493,7 +484,7 @@ public:
       "   stwcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
       : [result]  "=&r"  (result)
-      : [dest]    "r"    (dest),
+      : [dest]    "b"    (dest),
         [bits]    "r"    (bits)
       : "cc", "memory" );
 
@@ -514,7 +505,7 @@ public:
       "   stwcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
       : [result]  "=&r"  (result)
-      : [dest]    "r"    (dest),
+      : [dest]    "b"    (dest),
         [bits]    "r"    (bits)
       : "cc", "memory" );
 
@@ -540,7 +531,7 @@ public:
       "   bne-    1b                                  \n"
       : [old_value]  "=&r"  (old_value),
         [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -562,7 +553,7 @@ public:
       "   bne-    1b                                  \n"
       : [old_value]  "=&r"  (old_value),
         [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -584,7 +575,7 @@ public:
       "   bne-    1b                                  \n"
       : [old_value]  "=&r"  (old_value),
         [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -605,7 +596,7 @@ public:
       "   stdcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
       : [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -626,7 +617,7 @@ public:
       "   stdcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
       : [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
@@ -647,7 +638,7 @@ public:
       "   stdcx.  %[result], 0, %[dest]            \n"
       "   bne-    1b                               \n"
       : [result]     "=&r"  (result)
-      : [dest]       "r"    (dest),
+      : [dest]       "b"    (dest),
         [bits]       "r"    (bits)
       : "cc", "memory" );
 
