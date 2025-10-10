@@ -43,7 +43,6 @@ class UpgradeInputStream extends LeftOverInputStream {
         if (eof) {
             return -1;
         }
-                }
         return in.read(b, off, len);
     }
 
