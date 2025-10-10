@@ -2200,8 +2200,6 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
     const Register method = Rscratch;
     const Register klass  = Rscratch;
 
-
-
     __ ld(method, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
     __ load_method_holder(klass, method);
     __ clinit_barrier(klass, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
