@@ -412,7 +412,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
       }
-      if (ENQUEUE && !ctx->is_marked_strong_or_old(obj)) {
+      if (ENQUEUE && !ctx->is_marked_strong(obj)) {
         _satb_mark_queue_set.enqueue_known_active(queue, obj);
       }
     }
