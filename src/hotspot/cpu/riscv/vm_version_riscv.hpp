@@ -279,17 +279,17 @@ class VM_Version : public Abstract_VM_Version {
   //
   #define RV_NON_EXT_FEATURE_FLAGS(decl)                                                       \
   /* Id for microarch. Mvendorid plus marchid uniquely identify the microarch. */              \
-  decl(marchid          ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
+  decl(marchid           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* A unique encoding of the version of the processor implementation. */                      \
-  decl(mimpid           ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
+  decl(mimpid            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* SATP bits (number of virtual addr bits) mbare, sv39, sv48, sv57, sv64 */                  \
-  decl(satp_mode            ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                     \
+  decl(satp_mode         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Performance of misaligned scalar accesses (unknown, emulated, slow, fast, unsupported) */ \
-  decl(unaligned_scalar ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
+  decl(unaligned_scalar  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Performance of misaligned vector accesses (unknown, unspported, slow, fast) */            \
-  decl(unaligned_vector ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
+  decl(unaligned_vector  ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   /* Manufactory JEDEC id encoded, ISA vol 2 3.1.2.. */                                        \
-  decl(mvendorid        ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                         \
+  decl(mvendorid         ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
   decl(zicboz_block_size ,  RV_NO_FLAG_BIT,  false,  NO_UPDATE_DEFAULT)                        \
 
   #define DECLARE_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF)            \
