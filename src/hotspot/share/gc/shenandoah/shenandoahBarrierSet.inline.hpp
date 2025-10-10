@@ -426,23 +426,14 @@ void ShenandoahBarrierSet::arraycopy_barrier(T* src, T* dst, size_t count) {
     return;
   }
 
-  char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
+  const char gc_state = ShenandoahThreadLocalData::gc_state(Thread::current());
   if ((gc_state & ShenandoahHeap::EVACUATION) != 0) {
     arraycopy_evacuation(src, count);
   } else if ((gc_state & ShenandoahHeap::UPDATE_REFS) != 0) {
     arraycopy_update(src, count);
-  }
-
-  if (_heap->mode()->is_generational()) {
-    assert(ShenandoahSATBBarrier, "Generational mode assumes SATB mode");
-    if ((gc_state & ShenandoahHeap::YOUNG_MARKING) != 0) {
-      arraycopy_marking(src, dst, count, false);
-    }
-    if ((gc_state & ShenandoahHeap::OLD_MARKING) != 0) {
-      arraycopy_marking(src, dst, count, true);
-    }
   } else if ((gc_state & ShenandoahHeap::MARKING) != 0) {
-    arraycopy_marking(src, dst, count, false);
+    const bool marking_old = gc_state & ShenandoahHeap::OLD_MARKING;
+    arraycopy_marking(src, dst, count, marking_old);
   }
 }
 
