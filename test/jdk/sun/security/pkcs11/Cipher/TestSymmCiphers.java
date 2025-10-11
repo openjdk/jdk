@@ -35,6 +35,7 @@
 import jtreg.SkippedException;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.NoSuchAlgorithmException;
@@ -132,103 +133,91 @@ public class TestSymmCiphers extends PKCS11Test {
     }
 
     private static void test(Cipher cipher, int mode, SecretKey key,
-                             AlgorithmParameters params, int firstBlkSize,
-                             byte[] in, byte[] answer) throws Exception {
-        // test setup
-        long startTime, endTime;
-        cipher.init(mode, key, params);
-        int outLen = cipher.getOutputSize(in.length);
-        //debugOut("Estimated output size = " + outLen + "\n");
+            AlgorithmParameters params, int firstBlkSize,
+            byte[] in, byte[] answer) throws Exception {
+        try (Arena arena = Arena.ofConfined()) {
+            // test setup
+            long startTime, endTime;
+            cipher.init(mode, key, params);
+            int outLen = cipher.getOutputSize(in.length);
+            //debugOut("Estimated output size = " + outLen + "\n");
 
-        // test data preparation
-        ByteBuffer inBuf = ByteBuffer.allocate(in.length);
-        inBuf.put(in);
-        inBuf.position(0);
-        ByteBuffer inDirectBuf = ByteBuffer.allocateDirect(in.length);
-        inDirectBuf.put(in);
-        inDirectBuf.position(0);
-        ByteBuffer outBuf = ByteBuffer.allocate(outLen);
-        ByteBuffer outDirectBuf = ByteBuffer.allocateDirect(outLen);
+            // test data preparation
+            ByteBuffer inBuf = ByteBuffer.allocate(in.length);
+            inBuf.put(in);
+            inBuf.position(0);
+            ByteBuffer inDirectBuf = ByteBuffer.allocateDirect(in.length);
+            inDirectBuf.put(in);
+            inDirectBuf.position(0);
+            ByteBuffer outBuf = ByteBuffer.allocate(outLen);
+            ByteBuffer outDirectBuf = ByteBuffer.allocateDirect(outLen);
+            ByteBuffer inMemSegment = arena.allocate(in.length).asByteBuffer();
+            inMemSegment.put(in);
+            inMemSegment.position(0);
+            ByteBuffer outMemSegment = arena.allocate(outLen).asByteBuffer();
 
-        // test#1: byte[] in + byte[] out
-        //debugOut("Test#1:\n");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            startTime = System.nanoTime();
+            byte[] temp = cipher.update(in, 0, firstBlkSize);
+            if (temp != null && temp.length > 0) {
+                baos.write(temp, 0, temp.length);
+            }
+            temp = cipher.doFinal(in, firstBlkSize, in.length - firstBlkSize);
+            if (temp != null && temp.length > 0) {
+                baos.write(temp, 0, temp.length);
+            }
+            byte[] testOut1 = baos.toByteArray();
+            endTime = System.nanoTime();
+            perfOut("stream InBuf + stream OutBuf", endTime - startTime);
+            match(testOut1, answer);
 
-        startTime = System.nanoTime();
-        byte[] temp = cipher.update(in, 0, firstBlkSize);
-        if (temp != null && temp.length > 0) {
-            baos.write(temp, 0, temp.length);
+            // test#2: Non-direct Buffer in + non-direct Buffer out
+            execTest(cipher, answer, inBuf, outBuf, "non-direct InBuf + non-direct OutBuf");
+
+            // test#3: Direct Buffer in + direc Buffer out
+            execTest(cipher, answer, inDirectBuf, outDirectBuf, "direct InBuf + direct OutBuf");
+
+            inDirectBuf.position(0);
+            outBuf.position(0);
+
+            execTest(cipher, answer, inDirectBuf, outBuf, "direct InBuf + non-direct OutBuf");
+
+            // test#5: Non-direct Buffer in + direct Buffer out
+            inBuf.position(0);
+            outDirectBuf.position(0);
+            execTest(cipher, answer, inBuf, outDirectBuf, "non-direct InBuf + direct OutBuf");
+
+            outDirectBuf.position(0);
+            execTest(cipher, answer, inMemSegment, outMemSegment, "memsegment InBuf + memsegment OutBuf");
+
+            inMemSegment.position(0);
+            execTest(cipher, answer, inMemSegment, outDirectBuf, "memsegment InBuf + direct outbuf");
+
+            inMemSegment.position(0);
+            outBuf.position(0);
+            execTest(cipher, answer, inMemSegment, outBuf, "memsegment InBuf + non-direct Outbuf");
+
+            inBuf.position(0);
+            outMemSegment.position(0);
+            execTest(cipher, answer, inBuf, outMemSegment, "non-direct InBuf + memsegment Outbuf");
+
+            inDirectBuf.position(0);
+            outMemSegment.position(0);
+            execTest(cipher, answer, inDirectBuf, outMemSegment, "direct InBuf + memsegment Outbuf");
+
+            debugBuf.setLength(0);
         }
-        temp = cipher.doFinal(in, firstBlkSize, in.length - firstBlkSize);
-        if (temp != null && temp.length > 0) {
-            baos.write(temp, 0, temp.length);
-        }
-        byte[] testOut1 = baos.toByteArray();
-        endTime = System.nanoTime();
-        perfOut("stream InBuf + stream OutBuf", endTime - startTime);
-        match(testOut1, answer);
+    }
 
-        // test#2: Non-direct Buffer in + non-direct Buffer out
-        //debugOut("Test#2:\n");
-        //debugOut("inputBuf: " + inBuf + "\n");
-        //debugOut("outputBuf: " + outBuf + "\n");
-
-        startTime = System.nanoTime();
-        cipher.update(inBuf, outBuf);
-        cipher.doFinal(inBuf, outBuf);
-        endTime = System.nanoTime();
-        perfOut("non-direct InBuf + non-direct OutBuf", endTime - startTime);
-        match(outBuf, answer);
-
-        // test#3: Direct Buffer in + direc Buffer out
-        //debugOut("Test#3:\n");
-        //debugOut("(pre) inputBuf: " + inDirectBuf + "\n");
-        //debugOut("(pre) outputBuf: " + outDirectBuf + "\n");
-
-        startTime = System.nanoTime();
-        cipher.update(inDirectBuf, outDirectBuf);
-        cipher.doFinal(inDirectBuf, outDirectBuf);
-        endTime = System.nanoTime();
-        perfOut("direct InBuf + direct OutBuf", endTime - startTime);
-
-        //debugOut("(post) inputBuf: " + inDirectBuf + "\n");
-        //debugOut("(post) outputBuf: " + outDirectBuf + "\n");
-        match(outDirectBuf, answer);
-
-        // test#4: Direct Buffer in + non-direct Buffer out
-        //debugOut("Test#4:\n");
-        inDirectBuf.position(0);
-        outBuf.position(0);
-        //debugOut("inputBuf: " + inDirectBuf + "\n");
-        //debugOut("outputBuf: " + outBuf + "\n");
-
-        startTime = System.nanoTime();
-        cipher.update(inDirectBuf, outBuf);
-        cipher.doFinal(inDirectBuf, outBuf);
-        endTime = System.nanoTime();
-        perfOut("direct InBuf + non-direct OutBuf", endTime - startTime);
-        match(outBuf, answer);
-
-        // test#5: Non-direct Buffer in + direct Buffer out
-        //debugOut("Test#5:\n");
-        inBuf.position(0);
-        outDirectBuf.position(0);
-
-        //debugOut("(pre) inputBuf: " + inBuf + "\n");
-        //debugOut("(pre) outputBuf: " + outDirectBuf + "\n");
-
-        startTime = System.nanoTime();
-        cipher.update(inBuf, outDirectBuf);
-        cipher.doFinal(inBuf, outDirectBuf);
-        endTime = System.nanoTime();
-        perfOut("non-direct InBuf + direct OutBuf", endTime - startTime);
-
-        //debugOut("(post) inputBuf: " + inBuf + "\n");
-        //debugOut("(post) outputBuf: " + outDirectBuf + "\n");
-        match(outDirectBuf, answer);
-
-        debugBuf.setLength(0);
+    private static void execTest(Cipher cipher, byte[] answer,
+                                 ByteBuffer inbuf, ByteBuffer outbuf, String message) throws Exception {
+        long startTime = System.nanoTime();
+        cipher.update(inbuf, outbuf);
+        cipher.doFinal(inbuf, outbuf);
+        long endTime = System.nanoTime();
+        perfOut(message, endTime - startTime);
+        match(outbuf, answer);
     }
 
     private static void perfOut(String msg, long elapsed) {

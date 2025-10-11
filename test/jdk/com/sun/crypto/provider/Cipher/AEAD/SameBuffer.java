@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.Provider;
@@ -217,17 +218,27 @@ public class SameBuffer {
         // prepare byte buffer contained AAD and plain text
         int bufSize = AADLength + offset + outputLength;
         byte[] AAD_and_Text = Helper.generateBytes(bufSize);
-        ByteBuffer AAD_and_Text_Buf = ByteBuffer.allocate(bufSize);
-        AAD_and_Text_Buf.put(AAD_and_Text, 0, AAD_and_Text.length);
 
-        // do test
-        runGCMWithSameBuffer(Cipher.ENCRYPT_MODE, AAD_and_Text_Buf, offset,
-                textLength, params);
-        int tagLength = c.getParameters()
-                .getParameterSpec(GCMParameterSpec.class).getTLen() / 8;
-        AAD_and_Text_Buf.limit(AADLength + offset + textLength + tagLength);
-        runGCMWithSameBuffer(Cipher.DECRYPT_MODE, AAD_and_Text_Buf, offset,
-                textLength + tagLength, params);
+        try (Arena arena = Arena.ofConfined()) {
+            for (int i = 0; i < 2; ++i) {
+                ByteBuffer AAD_and_Text_Buf = switch (i) {
+                    case 0 -> ByteBuffer.allocate(bufSize);
+                    case 1 -> arena.allocate(bufSize).asByteBuffer();
+                    default -> throw new RuntimeException("Unknown test case");
+                };
+
+                AAD_and_Text_Buf.put(AAD_and_Text, 0, AAD_and_Text.length);
+
+                // do test
+                runGCMWithSameBuffer(Cipher.ENCRYPT_MODE, AAD_and_Text_Buf, offset,
+                        textLength, params);
+                int tagLength = c.getParameters()
+                        .getParameterSpec(GCMParameterSpec.class).getTLen() / 8;
+                AAD_and_Text_Buf.limit(AADLength + offset + textLength + tagLength);
+                runGCMWithSameBuffer(Cipher.DECRYPT_MODE, AAD_and_Text_Buf, offset,
+                        textLength + tagLength, params);
+            }
+        }
 
     }
 
