@@ -394,6 +394,37 @@ public class TestTutorial {
             )).toList()
         ));
 
+        var template3 = Template.make("x", (Integer x) -> scope(
+            // When using a "let" that captures the value in a lambda argument, we have
+            // to choose what kind of scope we generate. In most cases "scope" or
+            // "hashtagScope" are the best, because they limit the hashtag replacement
+            // of "y" to the same scope as the lambda argument.
+            let("y", x * 11, y -> scope(
+                """
+                static int v3a_#{x} = #y;
+                """
+            )),
+            // But in rare cases, we may want "y" and some nested "z" to escape.
+            let("y", x * 11, y -> flat(
+                let("z", y * 2),
+                """
+                static int v3b_#{x} = #y - #z;
+                """
+            )),
+            // Because of the "flat" scope, "y" and "z" have escaped.
+            """
+            static int v3c_#{x} = #y - #z;
+            """,
+            // Side note: We can simulate a "let" without lambda with a "let" that has a lambda.
+            // That is not very useful, but a similar trick can be used for other queries, that
+            // only provide a lambda version, and where we only want to use the hashtag replacement.
+            let("a", -x),
+            let("b", -x, b -> flat()),
+            """
+            static int v3d_#{x} = #a + #b;
+            """
+        ));
+
         // Let's write a simple class to demonstrate that this works, i.e. produces compilable code.
         var templateClass = Template.make(() -> scope(
             """
@@ -404,6 +435,7 @@ public class TestTutorial {
             template1.asToken(),
             template2.asToken(1),
             template2.asToken(2),
+            template3.asToken(2),
             """
                 public static void main() {
                     if (v1_3 != 3 ||
@@ -416,7 +448,11 @@ public class TestTutorial {
                         v2_1_7 != 7 ||
                         v2_2_3 != 6 ||
                         v2_2_5 != 10 ||
-                        v2_2_7 != 14) {
+                        v2_2_7 != 14 ||
+                        v3a_2 != 22 ||
+                        v3b_2 != -22 ||
+                        v3c_2 != -22 ||
+                        v3d_2 != -4) {
                         throw new RuntimeException("Wrong result!");
                     }
                 }
