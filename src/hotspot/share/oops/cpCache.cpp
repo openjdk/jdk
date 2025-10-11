@@ -643,7 +643,6 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
       if (old_method == nullptr || !old_method->is_old()) {
         continue;
       }
-      assert(!old_method->is_deleted(), "cannot delete these methods");
       Method* new_method = old_method->get_new_method();
       resolved_indy_entry_at(j)->adjust_method_entry(new_method);
       log_adjust("indy", old_method, new_method, trace_name_printed);
@@ -656,11 +655,6 @@ void ConstantPoolCache::adjust_method_entries(bool * trace_name_printed) {
       Method* old_method = method_entry->method();
       if (old_method == nullptr || !old_method->is_old()) {
         continue; // skip uninteresting entries
-      }
-      if (old_method->is_deleted()) {
-        // clean up entries with deleted methods
-        method_entry->reset_entry();
-        continue;
       }
       Method* new_method = old_method->get_new_method();
       method_entry->adjust_method_entry(new_method);
