@@ -2726,9 +2726,13 @@ public final class Locale implements Cloneable, Serializable {
          * @see Locale#forLanguageTag(String)
          */
         public Builder setLanguageTag(String languageTag) {
-            LanguageTag tag = LanguageTag.parse(
-                    languageTag, new ParsePosition(0), false);
-            localeBuilder.setLanguageTag(tag);
+            if (LocaleUtils.isEmpty(languageTag)) {
+                localeBuilder.clear();
+            } else {
+                LanguageTag tag = LanguageTag.parse(
+                        languageTag, new ParsePosition(0), false);
+                localeBuilder.setLanguageTag(tag);
+            }
             return this;
         }
 
