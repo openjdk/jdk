@@ -76,9 +76,9 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
         comp.addJavaSourceCode("p.xyz.InnerTest7",  generateWithDataNamesSimple());
         comp.addJavaSourceCode("p.xyz.InnerTest8",  generateWithDataNamesForFieldsAndVariables());
+        comp.addJavaSourceCode("p.xyz.InnerTest9a", generateWithScopes1());
         // TODO: fix
-        // x // comp.addJavaSourceCode("p.xyz.InnerTest9a", generateWithDataNamesAndScopes1());
-        // x // comp.addJavaSourceCode("p.xyz.InnerTest9b", generateWithDataNamesAndScopes2());
+        // x // comp.addJavaSourceCode("p.xyz.InnerTest9b", generateWithScopes2());
         comp.addJavaSourceCode("p.xyz.InnerTest10", generateWithDataNamesForFuzzing());
         comp.addJavaSourceCode("p.xyz.InnerTest11", generateWithStructuralNamesForMethods());
 
@@ -101,8 +101,8 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest7",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest8",  "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest9a", "main", new Object[] {});
         // TODO: fix
-        // x // comp.invoke("p.xyz.InnerTest9a", "main", new Object[] {});
         // x // comp.invoke("p.xyz.InnerTest9b", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest10", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest11", "main", new Object[] {});
@@ -1217,6 +1217,69 @@ public class TestTutorial {
     // x //     return templateClass.render();
     // x // }
 
+    // TODO: show use cases of all the different scopes.
+    // TODO: all versions of sample, with scopes?
+    // TODO: also use count, hasAny, toList and forEach.
+
+    public static String generateWithScopes1() {
+
+        // For the examples below, we need a convenient way of asserting the state
+        // of the available DataNames.
+        var templateVerify = Template.make("count", "hasAny", "toList", (Integer count, Boolean hasAny, String toList) -> scope(
+            dataNames(MUTABLE).exactOf(myInt).count(c -> flat(let("count2", c))),
+            dataNames(MUTABLE).exactOf(myInt).hasAny(h -> flat(let("hasAny2", h))),
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> flat(
+                let("toList2", String.join(", ", list.stream().map(DataName::name).toList()))
+            )),
+            """
+            if (#count != #count2 ||
+                #hasAny != #hasAny2 ||
+                !"#toList".equals("#toList2")) {
+                throw new RuntimeException("verify failed");
+            }
+            """
+        ));
+
+        var templateMain = Template.make(() -> scope(
+            "// Start with nothing:\n",
+            templateVerify.asToken(0, false, ""),
+            "// Add v1:\n",
+            addDataName("v1", myInt, MUTABLE),
+            "int v1 = 1;\n",
+            "// Check that it is visible:\n",
+            templateVerify.asToken(1, true, "v1"),
+            "// Add v2:\n",
+            addDataName("v2", myInt, MUTABLE),
+            "int v2 = 2;\n",
+            "// Check that both are visible:\n",
+            templateVerify.asToken(2, true, "v1, v2")
+        ));
+
+        var templateClass = Template.make(() -> scope(
+            """
+            package p.xyz;
+
+            public class InnerTest9a {
+            """,
+            Hooks.CLASS_HOOK.anchor(scope(
+            """
+                public static void main() {
+            """,
+                Hooks.METHOD_HOOK.anchor(scope(
+                    templateMain.asToken()
+                )),
+            """
+                }
+            """
+            )),
+            """
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
 
     // There are two more concepts to understand more deeply with DataNames.
     //
