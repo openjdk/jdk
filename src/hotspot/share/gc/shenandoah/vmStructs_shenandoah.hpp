@@ -36,7 +36,6 @@
   nonstatic_field(ShenandoahHeap, _log_min_obj_alignment_in_bytes, int)                               \
   nonstatic_field(ShenandoahHeap, _global_generation,              ShenandoahGeneration*)             \
   volatile_nonstatic_field(ShenandoahHeap, _committed,             size_t)                            \
-  volatile_nonstatic_field(ShenandoahGeneration, _used,            size_t)                            \
   static_field(ShenandoahHeapRegion, RegionSizeBytes,              size_t)                            \
   static_field(ShenandoahHeapRegion, RegionSizeBytesShift,         size_t)                            \
   volatile_nonstatic_field(ShenandoahHeapRegion, _state,           ShenandoahHeapRegion::RegionState) \

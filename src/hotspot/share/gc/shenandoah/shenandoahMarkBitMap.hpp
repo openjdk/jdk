@@ -33,7 +33,7 @@
 
 class ShenandoahMarkBitMap {
 public:
-  typedef size_t idx_t;         // Type used for bit and word indices.
+  typedef size_t idx_t;        // Type used for bit and word indices.
   typedef uintptr_t bm_word_t;  // Element type of array that represents the
                                 // bitmap, with BitsPerWord bits per element.
 
