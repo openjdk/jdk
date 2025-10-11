@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.meta;
 
+import jdk.vm.ci.meta.annotation.Annotated;
+
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Modifier;
 
