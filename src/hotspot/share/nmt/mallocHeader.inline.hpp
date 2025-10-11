@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,28 +36,33 @@
 
 inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker)
   : _size(size), _mst_marker(mst_marker), _mem_tag(mem_tag),
-    _unused(0), _canary(_header_canary_live_mark)
+  #if INCLUDE_ASAN
+    _poisoned(false),
+  #else
+    _unused(0),
+  #endif
+   _canary(_header_canary_live_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");
   // On 32-bit we have some bits more, use them for a second canary
   // guarding the start of the header.
-  NOT_LP64(_alt_canary = _header_alt_canary_live_mark;)
+  NOT_LP64(set_alt_canary(_header_alt_canary_live_mark);)
   set_footer(_footer_canary_live_mark); // set after initializing _size
 }
 
 inline void MallocHeader::revive() {
-  assert(_canary == _header_canary_dead_mark, "must be dead");
+  assert(canary() == _header_canary_dead_mark, "must be dead");
   assert(get_footer() == _footer_canary_dead_mark, "must be dead");
-  NOT_LP64(assert(_alt_canary == _header_alt_canary_dead_mark, "must be dead"));
-  _canary = _header_canary_live_mark;
-  NOT_LP64(_alt_canary = _header_alt_canary_live_mark);
+  NOT_LP64(assert(alt_canary() == _header_alt_canary_dead_mark, "must be dead"));
+  set_header_canary(_header_canary_live_mark);
+  NOT_LP64(set_alt_canary(_header_alt_canary_live_mark);)
   set_footer(_footer_canary_live_mark);
 }
 
 // The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
-  _canary = _header_canary_dead_mark;
-  NOT_LP64(_alt_canary = _header_alt_canary_dead_mark);
+  set_header_canary(_header_canary_dead_mark);
+  NOT_LP64(set_alt_canary(_header_alt_canary_dead_mark);)
   set_footer(_footer_canary_dead_mark);
 }
 
@@ -121,9 +126,9 @@ inline const MallocHeader* MallocHeader::resolve_checked(const void* memblock) {
 inline bool MallocHeader::looks_valid() const {
   // Note: we define these restrictions loose enough to also catch moderately corrupted blocks.
   // E.g. we don't check footer canary.
-  return ( (_canary == _header_canary_live_mark NOT_LP64(&& _alt_canary == _header_alt_canary_live_mark)) ||
-           (_canary == _header_canary_dead_mark NOT_LP64(&& _alt_canary == _header_alt_canary_dead_mark)) ) &&
-           _size > 0 && _size < max_reasonable_malloc_size;
+  return ( (canary() == _header_canary_live_mark NOT_LP64(&& alt_canary() == _header_alt_canary_live_mark)) ||
+           (canary() == _header_canary_dead_mark NOT_LP64(&& alt_canary() == _header_alt_canary_dead_mark)) ) &&
+           size() > 0 && size() < max_reasonable_malloc_size;
 }
 
 inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, address* p_corruption) const {
@@ -131,7 +136,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
   // adapt the associated gtests too.
 
   // Check header canary
-  if (_canary != _header_canary_live_mark) {
+  if (canary() != _header_canary_live_mark) {
     *p_corruption = (address)this;
     jio_snprintf(msg, msglen, "header canary broken");
     return false;
@@ -139,7 +144,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
 
 #ifndef _LP64
   // On 32-bit we have a second canary, check that one too.
-  if (_alt_canary != _header_alt_canary_live_mark) {
+  if (alt_canary() != _header_alt_canary_live_mark) {
     *p_corruption = (address)this;
     jio_snprintf(msg, msglen, "header canary broken");
     return false;
@@ -147,7 +152,7 @@ inline bool MallocHeader::check_block_integrity(char* msg, size_t msglen, addres
 #endif
 
   // Does block size seems reasonable?
-  if (_size >= max_reasonable_malloc_size) {
+  if (size() >= max_reasonable_malloc_size) {
     *p_corruption = (address)this;
     jio_snprintf(msg, msglen, "header looks invalid (weirdly large block size)");
     return false;

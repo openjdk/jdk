@@ -39,6 +39,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -187,6 +188,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
   //                      16 bytes alignment for 64-bit systems.
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
+
 #ifdef ASSERT
   // Read back
   {
@@ -195,6 +197,7 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
     assert(header2->mem_tag() == mem_tag, "Wrong memory tag");
   }
 #endif
+  header->set_poisoned(true);
 
   return memblock;
 }
@@ -204,6 +207,7 @@ void* MallocTracker::record_free_block(void* memblock) {
   assert(memblock != nullptr, "precondition");
 
   MallocHeader* header = MallocHeader::resolve_checked(memblock);
+  header->set_poisoned(false);
 
   deaccount(header->free_info());
 
