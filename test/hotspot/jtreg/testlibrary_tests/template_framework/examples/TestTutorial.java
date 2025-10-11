@@ -340,6 +340,8 @@ public class TestTutorial {
     // can be used in many contexts as we will see below. They can also be used on
     // their own and in the use of "let", as we will show right now.
     //
+    // Scopes are even more relevant for DataNames and Structural names.
+    // See: generateWithDataNamesForFieldsAndVariables
     // TODO: link to later example with names!
     public static String generateWithHashtagAndDollarReplacements3() {
 
@@ -468,6 +470,9 @@ public class TestTutorial {
     // scopes. For example, we can reach out from inside a method body to a hook anchored at
     // the top of the class, and insert a field.
     //
+    // The choice of transparency of an insertion scope is quite important. A common use case
+    // is to insert a DataName.
+    // See: generateWithDataNamesForFieldsAndVariables
     // TODO: ensure that we teach how to use "flat" scopes at insertion.
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
@@ -585,7 +590,14 @@ public class TestTutorial {
             """
             if ($field * $var != 55) { throw new RuntimeException("Wrong value!"); }
             """
-            // TODO: add good practive note about insert scope, should be "flat", link to DataName use?
+            // Note: we have used "scope" for the "insert" scope. This is fine here as
+            // we are only working with code and hashtags, but not with DataNames. If
+            // we were to also "addDataName" inside the insert scope, we would have to
+            // make sure that the scope is transparent for DataNames, so that they can
+            // escape to the anchor scope, and can be available to the caller of the
+            // insertion. One might want to use "flat" for the insertion scope.
+            // See: generateWithDataNamesForFieldsAndVariables.
+            // TODO: link more cases
         ));
 
         var templateClass = Template.make(() -> scope(
@@ -790,8 +802,6 @@ public class TestTutorial {
         return templateClass.render();
     }
 
-    // TODO: CONTINUE HERE WITH REFACTORING
-
     // In the example above, we could have easily kept track of the three fields ourselves,
     // and would not have had to rely on the Template Framework's DataNames for this. However,
     // with more complicated examples, this gets more and more difficult, if not impossible.
@@ -868,7 +878,19 @@ public class TestTutorial {
                     System.out.println("Status: #ints ints, #longs longs.");
                     """
                 ))
-            ))
+            )),
+            // In a real code generation case, we would most likely want to
+            // have the count as a Java variable so that one can take conditional
+            // action based on the value. For that we have to capture the count
+            // with a lambda and inner scope as above. If we only need to have
+            // the count as a hashtag replacement, we can also use the follwing
+            // trick:
+            dataNames(MUTABLE).exactOf(myInt).count(c -> flat(let("ints", c))),
+            dataNames(MUTABLE).exactOf(myLong).count(c -> flat(let("longs", c))),
+            // Because of the "flat" scopes, the hashtag replacements escape.
+            """
+            System.out.println("Status: #ints ints, #longs longs.");
+            """
         ));
 
         // Definition of the main method body.
@@ -1316,7 +1338,6 @@ public class TestTutorial {
 
         // Render templateClass to String.
         return templateClass.render();
-
     }
 
     // "DataNames" are useful for modeling fields and variables. They hold data,
