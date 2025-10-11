@@ -204,6 +204,7 @@ public:
   ciInstanceKlass* get_canonical_holder(int offset);
   ciField* get_field_by_offset(int field_offset, bool is_static);
   ciField* get_field_by_name(ciSymbol* name, ciSymbol* signature, bool is_static);
+  BasicType get_field_type_by_offset(int field_offset, bool is_static);
 
   // total number of nonstatic fields (including inherited):
   int nof_nonstatic_fields() {
