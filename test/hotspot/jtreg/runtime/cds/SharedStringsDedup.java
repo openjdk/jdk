@@ -24,7 +24,7 @@
 /**
  * @test SharedStringsDedup
  * @summary Test -Xshare:auto with shared strings and -XX:+UseStringDeduplication
- * @requires vm.cds.write.archived.java.heap
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/lib
  * @run driver SharedStringsDedup
  */
