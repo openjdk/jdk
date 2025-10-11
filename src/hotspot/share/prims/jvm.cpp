@@ -860,8 +860,6 @@ static jclass jvm_define_class_common(const char *name,
                                       jobject loader, const jbyte *buf,
                                       jsize len, jobject pd, const char *source,
                                       TRAPS) {
-  if (source == nullptr)  source = "__JVM_DefineClass__";
-
   JavaThread* jt = THREAD;
 
   PerfClassTraceTime vmtimer(ClassLoader::perf_define_appclass_time(),
@@ -881,10 +879,13 @@ static jclass jvm_define_class_common(const char *name,
                                            CHECK_NULL);
 
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*)buf, len, source);
+  ClassFileStream st((u1*)buf, len, source != nullptr ? source : "__JVM_DefineClass__");
   Handle class_loader (THREAD, JNIHandles::resolve(loader));
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   ClassLoadInfo cl_info(protection_domain);
+
+  EventClassFileDefine cfd_evt;
+
   Klass* k = SystemDictionary::resolve_from_stream(&st, class_name,
                                                    class_loader,
                                                    cl_info,
@@ -892,6 +893,14 @@ static jclass jvm_define_class_common(const char *name,
 
   if (log_is_enabled(Debug, class, resolve)) {
     trace_class_resolution(k);
+  }
+
+  if (cfd_evt.should_commit()) {
+    cfd_evt.set_definedClass(k);
+    cfd_evt.set_source(source != nullptr ? source : "jvm://");
+    cfd_evt.set_definingClassLoader(k->class_loader_data());
+
+    cfd_evt.commit();
   }
 
   return (jclass) JNIHandles::make_local(THREAD, k->java_mirror());
