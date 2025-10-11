@@ -68,9 +68,9 @@
 
 static const ZStatPhaseGeneration ZPhaseGenerationYoung[] {
   ZStatPhaseGeneration("Young Generation", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation (Promote All)", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation (Collect Roots)", ZGenerationId::young),
-  ZStatPhaseGeneration("Young Generation", ZGenerationId::young)
+  ZStatPhaseGeneration("Young Generation (Preclean)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Full Roots)", ZGenerationId::young),
+  ZStatPhaseGeneration("Young Generation (Partial Roots)", ZGenerationId::young)
 };
 
 static const ZStatPhaseGeneration ZPhaseGenerationOld("Old Generation", ZGenerationId::old);
