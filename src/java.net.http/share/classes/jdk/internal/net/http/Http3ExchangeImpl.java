@@ -1336,6 +1336,9 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         Http3Error resetError = Http3Error.fromCode(errorCode)
                 .orElse(Http3Error.H3_REQUEST_CANCELLED);
         if (!requestSent || !responseReceived) {
+            if (!responseReceived && resetError == Http3Error.H3_REQUEST_REJECTED) {
+                exchange.markUnprocessedByPeer();
+            }
             cancelImpl(new IOException("Stream %s reset by peer: %s"
                             .formatted(streamId(), resetReason)),
                     resetError);
