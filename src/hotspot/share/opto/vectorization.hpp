@@ -205,6 +205,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTERS);
   }
 
+  bool is_trace_optimization() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
+  }
+
   bool is_trace_speculative_runtime_checks() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
