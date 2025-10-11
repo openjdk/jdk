@@ -396,9 +396,182 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     }
   }
 
+  // Collapse addition of the same terms into multiplications.
+  Node* collapsed = Ideal_collapse_variable_times_con(phase, bt);
+  if (collapsed != nullptr) {
+    return collapsed; // Skip AddNode::Ideal() since it may now be a multiplication node.
+  }
+
   return AddNode::Ideal(phase, can_reshape);
 }
 
+// Try to collapse addition of the same terms into a single multiplication. On success, a new MulNode is returned.
+// Examples of this conversion includes:
+//   - a + a + ... + a => CON*a
+//   - (a * CON) + a   => (CON + 1) * a
+//   - a + (a * CON)   => (CON + 1) * a
+//
+// We perform such conversions incrementally during IGVN by transforming left most nodes first and work up to the root
+// of the expression. In other words, we convert, at each iteration:
+//        a + a + a + ... + a
+//     => 2*a + a + ... + a
+//     => 3*a + ... + a
+//     => n*a
+//
+// Due to the iterative nature of IGVN, MulNode transformed from first few AddNode terms may be further transformed into
+// power-of-2 pattern. (e.g., 2 * a => a << 1, 3 * a => (a << 2) + a). We can't guarantee we'll always pick up
+// transformed power-of-2 patterns when term `a` is complex.
+//
+// Note this also converts, for example, original expression `(a*3) + a` into `4*a` and `(a<<2) + a` into `5*a`. A more
+// generalized pattern `(a*b) + (a*c)` into `a*(b + c)` is handled by AddNode::IdealIL().
+Node* AddNode::Ideal_collapse_variable_times_con(PhaseGVN* phase, BasicType bt) {
+  // We need to make sure that the current AddNode is not part of a MulNode that has already been optimized to a
+  // power-of-2 addition (e.g., 3 * a => (a << 2) + a). Without this check, GVN would keep trying to optimize the same
+  // node and can't progress. For example, 3 * a => (a << 2) + a => 3 * a => (a << 2) + a => ...
+  if (Multiplication::find_power_of_two_addition_pattern(this, bt).is_valid()) {
+    return nullptr;
+  }
+
+  Node* lhs = in(1);
+  Node* rhs = in(2);
+
+  Multiplication mul = Multiplication::find_collapsible_addition_patterns(lhs, rhs, bt);
+  if (!mul.is_valid_with(rhs)) {
+    // Swap lhs and rhs then try again
+    mul = Multiplication::find_collapsible_addition_patterns(rhs, lhs, bt);
+    if (!mul.is_valid_with(lhs)) {
+      return nullptr;
+    }
+  }
+
+  Node* con;
+  if (bt == T_INT) {
+    con = phase->intcon(java_add(static_cast<jint>(mul.multiplier()), 1));
+  } else {
+    con = phase->longcon(java_add(mul.multiplier(), CONST64(1)));
+  }
+
+  return MulNode::make(con, mul.variable(), bt);
+}
+
+// Find a pattern of collapsable additions that can be converted to a multiplication.
+// When matching the LHS `a * CON`, we match with best efforts by looking for the following patterns:
+//     - (1) Simple addition:       LHS = a + a
+//     - (2) Simple lshift:         LHS = a << CON
+//     - (3) Simple multiplication: LHS = CON * a
+//     - (4) Power-of-two addition: LHS = (a << CON1) + (a << CON2)
+AddNode::Multiplication AddNode::Multiplication::find_collapsible_addition_patterns(const Node* a, const Node* pattern, BasicType bt) {
+  // (1) Simple addition pattern (e.g., lhs = a + a)
+  Multiplication mul = find_simple_addition_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // (2) Simple lshift pattern (e.g., lhs = a << CON)
+  mul = find_simple_lshift_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // (3) Simple multiplication pattern (e.g., lhs = CON * a)
+  mul = find_simple_multiplication_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // (4) Power-of-two addition pattern (e.g., lhs = (a << CON1) + (a << CON2))
+  // While multiplications can be potentially optimized to power-of-2 subtractions (e.g., a * 7 => (a << 3) - a),
+  // (x - y) + y => x is already handled by the Identity() methods. So, we don't need to check for that pattern here.
+  mul = find_power_of_two_addition_pattern(a, bt);
+  if (mul.is_valid_with(pattern)) {
+    return mul;
+  }
+
+  // We've tried everything.
+  return make_invalid();
+}
+
+// Try to match `n = a + a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = 2`.
+// The method matches `n` for pattern: a + a.
+AddNode::Multiplication AddNode::Multiplication::find_simple_addition_pattern(const Node* n, BasicType bt) {
+  if (n->Opcode() == Op_Add(bt) && n->in(1) == n->in(2)) {
+    return Multiplication(n->in(1), 2);
+  }
+
+  return make_invalid();
+}
+
+// Try to match `n = a << CON`. On success, return a struct with `.valid = true`, `variable = a`, and
+// `multiplier = 1 << CON`.
+// Match `n` for pattern: a << CON.
+// Note that the power-of-2 multiplication optimization could potentially convert a MulNode to this pattern.
+AddNode::Multiplication AddNode::Multiplication::find_simple_lshift_pattern(const Node* n, BasicType bt) {
+  // Note that power-of-2 multiplication optimization could potentially convert a MulNode to this pattern
+  if (n->Opcode() == Op_LShift(bt) && n->in(2)->is_Con()) {
+    Node* con = n->in(2);
+    if (!con->is_top()) {
+      return Multiplication(n->in(1), java_shift_left(1, con->get_int(), bt));
+    }
+  }
+
+  return make_invalid();
+}
+
+// Try to match `n = CON * a`. On success, return a struct with `.valid = true`, `variable = a`, and `multiplier = CON`.
+// Match `n` for patterns: CON * a
+// Note that `CON` will always be the second input node of a Mul node canonicalized by Ideal(). If this is not the case,
+// `n` has not been processed by iGVN. So we skip the optimization for the current add node and wait for to be added to
+// the queue again.
+AddNode::Multiplication AddNode::Multiplication::find_simple_multiplication_pattern(const Node* n, BasicType bt) {
+  if (n->Opcode() == Op_Mul(bt) && n->in(2)->is_Con()) {
+    Node* con = n->in(2);
+    Node* base = n->in(1);
+
+    if (!con->is_top()) {
+      return Multiplication(base, con->get_integer_as_long(bt));
+    }
+  }
+
+  return make_invalid();
+}
+
+// Try to match `n = (a << CON1) + (a << CON2)`. On success, return a struct with `.valid = true`, `variable = a`, and
+// `multiplier = (1 << CON1) + (1 << CON2)`.
+// Match `n` for patterns:
+//     - (1) (a << CON) + (a << CON)
+//     - (2) (a << CON) + a
+//     - (3) a + (a << CON)
+//     - (4) a + a
+// Note that one or both of the term of the addition could simply be `a` (i.e., a << 0) as in pattern (4).
+AddNode::Multiplication AddNode::Multiplication::find_power_of_two_addition_pattern(const Node* n, BasicType bt) {
+  if (n->Opcode() == Op_Add(bt) && n->in(1) != n->in(2)) {
+    const Multiplication lhs = find_simple_lshift_pattern(n->in(1), bt);
+    const Multiplication rhs = find_simple_lshift_pattern(n->in(2), bt);
+
+    // Pattern (1)
+    {
+      const Multiplication res = lhs.add(rhs);
+      if (res.is_valid()) {
+        return res;
+      }
+    }
+
+    // Pattern (2)
+    if (lhs.is_valid_with(n->in(2))) {
+      return Multiplication(lhs.variable(), java_add(lhs.multiplier(), CONST64(1)));
+    }
+
+    // Pattern (3)
+    if (rhs.is_valid_with(n->in(1))) {
+      return Multiplication(rhs.variable(), java_add(rhs.multiplier(), CONST64(1)));
+    }
+
+    // Pattern (4), which is equivalent to a simple addition pattern
+    return find_simple_addition_pattern(n, bt);
+  }
+
+  return make_invalid();
+}
 
 Node* AddINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   Node* in1 = in(1);

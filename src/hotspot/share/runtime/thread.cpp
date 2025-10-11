@@ -74,7 +74,7 @@ Thread::Thread(MemTag mem_tag) {
   set_osthread(nullptr);
   set_resource_area(new (mem_tag) ResourceArea(mem_tag));
   DEBUG_ONLY(_current_resource_mark = nullptr;)
-  set_handle_area(new (mem_tag) HandleArea(mem_tag, nullptr));
+  set_handle_area(new (mem_tag) HandleArea(mem_tag));
   set_metadata_handles(new (mtClass) GrowableArray<Metadata*>(30, mtClass));
   set_last_handle_mark(nullptr);
 
