@@ -25,14 +25,13 @@ package gc.NativeWrapperCollection;
 
 /*
  * @test TestNativeWrapperCollection
- * @summary TODO
+ * @summary Test that nmethod for native methods are collected after becoming not entrant
+ * @requires vm.compiler1.enabled
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -ea -Xbootclasspath/a:.
- *                          -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                          -XX:+UseSerialGC
- *                          gc.NativeWrapperCollection.TestNativeWrapperCollection
+ * @run main/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                  gc.NativeWrapperCollection.TestNativeWrapperCollection
  */
 
 import java.lang.reflect.Method;
