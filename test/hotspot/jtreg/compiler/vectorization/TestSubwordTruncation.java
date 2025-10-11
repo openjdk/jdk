@@ -428,6 +428,32 @@ public class TestSubwordTruncation {
         return new Object[] { in, res };
     }
 
+    @Test(compLevel = CompLevel.C2)
+    @IR(counts = { IRNode.CAST_II, ">0" })
+    @Warmup(0)
+    public Object[] testCastII() {
+        byte[] bytes = new byte[400];
+        intField = 6;
+        int i = 0;
+        int j = 1;
+
+        do {
+            bytes[j] = (byte) i;
+            int k = 1;
+
+            do {
+                i <<= intField;
+                i += (k ^ i);
+                i -= j;
+
+                for (int u = 1; 1 > u; u++) {
+                }
+            } while (++k < 8);
+        } while (++j < 191);
+
+        return new Object[] { bytes };
+    }
+
     public static void main(String[] args) {
         TestFramework.run();
     }
