@@ -52,7 +52,7 @@ public class TestNativeWrapperCollection {
     static native void method();
     static native void callRegisterNatives(int index);
 
-    public static void main(String... args) throws Exception {
+    public static void main(String[] args) throws Exception {
         Method method = TestNativeWrapperCollection.class.getDeclaredMethod("method");
 
         callRegisterNatives(0);
@@ -72,7 +72,6 @@ public class TestNativeWrapperCollection {
         WB.fullGC(); // mark the nmethod as not on stack
         WB.fullGC(); // reclaim the nmethod
 
-        // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = new JMXExecutor().execute("Compiler.codelist");
         Iterator<String> lines = output.asLines().iterator();
 
