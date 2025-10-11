@@ -1069,6 +1069,7 @@ public:
   VMOp_Type type() const override { return VMOp_RendezvousGCThreads; }
   void doit() override {
     Universe::heap()->safepoint_synchronize_begin();
+    Universe::heap()->safepoint_synchronize();
     Universe::heap()->safepoint_synchronize_end();
   };
 };

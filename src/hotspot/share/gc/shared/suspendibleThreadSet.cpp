@@ -140,8 +140,7 @@ void SuspendibleThreadSet::desynchronize() {
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");
-  DEBUG_ONLY(OrderAccess::fence();)
-  AtomicAccess::store(&_suspend_all, false);
   AtomicAccess::store(&_has_synchronized, false);
+  AtomicAccess::store(&_suspend_all, false);
   ml.notify_all();
 }
