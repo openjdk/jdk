@@ -467,6 +467,8 @@ public class TestTutorial {
     // In this example, we look at the use of Hooks. They allow us to reach back, to outer
     // scopes. For example, we can reach out from inside a method body to a hook anchored at
     // the top of the class, and insert a field.
+    //
+    // TODO: ensure that we teach how to use "flat" scopes at insertion.
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
         // Note: generally we prefer using the pre-defined CLASS_HOOK and METHOD_HOOK from the library,
@@ -481,15 +483,22 @@ public class TestTutorial {
 
         var template2 = Template.make("x", (Integer x) -> scope(
             """
-            // Let us go back to where we anchored the hook with anchor() and define a field named $field there.
-            // Note that in the Java code we have not defined anchor() on the hook, yet. But since it's a lambda
-            // expression, it is not evaluated, yet! Eventually, anchor() will be evaluated before insert() in
-            // this example.
+            // Let us go back to where we anchored the hook with anchor() and define a field named $field1 there.
             """,
-            myHook.insert(template1.asToken($("field"), x)),
+            myHook.insert(scope(
+                """
+                public static int $field1 = #x;
+                """
+            )),
             """
-            System.out.println("$field: " + $field);
-            if ($field != #x) { throw new RuntimeException("Wrong value!"); }
+            // We can do that by inserting a scope like above, or by inserting a template, like below.
+            """,
+            myHook.insert(template1.asToken($("field2"), x)),
+            """
+            System.out.println("$field1: " + $field1);
+            System.out.println("$field2: " + $field2);
+            if ($field1 != #x) { throw new RuntimeException("Wrong value 1!"); }
+            if ($field2 != #x) { throw new RuntimeException("Wrong value 2!"); }
             """
         ));
 
@@ -506,8 +515,11 @@ public class TestTutorial {
             myHook.anchor(scope(
                 // Any Hook.insert goes here.
                 //
-                // <-------- field_X = 5 ------------------+
-                // <-------- field_Y = 7 -------------+    |
+                // <-------- field1_X = 5 -----------------+
+                //           field2_X = 5                  |
+                //                                         |
+                // <-------- field1_Y = 7 ------------+    |
+                //           field2_Y = 7             |    |
                 //                                    |    |
                 """
                 public static void main() {
