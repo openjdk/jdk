@@ -483,6 +483,8 @@ private:
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 
+  static bool supports_misaligned_vector_accesses() { return unaligned_vector.value() == MISALIGNED_VECTOR_FAST; }
+
   static bool supports_on_spin_wait() { return UseZihintpause; }
 
   // RISCV64 supports fast class initialization checks

@@ -425,6 +425,8 @@ class VM_Version: public Abstract_VM_Version {
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 
+  constexpr static bool supports_misaligned_vector_accesses() { return true; }
+
   constexpr static bool supports_recursive_lightweight_locking() { return true; }
 
   // CPU feature query functions
