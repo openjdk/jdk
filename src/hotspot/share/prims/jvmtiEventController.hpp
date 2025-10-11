@@ -244,7 +244,7 @@ public:
 
   static void vm_start();
   static void vm_init();
-  static void vm_death();
+  static void vm_stop_event_posting();
 };
 
 #endif // SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP
