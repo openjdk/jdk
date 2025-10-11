@@ -29,9 +29,9 @@ import java.util.function.Function;
  * Represents an {@link Hook#isAnchored} query with the function that creates an inner scope
  * given the boolean answer.
  */
-record HookIsAnchoredToken(Hook hook, Function<Boolean, NestingToken> function) implements Token {
+record HookIsAnchoredToken(Hook hook, Function<Boolean, ScopeToken> function) implements Token {
 
-    NestingToken getNestingToken(boolean isAnchored) {
+    ScopeToken getScopeToken(boolean isAnchored) {
         return function().apply(isAnchored);
     }
 }

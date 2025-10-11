@@ -41,7 +41,7 @@ import java.util.Map;
  *
  * <p>
  * The {@link TemplateFrame} thus implements the hashtag and {@link Template#setFuelCost}
- * non-transparency aspect of {@link NestingToken}.
+ * non-transparency aspect of {@link ScopeToken}.
  *
  * <p>
  * See also {@link CodeFrame} for more explanations about the frames. Note, that while

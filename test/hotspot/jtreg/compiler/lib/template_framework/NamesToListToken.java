@@ -32,9 +32,9 @@ import java.util.List;
  */
 record NamesToListToken<N>(
         NameSet.Predicate predicate,
-        Function<List<N>, NestingToken> function) implements Token {
+        Function<List<N>, ScopeToken> function) implements Token {
 
-    NestingToken getNestingToken(List<Name> names) {
+    ScopeToken getScopeToken(List<Name> names) {
         List<N> castNames = names.stream().map(n -> (N)n).toList();
         return function().apply(castNames);
     }

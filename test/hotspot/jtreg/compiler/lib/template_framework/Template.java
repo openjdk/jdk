@@ -193,7 +193,7 @@ import compiler.lib.ir_framework.TestFramework;
  *
  * <p>
  * Code generation can involve keeping track of scopes in the code (e.g. liveness and availability of
- * {@link DataName}s) and of the hashtag replacements in the templates. The {@link NestingToken} serves
+ * {@link DataName}s) and of the hashtag replacements in the templates. The {@link ScopeToken} serves
  * this purpose, and allows the definition of transparent scopes (e.g. {@link #transparentScope}) and non-transparent
  * scopes (e.g. {#link #scope}).
  *
@@ -221,7 +221,7 @@ import compiler.lib.ir_framework.TestFramework;
  * A note from the implementor to the user: We have decided to implement the Template Framework using
  * a functional (lambdas) and data-oriented (tokens) model. The consequence is that there are three
  * orders in template rendering: (1) the execution order in lambdas, where we usually assemble the
- * tokens and pass them to some scope ({@link NestingToken}) as arguments. (2) the token evaluation
+ * tokens and pass them to some scope ({@link ScopeToken}) as arguments. (2) the token evaluation
  * order, which occurs in the order of how tokens are listed in a scope. By design, the token order
  * is the same order as execution in lambdas. To keep the lambda and token order in sync, most of the
  * queries about the state of code generation, such as {@link DataName}s and {@link Hook}s cannot
@@ -249,10 +249,10 @@ public sealed interface Template permits Template.ZeroArgs,
     /**
      * A {@link Template} with no arguments.
      *
-     * @param function The {@link Supplier} that creates the {@link NestingToken}.
+     * @param function The {@link Supplier} that creates the {@link ScopeToken}.
      */
-    record ZeroArgs(Supplier<NestingToken> function) implements Template {
-        NestingToken instantiate() {
+    record ZeroArgs(Supplier<ScopeToken> function) implements Template {
+        ScopeToken instantiate() {
             return function.get();
         }
 
@@ -292,10 +292,10 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * @param arg1Name The name of the (first) argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the (first) argument.
-     * @param function The {@link Function} that creates the {@link NestingToken} given the template argument.
+     * @param function The {@link Function} that creates the {@link ScopeToken} given the template argument.
      */
-    record OneArg<T1>(String arg1Name, Function<T1, NestingToken> function) implements Template {
-        NestingToken instantiate(T1 arg1) {
+    record OneArg<T1>(String arg1Name, Function<T1, ScopeToken> function) implements Template {
+        ScopeToken instantiate(T1 arg1) {
             return function.apply(arg1);
         }
 
@@ -340,10 +340,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg2Name The name of the second argument, used for hashtag replacements in the {@link Template}.
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
-     * @param function The {@link BiFunction} that creates the {@link NestingToken} given the template arguments.
+     * @param function The {@link BiFunction} that creates the {@link ScopeToken} given the template arguments.
      */
-    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, NestingToken> function) implements Template {
-        NestingToken instantiate(T1 arg1, T2 arg2) {
+    record TwoArgs<T1, T2>(String arg1Name, String arg2Name, BiFunction<T1, T2, ScopeToken> function) implements Template {
+        ScopeToken instantiate(T1 arg1, T2 arg2) {
             return function.apply(arg1, arg2);
         }
 
@@ -415,10 +415,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param <T1> The type of the first argument.
      * @param <T2> The type of the second argument.
      * @param <T3> The type of the third argument.
-     * @param function The function with three arguments that creates the {@link NestingToken} given the template arguments.
+     * @param function The function with three arguments that creates the {@link ScopeToken} given the template arguments.
      */
-    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, NestingToken> function) implements Template {
-        NestingToken instantiate(T1 arg1, T2 arg2, T3 arg3) {
+    record ThreeArgs<T1, T2, T3>(String arg1Name, String arg2Name, String arg3Name, TriFunction<T1, T2, T3, ScopeToken> function) implements Template {
+        ScopeToken instantiate(T1 arg1, T2 arg2, T3 arg3) {
             return function.apply(arg1, arg2, arg3);
         }
 
@@ -476,10 +476,10 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param scope The {@link NestingToken} created by {@link Template#scope}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @return A {@link Template} with zero arguments.
      */
-    static Template.ZeroArgs make(Supplier<NestingToken> scope) {
+    static Template.ZeroArgs make(Supplier<ScopeToken> scope) {
         return new Template.ZeroArgs(scope);
     }
 
@@ -502,12 +502,12 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param scope The {@link NestingToken} created by {@link Template#scope}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @param <T1> Type of the (first) argument.
      * @param arg1Name The name of the (first) argument for hashtag replacement.
      * @return A {@link Template} with one argument.
      */
-    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, NestingToken> scope) {
+    static <T1> Template.OneArg<T1> make(String arg1Name, Function<T1, ScopeToken> scope) {
         return new Template.OneArg<>(arg1Name, scope);
     }
 
@@ -530,14 +530,14 @@ public sealed interface Template permits Template.ZeroArgs,
      * ));
      * }
      *
-     * @param scope The {@link NestingToken} created by {@link Template#scope}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
      * @param arg2Name The name of the second argument for hashtag replacement.
      * @return A {@link Template} with two arguments.
      */
-    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, NestingToken> scope) {
+    static <T1, T2> Template.TwoArgs<T1, T2> make(String arg1Name, String arg2Name, BiFunction<T1, T2, ScopeToken> scope) {
         return new Template.TwoArgs<>(arg1Name, arg2Name, scope);
     }
 
@@ -546,7 +546,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * See {@link #scope} for more details about how to construct a Template with {@link Token}s.
      * Good practice but not enforced: {@code arg1Name}, {@code arg2Name}, and {@code arg3Name} should match the lambda argument names.
      *
-     * @param scope The {@link NestingToken} created by {@link Template#scope}.
+     * @param scope The {@link ScopeToken} created by {@link Template#scope}.
      * @param <T1> Type of the first argument.
      * @param arg1Name The name of the first argument for hashtag replacement.
      * @param <T2> Type of the second argument.
@@ -555,12 +555,12 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param arg3Name The name of the third argument for hashtag replacement.
      * @return A {@link Template} with three arguments.
      */
-    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, NestingToken> scope) {
+    static <T1, T2, T3> Template.ThreeArgs<T1, T2, T3> make(String arg1Name, String arg2Name, String arg3Name, Template.TriFunction<T1, T2, T3, ScopeToken> scope) {
         return new Template.ThreeArgs<>(arg1Name, arg2Name, arg3Name, scope);
     }
 
     /**
-     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
      * {@link DataName}s and {@link StructuralName}s, as well as hashtag-replacements and
      * {@link setFuelCost}. This means that any such name, hashtag-replacement or
      * {@link setFuelCost} declared inside the scope is local and does not escape to outer
@@ -623,15 +623,15 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static NestingToken scope(Object... tokens) {
-        return new NestingTokenImpl(TokenParser.parse(tokens), true, true, true);
+    static ScopeToken scope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, true, true);
     }
 
     /**
-     * Creates a {@link NestingToken} which represents a scope that is transparent for
+     * Creates a {@link ScopeToken} which represents a scope that is transparent for
      * {@link DataName}s and {@link StructuralName}s, as well as hashtag-replacements and
      * {@link setFuelCost}. This means that any such name, hashtag-replacement or
      * {@link setFuelCost} declared inside the scope escapes that scope and is still
@@ -647,15 +647,15 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static NestingToken transparentScope(Object... tokens) {
-        return new NestingTokenImpl(TokenParser.parse(tokens), false, false, false);
+    static ScopeToken transparentScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, false, false);
     }
 
     /**
-     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
      * {@link DataName}s and {@link StructuralName}s, but transparent for hashtag-replacements
      * and {@link setFuelCost}.
      * The scope is formed from a list of tokens, which can be {@link String}s,
@@ -669,15 +669,15 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static NestingToken nameScope(Object... tokens) {
-        return new NestingTokenImpl(TokenParser.parse(tokens), true, false, false);
+    static ScopeToken nameScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), true, false, false);
     }
 
     /**
-     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
      * hashtag-replacements, but transparent for {@link DataName}s and {@link StructuralName}s
      * and {@link setFuelCost}.
      * The scope is formed from a list of tokens, which can be {@link String}s,
@@ -710,15 +710,15 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static NestingToken hashtagScope(Object... tokens) {
-        return new NestingTokenImpl(TokenParser.parse(tokens), false, true, false);
+    static ScopeToken hashtagScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, true, false);
     }
 
     /**
-     * Creates a {@link NestingToken} which represents a scope that is non-transparent for
+     * Creates a {@link ScopeToken} which represents a scope that is non-transparent for
      * {@link setFuelCost}. but transparent for {@link DataName}s and {@link StructuralName}s
      * and hashtag-replacements.
      * The scope is formed from a list of tokens, which can be {@link String}s,
@@ -761,11 +761,11 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
      *               of any of these.
-     * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
+     * @return The {@link ScopeToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static NestingToken setFuelCostScope(Object... tokens) {
-        return new NestingTokenImpl(TokenParser.parse(tokens), false, false, true);
+    static ScopeToken setFuelCostScope(Object... tokens) {
+        return new ScopeTokenImpl(TokenParser.parse(tokens), false, false, true);
     }
 
     /**
@@ -842,7 +842,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @param function The function that is applied with the provided {@code value}.
      * @return A {@link Token} representing the hashtag replacement definition and inner scope.
      */
-    static <T> Token let(String key, T value, Function<T, NestingToken> function) {
+    static <T> Token let(String key, T value, Function<T, ScopeToken> function) {
         return new LetToken(key, value, function);
     }
 

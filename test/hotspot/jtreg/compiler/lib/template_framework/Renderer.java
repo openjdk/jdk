@@ -232,9 +232,9 @@ final class Renderer {
 
         templateToken.visitArguments((name, value) -> addHashtagReplacement(name, format(value)));
 
-        // If the NestingToken is transparent to Names, then the Template is transparent to names.
-        NestingToken nt = templateToken.instantiate();
-        renderNestingToken(nt, () -> {});
+        // If the ScopeToken is transparent to Names, then the Template is transparent to names.
+        ScopeToken st = templateToken.instantiate();
+        renderScopeToken(st, () -> {});
 
         if (currentTemplateFrame != templateFrame) {
             throw new RuntimeException("Internal error: TemplateFrame mismatch!");
@@ -242,14 +242,14 @@ final class Renderer {
         currentTemplateFrame = currentTemplateFrame.parent;
     }
 
-    private void renderNestingToken(NestingToken nt, Runnable preamble) {
-        if (!(nt instanceof NestingTokenImpl nti)) {
-            throw new RuntimeException("Internal error: could not unpack NestingTokenImpl.");
+    private void renderScopeToken(ScopeToken st, Runnable preamble) {
+        if (!(st instanceof ScopeTokenImpl sti)) {
+            throw new RuntimeException("Internal error: could not unpack ScopeTokenImpl.");
         }
 
         // We need the CodeFrame for local names.
         CodeFrame outerCodeFrame = currentCodeFrame;
-        if (nti.nestedNamesAreLocal()) {
+        if (sti.nestedNamesAreLocal()) {
             currentCodeFrame = CodeFrame.make(currentCodeFrame, false);
         }
 
@@ -258,10 +258,10 @@ final class Renderer {
         // replacement as the outer frame. And we need to be able to allow
         // local setFuelCost definitions.
         TemplateFrame innerTemplateFrame = null;
-        if (nti.nestedHashtagsAreLocal() || nti.nestedSetFuelCostAreLocal()) {
+        if (sti.nestedHashtagsAreLocal() || sti.nestedSetFuelCostAreLocal()) {
             innerTemplateFrame = TemplateFrame.makeInnerScope(currentTemplateFrame,
-                                                              !nti.nestedHashtagsAreLocal(),
-                                                              !nti.nestedSetFuelCostAreLocal());
+                                                              !sti.nestedHashtagsAreLocal(),
+                                                              !sti.nestedSetFuelCostAreLocal());
             currentTemplateFrame = innerTemplateFrame;
         }
 
@@ -269,9 +269,9 @@ final class Renderer {
         preamble.run();
 
         // Now render the nested code.
-        renderTokenList(nti.tokens());
+        renderTokenList(sti.tokens());
 
-        if (nti.nestedHashtagsAreLocal() || nti.nestedSetFuelCostAreLocal()) {
+        if (sti.nestedHashtagsAreLocal() || sti.nestedSetFuelCostAreLocal()) {
             if (currentTemplateFrame != innerTemplateFrame) {
                 throw new RuntimeException("Internal error: TemplateFrame mismatch!");
             }
@@ -280,7 +280,7 @@ final class Renderer {
 
         // Tear down CodeFrame nesting. If no nesting happened, the code is already
         // in the currendCodeFrame.
-        if (nti.nestedNamesAreLocal()) {
+        if (sti.nestedNamesAreLocal()) {
             outerCodeFrame.addCode(currentCodeFrame.getCode());
             currentCodeFrame = outerCodeFrame;
         }
@@ -291,7 +291,7 @@ final class Renderer {
             case StringToken(String s) -> {
                 renderStringWithDollarAndHashtagReplacements(s);
             }
-            case HookAnchorToken(Hook hook, NestingTokenImpl innerScope) -> {
+            case HookAnchorToken(Hook hook, ScopeTokenImpl innerScope) -> {
                 CodeFrame outerCodeFrame = currentCodeFrame;
 
                 // We need a CodeFrame to which the hook can insert code. If the nested names
@@ -304,7 +304,7 @@ final class Renderer {
                 CodeFrame innerCodeFrame = CodeFrame.make(hookCodeFrame, !innerScope.nestedNamesAreLocal());
                 currentCodeFrame = innerCodeFrame;
 
-                renderNestingToken(innerScope, () -> {});
+                renderScopeToken(innerScope, () -> {});
 
                 // Close the hookCodeFrame and innerCodeFrame. hookCodeFrame code comes before the
                 // innerCodeFrame code from the tokens.
@@ -312,20 +312,20 @@ final class Renderer {
                 currentCodeFrame.addCode(hookCodeFrame.getCode());
                 currentCodeFrame.addCode(innerCodeFrame.getCode());
             }
-            case HookInsertToken(Hook hook, NestingTokenImpl nestingToken) -> {
+            case HookInsertToken(Hook hook, ScopeTokenImpl scopeToken) -> {
                 // Switch to hook CodeFrame.
                 CodeFrame callerCodeFrame = currentCodeFrame;
                 CodeFrame hookCodeFrame = codeFrameForHook(hook);
 
                 // Use a transparent nested CodeFrame. We need a CodeFrame so that the code generated
-                // by the nestingToken can be collected, and hook insertions from it can still
-                // be made to the hookCodeFrame before the code from the nestingToken is added to
+                // by the scopeToken can be collected, and hook insertions from it can still
+                // be made to the hookCodeFrame before the code from the scopeToken is added to
                 // the hookCodeFrame.
                 // But the CodeFrame must be transparent, so that its name definitions go out to
-                // the hookCodeFrame, and are not limited to the CodeFrame for the nestingToken.
+                // the hookCodeFrame, and are not limited to the CodeFrame for the scopeToken.
                 currentCodeFrame = CodeFrame.make(hookCodeFrame, true);
 
-                renderNestingToken(nestingToken, () -> {});
+                renderScopeToken(scopeToken, () -> {});
 
                 hookCodeFrame.addCode(currentCodeFrame.getCode());
 
@@ -338,16 +338,16 @@ final class Renderer {
             case AddNameToken(Name name) -> {
                 currentCodeFrame.addName(name);
             }
-            case NestingToken nt -> {
-                renderNestingToken(nt, () -> {});
+            case ScopeToken st -> {
+                renderScopeToken(st, () -> {});
             }
             case NameSampleToken nst -> {
                 Name n = currentCodeFrame.sampleName(nst.predicate());
                 if (n == null) {
                     throw new RendererException("No Name found for " + nst.predicate().toString());
                 }
-                NestingToken nt = nst.getNestingToken(n);
-                renderNestingToken(nt, () -> {
+                ScopeToken st = nst.getScopeToken(n);
+                renderScopeToken(st, () -> {
                     if (nst.name() != null) {
                         addHashtagReplacement(nst.name(), n.name());
                     }
@@ -359,8 +359,8 @@ final class Renderer {
             case NameForEachToken nfet -> {
                 List<Name> list = currentCodeFrame.listNames(nfet.predicate());
                 list.stream().forEach(n -> {
-                    NestingToken nt = nfet.getNestingToken(n);
-                    renderNestingToken(nt, () -> {
+                    ScopeToken st = nfet.getScopeToken(n);
+                    renderScopeToken(st, () -> {
                         if (nfet.name() != null) {
                             addHashtagReplacement(nfet.name(), n.name());
                         }
@@ -370,35 +370,35 @@ final class Renderer {
                     });
                 });
             }
-            case NamesToListToken ntlt -> {
-                List<Name> list = currentCodeFrame.listNames(ntlt.predicate());
-                NestingToken nt = ntlt.getNestingToken(list);
-                renderNestingToken(nt, () -> {});
+            case NamesToListToken stlt -> {
+                List<Name> list = currentCodeFrame.listNames(stlt.predicate());
+                ScopeToken st = stlt.getScopeToken(list);
+                renderScopeToken(st, () -> {});
             }
             case NameCountToken nct -> {
                 int count = currentCodeFrame.countNames(nct.predicate());
-                NestingToken nt = nct.getNestingToken(count);
-                renderNestingToken(nt, () -> {});
+                ScopeToken st = nct.getScopeToken(count);
+                renderScopeToken(st, () -> {});
             }
             case NameHasAnyToken nhat -> {
                 boolean hasAny = currentCodeFrame.hasAnyNames(nhat.predicate());
-                NestingToken nt = nhat.getNestingToken(hasAny);
-                renderNestingToken(nt, () -> {});
+                ScopeToken st = nhat.getScopeToken(hasAny);
+                renderScopeToken(st, () -> {});
             }
             case SetFuelCostToken(float fuelCost) -> {
                 currentTemplateFrame.setFuelCost(fuelCost);
             }
             case LetToken lt -> {
-                NestingToken nt = lt.getNestingToken();
-                renderNestingToken(nt, () -> {
+                ScopeToken st = lt.getScopeToken();
+                renderScopeToken(st, () -> {
                     addHashtagReplacement(lt.key(), lt.value());
                 });
 
             }
             case HookIsAnchoredToken hiat -> {
                 boolean isAnchored = currentCodeFrame.codeFrameForHook(hiat.hook()) != null;
-                NestingToken nt = hiat.getNestingToken(isAnchored);
-                renderNestingToken(nt, () -> {});
+                ScopeToken st = hiat.getScopeToken(isAnchored);
+                renderScopeToken(st, () -> {});
             }
         }
     }

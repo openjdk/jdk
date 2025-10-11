@@ -195,13 +195,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * of the contained {@link DataName}s, making the sampled {@link DataName}
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the sampled {@link DataName}.
          * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token sample(Function<DataName, NestingToken> function) {
+        public Token sample(Function<DataName, ScopeToken> function) {
             return new NameSampleToken<DataName>(predicate(), null, null, function);
         }
 
@@ -291,13 +291,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * Counts the number of {@link DataName}s in the filtered set, making the count
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the count.
          * @return a token that represents the counting and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token count(Function<Integer, NestingToken> function) {
+        public Token count(Function<Integer, ScopeToken> function) {
             return new NameCountToken(predicate(), function);
         }
 
@@ -305,13 +305,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * Checks if there are any {@link DataName}s in the filtered set, making the resulting boolean
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the boolean indicating iff there are any {@link DataName}s in the filtered set.
          * @return a token that represents the checking and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token hasAny(Function<Boolean, NestingToken> function) {
+        public Token hasAny(Function<Boolean, ScopeToken> function) {
             return new NameHasAnyToken(predicate(), function);
         }
 
@@ -319,13 +319,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * Collects all {@link DataName}s in the filtered set, making the collected list
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the list of {@link DataName}.
          * @return A {@link List} of all {@link DataName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token toList(Function<List<DataName>, NestingToken> function) {
+        public Token toList(Function<List<DataName>, ScopeToken> function) {
             return new NamesToListToken(predicate(), function);
         }
 
@@ -333,13 +333,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * Calls the provided {@code function} for each {@link DataName}s in the filtered set,
          * making each of these {@link DataName}s available to a separate inner scope.
          *
-         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
          *                 for each of the {@link DataName}s in the filtereds set.
          * @return The token representing the for-each execution and the respective inner scopes.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token forEach(Function<DataName, NestingToken> function) {
+        public Token forEach(Function<DataName, ScopeToken> function) {
             return new NameForEachToken<DataName>(predicate(), null, null, function);
         }
 
@@ -357,13 +357,13 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *
          * @param name the key of the hashtag replacement for each individual {@link DataName} name.
          * @param type the key of the hashtag replacement for each individual {@link DataName} type.
-         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
          *                 for each of the {@link DataName}s in the filtereds set.
          * @return The token representing the for-each execution and the respective inner scopes.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token forEach(String name, String type, Function<DataName, NestingToken> function) {
+        public Token forEach(String name, String type, Function<DataName, ScopeToken> function) {
             return new NameForEachToken<DataName>(predicate(), name, type, function);
         }
     }

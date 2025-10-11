@@ -33,7 +33,7 @@ import java.util.List;
  * Note: we want the tokens to be package private, so we create this Impl
  *       record.
  */
-record NestingTokenImpl(List<Token> tokens,
-                        boolean nestedNamesAreLocal,
-                        boolean nestedHashtagsAreLocal,
-                        boolean nestedSetFuelCostAreLocal) implements NestingToken, Token {}
+record ScopeTokenImpl(List<Token> tokens,
+                      boolean nestedNamesAreLocal,
+                      boolean nestedHashtagsAreLocal,
+                      boolean nestedSetFuelCostAreLocal) implements ScopeToken, Token {}

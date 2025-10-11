@@ -31,9 +31,9 @@ import java.util.function.Function;
  */
 record NameHasAnyToken(
         NameSet.Predicate predicate,
-        Function<Boolean, NestingToken> function) implements Token {
+        Function<Boolean, ScopeToken> function) implements Token {
 
-    NestingToken getNestingToken(boolean hasAny) {
+    ScopeToken getScopeToken(boolean hasAny) {
         return function().apply(hasAny);
     }
 }

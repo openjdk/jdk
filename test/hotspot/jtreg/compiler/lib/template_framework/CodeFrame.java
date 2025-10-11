@@ -35,7 +35,7 @@ import java.util.List;
  * location later.
  *
  * <p>
- * The {@link CodeFrame} thus implements the {@link Name} non-transparency aspect of {@link NestingToken}.
+ * The {@link CodeFrame} thus implements the {@link Name} non-transparency aspect of {@link ScopeToken}.
  *
  * <p>
  * The {@link CodeFrame}s are nested relative to the order of the final rendered code. This can

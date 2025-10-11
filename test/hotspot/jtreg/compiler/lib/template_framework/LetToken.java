@@ -27,12 +27,12 @@ import java.util.function.Function;
 
 /**
  * Represents a let (aka hashtag) definition. The hashtag replacement is active for the
- * scope ({@link NestingToken}) that the {@code function} creates, but can escape that
+ * scope ({@link ScopeToken}) that the {@code function} creates, but can escape that
  * scope if it is transparent to hashtags.
  */
-record LetToken<T>(String key, T value, Function<T, NestingToken> function) implements Token {
+record LetToken<T>(String key, T value, Function<T, ScopeToken> function) implements Token {
 
-    NestingToken getNestingToken() {
+    ScopeToken getScopeToken() {
         return function().apply(value);
     }
 }

@@ -43,6 +43,6 @@ public sealed interface Token permits StringToken,
                                       NameCountToken,
                                       NameHasAnyToken,
                                       LetToken,
-                                      NestingToken,
-                                      NestingTokenImpl,
+                                      ScopeToken,
+                                      ScopeTokenImpl,
                                       SetFuelCostToken {}

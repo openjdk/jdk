@@ -28,4 +28,4 @@ import java.util.List;
 /**
  * Represents the {@link Hook#anchor} with its inner scope.
  */
-record HookAnchorToken(Hook hook, NestingToken innerScope) implements Token {}
+record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}

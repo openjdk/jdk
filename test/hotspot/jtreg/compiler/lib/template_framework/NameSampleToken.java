@@ -35,9 +35,9 @@ record NameSampleToken<N>(
         NameSet.Predicate predicate,
         String name,
         String type,
-        Function<N, NestingToken> function) implements Token {
+        Function<N, ScopeToken> function) implements Token {
 
-    NestingToken getNestingToken(Name n) {
+    ScopeToken getScopeToken(Name n) {
         return function().apply((N)n);
     }
 }

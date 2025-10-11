@@ -168,13 +168,13 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * of the contained {@link StructuralName}s, making the sampled {@link StructuralName}
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the sampled {@link StructuralName}.
          * @return a token that represents the sampling and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token sample(Function<StructuralName, NestingToken> function) {
+        public Token sample(Function<StructuralName, ScopeToken> function) {
             return new NameSampleToken<StructuralName>(predicate(), null, null, function);
         }
 
@@ -211,13 +211,13 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * Counts the number of {@link StructuralName}s in the filtered set, making the count
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the count.
          * @return a token that represents the counting and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token count(Function<Integer, NestingToken> function) {
+        public Token count(Function<Integer, ScopeToken> function) {
             return new NameCountToken(predicate(), function);
         }
 
@@ -225,26 +225,26 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * Checks if there are any {@link StructuralName}s in the filtered set, making the resulting boolean
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the boolean indicating iff there are any {@link StructuralName}s in the filtered set.
          * @return a token that represents the checking and inner scope.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token hasAny(Function<Boolean, NestingToken> function) {
+        public Token hasAny(Function<Boolean, ScopeToken> function) {
             return new NameHasAnyToken(predicate(), function);
         }
         /**
          * Collects all {@link StructuralName}s in the filtered set, making the collected list
          * available to an inner scope.
          *
-         * @param function The {@link Function} that creates the inner {@link NestingToken} given
+         * @param function The {@link Function} that creates the inner {@link ScopeToken} given
          *                 the list of {@link StructuralName}.
          * @return A {@link List} of all {@link StructuralName}s in the filtered set.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token toList(Function<List<StructuralName>, NestingToken> function) {
+        public Token toList(Function<List<StructuralName>, ScopeToken> function) {
             return new NamesToListToken(predicate(), function);
         }
 
@@ -252,13 +252,13 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          * Calls the provided {@code function} for each {@link StructuralName}s in the filtered set,
          * making each of these {@link StructuralName}s available to a separate inner scope.
          *
-         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
          *                 for each of the {@link StructuralName}s in the filtereds set.
          * @return The token representing the for-each execution and the respective inner scopes.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token forEach(Function<StructuralName, NestingToken> function) {
+        public Token forEach(Function<StructuralName, ScopeToken> function) {
             return new NameForEachToken<StructuralName>(predicate(), null, null, function);
         }
 
@@ -276,13 +276,13 @@ public record StructuralName(String name, StructuralName.Type type, int weight) 
          *
          * @param name the key of the hashtag replacement for each individual {@link StructuralName} name.
          * @param type the key of the hashtag replacement for each individual {@link StructuralName} type.
-         * @param function The {@link Function} that is called to create the inner {@link NestingToken}s
+         * @param function The {@link Function} that is called to create the inner {@link ScopeToken}s
          *                 for each of the {@link StructuralName}s in the filtereds set.
          * @return The token representing the for-each execution and the respective inner scopes.
          * @throws UnsupportedOperationException If the type was not constrained with either of
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
-        public Token forEach(String name, String type, Function<StructuralName, NestingToken> function) {
+        public Token forEach(String name, String type, Function<StructuralName, ScopeToken> function) {
             return new NameForEachToken<StructuralName>(predicate(), name, type, function);
         }
     }

@@ -26,9 +26,9 @@ package compiler.lib.template_framework;
 import java.util.function.Function;
 
 /**
- * A {@link Hook} can be {@link #anchor}ed for a certain scope ({@link NestingToken}), and that
+ * A {@link Hook} can be {@link #anchor}ed for a certain scope ({@link ScopeToken}), and that
  * anchoring stays active for any nested scope or nested {@link Template}. With {@link #insert},
- * one can insert a template ({@link TemplateToken}) or scope ({@link NestingToken}) to where the
+ * one can insert a template ({@link TemplateToken}) or scope ({@link ScopeToken}) to where the
  * {@link Hook} was {@link #anchor}'ed. If the hook was anchored for multiple outer scopes, the
  * innermost is chosen for insertion.
  *
@@ -38,7 +38,7 @@ import java.util.function.Function;
  * to the beginning of a method to insert local variables that should be live for the whole method.
  *
  * <p>
- * The choice of {@link NestingToken} is very important and powerful.
+ * The choice of {@link ScopeToken} is very important and powerful.
  * For example, if you want to insert a {@link DataName} to the scope of an anchor,
  * it is important that the scope of the insertion is transparent for {@link DataName}s,
  * e.g. using {@link Template#transparentScope}. In most cases, we want {@link DataName}s to escape
@@ -93,7 +93,7 @@ public record Hook(String name) {
      * @param innerScope An inner scope, for which the {@link Hook} is anchored.
      * @return A {@link Token} that captures the anchoring and the inner scope.
      */
-    public Token anchor(NestingToken innerScope) {
+    public Token anchor(ScopeToken innerScope) {
         return new HookAnchorToken(this, innerScope);
     }
 
@@ -109,14 +109,14 @@ public record Hook(String name) {
     }
 
     /**
-     * Inserts a scope ({@link NestingToken}) to the innermost location where this {@link Hook} was {@link #anchor}ed.
+     * Inserts a scope ({@link ScopeToken}) to the innermost location where this {@link Hook} was {@link #anchor}ed.
      * This could be in the same Template, or one nested further out.
      *
-     * @param nestingToken The scope to be inserted at the {@link Hook}.
+     * @param scopeToken The scope to be inserted at the {@link Hook}.
      * @return The {@link Token} which represents the code insertion into the {@link Hook}.
      */
-    public Token insert(NestingToken nestingToken) {
-        return new HookInsertToken(this, nestingToken);
+    public Token insert(ScopeToken scopeToken) {
+        return new HookInsertToken(this, scopeToken);
     }
 
     /**
@@ -126,7 +126,7 @@ public record Hook(String name) {
      * @param function the function that generates the inner scope given the boolean result.
      * @return the token that represents the check and inner scope.
      */
-    public Token isAnchored(Function<Boolean, NestingToken> function) {
+    public Token isAnchored(Function<Boolean, ScopeToken> function) {
         return new HookIsAnchoredToken(this, function);
     }
 }

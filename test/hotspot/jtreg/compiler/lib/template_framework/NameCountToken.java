@@ -31,9 +31,9 @@ import java.util.function.Function;
  */
 record NameCountToken(
         NameSet.Predicate predicate,
-        Function<Integer, NestingToken> function) implements Token {
+        Function<Integer, ScopeToken> function) implements Token {
 
-    NestingToken getNestingToken(int count) {
+    ScopeToken getScopeToken(int count) {
         return function().apply(count);
     }
 }

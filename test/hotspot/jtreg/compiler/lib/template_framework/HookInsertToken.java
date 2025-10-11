@@ -24,7 +24,7 @@
 package compiler.lib.template_framework;
 
 /**
- * Represents the {@link Hook#insert} with the {@link NestingToken} of the
+ * Represents the {@link Hook#insert} with the {@link ScopeToken} of the
  * scope that is to be inserted.
  */
-record HookInsertToken(Hook hook, NestingToken nestingToken) implements Token {}
+record HookInsertToken(Hook hook, ScopeToken scopeToken) implements Token {}

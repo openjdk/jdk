@@ -26,7 +26,7 @@ package compiler.lib.template_framework;
 import java.util.List;
 
 /**
- * A {@link NestingToken} represents a scope in a {@link Template}, which can be
+ * A {@link ScopeToken} represents a scope in a {@link Template}, which can be
  * created with {@link Template#scope}, {@link Template#transparentScope}, and other related methods.
  */
-public sealed interface NestingToken extends Token permits NestingTokenImpl {}
+public sealed interface ScopeToken extends Token permits ScopeTokenImpl {}
