@@ -44,6 +44,39 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
+    public static void verifyAppImageSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+        cmd.verifyIsOfType(PackageType.MAC);
+        Objects.requireNonNull(certRequest);
+        Objects.requireNonNull(keychain);
+
+        final Path bundleRoot;
+        if (cmd.isImagePackageType()) {
+            bundleRoot = cmd.outputBundle();
+        } else {
+            bundleRoot = cmd.pathToUnpackedPackageFile(
+                    cmd.appInstallationDirectory());
+        }
+
+        assertSigned(bundleRoot, certRequest);
+
+        if (!cmd.isRuntime()) {
+            cmd.addLauncherNames().stream().map(cmd::appLauncherPath).forEach(launcherPath -> {
+                assertSigned(launcherPath, certRequest);
+            });
+        }
+
+        var signOrigin = findSpctlSignOrigin(SpctlType.EXEC, bundleRoot).orElse(null);
+
+        TKit.assertEquals(certRequest.name(), signOrigin,
+                String.format("Check [%s] has sign origin as expected", bundleRoot));
+    }
+
+    public static void verifyPkgSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+        cmd.verifyIsOfType(PackageType.MAC_PKG);
+        assertPkgSigned(cmd.outputBundle(), certRequest,
+                Objects.requireNonNull(keychain.mapCertificateRequests().get(certRequest)));
+    }
+
     public static void assertSigned(Path path, CertificateRequest certRequest) {
         assertSigned(path);
         TKit.assertEquals(certRequest.name(), findCodesignSignOrigin(path).orElse(null),

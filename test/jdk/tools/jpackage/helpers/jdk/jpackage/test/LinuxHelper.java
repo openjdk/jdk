@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.Collections.unmodifiableSortedSet;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -38,6 +40,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
@@ -389,8 +393,7 @@ public final class LinuxHelper {
 
             Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
             if (integrated) {
-                Set<Scriptlet> requiredScriptlets = Stream.of(Scriptlet.values()).sorted().collect(
-                        Collectors.toSet());
+                var requiredScriptlets = Stream.of(Scriptlet.values()).sorted().toList();
                 TKit.assertTrue(scriptlets.keySet().containsAll(
                         requiredScriptlets), String.format(
                                 "Check all required scriptlets %s found in the package. Package scriptlets: %s",
@@ -710,7 +713,7 @@ public final class LinuxHelper {
 
     private static Map<Scriptlet, List<String>> getDebScriptlets(
             JPackageCommand cmd, Set<Scriptlet> scriptlets) {
-        Map<Scriptlet, List<String>> result = new HashMap<>();
+        Map<Scriptlet, List<String>> result = new TreeMap<>();
         TKit.withTempDirectory("dpkg-control-files", tempDir -> {
             // Extract control Debian package files into temporary directory
             Executor.of("dpkg", "-e")
@@ -732,7 +735,7 @@ public final class LinuxHelper {
         List<String> output = Executor.of("rpm", "-qp", "--scripts",
                 cmd.outputBundle().toString()).executeAndGetOutput();
 
-        Map<Scriptlet, List<String>> result = new HashMap<>();
+        Map<Scriptlet, List<String>> result = new TreeMap<>();
         List<String> curScriptletBody = null;
         for (String str : output) {
             Matcher m = Scriptlet.RPM_HEADER_PATTERN.matcher(str);
@@ -887,7 +890,8 @@ public final class LinuxHelper {
     private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
-    private static final Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+    private static final Set<Integer> XDG_CMD_VALID_ICON_SIZES = unmodifiableSortedSet(
+            new TreeSet<>(List.of(16, 22, 32, 48, 64, 128)));
 
     private static final Method getServiceUnitFileName = initGetServiceUnitFileName();
 }

@@ -28,13 +28,13 @@ import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconReso
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Path;
 import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.CopyAppImageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ApplicationLayout;
-import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinLauncher;
 
@@ -54,7 +54,7 @@ final class WinPackagingPipeline {
     }
 
     private static void rebrandLaunchers(AppImageBuildEnv<WinApplication, ApplicationLayout> env)
-            throws IOException, PackagerException {
+            throws IOException {
         for (var launcher : env.app().launchers()) {
             final var iconTarget = createLauncherIconResource(env.app(), launcher, env.env()::createResource).map(iconResource -> {
                 var iconDir = env.env().buildRoot().resolve("icons");
@@ -79,5 +79,10 @@ final class WinPackagingPipeline {
         }
     }
 
-    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayoutUtils.PLATFORM_APPLICATION_LAYOUT;
+    static final ApplicationLayout APPLICATION_LAYOUT = ApplicationLayout.build()
+            .setAll("")
+            .appDirectory("app")
+            .runtimeDirectory("runtime")
+            .appModsDirectory(Path.of("app", "mods"))
+            .create();
 }
