@@ -564,7 +564,7 @@ public final class DMarlinRenderingEngine extends RenderingEngine
     }
 
     private static boolean nearZero(final double num) {
-        return Math.abs(num) < 2.0d * Math.ulp(num);
+        return Math.abs(num) < 2.0d * Helpers.ulp(num);
     }
 
     abstract static class NormalizingPathIterator implements PathIterator {
