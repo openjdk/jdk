@@ -168,6 +168,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
                                    Register temp_reg, bool load_bc_into_bc_reg/*=true*/,
                                    int byte_no)
 {
+  assert_different_registers(bc_reg, temp_reg);
   if (!RewriteBytecodes)  return;
   Label L_patch_done;
 
@@ -232,8 +233,11 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   __ bind(L_okay);
 #endif
 
-  // patch bytecode
-  __ strb(bc_reg, at_bcp(0));
+  // Patch the bytecode using STLR, this is required so that the last STLR used in
+  // ResolvedFieldEntry::fill_in is obsevable before the patched bytecode. If it is not,
+  // TemplateTable::fast_* will observe an unresolved ResolvedFieldEntry and corrupt the Java heap.
+  __ lea(temp_reg, at_bcp(0));
+  __ stlrb(bc_reg, temp_reg);
   __ bind(L_patch_done);
 }
 
@@ -3079,6 +3083,7 @@ void TemplateTable::fast_storefield(TosState state)
 
   // R1: field offset, R2: field holder, R5: flags
   load_resolved_field_entry(r2, r2, noreg, r1, r5);
+  __ verify_field_offset(r1);
 
   {
     Label notVolatile;
@@ -3168,6 +3173,8 @@ void TemplateTable::fast_accessfield(TosState state)
   __ load_field_entry(r2, r1);
 
   __ load_sized_value(r1, Address(r2, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ verify_field_offset(r1);
+
   __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
 
   // r0: object
@@ -3234,7 +3241,9 @@ void TemplateTable::fast_xaccess(TosState state)
   __ ldr(r0, aaddress(0));
   // access constant pool cache
   __ load_field_entry(r2, r3, 2);
+
   __ load_sized_value(r1, Address(r2, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+  __ verify_field_offset(r1);
 
   // 8179954: We need to make sure that the code generated for
   // volatile accesses forms a sequentially-consistent set of
