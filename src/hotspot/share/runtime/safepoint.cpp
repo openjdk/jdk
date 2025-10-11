@@ -370,10 +370,10 @@ void SafepointSynchronize::begin() {
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
   log_trace(safepoint)("Arming safepoint using %s wait barrier", _wait_barrier->description());
   arm_safepoint();
-
+  
+  Universe::heap()->safepoint_synchronize();
   // Will spin until all threads are safe.
   int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
-  Universe::heap()->safepoint_synchronize();
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
