@@ -35,7 +35,9 @@ import jdk.test.lib.Asserts;
  * @library /test/lib /
  * @summary test combining vector not operation with compare
  * @modules jdk.incubator.vector
- * @requires (os.arch != "riscv64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*"))
+ * @requires (os.arch != "riscv64" & os.arch != "ppc64" & os.arch != "ppc64le") |
+ *           (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*") |
+ *           ((os.arch == "ppc64" | os.arch == "ppc64le") & vm.cpu.features ~= ".*darn.*")
  *
  * @run driver compiler.vectorapi.VectorMaskCompareNotTest
  */
