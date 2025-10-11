@@ -92,8 +92,7 @@ class LogMessageBuffer;
 // so that redundant specification of tags or levels can be avoided.
 //
 // Example usage:
-//   LogTarget(Debug, codecache, sweep) out;
-//   if (out.is_enabled()) {
+//   if (LogTarget(Debug, codecache, sweep) out; out.is_enabled()) {
 //     out.print("result = %d", result);
 //     LogStream ls(out);
 //     CodeCache::print_summary(&ls, false);
