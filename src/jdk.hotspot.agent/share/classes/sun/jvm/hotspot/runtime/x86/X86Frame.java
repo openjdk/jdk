@@ -271,7 +271,7 @@ public class X86Frame extends Frame {
 
     if (cb != null) {
       if (cb.isUpcallStub()) {
-        senderForUpcallStub(map, (UpcallStub)cb);
+        return senderForUpcallStub(map, (UpcallStub)cb);
       } else if (cb.isContinuationStub()) {
         return senderForContinuationStub(map, cb);
       } else {
