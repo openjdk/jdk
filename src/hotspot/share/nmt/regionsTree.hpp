@@ -29,8 +29,7 @@
 #include "nmt/vmatree.hpp"
 
 
-class ReservedMemoryRegion;
-class CommittedMemoryRegion;
+class VirtualMemoryRegion;
 // RegionsTree extends VMATree to add some more specific API and also defines a helper
 // for processing the tree nodes in a shorter and more meaningful way.
 class RegionsTree : public VMATree {
@@ -46,7 +45,7 @@ class RegionsTree : public VMATree {
     _with_storage(other._with_storage) {}
   RegionsTree& operator=(const RegionsTree& other) = delete;
 
-  ReservedMemoryRegion find_reserved_region(address addr);
+  VirtualMemoryRegion find_reserved_region(address addr);
 
   void commit_region(address addr, size_t size, const NativeCallStack& stack, SummaryDiff& diff);
   void uncommit_region(address addr, size_t size, SummaryDiff& diff);
@@ -81,7 +80,7 @@ class RegionsTree : public VMATree {
   DEBUG_ONLY(void print_on(outputStream* st);)
 
   template<typename F>
-  void visit_committed_regions(const ReservedMemoryRegion& rgn, F func);
+  void visit_committed_regions(const VirtualMemoryRegion& rgn, F func);
 
   template<typename F>
   void visit_reserved_regions(F func);
@@ -98,7 +97,7 @@ class RegionsTree : public VMATree {
     return _ncs_storage.get(si);
   }
 
-  size_t committed_size(const ReservedMemoryRegion& rgn);
+  size_t committed_size(const VirtualMemoryRegion& rgn);
 };
 
 #endif // NMT_REGIONSTREE_HPP
