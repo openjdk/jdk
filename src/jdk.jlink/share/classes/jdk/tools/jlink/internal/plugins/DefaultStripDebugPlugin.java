@@ -47,6 +47,8 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
     private final Plugin javaStripPlugin;
     private final NativePluginFactory stripNativePluginFactory;
 
+    private boolean isJavaStripPluginEnabled = true;
+
     public DefaultStripDebugPlugin() {
         this(new StripJavaDebugAttributesPlugin(),
              new DefaultNativePluginFactory());
@@ -59,6 +61,10 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
         this.stripNativePluginFactory = nativeStripPluginFact;
     }
 
+    public void enableJavaStripPlugin(boolean enableJavaStripPlugin) {
+        isJavaStripPluginEnabled = enableJavaStripPlugin;
+    }
+
     @Override
     public ResourcePool transform(ResourcePool in, ResourcePoolBuilder out) {
         Plugin stripNativePlugin = stripNativePluginFactory.create();
@@ -66,14 +72,21 @@ public final class DefaultStripDebugPlugin extends AbstractPlugin {
             Map<String, String> stripNativeConfig = Map.of(
                                      STRIP_NATIVE_DEBUG_PLUGIN, EXCLUDE_DEBUGINFO);
             stripNativePlugin.configure(stripNativeConfig);
+
+            if (!isJavaStripPluginEnabled) {
+                return stripNativePlugin.transform(in, out);
+            }
+
             ResourcePoolManager outRes =
                                  new ResourcePoolManager(in.byteOrder(),
                                                         ((ResourcePoolImpl)in).getStringTable());
             ResourcePool strippedJava = javaStripPlugin.transform(in,
                                                                   outRes.resourcePoolBuilder());
             return stripNativePlugin.transform(strippedJava, out);
-        } else {
+        } else if (isJavaStripPluginEnabled) {
             return javaStripPlugin.transform(in, out);
+        } else {
+            return in;
         }
     }
 
