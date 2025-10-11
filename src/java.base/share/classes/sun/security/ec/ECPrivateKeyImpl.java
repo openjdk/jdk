@@ -101,8 +101,11 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         int length = Math.min(sArr.length, sOctets.length);
         System.arraycopy(sArr, inPos, sOctets, outPos, length);
         Arrays.fill(sArr, (byte) 0);
-        makeEncoding(sOctets);
-        Arrays.fill(sOctets, (byte) 0);
+        try {
+            makeEncoding(sOctets);
+        } finally {
+            Arrays.fill(sOctets, (byte) 0);
+        }
     }
 
     ECPrivateKeyImpl(byte[] s, ECParameterSpec params)
@@ -111,8 +114,12 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
         this.params = params;
         byte[] privBytes = arrayS.clone();
         ArrayUtil.reverse(privBytes);
-        makeEncoding(privBytes);
-        Arrays.fill(privBytes, (byte) 0);
+        try {
+            makeEncoding(privBytes);
+        } finally {
+            Arrays.fill(privBytes, (byte) 0);
+        }
+
     }
 
     private void makeEncoding(byte[] privBytes) throws InvalidKeyException {

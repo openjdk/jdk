@@ -173,8 +173,8 @@ public class PEMDecoderTest {
         }
 
         // PBE
-        System.out.println("EncryptedPrivateKeyInfo.encryptKey with PBE: ");
-        ekpi = EncryptedPrivateKeyInfo.encryptKey(privateKey,
+        System.out.println("EncryptedPrivateKeyInfo.encrypt with PBE: ");
+        ekpi = EncryptedPrivateKeyInfo.encrypt(privateKey,
             "password".toCharArray(),"PBEWithMD5AndDES", null, null);
         try {
             ekpi.getKey("password".toCharArray());
@@ -184,8 +184,8 @@ public class PEMDecoderTest {
         }
 
         // PBES2
-        System.out.println("EncryptedPrivateKeyInfo.encryptKey with default: ");
-        ekpi = EncryptedPrivateKeyInfo.encryptKey(privateKey
+        System.out.println("EncryptedPrivateKeyInfo.encrypt with default: ");
+        ekpi = EncryptedPrivateKeyInfo.encrypt(privateKey
             , "password".toCharArray());
         try {
             ekpi.getKey("password".toCharArray());

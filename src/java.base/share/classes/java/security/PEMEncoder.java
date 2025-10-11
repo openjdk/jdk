@@ -43,13 +43,13 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * {@code PEMEncoder} implements an encoder for Privacy-Enhanced Mail (PEM)
- * data.  PEM is a textual encoding used to store and transfer security
+ * data.  PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
- * lists (CRL).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
+ * lists (CRLs).  It is defined in RFC 1421 and RFC 7468.  PEM consists of a
  * Base64-formatted binary encoding enclosed by a type-identifying header
  * and footer.
  *
- * <p> Encoding may be performed on Java API cryptographic objects that
+ * <p> Encoding can be performed on cryptographic objects that
  * implement {@link DEREncodable}. The {@link #encode(DEREncodable)}
  * and {@link #encodeToString(DEREncodable)} methods encode a DEREncodable
  * into PEM and return the data in a byte array or String.
@@ -58,7 +58,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code PEMEncoder} with the {@link #withEncryption(char[])} method,
  * which takes a password and returns a new {@code PEMEncoder} instance
  * configured to encrypt the key with that password. Alternatively, a
- * private key encrypted as an {@code EncryptedKeyInfo} object can be encoded
+ * private key encrypted as an {@link EncryptedPrivateKeyInfo} object can be encoded
  * directly to PEM by passing it to the {@code encode} or
  * {@code encodeToString} methods.
  *
@@ -68,50 +68,47 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@code encodeToString} methods are encoded as a
  * OneAsymmetricKey structure using the "PRIVATE KEY" type.
  *
- * <p> When encoding a {@link PEM}, the API surrounds the
- * {@link PEM#content()} with the PEM header and footer
- * from {@link PEM#type()}. {@link PEM#leadingData()} is
- * not included in the encoding.  {@code PEM} will not perform
- * validity checks on the data.
+ * <p> When encoding a {@link PEM} object, the API surrounds
+ * {@link PEM#content()} with a PEM header and footer based on
+ * {@link PEM#type()}. The value returned by {@link PEM#leadingData()} is not
+ * included in the output.
  *
- * <p>The following lists the supported {@code DEREncodable} classes and
- * the PEM types that each are encoded as:
+ * <p> The following lists the supported {@code DEREncodable} classes and
+ * the PEM types they encoded as:
  *
  * <ul>
  *  <li>{@code X509Certificate} : CERTIFICATE</li>
  *  <li>{@code X509CRL} : X509 CRL</li>
  *  <li>{@code PublicKey} : PUBLIC KEY</li>
  *  <li>{@code PrivateKey} : PRIVATE KEY</li>
- *  <li>{@code PrivateKey} (if configured with encryption):
- *  ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code PrivateKey} :
+ *  ENCRYPTED PRIVATE KEY  (if configured with encryption)</li>
  *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
  *  <li>{@code KeyPair} : PRIVATE KEY</li>
- *  <li>{@code KeyPair} (if configured with encryption) : ENCRYPTED PRIVATE KEY
- *  </li>
+ *  <li>{@code KeyPair} :
+ *  ENCRYPTED PRIVATE KEY if configured with encryption)</li>
  *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
  *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
- *  <li>{@code PKCS8EncodedKeySpec} (if configured with encryption) :
- *  ENCRYPTED PRIVATE KEY</li>
+ *  <li>{@code PKCS8EncodedKeySpec} :
+ *  ENCRYPTED PRIVATE KEY (if configured with encryption)</li>
  *  <li>{@code PEM} : {@code PEM.type()}</li>
  *  </ul>
  *
  * <p> This class is immutable and thread-safe.
  *
- * <p> Here is an example of encoding a private key object:
+ * <p> Example: encode a private key:
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of();
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * <p> Here is an example that encrypts and encodes a private key using the
- * specified password:
+ * <p> Example: encrypt and encode a private key using a password:
  * {@snippet lang = java:
  *     PEMEncoder pe = PEMEncoder.of().withEncryption(password);
  *     byte[] pemData = pe.encode(privKey);
  * }
  *
- * @implNote An implementation may support other PEM types and
- * {@code DEREncodable} objects.
+ * @implNote Implementations may support additional PEM types.
  *
  *
  * @see PEMDecoder
@@ -162,11 +159,11 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encodes the specified {@code DEREncodable} and returns a PEM encoded
+     * Encodes the specified {@code DEREncodable} and returns a PEM-encoded
      * string.
      *
      * @param de the {@code DEREncodable} to be encoded
-     * @return a {@code String} containing the PEM encoded data
+     * @return a {@code String} containing the PEM-encoded data
      * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
      * encoded
      * @throws NullPointerException if {@code de} is {@code null}
@@ -237,11 +234,11 @@ public final class PEMEncoder {
     }
 
     /**
-     * Encodes the specified {@code DEREncodable} and returns the PEM encoding
-     * in a byte array.
+     * Encodes the specified {@code DEREncodable} and returns a PEM-encoded
+     * byte array.
      *
      * @param de the {@code DEREncodable} to be encoded
-     * @return a PEM encoded byte array
+     * @return a PEM-encoded byte array
      * @throws IllegalArgumentException if the {@code DEREncodable} cannot be
      * encoded
      * @throws NullPointerException if {@code de} is {@code null}
@@ -252,8 +249,8 @@ public final class PEMEncoder {
     }
 
     /**
-     * Returns a new {@code PEMEncoder} instance configured for encryption
-     * with the default algorithm and a given password.
+     * Returns a copy of this PEMEncoder that encrypts and encodes
+     * using the specified password and default encryption algorithm.
      *
      * <p> Only {@link PrivateKey}, {@link KeyPair}, and
      * {@link PKCS8EncodedKeySpec} objects can be encoded with this newly
@@ -264,8 +261,9 @@ public final class PEMEncoder {
      * The default password-based encryption algorithm is defined
      * by the {@code jdk.epkcs8.defaultAlgorithm} security property and
      * uses the default encryption parameters of the provider that is selected.
-     * For greater flexibility with encryption options and parameters, use
-     * {@link EncryptedPrivateKeyInfo#encryptKey(DEREncodable, Key,
+     * To use non-default encryption parameters, or to encrypt with a different
+     * encryption provider, use
+     * {@link EncryptedPrivateKeyInfo#encrypt(DEREncodable, Key,
      * String, AlgorithmParameterSpec, Provider, SecureRandom)} and use the
      * returned object with {@link #encode(DEREncodable)}.
      *
@@ -338,7 +336,7 @@ public final class PEMEncoder {
                     // The public key is part of the private encoding.
                     publicEncoding = null;
                 }
-                privateEncoding = EncryptedPrivateKeyInfo.encryptKey(
+                privateEncoding = EncryptedPrivateKeyInfo.encrypt(
                     new PKCS8EncodedKeySpec(encoding), key, null, null, null,
                     null).getEncoded();
             } catch (IOException e) {

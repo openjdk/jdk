@@ -226,7 +226,7 @@ public class PEMEncoderTest {
             EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(entry.pem(),
                 EncryptedPrivateKeyInfo.class);
             if (entry.password() != null) {
-                EncryptedPrivateKeyInfo.encryptKey(pkey, entry.password(),
+                EncryptedPrivateKeyInfo.encrypt(pkey, entry.password(),
                     Pem.DEFAULT_ALGO, ekpi.getAlgParameters().
                         getParameterSpec(PBEParameterSpec.class),
                     null);

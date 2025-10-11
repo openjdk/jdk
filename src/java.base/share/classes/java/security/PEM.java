@@ -40,30 +40,32 @@ import java.util.Objects;
  * <p> The {@link PEMDecoder#decode(String)} and
  * {@link PEMDecoder#decode(InputStream)} methods return a {@code PEM} object
  * when the data type cannot be represented by a cryptographic object.
- * If {@code PEM} is desired instead of a cryptographic object, the
- * decoding methods {@link PEMDecoder#decode(String, Class)} or
- * {@link PEMDecoder#decode(InputStream, Class)} are used with
- * {@code PEM.class} as an argument.
+ * If you need access to the leading data of a PEM text, or if you want to
+ * handle the text content directly, use the decoding methods
+ * {@link PEMDecoder#decode(String, Class)} or
+ * {@link PEMDecoder#decode(InputStream, Class)} with {@code PEM.class} as a
+ * argument type.
  *
- * <p> A {@code PEM} object can be encoded back to its textual format by using
- * encode methods in {@link PEMEncoder} or the {@link #toString()} method.
+ * <p> A {@code PEM} object can be encoded back to its textual format by calling
+ * {@link #toString()} or using the encode methods in {@link PEMEncoder}.
  *
- * <p> When constructing a {@code PEM} instance, {@code type} and
+ * <p> When constructing a {@code PEM} instance, both {@code type} and
  * {@code content} must not be {@code null}.
  *
  * <p>No validation is performed during instantiation to ensure that
- * {@code type} conforms to {@code RFC 7468} or other legacy formats, that
+ * {@code type} conforms to RFC 7468 or other legacy formats, that
  * {@code content} is valid Base64, or that {@code content} matches the
  * {@code type}.
 
- * Common {@code type} values include, but are not limited to:
+ * <p> Common {@code type} values include, but are not limited to:
  * CERTIFICATE, CERTIFICATE REQUEST, ATTRIBUTE CERTIFICATE, X509 CRL, PKCS7,
  * CMS, PRIVATE KEY, ENCRYPTED PRIVATE KEY, RSA PRIVATE KEY, or PUBLIC KEY.
  *
- * <p> {@code leadingData} may be null if there was no data preceding the PEM
+ * <p> {@code leadingData} is {@code null} if there is no data preceding the PEM
  * header during decoding.  {@code leadingData} can be useful for reading
- * metadata that accompanies PEM data. {@code leadingData} is not defensively
- * copied and the {@link #leadingData()} method does not return a clone.
+ * metadata that accompanies the PEM data. This value was not defensively
+ * copied by the constructor, and the {@link #leadingData()} method does not
+ * return a clone.
  *
  * @param type the type identifier from the PEM header, without PEM syntax
  *             labels; for example, for a public key, {@code type} would be
@@ -85,17 +87,17 @@ public record PEM(String type, String content, byte[] leadingData)
     implements DEREncodable {
 
     /**
-     * Creates a {@code PEM} instance with the given parameters.
+     * Creates a {@code PEM} instance with the specified parameters.
      *
-     * @param type the type identifier
+     * @param type the PEM type identifier
      * @param content the Base64-encoded data, excluding the PEM header and
      *               footer
      * @param leadingData any non-PEM data read during the decoding process
-     *                    before the PEM header.  This value maybe {@code null}.
+     *                    before the PEM header.  This value may be {@code null}
      * @throws IllegalArgumentException if {@code type} is incorrectly
-     * formatted.
-     * @throws NullPointerException if {@code type} and/or {@code content} are
-     * {@code null}.
+     * formatted
+     * @throws NullPointerException if {@code type} or {@code content} is
+     * {@code null}
      */
     public PEM {
         Objects.requireNonNull(type, "\"type\" cannot be null.");
@@ -111,24 +113,26 @@ public record PEM(String type, String content, byte[] leadingData)
     }
 
     /**
-     * Creates a {@code PEM} instance with a given {@code type} and
-     * {@code content} data in String form.  {@code leadingData} is set to null.
+     * Creates a {@code PEM} instance with the specified type and content. This
+     * constructor sets {@code leadingData} to {@code null}.
      *
      * @param type the PEM type identifier
      * @param content the Base64-encoded data, excluding the PEM header and
      *               footer
      * @throws IllegalArgumentException if {@code type} is incorrectly
-     * formatted.
-     * @throws NullPointerException if {@code type} and/or {@code content} are
-     * {@code null}.
+     * formatted
+     * @throws NullPointerException if {@code type} or {@code content} is
+     * {@code null}
      */
     public PEM(String type, String content) {
         this(type, content, null);
     }
 
     /**
-     * Returns the type and Base64 encoding in PEM textual format.
-     * {@code leadingData} is not returned by this method.
+     * Returns the PEM formatted string containing the {@code type} and
+     * Base64-encoded {@code content}. {@code leadingData} is not included.
+     *
+     * @return the PEM text representation
      */
     @Override
     public String toString() {
@@ -136,12 +140,11 @@ public record PEM(String type, String content, byte[] leadingData)
     }
 
     /**
-     * Returns a Base64 decoded byte array of {@code content}.
+     * Returns a Base64-decoded byte array of {@code content}, using
+     * {@link Base64#getMimeDecoder()}.
      *
-     * @return a decoded byte array of {@code content}
-     * @throws IllegalArgumentException on a decoding error
-     *
-     * @see Base64#getMimeDecoder()
+     * @return a new decoded byte array of {@code content}
+     * @throws IllegalArgumentException on a decoding fails
      */
     public byte[] decode() {
         return Base64.getMimeDecoder().decode(content);

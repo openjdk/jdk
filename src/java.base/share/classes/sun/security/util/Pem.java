@@ -366,6 +366,12 @@ public class Pem {
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
         }
+        return decryptEncoding(ekpi, password);
+    }
+
+    public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi, char[] password)
+        throws GeneralSecurityException {
+
         PBEKeySpec keySpec = new PBEKeySpec(password);
         SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
         PKCS8EncodedKeySpec p8KeySpec =
