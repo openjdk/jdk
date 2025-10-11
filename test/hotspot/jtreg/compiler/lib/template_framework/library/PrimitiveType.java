@@ -31,6 +31,9 @@ import compiler.lib.generators.Generator;
 import compiler.lib.generators.RestrictableGenerator;
 
 import compiler.lib.template_framework.DataName;
+import compiler.lib.template_framework.Template;
+import compiler.lib.template_framework.TemplateToken;
+import static compiler.lib.template_framework.Template.body;
 
 /**
  * The {@link PrimitiveType} models Java's primitive types, and provides a set
@@ -148,4 +151,91 @@ public final class PrimitiveType implements CodeGenerationDataNameType {
             case FLOAT, DOUBLE -> true;
         };
     }
+
+    /**
+     * Calls the corresponding pseudo random number generator from
+     * {@link #generateLibraryRNG}, for the given type. Accordingly,
+     * one must generate {@link #generateLibraryRNG} into the same
+     * test if one wants to use this method.
+     *
+     * Note: if you simply need a compile time constant, then please
+     * use {@link #con} instead.
+     *
+     * @return the token representing the method call to obtain a
+     *         random value for the given type at runtime.
+     */
+    public Object callLibraryRNG() {
+        return switch (kind) {
+            case BYTE    -> "LibraryRNG.nextByte()";
+            case SHORT   -> "LibraryRNG.nextShort()";
+            case CHAR    -> "LibraryRNG.nextChar()";
+            case INT     -> "LibraryRNG.nextInt()";
+            case LONG    -> "LibraryRNG.nextLong()";
+            case FLOAT   -> "LibraryRNG.nextFloat()";
+            case DOUBLE  -> "LibraryRNG.nextDouble()";
+            case BOOLEAN -> "LibraryRNG.nextBoolean()";
+        };
+    }
+
+    /**
+     * Generates the {@code LibraryRNG} class, which makes a set of pseudo
+     * random number generators available, wrapping {@link Generators}. This
+     * is supposed to be used in tandem with {@link #callLibraryRNG}.
+     *
+     * Note: you must ensure that all required imports are performed:
+     *       {@code java.util.Random}
+     *       {@code jdk.test.lib.Utils}
+     *       {@code compiler.lib.generators.*}
+     *
+     * @return a TemplateToken that holds all the {@code LibraryRNG} class.
+     */
+    public static TemplateToken generateLibraryRNG() {
+        var template = Template.make(() -> body(
+            """
+            public static class LibraryRNG {
+                private static final Random RANDOM = Utils.getRandomInstance();
+                private static final RestrictableGenerator<Integer> GEN_BYTE = Generators.G.safeRestrict(Generators.G.ints(), Byte.MIN_VALUE, Byte.MAX_VALUE);
+                private static final RestrictableGenerator<Integer> GEN_CHAR = Generators.G.safeRestrict(Generators.G.ints(), Character.MIN_VALUE, Character.MAX_VALUE);
+                private static final RestrictableGenerator<Integer> GEN_SHORT = Generators.G.safeRestrict(Generators.G.ints(), Short.MIN_VALUE, Short.MAX_VALUE);
+                private static final RestrictableGenerator<Integer> GEN_INT = Generators.G.ints();
+                private static final RestrictableGenerator<Long> GEN_LONG = Generators.G.longs();
+                private static final Generator<Double> GEN_DOUBLE = Generators.G.doubles();
+                private static final Generator<Float> GEN_FLOAT = Generators.G.floats();
+
+                public static byte nextByte() {
+                    return GEN_BYTE.next().byteValue();
+                }
+
+                public static short nextShort() {
+                    return GEN_SHORT.next().shortValue();
+                }
+
+                public static char nextChar() {
+                    return (char)GEN_CHAR.next().intValue();
+                }
+
+                public static int nextInt() {
+                    return GEN_INT.next();
+                }
+
+                public static long nextLong() {
+                    return GEN_LONG.next();
+                }
+
+                public static float nextFloat() {
+                    return GEN_FLOAT.next();
+                }
+
+                public static double nextDouble() {
+                    return GEN_DOUBLE.next();
+                }
+
+                public static boolean nextBoolean() {
+                    return RANDOM.nextBoolean();
+                }
+            }
+            """
+        ));
+        return template.asToken();
+    };
 }
