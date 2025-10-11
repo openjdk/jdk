@@ -23,6 +23,7 @@
 package jdk.vm.ci.meta;
 
 import java.lang.reflect.AnnotatedElement;
+import java.net.URL;
 import java.util.List;
 
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
@@ -95,6 +96,12 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * @return {@code true} if this type is an enum
      */
     boolean isEnum();
+
+    /**
+     * Checks whether this type is a {@link Record}.
+     * @return true if this type is a {@link Record}
+     */
+    boolean isRecord();
 
     /**
      * Checks whether this type is initialized. If a type is initialized it implies that it was
@@ -172,6 +179,16 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
      * @return {@code true} if the object is an instance of this type
      */
     boolean isInstance(JavaConstant obj);
+
+    /**
+     * Gets an opaque handle to the ClassLoader for this type.
+     */
+    JavaConstant getLoader();
+
+    /**
+     * Gets the code location for this type.
+     */
+    URL getCodeLocation();
 
     /**
      * Gets the super class of this type. If this type represents either the {@code Object} class,

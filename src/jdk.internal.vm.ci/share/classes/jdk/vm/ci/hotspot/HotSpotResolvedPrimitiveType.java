@@ -24,9 +24,11 @@ package jdk.vm.ci.hotspot;
 
 import static java.util.Objects.requireNonNull;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.meta.JavaConstant.NULL_POINTER;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Modifier;
+import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 
@@ -144,6 +146,11 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
 
     @Override
     public boolean isEnum() {
+        return false;
+    }
+
+    @Override
+    public boolean isRecord() {
         return false;
     }
 
@@ -339,6 +346,16 @@ public final class HotSpotResolvedPrimitiveType extends HotSpotResolvedJavaType 
     @Override
     public JavaConstant getJavaMirror() {
         return mirror;
+    }
+
+    @Override
+    public JavaConstant getLoader() {
+        return NULL_POINTER;
+    }
+
+    @Override
+    public URL getCodeLocation() {
+        return null;
     }
 
     @Override
