@@ -29,7 +29,9 @@ package gc.NativeWrapperCollection;
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -ea -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseSerialGC
+ * @run main/othervm/native -ea -Xbootclasspath/a:.
+ *                          -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                          -XX:+UseSerialGC
  *                          gc.NativeWrapperCollection.TestNativeWrapperCollection
  */
 
@@ -69,32 +71,29 @@ public class TestNativeWrapperCollection {
         }
 
         WB.fullGC();
-        System.gc(); // TODO: Why is this needed?
+        WB.forceSafepoint();
 
-        assert(checkOneOccurrence()) : "CodeCache entry wasn't collected";
-    }
-
-    private static boolean checkOneOccurrence() {
         // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = new JMXExecutor().execute("Compiler.codelist");
         Iterator<String> lines = output.asLines().iterator();
 
-        int count = 0;
+        boolean foundOne = false;
         while (lines.hasNext()) {
             String line = lines.next();
             if (!line.contains("TestNativeWrapperCollection.method")) {
                 continue;
             }
-            if (++count > 1) {
-                return false;
+            if (foundOne) {
+                throw new AssertionError("Expected one CodeCache entry for " +
+                        "'TestNativeWrapperCollection.method', found at least 2");
             }
 
             String[] parts = line.split(" ");
             int codeState = Integer.parseInt(parts[2]);
             if (codeState == 1 /* not_entrant */) {
-                return false;
+                throw new AssertionError("Unexpected not-entrant entry for " +
+                        "'TestNativeWrapperCollection.method'");
             }
         }
-        return true;
     }
 }
