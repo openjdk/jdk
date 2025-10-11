@@ -1,0 +1,7 @@
+This is a tool for rendering compiler timelines.
+
+Feed it the output of -Xlog:jit*:
+  $ java -jar compilation-timeline.jar comp.log
+
+To build the project with Maven, do:
+  $ mvn clean verify
