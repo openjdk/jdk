@@ -21,17 +21,10 @@
  * questions.
  */
 
-#include <stdio.h>
-
 #include "jni.h"
 
-static void method0(JNIEnv* env, jclass cls) {
-  printf("method0\n");
-}
-
-static void method1(JNIEnv* env, jclass cls) {
-  printf("method1\n");
-}
+static void method0(JNIEnv* env, jclass cls) {}
+static void method1(JNIEnv* env, jclass cls) {}
 
 JNIEXPORT void JNICALL
 Java_gc_NativeWrapperCollection_TestNativeWrapperCollection_callRegisterNatives
