@@ -25,7 +25,7 @@ package gc.NativeWrapperCollection;
 
 /*
  * @test TestNativeWrapperCollection
- * @summary Test that nmethod for native methods are collected after becoming not entrant
+ * @summary Test that native wrappers are collected after becoming not entrant
  * @requires vm.compiler1.enabled
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
