@@ -984,6 +984,18 @@ Java_sun_nio_fs_UnixNativeDispatcher_mkdir0(JNIEnv* env, jclass this,
 }
 
 JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_mkdirat0(JNIEnv* env, jclass this,
+    jint dfd, jlong pathAddress, jint mode)
+{
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    /* EINTR not listed as a possible error */
+    if (mkdirat(dfd, path, (mode_t)mode) == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
+JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_rmdir0(JNIEnv* env, jclass this,
     jlong pathAddress)
 {
@@ -1009,6 +1021,20 @@ Java_sun_nio_fs_UnixNativeDispatcher_link0(JNIEnv* env, jclass this,
     }
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_linkat0(JNIEnv* env, jclass this,
+                                             jint dfd1, jlong addr1,
+                                             jint dfd2, jlong addr2, jint flag)
+{
+    int err;
+    const char* name1 = (const char*)jlong_to_ptr(addr1);
+    const char* name2 = (const char*)jlong_to_ptr(addr2);
+
+    RESTARTABLE(linkat(dfd1, name1, dfd2, name2, flag), err);
+    if (err == -1) {
+        throwUnixException(env, errno);
+    }
+}
 
 JNIEXPORT void JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_unlink0(JNIEnv* env, jclass this,
@@ -1083,6 +1109,19 @@ Java_sun_nio_fs_UnixNativeDispatcher_symlink0(JNIEnv* env, jclass this,
     }
 }
 
+JNIEXPORT void JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_symlinkat0(JNIEnv* env, jclass this,
+    jlong targetAddress, jint dfd, jlong linkAddress)
+{
+    const char* target = (const char*)jlong_to_ptr(targetAddress);
+    const char* link = (const char*)jlong_to_ptr(linkAddress);
+
+    /* EINTR not listed as a possible error */
+    if (symlinkat(target, dfd, link) == -1) {
+        throwUnixException(env, errno);
+    }
+}
+
 JNIEXPORT jbyteArray JNICALL
 Java_sun_nio_fs_UnixNativeDispatcher_readlink0(JNIEnv* env, jclass this,
     jlong pathAddress)
@@ -1093,6 +1132,36 @@ Java_sun_nio_fs_UnixNativeDispatcher_readlink0(JNIEnv* env, jclass this,
 
     /* EINTR not listed as a possible error */
     int n = readlink(path, target, sizeof(target));
+    if (n == -1) {
+        throwUnixException(env, errno);
+    } else {
+        jsize len;
+        if (n == sizeof(target)) {
+            /* Traditionally readlink(2) should not return more than */
+            /* PATH_MAX bytes (no terminating null byte is appended). */
+            throwUnixException(env, ENAMETOOLONG);
+            return NULL;
+        }
+        target[n] = '\0';
+        len = (jsize)strlen(target);
+        result = (*env)->NewByteArray(env, len);
+        if (result != NULL) {
+            (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)target);
+        }
+    }
+    return result;
+}
+
+JNIEXPORT jbyteArray JNICALL
+Java_sun_nio_fs_UnixNativeDispatcher_readlinkat0(JNIEnv* env, jclass this,
+    jint fd, jlong pathAddress)
+{
+    jbyteArray result = NULL;
+    char target[PATH_MAX+1];
+    const char* path = (const char*)jlong_to_ptr(pathAddress);
+
+    /* EINTR not listed as a possible error */
+    int n = readlinkat(fd, path, target, sizeof(target));
     if (n == -1) {
         throwUnixException(env, errno);
     } else {
