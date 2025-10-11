@@ -292,6 +292,30 @@ public class SecureDS {
             }
         }
 
+        // Test: move to cwd
+        final String TEXT = "Sous le pont Mirabeau coule la Seine";
+        Path file = Path.of("file");
+        Path filepath = dir.resolve(file);
+        Path cwd = Path.of(System.getProperty("user.dir"));
+        Path result = cwd.resolve(file);
+        Files.writeString(filepath, TEXT);
+        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir);) {
+            if (ds instanceof SecureDirectoryStream<Path> sds) {
+                sds.move(file, null, file);
+                if (!Files.exists(result))
+                    throw new RuntimeException(result + " does not exist");
+                if (!TEXT.equals(Files.readString(result)))
+                    throw new RuntimeException(result + " content incorrect");
+            } else {
+                throw new RuntimeException("Not a SecureDirectoryStream");
+            }
+            System.out.println("Success: \"" + TEXT + "\"");
+        } finally {
+            boolean fileDeleted = Files.deleteIfExists(filepath);
+            if (!fileDeleted)
+                Files.deleteIfExists(result);
+        }
+
         // clean-up
         delete(dir1);
         delete(dir2);
@@ -332,10 +356,6 @@ public class SecureDS {
         } catch (NullPointerException x) { }
         try {
             stream.move(null, stream, file);
-            shouldNotGetHere();
-        } catch (NullPointerException x) { }
-        try {
-            stream.move(file, null, file);
             shouldNotGetHere();
         } catch (NullPointerException x) { }
         try {
