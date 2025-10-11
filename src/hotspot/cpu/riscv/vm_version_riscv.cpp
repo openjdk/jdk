@@ -35,20 +35,20 @@
 
 uint32_t VM_Version::_initial_vector_length = 0;
 
-#define DEF_RV_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-VM_Version::NAME##RVExtFeatureValue VM_Version::NAME;
+#define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
 RV_EXT_FEATURE_FLAGS(DEF_RV_EXT_FEATURE)
 #undef DEF_RV_EXT_FEATURE
 
-#define DEF_RV_NON_EXT_FEATURE(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-VM_Version::NAME##RVNonExtFeatureValue VM_Version::NAME;
+#define DEF_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::PRETTY##RVNonExtFeatureValue VM_Version::PRETTY;
 RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
 #undef DEF_RV_NON_EXT_FEATURE
 
-#define ADD_RV_EXT_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-     &VM_Version::NAME,
-#define ADD_RV_NON_EXT_FEATURE_IN_LIST(NAME, PRETTY, LINUX_BIT, FSTRING, FLAGF) \
-     &VM_Version::NAME,
+#define ADD_RV_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::ext_##PRETTY,
+#define ADD_RV_NON_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::PRETTY,
  VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
  RV_EXT_FEATURE_FLAGS(ADD_RV_EXT_FEATURE_IN_LIST)
  RV_NON_EXT_FEATURE_FLAGS(ADD_RV_NON_EXT_FEATURE_IN_LIST)
@@ -148,7 +148,7 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
-  if (UseRVC && !ext_C.enabled()) {
+  if (UseRVC && !ext_c.enabled()) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
