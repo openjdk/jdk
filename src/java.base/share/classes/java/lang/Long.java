@@ -34,7 +34,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.DecimalDigits;
+import jdk.internal.util.HexDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -43,6 +45,7 @@ import static java.lang.Character.digit;
 import static java.lang.String.COMPACT_STRINGS;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
+import static jdk.internal.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 /**
  * The {@code Long} class is the {@linkplain
@@ -311,7 +314,38 @@ public final class Long extends Number
      * @since   1.0.2
      */
     public static String toHexString(long i) {
-        return toUnsignedString0(i, 4);
+        int mag = Long.SIZE - Long.numberOfLeadingZeros(i);
+        int len = Math.max(((mag + 3) >> 2), 1);
+        long x = HexDigits.hex8(i);
+        if (COMPACT_STRINGS) {
+            byte[] chars = new byte[len];
+            if (len > 8) {
+                len -= 8;
+                Unsafe.getUnsafe().putLongUnaligned(chars, ARRAY_BYTE_BASE_OFFSET + len, x, true);
+                x = HexDigits.hex8(i >>> 32);
+            }
+            do {
+                chars[--len] = (byte) x;
+                x >>>= 8;
+            } while (len > 0);
+            return new String(chars, LATIN1);
+        } else {
+            byte[] chars = new byte[len << 1];
+            byte b;
+            if (len > 8) {
+                for (int j = 0; j < 8; j++) {
+                    b = (byte) x;
+                    StringUTF16.putChar(chars, --len, b);
+                    x >>>= 8;
+                }
+                x = HexDigits.hex8(i >>> 32);
+            }
+            do {
+                StringUTF16.putChar(chars, --len, (byte) x);
+                x >>>= 8;
+            } while (len > 0);
+            return new String(chars, UTF16);
+        }
     }
 
     /**
