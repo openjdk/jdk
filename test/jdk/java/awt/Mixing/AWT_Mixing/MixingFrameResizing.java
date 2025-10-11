@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,11 @@ import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
+
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
+
 import test.java.awt.regtesthelpers.Util;
 
 /**
@@ -65,6 +67,7 @@ public class MixingFrameResizing extends OverlappingTestBase {
         frame = new JFrame("Mixing : Frame Resizing test");
         frame.setLayout(new SpringLayout());
         frame.setSize(50, 50);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         propagateAWTControls(frame);
         Util.waitTillShown(frame);
