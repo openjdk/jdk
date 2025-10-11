@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary White box test for shared strings
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc == null
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
  * @build jdk.test.whitebox.WhiteBox SharedStringsWb
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox

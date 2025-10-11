@@ -114,6 +114,7 @@ public class TestSerialGCWithCDS {
                               small1,
                               small2,
                               coops,
+			      "-XX:-AOTStreamableObjects",
                               "-Xlog:cds");
         out.shouldContain("Dumping shared data to file:");
         out.shouldHaveExitValue(0);
@@ -141,8 +142,9 @@ public class TestSerialGCWithCDS {
 
         int n = 2;
         if (dumpWithSerial == false && execWithSerial == true) {
-            // We dumped with G1, so we have an archived heap. At exec time, try to load them into
-            // a small SerialGC heap that may be too small.
+            // Regardless of which GC dumped the heap, there will be an object archive, either
+            // created with mapping if dumped with G1, or streaming if dumped with serial GC.
+            // At exec time, try to load them into a small SerialGC heap that may be too small.
             String[] sizes = {
                 "4m",   // usually this will success load the archived heap
                 "2m",   // usually this will fail to load the archived heap, but app can launch

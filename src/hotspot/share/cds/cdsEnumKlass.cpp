@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsEnumKlass.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -109,7 +108,7 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
 }
 
 bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
-  if (!ArchiveHeapLoader::is_in_use()) {
+  if (!HeapShared::is_archived_heap_in_use()) {
     return false;
   }
 
@@ -121,13 +120,13 @@ bool CDSEnumKlass::initialize_enum_klass(InstanceKlass* k, TRAPS) {
     log_info(aot, heap)("Initializing Enum class: %s", k->external_name());
   }
 
-  oop mirror = k->java_mirror();
   int i = 0;
   for (JavaFieldStream fs(k); !fs.done(); fs.next()) {
     if (fs.access_flags().is_static()) {
       int root_index = info->enum_klass_static_field_root_index_at(i++);
       fieldDescriptor& fd = fs.field_descriptor();
       assert(fd.field_type() == T_OBJECT || fd.field_type() == T_ARRAY, "must be");
+      oop mirror = k->java_mirror();
       mirror->obj_field_put(fd.offset(), HeapShared::get_root(root_index, /*clear=*/true));
     }
   }

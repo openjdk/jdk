@@ -26,8 +26,7 @@
  * @test
  * @summary Use a shared string allocated in a humongous G1 region.
  * @comment -- the following implies that G1 is used (by command-line or by default)
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc.G1
+ * @requires vm.cds.write.mapped.java.heap
  *
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @build HelloString
