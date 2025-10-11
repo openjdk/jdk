@@ -169,6 +169,9 @@ endif
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
 SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
 
+# dev or ci
+BUILD_ENV := @BUILD_ENV@
+
 # The top-level directory of the source repository
 TOPDIR := @TOPDIR@
 # Usually the top level directory, but could be something else if a custom
