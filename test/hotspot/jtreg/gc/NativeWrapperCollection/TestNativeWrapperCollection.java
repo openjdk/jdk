@@ -30,8 +30,8 @@ package gc.NativeWrapperCollection;
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                  gc.NativeWrapperCollection.TestNativeWrapperCollection
+ * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                          gc.NativeWrapperCollection.TestNativeWrapperCollection
  */
 
 import java.lang.reflect.Method;
