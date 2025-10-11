@@ -143,6 +143,21 @@ inline void ObjectMonitor::increment_recursions(JavaThread* current) {
   _recursions++;
 }
 
+inline void ObjectMonitor::inc_unmounted_vthreads() {
+  assert(_unmounted_vthreads >= 0, "invariant");
+  AtomicAccess::inc(&_unmounted_vthreads, memory_order_relaxed);
+}
+
+inline void ObjectMonitor::dec_unmounted_vthreads() {
+  assert(_unmounted_vthreads > 0, "invariant");
+  AtomicAccess::dec(&_unmounted_vthreads, memory_order_relaxed);
+}
+
+inline bool ObjectMonitor::has_unmounted_vthreads() const {
+  assert(_unmounted_vthreads >= 0, "invariant");
+  return AtomicAccess::load(&_unmounted_vthreads) > 0;
+}
+
 // Clear _owner field; current value must match old_value.
 inline void ObjectMonitor::release_clear_owner(JavaThread* old_owner) {
   int64_t old_value = owner_id_from(old_owner);
