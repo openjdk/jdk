@@ -910,6 +910,9 @@ public:
   jint initialize() override;
 
   void safepoint_synchronize_begin() override;
+
+  void safepoint_synchronize() override;
+
   void safepoint_synchronize_end() override;
 
   jlong last_refinement_epoch_start() const { return _last_refinement_epoch_start; }

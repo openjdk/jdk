@@ -1570,9 +1570,13 @@ void G1CollectedHeap::stop() {
 }
 
 void G1CollectedHeap::safepoint_synchronize_begin() {
-  SuspendibleThreadSet::synchronize();
+  SuspendibleThreadSet::synchronize_begin();
 
   _last_synchronized_start = os::elapsed_counter();
+}
+
+void G1CollectedHeap::safepoint_synchronize() {
+  SuspendibleThreadSet::synchronize();
 }
 
 void G1CollectedHeap::safepoint_synchronize_end() {
