@@ -25,7 +25,6 @@
 
 ################################################################################
 
-include LauncherCommon.gmk
 include LibCommon.gmk
 
 JPACKAGE_OUTPUT_DIR := \
