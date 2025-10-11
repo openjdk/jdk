@@ -45,6 +45,7 @@ import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.StructuralName;
 import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.flat;
+import static compiler.lib.template_framework.Template.hashtagScope;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
 import static compiler.lib.template_framework.Template.fuel;
@@ -69,6 +70,7 @@ public class TestTutorial {
         comp.addJavaSourceCode("p.xyz.InnerTest2",  generateWithTemplateArguments());
         comp.addJavaSourceCode("p.xyz.InnerTest3",  generateWithHashtagAndDollarReplacements());
         comp.addJavaSourceCode("p.xyz.InnerTest3b", generateWithHashtagAndDollarReplacements2());
+        comp.addJavaSourceCode("p.xyz.InnerTest3c", generateWithHashtagAndDollarReplacements3());
         comp.addJavaSourceCode("p.xyz.InnerTest4",  generateWithCustomHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest5",  generateWithLibraryHooks());
         comp.addJavaSourceCode("p.xyz.InnerTest6",  generateWithRecursionAndBindingsAndFuel());
@@ -93,6 +95,7 @@ public class TestTutorial {
         comp.invoke("p.xyz.InnerTest2",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest3b", "main", new Object[] {});
+        comp.invoke("p.xyz.InnerTest3c", "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest4",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest5",  "main", new Object[] {});
         comp.invoke("p.xyz.InnerTest6",  "main", new Object[] {});
@@ -225,14 +228,12 @@ public class TestTutorial {
         var template2 = Template.make("x", (Integer x) -> scope(
             // Sometimes it can be helpful to not just create a hashtag replacement
             // with let, but also to capture the variable to use it as lambda parameter.
-            let("y", 11 * x, y ->
-                scope(
-                    """
-                    System.out.println("T2: #x, #y");
-                    """,
-                    template1.asToken(y)
-                )
-            )
+            let("y", 11 * x, y -> scope(
+                """
+                System.out.println("T2: #x, #y");
+                """,
+                template1.asToken(y)
+            ))
         ));
 
         // This template generates an int variable and assigns it a value.
@@ -323,6 +324,99 @@ public class TestTutorial {
             """
                 public static void main() {
                     if (INT_CON != 42 || LONG_CON != 42) {
+                        throw new RuntimeException("Wrong result!");
+                    }
+                }
+            }
+            """
+        ));
+
+        // Render templateClass to String.
+        return templateClass.render();
+    }
+
+    // We already have used "scope" multiple times, but not explained it yet.
+    // So far, we have seen "scope" mostly in the context of Template scopes, but they
+    // can be used in many contexts as we will see below. They can also be used on
+    // their own and in the use of "let", as we will show right now.
+    //
+    // TODO: link to later example with names!
+    public static String generateWithHashtagAndDollarReplacements3() {
+
+        var template1 = Template.make(() -> scope(
+            // We can use scopes to limit the liveness of hashtag replacements.
+            scope(
+                let("x", 3), // does not escape
+                """
+                static int v1_3 = #x;
+                """
+            ),
+            scope(
+                let("x", 5), // does not escape
+                """
+                static int v1_5 = #x;
+                """
+            ),
+            // Using "scope" does not just limit the liveness / availability
+            // of hashtag replacements, but also of DataNames, StructuralNames,
+            // and setFuelCost. We can use "hashtagScope" to only limit hashtag
+            // replacements.
+            hashtagScope(
+                let("x", 7), // does not escape
+                """
+                static int v1_7 = #x;
+                """
+            ),
+            // Using "flat" means the scope is transparent, and the hashtag
+            // replacements escape the scope.
+            flat(
+                let("x", 11), // escape escopes the "flat" scope.
+                """
+                static int v1_11a = #x;
+                """
+            ),
+            // The hashtag replacement from the "flat" scope escaped, and is
+            // still available.
+            """
+            static int v1_11b = #x;
+            """
+        ));
+
+        var template2 = Template.make("x", (Integer x) -> scope(
+            // We can map a list of values to a list of scopes. Using a scope that is
+            // non-transparent for hashtag replacements means that we can reuse the same
+            // hashtag key when looping / streaming over multiple values.
+            List.of(3, 5, 7).stream().map(y -> scope(
+                let("y", y), // does not escape -> allows reuse of hashtag key "y".
+                """
+                static int v2_#{x}_#{y} = #x * #y;
+                """
+            )).toList()
+        ));
+
+        // Let's write a simple class to demonstrate that this works, i.e. produces compilable code.
+        var templateClass = Template.make(() -> scope(
+            """
+            package p.xyz;
+
+            public class InnerTest3c {
+            """,
+            template1.asToken(),
+            template2.asToken(1),
+            template2.asToken(2),
+            """
+                public static void main() {
+                    if (v1_3 != 3 ||
+                        v1_5 != 5 ||
+                        v1_7 != 7 ||
+                        v1_11a != 11 ||
+                        v1_11b != 11 ||
+                        v2_1_3 != 3 ||
+                        v2_1_5 != 5 ||
+                        v2_1_7 != 7 ||
+                        v2_2_3 != 6 ||
+                        v2_2_5 != 10 ||
+                        v2_2_7 != 14) {
                         throw new RuntimeException("Wrong result!");
                     }
                 }
