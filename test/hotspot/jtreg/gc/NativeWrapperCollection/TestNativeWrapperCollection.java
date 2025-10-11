@@ -92,6 +92,10 @@ public class TestNativeWrapperCollection {
                 throw new AssertionError("Unexpected not-entrant entry for " +
                         "'TestNativeWrapperCollection.method'");
             }
+
+            // Found one TestNativeWrapperCollection.method, exactly one is
+            // expected
+            foundOne = true;
         }
     }
 }
