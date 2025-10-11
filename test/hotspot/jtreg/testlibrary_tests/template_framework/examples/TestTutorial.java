@@ -342,6 +342,7 @@ public class TestTutorial {
     //
     // Scopes are even more relevant for DataNames and Structural names.
     // See: generateWithDataNamesForFieldsAndVariables
+    // See: generateWithScopes1
     // TODO: link to later example with names!
     public static String generateWithHashtagAndDollarReplacements3() {
 
@@ -473,6 +474,7 @@ public class TestTutorial {
     // The choice of transparency of an insertion scope is quite important. A common use case
     // is to insert a DataName.
     // See: generateWithDataNamesForFieldsAndVariables
+    // See: generateWithScopes1
     // TODO: ensure that we teach how to use "flat" scopes at insertion.
     public static String generateWithCustomHooks() {
         // We can define a custom hook.
@@ -597,6 +599,7 @@ public class TestTutorial {
             // escape to the anchor scope, and can be available to the caller of the
             // insertion. One might want to use "flat" for the insertion scope.
             // See: generateWithDataNamesForFieldsAndVariables.
+            // See: generateWithScopes1
             // TODO: link more cases
         ));
 
@@ -1217,10 +1220,6 @@ public class TestTutorial {
     // x //     return templateClass.render();
     // x // }
 
-    // TODO: show use cases of all the different scopes.
-    // TODO: all versions of sample, with scopes?
-    // TODO: also use count, hasAny, toList and forEach.
-
     public static String generateWithScopes1() {
 
         // For the examples below, we need a convenient way of asserting the state
@@ -1252,7 +1251,69 @@ public class TestTutorial {
             addDataName("v2", myInt, MUTABLE),
             "int v2 = 2;\n",
             "// Check that both are visible:\n",
-            templateVerify.asToken(2, true, "v1, v2")
+            templateVerify.asToken(2, true, "v1, v2"),
+
+            "// Create a local scope:\n",
+            "{\n", scope( // for consistency, we model the code and template scope together.
+                "// Add v3:\n",
+                addDataName("v3", myInt, MUTABLE),
+                "int v3 = 3;\n",
+                "// Check that all are visible:\n",
+                templateVerify.asToken(3, true, "v1, v2, v3")
+            ), "}\n",
+            "// But after the scope, v3 is no longer available:\n",
+            templateVerify.asToken(2, true, "v1, v2"),
+
+            "// Now let's create a list of variables.\n",
+            List.of(4, 5, 6).stream().map(i -> hashtagScope(
+                // The hashtagScope allows hashtag replacements to be local,
+                // and DataNames to escape, so we can use them afterwards.
+                let("i", i),
+                addDataName("v" + i, myInt, MUTABLE),
+                "int v#i = #i;\n"
+            )).toList(),
+            templateVerify.asToken(5, true, "v1, v2, v4, v5, v6"),
+
+            "// Let's multiply all variables by a factor of 2, using forEach:\n",
+            dataNames(MUTABLE).exactOf(myInt).forEach(dn -> scope(
+                let("v", dn.name()),
+                "#v *= 2;\n"
+            )),
+            "// We can do the same by directly capturing the name, instead of using let:\n",
+            dataNames(MUTABLE).exactOf(myInt).forEach("v", "type", dn -> scope(
+                "#v *= 2;\n"
+            )),
+            "// Yet another option is using toList, but here that is more cumbersome:\n",
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> scope(
+                list.stream().map(dn -> scope(
+                    let("v", dn.name()),
+                    "#v *= 2;\n"
+                )).toList()
+            )),
+
+            """
+            // We verify the result again.
+            """,
+            templateVerify.asToken(5, true, "v1, v2, v4, v5, v6"),
+            """
+            if (v1 != 1 * 8 ||
+                v2 != 2 * 8 ||
+                v4 != 4 * 8 ||
+                v5 != 5 * 8 ||
+                v6 != 6 * 8) {
+                throw new RuntimeException("wrong value!");
+            }
+            """,
+
+            "// Let us copy each variable:\n",
+            dataNames(MUTABLE).exactOf(myInt).forEach("v", "type", dn -> hashtagScope(
+                // Note that we need a hashtagScope here, so that we can reuse "v" as
+                // hashtag replacement in each iteration, but still let the copied
+                // DataNames escape.
+                addDataName(dn.name() + "_copy", myInt, MUTABLE),
+                "int #{v}_copy = #v;\n"
+            )),
+            templateVerify.asToken(10, true, "v1, v2, v4, v5, v6, v1_copy, v2_copy, v4_copy, v5_copy, v6_copy")
         ));
 
         var templateClass = Template.make(() -> scope(
@@ -1280,6 +1341,8 @@ public class TestTutorial {
         // Render templateClass to String.
         return templateClass.render();
     }
+
+    // TODO: show some more realistic use of DataNames in a recursive example.
 
     // There are two more concepts to understand more deeply with DataNames.
     //
