@@ -654,7 +654,8 @@ public final class Connection implements Runnable {
 
                     flushAndCloseOutputStream();
                     // 8313657 socket is not closed until GC is run
-                    closeOpenedSocket(sock);
+                    // due to the bug 8362268, the closure of the resource is moved to LdapClient.java
+                    //closeOpenedSocket(sock);
                     tryUnpauseReader();
 
                     if (!notifyParent) {
@@ -673,7 +674,6 @@ public final class Connection implements Runnable {
                             tlsHandshakeListener.tlsHandshakeCompleted.cancel(false);
                         }
                     }
-                    sock = null;
                 }
                 nparent = notifyParent;
             }
@@ -699,12 +699,6 @@ public final class Connection implements Runnable {
         } catch (IOException ioEx) {
             if (debug)
                 System.err.println("Connection.flushOutputStream: OutputStream flush problem " + ioEx);
-        }
-        try {
-            outStream.close();
-        } catch (IOException ioEx) {
-            if (debug)
-                System.err.println("Connection.closeOutputStream: OutputStream close problem " + ioEx);
         }
     }
 

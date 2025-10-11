@@ -27,11 +27,7 @@ import javax.naming.directory.InitialDirContext;
 import javax.net.SocketFactory;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Hashtable;
 
 import jdk.test.lib.process.OutputAnalyzer;
@@ -65,6 +61,7 @@ public class SocketCloseTest {
         props.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         props.put(Context.PROVIDER_URL, "ldap://localhost:1389/o=example");
         props.put("java.naming.ldap.factory.socket", CustomSocketFactory.class.getName());
+        props.put("com.sun.jndi.ldap.connect.timeout", 100+"");
         try {
             final DirContext ctx = new InitialDirContext(props);
         } catch (Exception e) {
@@ -112,48 +109,8 @@ public class SocketCloseTest {
         }
     }
 
-    private static class LdapInputStream extends InputStream {
-        private ByteArrayInputStream bos;
-
-        public LdapInputStream() {
-        }
-
-        @Override
-        public int read() throws IOException {
-            bos = new ByteArrayInputStream(BIND_RESPONSE);
-            return bos.read();
-        }
-    }
-
-    private static class LdapOutputStream extends OutputStream {
-
-        @Override
-        public void write(int b) throws IOException {
-            System.out.println("output stream writing");
-        }
-
-        @Override
-        public void flush() throws IOException {
-            System.out.println(BAD_FLUSH);
-            throw new IOException(BAD_FLUSH);
-        }
-    }
-
     private static class CustomSocket extends Socket {
         private int closeMethodCalled = 0;
-        private LdapOutputStream output = new LdapOutputStream();
-        private LdapInputStream input = new LdapInputStream();
-
-        public void connect(SocketAddress address, int timeout) {
-        }
-
-        public InputStream getInputStream() {
-            return input;
-        }
-
-        public OutputStream getOutputStream() {
-            return output;
-        }
 
         public int closeMethodCalledCount() {
             return closeMethodCalled;
