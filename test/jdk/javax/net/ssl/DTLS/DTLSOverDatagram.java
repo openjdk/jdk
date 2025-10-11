@@ -21,9 +21,6 @@
  * questions.
  */
 
-// SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.
-
 /*
  * @test
  * @bug 8043758
@@ -61,6 +58,9 @@ public class DTLSOverDatagram {
     private static final String PATH_TO_STORES = "../etc";
     private static final String KEY_STORE_FILE = "keystore";
     private static final String TRUST_STORE_FILE = "truststore";
+    protected static final String HOST = "localhost";
+    protected static final int CLIENT_PORT = findAvailablePort();
+    protected static final int SERVER_PORT = findAvailablePort();
 
     private static final String KEY_FILENAME =
             System.getProperty("test.src", ".") + "/" + PATH_TO_STORES +
@@ -132,8 +132,10 @@ public class DTLSOverDatagram {
      * The remainder is support stuff for DTLS operations.
      */
     SSLEngine createSSLEngine(boolean isClient) throws Exception {
-        SSLContext context = getDTLSContext();
-        SSLEngine engine = context.createSSLEngine();
+        SSLContext context =
+                isClient ? getClientDTLSContext() : getServerDTLSContext();
+        SSLEngine engine = context.createSSLEngine(HOST,
+                isClient ? CLIENT_PORT : SERVER_PORT);
 
         SSLParameters paras = engine.getSSLParameters();
         paras.setMaximumPacketSize(MAXIMUM_PACKET_SIZE);
@@ -507,7 +509,7 @@ public class DTLSOverDatagram {
     }
 
     // get DTSL context
-    SSLContext getDTLSContext() throws Exception {
+    static SSLContext getDTLSContext() throws Exception {
         String passphrase = "passphrase";
         return SSLContextBuilder.builder()
                 .trustStore(KeyStoreUtils.loadKeyStore(TRUST_FILENAME, passphrase))
@@ -515,6 +517,14 @@ public class DTLSOverDatagram {
                 .kmfPassphrase(passphrase)
                 .protocol("DTLS")
                 .build();
+    }
+
+    protected SSLContext getServerDTLSContext() throws Exception {
+        return getDTLSContext();
+    }
+
+    protected SSLContext getClientDTLSContext() throws Exception {
+        return getDTLSContext();
     }
 
 
@@ -525,10 +535,10 @@ public class DTLSOverDatagram {
 
 
     public final void runTest(DTLSOverDatagram testCase) throws Exception {
-        InetSocketAddress serverSocketAddress = new InetSocketAddress
-                (InetAddress.getLoopbackAddress(), 0);
-        InetSocketAddress clientSocketAddress = new InetSocketAddress
-                (InetAddress.getLoopbackAddress(), 0);
+        InetSocketAddress serverSocketAddress =
+                new InetSocketAddress(HOST, SERVER_PORT);
+        InetSocketAddress clientSocketAddress =
+                new InetSocketAddress(HOST, CLIENT_PORT);
 
         try (DatagramSocket serverSocket = new DatagramSocket(serverSocketAddress);
                 DatagramSocket clientSocket = new DatagramSocket(clientSocketAddress)) {
@@ -536,20 +546,14 @@ public class DTLSOverDatagram {
             serverSocket.setSoTimeout(socketTimeout);
             clientSocket.setSoTimeout(socketTimeout);
 
-            InetSocketAddress serverSocketAddr = new InetSocketAddress(
-                    InetAddress.getLoopbackAddress(), serverSocket.getLocalPort());
-
-            InetSocketAddress clientSocketAddr = new InetSocketAddress(
-                    InetAddress.getLoopbackAddress(), clientSocket.getLocalPort());
-
             ExecutorService pool = Executors.newFixedThreadPool(1);
             Future<Void> server;
 
             server = pool.submit(() -> runServer(
-                        testCase, serverSocket, clientSocketAddr));
+                    testCase, serverSocket, clientSocketAddress));
             pool.shutdown();
 
-            runClient(testCase, clientSocket, serverSocketAddr);
+            runClient(testCase, clientSocket, serverSocketAddress);
             server.get();
         }
     }
@@ -619,5 +623,13 @@ public class DTLSOverDatagram {
 
     static void log(String side, String message) {
         System.out.println(side + ": " + message);
+    }
+
+    static int findAvailablePort() {
+        try (var socket = new DatagramSocket(0)) {
+            return socket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

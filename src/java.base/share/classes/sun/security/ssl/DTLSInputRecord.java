@@ -1444,18 +1444,12 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 // the ChangeCipherSpec/Finished flight
                 //
                 if (expectCCSFlight) {
-                    // NewSessionTicket message presence in the final flight
-                    // should only be expected on the client side, and only
-                    // if stateless resumption is enabled.
-                    boolean isReady = hasFinishedMessage(bufferedFragments)
-                            && (!tc.sslConfig.isClientMode
-                            || !tc.handshakeContext.statelessResumption
-                            || hasCompleted(
-                            SSLHandshake.NEW_SESSION_TICKET.id));
-
+                    // Have the ChangeCipherSpec/Finished flight been received?
+                    boolean isReady = hasFinishedMessage();
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
-                        SSLLogger.fine("Has the final flight been received? "
-                                + isReady);
+                        SSLLogger.fine(
+                                "Has the final flight been received? "
+                                        + isReady);
                     }
 
                     return isReady;
@@ -1499,7 +1493,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                 //
                 // an abbreviated handshake
                 //
-                if (hasFinishedMessage(bufferedFragments)) {
+                if (hasFinishedMessage()) {
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                         SSLLogger.fine("It's an abbreviated handshake.");
                     }
@@ -1572,7 +1566,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     }
                 }
 
-                if (!hasFinishedMessage(bufferedFragments)) {
+                if (!hasFinishedMessage()) {
                     // not yet have the ChangeCipherSpec/Finished messages
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                         SSLLogger.fine(
@@ -1608,35 +1602,34 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
             return false;
         }
 
-        // Looking for the ChangeCipherSpec and Finished messages.
+        // Looking for the ChangeCipherSpec, Finished and
+        // NewSessionTicket messages.
         //
         // As the cached Finished message should be a ciphertext, we don't
         // exactly know a ciphertext is a Finished message or not.  According
         // to the spec of TLS/DTLS handshaking, a Finished message is always
         // sent immediately after a ChangeCipherSpec message.  The first
         // ciphertext handshake message should be the expected Finished message.
-        private boolean hasFinishedMessage(Set<RecordFragment> fragments) {
-
+        private boolean hasFinishedMessage() {
             boolean hasCCS = false;
             boolean hasFin = false;
-            for (RecordFragment fragment : fragments) {
+
+            for (RecordFragment fragment : bufferedFragments) {
                 if (fragment.contentType == ContentType.CHANGE_CIPHER_SPEC.id) {
-                    if (hasFin) {
-                        return true;
-                    }
                     hasCCS = true;
-                } else if (fragment.contentType == ContentType.HANDSHAKE.id) {
-                    // Finished is the first expected message of a new epoch.
-                    if (fragment.isCiphertext) {
-                        if (hasCCS) {
-                            return true;
-                        }
-                        hasFin = true;
-                    }
+                } else if (fragment.contentType == ContentType.HANDSHAKE.id
+                        && fragment.isCiphertext) {
+                    hasFin = true;
                 }
             }
 
-            return false;
+            return hasCCS && hasFin
+                    // NewSessionTicket message presence in the finished flight
+                    // should only be expected on the client side, and only
+                    // if stateless resumption is enabled.
+                    && (!tc.sslConfig.isClientMode
+                    || !tc.handshakeContext.statelessResumption
+                    || hasCompleted(SSLHandshake.NEW_SESSION_TICKET.id));
         }
 
         // Is client CertificateVerify a mandatory message?
