@@ -85,7 +85,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   void update_card_table_base(Thread* thread);
 
   virtual bool card_mark_must_follow_store() const {
-    return true;
+    return false;
   }
 
   // Add "pre_val" to a set of objects that may have been disconnected from the
