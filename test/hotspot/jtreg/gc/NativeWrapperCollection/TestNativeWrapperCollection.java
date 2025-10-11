@@ -70,8 +70,8 @@ public class TestNativeWrapperCollection {
             Thread.onSpinWait();
         }
 
-        WB.fullGC();
-        WB.forceSafepoint();
+        WB.fullGC(); // mark the nmethod as not on stack
+        WB.fullGC(); // reclaim the nmethod
 
         // Get output from dcmd (diagnostic command)
         OutputAnalyzer output = new JMXExecutor().execute("Compiler.codelist");
