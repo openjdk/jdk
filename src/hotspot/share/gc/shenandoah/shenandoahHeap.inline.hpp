@@ -109,35 +109,49 @@ inline void ShenandoahHeap::leave_evacuation(Thread* t) {
 }
 
 template <class T>
-inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p) {
+inline void ShenandoahHeap::non_conc_update_with_forwarded(T* p, ShenandoahCSetMap cset_map) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
-      // Corner case: when evacuation fails, there are objects in collection
-      // set that are not really forwarded. We can still go and try and update them
-      // (uselessly) to simplify the common path.
-      shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
-      shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
-
-      // Unconditionally store the update: no concurrent updates expected.
-      RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
+    CSetState cset_state = cset_map.cset_state(obj);
+    oop fwd;
+    switch (cset_state) {
+      case CSetState::NOT_IN_CSET:
+        return;
+      case CSetState::IN_CSET:
+        fwd = ShenandoahForwarding::get_forwardee(obj);
+        break;
+      case CSetState::FWDTABLE_COMPACT:
+        fwd = heap_region_containing(obj)->forwardee_compact(obj);
+        break;
+      case CSetState::FWDTABLE_WIDE:
+        fwd = heap_region_containing(obj)->forwardee_wide(obj);
+        break;
+      default: ShouldNotReachHere();
     }
+    // Corner case: when evacuation fails, there are objects in collection
+    // set that are not really forwarded. We can still go and try and update them
+    // (uselessly) to simplify the common path.
+    shenandoah_assert_marked_except(p, obj, cancelled_gc());
+    //shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
+
+    // Unconditionally store the update: no concurrent updates expected.
+    RawAccess<IS_NOT_NULL>::oop_store(p, fwd);
   }
 }
 
 template <class T>
-inline void ShenandoahHeap::conc_update_with_forwarded(T* p) {
+inline void ShenandoahHeap::conc_update_with_forwarded(T* p, ShenandoahCSetMap cset_map) {
   T o = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(o)) {
     oop obj = CompressedOops::decode_not_null(o);
-    if (in_collection_set(obj)) {
+    CSetState cset_state = cset_map.cset_state(obj);
+    if (cset_map.is_in(cset_state)) {
       // Corner case: when evacuation fails, there are objects in collection
       // set that are not really forwarded. We can still go and try CAS-update them
       // (uselessly) to simplify the common path.
       shenandoah_assert_forwarded_except(p, obj, cancelled_gc());
-      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      oop fwd = ShenandoahBarrierSet::resolve_forwarded_not_null(obj, this, cset_state);
       shenandoah_assert_not_in_cset_except(p, fwd, cancelled_gc());
 
       // Sanity check: we should not be updating the cset regions themselves,
@@ -447,12 +461,12 @@ inline bool ShenandoahHeap::requires_marking(const void* entry) const {
 
 inline bool ShenandoahHeap::in_collection_set(oop p) const {
   assert(collection_set() != nullptr, "Sanity");
-  return collection_set()->is_in(p);
+  return _cset_map.is_in(p);
 }
 
 inline bool ShenandoahHeap::in_collection_set_loc(void* p) const {
   assert(collection_set() != nullptr, "Sanity");
-  return collection_set()->is_in_loc(p);
+    return _cset_map.is_in_loc(p);
 }
 
 inline bool ShenandoahHeap::is_idle() const {
@@ -564,8 +578,8 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
         assert (slots[c] < tams,  "only objects below TAMS here: "  PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(tams));
         assert (slots[c] < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(slots[c]), p2i(limit));
         oop obj = cast_to_oop(slots[c]);
-        assert(oopDesc::is_oop(obj), "sanity");
         assert(ctx->is_marked(obj), "object expected to be marked");
+        //assert(oopDesc::is_oop(obj), "sanity: " PTR_FORMAT ", mark: " INTPTR_FORMAT ", 2nd word: " PTR_FORMAT, p2i(obj), obj->mark().value(), p2i(*(cast_from_oop<HeapWord*>(obj) + 1)));
         cl->do_object(obj);
       }
     } while (avail > 0);
@@ -592,7 +606,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     assert (cs >= tams, "only objects past TAMS here: "   PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(tams));
     assert (cs < limit, "only objects below limit here: " PTR_FORMAT " (" PTR_FORMAT ")", p2i(cs), p2i(limit));
     oop obj = cast_to_oop(cs);
-    assert(oopDesc::is_oop(obj), "sanity");
+    //assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
     size_t size = ShenandoahForwarding::size(obj);
     cl->do_object(obj);

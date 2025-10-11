@@ -116,8 +116,13 @@ private:
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
+      assert(Universe::is_in_heap(obj), "ref: " PTR_FORMAT ", obj: " PTR_FORMAT ", use_fwd_table: %s, obj-mark: " INTPTR_FORMAT, p2i(p), p2i(obj), BOOL_TO_STR(_heap->collection_set()->use_forward_table(obj)), obj->mark().value());
+      if (_heap->collection_set()->use_forward_table(obj)) {
+        obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
+      }
+      // log_info(gc)("load Klass* from obj: " PTR_FORMAT, p2i(obj));
       if (is_instance_ref_klass(ShenandoahForwarding::klass(obj))) {
-        obj = ShenandoahForwarding::get_forwardee(obj);
+        obj = ShenandoahBarrierSet::resolve_forwarded_not_null(obj);
       }
       // Single threaded verification can use faster non-atomic stack and bitmap
       // methods.
@@ -260,8 +265,8 @@ private:
             klass == nullptr || Metaspace::contains(klass),
             "Mirrored instance class should point to Metaspace");
 
-      const Metadata* array_klass = obj->metadata_field(java_lang_Class::array_klass_offset());
-      check(ShenandoahAsserts::_safe_oop, obj,
+      const Metadata* array_klass = fwd->metadata_field(java_lang_Class::array_klass_offset());
+      check(ShenandoahAsserts::_safe_oop_fwd, obj,
             array_klass == nullptr || Metaspace::contains(array_klass),
             "Mirrored array class should point to Metaspace");
     }
@@ -690,7 +695,12 @@ public:
         if (!in_generation(r)) {
           continue;
         }
-
+        if (_heap->collection_set()->use_forward_table(r)) {
+          // That region has no parsable objects anymore.
+          // TODO: We could probably still parse marked locations and verify
+          // the forwardees from the forwarding table.
+          continue;
+        }
         if (!r->is_humongous() && !r->is_trash()) {
           work_regular(r, stack, cl);
         } else if (r->is_humongous_start()) {

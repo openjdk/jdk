@@ -26,12 +26,14 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_HPP
 
+#include "shenandoahForwardingTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahForwardingTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "utilities/sizes.hpp"
@@ -268,6 +270,8 @@ private:
 
   bool _needs_bitmap_reset;
 
+  ShenandoahForwardingTable _fwd_table;
+
 public:
   ShenandoahHeapRegion(HeapWord* start, size_t index, bool committed);
 
@@ -490,6 +494,22 @@ public:
   inline void unset_needs_bitmap_reset() {
     _needs_bitmap_reset = false;
   }
+
+  bool build_forwarding_table(size_t num_forwardings) {
+    return _fwd_table.build(num_forwardings);
+  }
+
+  void zap_to_fwd_table() {
+    _fwd_table.zap_region();
+  }
+
+  HeapWord* forwarding_table_start() const {
+    return _fwd_table.start();
+  }
+
+  oop forwardee_compact(oop obj) const;
+
+  oop forwardee_wide(oop obj) const;
 
 private:
   void decrement_humongous_waste() const;
