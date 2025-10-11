@@ -119,9 +119,11 @@ void vmClasses::resolve_all(TRAPS) {
   // after vmSymbols::initialize() is called but before any classes are pre-loaded.
   ClassLoader::classLoader_init2(THREAD);
 
+#if INCLUDE_CDS
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::preload_classes(THREAD);
   }
+#endif
 
   // Preload commonly used klasses
   vmClassID scan = vmClassID::FIRST;

@@ -97,7 +97,9 @@ public:
   // It supports recursive locking and a read-only mode (in which case no locks are taken).
   // It is also a part of the TD collection termination protocol (see the "snapshot" field).
   class TrainingDataLocker {
+#if INCLUDE_CDS
     static volatile bool _snapshot; // If true we're not allocating new training data
+#endif
     static int _lock_mode;
     const bool _recursive;
     static void lock() {
@@ -152,7 +154,9 @@ public:
 #endif
     }
     static void assert_locked_or_snapshotted() {
+#if INCLUDE_CDS
       assert(safely_locked() || _snapshot, "use under TrainingDataLocker or after snapshot");
+#endif
     }
     static void assert_locked() {
       assert(safely_locked(), "use under TrainingDataLocker");
