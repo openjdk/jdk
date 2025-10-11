@@ -195,7 +195,6 @@ bool Rdtsc::initialize() {
   static bool initialized = false;
   if (!initialized) {
     assert(!rdtsc_elapsed_counter_enabled, "invariant");
-    VM_Version::initialize_tsc();
     assert(0 == tsc_frequency, "invariant");
     assert(0 == _epoch, "invariant");
     bool result = initialize_elapsed_counter(); // init hw
