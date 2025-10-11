@@ -492,6 +492,12 @@ public class TestTutorial {
             )),
             """
             // We can do that by inserting a scope like above, or by inserting a template, like below.
+            //
+            // Which method is used is up to the user. General guidance is if the same code may be
+            // inserted elsewhere, one should lean towards inserting templates. But in many cases
+            // it is nice to see the inserted code directly, and to be able to use hashtag replacements
+            // from the outer scope directly, without having to route them via template arguments,
+            // as we have to do below.
             """,
             myHook.insert(template1.asToken($("field2"), x)),
             """
@@ -553,31 +559,33 @@ public class TestTutorial {
     // there is a class scope inside another class scope. Similarly, we can nest lambda bodies
     // inside method bodies, so also METHOD_HOOK can be used in such a "re-entrant" way.
     public static String generateWithLibraryHooks() {
-        var templateStaticField = Template.make("name", "value", (String name, Integer value) -> scope(
-            """
-            static { System.out.println("Defining static field #name"); }
-            public static int #name = #value;
-            """
-        ));
-
-        var templateLocalVariable = Template.make("name", "value", (String name, Integer value) -> scope(
-            """
-            System.out.println("Defining local variable #name");
-            int #name = #value;
-            """
-        ));
 
         var templateMethodBody = Template.make(() -> scope(
             """
             // Let's define a local variable $var and a static field $field.
-            """,
-            Hooks.CLASS_HOOK.insert(templateStaticField.asToken($("field"), 5)),
-            Hooks.METHOD_HOOK.insert(templateLocalVariable.asToken($("var"), 11)),
-            """
+            // Since we are inserting them at the anchor before the code below,
+            // they will already be available:
             System.out.println("$field: " + $field);
             System.out.println("$var: " + $var);
+            """,
+            Hooks.CLASS_HOOK.insert(scope(
+                let("value", 5),
+                """
+                static { System.out.println("Defining static field $field"); }
+                public static int $field = #value;
+                """
+            )),
+            Hooks.METHOD_HOOK.insert(scope(
+                let("value", 11),
+                """
+                System.out.println("Defining local variable $var");
+                int $var = #value;
+                """
+            )),
+            """
             if ($field * $var != 55) { throw new RuntimeException("Wrong value!"); }
             """
+            // TODO: add good practive note about insert scope, should be "flat", link to DataName use?
         ));
 
         var templateClass = Template.make(() -> scope(
@@ -722,26 +730,12 @@ public class TestTutorial {
     private static final MySimpleInt mySimpleInt = new MySimpleInt();
 
     // In this example, we generate 3 fields, and add their names to the
-    // current scope. In a nested Template, we can then sample one of these
-    // DataNames, which gives us one of the fields. We increment that randomly
-    // chosen field. At the end, we print all three fields.
+    // current scope. We can then sample some of these DataNames, which
+    // gives us one of those fields each time. We increment those randomly
+    // chosen fields. At the end, we print all three fields.
     public static String generateWithDataNamesSimple() {
-        var templateMain = Template.make(() -> scope(
-            // Sample a random DataName, i.e. field, and assign its name to
-            // the hashtag replacement "#f".
-            // We are picking a mutable DataName, because we are not just
-            // reading but also writing to the field.
-            dataNames(MUTABLE).exactOf(mySimpleInt).sampleAndLetAs("f"),
-            // TODO: ensure we show different options for "sample"
-            """
-            // Let us now sample a random field #f, and increment it.
-            #f += 42;
-            """
-        ));
-
         var templateClass = Template.make(() -> scope(
             // Let us define the names for the three fields.
-            // We can then sample from these names in a nested Template.
             // We make all DataNames mutable, and with the same weight of 1,
             // so that they have equal probability of being sampled.
             // Note: the default weight is 1, so we can also omit the weight.
@@ -758,18 +752,35 @@ public class TestTutorial {
                 public static int $f3 = 0;
 
                 public static void main() {
-                    // Let us now call the nested template that samples
-                    // a random field and increments it.
+                    // Let us now sample a random field and assign its name to
+                    // the hashtag replacement "a".
                     """,
-                    templateMain.asToken(),
+                    dataNames(MUTABLE).exactOf(mySimpleInt).sampleAndLetAs("a"),
+                    """
+                    // We can now access the field, and increment it.
+                    #a += 42;
+                    // If we are also interested in the type of the field, we can do:
+                    """,
+                    dataNames(MUTABLE).exactOf(mySimpleInt).sampleAndLetAs("b", "bType"),
+                    """
+                    #b += 7;
+                    // In some cases, we may want to capture the DataName directly, which
+                    // requires capturing the value in a lambda that creates an inner scope:
+                    """,
+                    dataNames(MUTABLE).exactOf(mySimpleInt).sample((DataName dn) -> scope(
+                        let("c", dn.name()),
+                        """
+                        #c += 12;
+                        """
+                    )),
                     """
                     // Now, we can print all three fields, and see which
-                    // one was incremented.
+                    // ones were incremented.
                     System.out.println("f1: " + $f1);
                     System.out.println("f2: " + $f2);
                     System.out.println("f3: " + $f3);
-                    // We have two zeros, and one 42.
-                    if ($f1 + $f2 + $f3 != 42) { throw new RuntimeException("wrong result!"); }
+                    // Make sure they add up to the correct sum.
+                    if ($f1 + $f2 + $f3 != 42 + 7 + 12) { throw new RuntimeException("wrong result!"); }
                 }
             }
             """
@@ -778,6 +789,8 @@ public class TestTutorial {
         // Render templateClass to String.
         return templateClass.render();
     }
+
+    // TODO: CONTINUE HERE WITH REFACTORING
 
     // In the example above, we could have easily kept track of the three fields ourselves,
     // and would not have had to rely on the Template Framework's DataNames for this. However,
