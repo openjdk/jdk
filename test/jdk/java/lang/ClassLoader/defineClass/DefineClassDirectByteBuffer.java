@@ -61,8 +61,11 @@ public class DefineClassDirectByteBuffer {
     static final int ARRAY_BUFFER = 0;
     static final int WRAPPED_BUFFER = 1;
     static final int DIRECT_BUFFER = 2;
-    static final int FOREIGN_BUFFER = 3;
-    static final int MAPPED_BUFFER = 4;
+    static final int MAPPED_BUFFER = 3;
+    static final int FOREIGN_AUTO_BUFFER = 4;
+    static final int FOREIGN_CONFINED_BUFFER = 5;
+    static final int FOREIGN_GLOBAL_BUFFER = 6;
+    static final int FOREIGN_SHARED_BUFFER = 7;
 
     // -------- untrusted path (custom loader) --------
     static Stream<Arguments> bufferTypes() {
@@ -83,14 +86,29 @@ public class DefineClassDirectByteBuffer {
                 arguments(DIRECT_BUFFER, true, 0, false),
                 arguments(DIRECT_BUFFER, true, 16, false),
 
-                arguments(FOREIGN_BUFFER, false, 0, false),
-                arguments(FOREIGN_BUFFER, false, 16, false),
-                arguments(FOREIGN_BUFFER, true, 0, false),
-                arguments(FOREIGN_BUFFER, true, 16, false),
-
                 // MapMode.READ_ONLY from READ fc, the bb is readonly
                 arguments(MAPPED_BUFFER, false, 0, false),
-                arguments(MAPPED_BUFFER, false, 16, false)
+                arguments(MAPPED_BUFFER, false, 16, false),
+
+                arguments(FOREIGN_AUTO_BUFFER, false, 0, false),
+                arguments(FOREIGN_AUTO_BUFFER, false, 16, false),
+                arguments(FOREIGN_AUTO_BUFFER, true, 0, false),
+                arguments(FOREIGN_AUTO_BUFFER, true, 16, false),
+
+                arguments(FOREIGN_CONFINED_BUFFER, false, 0, false),
+                arguments(FOREIGN_CONFINED_BUFFER, false, 16, false),
+                arguments(FOREIGN_CONFINED_BUFFER, true, 0, false),
+                arguments(FOREIGN_CONFINED_BUFFER, true, 16, false),
+
+                arguments(FOREIGN_SHARED_BUFFER, false, 0, false),
+                arguments(FOREIGN_SHARED_BUFFER, false, 16, false),
+                arguments(FOREIGN_SHARED_BUFFER, true, 0, false),
+                arguments(FOREIGN_SHARED_BUFFER, true, 16, false),
+
+                arguments(FOREIGN_GLOBAL_BUFFER, false, 0, false),
+                arguments(FOREIGN_GLOBAL_BUFFER, false, 16, false),
+                arguments(FOREIGN_GLOBAL_BUFFER, true, 0, false),
+                arguments(FOREIGN_GLOBAL_BUFFER, true, 16, false)
         );
     }
 
@@ -118,9 +136,36 @@ public class DefineClassDirectByteBuffer {
                         .flip()
                         .position(pos);
             }
-            case FOREIGN_BUFFER -> {
+            case FOREIGN_AUTO_BUFFER -> {
+                return Arena
+                        .ofAuto()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .position(pos);
+            }
+            case FOREIGN_CONFINED_BUFFER -> {
                 return Arena
                         .ofConfined()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .position(pos);
+            }
+            case FOREIGN_GLOBAL_BUFFER -> {
+                return Arena
+                        .global()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .position(pos);
+            }
+            case FOREIGN_SHARED_BUFFER -> {
+                return Arena
+                        .ofShared()
                         .allocate(classBytes.length)
                         .asByteBuffer()
                         .put(classBytes)
