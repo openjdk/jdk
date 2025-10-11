@@ -315,7 +315,7 @@ class Universe: AllStatic {
   DEBUG_ONLY(static bool is_in_heap_or_null(const void* p) { return p == nullptr || is_in_heap(p); })
 
   // Reserve Java heap and determine CompressedOops mode
-  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment);
+  static ReservedHeapSpace reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size = 0);
 
   // Global OopStorages
   static OopStorage* vm_weak();

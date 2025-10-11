@@ -41,6 +41,9 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
   // ReservedSpace passed to initialize() must be aligned to this value.
   const size_t _alignment;
 
+  // OS page size used. If using Transparent Huge Pages, it's the desired large page-size.
+  const size_t _page_size;
+
   // Reserved area
   char* _reserved_low_addr;
   char* _reserved_high_addr;
@@ -68,6 +71,7 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
 
   // Accessors (all sizes are bytes).
   size_t alignment()          const { return _alignment; }
+  size_t page_size()          const { return _page_size; }
   char* reserved_low_addr()   const { return _reserved_low_addr; }
   char* reserved_high_addr()  const { return _reserved_high_addr; }
   char* committed_low_addr()  const { return _committed_low_addr; }
