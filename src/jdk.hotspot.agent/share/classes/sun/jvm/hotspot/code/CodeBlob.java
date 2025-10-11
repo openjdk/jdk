@@ -180,6 +180,8 @@ public class CodeBlob extends VMObject {
 
   public boolean isUpcallStub()         { return getKind() == UpcallKind; }
 
+  public boolean isContinuationStub()   { return getName().equals("StubRoutines (continuation stubs)"); }
+
   public boolean isJavaMethod()         { return false; }
 
   public boolean isNativeMethod()       { return false; }
