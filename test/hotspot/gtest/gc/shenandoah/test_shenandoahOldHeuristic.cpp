@@ -104,7 +104,7 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
     region->set_affiliation(OLD_GENERATION);
     region->make_regular_allocation(OLD_GENERATION);
     size_t live_bytes = ShenandoahHeapRegion::region_size_bytes() - garbage_bytes;
-    region->increase_live_data_alloc_words(live_bytes / HeapWordSize);
+    region->increase_live_data_gc_words(live_bytes / HeapWordSize);
     region->set_top(region->end());
     return region->garbage();
   }
