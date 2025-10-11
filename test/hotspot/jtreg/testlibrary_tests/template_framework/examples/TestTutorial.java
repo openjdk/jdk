@@ -44,7 +44,7 @@ import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.DataName;
 import compiler.lib.template_framework.StructuralName;
 import static compiler.lib.template_framework.Template.scope;
-import static compiler.lib.template_framework.Template.flat;
+import static compiler.lib.template_framework.Template.transparentScope;
 import static compiler.lib.template_framework.Template.hashtagScope;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
@@ -365,15 +365,15 @@ public class TestTutorial {
                 static int v1_7 = #x;
                 """
             ),
-            // Using "flat" means the scope is transparent, and the hashtag
+            // Using "transparentScope" means the scope is transparent, and the hashtag
             // replacements escape the scope.
-            flat(
-                let("x", 11), // escape escopes the "flat" scope.
+            transparentScope(
+                let("x", 11), // escape escopes the "transparentScope".
                 """
                 static int v1_11a = #x;
                 """
             ),
-            // The hashtag replacement from the "flat" scope escaped, and is
+            // The hashtag replacement from the "transparentScope" escaped, and is
             // still available.
             """
             static int v1_11b = #x;
@@ -403,13 +403,13 @@ public class TestTutorial {
                 """
             )),
             // But in rare cases, we may want "y" and some nested "z" to escape.
-            let("y", x * 11, y -> flat(
+            let("y", x * 11, y -> transparentScope(
                 let("z", y * 2),
                 """
                 static int v3b_#{x} = #y - #z;
                 """
             )),
-            // Because of the "flat" scope, "y" and "z" have escaped.
+            // Because of the "transparentScope", "y" and "z" have escaped.
             """
             static int v3c_#{x} = #y - #z;
             """,
@@ -417,7 +417,7 @@ public class TestTutorial {
             // That is not very useful, but a similar trick can be used for other queries, that
             // only provide a lambda version, and where we only want to use the hashtag replacement.
             let("a", -x),
-            let("b", -x, b -> flat()),
+            let("b", -x, b -> transparentScope()),
             """
             static int v3d_#{x} = #a + #b;
             """
@@ -591,7 +591,7 @@ public class TestTutorial {
             // we were to also "addDataName" inside the insert scope, we would have to
             // make sure that the scope is transparent for DataNames, so that they can
             // escape to the anchor scope, and can be available to the caller of the
-            // insertion. One might want to use "flat" for the insertion scope.
+            // insertion. One might want to use "transparentScope" for the insertion scope.
             // See: generateWithDataNamesForFieldsAndVariables.
             // See: generateWithScopes1
         ));
@@ -827,10 +827,10 @@ public class TestTutorial {
 
     public static String generateWithDataNamesForFieldsAndVariables() {
         // Define a static field.
-        // Note: it is very important that we use a "flat" scope for the template here,
+        // Note: it is very important that we use a "transparentScope" for the template here,
         //       so that the DataName can escape to outer scopes.
-        var templateStaticField = Template.make("type", (DataName.Type type) -> flat(
-            addDataName($("field"), type, MUTABLE), // escapes template because of "flat"
+        var templateStaticField = Template.make("type", (DataName.Type type) -> transparentScope(
+            addDataName($("field"), type, MUTABLE), // escapes template because of "transparentScope"
             // Note: since we have overridden MyPrimitive::toString, we can use
             //       the type directly as "#type" in the template, which then
             //       gets hashtag replaced with "int" or "long".
@@ -840,10 +840,10 @@ public class TestTutorial {
         ));
 
         // Define a local variable.
-        // Note: it is very important that we use a "flat" scope for the template here,
+        // Note: it is very important that we use a "transparentScope" for the template here,
         //       so that the DataName can escape to outer scopes.
-        var templateLocalVariable = Template.make("type", (DataName.Type type) -> flat(
-            addDataName($("var"), type, MUTABLE), // escapes template because of "flat"
+        var templateLocalVariable = Template.make("type", (DataName.Type type) -> transparentScope(
+            addDataName($("var"), type, MUTABLE), // escapes template because of "transparentScope"
             """
             #type $var = 0;
             """
@@ -881,9 +881,9 @@ public class TestTutorial {
             // with a lambda and inner scope as above. If we only need to have
             // the count as a hashtag replacement, we can also use the follwing
             // trick:
-            dataNames(MUTABLE).exactOf(myInt).count(c -> flat(let("ints", c))),
-            dataNames(MUTABLE).exactOf(myLong).count(c -> flat(let("longs", c))),
-            // Because of the "flat" scopes, the hashtag replacements escape.
+            dataNames(MUTABLE).exactOf(myInt).count(c -> transparentScope(let("ints", c))),
+            dataNames(MUTABLE).exactOf(myLong).count(c -> transparentScope(let("longs", c))),
+            // Because of the "transparentScope", the hashtag replacements escape.
             """
             System.out.println("Status: #ints ints, #longs longs.");
             """
@@ -999,9 +999,9 @@ public class TestTutorial {
         // For the examples below, we need a convenient way of asserting the state
         // of the available DataNames.
         var templateVerify = Template.make("count", "hasAny", "toList", (Integer count, Boolean hasAny, String toList) -> scope(
-            dataNames(MUTABLE).exactOf(myInt).count(c -> flat(let("count2", c))),
-            dataNames(MUTABLE).exactOf(myInt).hasAny(h -> flat(let("hasAny2", h))),
-            dataNames(MUTABLE).exactOf(myInt).toList(list -> flat(
+            dataNames(MUTABLE).exactOf(myInt).count(c -> transparentScope(let("count2", c))),
+            dataNames(MUTABLE).exactOf(myInt).hasAny(h -> transparentScope(let("hasAny2", h))),
+            dataNames(MUTABLE).exactOf(myInt).toList(list -> transparentScope(
                 let("toList2", String.join(", ", list.stream().map(DataName::name).toList()))
             )),
             """
@@ -1154,8 +1154,8 @@ public class TestTutorial {
 
     public static String generateWithDataNamesForFuzzing() {
         // This template is used to insert a DataName (field) into an outer scope, hence we must use
-        // "flat" instead of "scope".
-        var templateStaticField = Template.make("type", "mutable", (DataName.Type type, Boolean mutable) -> flat(
+        // "transparentScope" instead of "scope".
+        var templateStaticField = Template.make("type", "mutable", (DataName.Type type, Boolean mutable) -> transparentScope(
             addDataName($("field"), type, mutable ? MUTABLE : IMMUTABLE), // Escapes the template.
             let("isFinal", mutable ? "" : "final"),
             """
@@ -1274,9 +1274,9 @@ public class TestTutorial {
 
     public static String generateWithStructuralNamesForMethods() {
         // Define a method, which takes two ints, returns the result of op.
-        var templateMethod = Template.make("op", (String op) -> flat(
+        var templateMethod = Template.make("op", (String op) -> transparentScope(
             // Register the method name, so we can later sample.
-            addStructuralName($("methodName"), myMethodType), // escapes the template because of "flat"
+            addStructuralName($("methodName"), myMethodType), // escapes the template because of "transparentScope"
             """
             public static int $methodName(int a, int b) {
                 return a #op b;

@@ -42,7 +42,7 @@ import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
 import static compiler.lib.template_framework.Template.scope;
-import static compiler.lib.template_framework.Template.flat;
+import static compiler.lib.template_framework.Template.transparentScope;
 import static compiler.lib.template_framework.Template.dataNames;
 import static compiler.lib.template_framework.Template.let;
 import static compiler.lib.template_framework.Template.$;
@@ -131,10 +131,10 @@ public class TestPrimitiveTypes {
         // Finally, test the type by creating some DataNames (variables), and sampling
         // from them. There should be no cross-over between the types.
         // IMPORTANT: since we are adding the DataName via an inserted Template, we
-        //            must chose a "flat" scope, so that the DataName escapes. If we
+        //            must chose a "transparentScope", so that the DataName escapes. If we
         //            instead chose "scope", the test would fail, because it later
         //            finds no DataNames when we sample.
-        var variableTemplate = Template.make("type", (PrimitiveType type) -> flat(
+        var variableTemplate = Template.make("type", (PrimitiveType type) -> transparentScope(
             let("CON", type.con()),
             addDataName($("var"), type, MUTABLE), // escapes the Template
             """

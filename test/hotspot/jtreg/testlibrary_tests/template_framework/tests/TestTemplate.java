@@ -45,7 +45,7 @@ import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
 import static compiler.lib.template_framework.Template.scope;
-import static compiler.lib.template_framework.Template.flat;
+import static compiler.lib.template_framework.Template.transparentScope;
 import static compiler.lib.template_framework.Template.nameScope;
 import static compiler.lib.template_framework.Template.hashtagScope;
 import static compiler.lib.template_framework.Template.setFuelCostScope;
@@ -208,9 +208,9 @@ public class TestTemplate {
         expectIllegalArgumentException(() -> scope(null),              "Unexpected tokens: null");
         expectIllegalArgumentException(() -> scope("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> scope(new Hook("Hook1")), "Unexpected token:");
-        expectIllegalArgumentException(() -> flat(null),              "Unexpected tokens: null");
-        expectIllegalArgumentException(() -> flat("x", null),         "Unexpected token: null");
-        expectIllegalArgumentException(() -> flat(new Hook("Hook1")), "Unexpected token:");
+        expectIllegalArgumentException(() -> transparentScope(null),              "Unexpected tokens: null");
+        expectIllegalArgumentException(() -> transparentScope("x", null),         "Unexpected token: null");
+        expectIllegalArgumentException(() -> transparentScope(new Hook("Hook1")), "Unexpected token:");
         expectIllegalArgumentException(() -> nameScope(null),              "Unexpected tokens: null");
         expectIllegalArgumentException(() -> nameScope("x", null),         "Unexpected token: null");
         expectIllegalArgumentException(() -> nameScope(new Hook("Hook1")), "Unexpected token:");
@@ -812,7 +812,7 @@ public class TestTemplate {
             template1.asToken("alpha"),
             "break\n",
             "x1 = #x\n",
-            hook1.anchor(flat( // flat allows hashtags to escape
+            hook1.anchor(transparentScope( // transparentScope allows hashtags to escape
                 "x2 = #x\n", // leaks inside
                 template1.asToken("beta"),
                 let("y", "one"),
@@ -1128,9 +1128,9 @@ public class TestTemplate {
             ),
             readFuelTemplate.asToken(),
 
-            "flat:\n",
+            "transparentScope:\n",
             setFuelCost(4.0f),
-            flat(
+            transparentScope(
                 readFuelTemplate.asToken(),
                 setFuelCost(8.0f),
                 readFuelTemplate.asToken()
@@ -1174,7 +1174,7 @@ public class TestTemplate {
             <999.0f>
             <998.0f>
             <999.0f>
-            flat:
+            transparentScope:
             <996.0f>
             <992.0f>
             <992.0f>
@@ -1339,8 +1339,8 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        // Note: the scope of the template must be flat, so that the addDataName can escape.
-        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> flat(
+        // Note: the scope of the template must be transparentScope, so that the addDataName can escape.
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> transparentScope(
             addDataName(name, type, MUTABLE), // escapes
             "define #type #name\n",
             template1.asToken()
@@ -1371,7 +1371,7 @@ public class TestTemplate {
                     addDataName($("extra1"), myInt, MUTABLE), // does not escape
                     "$extra1 = 666\n"
                 )),
-                hook1.insert(flat(
+                hook1.insert(transparentScope(
                     addDataName($("extra2"), myInt, MUTABLE), // escapes
                     "$extra2 = 42\n"
                 )),
@@ -1436,13 +1436,13 @@ public class TestTemplate {
             "]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> flat(
+        var template2 = Template.make("name", "type", (String name, DataName.Type type) -> transparentScope(
             addDataName(name, type, MUTABLE), // escapes
             "define mutable #type #name\n",
             template1.asToken(type)
         ));
 
-        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> flat(
+        var template3 = Template.make("name", "type", (String name, DataName.Type type) -> transparentScope(
             addDataName(name, type, IMMUTABLE), // escapes
             "define immutable #type #name\n",
             template1.asToken(type)
@@ -1898,8 +1898,8 @@ public class TestTemplate {
                 let("v1", "a"),
                 "int #v1 = x + 1;\n"
             )),
-            // Using "flat", is is available.
-            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> flat(
+            // Using "transparentScope", is is available.
+            dataNames(IMMUTABLE).exactOf(myInt).sample(dn -> transparentScope(
                 addDataName("b", dn.type(), MUTABLE),
                 let("v2", "b"),
                 "int #v2 = x + 2;\n"
@@ -2172,7 +2172,7 @@ public class TestTemplate {
             "}]\n"
         ));
 
-        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> flat(
+        var template2 = Template.make("name", "type", (String name, StructuralName.Type type) -> transparentScope(
             addStructuralName(name, type), // escapes
             "define #type #name\n"
         ));
@@ -2275,7 +2275,7 @@ public class TestTemplate {
                 let("name2_" + sn.name(), sn.name()),
                 addStructuralName("scope_garbage2", myStructuralTypeA)
             )),
-            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> transparentScope(
                 // Same issue with hashtags as with "nameScope".
                 "sn3: ",  sn.name(), ".\n",
                 let("name3_" + sn.name(), sn.name()),
@@ -2286,14 +2286,14 @@ public class TestTemplate {
             structuralNames().exactOf(myStructuralTypeA).forEach(sn -> hashtagScope(
                 let("name4", sn.name()),
                 "sn4: #name4.\n",
-                // Same issue with duplicate names as with "flat".
+                // Same issue with duplicate names as with "transparentScope".
                 addStructuralName("y_" + sn.name(), myStructuralTypeA)
             )),
             structuralNames().exactOf(myStructuralTypeA).forEach(sn -> setFuelCostScope(
                 // Same issue with hashtags as with "nameScope".
                 "sn5: ",  sn.name(), ".\n",
                 let("name5_" + sn.name(), sn.name()),
-                // Same issue with duplicate names as with "flat".
+                // Same issue with duplicate names as with "transparentScope".
                 addStructuralName("z_" + sn.name(), myStructuralTypeA)
             )),
             "sn2: #name2_a #name2_b.\n", // hashtags escaped
@@ -2345,7 +2345,7 @@ public class TestTemplate {
                 "list2: #name2.\n",
                 addStructuralName("scope_garbage2", myStructuralTypeA)
             )),
-            structuralNames().exactOf(myStructuralTypeA).toList(list -> flat(
+            structuralNames().exactOf(myStructuralTypeA).toList(list -> transparentScope(
                 let("name3", list.size()),
                 "list3: #name3.\n",
                 addStructuralName("x", myStructuralTypeA)
@@ -2404,7 +2404,7 @@ public class TestTemplate {
                 "list2: #name2.\n",
                 addStructuralName("scope_garbage2", myStructuralTypeA)
             )),
-            structuralNames().exactOf(myStructuralTypeA).count(c -> flat(
+            structuralNames().exactOf(myStructuralTypeA).count(c -> transparentScope(
                 let("name3", c),
                 "list3: #name3.\n",
                 addStructuralName("x", myStructuralTypeA)
@@ -2463,7 +2463,7 @@ public class TestTemplate {
                 "list2: #name2.\n",
                 addStructuralName("scope_garbage2", myStructuralTypeA)
             )),
-            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> flat(
+            structuralNames().exactOf(myStructuralTypeA).hasAny(h -> transparentScope(
                 let("name3", h),
                 "list3: #name3.\n",
                 addStructuralName("x", myStructuralTypeA)
@@ -2564,18 +2564,18 @@ public class TestTemplate {
             addDataName("vx", myInt, MUTABLE),
             "x: #x.\n",
             listDataNames.asToken(),
-            // A "flat" nesting essencially does nothing but create
+            // A "transparentScope" nesting essencially does nothing but create
             // a list of tokens. It passes through names and hashtags.
-            "open flat:\n",
-            flat(
-                "$flat\n",
+            "open transparentScope:\n",
+            transparentScope(
+                "$transparentScope\n",
                 let("y", "YYY"),
                 addDataName("vy", myInt, MUTABLE),
                 "x: #x.\n",
                 "y: #y.\n",
                 listDataNames.asToken()
             ),
-            "close flat.\n",
+            "close transparentScope.\n",
             "x: #x.\n",
             "y: #y.\n",
             listDataNames.asToken(),
@@ -2629,7 +2629,7 @@ public class TestTemplate {
             let("q", "QQQ2"),
             "q: #q.\n",
             listDataNames.asToken(),
-            // A "setFuelCostScope" nesting behaves the same as "flat", as we are not useing fuel here.
+            // A "setFuelCostScope" nesting behaves the same as "transparentScope", as we are not useing fuel here.
             "open setFuelCostScope:\n",
             setFuelCostScope(
                 "$setFuelCostScope\n",
@@ -2650,12 +2650,12 @@ public class TestTemplate {
             start_1
             x: XXX.
             dataNames: {vx int; }
-            open flat:
-            flat_1
+            open transparentScope:
+            transparentScope_1
             x: XXX.
             y: YYY.
             dataNames: {vx int; vy int; }
-            close flat.
+            close transparentScope.
             x: XXX.
             y: YYY.
             dataNames: {vx int; vy int; }
@@ -2783,8 +2783,8 @@ public class TestTemplate {
             setFuelCost(50)
         ));
 
-        var flatTemplate = Template.make(() -> flat(
-            "flat:\n",
+        var transparentScopeTemplate = Template.make(() -> transparentScope(
+            "transparentScope:\n",
             let("local", "inner flag"),
             addStructuralName("y", myStructuralTypeA), // should escape
             statusTemplate.asToken(),
@@ -2798,7 +2798,7 @@ public class TestTemplate {
             statusTemplate.asToken(),
             scopeTemplate.asToken(),
             statusTemplate.asToken(),
-            flatTemplate.asToken(),
+            transparentScopeTemplate.asToken(),
             statusTemplate.asToken()
         ));
 
@@ -2812,7 +2812,7 @@ public class TestTemplate {
             fuel: 89.0f
             {a}
             fuel: 99.0f
-            flat:
+            transparentScope:
             {a, y}
             fuel: 89.0f
             {a, y}
@@ -2839,10 +2839,10 @@ public class TestTemplate {
             listNamesTemplate.asToken()
         ));
 
-        var insertFlatTemplate = Template.make("name", (String name) -> flat(
-            let("local", "insert flat garbage"),
+        var insertTransparentScopeTemplate = Template.make("name", (String name) -> transparentScope(
+            let("local", "insert transparentScope garbage"),
             addStructuralName(name, myStructuralTypeA),
-            "inserted flat: #name\n",
+            "inserted transparentScope: #name\n",
             listNamesTemplate.asToken()
         ));
 
@@ -2861,10 +2861,10 @@ public class TestTemplate {
                 hook1.insert(insertScopeTemplate.asToken("x1b")),
                 "scope after insert scope:\n",
                 listNamesTemplate.asToken(),
-                "scope before insert flat:\n",
+                "scope before insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(insertFlatTemplate.asToken("x1c")),
-                "scope after insert flat:\n",
+                hook1.insert(insertTransparentScopeTemplate.asToken("x1c")),
+                "scope after insert transparentScope:\n",
                 listNamesTemplate.asToken(),
                 "scope insert probe.\n",
                 hook1.insert(probeTemplate.asToken())
@@ -2872,26 +2872,26 @@ public class TestTemplate {
             "after scope:\n",
             listNamesTemplate.asToken(),
 
-            "flat:\n",
-            hook1.anchor(flat(
-                let("flat2", "abc"),
+            "transparentScope:\n",
+            hook1.anchor(transparentScope(
+                let("transparentScope2", "abc"),
                 addStructuralName("x2a", myStructuralTypeA),
-                "flat before insert scope:\n",
+                "transparentScope before insert scope:\n",
                 listNamesTemplate.asToken(),
                 hook1.insert(insertScopeTemplate.asToken("x2b")),
-                "flat after insert scope:\n",
+                "transparentScope after insert scope:\n",
                 listNamesTemplate.asToken(),
-                "flat before insert flat:\n",
+                "transparentScope before insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(insertFlatTemplate.asToken("x2c")),
-                "flat after insert flat:\n",
+                hook1.insert(inserttransparentScopeTemplate.asToken("x2c")),
+                "transparentScope after insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                "flat insert probe.\n",
+                "transparentScope insert probe.\n",
                 hook1.insert(probeTemplate.asToken())
             )),
-            "after flat:\n",
+            "after transparentScope:\n",
             listNamesTemplate.asToken(),
-            "flat2: #flat2\n",
+            "transparentScope2: #transparentScope2\n",
 
             "hashtagScope:\n",
             hook1.anchor(hashtagScope(
@@ -2902,10 +2902,10 @@ public class TestTemplate {
                 hook1.insert(insertScopeTemplate.asToken("x3b")),
                 "hashtagScope after insert scope:\n",
                 listNamesTemplate.asToken(),
-                "hashtagScope before insert flat:\n",
+                "hashtagScope before insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(insertFlatTemplate.asToken("x3c")),
-                "hashtagScope after insert flat:\n",
+                hook1.insert(inserttransparentScopeTemplate.asToken("x3c")),
+                "hashtagScope after insert transparentScope:\n",
                 listNamesTemplate.asToken(),
                 "hashtagScope insert probe.\n",
                 hook1.insert(probeTemplate.asToken())
@@ -2915,24 +2915,24 @@ public class TestTemplate {
 
             "nameScope:\n",
             hook1.anchor(nameScope(
-                let("flat4", "abcde"),
+                let("transparentScope4", "abcde"),
                 addStructuralName("x4a", myStructuralTypeA),
                 "nameScope before insert scope:\n",
                 listNamesTemplate.asToken(),
                 hook1.insert(insertScopeTemplate.asToken("x4b")),
                 "nameScope after insert scope:\n",
                 listNamesTemplate.asToken(),
-                "nameScope before insert flat:\n",
+                "nameScope before insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(insertFlatTemplate.asToken("x4c")),
-                "nameScope after insert flat:\n",
+                hook1.insert(insertTransparentScopeTemplate.asToken("x4c")),
+                "nameScope after insert transparentScope:\n",
                 listNamesTemplate.asToken(),
                 "nameScope insert probe.\n",
                 hook1.insert(probeTemplate.asToken())
             )),
             "after nameScope:\n",
             listNamesTemplate.asToken(),
-            "flat4: #flat4\n",
+            "transparentScope4: #transparentScope4\n",
 
             let("local", "outer garbage")
         ));
@@ -2943,7 +2943,7 @@ public class TestTemplate {
             scope:
             inserted scope: x1b
             {x1b}
-            inserted flat: x1c
+            inserted transparentScope: x1c
             {x1c}
             inserted probe:
             {x1c}
@@ -2951,36 +2951,36 @@ public class TestTemplate {
             {x1a}
             scope after insert scope:
             {x1a}
-            scope before insert flat:
+            scope before insert transparentScope:
             {x1a}
-            scope after insert flat:
+            scope after insert transparentScope:
             {x1c, x1a}
             scope insert probe.
             after scope:
             {}
-            flat:
+            transparentScope:
             inserted scope: x2b
             {x2a, x2b}
-            inserted flat: x2c
+            inserted transparentScope: x2c
             {x2a, x2c}
             inserted probe:
             {x2a, x2c}
-            flat before insert scope:
+            transparentScope before insert scope:
             {x2a}
-            flat after insert scope:
+            transparentScope after insert scope:
             {x2a}
-            flat before insert flat:
+            transparentScope before insert transparentScope:
             {x2a}
-            flat after insert flat:
+            transparentScope after insert transparentScope:
             {x2a, x2c}
-            flat insert probe.
-            after flat:
+            transparentScope insert probe.
+            after transparentScope:
             {x2a, x2c}
-            flat2: abc
+            transparentScope2: abc
             hashtagScope:
             inserted scope: x3b
             {x2a, x2c, x3a, x3b}
-            inserted flat: x3c
+            inserted transparentScope: x3c
             {x2a, x2c, x3a, x3c}
             inserted probe:
             {x2a, x2c, x3a, x3c}
@@ -2988,9 +2988,9 @@ public class TestTemplate {
             {x2a, x2c, x3a}
             hashtagScope after insert scope:
             {x2a, x2c, x3a}
-            hashtagScope before insert flat:
+            hashtagScope before insert transparentScope:
             {x2a, x2c, x3a}
-            hashtagScope after insert flat:
+            hashtagScope after insert transparentScope:
             {x2a, x2c, x3a, x3c}
             hashtagScope insert probe.
             after hashtagScope:
@@ -2998,7 +2998,7 @@ public class TestTemplate {
             nameScope:
             inserted scope: x4b
             {x2a, x2c, x3a, x3c, x4b}
-            inserted flat: x4c
+            inserted transparentScope: x4c
             {x2a, x2c, x3a, x3c, x4c}
             inserted probe:
             {x2a, x2c, x3a, x3c, x4c}
@@ -3006,14 +3006,14 @@ public class TestTemplate {
             {x2a, x2c, x3a, x3c, x4a}
             nameScope after insert scope:
             {x2a, x2c, x3a, x3c, x4a}
-            nameScope before insert flat:
+            nameScope before insert transparentScope:
             {x2a, x2c, x3a, x3c, x4a}
-            nameScope after insert flat:
+            nameScope after insert transparentScope:
             {x2a, x2c, x3a, x3c, x4c, x4a}
             nameScope insert probe.
             after nameScope:
             {x2a, x2c, x3a, x3c}
-            flat4: abcde
+            transparentScope4: abcde
             """;
         checkEQ(code, expected);
     }
@@ -3049,17 +3049,17 @@ public class TestTemplate {
                 "scope after insert scope:\n",
                 listNamesTemplate.asToken(),
 
-                "scope before insert flat:\n",
+                "scope before insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(flat(
-                    let("nameFlat", "x1c"), // escapes to caller
+                hook1.insert(transparentScope(
+                    let("nameTransparentScope", "x1c"), // escapes to caller
                     addStructuralName("x1c", myStructuralTypeA), // escapes to anchor scope
-                    "inserted flat: #nameFlat\n",
+                    "inserted transparentScope: #nameTransparentScope\n",
                     "local1: #local1\n",
                     listNamesTemplate.asToken()
                 )),
-                "scope after insert flat:\n",
-                "nameFlat: #nameFlat\n",
+                "scope after insert transparentScope:\n",
+                "nameTransparentScope: #nameTransparentScope\n",
                 listNamesTemplate.asToken(),
 
                 "scope before insert nameScope:\n",
@@ -3101,7 +3101,7 @@ public class TestTemplate {
             let("local0", "outer garbage 0"),
             let("local1", "outer garbage 1"),
             let("local2", "outer garbage 2"),
-            let("nameFlat", "outer garbage nameFlat"),
+            let("nameTransparentScope", "outer garbage nameTransparentScope"),
             let("nameNameScope", "outer garbage nameNameScope")
         ));
 
@@ -3112,7 +3112,7 @@ public class TestTemplate {
             inserted scope: x1b
             local1: LOCAL1
             {x1b}
-            inserted flat: x1c
+            inserted transparentScope: x1c
             local1: LOCAL1
             {x1c}
             inserted nameScope: x1d
@@ -3127,10 +3127,10 @@ public class TestTemplate {
             {x1a}
             scope after insert scope:
             {x1a}
-            scope before insert flat:
+            scope before insert transparentScope:
             {x1a}
-            scope after insert flat:
-            nameFlat: x1c
+            scope after insert transparentScope:
+            nameTransparentScope: x1c
             {x1c, x1a}
             scope before insert nameScope:
             {x1c, x1a}
@@ -3148,7 +3148,7 @@ public class TestTemplate {
         checkEQ(code, expected);
     }
 
-    // Analogue to testHookAndScopes2, but with "flat" instead of "scope".
+    // Analogue to testHookAndScopes2, but with "transparentScope" instead of "scope".
     public static void testHookAndScopes3() {
         Hook hook1 = new Hook("Hook1");
 
@@ -3161,13 +3161,13 @@ public class TestTemplate {
         ));
 
         var template = Template.make(() -> scope(
-            "flat:\n",
-            hook1.anchor(flat(
-                let("global0", "flat garbage"),
+            "transparentScope:\n",
+            hook1.anchor(transparentScope(
+                let("global0", "transparentScope garbage"),
                 let("global1", "GLOBAL1"),
                 addStructuralName("x1a", myStructuralTypeA),
 
-                "flat before insert scope:\n",
+                "transparentScope before insert scope:\n",
                 listNamesTemplate.asToken(),
                 hook1.insert(scope(
                     let("local2", "insert scope garbage"),
@@ -3177,23 +3177,23 @@ public class TestTemplate {
                     "global1: #global1\n",
                     listNamesTemplate.asToken()
                 )),
-                "flat after insert scope:\n",
+                "transparentScope after insert scope:\n",
                 listNamesTemplate.asToken(),
 
-                "flat before insert flat:\n",
+                "transparentScope before insert transparentScope:\n",
                 listNamesTemplate.asToken(),
-                hook1.insert(flat(
-                    let("nameFlat", "x1c"), // escapes to caller
+                hook1.insert(transparentScope(
+                    let("nameTransparentScope", "x1c"), // escapes to caller
                     addStructuralName("x1c", myStructuralTypeA), // escapes to anchor scope
-                    "inserted flat: #nameFlat\n",
+                    "inserted transparentScope: #nameTransparentScope\n",
                     "global1: #global1\n",
                     listNamesTemplate.asToken()
                 )),
-                "flat after insert flat:\n",
-                "nameFlat: #nameFlat\n",
+                "transparentScope after insert transparentScope:\n",
+                "nameTransparentScope: #nameTransparentScope\n",
                 listNamesTemplate.asToken(),
 
-                "flat before insert nameScope:\n",
+                "transparentScope before insert nameScope:\n",
                 listNamesTemplate.asToken(),
                 hook1.insert(nameScope(
                     let("nameNameScope", "x1d"), // escapes to caller
@@ -3202,11 +3202,11 @@ public class TestTemplate {
                     "global1: #global1\n",
                     listNamesTemplate.asToken()
                 )),
-                "flat after insert nameScope:\n",
+                "transparentScope after insert nameScope:\n",
                 "nameNameScope: #nameNameScope\n",
                 listNamesTemplate.asToken(),
 
-                "flat before insert hashtagScope:\n",
+                "transparentScope before insert hashtagScope:\n",
                 listNamesTemplate.asToken(),
                 hook1.insert(hashtagScope(
                     let("local2", "insert hashtagScope garbage"),
@@ -3216,21 +3216,21 @@ public class TestTemplate {
                     "global1: #global1\n",
                     listNamesTemplate.asToken()
                 )),
-                "flat after insert hashtagScope:\n",
+                "transparentScope after insert hashtagScope:\n",
                 listNamesTemplate.asToken(),
 
-                "flat insert probe.\n",
+                "transparentScope insert probe.\n",
                 hook1.insert(scope(
                     "inserted probe:\n",
                     listNamesTemplate.asToken()
                 ))
             )),
-            "after flat:\n",
+            "after transparentScope:\n",
             listNamesTemplate.asToken(),
             """
             global0: #global0
             global1: #global1
-            nameFlat: #nameFlat
+            nameTransparentScope: #nameTransparentScope
             nameNameScope: #nameNameScope
             """,
             let("name", "name garbage"),
@@ -3240,11 +3240,11 @@ public class TestTemplate {
         String code = template.render();
         String expected =
             """
-            flat:
+            transparentScope:
             inserted scope: x1b
             global1: GLOBAL1
             {x1a, x1b}
-            inserted flat: x1c
+            inserted transparentScope: x1c
             global1: GLOBAL1
             {x1a, x1c}
             inserted nameScope: x1d
@@ -3255,30 +3255,30 @@ public class TestTemplate {
             {x1a, x1c, x1e}
             inserted probe:
             {x1a, x1c, x1e}
-            flat before insert scope:
+            transparentScope before insert scope:
             {x1a}
-            flat after insert scope:
+            transparentScope after insert scope:
             {x1a}
-            flat before insert flat:
+            transparentScope before insert transparentScope:
             {x1a}
-            flat after insert flat:
-            nameFlat: x1c
+            transparentScope after insert transparentScope:
+            nameTransparentScope: x1c
             {x1a, x1c}
-            flat before insert nameScope:
+            transparentScope before insert nameScope:
             {x1a, x1c}
-            flat after insert nameScope:
+            transparentScope after insert nameScope:
             nameNameScope: x1d
             {x1a, x1c}
-            flat before insert hashtagScope:
+            transparentScope before insert hashtagScope:
             {x1a, x1c}
-            flat after insert hashtagScope:
+            transparentScope after insert hashtagScope:
             {x1a, x1c, x1e}
-            flat insert probe.
-            after flat:
+            transparentScope insert probe.
+            after transparentScope:
             {x1a, x1c, x1e}
-            global0: flat garbage
+            global0: transparentScope garbage
             global1: GLOBAL1
-            nameFlat: x1c
+            nameTransparentScope: x1c
             nameNameScope: x1d
             """;
         checkEQ(code, expected);
@@ -3706,7 +3706,7 @@ public class TestTemplate {
     public static void testFailingAddNameDuplication8() {
         var hook1 = new Hook("Hook1");
 
-        var template1 = Template.make(() -> flat(
+        var template1 = Template.make(() -> transparentScope(
             addDataName("name", myInt, MUTABLE) // escapes
         ));
 
@@ -3721,7 +3721,7 @@ public class TestTemplate {
 
     public static void testFailingScope1() {
         var template = Template.make(() -> scope(
-            flat(
+            transparentScope(
                 let("x", "x1") // escapes
             ),
             let("x", "x2") // second definition
@@ -3743,7 +3743,7 @@ public class TestTemplate {
         var template = Template.make(() -> scope(
             addStructuralName("a", myStructuralTypeA),
             addStructuralName("b", myStructuralTypeA),
-            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> transparentScope(
                 let("x", sn.name()) // leads to duplicate hashtag
             ))
         ));
@@ -3765,7 +3765,7 @@ public class TestTemplate {
         var template = Template.make(() -> scope(
             addStructuralName("a", myStructuralTypeA),
             addStructuralName("b", myStructuralTypeA),
-            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> flat(
+            structuralNames().exactOf(myStructuralTypeA).forEach(sn -> transparentScope(
                 addStructuralName("x", myStructuralTypeA) // leads to duplicate name
             ))
         ));

@@ -226,8 +226,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * <p>
          * {@snippet lang=java :
          * var template = Template.make(() -> scope(
-         *     dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> flat(
-         *         // The "let" hashtag definitions escape the "flat" scope.
+         *     dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> transparentScope(
+         *         // The "let" hashtag definitions escape the "transparentScope".
          *         let("name", dn.name()),
          *         let("type", dn.type())
          *     )),
@@ -244,7 +244,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name, String type) {
-            return new NameSampleToken<DataName>(predicate(), name, type, n -> Template.flat());
+            return new NameSampleToken<DataName>(predicate(), name, type, n -> Template.transparentScope());
         }
 
         /**
@@ -268,8 +268,8 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          * <p>
          * {@snippet lang=java :
          * var template = Template.make(() -> scope(
-         *     dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> flat(
-         *         // The "let" hashtag definition escape the "flat" scope.
+         *     dataNames(MUTABLE).subtypeOf(type).sample((DataName dn) -> transparentScope(
+         *         // The "let" hashtag definition escape the "transparentScope".
          *         let("name", dn.name())
          *     )),
          *     """
@@ -284,7 +284,7 @@ public record DataName(String name, DataName.Type type, boolean mutable, int wei
          *                                       {@link #subtypeOf}, {@link #supertypeOf} or {@link #exactOf}.
          */
         public Token sampleAndLetAs(String name) {
-            return new NameSampleToken<DataName>(predicate(), name, null, n -> Template.flat());
+            return new NameSampleToken<DataName>(predicate(), name, null, n -> Template.transparentScope());
         }
 
         /**

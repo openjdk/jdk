@@ -194,7 +194,7 @@ import compiler.lib.ir_framework.TestFramework;
  * <p>
  * Code generation can involve keeping track of scopes in the code (e.g. liveness and availability of
  * {@link DataName}s) and of the hashtag replacements in the templates. The {@link NestingToken} serves
- * this purpose, and allows the definition of transparent scopes (e.g. {@link #flat}) and non-transparent
+ * this purpose, and allows the definition of transparent scopes (e.g. {@link #transparentScope}) and non-transparent
  * scopes (e.g. {#link #scope}).
  *
  * <p>
@@ -571,7 +571,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * <p>
      * If you require a scope that is transparent for some or all of the above, consider
-     * using {@link flat}, {@link nameScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     * using {@link transparentScope}, {@link nameScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
      *
      * <p>
      * The most common use of {@link scope} is in the construction of templates:
@@ -596,7 +596,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * template scopes align with code scopes that are non-transparent for fields,
      * variables, etc. In rare cases where the scope of the template needs to be
      * transparent (e.g. because we need to insert a variable or field into an
-     * outer scope), it is recommended to use {@link flat}.
+     * outer scope), it is recommended to use {@link transparentScope}.
      *
      * <p>
      * We can also use nested scopes inside of templates:
@@ -611,10 +611,10 @@ public sealed interface Template permits Template.ZeroArgs,
      *     ),
      *     // CODE3: more code in the outer scope, names and hashtags from CODE2 are
      *     //        not available any more because of the non-transparent "scope".
-     *     flat(
-     *       // CODE4: some code in the inner "flat" scope. Names, hashtags and setFuelCost
-     *       //        escape the "flat" scope and are still available after the "flat"
-     *       //        scope closes.
+     *     transparentScope(
+     *       // CODE4: some code in the inner "transparentScope". Names, hashtags and setFuelCost
+     *       //        escape the "transparentScope" and are still available after the "transparentScope"
+     *       //        closes.
      *     )
      *     // CODE5: we still have access to names and hashtags from CODE4.
      * ));
@@ -650,7 +650,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return The {@link NestingToken} which captures the list of validated {@link Token}s.
      * @throws IllegalArgumentException if the list of tokens contains an unexpected object.
      */
-    static NestingToken flat(Object... tokens) {
+    static NestingToken transparentScope(Object... tokens) {
         return new NestingTokenImpl(TokenParser.parse(tokens), false, false, false);
     }
 
@@ -664,7 +664,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * <p>
      * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link flat}, {@link hashtagScope}, or {@link setFuelCostScope}.
+     * using {@link scope}, {@link transparentScope}, {@link hashtagScope}, or {@link setFuelCostScope}.
      *
      * @param tokens A list of tokens, which can be {@link String}s, boxed primitive types
      *               (for example {@link Integer}), any {@link Token}, or {@link List}s
@@ -686,7 +686,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * <p>
      * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link flat}, {@link nameScope}, {@link setFuelCostScope}.
+     * using {@link scope}, {@link transparentScope}, {@link nameScope}, {@link setFuelCostScope}.
      *
      * <p>
      * Keeping hashtag-replacements local but letting {@link DataName}s escape can be
@@ -727,7 +727,7 @@ public sealed interface Template permits Template.ZeroArgs,
      *
      * <p>
      * If you require a scope that is non-transparent for some or all of the above, consider
-     * using {@link scope}, {@link flat}, {@link nameScope}, {@link setFuelCostScope}.
+     * using {@link scope}, {@link transparentScope}, {@link nameScope}, {@link setFuelCostScope}.
      *
      * <p>
      * In some cases, it can be helpful to have different {@link setFuelCost} within
@@ -814,7 +814,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * @return A token that represents the hashtag replacement definition.
      */
     static Token let(String key, Object value) {
-        return new LetToken(key, value, v -> flat());
+        return new LetToken(key, value, v -> transparentScope());
     }
 
     /**
@@ -822,7 +822,7 @@ public sealed interface Template permits Template.ZeroArgs,
      * by the provided {@code function} with type {@code <T>}. While the argument of the lambda that
      * captures the value is naturally bounded to the scope of the lambda, the hashtag replacement
      * may be bound to the scope or escape it, depending on the choice of scope, see {@link scope}
-     * and {@link flat}.
+     * and {@link transparentScope}.
      *
      * <p>
      * {@snippet lang=java :

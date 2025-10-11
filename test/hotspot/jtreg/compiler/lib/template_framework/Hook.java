@@ -41,7 +41,7 @@ import java.util.function.Function;
  * The choice of {@link NestingToken} is very important and powerful.
  * For example, if you want to insert a {@link DataName} to the scope of an anchor,
  * it is important that the scope of the insertion is transparent for {@link DataName}s,
- * e.g. using {@link Template#flat}. In most cases, we want {@link DataName}s to escape
+ * e.g. using {@link Template#transparentScope}. In most cases, we want {@link DataName}s to escape
  * the inserted scope but not the anchor scope, so the anchor scope should be
  * non-transparent for {@link DataName}s, e.g. using {@link Template#scope}.
  * Example:
@@ -61,8 +61,8 @@ import java.util.function.Function;
  *         System.out.println("$field: " + $field)
  *         """,
  *         // Reach out to where the hook was anchored, and insert some code.
- *         myHook.insert(flat(
- *             // The field (DataName) escapes because the inserted scope is "flat"
+ *         myHook.insert(transparentScope(
+ *             // The field (DataName) escapes because the inserted scope is "transparentScope"
  *             addDataName($("field"), Primitives.INTS, MUTABLE),
  *             """
  *             public static int $field = 42;
@@ -105,7 +105,7 @@ public record Hook(String name) {
      * @return The {@link Token} which represents the code insertion into the {@link Hook}.
      */
     public Token insert(TemplateToken templateToken) {
-        return new HookInsertToken(this, Template.flat(templateToken));
+        return new HookInsertToken(this, Template.transparentScope(templateToken));
     }
 
     /**
