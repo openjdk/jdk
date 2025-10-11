@@ -23,9 +23,9 @@
  */
 
 #include "asm/macroAssembler.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "compiler/disassembler.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
