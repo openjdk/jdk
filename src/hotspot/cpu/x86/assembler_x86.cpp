@@ -22,7 +22,6 @@
  *
  */
 
-#include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
 #include "code/codeCache.hpp"
