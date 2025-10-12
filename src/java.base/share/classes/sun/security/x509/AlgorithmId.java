@@ -188,7 +188,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
         bytes.putOID(algid);
 
         if (encodedParams == null) {
-            if (OIDS_REQUIRING_NULL.contains(algid)) {
+            if (OIDS_REQUIRING_NULL.contains(algid.toString())) {
                 bytes.putNull();
             } else {
                 // Parameters omitted
@@ -649,48 +649,48 @@ public class AlgorithmId implements Serializable, DerEncoder {
          - RFC 9879 (HMAC) §4: HMAC algorithm identifiers
          - RFC 9688 (HMAC with SHA-3) §4.3: HMAC-SHA3 algorithms MUST omit parameters
      */
-    private static final Set<ObjectIdentifier> OIDS_REQUIRING_NULL = Set.of(
+    private static final Set<String> OIDS_REQUIRING_NULL = Set.of(
             // MessageDigest algorithms usually have a NULL parameters even
             // if most RFCs suggested absent.
-            ObjectIdentifier.of(KnownOIDs.MD2),
-            ObjectIdentifier.of(KnownOIDs.MD5),
-            ObjectIdentifier.of(KnownOIDs.SHA_1),
-            ObjectIdentifier.of(KnownOIDs.SHA_224),
-            ObjectIdentifier.of(KnownOIDs.SHA_256),
-            ObjectIdentifier.of(KnownOIDs.SHA_384),
-            ObjectIdentifier.of(KnownOIDs.SHA_512),
-            ObjectIdentifier.of(KnownOIDs.SHA_512$224),
-            ObjectIdentifier.of(KnownOIDs.SHA_512$256),
-            ObjectIdentifier.of(KnownOIDs.SHA3_224),
-            ObjectIdentifier.of(KnownOIDs.SHA3_256),
-            ObjectIdentifier.of(KnownOIDs.SHA3_384),
-            ObjectIdentifier.of(KnownOIDs.SHA3_512),
+            KnownOIDs.MD2.value(),
+            KnownOIDs.MD5.value(),
+            KnownOIDs.SHA_1.value(),
+            KnownOIDs.SHA_224.value(),
+            KnownOIDs.SHA_256.value(),
+            KnownOIDs.SHA_384.value(),
+            KnownOIDs.SHA_512.value(),
+            KnownOIDs.SHA_512$224.value(),
+            KnownOIDs.SHA_512$256.value(),
+            KnownOIDs.SHA3_224.value(),
+            KnownOIDs.SHA3_256.value(),
+            KnownOIDs.SHA3_384.value(),
+            KnownOIDs.SHA3_512.value(),
 
             //--- RSA key and signature algorithms (RFC 8017 §A.1, §A.2.4)
-            ObjectIdentifier.of(KnownOIDs.RSA),
-            ObjectIdentifier.of(KnownOIDs.SHA1withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA224withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA256withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA384withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA512withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA512$224withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA512$256withRSA),
-            ObjectIdentifier.of(KnownOIDs.MD2withRSA),
-            ObjectIdentifier.of(KnownOIDs.MD5withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA3_224withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA3_256withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA),
-            ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA),
+            KnownOIDs.RSA.value(),
+            KnownOIDs.SHA1withRSA.value(),
+            KnownOIDs.SHA224withRSA.value(),
+            KnownOIDs.SHA256withRSA.value(),
+            KnownOIDs.SHA384withRSA.value(),
+            KnownOIDs.SHA512withRSA.value(),
+            KnownOIDs.SHA512$224withRSA.value(),
+            KnownOIDs.SHA512$256withRSA.value(),
+            KnownOIDs.MD2withRSA.value(),
+            KnownOIDs.MD5withRSA.value(),
+            KnownOIDs.SHA3_224withRSA.value(),
+            KnownOIDs.SHA3_256withRSA.value(),
+            KnownOIDs.SHA3_384withRSA.value(),
+            KnownOIDs.SHA3_512withRSA.value(),
 
             // HMACs per RFC 9879 (Section 4): these require explicit NULL parameters
             // Note: HMAC-SHA3 algorithms (RFC 9688 §4.3) MUST omit parameters,
             // so they are intentionally excluded from this list.
-            ObjectIdentifier.of(KnownOIDs.HmacSHA1),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA224),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA256),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA384),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA512),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA512$224),
-            ObjectIdentifier.of(KnownOIDs.HmacSHA512$256)
+            KnownOIDs.HmacSHA1.value(),
+            KnownOIDs.HmacSHA224.value(),
+            KnownOIDs.HmacSHA256.value(),
+            KnownOIDs.HmacSHA384.value(),
+            KnownOIDs.HmacSHA512.value(),
+            KnownOIDs.HmacSHA512$224.value(),
+            KnownOIDs.HmacSHA512$256.value()
     );
 }
