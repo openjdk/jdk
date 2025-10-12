@@ -33,20 +33,41 @@
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/ostream.hpp"
 
 // One global static mutex for chunk pools.
 // It is used very early in the vm initialization, in allocation
 // code and other areas.  For many calls, the current thread has not
 // been created so we cannot use Mutex.
-static PlatformMutex* GlobalChunkPoolMutex = nullptr;
+class RecursivePlatformMutex : public PlatformMutex {
+  Thread* _owner;
+
+public:
+  RecursivePlatformMutex()
+    : PlatformMutex(), _owner(nullptr) {}
+
+  void lock() {
+    Thread* t = Thread::current_or_null_safe();
+    if (_owner == nullptr || t != _owner) {
+      PlatformMutex::lock();
+      _owner = t;
+    }
+  }
+
+  void unlock() {
+    _owner = nullptr;
+    PlatformMutex::unlock();
+  }
+};
+
+static DeferredStatic<RecursivePlatformMutex> GlobalChunkPoolMutex;
 
 void Arena::initialize_chunk_pool() {
-  GlobalChunkPoolMutex = new PlatformMutex();
+  GlobalChunkPoolMutex.initialize();
 }
 
 ChunkPoolLocker::ChunkPoolLocker() {
-  assert(GlobalChunkPoolMutex != nullptr, "must be initialized");
   GlobalChunkPoolMutex->lock();
 };
 
@@ -226,7 +247,7 @@ ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_s
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
 
- public:
+public:
    ChunkPoolCleaner() : PeriodicTask(cleaning_interval) {}
    void task() {
      ChunkPool::clean();

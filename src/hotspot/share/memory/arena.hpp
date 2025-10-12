@@ -38,7 +38,7 @@
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 class ChunkPoolLocker : public StackObj {
- public:
+public:
   ChunkPoolLocker();
   ~ChunkPoolLocker();
 };
