@@ -169,7 +169,9 @@ MallocSite* MallocSiteTable::malloc_site(uint32_t marker) {
   for (size_t index = 0;
        index < pos_idx && head != nullptr;
        index++, head = (MallocSiteHashtableEntry*)head->next()) {}
-  assert(head != nullptr, "Invalid position index");
+  if (head == nullptr) {
+    return nullptr;
+  }
   return head->data();
 }
 
