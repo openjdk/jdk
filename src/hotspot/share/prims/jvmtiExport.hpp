@@ -425,8 +425,10 @@ class JvmtiExport : public AllStatic {
   static void dec_in_callback_count() {
     AtomicAccess::dec(&_in_callback_count);
   }
-  static int  in_callback_count() {
-    return AtomicAccess::load(&_in_callback_count);
+  static int in_callback_count() {
+    int result = AtomicAccess::load(&_in_callback_count);
+    assert(result >= 0, "Should be positive");
+    return result;
   }
 
   // Used by C2 to deoptimize allocation intrinsics and post vm_object_alloc
