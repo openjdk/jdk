@@ -71,7 +71,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getContentEncoding();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -82,7 +88,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getContentLength();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -93,7 +105,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getContentLengthLong();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -104,7 +122,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getContentType();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -115,7 +139,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getDate();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -126,7 +156,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getExpiration();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -137,7 +173,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getHeaderField(0);
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -149,7 +191,13 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final String val = conn.getHeaderField("foo");
         assertNull(val, "unexpected header field value: " + val);
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -160,7 +208,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getHeaderFieldDate("bar", 42);
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -172,7 +226,13 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final int val = conn.getHeaderFieldInt("hello", 42);
         assertEquals(42, val, "unexpected header value");
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -184,7 +244,13 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final String val = conn.getHeaderFieldKey(42);
         assertNull(val, "unexpected header value: " + val);
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -196,7 +262,13 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final long val = conn.getHeaderFieldLong("foo", 42);
         assertEquals(42, val, "unexpected header value");
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -208,7 +280,13 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         final Map<String, List<String>> headers = conn.getHeaderFields();
         assertNotNull(headers, "null headers");
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -219,7 +297,13 @@ class FileURLConnStreamLeakTest {
         assertEquals(FILE_URLCONNECTION_CLASSNAME, conn.getClass().getName(),
                 "unexpected URLConnection type");
         final var _ = conn.getLastModified();
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -232,7 +316,13 @@ class FileURLConnStreamLeakTest {
         try (final InputStream is = conn.getInputStream()) {
             assertNotNull(is, "input stream is null");
         }
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 
@@ -244,7 +334,13 @@ class FileURLConnStreamLeakTest {
                 "unexpected URLConnection type");
         // FileURLConnection only supports reading
         assertThrows(UnknownServiceException.class, conn::getOutputStream);
+        // verify that the URLConnection isn't holding on to any file descriptors
+        // of this test file.
         Files.delete(this.testFile); // must not fail
+        // FileInputStream has a Cleaner which closes its underlying file descriptor.
+        // Here we add a reachability fence to URLConnection. This ensures that any FileInputStream
+        // it may be retaining, won't be GCed until after we have checked for file descriptor
+        // leaks on the previous line.
         Reference.reachabilityFence(conn);
     }
 }
