@@ -23,7 +23,7 @@
  */
 
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
@@ -186,7 +186,7 @@ void StackWatermark::assert_is_frame_safe(const frame& f) {
 // without going through any hooks.
 bool StackWatermark::is_frame_safe(const frame& f) {
   assert(_lock.owned_by_self(), "Must be locked");
-  uint32_t state = Atomic::load(&_state);
+  uint32_t state = AtomicAccess::load(&_state);
   if (!processing_started(state)) {
     return false;
   }
@@ -231,11 +231,11 @@ void StackWatermark::update_watermark() {
   assert(_lock.owned_by_self(), "invariant");
   if (_iterator != nullptr && _iterator->has_next()) {
     assert(_iterator->callee() != 0, "sanity");
-    Atomic::release_store(&_watermark, _iterator->callee());
-    Atomic::release_store(&_state, StackWatermarkState::create(epoch_id(), false /* is_done */)); // release watermark w.r.t. epoch
+    AtomicAccess::release_store(&_watermark, _iterator->callee());
+    AtomicAccess::release_store(&_state, StackWatermarkState::create(epoch_id(), false /* is_done */)); // release watermark w.r.t. epoch
   } else {
-    Atomic::release_store(&_watermark, uintptr_t(0)); // Release stack data modifications w.r.t. watermark
-    Atomic::release_store(&_state, StackWatermarkState::create(epoch_id(), true /* is_done */)); // release watermark w.r.t. epoch
+    AtomicAccess::release_store(&_watermark, uintptr_t(0)); // Release stack data modifications w.r.t. watermark
+    AtomicAccess::release_store(&_state, StackWatermarkState::create(epoch_id(), true /* is_done */)); // release watermark w.r.t. epoch
     log_info(stackbarrier)("Finished stack processing iteration for tid %d",
                            _jt->osthread()->thread_id());
   }
@@ -263,7 +263,7 @@ void StackWatermark::pop_linked_watermark() {
 }
 
 uintptr_t StackWatermark::watermark() {
-  return Atomic::load_acquire(&_watermark);
+  return AtomicAccess::load_acquire(&_watermark);
 }
 
 uintptr_t StackWatermark::last_processed() {
@@ -284,19 +284,19 @@ uintptr_t StackWatermark::last_processed_raw() {
 }
 
 bool StackWatermark::processing_started() const {
-  return processing_started(Atomic::load(&_state));
+  return processing_started(AtomicAccess::load(&_state));
 }
 
 bool StackWatermark::processing_started_acquire() const {
-  return processing_started(Atomic::load_acquire(&_state));
+  return processing_started(AtomicAccess::load_acquire(&_state));
 }
 
 bool StackWatermark::processing_completed() const {
-  return processing_completed(Atomic::load(&_state));
+  return processing_completed(AtomicAccess::load(&_state));
 }
 
 bool StackWatermark::processing_completed_acquire() const {
-  return processing_completed(Atomic::load_acquire(&_state));
+  return processing_completed(AtomicAccess::load_acquire(&_state));
 }
 
 void StackWatermark::process_linked_watermarks() {

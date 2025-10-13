@@ -284,6 +284,12 @@ else
   LogCmdlines =
 endif
 
+# Check if the command line contains redirection, that is <, > or >>,
+# and if so, return a value that is interpreted as true in a make $(if)
+# construct.
+is_redirect = \
+    $(if $(filter < > >>, $1), true)
+
 ################################################################################
 # ExecuteWithLog will run a command and log the output appropriately. This is
 # meant to be used by commands that do "real" work, like a compilation.
@@ -291,21 +297,23 @@ endif
 # of the build in case of failure. The  command line itself is stored in a file,
 # and also logged to stdout if the LOG=cmdlines option has been given.
 #
-# NOTE: If the command redirects stdout, the caller needs to wrap it in a
-# subshell (by adding parentheses around it), otherwise the redirect to the
-# subshell tee process will create a race condition where the target file may
-# not be fully written when the make recipe is done.
-#
 # Param 1 - The path to base the name of the log file / command line file on
 # Param 2 - The command to run
 ExecuteWithLog = \
-  $(call LogCmdlines, Executing: [$(strip $2)]) \
+  $(call LogCmdlines, Executing: \
+      [$(if $(call is_redirect, $2),$(LEFT_PAREN) )$(strip $2)$(if $(call \
+      is_redirect, $2), $(RIGHT_PAREN))]) \
   $(call MakeDir, $(dir $(strip $1)) $(MAKESUPPORT_OUTPUTDIR)/failure-logs) \
   $(call WriteFile, $2, $(strip $1).cmdline) \
-  ( $(RM) $(strip $1).log && $(strip $2) > >($(TEE) -a $(strip $1).log) 2> >($(TEE) -a $(strip $1).log >&2) || \
+  ( $(RM) $(strip $1).log && \
+      $(if $(call is_redirect, $2),$(LEFT_PAREN) )$(strip $2)$(if $(call \
+      is_redirect, $2), $(RIGHT_PAREN)) \
+      > >($(TEE) -a $(strip $1).log) 2> >($(TEE) -a $(strip $1).log >&2) || \
       ( exitcode=$(DOLLAR)? && \
-      $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).log && \
-      $(CP) $(strip $1).cmdline $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).cmdline && \
+      $(CP) $(strip $1).log $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst \
+      /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).log && \
+      $(CP) $(strip $1).cmdline $(MAKESUPPORT_OUTPUTDIR)/failure-logs/$(subst \
+      /,_,$(patsubst $(OUTPUTDIR)/%,%,$(strip $1))).cmdline && \
       exit $(DOLLAR)exitcode ) )
 
 ################################################################################

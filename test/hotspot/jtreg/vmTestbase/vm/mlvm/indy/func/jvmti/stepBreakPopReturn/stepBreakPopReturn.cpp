@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ MethodEntry(jvmtiEnv *jvmti_env,
             gIsMethodEntryWorking = JNI_TRUE;
 
             if (!gIsBreakpointSet)
-                NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr));
+                NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, thread));
         }
     }
 
@@ -116,7 +116,7 @@ SingleStep(jvmtiEnv *jvmti_env,
         free(locStr);
     }
 
-    NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, nullptr));
+    NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, thread));
 
     if (!gIsDebuggerCompatible) {
         if (!NSK_JVMTI_VERIFY(jvmti_env->SetBreakpoint(method, location)))
