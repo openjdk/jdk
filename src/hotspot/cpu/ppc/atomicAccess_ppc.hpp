@@ -265,7 +265,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
     : [old_value]       "=&r"   (old_value)
     /* in */
     : [dest]                   "b"     (dest),
-      [masked_compare_value]   "r"     (masked_compare_value),
+      [masked_compare_val]     "r"     (masked_compare_val),
       [exchange_value]         "r"     (exchange_value)
     /* clobber */
     : "cc",
