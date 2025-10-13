@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,16 +59,27 @@ public class Kernel implements Cloneable {
      * @param width         width of the kernel
      * @param height        height of the kernel
      * @param data          kernel data in row major order
+     * @throws IllegalArgumentException if {@code data} is null
+     * @throws IllegalArgumentException if {@code width} or {@code length}
+     *         is not positive
+     * @throws ArithmeticException if {@code width * length} overflows
+     *         an int
      * @throws IllegalArgumentException if the length of {@code data}
      *         is less than the product of {@code width} and
      *         {@code height}
      */
     public Kernel(int width, int height, float[] data) {
+        if (data == null) {
+            throw new IllegalArgumentException("Data must not be null");
+        }
+        if ((width <= 0) || (height <= 0)) {
+            throw new IllegalArgumentException("Invalid width or height");
+        }
         this.width  = width;
         this.height = height;
-        this.xOrigin  = (width-1)>>1;
-        this.yOrigin  = (height-1)>>1;
-        int len = width*height;
+        this.xOrigin  = (width - 1) >> 1;
+        this.yOrigin  = (height - 1) >> 1;
+        int len = Math.multiplyExact(width, height);
         if (data.length < len) {
             throw new IllegalArgumentException("Data array too small "+
                                                "(is "+data.length+
