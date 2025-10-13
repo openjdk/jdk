@@ -278,8 +278,7 @@ module java.base {
         jdk.net;
     exports sun.net to
         java.net.http,
-        jdk.naming.dns,
-        jdk.httpserver;
+        jdk.naming.dns;
     exports sun.net.ext to
         jdk.net;
     exports sun.net.dns to
