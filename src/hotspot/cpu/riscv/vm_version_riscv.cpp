@@ -197,7 +197,8 @@ void VM_Version::common_initialize() {
   }
 
   if (UseZicboz && zicboz_block_size.enabled()) {
-    assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
+    assert(is_power_of_2(zicboz_block_size.value()) &&
+           zicboz_block_size.value() > 0, "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);
     }
