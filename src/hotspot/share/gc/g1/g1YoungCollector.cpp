@@ -25,6 +25,7 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -52,7 +53,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -794,14 +794,11 @@ public:
 };
 
 void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states) {
-  // To access the protected constructor/destructor
-  class G1MarkScope : public MarkScope { };
-
   Tickspan task_time;
 
   Ticks start_processing = Ticks::now();
   {
-    G1MarkScope code_mark_scope;
+    NMethodMarkingScope nmethod_marking_scope;
     G1EvacuateOptionalRegionsTask task(per_thread_states, task_queues(), workers()->active_workers());
     task_time = run_task_timed(&task);
     // See comment in evacuate_initial_collection_set() for the reason of the scope.
