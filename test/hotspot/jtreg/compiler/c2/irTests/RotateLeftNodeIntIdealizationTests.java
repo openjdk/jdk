@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test that Ideal transformations of RotateLeftNode* are being performed as expected.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.RotateLeftNodeIntIdealizationTests
- * @requires os.arch == "x86_64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.opt.UseZbb == true)
+ * @requires os.arch == "x86_64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*zbb.*")
  */
 public class RotateLeftNodeIntIdealizationTests {
 

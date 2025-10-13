@@ -53,7 +53,8 @@ public sealed interface MethodParameterInfo
     Optional<Utf8Entry> name();
 
     /**
-     * {@return the access flags, as a bit mask}
+     * {@return the access flags, as a bit mask}  It is a {@link
+     * java.lang.classfile##u2 u2} value.
      *
      * @see Parameter#getModifiers()
      * @see AccessFlag.Location#METHOD_PARAMETER
@@ -84,6 +85,8 @@ public sealed interface MethodParameterInfo
      * {@return a method parameter description}
      * @param name the method parameter name, may be empty
      * @param flags the method parameter access flags
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static MethodParameterInfo of(Optional<Utf8Entry> name, int flags) {
         return new UnboundAttribute.UnboundMethodParameterInfo(name, flags);
@@ -104,6 +107,8 @@ public sealed interface MethodParameterInfo
      * {@return a method parameter description}
      * @param name the method parameter name, may be empty
      * @param flags the method parameter access flags
+     * @throws IllegalArgumentException if {@code flags} is not {@link
+     *         java.lang.classfile##u2 u2}
      */
     static MethodParameterInfo ofParameter(Optional<String> name, int flags) {
         return of(name.map(TemporaryConstantPool.INSTANCE::utf8Entry), flags);

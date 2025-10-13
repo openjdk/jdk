@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/arena.hpp"
 #include "memory/metaspace.hpp"
@@ -31,7 +29,6 @@
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
-#include "runtime/threadCritical.hpp"
 #include "utilities/ostream.hpp"
 
 // allocate using malloc; will fail if no memory available
@@ -68,15 +65,15 @@ void FreeHeap(void* p) {
   os::free(p);
 }
 
-void* MetaspaceObj::_shared_metaspace_base = nullptr;
-void* MetaspaceObj::_shared_metaspace_top  = nullptr;
+void* MetaspaceObj::_aot_metaspace_base = nullptr;
+void* MetaspaceObj::_aot_metaspace_top  = nullptr;
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  size_t word_size,
                                  MetaspaceObj::Type type, TRAPS) throw() {
   // Klass has its own operator new
   assert(type != ClassType, "class has its own operator new");
-  return Metaspace::allocate(loader_data, word_size, type, /*use_class_space*/ false, THREAD);
+  return Metaspace::allocate(loader_data, word_size, type, THREAD);
 }
 
 void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
@@ -84,7 +81,14 @@ void* MetaspaceObj::operator new(size_t size, ClassLoaderData* loader_data,
                                  MetaspaceObj::Type type) throw() {
   assert(!Thread::current()->is_Java_thread(), "only allowed by non-Java thread");
   assert(type != ClassType, "class has its own operator new");
-  return Metaspace::allocate(loader_data, word_size, type, /*use_class_space*/ false);
+  return Metaspace::allocate(loader_data, word_size, type);
+}
+
+// This is used for allocating training data. We are allocating training data in many cases where a GC cannot be triggered.
+void* MetaspaceObj::operator new(size_t size, MemTag flags) {
+  void* p = AllocateHeap(size, flags, CALLER_PC);
+  memset(p, 0, size);
+  return p;
 }
 
 bool MetaspaceObj::is_valid(const MetaspaceObj* p) {

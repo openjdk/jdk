@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
@@ -271,11 +270,11 @@ TEST(globalDefinitions, format_specifiers) {
   check_format("%+zd",                 (ssize_t)-2147483647, "-2147483647");
   check_format("%5zd",                 (ssize_t)123,      "  123");
   check_format("%-5zd",                (ssize_t)123,      "123  ");
-  check_format(SIZE_FORMAT,            (size_t)123u,      "123");
-  check_format(SIZE_FORMAT_X,          (size_t)0x123u,    "0x123");
+  check_format("%zu",                  (size_t)123u,      "123");
+  check_format("0x%zx",                (size_t)0x123u,    "0x123");
+  check_format("%5zu",                 (size_t)123u,      "  123");
+  check_format("%-5zu",                (size_t)123u,      "123  ");
   check_format(SIZE_FORMAT_X_0,        (size_t)0x123u,    "0x" LP64_ONLY("00000000") "00000123");
-  check_format(SIZE_FORMAT_W(5),       (size_t)123u,      "  123");
-  check_format(SIZE_FORMAT_W(-5),      (size_t)123u,      "123  ");
 
   check_format("%zd",                  (intx)123,         "123");
   check_format("%#zx",                 (intx)0x123,       "0x123");
@@ -295,4 +294,31 @@ TEST(globalDefinitions, format_specifiers) {
 
   // Check all platforms print this compatibly without leading 0x.
   check_format(UINT64_FORMAT_0,        (u8)0x123,         "0000000000000123");
+}
+
+TEST(globalDefinitions, jlong_from) {
+  jlong val = jlong_from(0xFF, 0);
+  EXPECT_EQ(val, CONST64(0x00000000FF00000000));
+
+  val = jlong_from(0, 0xFF);
+  EXPECT_EQ(val, CONST64(0x00000000000000FF));
+
+  val = jlong_from(0xFFFFFFFF, 0);
+  EXPECT_EQ((julong)val, UCONST64(0xFFFFFFFF00000000));
+
+  val = jlong_from(0, 0xFFFFFFFF);
+  EXPECT_EQ(val, CONST64(0x00000000FFFFFFFF));
+
+  val = jlong_from(0, -1);
+  EXPECT_EQ(val, CONST64(0x00000000FFFFFFFF));
+
+  val = jlong_from(-1, 0);
+  EXPECT_EQ((julong)val, UCONST64(0xFFFFFFFF00000000));
+
+  val = jlong_from(-1, -1);
+  EXPECT_EQ((julong)val, UCONST64(0xFFFFFFFFFFFFFFFF));
+  EXPECT_EQ(val, CONST64(-1));
+
+  val = jlong_from(0xABCD, 0xEFEF);
+  EXPECT_EQ(val, CONST64(0x0000ABCD0000EFEF));
 }

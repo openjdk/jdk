@@ -23,7 +23,6 @@
  */
 
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
@@ -32,12 +31,11 @@
 #include "runtime/safepoint.hpp"
 
 ShenandoahClassUnloadingTask::ShenandoahClassUnloadingTask(ShenandoahPhaseTimings::Phase phase,
-                                                           uint num_workers,
                                                            bool unloading_occurred) :
   WorkerTask("Shenandoah Class Unloading"),
   _phase(phase),
   _unloading_occurred(unloading_occurred),
-  _code_cache_task(num_workers, unloading_occurred),
+  _code_cache_task(unloading_occurred),
   _klass_cleaning_task() {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at a safepoint");
 }

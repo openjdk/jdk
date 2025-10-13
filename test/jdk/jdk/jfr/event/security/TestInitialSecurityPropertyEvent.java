@@ -38,7 +38,7 @@ import java.util.Properties;
  * @test
  * @bug 8292177
  * @summary InitialSecurityProperty JFR event
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules java.base/jdk.internal.access

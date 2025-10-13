@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,11 @@
 # questions.
 #
 
-ifeq ($(_MAKEBASE_GMK), )
-  $(error You must include MakeBase.gmk prior to including Utils.gmk)
-endif
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
 
 ################################################################################
-#
 # Basic utility functions available to MakeBase.gmk itself
-#
 ################################################################################
 
 # String equals
@@ -57,6 +54,42 @@ uppercase = \
     $(eval uppercase_result := $(call uppercase_internal, $(uppercase_table), $1)) \
     $(uppercase_result) \
   )
+
+lowercase_table := A,a B,b C,c D,d E,e F,f G,g H,h I,i J,j K,k L,l M,m N,n O,o \
+    P,p Q,q R,r S,s T,t U,u V,v W,w X,x Y,y Z,z
+
+lowercase_internal = \
+  $(if $(strip $1), $$(subst $(firstword $1), $(call lowercase_internal, \
+      $(wordlist 2, $(words $1), $1), $2)), $2)
+
+# Convert a string to lower case. Works only on a-z.
+# $1 - The string to convert
+lowercase = \
+  $(strip \
+    $(eval lowercase_result := $(call lowercase_internal, $(lowercase_table), $1)) \
+    $(lowercase_result) \
+  )
+
+lowercase_letters := a b c d e f g h i j k l m n o p q r s t u v w x y z
+uppercase_letters := A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+titlecase_internal = \
+  $(strip $(or \
+    $(strip $(foreach l, $(lowercase_letters) $(uppercase_letters), \
+      $(if $(filter $l%, $1), \
+        $(call uppercase, $l)$(call lowercase, $(patsubst $l%,%,$1))))), \
+    $1))
+
+# Convert a string to Title Case. Works only on a-z.
+# $1 - The string to convert
+titlecase = \
+  $(strip $(foreach w, $1, $(call titlecase_internal, $w)))
+
+# Returns the first character of a string. Works only on a-z.
+# $1 - The string to extract the first character from
+firstchar = \
+  $(strip $(foreach l, $(lowercase_letters) $(uppercase_letters), \
+    $(if $(filter $l%, $(firstword $1)), $l)))
 
 ################################################################################
 # Creates a sequence of increasing numbers (inclusive).
@@ -398,3 +431,8 @@ FilterExcludedTranslations = \
     ), \
     $1 \
   ))
+
+################################################################################
+
+include MakeIncludeEnd.gmk
+endif # include guard

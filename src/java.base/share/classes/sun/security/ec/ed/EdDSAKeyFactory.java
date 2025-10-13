@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,9 @@
 
 package sun.security.ec.ed;
 
-import java.security.KeyFactorySpi;
-import java.security.Key;
-import java.security.PublicKey;
-import java.security.PrivateKey;
-import java.security.InvalidKeyException;
-import java.security.ProviderException;
+import sun.security.pkcs.PKCS8Key;
+
+import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 import java.util.Arrays;
@@ -140,55 +137,68 @@ public class EdDSAKeyFactory extends KeyFactorySpi {
     private PublicKey generatePublicImpl(KeySpec keySpec)
         throws InvalidKeyException, InvalidKeySpecException {
 
-        if (keySpec instanceof X509EncodedKeySpec) {
-            X509EncodedKeySpec x509Spec = (X509EncodedKeySpec) keySpec;
-            EdDSAPublicKeyImpl result =
-                new EdDSAPublicKeyImpl(x509Spec.getEncoded());
-            checkLockedParams(InvalidKeySpecException::new,
-                result.getParams());
-            return result;
-        } else if (keySpec instanceof EdECPublicKeySpec) {
-            EdECPublicKeySpec publicKeySpec = (EdECPublicKeySpec) keySpec;
-            EdDSAParameters params = EdDSAParameters.get(
-                InvalidKeySpecException::new, publicKeySpec.getParams());
-            checkLockedParams(InvalidKeySpecException::new, params);
-            return new EdDSAPublicKeyImpl(params, publicKeySpec.getPoint());
-        } else {
-            throw new InvalidKeySpecException(
-                "Only X509EncodedKeySpec and EdECPublicKeySpec are supported");
-        }
+        return switch (keySpec) {
+            case X509EncodedKeySpec x509Spec -> {
+                EdDSAPublicKeyImpl result =
+                    new EdDSAPublicKeyImpl(x509Spec.getEncoded());
+                checkLockedParams(InvalidKeySpecException::new,
+                    result.getParams());
+                yield result;
+            }
+            case EdECPublicKeySpec publicKeySpec -> {
+                EdDSAParameters params = EdDSAParameters.get(
+                    InvalidKeySpecException::new, publicKeySpec.getParams());
+                checkLockedParams(InvalidKeySpecException::new, params);
+                yield new EdDSAPublicKeyImpl(params, publicKeySpec.getPoint());
+            }
+            case PKCS8EncodedKeySpec p8 -> {
+                PKCS8Key p8key = new EdDSAPrivateKeyImpl(p8.getEncoded());
+                if (!p8key.hasPublicKey()) {
+                    throw new InvalidKeySpecException("No public key found.");
+                }
+                yield new EdDSAPublicKeyImpl(p8key.getPubKeyEncoded());
+            }
+            case null -> throw new InvalidKeySpecException(
+                "keySpec must not be null");
+            default ->
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
+        };
     }
 
     private PrivateKey generatePrivateImpl(KeySpec keySpec)
         throws InvalidKeyException, InvalidKeySpecException {
 
-        if (keySpec instanceof PKCS8EncodedKeySpec) {
-            PKCS8EncodedKeySpec pkcsSpec = (PKCS8EncodedKeySpec) keySpec;
-            byte[] encoded = pkcsSpec.getEncoded();
-            try {
-                EdDSAPrivateKeyImpl result =
+        return switch (keySpec) {
+            case PKCS8EncodedKeySpec pkcsSpec -> {
+                byte[] encoded = pkcsSpec.getEncoded();
+                try {
+                    EdDSAPrivateKeyImpl result =
                         new EdDSAPrivateKeyImpl(encoded);
-                checkLockedParams(InvalidKeySpecException::new,
+                    checkLockedParams(InvalidKeySpecException::new,
                         result.getParams());
-                return result;
-            } finally {
-                Arrays.fill(encoded, (byte) 0);
+                    yield result;
+                } finally {
+                    Arrays.fill(encoded, (byte) 0);
+                }
             }
-        } else if (keySpec instanceof EdECPrivateKeySpec) {
-            EdECPrivateKeySpec privateKeySpec = (EdECPrivateKeySpec) keySpec;
-            EdDSAParameters params = EdDSAParameters.get(
-                InvalidKeySpecException::new, privateKeySpec.getParams());
-            checkLockedParams(InvalidKeySpecException::new, params);
-            byte[] bytes = privateKeySpec.getBytes();
-            try {
-                return new EdDSAPrivateKeyImpl(params, bytes);
-            } finally {
-                Arrays.fill(bytes, (byte)0);
+            case EdECPrivateKeySpec privateKeySpec -> {
+                EdDSAParameters params = EdDSAParameters.get(
+                    InvalidKeySpecException::new, privateKeySpec.getParams());
+                checkLockedParams(InvalidKeySpecException::new, params);
+                byte[] bytes = privateKeySpec.getBytes();
+                try {
+                    yield new EdDSAPrivateKeyImpl(params, bytes);
+                } finally {
+                    Arrays.fill(bytes, (byte) 0);
+                }
             }
-        } else {
-            throw new InvalidKeySpecException(
-                "Only PKCS8EncodedKeySpec and EdECPrivateKeySpec supported");
-        }
+            case null -> throw new InvalidKeySpecException(
+                "keySpec must not be null");
+            default ->
+                throw new InvalidKeySpecException(keySpec.getClass().getName() +
+                    " not supported.");
+        };
     }
 
     protected <T extends KeySpec> T engineGetKeySpec(Key key, Class<T> keySpec)

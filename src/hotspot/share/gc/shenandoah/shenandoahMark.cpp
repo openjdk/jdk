@@ -24,7 +24,6 @@
  */
 
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"

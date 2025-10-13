@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 6180413 6184485 6267144
  * @summary test for popup menu visual bugs in XAWT
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jdk.test.lib.Platform
  * @run main/manual PopupMenuVisuals
 */
 
@@ -40,16 +41,20 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 
+import jdk.test.lib.Platform;
+
 public class PopupMenuVisuals {
     private static final String INSTRUCTIONS = """
          This test should show a button 'Popup'.
          Click on the button. A popup menu should be shown.
          If following conditions are met:
-          - Menu is disabled
-          - Menu has caption 'Popup menu' (only applicable for linux)
-          - Menu items don't show shortcuts
+          - Menu is disabled %s%s
 
-         Click Pass else click Fail.""";
+         Click Pass else click Fail."""
+            .formatted(
+                    Platform.isLinux() ? "\n - Menu has caption 'Popup menu'" : "",
+                    !Platform.isOSX() ? "\n - Menu items don't show shortcuts" : ""
+            );
 
     static PopupMenu pm;
     static Frame frame;
@@ -58,7 +63,6 @@ public class PopupMenuVisuals {
         PassFailJFrame.builder()
                 .title("PopupMenu Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(35)
                 .testUI(PopupMenuVisuals::createTestUI)
                 .build()
@@ -79,9 +83,9 @@ public class PopupMenuVisuals {
         CheckboxMenuItem mi3 = new CheckboxMenuItem("Item 3");
         Menu sm = new Menu("Submenu");
 
-        //Get things going.  Request focus, set size, et cetera
+        // Get things going.  Request focus, set size, et cetera
         frame = new Frame("PopupMenuVisuals");
-        frame.setSize (200,200);
+        frame.setSize(200, 200);
         frame.validate();
 
         frame.add(b);

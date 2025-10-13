@@ -22,9 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/g1/g1FromCardCache.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/padded.inline.hpp"
@@ -81,7 +78,7 @@ void G1FromCardCache::print(outputStream* out) {
 #endif
 
 uint G1FromCardCache::num_par_rem_sets() {
-  return G1DirtyCardQueueSet::num_par_ids() + G1ConcRefinementThreads + MAX2(ConcGCThreads, ParallelGCThreads);
+  return G1ConcRefinementThreads + ConcGCThreads;
 }
 
 void G1FromCardCache::clear(uint region_idx) {

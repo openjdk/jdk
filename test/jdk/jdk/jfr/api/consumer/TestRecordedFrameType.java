@@ -39,7 +39,7 @@ import jdk.test.whitebox.WhiteBox;
 /**
  * @test
  * @summary Test jdk.jfr.consumer.RecordedFrame::getType()
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR & vm.compiler1.enabled
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox

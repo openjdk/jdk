@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,12 @@
 # questions.
 #
 
+################################################################################
+
 include CopyFiles.gmk
 include JarArchive.gmk
 include JavaCompilation.gmk
 include Modules.gmk
-
-################################################################################
-
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, modules/jdk.compiler/Gendata.gmk))
 
 # This is needed to properly setup DOCS_MODULES.
 $(eval $(call ReadImportMetaData))
@@ -56,7 +53,6 @@ COMPILECREATESYMBOLS_ADD_EXPORTS := \
     --add-exports jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED \
     --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
     --add-exports jdk.compiler/com.sun.tools.javac.jvm=ALL-UNNAMED \
-    --add-exports jdk.jdeps/com.sun.tools.classfile=ALL-UNNAMED \
     #
 
 # TODO: Unify with jdk.javadoc-gendata. Should only compile this once and share.
@@ -64,7 +60,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     TARGET_RELEASE := $(TARGET_RELEASE_NEWJDK), \
     COMPILER := buildjdk, \
     SRC := $(TOPDIR)/make/langtools/src/classes, \
-    INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
+    INCLUDES := build/tools/symbolgenerator, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javac, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \

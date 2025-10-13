@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "unittest.hpp"
 
 class G1BatchedTaskWorkers : AllStatic {
@@ -63,13 +62,13 @@ protected:
   uint _max_workers;
 
   void do_work_called(uint worker_id) {
-    Atomic::inc(&_num_do_work);
-    bool orig_value = Atomic::cmpxchg(&_do_work_called_by[worker_id], false, true);
+    AtomicAccess::inc(&_num_do_work);
+    bool orig_value = AtomicAccess::cmpxchg(&_do_work_called_by[worker_id], false, true);
     ASSERT_EQ(orig_value, false);
   }
 
   void verify_do_work_called_by(uint num_workers) {
-    ASSERT_EQ(Atomic::load(&_num_do_work), num_workers);
+    ASSERT_EQ(AtomicAccess::load(&_num_do_work), num_workers);
     // Do not need to check the _do_work_called_by array. The count is already verified
     // by above statement, and we already check that a given flag is only set once.
   }

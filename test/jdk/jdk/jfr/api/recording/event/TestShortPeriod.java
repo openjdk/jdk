@@ -33,7 +33,7 @@ import jdk.test.lib.jfr.EventNames;
 /**
  * @test Tests that periodic events are not disabled when using a very short
  *       period
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.jfr.api.recording.event.TestShortPeriod

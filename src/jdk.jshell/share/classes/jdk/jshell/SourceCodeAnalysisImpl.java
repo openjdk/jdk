@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
+import com.sun.source.tree.NewArrayTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Scope;
 import com.sun.source.tree.Tree;
@@ -54,16 +55,19 @@ import com.sun.tools.javac.api.JavacScope;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.ClassType;
+import com.sun.tools.javac.code.Type.MethodType;
 import com.sun.tools.javac.parser.Scanner;
 import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.parser.Tokens.Token;
 import com.sun.tools.javac.parser.Tokens.TokenKind;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
 import jdk.internal.shellsupport.doc.JavadocHelper;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
@@ -81,6 +85,7 @@ import java.util.function.Predicate;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -88,7 +93,6 @@ import javax.lang.model.type.TypeMirror;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 
 import java.io.IOException;
-import java.net.URI;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -97,6 +101,7 @@ import java.nio.file.FileVisitor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.ProviderNotFoundException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Arrays;
 import java.util.Collection;
@@ -107,6 +112,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -136,6 +142,7 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Types;
+import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileManager.Location;
 import javax.tools.StandardLocation;
 
@@ -248,6 +255,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     }
 
     private Tree.Kind guessKind(String code) {
+        return guessKind(code, null);
+    }
+
+    private Tree.Kind guessKind(String code, boolean[] moduleImport) {
         return proc.taskFactory.parse(code, pt -> {
             List<? extends Tree> units = pt.units();
             if (units.isEmpty()) {
@@ -255,6 +266,9 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
             Tree unitTree = units.get(0);
             proc.debug(DBG_COMPA, "Kind: %s -- %s\n", unitTree.getKind(), unitTree);
+            if (moduleImport != null && unitTree.getKind() == Kind.IMPORT) {
+                moduleImport[0] = ((ImportTree) unitTree).isModule();
+            }
             return unitTree.getKind();
         });
     }
@@ -286,23 +300,22 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 identifier = m.group();
             }
         }
-        code = code.substring(0, cursor);
-        if (code.trim().isEmpty()) { //TODO: comment handling
-            code += ";";
-        }
-        OuterWrap codeWrap = switch (guessKind(code)) {
-            case IMPORT -> proc.outerMap.wrapImport(Wrap.simpleWrap(code + "any.any"), null);
-            case CLASS, METHOD -> proc.outerMap.wrapInTrialClass(Wrap.classMemberWrap(code));
-            default -> proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
-        };
-        String requiredPrefix = identifier;
-        return computeSuggestions(codeWrap, cursor, anchor).stream()
-                .filter(s -> s.continuation().startsWith(requiredPrefix) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
+
+        OuterWrap codeWrap = wrapCodeForCompletion(code, cursor, true);
+        String[] requiredPrefix = new String[] {identifier};
+        return computeSuggestions(codeWrap, code, cursor, requiredPrefix, anchor).stream()
+                .filter(s -> filteringText(s).startsWith(requiredPrefix[0]) && !s.continuation().equals(REPL_DOESNOTMATTER_CLASS_NAME))
                 .sorted(Comparator.comparing(Suggestion::continuation))
                 .toList();
     }
 
-    private List<Suggestion> computeSuggestions(OuterWrap code, int cursor, int[] anchor) {
+    private static String filteringText(Suggestion suggestion) {
+        return suggestion instanceof SuggestionImpl impl
+                ? impl.filteringText
+                : suggestion.continuation();
+    }
+
+    private List<Suggestion> computeSuggestions(OuterWrap code, String inputCode, int cursor, String[] requiredPrefix, int[] anchor) {
         return proc.taskFactory.analyze(code, at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
@@ -393,6 +406,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         TypeMirror site = at.trees().getTypeMirror(exprPath);
                         boolean staticOnly = isStaticContext(at, exprPath);
                         ImportTree it = findImport(tp);
+
+                        if (it != null && it.isModule()) {
+                            int selectStart = (int) sp.getStartPosition(topLevel, tp.getLeaf());
+                            String qualifiedPrefix = it.getQualifiedIdentifier().getKind() == Kind.MEMBER_SELECT
+                                ? ((MemberSelectTree) it.getQualifiedIdentifier()).getExpression().toString() + "."
+                                : "";
+
+                            addModuleElements(at, qualifiedPrefix, result);
+
+                            requiredPrefix[0] = qualifiedPrefix + requiredPrefix[0];
+                            anchor[0] = selectStart;
+
+                            return result;
+                        }
+
                         boolean isImport = it != null;
 
                         List<? extends Element> members = membersOf(at, site, staticOnly && !isImport && tp.getLeaf().getKind() == Kind.MEMBER_SELECT);
@@ -450,20 +478,39 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             addScopeElements(at, scope, IDENTITY, accept, IS_PACKAGE.negate().and(smartTypeFilter), result);
                             break;
                         }
+                        if (isAnnotation(tp)) {
+                            if (getAnnotationAttributeNameOrNull(tp.getParentPath(), true) != null) {
+                                //nested annotation
+                                result = completionSuggestionsImpl(inputCode, cursor - 1, anchor);
+                                requiredPrefix[0] = "@" + requiredPrefix[0];
+                                return result;
+                            }
+
+                            Predicate<Element> accept = accessibility.and(STATIC_ONLY)
+                                    .and(IS_PACKAGE.or(IS_CLASS).or(IS_INTERFACE));
+                            addScopeElements(at, scope, IDENTITY, accept, IS_PACKAGE.negate().and(smartTypeFilter), result);
+                            break;
+                        }
                         ImportTree it = findImport(tp);
                         if (it != null) {
-                            // the context of the identifier is an import, look for
-                            // package names that start with the identifier.
-                            // If and when Java allows imports from the default
-                            // package to the default package which would allow
-                            // JShell to change to use the default package, and that
-                            // change is done, then this should use some variation
-                            // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
-                            addElements(listPackages(at, ""),
-                                    it.isStatic()
-                                            ? STATIC_ONLY.and(accessibility)
-                                            : accessibility,
-                                    smartFilter, result);
+                            if (it.isModule()) {
+                                addModuleElements(at, "", result);
+                            } else {
+                                // the context of the identifier is an import, look for
+                                // package names that start with the identifier.
+                                // If and when Java allows imports from the default
+                                // package to the default package which would allow
+                                // JShell to change to use the default package, and that
+                                // change is done, then this should use some variation
+                                // of membersOf(at, at.getElements().getPackageElement("").asType(), false)
+                                addElements(listPackages(at, ""),
+                                        it.isStatic()
+                                                ? STATIC_ONLY.and(accessibility)
+                                                : accessibility,
+                                        smartFilter, result);
+
+                                result.add(new SuggestionImpl("module ", false));
+                            }
                         }
                         break;
                     case CLASS: {
@@ -477,6 +524,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                     case ERRONEOUS: {
                         boolean staticOnly = ReplResolve.isStatic(((JavacScope)scope).getEnv());
                         Predicate<Element> accept = accessibility.and(staticOnly ? STATIC_ONLY : TRUE);
+                        boolean insertPrimitiveTypes = true;
                         if (isClass(tp)) {
                             ClassTree clazz = (ClassTree) tp.getParentPath().getLeaf();
                             if (clazz.getExtendsClause() == tp.getLeaf()) {
@@ -504,20 +552,101 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             if (var.getType() == tp.getLeaf()) {
                                 accept = accept.and(IS_TYPE);
                             }
+                        } else if (tp.getParentPath().getLeaf().getKind() == Kind.ANNOTATION) {
+                            AnnotationTree annotation = (AnnotationTree) tp.getParentPath().getLeaf();
+                            Element annotationType = at.trees().getElement(tp.getParentPath());
+                            Set<String> present = annotation.getArguments()
+                                                            .stream()
+                                                            .filter(expr -> expr.getKind() == Kind.ASSIGNMENT)
+                                                            .map(expr -> (AssignmentTree) expr)
+                                                            .map(assign -> assign.getVariable())
+                                                            .filter(var -> var.getKind() == Kind.IDENTIFIER)
+                                                            .map(var -> ((IdentifierTree) var).getName().toString())
+                                                            .collect(Collectors.toSet());
+                            addElements(ElementFilter.methodsIn(annotationType.getEnclosedElements()), el -> !present.contains(el.getSimpleName().toString()), TRUE, _ -> " = ", result);
+                            break;
+                        } else if (getAnnotationAttributeNameOrNull(tp, true) instanceof String attributeName) {
+                            Element annotationType = tp.getParentPath().getParentPath().getLeaf().getKind() == Kind.ANNOTATION
+                                    ? at.trees().getElement(tp.getParentPath().getParentPath())
+                                    : at.trees().getElement(tp.getParentPath().getParentPath().getParentPath());
+                            if (sp.getEndPosition(topLevel, tp.getParentPath().getLeaf()) == (-1)) {
+                                //synthetic 'value':
+                                addElements(ElementFilter.methodsIn(annotationType.getEnclosedElements()), TRUE, TRUE, _ -> " = ", result);
+                                boolean hasValue = findAnnotationAttributeIfAny(annotationType, "value").isPresent();
+                                if (!hasValue) {
+                                    break;
+                                }
+                            }
+                            Optional<ExecutableElement> ee = findAnnotationAttributeIfAny(annotationType, attributeName);
+                            if (ee.isEmpty()) {
+                                break;
+                            }
+                            TypeMirror relevantAttributeType = ee.orElseThrow().getReturnType();
+                            if (relevantAttributeType.getKind() == TypeKind.ARRAY) {
+                                relevantAttributeType = ((ArrayType) relevantAttributeType).getComponentType();
+                            }
+                            if (relevantAttributeType.getKind() == TypeKind.DECLARED &&
+                                at.getTypes().asElement(relevantAttributeType) instanceof Element attributeTypeEl) {
+                                if (attributeTypeEl.getKind() == ElementKind.ANNOTATION_TYPE) {
+                                    boolean hasAnyAttributes =
+                                            ElementFilter.methodsIn(attributeTypeEl.getEnclosedElements())
+                                                         .stream()
+                                                         .anyMatch(attribute -> attribute.getParameters().isEmpty());
+                                    String paren = hasAnyAttributes ? "(" : "";
+                                    String name = scopeContent(at, scope, IDENTITY).contains(attributeTypeEl)
+                                            ? attributeTypeEl.getSimpleName().toString() //simple name ought to be enough:
+                                            : ((TypeElement) attributeTypeEl).getQualifiedName().toString();
+                                    result.add(new SuggestionImpl("@" + name + paren, true));
+                                    break;
+                                } else if (attributeTypeEl.getKind() == ElementKind.ENUM) {
+                                    String typeName = scopeContent(at, scope, IDENTITY).contains(attributeTypeEl)
+                                            ? attributeTypeEl.getSimpleName().toString() //simple name ought to be enough:
+                                            : ((TypeElement) attributeTypeEl).getQualifiedName().toString();
+                                    result.add(new SuggestionImpl(typeName, true));
+                                    result.addAll(ElementFilter.fieldsIn(attributeTypeEl.getEnclosedElements())
+                                                               .stream()
+                                                               .filter(e -> e.getKind() == ElementKind.ENUM_CONSTANT)
+                                                               .map(c -> new SuggestionImpl(scopeContent(at, scope, IDENTITY).contains(c)
+                                                                       ? c.getSimpleName().toString()
+                                                                       : typeName + "." + c.getSimpleName(), c.getSimpleName().toString(),
+                                                                       true))
+                                                               .toList());
+                                    break;
+                                }
+                            }
+                            accept = accessibility.and(el -> {
+                                return switch (el.getKind()) {
+                                    case PACKAGE, ANNOTATION_TYPE, ENUM, INTERFACE, RECORD, ENUM_CONSTANT -> true;
+                                    case CLASS -> !((TypeElement) el).asType().getKind().isPrimitive();
+                                    case FIELD -> isPermittedAnnotationAttributeFieldType(at, el.asType());
+                                    default -> false;
+                                };
+                            });
+                            insertPrimitiveTypes = false;
                         }
 
                         addScopeElements(at, scope, IDENTITY, accept, smartFilter, result);
 
-                        Tree parent = tp.getParentPath().getLeaf();
-                        accept = switch (parent.getKind()) {
-                            case VARIABLE -> ((VariableTree) parent).getType() == tp.getLeaf() ?
-                                             IS_VOID.negate() :
-                                             TRUE;
-                            case PARAMETERIZED_TYPE -> FALSE; // TODO: JEP 218: Generics over Primitive Types
-                            case TYPE_PARAMETER, CLASS, INTERFACE, ENUM, RECORD -> FALSE;
-                            default -> TRUE;
-                        };
-                        addElements(primitivesOrVoid(at), accept, smartFilter, result);
+                        if (insertPrimitiveTypes) {
+                            Tree parent = tp.getParentPath().getLeaf();
+                            accept = switch (parent.getKind()) {
+                                case VARIABLE -> ((VariableTree) parent).getType() == tp.getLeaf() ?
+                                                 IS_VOID.negate() :
+                                                 TRUE;
+                                case PARAMETERIZED_TYPE -> FALSE; // TODO: JEP 218: Generics over Primitive Types
+                                case TYPE_PARAMETER, CLASS, INTERFACE, ENUM, RECORD -> FALSE;
+                                default -> TRUE;
+                            };
+                            addElements(primitivesOrVoid(at), accept, smartFilter, result);
+                        }
+
+                        boolean hasBooleanSmartType = targetTypes != null &&
+                                StreamSupport.stream(targetTypes.spliterator(), false)
+                                             .anyMatch(tm -> tm.getKind() == TypeKind.BOOLEAN);
+                        if (hasBooleanSmartType) {
+                            result.add(new SuggestionImpl("true", true));
+                            result.add(new SuggestionImpl("false", true));
+                        }
                         break;
                     }
                 }
@@ -621,7 +750,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             Trees trees = task.trees();
             SourcePositions sp = trees.getSourcePositions();
             List<Token> tokens = new ArrayList<>();
-            Scanner scanner = ScannerFactory.instance(new Context()).newScanner(wrappedCode, false);
+            Context ctx = new Context();
+            ctx.put(DiagnosticListener.class, (DiagnosticListener) d -> {});
+            Scanner scanner = ScannerFactory.instance(ctx).newScanner(wrappedCode, false);
+            Log.instance(ctx).useSource(cut.getSourceFile());
             scanner.nextToken();
             BiConsumer<Integer, Integer> addKeywordForSpan = (spanStart, spanEnd) -> {
                 int start = codeWrap.wrapIndexToSnippetIndex(spanStart);
@@ -879,6 +1011,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 long start = sp.getStartPosition(topLevel, tree);
                 long end = sp.getEndPosition(topLevel, tree);
 
+                if (end == (-1) && tree.getKind() == Kind.ASSIGNMENT &&
+                    getCurrentPath() != null &&
+                    getCurrentPath().getLeaf().getKind() == Kind.ANNOTATION) {
+                    //the assignment is synthetically generated, take the end pos of the nested tree:
+                    end = sp.getEndPosition(topLevel, ((AssignmentTree) tree).getExpression());
+                }
                 if (start <= wrapEndPos && wrapEndPos <= end &&
                     (deepest[0] == null || deepest[0].getLeaf() == getCurrentPath().getLeaf())) {
                     deepest[0] = new TreePath(getCurrentPath(), tree);
@@ -908,6 +1046,12 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 ((MethodTree)parent).getThrows().contains(tp.getLeaf());
     }
 
+    private boolean isAnnotation(TreePath tp) {
+        Tree parent = tp.getParentPath().getLeaf();
+        return parent.getKind() == Kind.ANNOTATION &&
+                ((AnnotationTree)parent).getAnnotationType().equals(tp.getLeaf());
+    }
+
     private boolean isClass(TreePath tp) {
         return tp.getParentPath() != null &&
                CLASS_KINDS.contains(tp.getParentPath().getLeaf().getKind());
@@ -921,6 +1065,39 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private boolean isVariable(TreePath tp) {
         return tp.getParentPath() != null &&
                tp.getParentPath().getLeaf().getKind() == Kind.VARIABLE;
+    }
+
+    private String getAnnotationAttributeNameOrNull(TreePath tp, boolean acceptArray) {
+        if (tp.getParentPath() == null) {
+            return null;
+        }
+        if (tp.getParentPath().getLeaf().getKind() == Kind.NEW_ARRAY &&
+            ((NewArrayTree) tp.getParentPath().getLeaf()).getInitializers().contains(tp.getLeaf())) {
+            if (acceptArray) {
+                return getAnnotationAttributeNameOrNull(tp.getParentPath(), false);
+            } else {
+                return null;
+            }
+        }
+        if (tp.getParentPath().getParentPath() == null ||
+            tp.getParentPath().getLeaf().getKind() != Kind.ASSIGNMENT ||
+            tp.getParentPath().getParentPath().getLeaf().getKind() != Kind.ANNOTATION) {
+            return null;
+        }
+        AssignmentTree assign = (AssignmentTree) tp.getParentPath().getLeaf();
+        if (assign.getVariable().getKind() != Kind.IDENTIFIER) {
+            return null;
+        }
+        return ((IdentifierTree) assign.getVariable()).getName().toString();
+    }
+
+    private Optional<ExecutableElement> findAnnotationAttributeIfAny(Element annotationType,
+                                                                     String attributeName) {
+        return ElementFilter.methodsIn(annotationType.getEnclosedElements())
+                            .stream()
+                            .filter(ee -> ee.getSimpleName().contentEquals(attributeName))
+                            .filter(ee -> ee.getParameters().isEmpty())
+                            .findAny();
     }
 
     private ImportTree findImport(TreePath tp) {
@@ -947,6 +1124,17 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                         return true;
             }
         };
+    }
+
+    private boolean isPermittedAnnotationAttributeFieldType(AnalyzeTask at, TypeMirror type) {
+        if (type.getKind().isPrimitive()) {
+            return true;
+        }
+        if (type.getKind() == TypeKind.DECLARED) {
+            Element el = ((DeclaredType) type).asElement();
+            return el.getKind() == ElementKind.ENUM || el.equals(at.getElements().getTypeElement("java.lang.String"));
+        }
+        return false;
     }
 
     private final Predicate<Element> TRUE = el -> true;
@@ -1012,6 +1200,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
+    private void addModuleElements(AnalyzeTask at,
+                                   String prefix,
+                                   List<Suggestion> result) {
+        for (ModuleElement me : at.getElements().getAllModuleElements()) {
+            if (!me.getQualifiedName().toString().startsWith(prefix)) {
+                continue;
+            }
+            result.add(new SuggestionImpl(me.getQualifiedName().toString(),
+                                          false));
+        }
+    }
+
     private String simpleName(Element el) {
         return el.getKind() == ElementKind.CONSTRUCTOR ? el.getEnclosingElement().getSimpleName().toString()
                                                        : el.getSimpleName().toString();
@@ -1073,7 +1273,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 if (jlObject != null) {
                     result.addAll(membersOf(at, jlObject));
                 }
-                result.add(createArrayLengthSymbol(at, site));
+                result.addAll(createArraySymbols(at, site));
                 if (shouldGenerateDotClassItem)
                     result.add(createDotClassSymbol(at, site));
                 return result;
@@ -1161,11 +1361,21 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return existing;
     }
 
-    private Element createArrayLengthSymbol(AnalyzeTask at, TypeMirror site) {
-        Name length = Names.instance(at.getContext()).length;
-        Type intType = Symtab.instance(at.getContext()).intType;
+    private List<Element> createArraySymbols(AnalyzeTask at, TypeMirror site) {
+        Symtab syms = Symtab.instance(at.getContext());
+        Names names = Names.instance(at.getContext());
+        Name length = names.length;
+        Name clone = names.clone;
+        Type lengthType = syms.intType;
+        Type cloneType = new MethodType(com.sun.tools.javac.util.List.<Type>nil(),
+                                        (Type) site,
+                                        com.sun.tools.javac.util.List.<Type>nil(),
+                                        syms.methodClass);
 
-        return new VarSymbol(Flags.PUBLIC | Flags.FINAL, length, intType, ((Type) site).tsym);
+        return List.of(
+                new VarSymbol(Flags.PUBLIC | Flags.FINAL, length, lengthType, ((Type) site).tsym),
+                new MethodSymbol(Flags.PUBLIC | Flags.FINAL, clone, cloneType, ((Type) site).tsym)
+        );
     }
 
     private Element createDotClassSymbol(AnalyzeTask at, TypeMirror site) {
@@ -1177,7 +1387,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         return new VarSymbol(Flags.PUBLIC | Flags.STATIC | Flags.FINAL, _class, classType, erasedSite.tsym);
     }
 
-    private Iterable<? extends Element> scopeContent(AnalyzeTask at, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor) {
+    private Collection<? extends Element> scopeContent(AnalyzeTask at, Scope scope, Function<Element, Iterable<? extends Element>> elementConvertor) {
         Iterable<Scope> scopeIterable = () -> new Iterator<Scope>() {
             private Scope currentScope = scope;
             @Override
@@ -1246,11 +1456,54 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
 
         Tree current = forPath.getLeaf();
 
+        if (current.getKind() == Kind.ANNOTATION) {
+            Element type = at.trees().getElement(forPath);
+            if (type != null) {
+                Optional<ExecutableElement> valueAttr =
+                        ElementFilter.methodsIn(type.getEnclosedElements())
+                                     .stream()
+                                     .filter(ee -> ee.getSimpleName().contentEquals("value"))
+                                     .findAny();
+                if (valueAttr.isPresent()) {
+                    TypeMirror returnType = valueAttr.orElseThrow().getReturnType();
+
+                    if (returnType.getKind() == TypeKind.ARRAY) {
+                        returnType = ((ArrayType) returnType).getComponentType();
+                    }
+
+                    return Collections.singletonList(returnType);
+                }
+            }
+        }
+
         switch (forPath.getParentPath().getLeaf().getKind()) {
+            case NEW_ARRAY:
+                if (getAnnotationAttributeNameOrNull(forPath, true) != null) {
+                    forPath = forPath.getParentPath();
+                    current = forPath.getLeaf();
+                    //fall-through
+                } else {
+                    break;
+                }
             case ASSIGNMENT: {
                 AssignmentTree tree = (AssignmentTree) forPath.getParentPath().getLeaf();
-                if (tree.getExpression() == current)
-                    return Collections.singletonList(at.trees().getTypeMirror(new TreePath(forPath.getParentPath(), tree.getVariable())));
+                if (tree.getExpression() == current) {
+                    if (forPath.getParentPath().getParentPath().getLeaf().getKind() == Kind.ANNOTATION) {
+                        Element method = at.trees().getElement(new TreePath(forPath.getParentPath(), tree.getVariable()));
+                        if (method != null && method.getKind() == ElementKind.METHOD) {
+                            TypeMirror returnType = ((ExecutableElement) method).getReturnType();
+
+                            if (returnType.getKind() == TypeKind.ARRAY) {
+                                returnType = ((ArrayType) returnType).getComponentType();
+                            }
+
+                            return Collections.singletonList(returnType);
+                        }
+                        return null;
+                    } else {
+                        return Collections.singletonList(at.trees().getTypeMirror(new TreePath(forPath.getParentPath(), tree.getVariable())));
+                    }
+                }
                 break;
             }
             case VARIABLE: {
@@ -1478,15 +1731,11 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     };
 
     private List<Documentation> documentationImpl(String code, int cursor, boolean computeJavadoc) {
-        code = code.substring(0, cursor);
-        if (code.trim().isEmpty()) { //TODO: comment handling
-            code += ";";
-        }
-
-        if (guessKind(code) == Kind.IMPORT)
+        OuterWrap codeWrap = wrapCodeForCompletion(code, cursor, false);
+        if (codeWrap == null) {
+            //import:
             return Collections.emptyList();
-
-        OuterWrap codeWrap = proc.outerMap.wrapInTrialClass(Wrap.methodWrap(code));
+        }
         return proc.taskFactory.analyze(codeWrap, List.of(keepParameterNames), at -> {
             SourcePositions sp = at.trees().getSourcePositions();
             CompilationUnitTree topLevel = at.firstCuTree();
@@ -1498,7 +1747,8 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             TreePath prevPath = null;
             while (tp != null && tp.getLeaf().getKind() != Kind.METHOD_INVOCATION &&
                    tp.getLeaf().getKind() != Kind.NEW_CLASS && tp.getLeaf().getKind() != Kind.IDENTIFIER &&
-                   tp.getLeaf().getKind() != Kind.MEMBER_SELECT) {
+                   tp.getLeaf().getKind() != Kind.MEMBER_SELECT &&
+                   tp.getLeaf().getKind() != Kind.ANNOTATION) {
                 prevPath = tp;
                 tp = tp.getParentPath();
             }
@@ -1551,6 +1801,18 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 }
 
                 elements = Stream.of(el);
+            } else if (tp.getLeaf().getKind() == Kind.ANNOTATION) {
+                Element el = at.trees().getElement(tp);
+
+                if (el == null ||
+                    el.getKind() != ElementKind.ANNOTATION_TYPE) {
+                    //erroneous state:
+                    return Collections.emptyList();
+                }
+
+                elements = ElementFilter.methodsIn(el.getEnclosedElements())
+                                        .stream()
+                                        .map(ee -> (Element) ee);
             } else {
                 return Collections.emptyList();
             }
@@ -1942,12 +2204,22 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     //update indexes, either initially or after a classpath change:
     private void refreshIndexes(int version) {
         try {
-            Collection<Path> paths = new ArrayList<>();
-            MemoryFileManager fm = proc.taskFactory.fileManager();
-
-            appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, paths);
-            appendPaths(fm, StandardLocation.CLASS_PATH, paths);
-            appendPaths(fm, StandardLocation.SOURCE_PATH, paths);
+            Collection<Path> paths = proc.taskFactory.parse("", task -> {
+                MemoryFileManager fm = proc.taskFactory.fileManager();
+                Collection<Path> _paths = new ArrayList<>();
+                try {
+                    appendPaths(fm, StandardLocation.PLATFORM_CLASS_PATH, _paths);
+                    appendPaths(fm, StandardLocation.CLASS_PATH, _paths);
+                    appendPaths(fm, StandardLocation.SOURCE_PATH, _paths);
+                    appendModulePaths(fm, StandardLocation.SYSTEM_MODULES, _paths);
+                    appendModulePaths(fm, StandardLocation.UPGRADE_MODULE_PATH, _paths);
+                    appendModulePaths(fm, StandardLocation.MODULE_PATH, _paths);
+                    return _paths;
+                } catch (Exception ex) {
+                    proc.debug(ex, "SourceCodeAnalysisImpl.refreshIndexes(" + version + ")");
+                    return List.of();
+                }
+            });
 
             Map<Path, ClassIndex> newIndexes = new HashMap<>();
 
@@ -2000,28 +2272,26 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
+    private void appendModulePaths(MemoryFileManager fm, Location loc, Collection<Path> paths) throws IOException {
+        for (Set<Location> moduleLocations : fm.listLocationsForModules(loc)) {
+            for (Location moduleLocation : moduleLocations) {
+                Iterable<? extends Path> modulePaths = fm.getLocationAsPaths(moduleLocation);
+
+                if (modulePaths == null) {
+                    continue;
+                }
+
+                modulePaths.forEach(paths::add);
+            }
+        }
+    }
+
     //create/update index a given JavaFileManager entry (which may be a JDK installation, a jar/zip file or a directory):
     //if an index exists for the given entry, the existing index is kept unless the timestamp is modified
     private ClassIndex indexForPath(Path path) {
-        if (isJRTMarkerFile(path)) {
-            FileSystem jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
-            Path modules = jrtfs.getPath("modules");
-            return PATH_TO_INDEX.compute(path, (p, index) -> {
-                try {
-                    long lastModified = Files.getLastModifiedTime(modules).toMillis();
-                    if (index == null || index.timestamp != lastModified) {
-                        try (DirectoryStream<Path> stream = Files.newDirectoryStream(modules)) {
-                            index = doIndex(lastModified, path, stream);
-                        }
-                    }
-                    return index;
-                } catch (IOException ex) {
-                    proc.debug(ex, "SourceCodeAnalysisImpl.indexesForPath(" + path.toString() + ")");
-                    return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
-                }
-            });
-        } else if (!Files.isDirectory(path)) {
-            if (Files.exists(path)) {
+        if (!Files.isDirectory(path)) {
+            if (Files.exists(path) &&
+                !isJRTMarkerFile(path)) { //don't directly index lib/modules
                 return PATH_TO_INDEX.compute(path, (p, index) -> {
                     try {
                         long lastModified = Files.getLastModifiedTime(p).toMillis();
@@ -2033,7 +2303,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                             }
                         }
                         return index;
-                    } catch (IOException ex) {
+                    } catch (IOException | ProviderNotFoundException ex) {
                         proc.debug(ex, "SourceCodeAnalysisImpl.indexesForPath(" + path.toString() + ")");
                         return new ClassIndex(-1, path, Collections.emptySet(), Collections.emptyMap());
                     }
@@ -2052,7 +2322,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
         }
     }
 
-    static boolean isJRTMarkerFile(Path path) {
+    private static boolean isJRTMarkerFile(Path path) {
         return path.equals(Paths.get(System.getProperty("java.home"), "lib", "modules"));
     }
 
@@ -2140,11 +2410,108 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             upToDate = classpathVersion == indexVersion;
         }
         while (!upToDate) {
-            INDEXER.submit(() -> {}).get();
+            waitCurrentBackgroundTasksFinished();
             synchronized (currentIndexes) {
                 upToDate = classpathVersion == indexVersion;
             }
         }
+    }
+
+    public static void waitCurrentBackgroundTasksFinished() throws Exception {
+        INDEXER.submit(() -> {}).get();
+    }
+
+    private OuterWrap wrapCodeForCompletion(String code, int cursor, boolean wrapImports) {
+        code = code.substring(0, cursor);
+        if (code.trim().isEmpty()) { //TODO: comment handling
+            code += ";";
+        }
+
+        List<String> imports = new ArrayList<>();
+        List<Wrap> declarationParts = new ArrayList<>();
+        String lastImport = null;
+        boolean lastImportIsModuleImport = false;
+        Wrap declarationWrap = null;
+        Wrap pendingWrap = null;
+        String input = code;
+        boolean cont = true;
+        int startOffset = 0;
+
+        while (cont) {
+            if (lastImport != null) {
+                imports.add(lastImport);
+                lastImport = null;
+            }
+            if (declarationWrap != null) {
+                declarationParts.add(declarationWrap);
+                declarationWrap = null;
+                pendingWrap = null;
+            }
+
+            String current;
+            SourceCodeAnalysis.CompletionInfo completeness = analyzeCompletion(input);
+            int newStartOffset;
+
+            if (completeness.completeness().isComplete() && !completeness.remaining().isBlank()) {
+                current = input.substring(0, input.length() - completeness.remaining().length());
+                newStartOffset = startOffset + input.length() - completeness.remaining().length();
+                input = completeness.remaining();
+                cont = true;
+            } else {
+                current = input;
+                cont = false;
+                newStartOffset = startOffset;
+            }
+
+            boolean[] moduleImport = new boolean[1];
+
+            switch (guessKind(current, moduleImport)) {
+                case IMPORT -> {
+                    lastImport = current;
+                    lastImportIsModuleImport = moduleImport[0];
+                }
+                case CLASS, METHOD -> {
+                    pendingWrap = declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                }
+                case VARIABLE -> {
+                    declarationWrap = Wrap.classMemberWrap(whitespaces(code, startOffset) + current);
+                    pendingWrap = Wrap.methodWrap(whitespaces(code, startOffset) + current);
+                }
+                default -> {
+                    pendingWrap = declarationWrap = Wrap.methodWrap(whitespaces(code, startOffset) + current);
+                }
+            }
+
+            startOffset = newStartOffset;
+        }
+
+        if (lastImport != null) {
+            if (wrapImports) {
+                return proc.outerMap.wrapImport(Wrap.simpleWrap(whitespaces(code, startOffset) + lastImport + (!lastImportIsModuleImport ? "any.any" : "")), null);
+            } else {
+                return null;
+            }
+        }
+
+        if (pendingWrap != null) {
+            return proc.outerMap.wrapInTrialClass(imports, declarationParts, pendingWrap);
+        }
+
+        throw new IllegalStateException("No pending wrap for: " + code);
+    }
+
+    private static String whitespaces(String input, int offset) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i < offset; i++) {
+            if (input.charAt(i) == '\n') {
+                result.append('\n');
+            } else {
+                result.append(' ');
+            }
+        }
+
+        return result.toString();
     }
 
     /**
@@ -2153,6 +2520,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
     private static class SuggestionImpl implements Suggestion {
 
         private final String continuation;
+        private final String filteringText;
         private final boolean matchesType;
 
         /**
@@ -2162,7 +2530,19 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
          * @param matchesType does the candidate match the target type
          */
         public SuggestionImpl(String continuation, boolean matchesType) {
+            this(continuation, continuation, matchesType);
+        }
+
+        /**
+         * Create a {@code Suggestion} instance.
+         *
+         * @param continuation a candidate continuation of the user's input
+         * @param filteringText a text that should be used for filtering
+         * @param matchesType does the candidate match the target type
+         */
+        public SuggestionImpl(String continuation, String filteringText, boolean matchesType) {
             this.continuation = continuation;
+            this.filteringText = filteringText;
             this.matchesType = matchesType;
         }
 

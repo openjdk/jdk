@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeBehaviours.hpp"
+#include "code/nmethod.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
 CompiledICProtectionBehaviour* CompiledICProtectionBehaviour::_current = nullptr;
 
-bool DefaultICProtectionBehaviour::lock(nmethod* method) {
-  if (is_safe(method)) {
+bool DefaultICProtectionBehaviour::lock(nmethod* nm) {
+  if (is_safe(nm)) {
     return false;
   }
   CompiledIC_lock->lock_without_safepoint_check();
   return true;
 }
 
-void DefaultICProtectionBehaviour::unlock(nmethod* method) {
+void DefaultICProtectionBehaviour::unlock(nmethod* nm) {
   CompiledIC_lock->unlock();
 }
 
-bool DefaultICProtectionBehaviour::is_safe(nmethod* method) {
-  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self();
+bool DefaultICProtectionBehaviour::is_safe(nmethod* nm) {
+  return SafepointSynchronize::is_at_safepoint() || CompiledIC_lock->owned_by_self() || (NMethodState_lock->owned_by_self() && nm->is_not_installed());
 }

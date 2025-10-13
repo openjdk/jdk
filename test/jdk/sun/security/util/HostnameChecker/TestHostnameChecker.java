@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.util.List;
 import jdk.test.lib.security.CertUtils;
 import sun.security.util.*;
 import sun.security.x509.X509CertImpl;
+import sun.security.x509.X509CertInfo;
 
 /**
  * Certificate 1:
@@ -225,7 +226,7 @@ public class TestHostnameChecker {
     }
 
     private static X509Certificate mock(String domain) {
-        return new X509CertImpl(null, null, null, new byte[0]) {
+        return new X509CertImpl(new X509CertInfo(), null, null, new byte[0]) {
             @Override
             public Collection<List<?>> getSubjectAlternativeNames() {
                 return List.of(List.of(2, domain));

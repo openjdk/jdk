@@ -31,7 +31,7 @@ import jdk.jfr.StackTrace;
 /**
  * @test
  * @summary Tests that large output is truncated
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

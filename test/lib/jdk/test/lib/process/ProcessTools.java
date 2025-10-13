@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -981,7 +981,7 @@ public final class ProcessTools {
         String[] classArgs = new String[args.length - 2];
         System.arraycopy(args, 2, classArgs, 0, args.length - 2);
         Class<?> c = Class.forName(className);
-        Method mainMethod = c.getMethod("main", new Class[] { String[].class });
+        Method mainMethod = c.getMethod("main", new Class<?>[] { String[].class });
         mainMethod.setAccessible(true);
 
         if (testThreadFactoryName.equals("Virtual")) {

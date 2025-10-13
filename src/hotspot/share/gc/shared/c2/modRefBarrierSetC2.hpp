@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,25 +31,10 @@ class TypeOopPtr;
 
 class ModRefBarrierSetC2: public BarrierSetC2 {
 protected:
-  virtual void pre_barrier(GraphKit* kit,
-                           bool do_load,
-                           Node* ctl,
-                           Node* obj,
-                           Node* adr,
-                           uint adr_idx,
-                           Node* val,
-                           const TypeOopPtr* val_type,
-                           Node* pre_val,
-                           BasicType bt) const {}
-
   virtual void post_barrier(GraphKit* kit,
-                            Node* ctl,
-                            Node* store,
                             Node* obj,
                             Node* adr,
-                            uint adr_idx,
                             Node* val,
-                            BasicType bt,
                             bool use_precise) const {}
 
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const;

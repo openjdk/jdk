@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,10 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  * A pseudo-instruction modeling an entry in the {@code exception_table} array
  * of a {@link CodeAttribute Code} attribute.  Catch (JVMS {@jvms 3.12}) and
  * finally (JVMS {@jvms 3.14}) blocks in Java source code compile to exception
- * table entries.  Delivered as a {@link CodeElement} when traversing the
- * contents of a {@link CodeModel}.
+ * table entries.  The order of exception table entries is significant: when an
+ * exception is thrown in a method, execution branches to the first matching
+ * exception handler if such a handler exists (JVMS {@jvms 2.10}). Delivered as
+ * a {@link CodeElement} when traversing the contents of a {@link CodeModel}.
  * <p>
  * An exception table entry is composite:
  * {@snippet lang=text :
@@ -54,6 +56,7 @@ import jdk.internal.classfile.impl.AbstractPseudoInstruction;
  * }
  *
  * @see CodeBuilder#exceptionCatch CodeBuilder::exceptionCatch
+ * @see CodeAttribute#exceptionHandlers()
  * @jvms 4.7.3 The {@code Code} Attribute
  * @since 24
  */

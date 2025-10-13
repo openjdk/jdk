@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.Map;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+import jdk.jpackage.internal.resources.ResourceLocator;
 
 /**
  * Shell scripts of a package.
@@ -62,11 +64,27 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
         return this;
     }
 
-    PackageScripts<T> setResourceDir(Path v) throws IOException {
+    PackageScripts<T> setResourceDir(Path v) {
         for (var script : scripts.values()) {
             script.getResource().setResourceDir(v);
         }
         return this;
+    }
+
+    PackageScripts<T> setResourceDir(BuildEnv env) {
+        env.resourceDir().ifPresent(this::setResourceDir);
+        return this;
+    }
+
+    boolean isEmpty() {
+        return scripts.values().stream().map(
+                ShellScriptResource::getResource).allMatch(overridableResource -> {
+            try {
+                return overridableResource.saveToStream(null) == null;
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        });
     }
 
     void saveInFolder(Path folder) throws IOException {
@@ -78,26 +96,35 @@ final class PackageScripts<T extends Enum<T> & Supplier<OverridableResource>> {
     static class ResourceConfig {
 
         ResourceConfig(String defaultName, String categoryId) {
+            this(Optional.of(defaultName), categoryId);
+        }
+
+        ResourceConfig(Optional<String> defaultName, String categoryId) {
             this.defaultName = defaultName;
             this.category = I18N.getString(categoryId);
         }
 
         OverridableResource createResource() {
-            var resource = new OverridableResource(defaultName).setCategory(category);
+            final var resource = defaultName.map(v -> {
+                    return new OverridableResource(v, ResourceLocator.class);
+                }).orElseGet(OverridableResource::new).setCategory(category);
+
             return getDefaultPublicName().map(resource::setPublicName).orElse(
                     resource);
         }
 
         private Optional<String> getDefaultPublicName() {
-            final String wellKnownSuffix = ".template";
-            if (defaultName.endsWith(wellKnownSuffix)) {
-                return Optional.of(defaultName.substring(0, defaultName.length()
-                        - wellKnownSuffix.length()));
-            }
-            return Optional.ofNullable(null);
+            return defaultName.flatMap(v -> {
+                final String wellKnownSuffix = ".template";
+                if (v.endsWith(wellKnownSuffix)) {
+                    return Optional.of(v.substring(0,
+                            v.length() - wellKnownSuffix.length()));
+                }
+                return Optional.empty();
+            });
         }
 
-        private final String defaultName;
+        private final Optional<String> defaultName;
         private final String category;
     }
 

@@ -55,6 +55,8 @@ import javax.imageio.plugins.jpeg.JPEGImageWriteParam;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import org.w3c.dom.Node;
+import sun.java2d.Disposer;
+import sun.java2d.DisposerRecord;
 
 /**
  * Base class for all possible forms of JPEG compression in TIFF.
@@ -219,12 +221,14 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
             if(supportsStreamMetadata) {
                 String smName = spi.getNativeStreamMetadataFormatName();
                 if(smName == null || !smName.equals(STREAM_METADATA_NAME)) {
+                    this.JPEGWriter.dispose();
                     this.JPEGWriter = null;
                 }
             }
             if(this.JPEGWriter != null && supportsImageMetadata) {
                 String imName = spi.getNativeImageMetadataFormatName();
                 if(imName == null || !imName.equals(IMAGE_METADATA_NAME)) {
+                    this.JPEGWriter.dispose();
                     this.JPEGWriter = null;
                 }
             }
@@ -263,6 +267,12 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
 
                 // Set the writer.
                 this.JPEGWriter = writer;
+                // The JDK built-in JPEGImageWriter will self-dispose.
+                // So a Disposer is only needed here if it is an unknown reader.
+                // This is not common, so likely this will rarely be needed.
+                if (!(this.JPEGWriter instanceof com.sun.imageio.plugins.jpeg.JPEGImageWriter)) {
+                    Disposer.addRecord(this, new ImageWriterDisposerRecord(this.JPEGWriter));
+                }
                 break;
             }
 
@@ -435,11 +445,16 @@ public abstract class TIFFBaseJPEGCompressor extends TIFFCompressor {
         return compDataLength;
     }
 
-    @SuppressWarnings("removal")
-    protected void finalize() throws Throwable {
-        super.finalize();
-        if(JPEGWriter != null) {
-            JPEGWriter.dispose();
+    private static class ImageWriterDisposerRecord implements DisposerRecord {
+        private final ImageWriter writer;
+
+        public ImageWriterDisposerRecord(ImageWriter writer) {
+            this.writer = writer;
+        }
+
+        @Override
+        public void dispose() {
+            writer.dispose();
         }
     }
 }

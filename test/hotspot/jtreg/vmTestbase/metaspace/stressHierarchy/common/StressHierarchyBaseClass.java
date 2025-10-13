@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ import java.net.MalformedURLException;
 import metaspace.share.HeapOOMEException;
 import metaspace.share.TriggerUnloadingByFillingMetaspace;
 import metaspace.share.TriggerUnloadingHelper;
-import metaspace.share.TriggerUnloadingWithWhiteBox;
+import metaspace.share.TriggerUnloadingWithFullGC;
 import metaspace.stressHierarchy.common.classloader.tree.Node;
 import metaspace.stressHierarchy.common.classloader.tree.Tree;
 import metaspace.stressHierarchy.common.exceptions.TimeIsOverException;
@@ -48,7 +48,7 @@ abstract public class StressHierarchyBaseClass extends TestBase {
 
     protected static String[] args;
 
-    protected TriggerUnloadingHelper triggerUnloadingHelper = new TriggerUnloadingWithWhiteBox(); //default helper
+    protected TriggerUnloadingHelper triggerUnloadingHelper = new TriggerUnloadingWithFullGC(); //default helper
 
     protected PerformChecksHelper performChecksHelper = null;
 

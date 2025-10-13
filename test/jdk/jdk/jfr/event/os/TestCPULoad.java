@@ -32,7 +32,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @run main/othervm jdk.jfr.event.os.TestCPULoad

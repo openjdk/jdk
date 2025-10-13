@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,6 +141,10 @@ public class ownedmonitors001 {
                 break label1;
             }
 
+            log1("Getting ThreadReference for main thread");
+            ThreadReference mainThread =
+                debuggee.threadByFieldNameOrThrow(debuggeeRef, "mainThread", "main");
+
             for (int i2 = 0; ; i2++) {
                 if (!vm.canGetOwnedMonitorInfo()) {
                     log1("TEST ABORTED: vm.canGetOwnedMonitorInfo() returned false.");
@@ -163,11 +167,11 @@ public class ownedmonitors001 {
                 switch (i2) {
 
                     case 0 :
-                        checkMonitors("main", 0);
+                        checkMonitors(mainThread, 0);
                         break;
 
                     case 1 :
-                        checkMonitors("main", monitorCount);
+                        checkMonitors(mainThread, monitorCount);
                         break;
 
                     default:
@@ -210,21 +214,8 @@ public class ownedmonitors001 {
         return testExitCode;
     }
 
-    private void checkMonitors(String threadName, int expSize) {
-        log1("Getting ThreadReference for " + threadName + " thread");
-        ThreadReference checkedThread = null;
-        Iterator itr = vm.allThreads().listIterator();
-        while (itr.hasNext()) {
-             ThreadReference thread = (ThreadReference) itr.next();
-             if (thread.name().equals(threadName)) {
-                  checkedThread = thread;
-             }
-        }
-        if (checkedThread == null) {
-            log3("Cannot find  " + threadName + "thread in the debuggee");
-            testExitCode = FAILED;
-            return;
-        }
+    private void checkMonitors(ThreadReference checkedThread, int expSize) {
+        String threadName = checkedThread.name();
         log1("Checking up throwing an IncompatibleThreadStateException for not suspended thread");
         List monitors;
         try {
@@ -252,7 +243,7 @@ public class ownedmonitors001 {
                 if (expSize > 0) {
                     log1("Checking up items in ownedMonitors() list");
                     getMonitorRefs();
-                    itr = expMonitors.iterator();
+                    Iterator itr = expMonitors.iterator();
                     while (itr.hasNext()) {
                         ObjectReference mon = (ObjectReference) itr.next();
                         if (monitors.contains(mon)) {

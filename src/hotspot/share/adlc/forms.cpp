@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ Form::DataType Form::ideal_to_const_type(const char *name) const {
   if (strcmp(name,"ConNKlass")==0) return Form::idealNKlass;
   if (strcmp(name,"ConL")==0) return Form::idealL;
   if (strcmp(name,"ConF")==0) return Form::idealF;
+  if (strcmp(name,"ConH")==0) return Form::idealH;
   if (strcmp(name,"ConD")==0) return Form::idealD;
   if (strcmp(name,"Bool")==0) return Form::idealI;
 

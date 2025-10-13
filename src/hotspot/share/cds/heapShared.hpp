@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_HEAPSHARED_HPP
 #define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -37,7 +37,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings;
@@ -143,26 +143,6 @@ class HeapShared: AllStatic {
   friend class VerifySharedOopClosure;
 
 public:
-  // Can this VM write a heap region into the CDS archive?
-  static bool can_write() {
-    CDS_JAVA_HEAP_ONLY(
-      if (_disable_writing) {
-        return false;
-      }
-      // Need compressed class pointers for heap region dump.
-      if (!UseCompressedClassPointers) {
-        return false;
-      }
-      // Almost all GCs support heap region dump, except ZGC (so far).
-      return !UseZGC;
-    )
-    NOT_CDS_JAVA_HEAP(return false;)
-  }
-
-  static void disable_writing() {
-    CDS_JAVA_HEAP_ONLY(_disable_writing = true;)
-  }
-
   static bool is_subgraph_root_class(InstanceKlass* ik);
 
   // Scratch objects for archiving Klass::java_mirror()
@@ -173,7 +153,6 @@ public:
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP
-  static bool _disable_writing;
   static DumpedInternedStrings *_dumped_interned_strings;
 
   // statistics
@@ -185,9 +164,12 @@ private:
 
   static void count_allocation(size_t size);
   static void print_stats();
-  static void debug_trace();
 public:
+  static void debug_trace();
   static unsigned oop_hash(oop const& p);
+  static unsigned oop_handle_hash(OopHandle const& oh);
+  static unsigned oop_handle_hash_raw(OopHandle const& oh);
+  static bool oop_handle_equals(const OopHandle& a, const OopHandle& b);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
   }
@@ -196,7 +178,7 @@ public:
 
   class CachedOopInfo {
     // Used by CDSHeapVerifier.
-    oop _orig_referrer;
+    OopHandle _orig_referrer;
 
     // The location of this object inside ArchiveHeapWriter::_buffer
     size_t _buffer_offset;
@@ -207,12 +189,12 @@ public:
     // One or more fields in this object are pointing to MetaspaceObj
     bool _has_native_pointers;
   public:
-    CachedOopInfo(oop orig_referrer, bool has_oop_pointers)
+    CachedOopInfo(OopHandle orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
         _buffer_offset(0),
         _has_oop_pointers(has_oop_pointers),
         _has_native_pointers(false) {}
-    oop orig_referrer()             const { return _orig_referrer;   }
+    oop orig_referrer() const;
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
     bool has_oop_pointers()         const { return _has_oop_pointers; }
@@ -223,14 +205,15 @@ public:
 private:
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
-  typedef ResizeableResourceHashtable<oop, CachedOopInfo,
+  typedef ResizeableHashTable<OopHandle, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_hash> ArchivedObjectCache;
+      HeapShared::oop_handle_hash_raw,
+      HeapShared::oop_handle_equals> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   class DumpTimeKlassSubGraphInfoTable
-    : public ResourceHashtable<Klass*, KlassSubGraphInfo,
+    : public HashTable<Klass*, KlassSubGraphInfo,
                                137, // prime number
                                AnyObj::C_HEAP,
                                mtClassShared,
@@ -255,7 +238,7 @@ private:
   static DumpTimeKlassSubGraphInfoTable* _dump_time_subgraph_info_table;
   static RunTimeKlassSubGraphInfoTable _run_time_subgraph_info_table;
 
-  static CachedOopInfo make_cached_oop_info(oop obj);
+  static CachedOopInfo make_cached_oop_info(oop obj, oop referrer);
   static ArchivedKlassSubGraphInfoRecord* archive_subgraph_info(KlassSubGraphInfo* info);
   static void archive_object_subgraphs(ArchivableStaticFieldInfo fields[],
                                        bool is_full_module_graph);
@@ -285,7 +268,7 @@ private:
   // !UseCompressedOops only: used to relocate pointers to the archived objects
   static ptrdiff_t _runtime_delta;
 
-  typedef ResizeableResourceHashtable<oop, bool,
+  typedef ResizeableHashTable<oop, bool,
       AnyObj::C_HEAP,
       mtClassShared,
       HeapShared::oop_hash> SeenObjectsTable;
@@ -305,8 +288,7 @@ private:
   static GrowableArrayCHeap<OopHandle, mtClassShared>* _root_segments;
   static int _root_segment_max_size_elems;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
-  static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
-  static MetaspaceObjToOopHandleTable* _scratch_references_table;
+  static MetaspaceObjToOopHandleTable* _scratch_objects_table;
 
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
@@ -336,7 +318,7 @@ private:
 
   static bool has_been_seen_during_subgraph_recording(oop obj);
   static void set_has_been_seen_during_subgraph_recording(oop obj);
-  static bool archive_object(oop obj, KlassSubGraphInfo* subgraph_info);
+  static bool archive_object(oop obj, oop referrer, KlassSubGraphInfo* subgraph_info);
 
   static void resolve_classes_for_subgraphs(JavaThread* current, ArchivableStaticFieldInfo fields[]);
   static void resolve_classes_for_subgraph_of(JavaThread* current, Klass* k);
@@ -361,6 +343,31 @@ private:
   static void prepare_resolved_references();
   static void archive_strings();
   static void archive_subgraphs();
+  static void copy_java_mirror(oop orig_mirror, oop scratch_m);
+
+  // PendingOop and PendingOopStack are used for recursively discovering all cacheable
+  // heap objects. The recursion is done using PendingOopStack so we won't overflow the
+  // C stack with deep reference chains.
+  class PendingOop {
+    oop _obj;
+    oop _referrer;
+    int _level;
+
+  public:
+    PendingOop() : _obj(nullptr), _referrer(nullptr), _level(-1) {}
+    PendingOop(oop obj, oop referrer, int level) : _obj(obj), _referrer(referrer), _level(level) {}
+
+    oop obj()      const { return _obj; }
+    oop referrer() const { return _referrer; }
+    int level()    const { return _level; }
+  };
+
+  class OopFieldPusher;
+  using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
+
+  static PendingOop _object_being_archived;
+  static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
+                              oop orig_obj, oop referrer);
 
  public:
   static void reset_archived_object_states(TRAPS);
@@ -376,8 +383,12 @@ private:
     return _archived_object_cache;
   }
 
+  static CachedOopInfo* get_cached_oop_info(oop orig_obj) {
+    OopHandle oh(&orig_obj);
+    return _archived_object_cache->get(oh);
+  }
+
   static int archive_exception_instance(oop exception);
-  static void write_heap(ArchiveHeapInfo* heap_info);
 
   static bool archive_reachable_objects_from(int level,
                                              KlassSubGraphInfo* subgraph_info,
@@ -424,14 +435,17 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void write_heap(ArchiveHeapInfo* heap_info) NOT_CDS_JAVA_HEAP_RETURN;
   static objArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
-  static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
+  static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
+    CDS_JAVA_HEAP_ONLY(return (idx == AOTMetaspace::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
+  static void delete_tables_with_raw_oops() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void resolve_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(JavaThread* current, Klass* k) NOT_CDS_JAVA_HEAP_RETURN;
@@ -465,14 +479,14 @@ private:
 
 #if INCLUDE_CDS_JAVA_HEAP
 class DumpedInternedStrings :
-  public ResizeableResourceHashtable<oop, bool,
+  public ResizeableHashTable<oop, bool,
                            AnyObj::C_HEAP,
                            mtClassShared,
                            HeapShared::string_oop_hash>
 {
 public:
   DumpedInternedStrings(unsigned size, unsigned max_size) :
-    ResizeableResourceHashtable<oop, bool,
+    ResizeableHashTable<oop, bool,
                                 AnyObj::C_HEAP,
                                 mtClassShared,
                                 HeapShared::string_oop_hash>(size, max_size) {}

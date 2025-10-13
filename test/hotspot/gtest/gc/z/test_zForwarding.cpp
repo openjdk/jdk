@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zForwarding.inline.hpp"
 #include "gc/z/zForwardingAllocator.inline.hpp"
@@ -29,6 +28,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zPage.inline.hpp"
+#include "gc/z/zVirtualMemory.inline.hpp"
 #include "runtime/os.hpp"
 #include "unittest.hpp"
 
@@ -56,7 +56,7 @@ public:
     const size_t increment = MAX2(align_up(unused / 100, ZGranuleSize), ZGranuleSize);
 
     for (uintptr_t start = 0; start + ZGranuleSize <= ZAddressOffsetMax; start += increment) {
-      char* const reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase + start, ZGranuleSize, false /* executable */);
+      char* const reserved = os::attempt_reserve_memory_at((char*)ZAddressHeapBase + start, ZGranuleSize, mtTest);
       if (reserved != nullptr) {
         // Success
         return reserved;
@@ -222,10 +222,7 @@ public:
   static void test(void (*function)(ZForwarding*), uint32_t size) {
     // Create page
     const ZVirtualMemory vmem(zoffset(_page_offset), ZPageSizeSmall);
-    const ZPhysicalMemory pmem(ZPhysicalMemorySegment(zoffset(0), ZPageSizeSmall, true));
-    ZPage page(ZPageType::small, vmem, pmem);
-
-    page.reset(ZPageAge::eden);
+    ZPage page(ZPageType::small, ZPageAge::eden, vmem, 0u);
 
     const size_t object_size = 16;
     const zaddress object = page.alloc_object(object_size);

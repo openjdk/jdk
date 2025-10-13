@@ -38,7 +38,7 @@ import jdk.test.lib.Utils;
 /**
  * @test
  * @summary The test verifies JFR.configure command
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal

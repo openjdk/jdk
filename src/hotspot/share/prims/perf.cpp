@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jni.h"
 #include "jvm.h"
@@ -112,7 +111,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
   char* name_utf = nullptr;
 
   if (units <= 0 || units > PerfData::U_Last) {
-    debug_only(warning("unexpected units argument, units = %d", units));
+    DEBUG_ONLY(warning("unexpected units argument, units = %d", units));
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
@@ -151,7 +150,7 @@ PERF_ENTRY(jobject, Perf_CreateLong(JNIEnv *env, jobject perf, jstring name,
     break;
 
   default: /* Illegal Argument */
-    debug_only(warning("unexpected variability value: %d", variability));
+    DEBUG_ONLY(warning("unexpected variability value: %d", variability));
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
     break;
   }
@@ -180,14 +179,14 @@ PERF_ENTRY(jobject, Perf_CreateByteArray(JNIEnv *env, jobject perf,
   // check for valid variability classification
   if (variability != PerfData::V_Constant &&
       variability != PerfData::V_Variable) {
-    debug_only(warning("unexpected variability value: %d", variability));
+    DEBUG_ONLY(warning("unexpected variability value: %d", variability));
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 
   // check for valid units
   if (units != PerfData::U_String) {
     // only String based ByteArray objects are currently supported
-    debug_only(warning("unexpected units value: %d", variability));
+    DEBUG_ONLY(warning("unexpected units value: %d", variability));
     THROW_NULL(vmSymbols::java_lang_IllegalArgumentException());
   }
 

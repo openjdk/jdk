@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageParState.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
+#include "gc/shared/weakProcessor.inline.hpp"
 #include "gc/shared/weakProcessorTimes.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/iterator.hpp"

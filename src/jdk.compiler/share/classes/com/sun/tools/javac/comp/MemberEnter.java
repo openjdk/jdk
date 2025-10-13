@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,6 @@ public class MemberEnter extends JCTree.Visitor {
     private final Annotate annotate;
     private final Types types;
     private final Names names;
-    private final DeferredLintHandler deferredLintHandler;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -87,7 +86,6 @@ public class MemberEnter extends JCTree.Visitor {
         types = Types.instance(context);
         source = Source.instance(context);
         names = Names.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
     }
 
     /** Construct method type from method signature.
@@ -185,7 +183,7 @@ public class MemberEnter extends JCTree.Visitor {
     public void visitMethodDef(JCMethodDecl tree) {
         WriteableScope enclScope = enter.enterScope(env);
         MethodSymbol m = new MethodSymbol(0, tree.name, null, enclScope.owner);
-        m.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, m, tree);
+        m.flags_field = chk.checkFlags(tree.mods.flags, m, tree);
         tree.sym = m;
 
         //if this is a default method, add the DEFAULT flag to the enclosing interface
@@ -194,16 +192,11 @@ public class MemberEnter extends JCTree.Visitor {
         }
 
         Env<AttrContext> localEnv = methodEnv(tree, env);
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
-        try {
-            // Compute the method type
-            m.type = signature(m, tree.typarams, tree.params,
-                               tree.restype, tree.recvparam,
-                               tree.thrown,
-                               localEnv);
-        } finally {
-            deferredLintHandler.setPos(prevLintPos);
-        }
+        // Compute the method type
+        m.type = signature(m, tree.typarams, tree.params,
+                           tree.restype, tree.recvparam,
+                           tree.thrown,
+                           localEnv);
 
         if (types.isSignaturePolymorphic(m)) {
             m.flags_field |= SIGNATURE_POLYMORPHIC;
@@ -227,14 +220,14 @@ public class MemberEnter extends JCTree.Visitor {
         enclScope.enter(m);
         }
 
-        annotate.annotateLater(tree.mods.annotations, localEnv, m, tree.pos());
+        annotate.annotateLater(tree.mods.annotations, localEnv, m);
         // Visit the signature of the method. Note that
         // TypeAnnotate doesn't descend into the body.
-        annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, m, tree.pos());
+        annotate.queueScanTreeAndTypeAnnotate(tree, localEnv, m);
 
         if (tree.defaultValue != null) {
             m.defaultValue = annotate.unfinishedDefaultValue(); // set it to temporary sentinel for now
-            annotate.annotateDefaultValueLater(tree.defaultValue, localEnv, m, tree.pos());
+            annotate.annotateDefaultValueLater(tree.defaultValue, localEnv, m);
         }
     }
 
@@ -263,18 +256,13 @@ public class MemberEnter extends JCTree.Visitor {
             localEnv = env.dup(tree, env.info.dup());
             localEnv.info.staticLevel++;
         }
-        DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
 
-        try {
-            if (TreeInfo.isEnumInit(tree)) {
-                attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
-            } else if (!tree.isImplicitlyTyped()) {
-                attr.attribType(tree.vartype, localEnv);
-                if (TreeInfo.isReceiverParam(tree))
-                    checkReceiver(tree, localEnv);
-            }
-        } finally {
-            deferredLintHandler.setPos(prevLintPos);
+        if (TreeInfo.isEnumInit(tree)) {
+            attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
+        } else if (!tree.isImplicitlyTyped()) {
+            attr.attribType(tree.vartype, localEnv);
+            if (TreeInfo.isReceiverParam(tree))
+                checkReceiver(tree, localEnv);
         }
 
         if ((tree.mods.flags & VARARGS) != 0) {
@@ -293,7 +281,7 @@ public class MemberEnter extends JCTree.Visitor {
                 : tree.vartype.type;
         Name name = tree.name;
         VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
-        v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
+        v.flags_field = chk.checkFlags(tree.mods.flags, v, tree);
         tree.sym = v;
         if (tree.init != null) {
             v.flags_field |= HASINIT;
@@ -301,7 +289,7 @@ public class MemberEnter extends JCTree.Visitor {
                 needsLazyConstValue(tree.init)) {
                 Env<AttrContext> initEnv = getInitEnv(tree, env);
                 initEnv.info.enclVar = v;
-                v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
+                v.setLazyConstValue(initEnv(tree, initEnv), env, attr, tree);
             }
         }
 
@@ -315,9 +303,9 @@ public class MemberEnter extends JCTree.Visitor {
             }
         }
 
-        annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
+        annotate.annotateLater(tree.mods.annotations, localEnv, v);
         if (!tree.isImplicitlyTyped()) {
-            annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v, tree.pos());
+            annotate.queueScanTreeAndTypeAnnotate(tree.vartype, localEnv, v);
         }
 
         v.pos = tree.pos;

@@ -36,9 +36,6 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * by {@link #attributeMapper}, and registered to the {@link
  * ClassFile.AttributeMapperOption} so the user-defined attributes can be read.
  * <p>
- * User-defined attributes are currently not delivered in the traversal of a
- * {@link CodeModel}.
- * <p>
  * Accessor methods on user-defined attributes read from {@code class} files
  * may throw {@link IllegalArgumentException} if the attribute model is lazily
  * evaluated, and the evaluation encounters malformed {@code class} file format

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gcLogPrecious.hpp"
 #include "gc/z/zAddress.hpp"
 #include "gc/z/zBarrierSet.hpp"
@@ -32,7 +31,6 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLargePages.hpp"
-#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zStat.hpp"
@@ -59,8 +57,8 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
 
   // Early initialization
   ZNMT::initialize();
-  ZGlobalsPointers::initialize();
   ZNUMA::initialize();
+  ZGlobalsPointers::initialize();
   ZCPU::initialize();
   ZStatValue::initialize();
   ZThreadLocalAllocBuffer::initialize();

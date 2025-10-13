@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,7 @@ import java.util.stream.Stream;
 
 /**
  * The Catalog class represents an entity Catalog as defined by
- * <a
- * href="https://www.oasis-open.org/committees/download.php/14809/xml-catalogs.html">
+ * <a href="https://groups.oasis-open.org/higherlogic/ws/public/download/14810/xml-catalogs.pdf">
  * XML Catalogs, OASIS Standard V1.1, 7 October 2005</a>.
  * <p>
  * A catalog is an XML file that contains a root {@code catalog} entry with a list

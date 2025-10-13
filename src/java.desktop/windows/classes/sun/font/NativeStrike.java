@@ -48,9 +48,11 @@ public class NativeStrike extends PhysicalStrike {
     }
 
 
+    @Override
     void getGlyphImagePtrs(int[] glyphCodes, long[] images,int  len) {
     }
 
+    @Override
     long getGlyphImagePtr(int glyphCode) {
         return 0L;
     }
@@ -59,26 +61,32 @@ public class NativeStrike extends PhysicalStrike {
         return 0L;
     }
 
+    @Override
     void getGlyphImageBounds(int glyphcode,
                              Point2D.Float pt,
                              Rectangle result) {
     }
 
+    @Override
     Point2D.Float getGlyphMetrics(int glyphCode) {
         return null;
     }
 
+    @Override
     float getGlyphAdvance(int glyphCode) {
         return 0f;
     }
 
+    @Override
     Rectangle2D.Float getGlyphOutlineBounds(int glyphCode) {
         return null;
     }
+    @Override
     GeneralPath getGlyphOutline(int glyphCode, float x, float y) {
         return null;
     }
 
+    @Override
     GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
         return null;
     }

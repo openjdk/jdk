@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
@@ -78,7 +77,6 @@ uint32_t LockStack::end_offset() {
 
 #ifndef PRODUCT
 void LockStack::verify(const char* msg) const {
-  assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when light weight locking is disabled");
   assert((_top <= end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
   assert((_top >= start_offset()), "lockstack underflow: _top %d start_offset %d", _top, start_offset());
   if (SafepointSynchronize::is_at_safepoint() || (Thread::current()->is_Java_thread() && is_owning_thread())) {

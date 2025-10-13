@@ -36,7 +36,7 @@ import jdk.test.lib.jfr.TestClassLoader;
  * @test
  * @bug 8266936 8276422
  * @summary The test verifies that classes overriding finalize() are represented as events.
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
  * @run main/othervm -Xlog:class+unload,finalizer -Xmx16m jdk.jfr.event.runtime.TestFinalizerStatisticsEvent

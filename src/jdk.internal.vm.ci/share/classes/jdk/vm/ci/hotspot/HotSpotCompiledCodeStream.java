@@ -63,6 +63,10 @@ import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_NARROW_
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_OOP;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_PRIMITIVE;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT_VECTOR;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_NARROW_OOP;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_OOP;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_PRIMITIVE;
+import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.STACK_SLOT4_VECTOR;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.VIRTUAL_OBJECT_ID;
 import static jdk.vm.ci.hotspot.HotSpotCompiledCodeStream.Tag.VIRTUAL_OBJECT_ID2;
 
@@ -178,6 +182,10 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         STACK_SLOT_OOP,
         STACK_SLOT_NARROW_OOP,
         STACK_SLOT_VECTOR,
+        STACK_SLOT4_PRIMITIVE,
+        STACK_SLOT4_OOP,
+        STACK_SLOT4_NARROW_OOP,
+        STACK_SLOT4_VECTOR,
         VIRTUAL_OBJECT_ID,
         VIRTUAL_OBJECT_ID2,
         NULL_CONSTANT,
@@ -457,8 +465,12 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         rawWriteU2(name, value);
     }
 
+    private static boolean isS2(int value) {
+        return value >= Short.MIN_VALUE && value <= Short.MAX_VALUE;
+    }
+
     private void writeS2(String name, int value) {
-        if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+        if (!isS2(value)) {
             throw error("value not an s2: " + value);
         }
         rawWriteU2(name, value);
@@ -581,7 +593,8 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         writeInt("targetCodeSize", code.targetCodeSize);
         writeInt("totalFrameSize", code.totalFrameSize);
         if (isSet(flags, HAS_DEOPT_RESCUE_SLOT)) {
-            writeS2("offset", deoptRescueSlot.getRawOffset());
+            int offset = deoptRescueSlot.getRawOffset();
+            writeInt("offset", offset);
             writeBoolean("addRawFrameSize", deoptRescueSlot.getRawAddFrameSize());
         }
         writeInt("dataSectionSize", code.dataSection.length);
@@ -1063,17 +1076,25 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         } else if (value instanceof StackSlot) {
             StackSlot slot = (StackSlot) value;
             Tag tag;
+            int offset = slot.getRawOffset();
+            boolean s2 = isS2(offset);
             if (kind == JavaKind.Object) {
                 if (isVector(slot)) {
-                    tag = STACK_SLOT_VECTOR;
+                    tag = s2 ? STACK_SLOT_VECTOR : STACK_SLOT4_VECTOR;
+                } else if (isNarrowOop(slot)) {
+                    tag = s2 ? STACK_SLOT_NARROW_OOP : STACK_SLOT4_NARROW_OOP;
                 } else {
-                    tag = isNarrowOop(slot) ? STACK_SLOT_NARROW_OOP : STACK_SLOT_OOP;
+                    tag = s2 ? STACK_SLOT_OOP : STACK_SLOT4_OOP;
                 }
             } else {
-                tag = STACK_SLOT_PRIMITIVE;
+                tag = s2 ? STACK_SLOT_PRIMITIVE : STACK_SLOT4_PRIMITIVE;
             }
             writeTag(tag);
-            writeS2("offset", slot.getRawOffset());
+            if (s2) {
+                writeS2("offset", slot.getRawOffset());
+            } else {
+                writeInt("offset4", slot.getRawOffset());
+            }
             writeBoolean("addRawFrameSize", slot.getRawAddFrameSize());
         } else if (value instanceof VirtualObject) {
             VirtualObject vo = (VirtualObject) value;

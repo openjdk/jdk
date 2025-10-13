@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zMapper_windows.hpp"
 #include "gc/z/zSyscall_windows.hpp"
@@ -79,7 +78,7 @@ void ZMapper::unreserve(zaddress_unsafe addr, size_t size) {
   const bool res = ZSyscall::VirtualFreeEx(
     GetCurrentProcess(), // hProcess
     (void*)untype(addr), // lpAddress
-    size,                // dwSize
+    0,                   // dwSize
     MEM_RELEASE          // dwFreeType
     );
 

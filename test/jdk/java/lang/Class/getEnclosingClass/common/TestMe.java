@@ -23,7 +23,7 @@
 
 /*
  * @summary Check getEnclosingClass and other methods
- * @author Peter von der Ah\u00e9
+ * @author Peter von der Ahé
  */
 
 package common;

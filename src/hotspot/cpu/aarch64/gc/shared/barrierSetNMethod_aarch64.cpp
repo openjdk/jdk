@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -59,8 +58,6 @@ static int entry_barrier_offset(nmethod* nm) {
     return -4 * (4 + slow_path_size(nm));
   case NMethodPatchingType::conc_instruction_and_data_patch:
     return -4 * (10 + slow_path_size(nm));
-  case NMethodPatchingType::conc_data_patch:
-    return -4 * (5 + slow_path_size(nm));
   }
   ShouldNotReachHere();
   return 0;
@@ -115,11 +112,25 @@ public:
   }
 
   int get_value() {
-    return Atomic::load_acquire(guard_addr());
+    return AtomicAccess::load_acquire(guard_addr());
   }
 
-  void set_value(int value) {
-    Atomic::release_store(guard_addr(), value);
+  void set_value(int value, int bit_mask) {
+    if (bit_mask == ~0) {
+      AtomicAccess::release_store(guard_addr(), value);
+      return;
+    }
+    assert((value & ~bit_mask) == 0, "trying to set bits outside the mask");
+    value &= bit_mask;
+    int old_value = AtomicAccess::load(guard_addr());
+    while (true) {
+      // Only bits in the mask are changed
+      int new_value = value | (old_value & ~bit_mask);
+      if (new_value == old_value) break;
+      int v = AtomicAccess::cmpxchg(guard_addr(), old_value, new_value, memory_order_release);
+      if (v == old_value) break;
+      old_value = v;
+    }
   }
 
   bool check_barrier(err_msg& msg) const;
@@ -182,7 +193,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   new_frame->pc = SharedRuntime::get_handle_wrong_method_stub();
 }
 
-void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
+void BarrierSetNMethod::set_guard_value(nmethod* nm, int value, int bit_mask) {
   if (!supports_entry_barrier(nm)) {
     return;
   }
@@ -199,7 +210,7 @@ void BarrierSetNMethod::set_guard_value(nmethod* nm, int value) {
   }
 
   NativeNMethodBarrier barrier(nm);
-  barrier.set_value(value);
+  barrier.set_value(value, bit_mask);
 }
 
 int BarrierSetNMethod::guard_value(nmethod* nm) {

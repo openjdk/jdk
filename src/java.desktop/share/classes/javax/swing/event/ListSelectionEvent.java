@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,11 @@
 package javax.swing.event;
 
 import java.util.EventObject;
-import javax.swing.*;
+import javax.swing.ListSelectionModel;
 
 
 /**
- * An event that characterizes a change in selection. The change is limited to a
+ * An event that characterizes a change in selection. The change is limited to
  * a single inclusive interval. The selection of at least one index within the
  * range will have changed. A decent {@code ListSelectionModel} implementation
  * will keep the range as small as possible. {@code ListSelectionListeners} will
@@ -53,9 +53,9 @@ import javax.swing.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class ListSelectionEvent extends EventObject
 {
-    private int firstIndex;
-    private int lastIndex;
-    private boolean isAdjusting;
+    private final int firstIndex;
+    private final int lastIndex;
+    private final boolean isAdjusting;
 
     /**
      * Represents a change in selection status between {@code firstIndex} and
@@ -64,8 +64,8 @@ public class ListSelectionEvent extends EventObject
      * have changed.
      *
      * @param source the {@code Object} on which the event initially occurred
-     * @param firstIndex the first index in the range, &lt;= lastIndex
-     * @param lastIndex the last index in the range, &gt;= firstIndex
+     * @param firstIndex the first index in the range, &lt;= {@code lastIndex}
+     * @param lastIndex the last index in the range, &gt;= {@code firstIndex}
      * @param isAdjusting whether or not this is one in a series of
      *        multiple events, where changes are still being made
      */
@@ -111,7 +111,7 @@ public class ListSelectionEvent extends EventObject
      * Returns a {@code String} that displays and identifies this
      * object's properties.
      *
-     * @return a String representation of this object
+     * @return a string representation of this object
      */
     public String toString() {
         String properties =

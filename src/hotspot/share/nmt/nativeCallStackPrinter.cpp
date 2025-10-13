@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "nmt/nativeCallStackPrinter.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -45,10 +44,7 @@ void NativeCallStackPrinter::print_stack(const NativeCallStack* stack) const {
     if (created) {
       stringStream ss(4 * K);
       stack->print_frame(&ss, pc);
-      const size_t len = ss.size();
-      char* store = NEW_ARENA_ARRAY(&_text_storage, char, len + 1);
-      memcpy(store, ss.base(), len + 1);
-      (*cached_frame_text) = store;
+      (*cached_frame_text) = ss.as_string(&_text_storage);
     }
     _out->print_raw_cr(*cached_frame_text);
   }

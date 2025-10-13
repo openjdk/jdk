@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/os.hpp"
@@ -1198,7 +1197,7 @@ public:
   void work(uint worker_id) {
     ChtCountScan par_scan;
     _scan_task->do_safepoint_scan(par_scan);
-    Atomic::add(_total_scanned, par_scan._count);
+    AtomicAccess::add(_total_scanned, par_scan._count);
   }
 };
 

@@ -22,7 +22,7 @@
  *
  */
 
-#include "precompiled.hpp"
+
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciUtilities.hpp"
@@ -41,7 +41,7 @@
 #include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 void*       Disassembler::_library               = nullptr;
 bool        Disassembler::_tried_to_load_library = false;
@@ -190,7 +190,7 @@ class decode_env {
     }
   };
 
-  typedef ResourceHashtable<
+  typedef HashTable<
       address, SourceFileInfo,
       15889,      // prime number
       AnyObj::C_HEAP> SourceFileInfoTable;

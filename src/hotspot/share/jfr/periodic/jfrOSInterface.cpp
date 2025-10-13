@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
@@ -32,8 +31,6 @@
 #include "runtime/os_perf.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/ostream.hpp"
-
-#include <stdlib.h> // for environment variables
 
 static JfrOSInterface* _instance = nullptr;
 
@@ -82,10 +79,7 @@ class JfrOSInterface::JfrOSInterfaceImpl : public JfrCHeapObj {
   // os information
   int os_version(char** os_version) const;
 
-  // environment information
-  void generate_environment_variables_events();
-
-   // system processes information
+  // system processes information
   int system_processes(SystemProcess** system_processes, int* no_of_sys_processes);
 
   int network_utilization(NetworkInterface** network_interfaces);

@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahGenerationalMode.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"

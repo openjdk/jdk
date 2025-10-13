@@ -47,7 +47,7 @@ The notice is:
 "Copyright © 2023 W3C®. This software or document includes material copied from
 or derived from [title and URI of the W3C document]."
 
-Disclaimers §anchor
+Disclaimers
 
 THIS DOCUMENT IS PROVIDED "AS IS," AND COPYRIGHT HOLDERS MAKE NO REPRESENTATIONS
 OR WARRANTIES, EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, WARRANTIES OF

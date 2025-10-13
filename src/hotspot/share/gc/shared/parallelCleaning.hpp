@@ -33,14 +33,13 @@
 class CodeCacheUnloadingTask {
 
   const bool                _unloading_occurred;
-  const uint                _num_workers;
 
   // Variables used to claim nmethods.
   nmethod* _first_nmethod;
   nmethod* volatile _claimed_nmethod;
 
 public:
-  CodeCacheUnloadingTask(uint num_workers, bool unloading_occurred);
+  CodeCacheUnloadingTask(bool unloading_occurred);
   ~CodeCacheUnloadingTask();
 
 private:
@@ -52,23 +51,12 @@ public:
   void work(uint worker_id);
 };
 
-
+// Cleans out the Klass tree from stale data.
 class KlassCleaningTask : public StackObj {
-  volatile int                            _clean_klass_tree_claimed;
-  ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
+  ClassLoaderDataGraphIteratorAtomic _cld_iterator_atomic;
 
 public:
-  KlassCleaningTask();
-
-private:
-  bool claim_clean_klass_tree_task();
-  InstanceKlass* claim_next_klass();
-
-public:
-
-  void clean_klass(InstanceKlass* ik) {
-    ik->clean_weak_instanceklass_links();
-  }
+  KlassCleaningTask() : _cld_iterator_atomic() { }
 
   void work();
 };

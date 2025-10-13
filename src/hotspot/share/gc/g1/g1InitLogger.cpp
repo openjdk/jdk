@@ -22,10 +22,9 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/g1/g1InitLogger.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 

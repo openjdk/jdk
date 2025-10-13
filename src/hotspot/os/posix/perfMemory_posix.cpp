@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "jvm_io.h"
 #include "logging/log.hpp"
@@ -41,15 +40,14 @@
 #include "os_linux.hpp"
 #endif
 
-// put OS-includes here
-# include <sys/types.h>
-# include <sys/mman.h>
 # include <errno.h>
-# include <stdio.h>
-# include <unistd.h>
-# include <sys/stat.h>
-# include <signal.h>
 # include <pwd.h>
+# include <signal.h>
+# include <stdio.h>
+# include <sys/mman.h>
+# include <sys/stat.h>
+# include <sys/types.h>
+# include <unistd.h>
 
 #if defined(LINUX)
 # include <sys/file.h>
@@ -65,7 +63,7 @@ static char* backing_store_file_name = nullptr;  // name of the backing store
 static char* create_standard_memory(size_t size) {
 
   // allocate an aligned chuck of memory
-  char* mapAddress = os::reserve_memory(size);
+  char* mapAddress = os::reserve_memory(size, mtInternal);
 
   if (mapAddress == nullptr) {
     return nullptr;
@@ -151,7 +149,7 @@ static char* get_user_tmp_dir(const char* user, int vmid, int nspid) {
   char* dirname = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   // construct the path name to user specific tmp directory
-  snprintf(dirname, nbytes, "%s/%s_%s", tmpdir, perfdir, user);
+  os::snprintf_checked(dirname, nbytes, "%s/%s_%s", tmpdir, perfdir, user);
 
   return dirname;
 }
@@ -662,7 +660,7 @@ static char* get_sharedmem_filename(const char* dirname, int vmid, int nspid) {
   size_t nbytes = strlen(dirname) + UINT_CHARS + 2;
 
   char* name = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
-  snprintf(name, nbytes, "%s/%d", dirname, pid);
+  os::snprintf_checked(name, nbytes, "%s/%d", dirname, pid);
 
   return name;
 }
@@ -1086,10 +1084,10 @@ static char* mmap_create_shared(size_t size) {
 static void unmap_shared(char* addr, size_t bytes) {
   int res;
   if (MemTracker::enabled()) {
-    ThreadCritical tc;
+    MemTracker::NmtVirtualMemoryLocker nvml;
     res = ::munmap(addr, bytes);
     if (res == 0) {
-      MemTracker::record_virtual_memory_release((address)addr, bytes);
+      MemTracker::record_virtual_memory_release(addr, bytes);
     }
   } else {
     res = ::munmap(addr, bytes);

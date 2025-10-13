@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,20 @@
 
 /*
  * @test
- * @bug 8203882
+ * @bug 8203882 8352623
  * @summary (httpclient) Check that HttpClient throws IOException when
  *      receiving 401/407 with no WWW-Authenticate/Proxy-Authenticate
  *      header only in the case where an authenticator is configured
  *      for the client. If no authenticator is configured the client
  *      should simply let the caller deal with the unauthorized response.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext ReferenceTracker
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=headers
  *       UnauthorizedTest
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -49,9 +47,8 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.net.Authenticator;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -60,11 +57,13 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -76,10 +75,12 @@ public class UnauthorizedTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
     HttpClient authClient;
     HttpClient noAuthClient;
 
@@ -95,41 +96,51 @@ public class UnauthorizedTest implements HttpServerAdapters {
     static final int HTTP_OK = 200;
     static final String MESSAGE = "Unauthorized";
 
+    static WeakReference<HttpClient> ref(HttpClient client) {
+        return new WeakReference<>(client);
+    }
+
     @DataProvider(name = "all")
     public Object[][] positive() {
         return new Object[][] {
-                { httpURI   + "/server", UNAUTHORIZED, true, authClient},
-                { httpsURI  + "/server", UNAUTHORIZED, true, authClient},
-                { http2URI  + "/server", UNAUTHORIZED, true, authClient},
-                { https2URI + "/server", UNAUTHORIZED, true, authClient},
-                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, true, authClient},
-                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, true, authClient},
-                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, true, authClient},
-                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, true, authClient},
-                { httpURI   + "/server", UNAUTHORIZED, false, authClient},
-                { httpsURI  + "/server", UNAUTHORIZED, false, authClient},
-                { http2URI  + "/server", UNAUTHORIZED, false, authClient},
-                { https2URI + "/server", UNAUTHORIZED, false, authClient},
-                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, false, authClient},
-                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, false, authClient},
-                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, false, authClient},
-                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, false, authClient},
-                { httpURI   + "/server", UNAUTHORIZED, true, noAuthClient},
-                { httpsURI  + "/server", UNAUTHORIZED, true, noAuthClient},
-                { http2URI  + "/server", UNAUTHORIZED, true, noAuthClient},
-                { https2URI + "/server", UNAUTHORIZED, true, noAuthClient},
-                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, true, noAuthClient},
-                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, true, noAuthClient},
-                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, true, noAuthClient},
-                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, true, noAuthClient},
-                { httpURI   + "/server", UNAUTHORIZED, false, noAuthClient},
-                { httpsURI  + "/server", UNAUTHORIZED, false, noAuthClient},
-                { http2URI  + "/server", UNAUTHORIZED, false, noAuthClient},
-                { https2URI + "/server", UNAUTHORIZED, false, noAuthClient},
-                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, false, noAuthClient},
-                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, false, noAuthClient},
-                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, false, noAuthClient},
-                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, false, noAuthClient},
+                { http3URI  + "/server", UNAUTHORIZED, true, ref(authClient)},
+                { http3URI  + "/server", UNAUTHORIZED, false, ref(authClient)},
+                { http3URI  + "/server", UNAUTHORIZED, true, ref(noAuthClient)},
+                { http3URI  + "/server", UNAUTHORIZED, false, ref(noAuthClient)},
+
+
+                { httpURI   + "/server", UNAUTHORIZED, true, ref(authClient)},
+                { httpsURI  + "/server", UNAUTHORIZED, true, ref(authClient)},
+                { http2URI  + "/server", UNAUTHORIZED, true, ref(authClient)},
+                { https2URI + "/server", UNAUTHORIZED, true, ref(authClient)},
+                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, true, ref(authClient)},
+                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, true, ref(authClient)},
+                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, true, ref(authClient)},
+                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, true, ref(authClient)},
+                { httpURI   + "/server", UNAUTHORIZED, false, ref(authClient)},
+                { httpsURI  + "/server", UNAUTHORIZED, false, ref(authClient)},
+                { http2URI  + "/server", UNAUTHORIZED, false, ref(authClient)},
+                { https2URI + "/server", UNAUTHORIZED, false, ref(authClient)},
+                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, false, ref(authClient)},
+                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, false, ref(authClient)},
+                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, false, ref(authClient)},
+                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, false, ref(authClient)},
+                { httpURI   + "/server", UNAUTHORIZED, true, ref(noAuthClient)},
+                { httpsURI  + "/server", UNAUTHORIZED, true, ref(noAuthClient)},
+                { http2URI  + "/server", UNAUTHORIZED, true, ref(noAuthClient)},
+                { https2URI + "/server", UNAUTHORIZED, true, ref(noAuthClient)},
+                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, true, ref(noAuthClient)},
+                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, true, ref(noAuthClient)},
+                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, true, ref(noAuthClient)},
+                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, true, ref(noAuthClient)},
+                { httpURI   + "/server", UNAUTHORIZED, false, ref(noAuthClient)},
+                { httpsURI  + "/server", UNAUTHORIZED, false, ref(noAuthClient)},
+                { http2URI  + "/server", UNAUTHORIZED, false, ref(noAuthClient)},
+                { https2URI + "/server", UNAUTHORIZED, false, ref(noAuthClient)},
+                { httpURI   + "/proxy",  PROXY_UNAUTHORIZED, false, ref(noAuthClient)},
+                { httpsURI  + "/proxy",  PROXY_UNAUTHORIZED, false, ref(noAuthClient)},
+                { http2URI  + "/proxy",  PROXY_UNAUTHORIZED, false, ref(noAuthClient)},
+                { https2URI + "/proxy",  PROXY_UNAUTHORIZED, false, ref(noAuthClient)},
         };
     }
 
@@ -138,15 +149,24 @@ public class UnauthorizedTest implements HttpServerAdapters {
     static final Authenticator authenticator = new Authenticator() {
     };
 
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "all")
-    void test(String uriString, int code, boolean async, HttpClient client) throws Throwable {
+    void test(String uriString, int code, boolean async, WeakReference<HttpClient> clientRef) throws Throwable {
+        HttpClient client = clientRef.get();
         out.printf("%n---- starting (%s, %d, %s, %s) ----%n",
                 uriString, code, async ? "async" : "sync",
                 client.authenticator().isPresent() ? "authClient" : "noAuthClient");
         URI uri = URI.create(uriString);
 
-        HttpRequest.Builder requestBuilder = HttpRequest
-                .newBuilder(uri)
+        HttpRequest.Builder requestBuilder = newRequestBuilder(uri)
                 .GET();
 
         HttpRequest request = requestBuilder.build();
@@ -163,6 +183,7 @@ public class UnauthorizedTest implements HttpServerAdapters {
                try {
                    response = client.sendAsync(request, BodyHandlers.ofString()).get();
                } catch (ExecutionException ex) {
+                   ex.printStackTrace();
                    throw ex.getCause();
                }
            }
@@ -204,13 +225,17 @@ public class UnauthorizedTest implements HttpServerAdapters {
         https2TestServer.addHandler(new UnauthorizedHandler(), "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 
-        authClient = HttpClient.newBuilder()
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new UnauthorizedHandler(), "/http3/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3";
+
+        authClient = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .authenticator(authenticator)
                 .build();
 
-        noAuthClient = HttpClient.newBuilder()
+        noAuthClient = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .build();
@@ -219,14 +244,26 @@ public class UnauthorizedTest implements HttpServerAdapters {
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
     public void teardown() throws Exception {
+        // authClient.close();
+        // noAuthClient.close();
+        var TRACKER = ReferenceTracker.INSTANCE;
+        TRACKER.track(authClient);
+        TRACKER.track(noAuthClient);
+        authClient = noAuthClient = null;
+        System.gc();
+        var error = TRACKER.check(1000);
+
         httpTestServer.stop();
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
+        if (error != null) throw error;
     }
 
     static class UnauthorizedHandler implements HttpTestHandler {

@@ -31,7 +31,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary Test jfr view
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @requires (vm.gc == "G1" | vm.gc == null)
  *           & vm.opt.ExplicitGCInvokesConcurrent != false
@@ -84,7 +84,7 @@ public class TestView {
         // Verify verbose heading
         output.shouldContain("(longestPause)");
         // Verify row contents
-        output.shouldContain("Old Garbage Collection");
+        output.shouldContain("G1");
         // Verify verbose query
         output.shouldContain("SELECT");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "memory/allocation.hpp"
-#include "nmt/memTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
+#include "nmt/memTracker.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/vmatree.hpp"
-#include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
-MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
-PlatformMutex* MemoryFileTracker::Instance::_mutex = nullptr;
+DeferredStatic<MemoryFileTracker> MemoryFileTracker::Instance::_tracker;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
   : _stack_storage(is_detailed_mode), _files() {}
@@ -45,18 +42,20 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         MemTag mem_tag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
   VMATree::RegionData regiondata(sidx, mem_tag);
-  VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
+  VMATree::SummaryDiff diff;
+  file->_tree.commit_mapping(offset, size, regiondata, diff);
   for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
     summary->commit_memory(diff.tag[i].commit);
   }
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
-  VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
+  VMATree::SummaryDiff diff;
+  file->_tree.release_mapping(offset, size, diff);
   for (int i = 0; i < mt_number_of_tags; i++) {
-    VirtualMemory* summary = file->_summary.by_type(NMTUtil::index_to_tag(i));
+    VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
     summary->commit_memory(diff.tag[i].commit);
   }
@@ -67,16 +66,16 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
 
   stream->print_cr("Memory map of %s", file->_descriptive_name);
   stream->cr();
-  VMATree::TreapNode* prev = nullptr;
+  const VMATree::TNode* prev = nullptr;
 #ifdef ASSERT
-  VMATree::TreapNode* broken_start = nullptr;
-  VMATree::TreapNode* broken_end = nullptr;
+  const VMATree::TNode* broken_start = nullptr;
+  const VMATree::TNode* broken_end = nullptr;
 #endif
-  file->_tree.visit_in_order([&](VMATree::TreapNode* current) {
+  file->_tree.visit_in_order([&](const VMATree::TNode* current) {
     if (prev == nullptr) {
       // Must be first node.
       prev = current;
-      return;
+      return true;
     }
 #ifdef ASSERT
     if (broken_start != nullptr && prev->val().out.mem_tag() != current->val().in.mem_tag()) {
@@ -87,18 +86,19 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
     if (prev->val().out.type() == VMATree::StateType::Committed) {
       const VMATree::position& start_addr = prev->key();
       const VMATree::position& end_addr = current->key();
-      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s from",
+      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated %zu%s" " for %s from",
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
                        NMTUtil::tag_to_name(prev->val().out.mem_tag()));
       {
-        streamIndentor si(stream, 4);
-        _stack_storage.get(prev->val().out.stack()).print_on(stream);
+        StreamIndentor si(stream, 4);
+        _stack_storage.get(prev->val().out.reserved_stack()).print_on(stream);
       }
       stream->cr();
     }
     prev = current;
+    return true;
   });
 #ifdef ASSERT
   if (broken_start != nullptr) {
@@ -129,10 +129,8 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   if (tracking_level == NMT_TrackingLevel::NMT_off) return true;
-  _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
-  if (_tracker == nullptr) return false;
-  new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
-  _mutex = new PlatformMutex();
+  bool is_detailed_mode = tracking_level == NMT_TrackingLevel::NMT_detail;
+  _tracker.initialize(is_detailed_mode);
   return true;
 }
 
@@ -180,7 +178,7 @@ const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTrack
 
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
   iterate_summary([&](MemTag tag, const VirtualMemory* current) {
-    VirtualMemory* snap = snapshot->by_type(tag);
+    VirtualMemory* snap = snapshot->by_tag(tag);
     // Only account the committed memory.
     snap->commit_memory(current->committed());
   });
@@ -188,12 +186,4 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
-}
-
-MemoryFileTracker::Instance::Locker::Locker() {
-  MemoryFileTracker::Instance::_mutex->lock();
-}
-
-MemoryFileTracker::Instance::Locker::~Locker() {
-  MemoryFileTracker::Instance::_mutex->unlock();
 }

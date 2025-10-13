@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2024, Alibaba Group Holding Limited. All Rights Reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -317,7 +317,7 @@ public class MergeLoadBench {
     public void getCharBV(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            char c = (char) CHAR_B.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            char c = (char) CHAR_B.get(bytes4, i * 2);
             sum += c;
         }
         BH.consume(sum);
@@ -357,7 +357,7 @@ public class MergeLoadBench {
     public void getCharLV(Blackhole BH) {
         long sum = 0;
         for (int i = 0; i < longs.length; i++) {
-            char c = (char) CHAR_L.get(bytes4, Unsafe.ARRAY_BYTE_BASE_OFFSET + i * 2);
+            char c = (char) CHAR_L.get(bytes4, i * 2);
             sum += c;
         }
         BH.consume(sum);

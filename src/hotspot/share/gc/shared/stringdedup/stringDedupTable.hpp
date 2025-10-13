@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTABLE_HPP
 #define SHARE_GC_SHARED_STRINGDEDUP_STRINGDEDUPTABLE_HPP
 
-#include "memory/allStatic.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/stringdedup/stringDedupStat.hpp"
+#include "memory/allStatic.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "oops/weakHandle.hpp"
 #include "utilities/globalDefinitions.hpp"

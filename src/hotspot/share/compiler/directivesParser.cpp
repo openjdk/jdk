@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/directivesParser.hpp"
 #include "memory/allocation.inline.hpp"
@@ -31,6 +30,7 @@
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "opto/traceMergeStoresTag.hpp"
 #include "runtime/os.hpp"
+
 #include <string.h>
 
 void DirectivesParser::push_tmp(CompilerDirectives* dir) {

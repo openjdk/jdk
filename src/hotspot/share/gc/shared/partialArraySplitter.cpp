@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/partialArraySplitter.hpp"
 #include "gc/shared/partialArrayState.hpp"
 #include "utilities/macros.hpp"
 
 PartialArraySplitter::PartialArraySplitter(PartialArrayStateManager* manager,
-                                           uint num_workers)
+                                           uint num_workers,
+                                           size_t chunk_size)
   : _allocator(manager),
-    _stepper(num_workers, ParGCArrayScanChunk)
+    _stepper(num_workers, chunk_size)
     TASKQUEUE_STATS_ONLY(COMMA _stats())
 {}
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
@@ -389,6 +388,7 @@ Handle CodeInstaller::read_oop(HotSpotCompiledCodeStream* stream, u1 tag, JVMCI_
 
 ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1 tag, BasicType type, ScopeValue* &second, JVMCI_TRAPS) {
   second = nullptr;
+  bool stack_slot_is_s2 = true;
   switch (tag) {
     case ILLEGAL: {
       if (type != T_ILLEGAL) {
@@ -437,11 +437,17 @@ ScopeValue* CodeInstaller::get_scope_value(HotSpotCompiledCodeStream* stream, u1
         return value;
       }
     }
+    case STACK_SLOT4_PRIMITIVE:
+    case STACK_SLOT4_NARROW_OOP:
+    case STACK_SLOT4_OOP:
+    case STACK_SLOT4_VECTOR:
+      stack_slot_is_s2 = false;
+      // fall through
     case STACK_SLOT_PRIMITIVE:
     case STACK_SLOT_NARROW_OOP:
     case STACK_SLOT_OOP:
     case STACK_SLOT_VECTOR: {
-      jint offset = (jshort) stream->read_s2("offset");
+      jint offset = stack_slot_is_s2 ? (jshort) stream->read_s2("offset") : stream->read_s4("offset4");
       if (stream->read_bool("addRawFrameSize")) {
         offset += _total_frame_size;
       }
@@ -815,6 +821,18 @@ JVMCI::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler,
         DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, compiler);
         nm->maybe_print_nmethod(directive);
         DirectivesStack::release(directive);
+
+        // Since this compilation didn't pass through the broker it wasn't logged yet.
+        if (PrintCompilation) {
+          ttyLocker ttyl;
+          if (name != nullptr) {
+            stringStream st;
+            st.print_cr("(hosted JVMCI compilation: %s)", name);
+            CompileTask::print(tty, nm, st.as_string());
+          } else {
+            CompileTask::print(tty, nm, "(hosted JVMCI compilation)");
+          }
+        }
       }
 
       BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
@@ -849,7 +867,7 @@ void CodeInstaller::initialize_fields(HotSpotCompiledCodeStream* stream, u1 code
   if (!is_set(code_flags, HCC_HAS_DEOPT_RESCUE_SLOT)) {
     _orig_pc_offset = -1;
   } else {
-    _orig_pc_offset = stream->read_s2("offset");
+    _orig_pc_offset = stream->read_s4("offset");
     if (stream->read_bool("addRawFrameSize")) {
       _orig_pc_offset += _total_frame_size;
     }
@@ -1123,7 +1141,7 @@ int CodeInstaller::map_jvmci_bci(int bci) {
   return bci;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool is_mh_invoke, bool return_oop, JVMCI_TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stream, u1 debug_info_flags, bool full_info, bool return_oop, JVMCI_TRAPS) {
   if (full_info) {
     read_virtual_objects(stream, JVMCI_CHECK);
   }
@@ -1166,7 +1184,7 @@ void CodeInstaller::record_scope(jint pc_offset, HotSpotCompiledCodeStream* stre
       // has_ea_local_in_scope and arg_escape should be added to JVMCI
       const bool has_ea_local_in_scope = false;
       const bool arg_escape            = false;
-      _debug_recorder->describe_scope(pc_offset, method, nullptr, bci, reexecute, rethrow_exception, is_mh_invoke, return_oop,
+      _debug_recorder->describe_scope(pc_offset, method, nullptr, bci, reexecute, rethrow_exception, return_oop,
                                       has_ea_local_in_scope, arg_escape,
                                       locals_token, stack_token, monitors_token);
     }
@@ -1224,14 +1242,8 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     _debug_recorder->add_safepoint(next_pc_offset, map);
 
     if (!method.is_null()) {
-      vmIntrinsics::ID iid = method->intrinsic_id();
-      bool is_mh_invoke = false;
-      if (direct_call) {
-        is_mh_invoke = !method->is_static() && (iid == vmIntrinsics::_compiledLambdaForm ||
-                (MethodHandles::is_signature_polymorphic(iid) && MethodHandles::is_signature_polymorphic_intrinsic(iid)));
-      }
       bool return_oop = method->is_returning_oop();
-      record_scope(next_pc_offset, stream, flags, true, is_mh_invoke, return_oop, JVMCI_CHECK);
+      record_scope(next_pc_offset, stream, flags, true, return_oop, JVMCI_CHECK);
     } else {
       record_scope(next_pc_offset, stream, flags, true, JVMCI_CHECK);
     }
@@ -1321,9 +1333,6 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case DEOPT_HANDLER_ENTRY:
       _offsets.set_value(CodeOffsets::Deopt, pc_offset);
       break;
-    case DEOPT_MH_HANDLER_ENTRY:
-      _offsets.set_value(CodeOffsets::DeoptMH, pc_offset);
-      break;
     case FRAME_COMPLETE:
       _offsets.set_value(CodeOffsets::Frame_Complete, pc_offset);
       break;
@@ -1351,6 +1360,7 @@ void CodeInstaller::site_Mark(CodeBuffer& buffer, jint pc_offset, HotSpotCompile
     case VERIFY_OOP_BITS:
     case VERIFY_OOP_MASK:
     case VERIFY_OOP_COUNT_ADDRESS:
+    case DEOPT_MH_HANDLER_ENTRY:
       break;
 
     default:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/debugInfo.hpp"
 #include "oops/access.hpp"
 #include "oops/compressedOops.inline.hpp"
@@ -31,9 +30,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/stackValue.hpp"
-#if INCLUDE_ZGC
-#include "gc/z/zBarrier.inline.hpp"
-#endif
 #if INCLUDE_SHENANDOAHGC
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,9 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.Wrapper;
@@ -64,9 +66,7 @@ import java.util.stream.Stream;
 import static java.lang.classfile.ClassFile.*;
 import static java.lang.invoke.LambdaForm.BasicType.V_TYPE;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import static java.lang.invoke.MethodHandleStatics.UNSAFE;
-import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
-import static java.lang.invoke.MethodHandleStatics.newInternalError;
+import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodType.methodType;
 
 /**
@@ -84,7 +84,8 @@ import static java.lang.invoke.MethodType.methodType;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
-public class MethodHandles {
+@AOTSafeClassInitializer
+public final class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
 
@@ -502,7 +503,7 @@ public class MethodHandles {
      * <tbody>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</th>
-     *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
+     *     <td>{@code FT f;}</td><td>{@code (FT) this.f;}</td>
      * </tr>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</th>
@@ -2822,10 +2823,10 @@ assertEquals("[x, y, z]", pb.command().toString());
          * if and only if one of the following is true:
          * <ul>
          * <li>{@code targetClass} is in {@code M0} and {@code M1}
-         *     {@linkplain Module#reads reads} {@code M0} and the type is
+         *     {@linkplain Module#canRead(Module)}  reads} {@code M0} and the type is
          *     in a package that is exported to at least {@code M1}.
          * <li>{@code targetClass} is in {@code M1} and {@code M0}
-         *     {@linkplain Module#reads reads} {@code M1} and the type is
+         *     {@linkplain Module#canRead(Module)}  reads} {@code M1} and the type is
          *     in a package that is exported to at least {@code M0}.
          * <li>{@code targetClass} is in a third module {@code M2} and both {@code M0}
          *     and {@code M1} reads {@code M2} and the type is in a package
@@ -4306,9 +4307,10 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T}, with the exception of
-     *     access modes {@code get} and {@code set} for {@code long} and
-     *     {@code double} on 32-bit platforms.
+     * <li>read write access modes for all {@code T}.  Access modes {@code get}
+     *     and {@code set} for {@code long} and {@code double} are supported but
+     *     have no atomicity guarantee, as described in Section {@jls 17.7} of
+     *     <cite>The Java Language Specification</cite>.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
@@ -4827,19 +4829,9 @@ assert((int)twice.invokeExact(21) == 42);
      * @throws IllegalArgumentException if the given type is {@code void.class}
      */
     public static MethodHandle constant(Class<?> type, Object value) {
-        if (type.isPrimitive()) {
-            if (type == void.class)
-                throw newIllegalArgumentException("void type");
-            Wrapper w = Wrapper.forPrimitiveType(type);
-            value = w.convert(value, type);
-            if (w.zero().equals(value))
-                return zero(w, type);
-            return insertArguments(identity(type), 0, value);
-        } else {
-            if (value == null)
-                return zero(Wrapper.OBJECT, type);
-            return identity(type).bindTo(value);
-        }
+        if (Objects.requireNonNull(type) == void.class)
+            throw newIllegalArgumentException("void type");
+        return MethodHandleImpl.makeConstantReturning(type, value);
     }
 
     /**
@@ -4881,7 +4873,8 @@ assert((int)twice.invokeExact(21) == 42);
      */
     public static MethodHandle zero(Class<?> type) {
         Objects.requireNonNull(type);
-        return type.isPrimitive() ?  zero(Wrapper.forPrimitiveType(type), type) : zero(Wrapper.OBJECT, type);
+        return type.isPrimitive() ? primitiveZero(Wrapper.forPrimitiveType(type))
+                : MethodHandleImpl.makeConstantReturning(type, null);
     }
 
     private static MethodHandle identityOrVoid(Class<?> type) {
@@ -4900,7 +4893,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @param type the type of the desired method handle
      * @return a constant method handle of the given type, which returns a default value of the given return type
      * @throws NullPointerException if the argument is null
-     * @see MethodHandles#zero
+     * @see MethodHandles#zero(Class)
      * @see MethodHandles#constant
      * @since 9
      */
@@ -4911,28 +4904,32 @@ assert((int)twice.invokeExact(21) == 42);
 
     private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.COUNT];
     private static MethodHandle makeIdentity(Class<?> ptype) {
-        MethodType mtype = methodType(ptype, ptype);
+        MethodType mtype = methodType(ptype, ptype); // throws IAE for void
         LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
         return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.IDENTITY);
     }
 
-    private static MethodHandle zero(Wrapper btw, Class<?> rtype) {
-        int pos = btw.ordinal();
-        MethodHandle zero = ZERO_MHS[pos];
-        if (zero == null) {
-            zero = setCachedMethodHandle(ZERO_MHS, pos, makeZero(btw.primitiveType()));
+    private static MethodHandle primitiveZero(Wrapper w) {
+        assert w != Wrapper.OBJECT : w;
+        int pos = w.ordinal();
+        MethodHandle mh = PRIMITIVE_ZERO_MHS[pos];
+        if (mh == null) {
+            mh = setCachedMethodHandle(PRIMITIVE_ZERO_MHS, pos, makePrimitiveZero(w));
         }
-        if (zero.type().returnType() == rtype)
-            return zero;
-        assert(btw == Wrapper.OBJECT);
-        return makeZero(rtype);
+        assert (mh.type().returnType() == w.primitiveType()) : mh;
+        return mh;
     }
-    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.COUNT];
-    private static MethodHandle makeZero(Class<?> rtype) {
-        MethodType mtype = methodType(rtype);
-        LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));
-        return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.ZERO);
+
+    private static MethodHandle makePrimitiveZero(Wrapper w) {
+        if (w == Wrapper.VOID) {
+            var lf = LambdaForm.identityForm(V_TYPE); // ensures BMH & SimpleMH are initialized
+            return SimpleMethodHandle.make(MethodType.methodType(void.class), lf);
+        } else {
+            return MethodHandleImpl.makeConstantReturning(w.primitiveType(), w.zero());
+        }
     }
+
+    private static final @Stable MethodHandle[] PRIMITIVE_ZERO_MHS = new MethodHandle[Wrapper.COUNT];
 
     private static synchronized MethodHandle setCachedMethodHandle(MethodHandle[] cache, int pos, MethodHandle value) {
         // Simulate a CAS, to avoid racy duplication of results.

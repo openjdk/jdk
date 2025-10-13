@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -55,7 +55,7 @@ import org.xml.sax.SAXException;
  * serializers (xml, html, text ...) that write output to a stream.
  *
  * @xsl.usage internal
- * @LastModified: Mar 2022
+ * @LastModified: Feb 2025
  */
 abstract public class ToStream extends SerializerBase {
 
@@ -955,7 +955,7 @@ abstract public class ToStream extends SerializerBase {
         throws IOException, SAXException
     {
         int status = -1;
-        if (i + 1 >= end)
+        if (i + 1 >= end && m_highSurrogate == 0)
         {
             m_highSurrogate = c;
             return status;

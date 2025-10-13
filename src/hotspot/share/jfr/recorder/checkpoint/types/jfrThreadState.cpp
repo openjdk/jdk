@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,9 @@
 *
 */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
-#include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
 #include "jfr/recorder/checkpoint/jfrCheckpointWriter.hpp"
+#include "jfr/recorder/checkpoint/types/jfrThreadState.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jvmtifiles/jvmti.h"
 #include "runtime/javaThread.hpp"

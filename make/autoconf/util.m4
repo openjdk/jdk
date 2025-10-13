@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -566,6 +566,14 @@ AC_DEFUN([UTIL_CHECK_TYPE_file],
   fi
 ])
 
+AC_DEFUN([UTIL_CHECK_TYPE_executable],
+[
+  # Check that the argument is an existing file that the user has execute access to.
+  if (test ! -x "$1") || (test ! -f "$1") ; then
+    FAILURE="File $1 does not exist or is not executable"
+  fi
+])
+
 AC_DEFUN([UTIL_CHECK_TYPE_directory],
 [
   # Check that the argument is an existing directory
@@ -648,7 +656,7 @@ AC_DEFUN([UTIL_CHECK_TYPE_features],
 # Arguments:
 #   NAME: The base name of this option (i.e. what follows --with-). Required.
 #   TYPE: The type of the value. Can be one of "string", "integer", "file",
-#     "directory", "literal", "multivalue" or "features". Required.
+#     "executable", "directory", "literal", "multivalue" or "features". Required.
 #   DEFAULT: The default value for this option. Can be any valid string.
 #     Required.
 #   OPTIONAL: If this feature can be disabled. Defaults to false. If true,
@@ -758,7 +766,7 @@ UTIL_DEFUN_NAMED([UTIL_ARG_WITH],
   # Need to assign since we can't expand ARG TYPE inside the m4 quoted if statement
   TEST_TYPE="ARG_TYPE"
   # Additional [] needed to keep m4 from mangling shell constructs.
-  [ if [[ ! "$TEST_TYPE" =~ ^(string|integer|file|directory|literal|multivalue|features)$ ]] ; then ]
+  [ if [[ ! "$TEST_TYPE" =~ ^(string|integer|file|executable|directory|literal|multivalue|features)$ ]] ; then ]
     AC_MSG_ERROR([Internal error: Argument TYPE to [UTIL_ARG_WITH] must be a valid type, was: 'ARG_TYPE'])
   fi
 

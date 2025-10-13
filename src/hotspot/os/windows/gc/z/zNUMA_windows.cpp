@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,24 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "gc/z/zNUMA.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/z/zCPU.inline.hpp"
+#include "gc/z/zNUMA.inline.hpp"
+#include "runtime/globals_extension.hpp"
 
 void ZNUMA::pd_initialize() {
   _enabled = false;
-}
-
-uint32_t ZNUMA::count() {
-  return 1;
+  _count = !FLAG_IS_DEFAULT(ZFakeNUMA)
+      ? ZFakeNUMA
+      : 1;
 }
 
 uint32_t ZNUMA::id() {
+  if (is_faked()) {
+    // ZFakeNUMA testing
+    return ZCPU::id() % ZFakeNUMA;
+  }
+
   return 0;
 }
 

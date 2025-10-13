@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "classfile/javaClasses.inline.hpp"
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -138,4 +137,10 @@ ciKlass* ciInstance::java_lang_Class_klass() {
   VM_ENTRY_MARK;
   assert(java_lang_Class::as_Klass(get_oop()) != nullptr, "klass is null");
   return CURRENT_ENV->get_metadata(java_lang_Class::as_Klass(get_oop()))->as_klass();
+}
+
+char* ciInstance::java_lang_String_str(char* buf, size_t buflen) {
+  VM_ENTRY_MARK;
+  assert(get_oop()->is_a(vmClasses::String_klass()), "not a String");
+  return java_lang_String::as_utf8_string(get_oop(), buf, buflen);
 }

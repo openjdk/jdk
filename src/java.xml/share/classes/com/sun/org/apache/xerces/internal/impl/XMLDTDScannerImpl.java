@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -63,7 +63,7 @@ import jdk.xml.internal.XMLSecurityManager;
  * @author Glenn Marcy, IBM
  * @author Eric Ye, IBM
  *
- * @LastModified: July 2023
+ * @LastModified: Feb 2025
  */
 public class XMLDTDScannerImpl
 extends XMLScanner
@@ -670,7 +670,10 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
         //fIncludeSectDepth != 0 or fExtEntityDepth != 0 throw Exception
         if (augs != null && Boolean.TRUE.equals(augs.getItem(Constants.LAST_ENTITY))
             && ( fMarkUpDepth != 0 || fExtEntityDepth !=0 || fIncludeSectDepth != 0)){
-            throw new EOFException();
+            fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
+                    "PrematureEOF",
+                    new Object[]{ name },
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR);
         }
 
     } // endEntity(String)

@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/chains/edgeStore.hpp"
@@ -66,7 +65,7 @@ const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
   if (is_static_field(ref_owner, ik, offset)) {
     assert(ik->is_mirror_instance_klass(), "invariant");
     assert(java_lang_Class::as_Klass(ref_owner)->is_instance_klass(), "invariant");
-    ik = InstanceKlass::cast(java_lang_Class::as_Klass(ref_owner));
+    ik = java_lang_Class::as_InstanceKlass(ref_owner);
   }
   while (ik != nullptr) {
     JavaFieldStream jfs(ik);
@@ -77,7 +76,7 @@ const Symbol* EdgeUtils::field_name(const Edge& edge, jshort* modifiers) {
       }
       jfs.next();
     }
-    ik = (const InstanceKlass*)ik->super();
+    ik = ik->super();
   }
   *modifiers = 0;
   return nullptr;

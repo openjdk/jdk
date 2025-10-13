@@ -84,11 +84,9 @@ class DispatchTable {
 };
 
 class TemplateInterpreter: public AbstractInterpreter {
-  friend class VMStructs;
   friend class InterpreterMacroAssembler;
   friend class TemplateInterpreterGenerator;
   friend class TemplateTable;
-  friend class CodeCacheExtensions;
   // friend class Interpreter;
  public:
 

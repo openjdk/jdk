@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "oops/method.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
@@ -37,7 +38,6 @@
 #include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "oops/method.hpp"
 
 class HelpDCmd : public DCmdWithParser {
 protected:
@@ -805,10 +805,11 @@ public:
 
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
-  DCmdArgument<bool> _human_readable;
+  DCmdArgument<bool> _verbose;
+  DCmdArgument<bool> _legend;
   DCmdArgument<MemorySizeArgument> _minsize;
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 3; }
   CompilationMemoryStatisticDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.memory";

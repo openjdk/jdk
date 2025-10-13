@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.jfr.Description;
 import jdk.jfr.Label;
 import jdk.jfr.DataAmount;
 import jdk.jfr.Name;
+import jdk.jfr.Throttle;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.MirrorEvent;
 
@@ -37,7 +38,14 @@ import jdk.jfr.internal.MirrorEvent;
 @Label("File Read")
 @Category("Java Application")
 @Description("Reading data from a file")
-@StackFilter({"java.io.FileInputStream", "java.io.RandomAccessFile", "sun.nio.ch.FileChannelImpl"})
+@StackFilter({"java.nio.channels.FileChannel",
+              "java.io.DataInputStream",
+              "java.io.FileInputStream",
+              "java.io.InputStream",
+              "java.io.RandomAccessFile",
+              "sun.nio.ch.ChannelInputStream",
+              "sun.nio.ch.FileChannelImpl"})
+@Throttle
 public final class FileReadEvent extends MirrorEvent {
 
     @Label("Path")

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,6 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "jvmci/jvmci.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
@@ -181,6 +180,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
     case POLL_RETURN_FAR:
       _instructions->relocate(pc, relocInfo::poll_return_type);
       return true;
+#if INCLUDE_ZGC
     case Z_BARRIER_RELOCATION_FORMAT_LOAD_GOOD_BEFORE_TB_X:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatLoadGoodBeforeTbX);
       return true;
@@ -193,6 +193,7 @@ bool CodeInstaller::pd_relocate(address pc, jint mark) {
     case Z_BARRIER_RELOCATION_FORMAT_STORE_BAD_BEFORE_MOV:
       _instructions->relocate(pc, barrier_Relocation::spec(), ZBarrierRelocationFormatStoreBadBeforeMov);
       return true;
+#endif
 
   }
   return false;

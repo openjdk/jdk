@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,18 +75,25 @@ AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
     AC_MSG_NOTICE([Rewriting ORIGINAL_PATH to $REWRITTEN_PATH])
   fi
 
+  if test "x$OPENJDK_TARGET_CPU" = xx86 && test "x$with_jvm_variants" != xzero; then
+    AC_MSG_ERROR([32-bit x86 builds are not supported])
+  fi
+
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
-      AC_MSG_ERROR([32-bit Windows builds are not supported])
-    fi
     BASIC_SETUP_PATHS_WINDOWS
   fi
 
   # We get the top-level directory from the supporting wrappers.
   BASIC_WINDOWS_VERIFY_DIR($TOPDIR, source)
+  orig_topdir="$TOPDIR"
   UTIL_FIXUP_PATH(TOPDIR)
   AC_MSG_CHECKING([for top-level directory])
   AC_MSG_RESULT([$TOPDIR])
+  if test "x$TOPDIR" != "x$orig_topdir"; then
+    AC_MSG_WARN([Your top dir was originally represented as $orig_topdir,])
+    AC_MSG_WARN([but after rewriting it became $TOPDIR.])
+    AC_MSG_WARN([This typically means you have characters like space in the path, which can cause all kind of trouble.])
+  fi
   AC_SUBST(TOPDIR)
 
   if test "x$CUSTOM_ROOT" != x; then
@@ -127,17 +134,33 @@ AC_DEFUN_ONCE([BASIC_SETUP_BUILD_ENV],
   )
   AC_SUBST(BUILD_ENV)
 
+  AC_MSG_CHECKING([for locale to use])
   if test "x$LOCALE" != x; then
     # Check if we actually have C.UTF-8; if so, use it
     if $LOCALE -a | $GREP -q -E "^C\.(utf8|UTF-8)$"; then
       LOCALE_USED=C.UTF-8
+      AC_MSG_RESULT([C.UTF-8 (recommended)])
+    elif $LOCALE -a | $GREP -q -E "^en_US\.(utf8|UTF-8)$"; then
+      LOCALE_USED=en_US.UTF-8
+      AC_MSG_RESULT([en_US.UTF-8 (acceptable fallback)])
     else
-      AC_MSG_WARN([C.UTF-8 locale not found, using C locale])
-      LOCALE_USED=C
+      # As a fallback, check if users locale is UTF-8. USER_LOCALE was saved
+      # by the wrapper configure script before autconf messed up LC_ALL.
+      if $ECHO $USER_LOCALE | $GREP -q -E "\.(utf8|UTF-8)$"; then
+        LOCALE_USED=$USER_LOCALE
+        AC_MSG_RESULT([$USER_LOCALE (untested fallback)])
+        AC_MSG_WARN([Could not find C.UTF-8 or en_US.UTF-8 locale. This is not supported, and the build might fail unexpectedly.])
+      else
+        AC_MSG_RESULT([no UTF-8 locale found])
+        AC_MSG_WARN([No UTF-8 locale found. This is not supported. Proceeding with the C locale, but the build might fail unexpectedly.])
+        LOCALE_USED=C
+      fi
+      AC_MSG_NOTICE([The recommended locale is C.UTF-8, but en_US.UTF-8 is also accepted.])
     fi
   else
-    AC_MSG_WARN([locale command not not found, using C locale])
-    LOCALE_USED=C
+    LOCALE_USED=C.UTF-8
+    AC_MSG_RESULT([C.UTF-8 (default)])
+    AC_MSG_WARN([locale command not not found, using C.UTF-8 locale])
   fi
 
   export LC_ALL=$LOCALE_USED
@@ -187,17 +210,8 @@ AC_DEFUN([BASIC_SETUP_XCODE_SYSROOT],
     if test $? -ne 0; then
       AC_MSG_ERROR([The xcodebuild tool in the devkit reports an error: $XCODEBUILD_OUTPUT])
     fi
-  elif test "x$TOOLCHAIN_PATH" != x; then
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild, $TOOLCHAIN_PATH)
-    if test "x$XCODEBUILD" != x; then
-      XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
-      if test $? -ne 0; then
-        AC_MSG_WARN([Ignoring the located xcodebuild tool $XCODEBUILD due to an error: $XCODEBUILD_OUTPUT])
-        XCODEBUILD=
-      fi
-    fi
   else
-    UTIL_LOOKUP_PROGS(XCODEBUILD, xcodebuild)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(XCODEBUILD, xcodebuild)
     if test "x$XCODEBUILD" != x; then
       XCODEBUILD_OUTPUT=`"$XCODEBUILD" -version 2>&1`
       if test $? -ne 0; then
@@ -325,19 +339,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   # You can force the sysroot if the sysroot encoded into the compiler tools
   # is not correct.
-  AC_ARG_WITH(sys-root, [AS_HELP_STRING([--with-sys-root],
-      [alias for --with-sysroot for backwards compatibility])],
-      [SYSROOT=$with_sys_root]
-  )
-
   AC_ARG_WITH(sysroot, [AS_HELP_STRING([--with-sysroot],
       [use this directory as sysroot])],
       [SYSROOT=$with_sysroot]
-  )
-
-  AC_ARG_WITH([tools-dir], [AS_HELP_STRING([--with-tools-dir],
-      [alias for --with-toolchain-path for backwards compatibility])],
-      [UTIL_PREPEND_TO_PATH([TOOLCHAIN_PATH],$with_tools_dir)]
   )
 
   AC_ARG_WITH([toolchain-path], [AS_HELP_STRING([--with-toolchain-path],
@@ -347,6 +351,9 @@ AC_DEFUN_ONCE([BASIC_SETUP_DEVKIT],
 
   AC_ARG_WITH([xcode-path], [AS_HELP_STRING([--with-xcode-path],
       [set up toolchain on Mac OS using a path to an Xcode installation])])
+
+  UTIL_DEPRECATED_ARG_WITH(sys-root)
+  UTIL_DEPRECATED_ARG_WITH(tools-dir)
 
   if test "x$with_xcode_path" != x; then
     if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
@@ -392,11 +399,21 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
       [ CONF_NAME=${with_conf_name} ])
 
   # Test from where we are running configure, in or outside of src root.
+  if test "x$OPENJDK_BUILD_OS" = xwindows || test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    # These systems have case insensitive paths, so convert them to lower case.
+    [ cmp_configure_start_dir=`$ECHO $CONFIGURE_START_DIR | $TR '[:upper:]' '[:lower:]'` ]
+    [ cmp_topdir=`$ECHO $TOPDIR | $TR '[:upper:]' '[:lower:]'` ]
+    [ cmp_custom_root=`$ECHO $CUSTOM_ROOT | $TR '[:upper:]' '[:lower:]'` ]
+  else
+    cmp_configure_start_dir="$CONFIGURE_START_DIR"
+    cmp_topdir="$TOPDIR"
+    cmp_custom_root="$CUSTOM_ROOT"
+  fi
   AC_MSG_CHECKING([where to store configuration])
-  if test "x$CONFIGURE_START_DIR" = "x$TOPDIR" \
-      || test "x$CONFIGURE_START_DIR" = "x$CUSTOM_ROOT" \
-      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make/autoconf" \
-      || test "x$CONFIGURE_START_DIR" = "x$TOPDIR/make" ; then
+  if test "x$cmp_configure_start_dir" = "x$cmp_topdir" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_custom_root" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_topdir/make/autoconf" \
+      || test "x$cmp_configure_start_dir" = "x$cmp_topdir/make" ; then
     # We are running configure from the src root.
     # Create a default ./build/target-variant-debuglevel output root.
     if test "x${CONF_NAME}" = x; then
@@ -417,7 +434,12 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # If configuration is situated in normal build directory, just use the build
     # directory name as configuration name, otherwise use the complete path.
     if test "x${CONF_NAME}" = x; then
-      CONF_NAME=`$ECHO $CONFIGURE_START_DIR | $SED -e "s!^${TOPDIR}/build/!!"`
+      [ if [[ "$cmp_configure_start_dir" =~ ^${cmp_topdir}/build/[^/]+$ ||
+          "$cmp_configure_start_dir" =~ ^${cmp_custom_root}/build/[^/]+$ ]]; then ]
+          CONF_NAME="${CONFIGURE_START_DIR##*/}"
+      else
+          CONF_NAME="$CONFIGURE_START_DIR"
+      fi
     fi
     OUTPUTDIR="$CONFIGURE_START_DIR"
     AC_MSG_RESULT([in current directory])
@@ -542,9 +564,6 @@ AC_DEFUN_ONCE([BASIC_TEST_USABILITY_ISSUES],
   AC_MSG_RESULT($OUTPUT_DIR_IS_LOCAL)
 
   BASIC_CHECK_SRC_PERMS
-
-  # Check if the user has any old-style ALT_ variables set.
-  FOUND_ALT_VARIABLES=`env | grep ^ALT_`
 
   # Before generating output files, test if they exist. If they do, this is a reconfigure.
   # Since we can't properly handle the dependencies for this, warn the user about the situation

@@ -22,7 +22,7 @@
  */
 
 // key: compiler.warn.attempt.to.synchronize.on.instance.of.value.based.class
-// options: -Xlint:synchronization
+// options: -Xlint:identity
 
 class AttemptToSynchronizeOnInstanceOfVbc {
     void foo(Integer i) {

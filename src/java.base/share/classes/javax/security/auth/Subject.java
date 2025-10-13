@@ -300,7 +300,7 @@ public final class Subject implements java.io.Serializable {
      * @since 18
      */
     public static Subject current() {
-        return SCOPED_SUBJECT.orElse(null);
+        return SCOPED_SUBJECT.isBound() ? SCOPED_SUBJECT.get() : null;
     }
 
     /**

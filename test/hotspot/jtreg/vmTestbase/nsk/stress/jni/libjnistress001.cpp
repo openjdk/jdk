@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ Java_nsk_stress_jni_JNIter001_jnistress (JNIEnv *env, jobject jobj, jstring jstr
   for (j = 0; j < DIGESTLENGTH; j++) {
     digest[j] = 0;
   }
-  element->str[allocs] = env->GetStringUTFChars(jstr, 0); CE
+  element->str[allocs] = env->GetStringUTFChars(jstr, nullptr); CE
   if (strlen(element->str[allocs]) != (size_t) env->GetStringUTFLength(jstr)) {
     printf("Length is wrong in string No. %d\n", allocs);
   } else {
@@ -177,7 +177,7 @@ Java_nsk_stress_jni_JNIter001_jnistress1(JNIEnv *env, jobject jobj, jstring jstr
   for (j = 0; j < DIGESTLENGTH; j++) {
     digest[j] = 0;
   }
-  javachars->str[index] = env->GetStringChars(jstr, 0); CE
+  javachars->str[index] = env->GetStringChars(jstr, nullptr); CE
   javachars->size[index] = env->GetStringUTFLength(jstr); CE
   elem_len = javachars->size[index];
   len += elem_len;

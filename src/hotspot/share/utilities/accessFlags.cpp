@@ -22,9 +22,8 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/accessFlags.hpp"
 
 #if !defined(PRODUCT) || INCLUDE_JVMTI

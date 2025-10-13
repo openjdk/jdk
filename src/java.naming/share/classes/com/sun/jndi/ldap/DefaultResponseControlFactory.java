@@ -36,7 +36,7 @@ import javax.naming.ldap.*;
  * <ul>
  * <li>
  * Paged results, as defined in
- * <a href="http://www.ietf.org/rfc/rfc2696.txt">RFC 2696</a>.
+ * <a href="https://www.ietf.org/rfc/rfc2696.txt">RFC 2696</a>.
  * <li>
  * Server-side sorting, as defined in
  * <a href="http://www.ietf.org/rfc/rfc2891.txt">RFC 2891</a>.

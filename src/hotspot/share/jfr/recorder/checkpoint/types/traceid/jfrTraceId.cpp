@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/symbolTable.hpp"
@@ -32,7 +31,7 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiThreadState.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "utilities/growableArray.hpp"
@@ -44,7 +43,7 @@ static traceid atomic_inc(traceid volatile* const dest, traceid stride = 1) {
   do {
     compare_value = *dest;
     exchange_value = compare_value + stride;
-  } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
+  } while (AtomicAccess::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
 

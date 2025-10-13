@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/lambdaFormInvokers.inline.hpp"
@@ -58,7 +57,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   assert(is_enabled(), "must be");
 
   if (!ClassLoader::has_jrt_entry()) {
-    log_warning(cds)("DumpLoadedClassList and CDS are not supported in exploded build");
+    log_warning(aot)("DumpLoadedClassList and CDS are not supported in exploded build");
     DumpLoadedClassList = nullptr;
     return;
   }
@@ -67,7 +66,7 @@ void ClassListWriter::write(const InstanceKlass* k, const ClassFileStream* cfs) 
   write_to_stream(k, w.stream(), cfs);
 }
 
-class ClassListWriter::IDTable : public ResourceHashtable<
+class ClassListWriter::IDTable : public HashTable<
   const InstanceKlass*, int,
   15889, // prime number
   AnyObj::C_HEAP> {};
@@ -111,7 +110,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   bool is_builtin_loader = SystemDictionaryShared::is_builtin_loader(loader_data);
   if (!is_builtin_loader) {
     // class may be loaded from shared archive
-    if (!k->is_shared()) {
+    if (!k->in_aot_cache()) {
       if (cfs == nullptr || cfs->source() == nullptr) {
         // CDS static dump only handles unregistered class with known source.
         return;
@@ -140,7 +139,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   }
 
   {
-    InstanceKlass* super = k->java_super();
+    InstanceKlass* super = k->super();
     if (super != nullptr && !has_id(super)) {
       return;
     }
@@ -166,7 +165,7 @@ void ClassListWriter::write_to_stream(const InstanceKlass* k, outputStream* stre
   ResourceMark rm;
   stream->print("%s id: %d", k->name()->as_C_string(), get_id(k));
   if (!is_builtin_loader) {
-    InstanceKlass* super = k->java_super();
+    InstanceKlass* super = k->super();
     assert(super != nullptr, "must be");
     stream->print(" super: %d", get_id(super));
 

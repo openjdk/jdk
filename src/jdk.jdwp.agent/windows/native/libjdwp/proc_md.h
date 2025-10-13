@@ -31,8 +31,8 @@
 
 #define MUTEX_T         int
 #define MUTEX_INIT      0
-#define MUTEX_LOCK(x)           /* FIXUP? */
-#define MUTEX_UNLOCK(x)         /* FIXUP? */
+#define MUTEX_LOCK(x)   ((void) (x))        /* FIXUP? */
+#define MUTEX_UNLOCK(x) ((void) (x))        /* FIXUP? */
 #define GET_THREAD_ID() GetCurrentThreadId()
 #define THREAD_T        unsigned long
 #define PID_T           int

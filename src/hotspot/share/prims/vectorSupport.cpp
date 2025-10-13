@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/location.hpp"
 #include "jni.h"
 #include "jvm.h"
+#include "memory/oopFactory.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/vectorSupport.hpp"
@@ -40,30 +40,8 @@
 #include "runtime/stackValue.hpp"
 #ifdef COMPILER2
 #include "opto/matcher.hpp"
+#include "opto/vectornode.hpp"
 #endif // COMPILER2
-
-#ifdef COMPILER2
-const char* VectorSupport::mathname[VectorSupport::NUM_VECTOR_OP_MATH] = {
-    "tan",
-    "tanh",
-    "sin",
-    "sinh",
-    "cos",
-    "cosh",
-    "asin",
-    "acos",
-    "atan",
-    "atan2",
-    "cbrt",
-    "log",
-    "log10",
-    "log1p",
-    "pow",
-    "exp",
-    "expm1",
-    "hypot",
-};
-#endif
 
 bool VectorSupport::is_vector(Klass* klass) {
   return klass->is_subclass_of(vmClasses::vector_VectorPayload_klass());
@@ -132,9 +110,7 @@ Handle VectorSupport::allocate_vector_payload_helper(InstanceKlass* ik, frame* f
   int elem_size = type2aelembytes(elem_bt);
 
   // On-heap vector values are represented as primitive arrays.
-  TypeArrayKlass* tak = Universe::typeArrayKlass(elem_bt);
-
-  typeArrayOop arr = tak->allocate(num_elem, CHECK_NH); // safepoint
+  typeArrayOop arr = oopFactory::new_typeArray(elem_bt, num_elem, CHECK_NH); // safepoint
 
   if (location.is_register()) {
     // Value was in a callee-saved register.
@@ -616,25 +592,25 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       break;
     }
 
-    case VECTOR_OP_TAN:
-    case VECTOR_OP_TANH:
-    case VECTOR_OP_SIN:
-    case VECTOR_OP_SINH:
-    case VECTOR_OP_COS:
-    case VECTOR_OP_COSH:
-    case VECTOR_OP_ASIN:
-    case VECTOR_OP_ACOS:
-    case VECTOR_OP_ATAN:
-    case VECTOR_OP_ATAN2:
-    case VECTOR_OP_CBRT:
-    case VECTOR_OP_LOG:
-    case VECTOR_OP_LOG10:
-    case VECTOR_OP_LOG1P:
-    case VECTOR_OP_POW:
-    case VECTOR_OP_EXP:
-    case VECTOR_OP_EXPM1:
-    case VECTOR_OP_HYPOT:
-      return Op_CallLeafVector;
+    case VECTOR_OP_TAN:   // fall-through
+    case VECTOR_OP_TANH:  // fall-through
+    case VECTOR_OP_SIN:   // fall-through
+    case VECTOR_OP_SINH:  // fall-through
+    case VECTOR_OP_COS:   // fall-through
+    case VECTOR_OP_COSH:  // fall-through
+    case VECTOR_OP_ASIN:  // fall-through
+    case VECTOR_OP_ACOS:  // fall-through
+    case VECTOR_OP_ATAN:  // fall-through
+    case VECTOR_OP_ATAN2: // fall-through
+    case VECTOR_OP_CBRT:  // fall-through
+    case VECTOR_OP_LOG:   // fall-through
+    case VECTOR_OP_LOG10: // fall-through
+    case VECTOR_OP_LOG1P: // fall-through
+    case VECTOR_OP_POW:   // fall-through
+    case VECTOR_OP_EXP:   // fall-through
+    case VECTOR_OP_EXPM1: // fall-through
+    case VECTOR_OP_HYPOT: return 0; // not supported; should be handled in Java code
+
     default: fatal("unknown op: %d", vop);
   }
   return 0; // Unimplemented
@@ -656,16 +632,26 @@ JVM_ENTRY(jint, VectorSupport_GetMaxLaneCount(JNIEnv *env, jclass vsclazz, jobje
   return -1;
 } JVM_END
 
+JVM_ENTRY(jstring, VectorSupport_GetCPUFeatures(JNIEnv* env, jclass ignored))
+  const char* features_string = VM_Version::features_string();
+  assert(features_string != nullptr, "missing cpu features info");
+
+  oop result = java_lang_String::create_oop_from_str(features_string, CHECK_NULL);
+  return (jstring) JNIHandles::make_local(THREAD, result);
+JVM_END
+
 // JVM_RegisterVectorSupportMethods
 
 #define LANG "Ljava/lang/"
 #define CLS LANG "Class;"
+#define LSTR LANG "String;"
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod jdk_internal_vm_vector_VectorSupport_methods[] = {
-    {CC "getMaxLaneCount",   CC "(" CLS ")I", FN_PTR(VectorSupport_GetMaxLaneCount)}
+    {CC "getMaxLaneCount", CC "(" CLS ")I", FN_PTR(VectorSupport_GetMaxLaneCount)},
+    {CC "getCPUFeatures",  CC "()" LSTR,    FN_PTR(VectorSupport_GetCPUFeatures)}
 };
 
 #undef CC
@@ -673,6 +659,7 @@ static JNINativeMethod jdk_internal_vm_vector_VectorSupport_methods[] = {
 
 #undef LANG
 #undef CLS
+#undef LSTR
 
 // This function is exported, used by NativeLookup.
 

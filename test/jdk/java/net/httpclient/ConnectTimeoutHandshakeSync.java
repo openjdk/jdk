@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import org.testng.annotations.Test;
  * @test
  * @summary Tests connection timeouts during SSL handshake
  * @bug 8208391
+ * @library /test/lib
+ * @build AbstractConnectTimeoutHandshake
  * @run testng/othervm ConnectTimeoutHandshakeSync
  */
 

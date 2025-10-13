@@ -23,14 +23,13 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSetPreselector.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
@@ -38,55 +37,44 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-
 #include "utilities/quickSort.hpp"
 
-
-class ShenandoahResetUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
+template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC = false>
+class ShenandoahResetBitmapClosure final : public ShenandoahHeapRegionClosure {
 private:
-  ShenandoahHeap* _heap;
-  ShenandoahMarkingContext* const _ctx;
-public:
-  ShenandoahResetUpdateRegionStateClosure() :
-    _heap(ShenandoahHeap::heap()),
-    _ctx(_heap->marking_context()) {}
+  ShenandoahHeap*           _heap;
+  ShenandoahMarkingContext* _ctx;
 
-  void heap_region_do(ShenandoahHeapRegion* r) override {
-    if (r->is_active()) {
-      // Reset live data and set TAMS optimistically. We would recheck these under the pause
-      // anyway to capture any updates that happened since now.
-      _ctx->capture_top_at_mark_start(r);
-      r->clear_live_data();
+public:
+  explicit ShenandoahResetBitmapClosure() :
+    ShenandoahHeapRegionClosure(), _heap(ShenandoahHeap::heap()), _ctx(_heap->marking_context()) {}
+
+  void heap_region_do(ShenandoahHeapRegion* region) override {
+    assert(!_heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
+    if (PREPARE_FOR_CURRENT_CYCLE) {
+      if (region->need_bitmap_reset() && _heap->is_bitmap_slice_committed(region)) {
+        _ctx->clear_bitmap(region);
+      } else {
+        region->set_needs_bitmap_reset();
+      }
+      // Capture Top At Mark Start for this generation.
+      if (FULL_GC || region->is_active()) {
+        // Reset live data and set TAMS optimistically. We would recheck these under the pause
+        // anyway to capture any updates that happened since now.
+        _ctx->capture_top_at_mark_start(region);
+        region->clear_live_data();
+      }
+    } else {
+      if (_heap->is_bitmap_slice_committed(region)) {
+        _ctx->clear_bitmap(region);
+        region->unset_needs_bitmap_reset();
+      } else {
+        region->set_needs_bitmap_reset();
+      }
     }
   }
 
   bool is_thread_safe() override { return true; }
-};
-
-class ShenandoahResetBitmapTask : public WorkerTask {
-private:
-  ShenandoahRegionIterator _regions;
-  ShenandoahGeneration* _generation;
-
-public:
-  ShenandoahResetBitmapTask(ShenandoahGeneration* generation) :
-    WorkerTask("Shenandoah Reset Bitmap"), _generation(generation) {}
-
-  void work(uint worker_id) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    assert(!heap->is_uncommit_in_progress(), "Cannot uncommit bitmaps while resetting them.");
-    ShenandoahHeapRegion* region = _regions.next();
-    ShenandoahMarkingContext* const ctx = heap->marking_context();
-    while (region != nullptr) {
-      auto const affiliation = region->affiliation();
-      bool needs_reset = affiliation == FREE || _generation->contains(affiliation);
-      if (needs_reset && heap->is_bitmap_slice_committed(region)) {
-        ctx->clear_bitmap(region);
-      }
-      region = _regions.next();
-    }
-  }
 };
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -105,20 +93,6 @@ public:
   bool is_thread_safe() override {
     return true;
   }
-};
-
-class ShenandoahCopyWriteCardTableToRead: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahScanRemembered* _scanner;
-public:
-  ShenandoahCopyWriteCardTableToRead(ShenandoahScanRemembered* scanner) : _scanner(scanner) {}
-
-  void heap_region_do(ShenandoahHeapRegion* region) override {
-    assert(region->is_old(), "Don't waste time doing this for non-old regions");
-    _scanner->reset_remset(region->bottom(), ShenandoahHeapRegion::region_size_words());
-  }
-
-  bool is_thread_safe() override { return true; }
 };
 
 // Add [TAMS, top) volume over young regions. Used to correct age 0 cohort census
@@ -174,15 +148,15 @@ ShenandoahHeuristics* ShenandoahGeneration::initialize_heuristics(ShenandoahMode
 }
 
 size_t ShenandoahGeneration::bytes_allocated_since_gc_start() const {
-  return Atomic::load(&_bytes_allocated_since_gc_start);
+  return AtomicAccess::load(&_bytes_allocated_since_gc_start);
 }
 
-void ShenandoahGeneration::reset_bytes_allocated_since_gc_start() {
-  Atomic::store(&_bytes_allocated_since_gc_start, (size_t)0);
+void ShenandoahGeneration::reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated) {
+  AtomicAccess::store(&_bytes_allocated_since_gc_start, initial_bytes_allocated);
 }
 
 void ShenandoahGeneration::increase_allocated(size_t bytes) {
-  Atomic::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
+  AtomicAccess::add(&_bytes_allocated_since_gc_start, bytes, memory_order_relaxed);
 }
 
 void ShenandoahGeneration::set_evacuation_reserve(size_t new_val) {
@@ -208,7 +182,7 @@ void ShenandoahGeneration::log_status(const char *msg) const {
   // byte size in proper unit and proper unit for byte size are consistent.
   const size_t v_used = used();
   const size_t v_used_regions = used_regions_size();
-  const size_t v_soft_max_capacity = soft_max_capacity();
+  const size_t v_soft_max_capacity = ShenandoahHeap::heap()->soft_max_capacity();
   const size_t v_max_capacity = max_capacity();
   const size_t v_available = available();
   const size_t v_humongous_waste = get_humongous_waste();
@@ -226,29 +200,33 @@ void ShenandoahGeneration::log_status(const char *msg) const {
               PROPERFMTARGS(v_soft_max_capacity), PROPERFMTARGS(v_max_capacity), PROPERFMTARGS(v_available));
 }
 
+template <bool PREPARE_FOR_CURRENT_CYCLE, bool FULL_GC>
 void ShenandoahGeneration::reset_mark_bitmap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
 
   set_mark_incomplete();
 
-  ShenandoahResetBitmapTask task(this);
-  heap->workers()->run_task(&task);
+  ShenandoahResetBitmapClosure<PREPARE_FOR_CURRENT_CYCLE, FULL_GC> closure;
+  parallel_heap_region_iterate_free(&closure);
 }
+// Explicit specializations
+template void ShenandoahGeneration::reset_mark_bitmap<true, false>();
+template void ShenandoahGeneration::reset_mark_bitmap<true, true>();
+template void ShenandoahGeneration::reset_mark_bitmap<false, false>();
 
-// The ideal is to swap the remembered set so the safepoint effort is no more than a few pointer manipulations.
-// However, limitations in the implementation of the mutator write-barrier make it difficult to simply change the
-// location of the card table.  So the interim implementation of swap_remembered_set will copy the write-table
-// onto the read-table and will then clear the write-table.
-void ShenandoahGeneration::swap_remembered_set() {
+// Swap the read and write card table pointers prior to the next remset scan.
+// This avoids the need to synchronize reads of the table by the GC workers
+// doing remset scanning, on the one hand, with the dirtying of the table by
+// mutators on the other.
+void ShenandoahGeneration::swap_card_tables() {
   // Must be sure that marking is complete before we swap remembered set.
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   heap->assert_gc_workers(heap->workers()->active_workers());
   shenandoah_assert_safepoint();
 
   ShenandoahOldGeneration* old_generation = heap->old_generation();
-  ShenandoahCopyWriteCardTableToRead task(old_generation->card_scan());
-  old_generation->parallel_heap_region_iterate(&task);
+  old_generation->card_scan()->swap_card_tables();
 }
 
 // Copy the write-version of the card-table into the read-version, clearing the
@@ -266,12 +244,7 @@ void ShenandoahGeneration::merge_write_table() {
 }
 
 void ShenandoahGeneration::prepare_gc() {
-
-  reset_mark_bitmap();
-
-  // Capture Top At Mark Start for this generation (typically young) and reset mark bitmap.
-  ShenandoahResetUpdateRegionStateClosure cl;
-  parallel_heap_region_iterate_free(&cl);
+  reset_mark_bitmap<true>();
 }
 
 void ShenandoahGeneration::parallel_heap_region_iterate_free(ShenandoahHeapRegionClosure* cl) {
@@ -560,8 +533,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
   bool* const candidate_regions_for_promotion_by_copy = heap->collection_set()->preselected_regions();
   ShenandoahMarkingContext* const ctx = heap->marking_context();
 
-  const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
+
+  const size_t pip_used_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahGenerationalMinPIPUsage) / 100;
 
   size_t old_consumed = 0;
   size_t promo_potential = 0;
@@ -584,11 +558,9 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // skip over regions that aren't regular young with some live data
       continue;
     }
-    if (r->age() >= tenuring_threshold) {
-      if ((r->garbage() < old_garbage_threshold)) {
-        // This tenure-worthy region has too little garbage, so we do not want to expend the copying effort to
-        // reclaim the garbage; instead this region may be eligible for promotion-in-place to the
-        // old generation.
+    if (heap->is_tenurable(r)) {
+      if ((r->garbage() < old_garbage_threshold) && (r->used() > pip_used_threshold)) {
+        // We prefer to promote this region in place because is has a small amount of garbage and a large usage.
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
         if (!heap->is_concurrent_old_mark_in_progress() && tams == original_top) {
@@ -614,7 +586,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
         // Else, we do not promote this region (either in place or by copy) because it has received new allocations.
 
         // During evacuation, we exclude from promotion regions for which age > tenure threshold, garbage < garbage-threshold,
-        //  and get_top_before_promote() != tams
+        //  used > pip_used_threshold, and get_top_before_promote() != tams
       } else {
         // Record this promotion-eligible candidate region. After sorting and selecting the best candidates below,
         // we may still decide to exclude this promotion-eligible region from the current collection set.  If this
@@ -639,7 +611,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // these regions.  The likely outcome is that these regions will not be selected for evacuation or promotion
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
-      if (heap->is_aging_cycle() && (r->age() + 1 == tenuring_threshold)) {
+      if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
         if (r->garbage() >= old_garbage_threshold) {
           promo_potential += r->get_live_data_bytes();
         }
@@ -706,7 +678,7 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold
-  if (is_generational && ShenandoahGenerationalAdaptiveTenuring && !ShenandoahGenerationalCensusAtEvac) {
+  if (is_generational && ShenandoahGenerationalAdaptiveTenuring) {
     // Objects above TAMS weren't included in the age census. Since they were all
     // allocated in this cycle they belong in the age 0 cohort. We walk over all
     // young regions and sum the volume of objects between TAMS and top.
@@ -800,10 +772,6 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   return true;
 }
 
-bool ShenandoahGeneration::is_mark_complete() {
-  return _is_marking_complete.is_set();
-}
-
 void ShenandoahGeneration::set_mark_complete() {
   _is_marking_complete.set();
 }
@@ -829,14 +797,13 @@ void ShenandoahGeneration::cancel_marking() {
 
 ShenandoahGeneration::ShenandoahGeneration(ShenandoahGenerationType type,
                                            uint max_workers,
-                                           size_t max_capacity,
-                                           size_t soft_max_capacity) :
+                                           size_t max_capacity) :
   _type(type),
   _task_queues(new ShenandoahObjToScanQueueSet(max_workers)),
   _ref_processor(new ShenandoahReferenceProcessor(MAX2(max_workers, 1U))),
   _affiliated_region_count(0), _humongous_waste(0), _evacuation_reserve(0),
   _used(0), _bytes_allocated_since_gc_start(0),
-  _max_capacity(max_capacity), _soft_max_capacity(soft_max_capacity),
+  _max_capacity(max_capacity),
   _heuristics(nullptr)
 {
   _is_marking_complete.set();
@@ -887,7 +854,7 @@ size_t ShenandoahGeneration::increment_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  return Atomic::add(&_affiliated_region_count, (size_t) 1);
+  return AtomicAccess::add(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count() {
@@ -895,7 +862,7 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
   // During full gc, multiple GC worker threads may change region affiliations without a lock.  No lock is enforced
   // on read and write of _affiliated_region_count.  At the end of full gc, a single thread overwrites the count with
   // a coherent value.
-  auto affiliated_region_count = Atomic::sub(&_affiliated_region_count, (size_t) 1);
+  auto affiliated_region_count = AtomicAccess::sub(&_affiliated_region_count, (size_t) 1);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (used() + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
@@ -903,19 +870,19 @@ size_t ShenandoahGeneration::decrement_affiliated_region_count() {
 }
 
 size_t ShenandoahGeneration::decrement_affiliated_region_count_without_lock() {
-  return Atomic::sub(&_affiliated_region_count, (size_t) 1);
+  return AtomicAccess::sub(&_affiliated_region_count, (size_t) 1);
 }
 
 size_t ShenandoahGeneration::increase_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  return Atomic::add(&_affiliated_region_count, delta);
+  return AtomicAccess::add(&_affiliated_region_count, delta);
 }
 
 size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
   shenandoah_assert_heaplocked_or_safepoint();
-  assert(Atomic::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
+  assert(AtomicAccess::load(&_affiliated_region_count) >= delta, "Affiliated region count cannot be negative");
 
-  auto const affiliated_region_count = Atomic::sub(&_affiliated_region_count, delta);
+  auto const affiliated_region_count = AtomicAccess::sub(&_affiliated_region_count, delta);
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used + _humongous_waste <= affiliated_region_count * ShenandoahHeapRegion::region_size_bytes()),
          "used + humongous cannot exceed regions");
@@ -924,18 +891,18 @@ size_t ShenandoahGeneration::decrease_affiliated_region_count(size_t delta) {
 
 void ShenandoahGeneration::establish_usage(size_t num_regions, size_t num_bytes, size_t humongous_waste) {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "must be at a safepoint");
-  Atomic::store(&_affiliated_region_count, num_regions);
-  Atomic::store(&_used, num_bytes);
+  AtomicAccess::store(&_affiliated_region_count, num_regions);
+  AtomicAccess::store(&_used, num_bytes);
   _humongous_waste = humongous_waste;
 }
 
 void ShenandoahGeneration::increase_used(size_t bytes) {
-  Atomic::add(&_used, bytes);
+  AtomicAccess::add(&_used, bytes);
 }
 
 void ShenandoahGeneration::increase_humongous_waste(size_t bytes) {
   if (bytes > 0) {
-    Atomic::add(&_humongous_waste, bytes);
+    AtomicAccess::add(&_humongous_waste, bytes);
   }
 }
 
@@ -943,18 +910,18 @@ void ShenandoahGeneration::decrease_humongous_waste(size_t bytes) {
   if (bytes > 0) {
     assert(ShenandoahHeap::heap()->is_full_gc_in_progress() || (_humongous_waste >= bytes),
            "Waste (%zu) cannot be negative (after subtracting %zu)", _humongous_waste, bytes);
-    Atomic::sub(&_humongous_waste, bytes);
+    AtomicAccess::sub(&_humongous_waste, bytes);
   }
 }
 
 void ShenandoahGeneration::decrease_used(size_t bytes) {
   assert(ShenandoahHeap::heap()->is_full_gc_in_progress() ||
          (_used >= bytes), "cannot reduce bytes used by generation below zero");
-  Atomic::sub(&_used, bytes);
+  AtomicAccess::sub(&_used, bytes);
 }
 
 size_t ShenandoahGeneration::used_regions() const {
-  return Atomic::load(&_affiliated_region_count);
+  return AtomicAccess::load(&_affiliated_region_count);
 }
 
 size_t ShenandoahGeneration::free_unaffiliated_regions() const {
@@ -982,7 +949,7 @@ size_t ShenandoahGeneration::available_with_reserve() const {
 }
 
 size_t ShenandoahGeneration::soft_available() const {
-  return available(soft_max_capacity());
+  return available(ShenandoahHeap::heap()->soft_max_capacity());
 }
 
 size_t ShenandoahGeneration::available(size_t capacity) const {

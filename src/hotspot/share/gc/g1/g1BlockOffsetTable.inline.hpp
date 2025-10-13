@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,12 @@
 #define SHARE_GC_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
-#include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomicAccess.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* addr) const {
   assert(_reserved.contains(addr), "invalid address");
@@ -51,7 +52,7 @@ inline HeapWord* G1BlockOffsetTable::block_start_reaching_into_card(const void* 
 
 uint8_t G1BlockOffsetTable::offset_array(uint8_t* addr) const {
   check_address(addr, "Block offset table address out of range");
-  return Atomic::load(addr);
+  return AtomicAccess::load(addr);
 }
 
 inline uint8_t* G1BlockOffsetTable::entry_for_addr(const void* const p) const {

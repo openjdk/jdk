@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ void JNICALL classPrepareHandler(
         jthread thread,
         jclass klass) {
     int success = 1;
+    bool finish = false;
     char className[MAX_STRING_LENGTH];
     jint loadedClassesCount;
     jclass *loadedClasses;
@@ -75,8 +76,7 @@ void JNICALL classPrepareHandler(
 
         if (eventsCounter == EXPECTED_EVENTS_NUMBER) {
             NSK_DISPLAY2("%s: all expected events were received (eventsCounter: %d)\n", agentName, eventsCounter);
-
-            nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_PREPARE, success, jvmti, jni);
+            finish = true;
         }
 
         if (!NSK_JVMTI_VERIFY(jvmti->RawMonitorExit(eventsCounterMonitor))) {
@@ -86,8 +86,8 @@ void JNICALL classPrepareHandler(
         success = 0;
     }
 
-    if (!success) {
-        nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_PREPARE, 0, jvmti, jni);
+    if (finish || !success) {
+        nsk_jvmti_aod_disableEventAndFinish(agentName, JVMTI_EVENT_CLASS_PREPARE, success, jvmti, jni);
     }
 }
 

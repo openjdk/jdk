@@ -38,7 +38,7 @@ import java.util.*;
  * @author Clemens Eisserer
  */
 
-public class MaskTileManager {
+public final class MaskTileManager {
 
     public static final int MASK_SIZE = 256;
 

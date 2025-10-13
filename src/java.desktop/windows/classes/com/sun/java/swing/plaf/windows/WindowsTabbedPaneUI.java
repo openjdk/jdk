@@ -48,7 +48,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
+public final class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
     /**
      * Keys to use for forward focus traversal when the JComponent is
      * managing focus.
@@ -63,6 +63,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
 
     private boolean contentOpaque = true;
 
+    @Override
     @SuppressWarnings("deprecation")
     protected void installDefaults() {
         super.installDefaults();
@@ -82,6 +83,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
         tabPane.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, managingFocusBackwardTraversalKeys);
     }
 
+    @Override
     protected void uninstallDefaults() {
         // sets the focus forward and backward traversal keys to null
         // to restore the defaults
@@ -94,6 +96,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
         return new WindowsTabbedPaneUI();
     }
 
+    @Override
     protected void setRolloverTab(int index) {
         // Rollover is only supported on XP
         if (XPStyle.getXP() != null) {
@@ -119,6 +122,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
         }
     }
 
+    @Override
     protected void paintContentBorder(Graphics g, int tabPlacement, int selectedIndex) {
         XPStyle xp = XPStyle.getXP();
         if (xp != null && (contentOpaque || tabPane.isOpaque())) {
@@ -155,6 +159,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
         super.paintContentBorder(g, tabPlacement, selectedIndex);
     }
 
+    @Override
     protected void paintTabBackground(Graphics g, int tabPlacement, int tabIndex,
                                       int x, int y, int w, int h, boolean isSelected ) {
         if (XPStyle.getXP() == null) {
@@ -162,6 +167,7 @@ public class WindowsTabbedPaneUI extends BasicTabbedPaneUI {
         }
     }
 
+    @Override
     protected void paintTabBorder(Graphics g, int tabPlacement, int tabIndex,
                                   int x, int y, int w, int h, boolean isSelected ) {
         XPStyle xp = XPStyle.getXP();

@@ -23,11 +23,16 @@
 # questions.
 #
 
+include MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
+################################################################################
+
 include CopyFiles.gmk
 include JdkNativeCompilation.gmk
 include Modules.gmk
 include ProcessMarkdown.gmk
-include ToolsJdk.gmk
+include $(TOPDIR)/make/ToolsJdk.gmk
 
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
@@ -151,8 +156,8 @@ define SetupBuildLauncherBody
       DISABLED_WARNINGS_gcc := unused-function unused-variable, \
       DISABLED_WARNINGS_clang := unused-function, \
       LDFLAGS := $$($1_LDFLAGS), \
-      LDFLAGS_linux := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
-      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN,/../lib), \
+      LDFLAGS_linux := $$(call SetExecutableOrigin,/../lib), \
+      LDFLAGS_macosx := $$(call SetExecutableOrigin,/../lib), \
       LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
       JDK_LIBS := $$($1_JDK_LIBS), \
       JDK_LIBS_windows := $$($1_JDK_LIBS_windows), \
@@ -234,3 +239,8 @@ ifeq ($(call isTargetOsType, unix)+$(MAKEFILE_PREFIX), true+Launcher)
     endif
   endif
 endif
+
+################################################################################
+
+endif # include guard
+include MakeIncludeEnd.gmk

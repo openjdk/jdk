@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
 #ifndef SHARE_C1_C1_GLOBALS_HPP
 #define SHARE_C1_C1_GLOBALS_HPP
 
-#include "c1/c1_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
 #include "utilities/macros.hpp"
+#include CPU_HEADER(c1_globals)
 //
 // Declare all global flags used by the client compiler.
 //
@@ -212,9 +212,6 @@
   develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
-  develop(bool, TimeEachLinearScan, false,                                  \
-          "print detailed timing of each LinearScan run")                   \
-                                                                            \
   develop(bool, CountLinearScan, false,                                     \
           "collect statistic counters during LinearScan")                   \
                                                                             \
@@ -244,9 +241,6 @@
   develop(bool, GenerateArrayStoreCheck, true,                              \
           "Generates code for array store checks")                          \
                                                                             \
-  develop(bool, DeoptC1, true,                                              \
-          "Use deoptimization in C1")                                       \
-                                                                            \
   develop(bool, PrintBailouts, false,                                       \
           "Print bailout and its reason")                                   \
                                                                             \
@@ -270,21 +264,6 @@
                                                                             \
   develop(bool, BailoutOnExceptionHandlers, false,                          \
           "bailout of compilation for methods with exception handlers")     \
-                                                                            \
-  develop(bool, InstallMethods, true,                                       \
-          "Install methods at the end of successful compilations")          \
-                                                                            \
-  /* The compiler assumes, in many places, that methods are at most 1MB. */ \
-  /* Therefore, we restrict this flag to at most 1MB.                    */ \
-  develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
-          "Maximum size of a compiled method.")                             \
-          range(0, 1*M)                                                     \
-                                                                            \
-  develop(bool, TraceFPUStack, false,                                       \
-          "Trace emulation of the FPU stack (intel only)")                  \
-                                                                            \
-  develop(bool, TraceFPURegisterUsage, false,                               \
-          "Trace usage of FPU registers at start of blocks (intel only)")   \
                                                                             \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \

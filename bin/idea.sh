@@ -99,7 +99,7 @@ if [ "$VERBOSE" = "true" ] ; then
   echo "idea template dir: $IDEA_TEMPLATE"
 fi
 
-cd $TOP ; make idea-gen-config IDEA_OUTPUT=$IDEA_OUTPUT MODULES="$*" $CONF_ARG || exit 1
+cd $TOP ; make idea-gen-config ALLOW=IDEA_OUTPUT,MODULES IDEA_OUTPUT=$IDEA_OUTPUT MODULES="$*" $CONF_ARG || exit 1
 cd $SCRIPT_DIR
 
 . $IDEA_OUTPUT/env.cfg
@@ -125,7 +125,8 @@ if [ -d "$TOPLEVEL_DIR/.hg" ] ; then
     VCS_TYPE="hg4idea"
 fi
 
-if [ -d "$TOPLEVEL_DIR/.git" ] ; then
+# Git worktrees use a '.git' file rather than directory, so test both.
+if [ -d "$TOPLEVEL_DIR/.git" -o -f "$TOPLEVEL_DIR/.git" ] ; then
     VCS_TYPE="Git"
 fi
 

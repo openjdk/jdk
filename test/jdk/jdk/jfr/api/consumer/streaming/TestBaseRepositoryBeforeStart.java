@@ -32,7 +32,7 @@ import jdk.test.lib.Asserts;
  * @test
  * @summary Test that it is possible to start a stream against a directory,
  *          specified on command line, after the application starts
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.streaming.Application

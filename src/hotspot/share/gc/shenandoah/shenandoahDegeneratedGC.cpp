@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
@@ -40,9 +39,9 @@
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
+#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -84,6 +83,10 @@ void ShenandoahDegenGC::entry_degenerated() {
   heap->set_degenerated_gc_in_progress(true);
   op_degenerated();
   heap->set_degenerated_gc_in_progress(false);
+  {
+    ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::degen_gc_propagate_gc_state);
+    heap->propagate_gc_state_to_all_threads();
+  }
 }
 
 void ShenandoahDegenGC::op_degenerated() {
@@ -91,7 +94,7 @@ void ShenandoahDegenGC::op_degenerated() {
   // Degenerated GC is STW, but it can also fail. Current mechanics communicates
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
-  heap->clear_cancelled_gc(true /* clear oom handler */);
+  heap->clear_cancelled_gc();
 
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
@@ -112,8 +115,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 #endif
 
-  ShenandoahMetricsSnapshot metrics;
-  metrics.snap_before();
+  ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   switch (_degen_point) {
     // The cases below form the Duff's-like device: it describes the actual GC cycle,
@@ -132,9 +134,15 @@ void ShenandoahDegenGC::op_degenerated() {
       heap->set_unload_classes(_generation->heuristics()->can_unload_classes() &&
                                 (!heap->mode()->is_generational() || _generation->is_global()));
 
-      if (heap->mode()->is_generational() && _generation->is_young()) {
-        // Swap remembered sets for young
-        _generation->swap_remembered_set();
+      if (heap->mode()->is_generational()) {
+        // Clean the read table before swapping it. The end goal here is to have a clean
+        // write table, and to have the read table updated with the previous write table.
+        heap->old_generation()->card_scan()->mark_read_table_as_clean();
+
+        if (_generation->is_young()) {
+          // Swap remembered sets for young
+          _generation->swap_card_tables();
+        }
       }
 
     case _degenerated_roots:
@@ -166,7 +174,7 @@ void ShenandoahDegenGC::op_degenerated() {
           // We only need this if the concurrent cycle has already swapped the card tables.
           // Marking will use the 'read' table, but interesting pointers may have been
           // recorded in the 'write' table in the time between the cancelled concurrent cycle
-          // and this degenerated cycle. These pointers need to be included the 'read' table
+          // and this degenerated cycle. These pointers need to be included in the 'read' table
           // used to scan the remembered set during the STW mark which follows here.
           _generation->merge_write_table();
         }
@@ -237,7 +245,6 @@ void ShenandoahDegenGC::op_degenerated() {
           ShenandoahHeapRegion* r;
           while ((r = heap->collection_set()->next()) != nullptr) {
             if (r->is_pinned()) {
-              heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
               op_degenerated_fail();
               return;
             }
@@ -300,17 +307,14 @@ void ShenandoahDegenGC::op_degenerated() {
     Universe::verify();
   }
 
-  metrics.snap_after();
-
-  // Check for futility and fail. There is no reason to do several back-to-back Degenerated cycles,
-  // because that probably means the heap is overloaded and/or fragmented.
-  if (!metrics.is_good_progress()) {
-    heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
-    op_degenerated_futile();
-  } else {
+  // Decide if this cycle made good progress, and, if not, should it upgrade to a full GC.
+  const bool progress = metrics.is_good_progress();
+  ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
+  policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
+  if (progress) {
     heap->notify_gc_progress();
-    heap->shenandoah_policy()->record_success_degenerated(_generation->is_young(), _abbreviated);
-    _generation->heuristics()->record_success_degenerated();
+  } else if (!heap->mode()->is_generational() || policy->generational_should_upgrade_degenerated_gc()) {
+    op_degenerated_futile();
   }
 }
 
@@ -390,7 +394,7 @@ void ShenandoahDegenGC::op_evacuate() {
 void ShenandoahDegenGC::op_init_update_refs() {
   // Evacuation has completed
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  heap->prepare_update_heap_references(false /*concurrent*/);
+  heap->prepare_update_heap_references();
   heap->set_update_refs_in_progress(true);
 }
 
@@ -457,7 +461,10 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
 
 void ShenandoahDegenGC::upgrade_to_full() {
   log_info(gc)("Degenerated GC upgrading to Full GC");
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
+  heap->increment_total_collections(true);
+  heap->shenandoah_policy()->record_degenerated_upgrade_to_full();
   ShenandoahFullGC full_gc;
   full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }

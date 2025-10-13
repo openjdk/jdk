@@ -22,13 +22,12 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciMethod.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "interpreter/linkResolver.hpp"
-#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdMacros.hpp"
+#include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTrace.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrResolution.hpp"
@@ -43,7 +42,6 @@
 #include "opto/parse.hpp"
 #endif
 
- // for strstr
 #include <string.h>
 
 // The following packages are internal implmentation details used by reflection.

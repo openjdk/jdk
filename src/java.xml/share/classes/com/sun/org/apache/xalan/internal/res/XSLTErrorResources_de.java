@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
  * Array. You also need to update MAX_CODE for error strings
  * and MAX_WARNING for warnings ( Needed for only information
  * purpose )
- * @LastModified: May 2022
+ * @LastModified: Dec 2024
  */
 public class XSLTErrorResources_de extends ListResourceBundle
 {
@@ -1197,7 +1197,7 @@ public class XSLTErrorResources_de extends ListResourceBundle
       "Das Feature \"{0}\" kann nicht f\u00FCr diese TransformerFactory festgelegt werden."},
 
     { ER_EXTENSION_ELEMENT_NOT_ALLOWED_IN_SECURE_PROCESSING,
-          "Verwendung des Erweiterungselements \"{0}\" ist nicht zul\u00E4ssig, wenn das Feature f\u00FCr die sichere Verarbeitung auf \"true\" gesetzt ist."},
+        "Verwendung der Erweiterungsfunktion \"{0}\" ist nicht zul\u00E4ssig, wenn die Erweiterungsfunktionen vom Feature f\u00FCr die sichere Verarbeitung oder der Eigenschaft \"jdk.xml.enableExtensionFunctions\" deaktiviert wurden. Setzen Sie \"jdk.xml.enableExtensionFunctions\" auf \"true\", um die Erweiterungsfunktionen zu aktivieren."},
 
     { ER_NAMESPACE_CONTEXT_NULL_NAMESPACE,
       "Pr\u00E4fix f\u00FCr Null-Namespace-URI kann nicht abgerufen werden."},

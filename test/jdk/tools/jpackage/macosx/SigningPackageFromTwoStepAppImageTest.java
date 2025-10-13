@@ -41,7 +41,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * jpackagerTest keychain with always allowed access to this keychain for user
  * which runs test.
  * note:
- * "jpackage.openjdk.java.net" can be over-ridden by systerm property
+ * "jpackage.openjdk.java.net" can be over-ridden by system property
  * "jpackage.mac.signing.key.user.name", and
  * "jpackagerTest" can be over-ridden by system property
  * "jpackage.mac.signing.keychain"
@@ -51,17 +51,15 @@ import jdk.jpackage.test.Annotations.Parameter;
  * @test
  * @summary jpackage with --type pkg,dmg --app-image
  * @library /test/jdk/tools/jpackage/helpers
- * @library /test/lib
  * @library base
  * @key jpackagePlatformPackage
  * @build SigningBase
- * @build SigningCheck
- * @build jtreg.SkippedException
  * @build jdk.jpackage.test.*
  * @build SigningPackageFromTwoStepAppImageTest
- * @requires (os.family == "mac")
+ * @requires (jpackage.test.MacSignTests == "run")
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=SigningPackageFromTwoStepAppImageTest
+ *  --jpt-before-run=SigningBase.verifySignTestEnvReady
  */
 public class SigningPackageFromTwoStepAppImageTest {
 
@@ -103,11 +101,7 @@ public class SigningPackageFromTwoStepAppImageTest {
     @Parameter({"true", "false"})
     // Unsigned
     @Parameter({"false", "true"})
-    public void test(String... testArgs) throws Exception {
-        boolean signAppImage = Boolean.parseBoolean(testArgs[0]);
-        boolean signingKey = Boolean.parseBoolean(testArgs[1]);
-
-        SigningCheck.checkCertificates(SigningBase.DEFAULT_INDEX);
+    public void test(boolean signAppImage, boolean signingKey) throws Exception {
 
         Path appimageOutput = TKit.createTempDirectory("appimage");
 

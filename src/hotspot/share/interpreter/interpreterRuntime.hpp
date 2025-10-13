@@ -192,7 +192,6 @@ class SignatureHandlerLibrary: public AllStatic {
 
  public:
   static void add(const methodHandle& method);
-  static void add(uint64_t fingerprint, address handler);
 };
 
 #endif // SHARE_INTERPRETER_INTERPRETERRUNTIME_HPP

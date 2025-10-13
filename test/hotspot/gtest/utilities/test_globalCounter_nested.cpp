@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,7 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/spinYield.hpp"
@@ -53,21 +52,21 @@ protected:
   ~RCUNestedThread() {}
 
   void set_state(NestedTestState new_state) {
-    Atomic::release_store(&_state, new_state);
+    AtomicAccess::release_store(&_state, new_state);
   }
 
   void wait_with_state(NestedTestState new_state) {
     SpinYield spinner;
-    Atomic::release_store(&_state, new_state);
-    while (!Atomic::load_acquire(&_proceed)) {
+    AtomicAccess::release_store(&_state, new_state);
+    while (!AtomicAccess::load_acquire(&_proceed)) {
       spinner.wait();
     }
-    Atomic::release_store(&_proceed, false);
+    AtomicAccess::release_store(&_proceed, false);
   }
 
 public:
   NestedTestState state() const {
-    return Atomic::load_acquire(&_state);
+    return AtomicAccess::load_acquire(&_state);
   }
 
   void wait_for_state(NestedTestState goal) {
@@ -78,7 +77,7 @@ public:
   }
 
   void proceed() {
-    Atomic::release_store(&_proceed, true);
+    AtomicAccess::release_store(&_proceed, true);
   }
 };
 

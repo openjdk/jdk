@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,13 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/nativeInst.hpp"
 #include "code/nmethod.hpp"
 #include "jvm.h"
 #include "logging/log.hpp"
 #include "os_posix.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
@@ -50,6 +49,13 @@
 
 #include <signal.h>
 
+#define SEGV_BNDERR_value 3
+
+#if defined(SEGV_BNDERR)
+STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+#else
+#define SEGV_BNDERR SEGV_BNDERR_value
+#endif
 
 static const char* get_signal_name(int sig, char* out, size_t outlen);
 
@@ -141,7 +147,7 @@ public:
 };
 
 
-debug_only(static bool signal_sets_initialized = false);
+DEBUG_ONLY(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, preinstalled_sigs;
 
 // Our own signal handlers should never ever get replaced by a third party one.
@@ -350,7 +356,7 @@ static void jdk_misc_signal_init() {
 
 void os::signal_notify(int sig) {
   if (sig_semaphore != nullptr) {
-    Atomic::inc(&pending_signals[sig]);
+    AtomicAccess::inc(&pending_signals[sig]);
     sig_semaphore->signal();
   } else {
     // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
@@ -363,7 +369,7 @@ static int check_pending_signals() {
   for (;;) {
     for (int i = 0; i < NSIG + 1; i++) {
       jint n = pending_signals[i];
-      if (n > 0 && n == Atomic::cmpxchg(&pending_signals[i], n, n - 1)) {
+      if (n > 0 && n == AtomicAccess::cmpxchg(&pending_signals[i], n, n - 1)) {
         return i;
       }
     }
@@ -615,9 +621,7 @@ int JVM_HANDLE_XXX_SIGNAL(int sig, siginfo_t* info,
       if (cb != nullptr && cb->is_nmethod()) {
         nmethod* nm = cb->as_nmethod();
         assert(nm->insts_contains_inclusive(pc), "");
-        address deopt = nm->is_method_handle_return(pc) ?
-          nm->deopt_mh_handler_begin() :
-          nm->deopt_handler_begin();
+        address deopt = nm->deopt_handler_begin();
         assert(deopt != nullptr, "");
 
         frame fr = os::fetch_frame_from_context(uc);
@@ -970,6 +974,9 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
     { SIGFPE,  FPE_FLTSUB,   "FPE_FLTSUB",   "Subscript out of range." },
     { SIGSEGV, SEGV_MAPERR,  "SEGV_MAPERR",  "Address not mapped to object." },
     { SIGSEGV, SEGV_ACCERR,  "SEGV_ACCERR",  "Invalid permissions for mapped object." },
+#if defined(LINUX)
+    { SIGSEGV, SEGV_BNDERR,  "SEGV_BNDERR",  "Failed address bound checks." },
+#endif
 #if defined(AIX)
     // no explanation found what keyerr would be
     { SIGSEGV, SEGV_KEYERR,  "SEGV_KEYERR",  "key error" },
@@ -1496,6 +1503,14 @@ bool PosixSignals::is_sig_ignored(int sig) {
   }
 }
 
+void* PosixSignals::get_signal_handler_for_signal(int sig) {
+  struct sigaction oact;
+  if (sigaction(sig, (struct sigaction*)nullptr, &oact) == -1) {
+    return nullptr;
+  }
+  return get_signal_handler(&oact);
+}
+
 static void signal_sets_init() {
   sigemptyset(&preinstalled_sigs);
 
@@ -1538,7 +1553,7 @@ static void signal_sets_init() {
   if (!ReduceSignalUsage) {
     sigaddset(&vm_sigs, BREAK_SIGNAL);
   }
-  debug_only(signal_sets_initialized = true);
+  DEBUG_ONLY(signal_sets_initialized = true);
 }
 
 // These are signals that are unblocked while a thread is running Java.

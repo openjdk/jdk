@@ -32,7 +32,7 @@ import jdk.jfr.Name;
 /**
  * @test
  * @summary Tests output from various tag sets and levels
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.log.LogAnalyzer

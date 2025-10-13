@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
 /**
  * @test
  * @summary Test that a stream starts against the latest created repository
- * @key jfr
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib
  * @build jdk.jfr.api.consumer.streaming.Application

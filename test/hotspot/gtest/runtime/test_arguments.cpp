@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,15 @@
  * questions.
  */
 
-#include "precompiled.hpp"
 #include "jvm.h"
-#include "unittest.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <errno.h>
+
+#include "unittest.hpp"
 
 class ArgumentsTest : public ::testing::Test {
 public:
@@ -58,7 +58,7 @@ public:
 
 TEST_F(ArgumentsTest, atojulong) {
   char ullong_max[32];
-  int ret = jio_snprintf(ullong_max, sizeof(ullong_max), JULONG_FORMAT, ULLONG_MAX);
+  int ret = jio_snprintf(ullong_max, sizeof(ullong_max), "%llu", ULLONG_MAX);
   ASSERT_NE(-1, ret);
 
   julong value;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,13 @@ import static compiler.lib.ir_framework.CompilePhase.*;
 
 /*
  * @test
- * @requires vm.debug == true & vm.flagless
+ * @requires vm.flagless
  * @summary Test compile command file writer.
  * @library /test/lib /testlibrary_tests /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run junit/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                    -XX:+WhiteBoxAPI compiler.lib.ir_framework.flag.TestCompilePhaseCollector
+ * @run junit/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+UnlockDiagnosticVMOptions
+ *                    -XX:+WhiteBoxAPI compiler.lib.ir_framework.flag.TestCompileCommandFileWriter
  */
 public class TestCompileCommandFileWriter {
 
@@ -81,6 +81,8 @@ public class TestCompileCommandFileWriter {
     }
 
     private void check(Class<?> testClass, boolean findIdeal, boolean findOpto, CompilePhase... compilePhases) throws IOException {
+        var compilerDirectivesFlagBuilder = new CompilerDirectivesFlagBuilder(testClass);
+        compilerDirectivesFlagBuilder.build();
         try (Scanner scanner = new Scanner(Paths.get(FlagVM.TEST_VM_COMPILE_COMMANDS_FILE))) {
             boolean foundIdeal = false;
             boolean foundOpto = false;
@@ -132,14 +134,14 @@ public class TestCompileCommandFileWriter {
 
     static class OptoOnly1 {
         @Test
-        @IR(failOn = IRNode.ALLOC)
+        @IR(failOn = IRNode.FIELD_ACCESS)
         public void test() {
         }
     }
 
     static class OptoOnly2 {
         @Test
-        @IR(failOn = IRNode.ALLOC, phase = PRINT_OPTO_ASSEMBLY)
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = PRINT_OPTO_ASSEMBLY)
         public void test() {
         }
     }
@@ -147,14 +149,14 @@ public class TestCompileCommandFileWriter {
     static class Both1 {
         @Test
         @IR(failOn = IRNode.STORE)
-        @IR(failOn = IRNode.ALLOC)
+        @IR(failOn = IRNode.FIELD_ACCESS)
         public void test() {
         }
     }
 
     static class Both2 {
         @Test
-        @IR(failOn = {IRNode.STORE, IRNode. ALLOC})
+        @IR(failOn = {IRNode.STORE, IRNode. FIELD_ACCESS})
         public void test() {
         }
     }
@@ -183,7 +185,7 @@ public class TestCompileCommandFileWriter {
 
     static class Mix2 {
         @Test
-        @IR(failOn = IRNode.ALLOC, phase = AFTER_PARSING)
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = AFTER_PARSING)
         @IR(failOn = IRNode.STORE, phase = PRINT_OPTO_ASSEMBLY)
         public void test() {
         }
@@ -193,7 +195,7 @@ public class TestCompileCommandFileWriter {
         @Test
         @IR(failOn = IRNode.STORE, phase = AFTER_PARSING)
         @IR(failOn = IRNode.STORE, phase = PRINT_IDEAL)
-        @IR(failOn = IRNode.ALLOC, phase = PRINT_OPTO_ASSEMBLY)
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = PRINT_OPTO_ASSEMBLY)
         public void test() {
         }
     }
@@ -201,7 +203,7 @@ public class TestCompileCommandFileWriter {
     static class Mix4 {
         @Test
         @IR(failOn = IRNode.STORE, phase = {AFTER_PARSING, PRINT_IDEAL})
-        @IR(failOn = IRNode.ALLOC, phase = PRINT_OPTO_ASSEMBLY)
+        @IR(failOn = IRNode.FIELD_ACCESS, phase = PRINT_OPTO_ASSEMBLY)
         public void test() {
         }
     }

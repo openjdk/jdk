@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8347841
  * @summary test Time Zone Boundary
  * @run junit TimeZoneBoundaryTest
  */
@@ -251,7 +252,7 @@ public class TimeZoneBoundaryTest
     @Test
     public void TestBoundaries()
     {
-        TimeZone pst = TimeZone.getTimeZone("PST");
+        TimeZone pst = TimeZone.getTimeZone("America/Los_Angeles");
         TimeZone save = TimeZone.getDefault();
         try {
             TimeZone.setDefault(pst);
@@ -410,11 +411,8 @@ public class TimeZoneBoundaryTest
     @Test
     public void TestStepwise()
     {
-        findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("ACT"), 0);
-        // "EST" is disabled because its behavior depends on the mapping property. (6466476).
-        //findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("EST"), 2);
-        findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("HST"), 0);
-        findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("PST"), 2);
+        findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("Australia/Darwin"), 0);
+        findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("Pacific/Honolulu"), 0);
         findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("PST8PDT"), 2);
         findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("SystemV/PST"), 0);
         findBoundariesStepwise(1997, ONE_DAY, TimeZone.getTimeZone("SystemV/PST8PDT"), 2);

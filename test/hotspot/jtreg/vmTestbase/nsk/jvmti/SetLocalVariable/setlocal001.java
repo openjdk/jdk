@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,6 +80,10 @@ public class setlocal001 {
         float f = 0f;
         double d = 0;
         checkPoint();
+        if (currThread.isVirtual()) {
+            out.println("meth01: skipping results check for virtual thread");
+            return d + f + 1; // SetLocal* should return OPAQUE_FRAME for a virtual thread
+        }
         if (l != 22L || f != floatVal || d != doubleVal) {
             out.println("meth01: l =" + l + " f = " + f + " d = " + d);
             result = 2;
@@ -97,6 +101,10 @@ public class setlocal001 {
             meth02(step - 1);
         } else {
             checkPoint();
+            if (currThread.isVirtual()) {
+                out.println("meth02: skipping results check for virtual thread");
+                return; // SetLocal* should return OPAQUE_FRAME for a virtual thread
+            }
             if (i1 != 1 || i2 != 1 || i3 != 1 || i4 != 1 || !i5) {
                 out.println("meth02: i1 =" + i1 + " i2 = " + i2 +
                     " i3 = " + i3 + " i4 = " + i4 + " i5 = " + i5);
@@ -109,6 +117,10 @@ public class setlocal001 {
         setlocal001 ob1 = null;
         int[] ob2 = null;
         checkPoint();
+        if (currThread.isVirtual()) {
+            out.println("meth03: skipping results check for virtual thread");
+            return; // SetLocalObject for obj1 and obj2 should return OPAQUE_FRAME for a virtual thread
+        }
         if (ob1.val != 3 || ob2[2] != 8) {
             out.println("meth03: ob1.val =" + ob1.val + " ob2[2] = " + ob2[2]);
             result = 2;
@@ -118,6 +130,10 @@ public class setlocal001 {
     public static void meth04(int i1, long l, short i2, double d,
                               char i3, float f, byte i4, boolean b) {
         checkPoint();
+        if (currThread.isVirtual()) {
+            out.println("meth04: skipping results check for virtual thread");
+            return; // SetLocal* should return OPAQUE_FRAME for a virtual thread
+        }
         if (i1 != 1 || i2 != 2 || i3 != 3 || i4 != 4 ||
                 l != 22L || f != floatVal || d != doubleVal || !b) {
             out.println("meth04: i1 =" + i1 + " i2 = " + i2 +

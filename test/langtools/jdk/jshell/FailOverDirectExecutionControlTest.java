@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * @library /tools/lib
  * @build toolbox.ToolBox toolbox.JarTask toolbox.JavacTask
  * @build KullaTesting ExecutionControlTestBase Compiler
- * @run testng FailOverDirectExecutionControlTest
+ * @run junit FailOverDirectExecutionControlTest
  * @key intermittent
  */
 
@@ -48,20 +48,20 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.Test;
-import org.testng.annotations.BeforeMethod;
 import jdk.jshell.execution.FailOverExecutionControlProvider;
 import jdk.jshell.spi.ExecutionControlProvider;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.AfterEach;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase {
 
     ClassLoader ccl;
     ExecutionControlProvider provider;
+    Logger logger;
     LogTestHandler hndlr;
     Map<Level, List<String>> logged;
 
@@ -92,10 +92,10 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
 
     }
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
-        Logger logger = Logger.getLogger("jdk.jshell.execution");
+        logger = Logger.getLogger("jdk.jshell.execution");
         logger.setLevel(Level.ALL);
         hndlr = new LogTestHandler();
         logger.addHandler(hndlr);
@@ -133,21 +133,22 @@ public class FailOverDirectExecutionControlTest extends ExecutionControlTestBase
         setUp(builder -> builder.executionEngine(provider, pm));
     }
 
-    @AfterMethod
+    @AfterEach
     @Override
     public void tearDown() {
         super.tearDown();
-        Logger logger = Logger.getLogger("jdk.jshell.execution");
         logger.removeHandler(hndlr);
+        logger = null;
         Thread.currentThread().setContextClassLoader(ccl);
     }
 
     @Override
+    @Test
     public void variables() {
         super.variables();
-        assertEquals(logged.get(Level.FINEST).size(), 1);
-        assertEquals(logged.get(Level.FINE).size(), 2);
-        assertEquals(logged.get(Level.WARNING).size(), 2);
+        assertEquals(1, logged.get(Level.FINEST).size());
+        assertEquals(2, logged.get(Level.FINE).size());
+        assertEquals(2, logged.get(Level.WARNING).size());
         assertNull(logged.get(Level.SEVERE));
         String log = logged.get(Level.WARNING).get(0);
         assertTrue(log.contains("Failure failover -- 0 = alwaysFailing"), log);

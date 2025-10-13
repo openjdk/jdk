@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-
 #ifdef LINUX
 
 #include "runtime/os.hpp"
 #include "cgroupSubsystem_linux.hpp"
+#include "cgroupUtil_linux.hpp"
 #include "cgroupV1Subsystem_linux.hpp"
 #include "cgroupV2Subsystem_linux.hpp"
 #include "unittest.hpp"
@@ -342,7 +341,6 @@ TEST(cgroupTest, read_string_tests) {
   ok = controller->read_string(base_with_slash, result, 1024);
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_STREQ("", result) << "Expected untouched result";
-  delete_file(test_file);
 
   // File contents larger than 1K
   // We only read in the first 1K - 1 bytes
@@ -359,6 +357,8 @@ TEST(cgroupTest, read_string_tests) {
   EXPECT_TRUE(1023 == strlen(result)) << "Expected only the first 1023 chars to be read in";
   EXPECT_EQ(0, strncmp(too_large, result, 1023));
   EXPECT_EQ(result[1023], '\0') << "The last character must be the null character";
+
+  delete_file(test_file);
 }
 
 TEST(cgroupTest, read_number_tuple_test) {
@@ -394,6 +394,8 @@ TEST(cgroupTest, read_number_tuple_test) {
   ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, &result);
   EXPECT_FALSE(ok) << "Empty file should be an error";
   EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
+
+  delete_file(test_file);
 }
 
 TEST(cgroupTest, read_numerical_key_beyond_max_path) {
@@ -434,9 +436,16 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     "/user.slice/user-1000.slice/user@1000.service", // cgroup_path
     "/sys/fs/cgroup/mem"                             // expected_path
   };
-  int length = 2;
+  TestCase container_moving_cgroup = {
+    "/sys/fs/cgroup/cpu,cpuacct",                                            // mount_path
+    "/system.slice/garden.service/garden/good/2f57368b-0eda-4e52-64d8-af5c", // root_path
+    "/system.slice/garden.service/garden/bad/2f57368b-0eda-4e52-64d8-af5c",  // cgroup_path
+    "/sys/fs/cgroup/cpu,cpuacct"                                             // expected_path
+  };
+  int length = 3;
   TestCase* testCases[] = { &host,
-                            &container_engine };
+                            &container_engine,
+                            &container_moving_cgroup };
   for (int i = 0; i < length; i++) {
     CgroupV1Controller* ctrl = new CgroupV1Controller( (char*)testCases[i]->root_path,
                                                        (char*)testCases[i]->mount_path,
@@ -444,6 +453,72 @@ TEST(cgroupTest, set_cgroupv1_subsystem_path) {
     ctrl->set_subsystem_path((char*)testCases[i]->cgroup_path);
     ASSERT_STREQ(testCases[i]->expected_path, ctrl->subsystem_path());
   }
+}
+
+TEST(cgroupTest, set_cgroupv1_subsystem_path_adjusted) {
+  TestCase memory = {
+    "/sys/fs/cgroup/memory", // mount_path
+    "/",                     // root_path
+    "../test1",              // cgroup_path
+    "/sys/fs/cgroup/memory"  // expected_path
+  };
+  TestCase cpu = {
+    "/sys/fs/cgroup/cpu", // mount_path
+    "/",                  // root_path
+    "../../test2",        // cgroup_path
+    "/sys/fs/cgroup/cpu"  // expected_path
+  };
+  CgroupCpuController* ccc = new CgroupV1CpuController(CgroupV1Controller((char*)cpu.root_path,
+                                                                          (char*)cpu.mount_path,
+                                                                          true /* read-only mount */));
+  ccc->set_subsystem_path((char*)cpu.cgroup_path);
+  EXPECT_TRUE(ccc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(ccc);
+  ASSERT_STREQ(cpu.expected_path, ccc->subsystem_path());
+  EXPECT_FALSE(ccc->needs_hierarchy_adjustment());
+
+  CgroupMemoryController* cmc = new CgroupV1MemoryController(CgroupV1Controller((char*)memory.root_path,
+                                                                                (char*)memory.mount_path,
+                                                                                true /* read-only mount */));
+  cmc->set_subsystem_path((char*)memory.cgroup_path);
+  EXPECT_TRUE(cmc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(cmc);
+  ASSERT_STREQ(memory.expected_path, cmc->subsystem_path());
+  EXPECT_FALSE(cmc->needs_hierarchy_adjustment());
+}
+
+TEST(cgroupTest, set_cgroupv2_subsystem_path_adjusted) {
+  TestCase memory = {
+    "/sys/fs/cgroup", // mount_path
+    "/",              // root_path
+    "../test1",       // cgroup_path
+    "/sys/fs/cgroup"  // expected_path
+  };
+  TestCase cpu = {
+    "/sys/fs/cgroup", // mount_path
+    "/",              // root_path
+    "../../test2",    // cgroup_path
+    "/sys/fs/cgroup"  // expected_path
+  };
+  CgroupCpuController* ccc = new CgroupV2CpuController(CgroupV2Controller((char*)cpu.mount_path,
+                                                                          (char*)cpu.cgroup_path,
+                                                                          true /* read-only mount */));
+  EXPECT_TRUE(ccc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(ccc);
+  ASSERT_STREQ(cpu.expected_path, ccc->subsystem_path());
+  EXPECT_FALSE(ccc->needs_hierarchy_adjustment());
+
+  CgroupMemoryController* cmc = new CgroupV2MemoryController(CgroupV2Controller((char*)memory.mount_path,
+                                                                                (char*)memory.cgroup_path,
+                                                                                true /* read-only mount */));
+  EXPECT_TRUE(cmc->needs_hierarchy_adjustment());
+
+  CgroupUtil::adjust_controller(cmc);
+  ASSERT_STREQ(memory.expected_path, cmc->subsystem_path());
+  EXPECT_FALSE(cmc->needs_hierarchy_adjustment());
 }
 
 TEST(cgroupTest, set_cgroupv2_subsystem_path) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      4852280 4517115 4973608 4994589 8026567 8071982 8196202 8234746
- *           8311264
+ *           8311264 8345555
  * @summary  Perform tests on index.html file.
  *           Also test that index-all.html has the appropriate output.
  *           Test for unnamed package in index.
@@ -60,8 +60,8 @@ public class TestIndex extends JavadocTester {
                     <a href="pkg/C.html#c()" class="member-name-link">c()</a> - Method in class pkg.\
                     <a href="pkg/C.html" title="class in pkg">C</a>""",
                 """
-                    <a href="pkg/C.html#c-heading" class="search-tag-link">C</a> - Search tag in cla\
-                    ss pkg.C""",
+                    <a href="pkg/C.html#c-heading" class="search-tag-link">C</a> - Section in class \
+                    pkg.C""",
                 """
                     <a href="pkg/C.html" class="type-name-link" title="class in pkg">C</a> - Class i\
                     n <a href="pkg/package-summary.html">pkg</a>""",
@@ -78,8 +78,8 @@ public class TestIndex extends JavadocTester {
                     <a href="pkg/C.html#c/d" class="search-tag-link">c/d</a> - Search tag in class p\
                     kg.C""",
                 """
-                    <a href="pkg/C.html#c-d-heading" class="search-tag-link">C/D</a> - Search tag in\
-                     class pkg.C""",
+                    <a href="pkg/C.html#c-d-heading" class="search-tag-link">C/D</a> - Section in cl\
+                    ass pkg.C""",
                 """
                     <a href="pkg/Coin.html" class="type-name-link" title="enum class in pkg">Coin</a\
                     > - Enum Class in <a href="pkg/package-summary.html">pkg</a>""",

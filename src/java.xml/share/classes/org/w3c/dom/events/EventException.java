@@ -54,6 +54,9 @@ public class EventException extends RuntimeException {
        super(message);
        this.code = code;
     }
+    /**
+     * @serial
+     */
     public short   code;
     // EventExceptionCode
     /**

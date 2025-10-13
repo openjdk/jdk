@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "utilities/virtualizationSupport.hpp"
@@ -68,13 +67,13 @@ void VirtualizationSupport::initialize() {
     VMGuestLibError sg_error = GuestLib_StatGet("text", "resources", &result_info, &result_size);
     if (sg_error == VMGUESTLIB_ERROR_SUCCESS) {
       has_resource_information = true;
-      os::snprintf(extended_resource_info_at_startup, sizeof(extended_resource_info_at_startup), "%s", result_info);
+      os::snprintf_checked(extended_resource_info_at_startup, sizeof(extended_resource_info_at_startup), "%s", result_info);
       GuestLib_StatFree(result_info, result_size);
     }
     sg_error = GuestLib_StatGet("text", "host", &result_info, &result_size);
     if (sg_error == VMGUESTLIB_ERROR_SUCCESS) {
       has_host_information = true;
-      os::snprintf(host_information, sizeof(host_information), "%s", result_info);
+      os::snprintf_checked(host_information, sizeof(host_information), "%s", result_info);
       GuestLib_StatFree(result_info, result_size);
     }
   }

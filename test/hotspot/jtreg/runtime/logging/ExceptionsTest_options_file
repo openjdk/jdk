@@ -1,1 +1,1 @@
--Xlog:exceptions=info
+-Xlog:exceptions,exceptions+stacktrace

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run junit/othervm --enable-native-access=ALL-UNNAMED TestSymbolLookupFindOrThrow
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestSymbolLookupFindOrThrow
  */
 
 import java.lang.foreign.MemorySegment;

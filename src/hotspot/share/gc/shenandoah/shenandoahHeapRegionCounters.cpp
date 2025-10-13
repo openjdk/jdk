@@ -24,16 +24,15 @@
  *
  */
 
-#include "precompiled.hpp"
 
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
+#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/perfData.inline.hpp"
 #include "utilities/defaultStream.hpp"
 
@@ -108,7 +107,7 @@ void ShenandoahHeapRegionCounters::update() {
   if (ShenandoahRegionSampling) {
     jlong current = nanos_to_millis(os::javaTimeNanos());
     jlong last = _last_sample_millis;
-    if (current - last > ShenandoahRegionSamplingRate && Atomic::cmpxchg(&_last_sample_millis, last, current) == last) {
+    if (current - last > ShenandoahRegionSamplingRate && AtomicAccess::cmpxchg(&_last_sample_millis, last, current) == last) {
 
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       _status->set_value(encode_heap_status(heap));

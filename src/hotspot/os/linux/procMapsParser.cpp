@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
 
 #include "procMapsParser.hpp"
 #include "runtime/os.hpp"
@@ -78,8 +76,16 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   SCAN("Private_Hugetlb", out.private_hugetlb);
   SCAN("Shared_Hugetlb", out.shared_hugetlb);
   SCAN("Swap", out.swap);
-  int i = 0;
 #undef SCAN
+
+  // scan THPeligible into a bool
+  int thpel = 0;
+  if (::sscanf(_line, "THPeligible: %d", &thpel) == 1) {
+    assert(thpel == 1 || thpel == 0, "Unexpected value %d", thpel);
+    out.thpeligible = (thpel == 1);
+    return;
+  }
+
   // scan some flags too
   if (strncmp(_line, "VmFlags:", 8) == 0) {
 #define SCAN(flag) { out.flag = (::strstr(_line + 8, " " #flag) != nullptr); }

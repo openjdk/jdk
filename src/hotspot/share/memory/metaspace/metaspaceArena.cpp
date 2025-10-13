@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metaspace/chunkManager.hpp"
@@ -39,7 +38,7 @@
 #include "memory/metaspace/metaspaceSettings.hpp"
 #include "memory/metaspace/metaspaceStatistics.hpp"
 #include "memory/metaspace/virtualSpaceList.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/init.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "services/memoryService.hpp"

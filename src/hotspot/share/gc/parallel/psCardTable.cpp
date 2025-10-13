@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,17 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "gc/parallel/objectStartArray.inline.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
 #include "gc/parallel/psCardTable.hpp"
 #include "gc/parallel/psPromotionManager.inline.hpp"
-#include "gc/parallel/psScavenge.inline.hpp"
 #include "gc/parallel/psYoungGen.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
-#include "utilities/spinYield.hpp"
 #include "utilities/align.hpp"
+#include "utilities/spinYield.hpp"
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
@@ -384,9 +382,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Sync with other workers.
-  Atomic::dec(&_preprocessing_active_workers);
+  AtomicAccess::dec(&_preprocessing_active_workers);
   SpinYield spin_yield;
-  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+  while (AtomicAccess::load_acquire(&_preprocessing_active_workers) > 0) {
     spin_yield.wait();
   }
 

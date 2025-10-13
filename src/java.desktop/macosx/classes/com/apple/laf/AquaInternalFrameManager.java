@@ -73,6 +73,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
      */
     Vector<JInternalFrame> fChildFrames = new Vector<JInternalFrame>(1);
 
+    @Override
     public void closeFrame(final JInternalFrame f) {
         if (f == fCurrentFrame) {
             activateNextFrame();
@@ -81,6 +82,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
         super.closeFrame(f);
     }
 
+    @Override
     public void deiconifyFrame(final JInternalFrame f) {
         JInternalFrame.JDesktopIcon desktopIcon;
 
@@ -96,6 +98,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
     }
 
     /** Removes the frame from its parent and adds its desktopIcon to the parent. */
+    @Override
     public void iconifyFrame(final JInternalFrame f) {
         // Same as super except doesn't deactivate it
         JInternalFrame.JDesktopIcon desktopIcon;
@@ -117,6 +120,7 @@ public class AquaInternalFrameManager extends DefaultDesktopManager {
     }
 
     // WindowsDesktopManager code
+    @Override
     public void activateFrame(final JInternalFrame f) {
         try {
             if (f != null) super.activateFrame(f);

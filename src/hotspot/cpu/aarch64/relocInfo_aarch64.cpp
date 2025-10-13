@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,7 +23,6 @@
  *
  */
 
-#include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
@@ -91,7 +90,6 @@ void Relocation::pd_set_call_destination(address x) {
 
 void trampoline_stub_Relocation::pd_fix_owner_after_move() {
   NativeCall* call = nativeCall_at(owner());
-  assert(call->raw_destination() == owner(), "destination should be empty");
   address trampoline = addr();
   address dest = nativeCallTrampolineStub_at(trampoline)->destination();
   if (!Assembler::reachable_from_branch_at(owner(), dest)) {

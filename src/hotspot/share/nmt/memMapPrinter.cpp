@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,18 +23,16 @@
  *
  */
 
-#include "precompiled.hpp"
-
 #if defined(LINUX) || defined(_WIN64) || defined(__APPLE__)
 
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
-#include "memory/universe.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTag.hpp"
 #include "nmt/memTagBitmap.hpp"
-#include "nmt/memMapPrinter.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -44,6 +42,7 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/permitForbiddenFunctions.hpp"
 
 // Note: throughout this code we will use the term "VMA" for OS system level memory mapping
 
@@ -97,8 +96,8 @@ public:
                            _count(0), _capacity(0), _last(0) {}
 
   ~CachedNMTInformation() {
-    ALLOW_C_FUNCTION(free, ::free(_ranges);)
-    ALLOW_C_FUNCTION(free, ::free(_mem_tags);)
+    permit_forbidden_function::free(_ranges);
+    permit_forbidden_function::free(_mem_tags);
   }
 
   bool add(const void* from, const void* to, MemTag mem_tag) {
@@ -112,9 +111,9 @@ public:
     if (_count == _capacity) {
       // Enlarge if needed
       const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
-      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
-      ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
-      ALLOW_C_FUNCTION(realloc, _mem_tags = (MemTag*)::realloc(_mem_tags, new_capacity * sizeof(MemTag));)
+      // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks.
+      _ranges = (Range*)permit_forbidden_function::realloc(_ranges, new_capacity * sizeof(Range));
+      _mem_tags = (MemTag*)permit_forbidden_function::realloc(_mem_tags, new_capacity * sizeof(MemTag));
       if (_ranges == nullptr || _mem_tags == nullptr) {
         // In case of OOM lets make no fuss. Just return.
         return false;
@@ -158,7 +157,7 @@ public:
 
   // Iterate all NMT virtual memory regions and fill this cache.
   bool fill_from_nmt() {
-    return VirtualMemoryTracker::walk_virtual_memory(this);
+    return MemTracker::walk_virtual_memory(this);
   }
 };
 
@@ -238,7 +237,7 @@ MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInform
 {}
 
 void MappingPrintSession::print_nmt_flag_legend() const {
-#define DO(flag, shortname, text) _out->indent(); _out->print_cr("%10s: %s", shortname, text);
+#define DO(flag, shortname, text) _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }

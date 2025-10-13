@@ -92,7 +92,7 @@ import com.sun.jndi.ldap.BerEncoder;
  * } </pre>
  * <p>
  * This class implements the LDAPv3 Control for paged-results as defined in
- * <a href="http://www.ietf.org/rfc/rfc2696.txt">RFC 2696</a>.
+ * <a href="https://www.ietf.org/rfc/rfc2696.txt">RFC 2696</a>.
  *
  * The control's value has the following ASN.1 definition:
  * <pre>{@code

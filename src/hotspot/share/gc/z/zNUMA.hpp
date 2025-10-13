@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,23 +24,33 @@
 #ifndef SHARE_GC_Z_ZNUMA_HPP
 #define SHARE_GC_Z_ZNUMA_HPP
 
+#include "gc/z/zGlobals.hpp"
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ZNUMA : public AllStatic {
+  friend class VMStructs;
+  friend class ZNUMATest;
+  friend class ZTest;
+
 private:
-  static bool _enabled;
+  static bool     _enabled;
+  static uint32_t _count;
 
   static void pd_initialize();
 
 public:
   static void initialize();
+
   static bool is_enabled();
+  static bool is_faked();
 
   static uint32_t count();
   static uint32_t id();
 
   static uint32_t memory_id(uintptr_t addr);
+
+  static size_t calculate_share(uint32_t numa_id, size_t total, size_t granule = ZGranuleSize, uint32_t ignore_count = 0);
 
   static const char* to_string();
 };

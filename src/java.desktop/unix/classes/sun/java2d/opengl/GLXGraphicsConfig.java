@@ -49,6 +49,7 @@ import sun.awt.X11GraphicsEnvironment;
 import sun.awt.image.OffScreenImage;
 import sun.awt.image.SunVolatileImage;
 import sun.awt.image.SurfaceManager;
+import sun.awt.image.VolatileSurfaceManager;
 import sun.java2d.SunGraphics2D;
 import sun.java2d.Surface;
 import sun.java2d.SurfaceData;
@@ -72,7 +73,8 @@ public final class GLXGraphicsConfig
     private long pConfigInfo;
     private ContextCapabilities oglCaps;
     private final OGLContext context;
-    private final SurfaceManager.ProxyCache surfaceDataProxyCache = new SurfaceManager.ProxyCache();
+    private final SurfaceManager.ProxyCache surfaceDataProxyCache =
+            new SurfaceManager.ProxyCache();
 
     private static native long getGLXConfigInfo(int screennum, int visualnum);
     private static native int getOGLCapabilities(long configInfo);
@@ -147,7 +149,7 @@ public final class GLXGraphicsConfig
      * This is a small helper class that allows us to execute
      * getGLXConfigInfo() on the queue flushing thread.
      */
-    private static class GLXGetConfigInfo implements Runnable {
+    private static final class GLXGetConfigInfo implements Runnable {
         private int screen;
         private int visual;
         private long cfginfo;
@@ -155,6 +157,7 @@ public final class GLXGraphicsConfig
             this.screen = screen;
             this.visual = visual;
         }
+        @Override
         public void run() {
             cfginfo = getGLXConfigInfo(screen, visual);
         }
@@ -210,6 +213,7 @@ public final class GLXGraphicsConfig
         }
     }
 
+    @Override
     public String toString() {
         return ("GLXGraphicsConfig[dev="+getDevice()+
                 ",vis=0x"+Integer.toHexString(visual)+
@@ -357,7 +361,7 @@ public final class GLXGraphicsConfig
         }
     }
 
-    private static class GLXBufferCaps extends BufferCapabilities {
+    private static final class GLXBufferCaps extends BufferCapabilities {
         public GLXBufferCaps(boolean dblBuf) {
             super(imageCaps, imageCaps,
                   dblBuf ? FlipContents.UNDEFINED : null);
@@ -372,10 +376,11 @@ public final class GLXGraphicsConfig
         return bufferCaps;
     }
 
-    private static class GLXImageCaps extends ImageCapabilities {
+    private static final class GLXImageCaps extends ImageCapabilities {
         private GLXImageCaps() {
             super(true);
         }
+        @Override
         public boolean isTrueVolatile() {
             return true;
         }
@@ -412,5 +417,11 @@ public final class GLXGraphicsConfig
     @Override
     public ContextCapabilities getContextCapabilities() {
         return oglCaps;
+    }
+
+    @Override
+    public VolatileSurfaceManager createVolatileManager(SunVolatileImage image,
+                                                        Object context) {
+        return new GLXVolatileSurfaceManager(image, context);
     }
 }
