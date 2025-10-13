@@ -82,6 +82,8 @@ private:
   bool compute_injected_fields_helper();
   void compute_transitive_interfaces();
 
+  ciField* get_non_static_field_by_offset(int field_offset);
+
 protected:
   ciInstanceKlass(Klass* k);
   ciInstanceKlass(ciSymbol* name, jobject loader);

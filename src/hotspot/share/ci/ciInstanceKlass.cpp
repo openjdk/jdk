@@ -392,16 +392,22 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
 }
 
 // ------------------------------------------------------------------
+// ciInstanceKlass::get_non_static_field_by_offset
+ciField* ciInstanceKlass::get_non_static_field_by_offset(int field_offset) {
+  for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
+    ciField* field = _nonstatic_fields->at(i);
+    int  field_off = field->offset_in_bytes();
+    if (field_off == field_offset)
+      return field;
+  }
+  return nullptr;
+}
+
+// ------------------------------------------------------------------
 // ciInstanceKlass::get_field_by_offset
 ciField* ciInstanceKlass::get_field_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
-    for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
-      ciField* field = _nonstatic_fields->at(i);
-      int  field_off = field->offset_in_bytes();
-      if (field_off == field_offset)
-        return field;
-    }
-    return nullptr;
+    return get_non_static_field_by_offset(field_offset);
   }
   VM_ENTRY_MARK;
   InstanceKlass* k = get_instanceKlass();
@@ -435,13 +441,8 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
 // except this does not require allocating memory for a new ciField
 BasicType ciInstanceKlass::get_field_type_by_offset(const int field_offset, const bool is_static) {
   if (!is_static) {
-    for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
-      ciField* field = _nonstatic_fields->at(i);
-      int field_off = field->offset_in_bytes();
-      if (field_off == field_offset)
-        return field->layout_type();
-    }
-    return T_ILLEGAL;
+    ciField* field = get_non_static_field_by_offset(field_offset);
+    return field != nullptr ? field->layout_type() : T_ILLEGAL;
   }
 
   // Avoid allocating a new ciField by obtaining the field type directly
