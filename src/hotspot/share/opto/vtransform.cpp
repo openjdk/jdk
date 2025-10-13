@@ -1175,16 +1175,16 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     return false;
   }
 
+  // All checks were successful. Edit the vtransform graph now.
+  TRACE_OPTIMIZE(
+    tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
+  )
+
   const int sopc     = scalar_opcode();
   const uint vlen    = vector_length();
   const BasicType bt = element_basic_type();
   const int vopc     = VectorNode::opcode(sopc, bt);
-
-  // All checks were successful. Edit the vtransform graph now.
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
-  TRACE_OPTIMIZE(
-    tty->print_cr("VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop");
-  )
 
   // Create a vector of identity values.
   Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
