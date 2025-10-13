@@ -27,12 +27,12 @@ Sample usages:
         jpackage -n name --runtime-image <runtime-image>
 
 Generic Options:
-  @<filename> 
-          Read options and/or mode from a file 
+  @<filename>
+          Read options and/or mode from a file
           This option can be used multiple times.
-  --type -t <type> 
+  --type -t <type>
           The type of package to create
-          Valid values are: {"app-image", "exe", "msi"} 
+          Valid values are: {"app-image", "exe", "msi"}
           If this option is not specified a platform dependent
           default type will be created.
   --app-version <version>
@@ -41,7 +41,11 @@ Generic Options:
           Copyright for the application
   --description <description string>
           Description of the application
-  --help -h 
+  --dest -d <destination path>
+          Path where generated output file is placed
+          (absolute path or relative to the current directory)
+          Defaults to the current working directory.
+  --help -h
           Print the usage text with a list and description of each valid
           option for the current platform to the output stream, and exit
   --icon <file path>
@@ -49,10 +53,6 @@ Generic Options:
           (absolute path or relative to the current directory)
   --name -n <name>
           Name of the application and/or package
-  --dest -d <destination path>
-          Path where generated output file is placed
-          (absolute path or relative to the current directory)
-          Defaults to the current working directory.
   --temp <directory path>
           Path of a new or empty directory used to create temporary files
           (absolute path or relative to the current directory)
@@ -73,19 +73,19 @@ Options for creating the runtime image:
           This module list, along with the main module (if specified)
           will be passed to jlink as the --add-module argument.
           If not specified, either just the main module (if --module is
-          specified), or the default set of modules (if --main-jar is 
+          specified), or the default set of modules (if --main-jar is
           specified) are used.
+          This option can be used multiple times.
+  --jlink-options <jlink options>
+          A space separated list of options to pass to jlink
+          If not specified, defaults to "--strip-native-commands
+          --strip-debug --no-man-pages --no-header-files".
           This option can be used multiple times.
   --module-path -p <module path>...
           A ; separated list of paths
           Each path is either a directory of modules or the path to a
           modular jar.
           (Each path is absolute or relative to the current directory.)
-          This option can be used multiple times.
-  --jlink-options <jlink options> 
-          A space separated list of options to pass to jlink 
-          If not specified, defaults to "--strip-native-commands 
-          --strip-debug --no-man-pages --no-header-files". 
           This option can be used multiple times.
   --runtime-image <directory path>
           Path of the predefined runtime image that will be copied into
@@ -97,15 +97,15 @@ Options for creating the runtime image:
           --strip-native-commands.
 
 Options for creating the application image:
+  --app-content <additional content>[,<additional content>...]
+          A comma separated list of paths to files and/or directories
+          to add to the application payload.
+          This option can be used more than once.
   --input -i <directory path>
           Path of the input directory that contains the files to be packaged
           (absolute path or relative to the current directory)
           All files in the input directory will be packaged into the
           application image.
-  --app-content <additional content>[,<additional content>...]
-          A comma separated list of paths to files and/or directories
-          to add to the application payload.
-          This option can be used more than once.
 
 Options for creating the application launcher(s):
   --add-launcher <launcher name>=<file path>
@@ -122,7 +122,7 @@ Options for creating the application launcher(s):
           The main application launcher will be built from the command line
           options. Additional alternative launchers can be built using
           this option, and this option can be used multiple times to
-          build multiple additional launchers. 
+          build multiple additional launchers.
   --arguments <main class arguments>
           Command line arguments to pass to the main class if no command
           line arguments are given to the launcher
@@ -165,6 +165,9 @@ Options for creating the application package:
           This option can be used multiple times.
   --install-dir <directory path>
           Relative sub-path under the default installation location
+  --launcher-as-service
+          Request to create an installer that will register the main
+          application launcher as a background service-type application.
   --license-file <file path>
           Path to the license file
           (absolute path or relative to the current directory)
@@ -177,9 +180,6 @@ Options for creating the application package:
           Path of the predefined runtime image to install
           (absolute path or relative to the current directory)
           Option is required when creating a runtime package.
-  --launcher-as-service
-          Request to create an installer that will register the main
-          application launcher as a background service-type application.
 
 Platform dependent options for creating the application package:
   --win-dir-chooser
