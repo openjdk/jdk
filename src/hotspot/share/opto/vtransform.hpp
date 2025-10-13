@@ -841,6 +841,7 @@ public:
 private:
   int vector_reduction_opcode() const;
   bool requires_strict_order() const;
+  bool optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform);
   bool optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform);
 };
 

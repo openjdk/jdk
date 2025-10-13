@@ -1072,7 +1072,7 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 //       become profitable, since the expensive reduction node is moved
 //       outside the loop, and instead cheaper element-wise vector accumulations
 //       are performed inside the loop.
-bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop_preconditions(VTransform& vtransform) {
   // We have a phi with a single use.
   VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
   if (phi == nullptr) {
@@ -1167,6 +1167,18 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     // We expect another non strict reduction, verify it in the next iteration.
     current_red = scalar_input->isa_ReductionVector();
   }
+  return true; // success
+}
+
+bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
+  if (!optimize_move_non_strict_order_reductions_out_of_loop_preconditions(vtransform)) {
+    return false;
+  }
+
+  const int sopc     = scalar_opcode();
+  const uint vlen    = vector_length();
+  const BasicType bt = element_basic_type();
+  const int vopc     = VectorNode::opcode(sopc, bt);
 
   // All checks were successful. Edit the vtransform graph now.
   PhaseIdealLoop* phase = vloop_analyzer.vloop().phase();
@@ -1183,12 +1195,15 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
   vtn_identity_vector->init_req(1, vtn_identity);
 
   // Turn the scalar phi into a vector phi.
+  VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
   VTransformNode* init = phi->in_req(1);
   phi->set_req(1, vtn_identity_vector);
 
   // Traverse down the chain of reductions, and replace them with vector_accumulators.
+  VTransformReductionVectorNode* first_red   = this;
+  VTransformReductionVectorNode* last_red    = phi->in_req(2)->isa_ReductionVector();
+  VTransformReductionVectorNode* current_red = first_red;
   VTransformNode* current_vector_accumulator = phi;
-  current_red = first_red;
   while (true) {
     VTransformNode* vector_input = current_red->in_req(2);
     VTransformVectorNode* vector_accumulator = new (vtransform.arena()) VTransformElementWiseVectorNode(vtransform, 3, current_red->properties(), vopc);
