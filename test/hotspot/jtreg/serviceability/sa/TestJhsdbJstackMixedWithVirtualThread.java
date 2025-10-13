@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8369505
  * @requires (os.family == "linux") & (vm.hasSA)
- * @requires (os.arch == "amd64" | os.arch == "aarch64")
+ * @requires (os.arch == "amd64" | os.arch == "aarch64" | os.arch == "riscv64")
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithVirtualThread
  */
