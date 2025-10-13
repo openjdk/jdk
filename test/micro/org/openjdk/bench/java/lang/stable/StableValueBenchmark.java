@@ -25,6 +25,7 @@ package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.LazyConstant;
@@ -58,6 +59,11 @@ public class StableValueBenchmark {
     private static final Holder HOLDER2 = new Holder(VALUE2);
     private static final RecordHolder RECORD_HOLDER = new RecordHolder(VALUE);
     private static final RecordHolder RECORD_HOLDER2 = new RecordHolder(VALUE2);
+
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_42 = LazyConstant.of(() -> Optional.of(42));
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_42_2 = LazyConstant.of(() -> Optional.of(42));
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_EMPTY = LazyConstant.of(Optional::empty);
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_EMPTY2 = LazyConstant.of(Optional::empty);
 
     private final LazyConstant<Integer> stable = init(VALUE);
     private final LazyConstant<Integer> stable2 = init(VALUE2);
@@ -102,6 +108,16 @@ public class StableValueBenchmark {
     @Benchmark
     public int staticHolder() {
         return HOLDER.get() + HOLDER2.get();
+    }
+
+    @Benchmark
+    public int staticOptional42() {
+        return OPTIONAL_42.get().orElseThrow() + OPTIONAL_42_2.get().orElseThrow();
+    }
+
+    @Benchmark
+    public boolean staticOptionalEmpty() {
+        return OPTIONAL_EMPTY.get().isEmpty() ^ OPTIONAL_EMPTY2.get().isEmpty();
     }
 
     @Benchmark
