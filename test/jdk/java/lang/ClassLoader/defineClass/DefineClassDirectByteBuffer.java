@@ -67,15 +67,12 @@ public class DefineClassDirectByteBuffer {
 
         return Stream.of(
                 // WRAPPED_BUFFER
-                arguments(ByteBuffer
-                                .wrap(classBytes),
+                arguments(ByteBuffer.wrap(classBytes),
                         false),
-                arguments(ByteBuffer
-                                .wrap(classBytes)
+                arguments(ByteBuffer.wrap(classBytes)
                                 .asReadOnlyBuffer(),
                         true),
-                arguments(ByteBuffer
-                                .wrap(classBytesAtOffset)
+                arguments(ByteBuffer.wrap(classBytesAtOffset)
                                 .position(CLASSBYTES_OFFSET),
                         false),
                 arguments(ByteBuffer
@@ -84,16 +81,14 @@ public class DefineClassDirectByteBuffer {
                                 .asReadOnlyBuffer(),
                         true),
                 // ARRAY_BUFFER
-                arguments(ByteBuffer
-                                .allocate(classBytes.length)
+                arguments(ByteBuffer.allocate(classBytes.length)
                                 .put(classBytes)
                                 .flip(),
                         false),
-                arguments(ByteBuffer
-                                .allocate(classBytes.length)
+                arguments(ByteBuffer.allocate(classBytes.length)
                                 .put(classBytes)
                                 .flip()
-                        .position(0)
+                                .position(0)
                                 .asReadOnlyBuffer(),
                         true),
                 arguments(ByteBuffer.allocate(classBytesAtOffset.length)
