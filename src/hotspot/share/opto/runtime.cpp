@@ -343,7 +343,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
     Handle holder(current, klass->klass_holder()); // keep the klass alive
     result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
     current->set_vm_result_oop(result);
-    if (UseShenandoahGC) {
+    if (UseShenandoahGC && result != nullptr) {
       region_age_before_gc = ShenandoahHeap::heap()->heap_region_containing(result)->age();
     }
 
@@ -356,12 +356,12 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
   JRT_BLOCK_END;
 
-  if (UseShenandoahGC) {
+  if (UseShenandoahGC && result != nullptr) {
     if (!ShenandoahHeap::heap()->is_in_young(current->vm_result_oop())) {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       oop relocated = current->vm_result_oop();
-      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
-          p2i(result), heap->heap_region_containing(result)->index(), region_age_before_gc,
+      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", size: %zu, region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
+          p2i(result), result->size(), heap->heap_region_containing(result)->index(), region_age_before_gc,
           p2i(current->vm_result_oop()), heap->heap_region_containing(current->vm_result_oop())->index());
 
       report_vm_error(__FILE__, __LINE__, msg.buffer());
@@ -374,14 +374,15 @@ JRT_END
 
 // array allocation
 JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaThread* current))
+
+  // Scavenge and allocate an instance.
+  oop result;
+  size_t region_age_before_gc = 0;
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_array_ctr++;            // new array requires GC
 #endif
   assert(check_compiled_frame(current), "incorrect caller");
-
-  // Scavenge and allocate an instance.
-  oop result;
 
   if (array_type->is_typeArray_klass()) {
     // The oopFactory likes to work with the element type.
@@ -397,6 +398,10 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
     result = oopFactory::new_objArray(elem_type, len, THREAD);
   }
 
+  if (UseShenandoahGC && result != nullptr) {
+    region_age_before_gc = ShenandoahHeap::heap()->heap_region_containing(result)->age();
+  }
+
   // Pass oops back through thread local storage.  Our apparent type to Java
   // is that we return an oop, but we can block on exit from this routine and
   // a GC can trash the oop in C's return register.  The generated stub will
@@ -405,6 +410,17 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   current->set_vm_result_oop(result);
   JRT_BLOCK_END;
 
+  if (UseShenandoahGC && result != nullptr) {
+    if (!ShenandoahHeap::heap()->is_in_young(current->vm_result_oop())) {
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      oop relocated = current->vm_result_oop();
+      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", size: %d, region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
+          p2i(result), len, heap->heap_region_containing(result)->index(), region_age_before_gc,
+          p2i(current->vm_result_oop()), heap->heap_region_containing(current->vm_result_oop())->index());
+
+      report_vm_error(__FILE__, __LINE__, msg.buffer());
+    }
+  }
   // inform GC that we won't do card marks for initializing writes.
   SharedRuntime::on_slowpath_allocation_exit(current);
 JRT_END
