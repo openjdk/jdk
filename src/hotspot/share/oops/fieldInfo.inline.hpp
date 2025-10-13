@@ -30,7 +30,7 @@
 #include "memory/metadataFactory.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/symbol.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 
 inline Symbol* FieldInfo::name(ConstantPool* cp) const {
@@ -173,11 +173,11 @@ inline FieldInfoReader& FieldInfoReader::set_position_and_next_index(int positio
 }
 
 inline void FieldStatus::atomic_set_bits(u1& flags, u1 mask) {
-  Atomic::fetch_then_or(&flags, mask);
+  AtomicAccess::fetch_then_or(&flags, mask);
 }
 
 inline void FieldStatus::atomic_clear_bits(u1& flags, u1 mask) {
-  Atomic::fetch_then_and(&flags, (u1)(~mask));
+  AtomicAccess::fetch_then_and(&flags, (u1)(~mask));
 }
 
 inline void FieldStatus::update_flag(FieldStatusBitPosition pos, bool z) {

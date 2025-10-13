@@ -33,7 +33,10 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/growableArray.hpp"
@@ -218,8 +221,8 @@ void AOTMapLogger::dumptime_log_metaspace_region(const char* name, DumpRegion* r
 }
 
 void AOTMapLogger::runtime_log_metaspace_regions(FileMapInfo* mapinfo, GrowableArrayCHeap<ArchivedObjInfo, mtClass>* objs) {
-  FileMapRegion* rw = mapinfo->region_at(MetaspaceShared::rw);
-  FileMapRegion* ro = mapinfo->region_at(MetaspaceShared::ro);
+  FileMapRegion* rw = mapinfo->region_at(AOTMetaspace::rw);
+  FileMapRegion* ro = mapinfo->region_at(AOTMetaspace::ro);
 
   address rw_base = address(rw->mapped_base());
   address rw_end  = address(rw->mapped_end());
@@ -348,8 +351,17 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     case MetaspaceObj::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
+    case MetaspaceObj::MethodCountersType:
+      log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::MethodDataType:
+      log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
+      break;
     case MetaspaceObj::SymbolType:
       log_symbol((Symbol*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::KlassTrainingDataType:
+      log_klass_training_data((KlassTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
     default:
       log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
@@ -389,6 +401,18 @@ void AOTMapLogger::log_const_method(ConstMethod* cm, address requested_addr, con
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  cm->method()->external_name());
 }
 
+void AOTMapLogger::log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name,
+                                      int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  mc->method()->external_name());
+}
+
+void AOTMapLogger::log_method_data(MethodData* md, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  md->method()->external_name());
+}
+
 void AOTMapLogger::log_klass(Klass* k, address requested_addr, const char* type_name,
                              int bytes, Thread* current) {
   ResourceMark rm(current);
@@ -406,6 +430,16 @@ void AOTMapLogger::log_symbol(Symbol* s, address requested_addr, const char* typ
   ResourceMark rm(current);
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
                       s->as_quoted_ascii());
+}
+void AOTMapLogger::log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name,
+                                           int bytes, Thread* current) {
+  ResourceMark rm(current);
+  if (ktd->has_holder()) {
+    log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
+                        ktd->name()->as_klass_external_name());
+  } else {
+    log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
+  }
 }
 
 #undef _LOG_PREFIX
@@ -782,7 +816,7 @@ void AOTMapLogger::dumptime_log_heap_region(ArchiveHeapInfo* heap_info) {
 
 void AOTMapLogger::runtime_log_heap_region(FileMapInfo* mapinfo) {
   ResourceMark rm;
-  int heap_region_index = MetaspaceShared::hp;
+  int heap_region_index = AOTMetaspace::hp;
   FileMapRegion* r = mapinfo->region_at(heap_region_index);
   size_t alignment = ObjectAlignmentInBytes;
 

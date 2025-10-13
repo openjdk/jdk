@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -28,12 +28,12 @@ import com.sun.org.apache.bcel.internal.ExceptionConst;
  * <PRE>
  * Stack: ..., arrayref -&gt; ..., length
  * </PRE>
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public class ARRAYLENGTH extends Instruction implements ExceptionThrower, StackProducer, StackConsumer /* since 6.0 */ {
 
     /**
-     * Get length of array
+     * Gets length of array
      */
     public ARRAYLENGTH() {
         super(com.sun.org.apache.bcel.internal.Const.ARRAYLENGTH, (short) 1);

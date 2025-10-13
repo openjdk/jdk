@@ -38,6 +38,7 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -68,7 +69,6 @@
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/threadHeapSampler.hpp"
 #include "runtime/threads.hpp"
@@ -450,6 +450,18 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
 
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->get_cached_class_file_bytes() == nullptr) {
+      // Link the class to avoid races with the rewriter. This will call the verifier also
+      // on the class. Linking is also done in VM_RedefineClasses below, but we need
+      // to keep that for other VM_RedefineClasses callers.
+      JavaThread* THREAD = current_thread;
+      ik->link_class(THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        // Retransform/JVMTI swallows error messages. Using this class will rerun the verifier in a context
+        // that propagates the VerifyError, if thrown.
+        CLEAR_PENDING_EXCEPTION;
+        return JVMTI_ERROR_INVALID_CLASS;
+      }
+
       // Not cached, we need to reconstitute the class file from the
       // VM representation. We don't attach the reconstituted class
       // bytes to the InstanceKlass here because they have not been
@@ -1367,11 +1379,6 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
     return err;
   }
 
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *owned_monitor_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
-  }
-
   // growable array of jvmti monitors info on the C-heap
   GrowableArray<jvmtiMonitorStackDepthInfo*> *owned_monitors_list =
       new (mtServiceability) GrowableArray<jvmtiMonitorStackDepthInfo*>(1, mtServiceability);
@@ -1425,11 +1432,6 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
   jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, calling_thread, &java_thread, &thread_oop);
   if (err != JVMTI_ERROR_NONE) {
     return err;
-  }
-
-  if (LockingMode == LM_LEGACY && java_thread == nullptr) {
-    *monitor_info_count_ptr = 0;
-    return JVMTI_ERROR_NONE;
   }
 
   // growable array of jvmti monitors info on the C-heap
@@ -2839,9 +2841,9 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
 
   InstanceKlass* ik = InstanceKlass::cast(k);
 
-  FilteredJavaFieldStream flds(ik);
+  JavaFieldStream flds(ik);
 
-  int result_count = flds.field_count();
+  int result_count = ik->java_fields_count();
 
   // Allocate the result and fill it in.
   jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));
@@ -3417,7 +3419,8 @@ jvmtiError
 JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char** bytecodes_ptr) {
   NULL_CHECK(method, JVMTI_ERROR_INVALID_METHODID);
 
-  methodHandle mh(Thread::current(), method);
+  JavaThread* current_thread = JavaThread::current();
+  methodHandle mh(current_thread, method);
   jint size = (jint)mh->code_size();
   jvmtiError err = allocate(size, bytecodes_ptr);
   if (err != JVMTI_ERROR_NONE) {
@@ -3426,6 +3429,13 @@ JvmtiEnv::GetBytecodes(Method* method, jint* bytecode_count_ptr, unsigned char**
 
   (*bytecode_count_ptr) = size;
   // get byte codes
+  // Make sure the class is verified and rewritten first.
+  JavaThread* THREAD = current_thread;
+  mh->method_holder()->link_class(THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    CLEAR_PENDING_EXCEPTION;
+    return JVMTI_ERROR_INVALID_CLASS;
+  }
   JvmtiClassFileReconstituter::copy_bytecodes(mh, *bytecodes_ptr);
 
   return JVMTI_ERROR_NONE;

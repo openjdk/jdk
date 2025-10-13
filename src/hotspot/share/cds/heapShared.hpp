@@ -25,8 +25,8 @@
 #ifndef SHARE_CDS_HEAPSHARED_HPP
 #define SHARE_CDS_HEAPSHARED_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/dumpTimeClassInfo.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/gc_globals.hpp"
@@ -167,6 +167,9 @@ private:
 public:
   static void debug_trace();
   static unsigned oop_hash(oop const& p);
+  static unsigned oop_handle_hash(OopHandle const& oh);
+  static unsigned oop_handle_hash_raw(OopHandle const& oh);
+  static bool oop_handle_equals(const OopHandle& a, const OopHandle& b);
   static unsigned string_oop_hash(oop const& string) {
     return java_lang_String::hash_code(string);
   }
@@ -175,7 +178,7 @@ public:
 
   class CachedOopInfo {
     // Used by CDSHeapVerifier.
-    oop _orig_referrer;
+    OopHandle _orig_referrer;
 
     // The location of this object inside ArchiveHeapWriter::_buffer
     size_t _buffer_offset;
@@ -186,12 +189,12 @@ public:
     // One or more fields in this object are pointing to MetaspaceObj
     bool _has_native_pointers;
   public:
-    CachedOopInfo(oop orig_referrer, bool has_oop_pointers)
+    CachedOopInfo(OopHandle orig_referrer, bool has_oop_pointers)
       : _orig_referrer(orig_referrer),
         _buffer_offset(0),
         _has_oop_pointers(has_oop_pointers),
         _has_native_pointers(false) {}
-    oop orig_referrer()             const { return _orig_referrer;   }
+    oop orig_referrer() const;
     void set_buffer_offset(size_t offset) { _buffer_offset = offset; }
     size_t buffer_offset()          const { return _buffer_offset;   }
     bool has_oop_pointers()         const { return _has_oop_pointers; }
@@ -202,10 +205,11 @@ public:
 private:
   static const int INITIAL_TABLE_SIZE = 15889; // prime number
   static const int MAX_TABLE_SIZE     = 1000000;
-  typedef ResizeableHashTable<oop, CachedOopInfo,
+  typedef ResizeableHashTable<OopHandle, CachedOopInfo,
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_hash> ArchivedObjectCache;
+      HeapShared::oop_handle_hash_raw,
+      HeapShared::oop_handle_equals> ArchivedObjectCache;
   static ArchivedObjectCache* _archived_object_cache;
 
   class DumpTimeKlassSubGraphInfoTable
@@ -339,6 +343,7 @@ private:
   static void prepare_resolved_references();
   static void archive_strings();
   static void archive_subgraphs();
+  static void copy_java_mirror(oop orig_mirror, oop scratch_m);
 
   // PendingOop and PendingOopStack are used for recursively discovering all cacheable
   // heap objects. The recursion is done using PendingOopStack so we won't overflow the
@@ -376,6 +381,11 @@ private:
   }
   static ArchivedObjectCache* archived_object_cache() {
     return _archived_object_cache;
+  }
+
+  static CachedOopInfo* get_cached_oop_info(oop orig_obj) {
+    OopHandle oh(&orig_obj);
+    return _archived_object_cache->get(oh);
   }
 
   static int archive_exception_instance(oop exception);
@@ -432,9 +442,10 @@ private:
   static void init_scratch_objects_for_basic_type_mirrors(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_box_classes(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
-    CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
+    CDS_JAVA_HEAP_ONLY(return (idx == AOTMetaspace::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
+  static void delete_tables_with_raw_oops() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void resolve_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
   static void initialize_from_archived_subgraph(JavaThread* current, Klass* k) NOT_CDS_JAVA_HEAP_RETURN;

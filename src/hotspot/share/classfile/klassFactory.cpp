@@ -51,7 +51,7 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
                                           TRAPS) {
 #if INCLUDE_CDS && INCLUDE_JVMTI
   assert(ik != nullptr, "sanity");
-  assert(ik->is_shared(), "expecting a shared class");
+  assert(ik->in_aot_cache(), "expecting a shared class");
   if (JvmtiExport::should_post_class_file_load_hook()) {
     ResourceMark rm(THREAD);
     // Post the CFLH

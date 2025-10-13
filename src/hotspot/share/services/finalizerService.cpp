@@ -30,7 +30,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/instanceKlass.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
@@ -105,20 +105,20 @@ const char* FinalizerEntry::codesource() const {
 }
 
 uintptr_t FinalizerEntry::objects_on_heap() const {
-  return Atomic::load(&_objects_on_heap);
+  return AtomicAccess::load(&_objects_on_heap);
 }
 
 uintptr_t FinalizerEntry::total_finalizers_run() const {
-  return Atomic::load(&_total_finalizers_run);
+  return AtomicAccess::load(&_total_finalizers_run);
 }
 
 void FinalizerEntry::on_register() {
-  Atomic::inc(&_objects_on_heap, memory_order_relaxed);
+  AtomicAccess::inc(&_objects_on_heap, memory_order_relaxed);
 }
 
 void FinalizerEntry::on_complete() {
-  Atomic::inc(&_total_finalizers_run, memory_order_relaxed);
-  Atomic::dec(&_objects_on_heap, memory_order_relaxed);
+  AtomicAccess::inc(&_total_finalizers_run, memory_order_relaxed);
+  AtomicAccess::dec(&_objects_on_heap, memory_order_relaxed);
 }
 
 static inline uintx hash_function(const InstanceKlass* ik) {
@@ -193,11 +193,11 @@ class FinalizerEntryLookupGet {
 };
 
 static inline void set_has_work(bool value) {
-  Atomic::store(&_has_work, value);
+  AtomicAccess::store(&_has_work, value);
 }
 
 static inline bool has_work() {
-  return Atomic::load(&_has_work);
+  return AtomicAccess::load(&_has_work);
 }
 
 static void request_resize() {
