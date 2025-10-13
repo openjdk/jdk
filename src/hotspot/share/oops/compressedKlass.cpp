@@ -78,10 +78,10 @@ void CompressedKlassPointers::pre_initialize() {
 void CompressedKlassPointers::sanity_check_after_initialization() {
   // In expectation of an assert, prepare condensed info to be printed with the assert.
   char tmp[256];
-  os::snprintf(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
-      " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
-      RANGE2FMTARGS(_klass_range_start, _klass_range_end),
-      p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
+  os::snprintf_checked(tmp, sizeof(tmp), "klass range: " RANGE2FMT ","
+                       " base " PTR_FORMAT ", shift %d, lowest/highest valid narrowKlass %u/%u",
+                       RANGE2FMTARGS(_klass_range_start, _klass_range_end),
+                       p2i(_base), _shift, _lowest_valid_narrow_klass_id, _highest_valid_narrow_klass_id);
 #define ASSERT_HERE(cond) assert(cond, " (%s)", tmp);
 #define ASSERT_HERE_2(cond, msg) assert(cond, msg " (%s)", tmp);
 
@@ -110,7 +110,7 @@ void CompressedKlassPointers::sanity_check_after_initialization() {
   // Check that Klass range is fully engulfed in the encoding range
   const address encoding_start = _base;
   const address encoding_end = (address)
-      LP64_ONLY(p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift))
+      LP64_ONLY((p2u(_base) + (uintptr_t)nth_bit(narrow_klass_pointer_bits() + _shift)))
       NOT_LP64(max_klass_range_size());
   ASSERT_HERE_2(_klass_range_start >= _base && _klass_range_end <= encoding_end,
                 "Resulting encoding range does not fully cover the class range");

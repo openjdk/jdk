@@ -24,13 +24,14 @@
  */
 package jdk.jpackage.internal;
 
-import jdk.jpackage.internal.model.LinuxPackage;
-import jdk.jpackage.internal.model.LinuxLauncher;
-import jdk.jpackage.internal.model.Package;
-import jdk.jpackage.internal.model.Launcher;
+import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
+import static jdk.jpackage.internal.model.LauncherShortcut.toRequest;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,12 +46,14 @@ import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
-import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 import jdk.jpackage.internal.model.FileAssociation;
+import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.LinuxLauncher;
+import jdk.jpackage.internal.model.LinuxPackage;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.CompositeProxy;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 /**
  * Helper to create files for desktop integration.
@@ -65,7 +68,7 @@ final class DesktopIntegration extends ShellCustomAction {
     private static final List<String> REPLACEMENT_STRING_IDS = List.of(
             COMMANDS_INSTALL, COMMANDS_UNINSTALL, SCRIPTS, COMMON_SCRIPTS);
 
-    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) throws IOException {
+    private DesktopIntegration(BuildEnv env, LinuxPackage pkg, LinuxLauncher launcher) {
 
         associations = launcher.fileAssociations().stream().map(
                 LinuxFileAssociation::create).toList();
@@ -77,7 +80,7 @@ final class DesktopIntegration extends ShellCustomAction {
         // Need desktop and icon files if one of conditions is met:
         //  - there are file associations configured
         //  - user explicitly requested to create a shortcut
-        boolean withDesktopFile = !associations.isEmpty() || launcher.shortcut().orElse(false);
+        boolean withDesktopFile = !associations.isEmpty() || toRequest(launcher.shortcut()).orElse(false);
 
         var curIconResource = createLauncherIconResource(pkg.app(), launcher,
                 env::createResource);
@@ -86,10 +89,14 @@ final class DesktopIntegration extends ShellCustomAction {
             // This is additional launcher with explicit `no icon` configuration.
             withDesktopFile = false;
         } else {
-            final Path nullPath = null;
-            if (curIconResource.get().saveToFile(nullPath) != OverridableResource.Source.DefaultResource) {
-                // This launcher has custom icon configured.
-                withDesktopFile = true;
+            try {
+                if (curIconResource.get().saveToFile((Path)null) != OverridableResource.Source.DefaultResource) {
+                    // This launcher has custom icon configured.
+                    withDesktopFile = true;
+                }
+            } catch (IOException ex) {
+                // Should never happen as `saveToFile((Path)null)` should not perform any actual I/O operations.
+                throw new UncheckedIOException(ex);
             }
         }
 
@@ -132,14 +139,14 @@ final class DesktopIntegration extends ShellCustomAction {
             nestedIntegrations = pkg.app().additionalLaunchers().stream().map(v -> {
                 return (LinuxLauncher)v;
             }).filter(l -> {
-                return l.shortcut().orElse(true);
-            }).map(toFunction(l -> {
+                return toRequest(l.shortcut()).orElse(true);
+            }).map(l -> {
                 return new DesktopIntegration(env, pkg, l);
-            })).toList();
+            }).toList();
         }
     }
 
-    static ShellCustomAction create(BuildEnv env, Package pkg) throws IOException {
+    static ShellCustomAction create(BuildEnv env, Package pkg) {
         if (pkg.isRuntimeInstaller()) {
             return ShellCustomAction.nop(REPLACEMENT_STRING_IDS);
         }
@@ -225,6 +232,9 @@ final class DesktopIntegration extends ShellCustomAction {
     }
 
     private Map<String, String> createDataForDesktopFile() {
+
+        var installedLayout = pkg.asInstalledPackageApplicationLayout().orElseThrow();
+
         Map<String, String> data = new HashMap<>();
         data.put("APPLICATION_NAME", launcher.name());
         data.put("APPLICATION_DESCRIPTION", launcher.description());
@@ -232,8 +242,24 @@ final class DesktopIntegration extends ShellCustomAction {
                 f -> f.installPath().toString()).orElse(null));
         data.put("DEPLOY_BUNDLE_CATEGORY", pkg.menuGroupName());
         data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
-                pkg.asInstalledPackageApplicationLayout().orElseThrow().launchersDirectory().resolve(
-                        launcher.executableNameWithSuffix()).toString()));
+                installedLayout.launchersDirectory().resolve(launcher.executableNameWithSuffix()).toString()));
+        data.put("STARTUP_DIRECTORY", launcher.shortcut()
+                .flatMap(LauncherShortcut::startupDirectory)
+                .map(startupDirectory -> {
+                    switch (startupDirectory) {
+                        case DEFAULT -> {
+                            return (Path)null;
+                        }
+                        case APP_DIR -> {
+                            return installedLayout.appDirectory();
+                        }
+                        default -> {
+                            throw new AssertionError();
+                        }
+                    }
+                }).map(str -> {
+                    return "Path=" + str;
+                }).orElse(null));
 
         return data;
     }
@@ -334,7 +360,7 @@ final class DesktopIntegration extends ShellCustomAction {
      *  - installPath(): path where it should be installed by package manager;
      */
     private InstallableFile createDesktopFile(String fileName) {
-        var srcPath = pkg.asPackageApplicationLayout().orElseThrow().resolveAt(env.appImageDir()).desktopIntegrationDirectory().resolve(fileName);
+        var srcPath = env.asApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         var installPath = pkg.asInstalledPackageApplicationLayout().orElseThrow().desktopIntegrationDirectory().resolve(fileName);
         return new InstallableFile(srcPath, installPath);
     }
@@ -481,7 +507,7 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private final BuildEnv env;
     private final LinuxPackage pkg;
-    private final Launcher launcher;
+    private final LinuxLauncher launcher;
 
     private final List<LinuxFileAssociation> associations;
 

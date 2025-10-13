@@ -156,6 +156,10 @@ class NativeCall: private NativeInstruction {
   static void set_stub_address_destination_at(address dest, address value);
   // return target address at stub
   static address stub_address_destination_at(address src);
+  // We either have a jalr or jal depending on distance to old destination.
+  // This method emits a new jal if new destination is within jal reach.
+  // Otherwise restores the jalr which can reach any destination.
+  void optimize_call(address dest, bool mt_safe = true);
 };
 
 // An interface for accessing/manipulating native mov reg, imm instructions.
@@ -290,12 +294,6 @@ inline NativeGeneralJump* nativeGeneralJump_at(address addr) {
   return jump;
 }
 
-class NativeIllegalInstruction: public NativeInstruction {
- public:
-  // Insert illegal opcode as specific address
-  static void insert(address code_pos);
-};
-
 inline bool NativeInstruction::is_nop() const {
   uint32_t insn = Assembler::ld_instr(addr_at(0));
   return insn == 0x13;
@@ -349,14 +347,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   address instruction_address() const       { return addr_at(instruction_offset); }
   address next_instruction_address() const  { return addr_at(instruction_size); }
 
-  void verify();
-
-  static bool is_deopt_at(address instr) {
-    assert(instr != nullptr, "");
-    uint32_t value = Assembler::ld_instr(instr);
-    // 0xc0201073 encodes CSRRW x0, instret, x0
-    return value == 0xc0201073;
-  }
+  static bool is_deopt_at(address instr);
 
   // MT-safe patching
   static void insert(address code_pos);

@@ -31,6 +31,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "compiler/compilerDefinitions.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/gcConfig.hpp"
 #include "gc/shared/genArguments.hpp"
@@ -546,6 +547,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "ZGenerational",                JDK_Version::jdk(23), JDK_Version::jdk(24), JDK_Version::undefined() },
   { "ZMarkStackSpaceLimit",         JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
+  { "G1UpdateBufferSize",           JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 #if defined(AARCH64)
   { "NearCpool",                    JDK_Version::undefined(), JDK_Version::jdk(25), JDK_Version::undefined() },
 #endif
@@ -566,6 +568,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "UseAdaptiveSizePolicyFootprintGoal",               JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   { "UseAdaptiveSizePolicyWithSystemGC",                JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
   { "UsePSAdaptiveSurvivorSizePolicy",                  JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+
+  { "PretenureSizeThreshold",       JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
+  { "HeapMaximumCompactionInterval",JDK_Version::undefined(), JDK_Version::jdk(26), JDK_Version::jdk(27) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1502,49 +1507,59 @@ size_t Arguments::limit_heap_by_allocatable_memory(size_t limit) {
 // Use static initialization to get the default before parsing
 static const size_t DefaultHeapBaseMinAddress = HeapBaseMinAddress;
 
-void Arguments::set_heap_size() {
-  julong phys_mem;
+static size_t clamp_by_size_t_max(uint64_t value) {
+  return (size_t)MIN2(value, (uint64_t)std::numeric_limits<size_t>::max());
+}
 
-  // If the user specified one of these options, they
-  // want specific memory sizing so do not limit memory
-  // based on compressed oops addressability.
-  // Also, memory limits will be calculated based on
-  // available os physical memory, not our MaxRAM limit,
-  // unless MaxRAM is also specified.
-  bool override_coop_limit = (!FLAG_IS_DEFAULT(MaxRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(MinRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
-                           !FLAG_IS_DEFAULT(MaxRAM));
-  if (override_coop_limit) {
-    if (FLAG_IS_DEFAULT(MaxRAM)) {
-      phys_mem = os::physical_memory();
-      FLAG_SET_ERGO(MaxRAM, (uint64_t)phys_mem);
+void Arguments::set_heap_size() {
+  uint64_t physical_memory;
+
+  // Check if the user has configured any limit on the amount of RAM we may use.
+  bool has_ram_limit = !FLAG_IS_DEFAULT(MaxRAMPercentage) ||
+                       !FLAG_IS_DEFAULT(MinRAMPercentage) ||
+                       !FLAG_IS_DEFAULT(InitialRAMPercentage) ||
+                       !FLAG_IS_DEFAULT(MaxRAM);
+
+  if (has_ram_limit) {
+    if (!FLAG_IS_DEFAULT(MaxRAM)) {
+      // The user has configured MaxRAM, use that instead of physical memory
+      // reported by the OS.
+      physical_memory = MaxRAM;
     } else {
-      phys_mem = (julong)MaxRAM;
+      // The user has configured a limit, make sure MaxRAM reflects the physical
+      // memory limit that heap sizing takes into account.
+      physical_memory = os::physical_memory();
+      FLAG_SET_ERGO(MaxRAM, physical_memory);
     }
   } else {
-    phys_mem = FLAG_IS_DEFAULT(MaxRAM) ? MIN2(os::physical_memory(), (julong)MaxRAM)
-                                       : (julong)MaxRAM;
+    // If the user did not specify any limit, choose the lowest of the available
+    // physical memory and MaxRAM. MaxRAM is typically set to 128GB on 64-bit
+    // architecture.
+    physical_memory = MIN2(os::physical_memory(), MaxRAM);
   }
 
-  // If the maximum heap size has not been set with -Xmx,
-  // then set it as fraction of the size of physical memory,
-  // respecting the maximum and minimum sizes of the heap.
+  // If the maximum heap size has not been set with -Xmx, then set it as
+  // fraction of the size of physical memory, respecting the maximum and
+  // minimum sizes of the heap.
   if (FLAG_IS_DEFAULT(MaxHeapSize)) {
-    julong reasonable_max = (julong)(((double)phys_mem * MaxRAMPercentage) / 100);
-    const julong reasonable_min = (julong)(((double)phys_mem * MinRAMPercentage) / 100);
+    uint64_t min_memory = (uint64_t)(((double)physical_memory * MinRAMPercentage) / 100);
+    uint64_t max_memory = (uint64_t)(((double)physical_memory * MaxRAMPercentage) / 100);
+
+    const size_t reasonable_min = clamp_by_size_t_max(min_memory);
+    size_t reasonable_max = clamp_by_size_t_max(max_memory);
+
     if (reasonable_min < MaxHeapSize) {
       // Small physical memory, so use a minimum fraction of it for the heap
       reasonable_max = reasonable_min;
     } else {
       // Not-small physical memory, so require a heap at least
       // as large as MaxHeapSize
-      reasonable_max = MAX2(reasonable_max, (julong)MaxHeapSize);
+      reasonable_max = MAX2(reasonable_max, MaxHeapSize);
     }
 
     if (!FLAG_IS_DEFAULT(ErgoHeapSizeLimit) && ErgoHeapSizeLimit != 0) {
       // Limit the heap size to ErgoHeapSizeLimit
-      reasonable_max = MIN2(reasonable_max, (julong)ErgoHeapSizeLimit);
+      reasonable_max = MIN2(reasonable_max, ErgoHeapSizeLimit);
     }
 
     reasonable_max = limit_heap_by_allocatable_memory(reasonable_max);
@@ -1554,9 +1569,9 @@ void Arguments::set_heap_size() {
       // so be sure that the maximum size is consistent.  Done
       // after call to limit_heap_by_allocatable_memory because that
       // method might reduce the allocation size.
-      reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
+      reasonable_max = MAX2(reasonable_max, InitialHeapSize);
     } else if (!FLAG_IS_DEFAULT(MinHeapSize)) {
-      reasonable_max = MAX2(reasonable_max, (julong)MinHeapSize);
+      reasonable_max = MAX2(reasonable_max, MinHeapSize);
     }
 
 #ifdef _LP64
@@ -1565,8 +1580,8 @@ void Arguments::set_heap_size() {
       if (!FLAG_IS_DEFAULT(HeapBaseMinAddress)) {
         if (HeapBaseMinAddress < DefaultHeapBaseMinAddress) {
           // matches compressed oops printing flags
-          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least %zu"
-                                     " (%zuG) which is greater than value given %zu",
+          log_debug(gc, heap, coops)("HeapBaseMinAddress must be at least %zu "
+                                     "(%zuG) which is greater than value given %zu",
                                      DefaultHeapBaseMinAddress,
                                      DefaultHeapBaseMinAddress/G,
                                      HeapBaseMinAddress);
@@ -1574,61 +1589,62 @@ void Arguments::set_heap_size() {
         }
       }
     }
-    if (UseCompressedOops) {
-      // Limit the heap size to the maximum possible when using compressed oops
-      julong max_coop_heap = (julong)max_heap_for_compressed_oops();
 
-      if (HeapBaseMinAddress + MaxHeapSize < max_coop_heap) {
-        // Heap should be above HeapBaseMinAddress to get zero based compressed oops
-        // but it should be not less than default MaxHeapSize.
+    if (UseCompressedOops) {
+      size_t heap_end = HeapBaseMinAddress + MaxHeapSize;
+      size_t max_coop_heap = max_heap_for_compressed_oops();
+
+      // Limit the heap size to the maximum possible when using compressed oops
+      if (heap_end < max_coop_heap) {
+        // Heap should be above HeapBaseMinAddress to get zero based compressed
+        // oops but it should be not less than default MaxHeapSize.
         max_coop_heap -= HeapBaseMinAddress;
       }
 
-      // If user specified flags prioritizing os physical
-      // memory limits, then disable compressed oops if
-      // limits exceed max_coop_heap and UseCompressedOops
-      // was not specified.
+      // If the user has configured any limit on the amount of RAM we may use,
+      // then disable compressed oops if the calculated max exceeds max_coop_heap
+      // and UseCompressedOops was not specified.
       if (reasonable_max > max_coop_heap) {
-        if (FLAG_IS_ERGO(UseCompressedOops) && override_coop_limit) {
-          aot_log_info(aot)("UseCompressedOops disabled due to"
-            " max heap %zu > compressed oop heap %zu. "
-            "Please check the setting of MaxRAMPercentage %5.2f."
-            ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
+        if (FLAG_IS_ERGO(UseCompressedOops) && has_ram_limit) {
+          aot_log_info(aot)("UseCompressedOops disabled due to "
+                            "max heap %zu > compressed oop heap %zu. "
+                            "Please check the setting of MaxRAMPercentage %5.2f.",
+                            reasonable_max, max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
         } else {
-          reasonable_max = MIN2(reasonable_max, max_coop_heap);
+          reasonable_max = max_coop_heap;
         }
       }
     }
 #endif // _LP64
 
-    log_trace(gc, heap)("  Maximum heap size %zu", (size_t) reasonable_max);
-    FLAG_SET_ERGO(MaxHeapSize, (size_t)reasonable_max);
+    log_trace(gc, heap)("  Maximum heap size %zu", reasonable_max);
+    FLAG_SET_ERGO(MaxHeapSize, reasonable_max);
   }
 
   // If the minimum or initial heap_size have not been set or requested to be set
   // ergonomically, set them accordingly.
   if (InitialHeapSize == 0 || MinHeapSize == 0) {
-    julong reasonable_minimum = (julong)(OldSize + NewSize);
-
-    reasonable_minimum = MIN2(reasonable_minimum, (julong)MaxHeapSize);
-
+    size_t reasonable_minimum = clamp_by_size_t_max((uint64_t)OldSize + (uint64_t)NewSize);
+    reasonable_minimum = MIN2(reasonable_minimum, MaxHeapSize);
     reasonable_minimum = limit_heap_by_allocatable_memory(reasonable_minimum);
 
     if (InitialHeapSize == 0) {
-      julong reasonable_initial = (julong)(((double)phys_mem * InitialRAMPercentage) / 100);
+      uint64_t initial_memory = (uint64_t)(((double)physical_memory * InitialRAMPercentage) / 100);
+      size_t reasonable_initial = clamp_by_size_t_max(initial_memory);
       reasonable_initial = limit_heap_by_allocatable_memory(reasonable_initial);
 
-      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, (julong)MinHeapSize);
-      reasonable_initial = MIN2(reasonable_initial, (julong)MaxHeapSize);
+      reasonable_initial = MAX3(reasonable_initial, reasonable_minimum, MinHeapSize);
+      reasonable_initial = MIN2(reasonable_initial, MaxHeapSize);
 
       FLAG_SET_ERGO(InitialHeapSize, (size_t)reasonable_initial);
       log_trace(gc, heap)("  Initial heap size %zu", InitialHeapSize);
     }
+
     // If the minimum heap size has not been set (via -Xms or -XX:MinHeapSize),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (MinHeapSize == 0) {
-      FLAG_SET_ERGO(MinHeapSize, MIN2((size_t)reasonable_minimum, InitialHeapSize));
+      FLAG_SET_ERGO(MinHeapSize, MIN2(reasonable_minimum, InitialHeapSize));
       log_trace(gc, heap)("  Minimum heap size %zu", MinHeapSize);
     }
   }
@@ -1645,7 +1661,8 @@ jint Arguments::set_aggressive_heap_flags() {
   // Thus, we need to make sure we're using a julong for intermediate
   // calculations.
   julong initHeapSize;
-  julong total_memory = os::physical_memory();
+  physical_memory_size_type phys_mem = os::physical_memory();
+  julong total_memory = static_cast<julong>(phys_mem);
 
   if (total_memory < (julong) 256 * M) {
     jio_fprintf(defaultStream::error_stream(),
@@ -1851,24 +1868,6 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-  if (UseObjectMonitorTable && LockingMode != LM_LIGHTWEIGHT) {
-    // ObjectMonitorTable requires lightweight locking.
-    FLAG_SET_CMDLINE(UseObjectMonitorTable, false);
-    warning("UseObjectMonitorTable requires LM_LIGHTWEIGHT");
-  }
-
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
-  if (LockingMode == LM_MONITOR) {
-    jio_fprintf(defaultStream::error_stream(),
-                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
-    return false;
-  }
-#endif
-  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
-    jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)\n");
-    return false;
-  }
   return status;
 }
 
@@ -2411,30 +2410,54 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
     // Xmaxf
     } else if (match_option(option, "-Xmaxf", &tail)) {
       char* err;
-      int maxf = (int)(strtod(tail, &err) * 100);
+      double dmaxf = strtod(tail, &err);
       if (*err != '\0' || *tail == '\0') {
         jio_fprintf(defaultStream::error_stream(),
-                    "Bad max heap free percentage size: %s\n",
+                    "Bad max heap free ratio: %s\n",
                     option->optionString);
         return JNI_EINVAL;
-      } else {
-        if (FLAG_SET_CMDLINE(MaxHeapFreeRatio, maxf) != JVMFlag::SUCCESS) {
-            return JNI_EINVAL;
-        }
+      }
+      if (dmaxf < 0.0 || dmaxf > 1.0) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xmaxf value (%s) is outside the allowed range [ 0.0 ... 1.0 ]\n",
+                    option->optionString);
+        return JNI_EINVAL;
+      }
+      const uintx umaxf = (uintx)(dmaxf * 100);
+      if (MinHeapFreeRatio > umaxf) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xmaxf value (%s) must be greater than or equal to the implicit -Xminf value (%.2f)\n",
+                    tail, MinHeapFreeRatio / 100.0f);
+        return JNI_EINVAL;
+      }
+      if (FLAG_SET_CMDLINE(MaxHeapFreeRatio, umaxf) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
       }
     // Xminf
     } else if (match_option(option, "-Xminf", &tail)) {
       char* err;
-      int minf = (int)(strtod(tail, &err) * 100);
+      double dminf = strtod(tail, &err);
       if (*err != '\0' || *tail == '\0') {
         jio_fprintf(defaultStream::error_stream(),
-                    "Bad min heap free percentage size: %s\n",
+                    "Bad min heap free ratio: %s\n",
                     option->optionString);
         return JNI_EINVAL;
-      } else {
-        if (FLAG_SET_CMDLINE(MinHeapFreeRatio, minf) != JVMFlag::SUCCESS) {
-          return JNI_EINVAL;
-        }
+      }
+      if (dminf < 0.0 || dminf > 1.0) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xminf value (%s) is outside the allowed range [ 0.0 ... 1.0 ]\n",
+                    tail);
+        return JNI_EINVAL;
+      }
+      const uintx uminf = (uintx)(dminf * 100);
+      if (MaxHeapFreeRatio < uminf) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "-Xminf value (%s) must be less than or equal to the implicit -Xmaxf value (%.2f)\n",
+                    tail, MaxHeapFreeRatio / 100.0f);
+        return JNI_EINVAL;
+      }
+      if (FLAG_SET_CMDLINE(MinHeapFreeRatio, uminf) != JVMFlag::SUCCESS) {
+        return JNI_EINVAL;
       }
     // -Xss
     } else if (match_option(option, "-Xss", &tail)) {

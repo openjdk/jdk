@@ -28,16 +28,21 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.FileAssociations;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.LauncherShortcut;
 import jdk.jpackage.test.LauncherShortcut.InvokeShortcutSpec;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
@@ -63,6 +68,7 @@ import jdk.jpackage.test.WinShortcutVerifier;
  * @key jpackagePlatformPackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
+ * @requires (os.family != "mac")
  * @requires (jpackage.test.SQETest != null)
  * @compile -Xlint:all -Werror AddLShortcutTest.java
  * @run main/othervm/timeout=540 -Xmx512m
@@ -76,6 +82,7 @@ import jdk.jpackage.test.WinShortcutVerifier;
  * @key jpackagePlatformPackage
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
+ * @requires (os.family != "mac")
  * @requires (jpackage.test.SQETest == null)
  * @compile -Xlint:all -Werror AddLShortcutTest.java
  * @run main/othervm/timeout=1080 -Xmx512m
@@ -85,13 +92,15 @@ import jdk.jpackage.test.WinShortcutVerifier;
 
 public class AddLShortcutTest {
 
-    @Test
+    @Test(ifNotOS = OperatingSystem.MACOS)
     public void test() {
         // Configure several additional launchers with each combination of
         // possible shortcut hints in add-launcher property file.
         // default is true so Foo (no property), and Bar (properties set to "true")
         // will have shortcuts while other launchers with some properties set
         // to "false" will have none.
+
+        final var packageName = MethodHandles.lookup().lookupClass().getSimpleName();
 
         PackageTest packageTest = new PackageTest().configureHelloApp();
         packageTest.addInitializer(cmd -> {
@@ -102,11 +111,14 @@ public class AddLShortcutTest {
             } else if (TKit.isLinux()) {
                 cmd.addArguments("--linux-shortcut");
             }
+
+            cmd.setArgumentValue("--name", packageName);
+
+            var addLauncherApp = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");
+            HelloApp.createBundle(JavaAppDesc.parse(addLauncherApp + "*another.jar:Welcome"), cmd.inputDir());
         });
 
-        new FileAssociations(
-                MethodHandles.lookup().lookupClass().getSimpleName()).applyTo(
-                packageTest);
+        new FileAssociations(packageName).applyTo(packageTest);
 
         new AdditionalLauncher("Foo")
                 .setDefaultArguments("yep!")
@@ -131,11 +143,16 @@ public class AddLShortcutTest {
                 .setShortcuts(true, false)
                 .applyTo(packageTest);
 
-        new AdditionalLauncher("Launcher5")
-                .setDefaultArguments()
+        var launcher5 = new AdditionalLauncher("Launcher5")
+                .setDefaultArguments("--print-workdir")
                 .setIcon(GOLDEN_ICON)
-                .setShortcuts(false, true)
-                .applyTo(packageTest);
+                .setShortcut(LauncherShortcut.LINUX_SHORTCUT, StartupDirectory.APP_DIR)
+                .setShortcut(LauncherShortcut.WIN_DESKTOP_SHORTCUT, StartupDirectory.APP_DIR)
+                .setShortcut(LauncherShortcut.WIN_START_MENU_SHORTCUT, null)
+                .setProperty("main-jar", "another.jar")
+                .setProperty("main-class", "Welcome");
+
+        new ShortcutStartupDirectoryVerifier(packageName).add(launcher5).applyTo(packageTest);
 
         packageTest.run();
     }
@@ -190,10 +207,50 @@ public class AddLShortcutTest {
 
             predefinedAppImage[0] = cmd.outputBundle();
         }).addInitializer(cmd -> {
+            cfgs[0].applyToMainLauncher(cmd);
             cmd.removeArgumentWithValue("--input");
             cmd.setArgumentValue("--name", "AddLShortcutDir2Test");
             cmd.addArguments("--app-image", predefinedAppImage[0]);
-            cfgs[0].applyToMainLauncher(cmd);
+        }).run(RunnablePackageTest.Action.CREATE_AND_UNPACK);
+    }
+
+    @Test(ifNotOS = OperatingSystem.MACOS)
+    @Parameter(value = "DEFAULT")
+    @Parameter(value = "APP_DIR")
+    public void testLastArg(StartupDirectory startupDirectory) {
+        final List<String> shortcutArgs = new ArrayList<>();
+        if (TKit.isLinux()) {
+            shortcutArgs.add("--linux-shortcut");
+        } else if (TKit.isWindows()) {
+            shortcutArgs.add("--win-shortcut");
+        } else {
+            TKit.assertUnexpected("Unsupported platform");
+        }
+
+        if (startupDirectory == StartupDirectory.APP_DIR) {
+            shortcutArgs.add(startupDirectory.asStringValue());
+        }
+
+        Path[] predefinedAppImage = new Path[1];
+
+        new PackageTest().addRunOnceInitializer(() -> {
+            var cmd = JPackageCommand.helloAppImage()
+                    .setArgumentValue("--name", "foo")
+                    .setFakeRuntime();
+
+            cmd.execute();
+
+            predefinedAppImage[0] = cmd.outputBundle();
+        }).addInitializer(cmd -> {
+            cmd.removeArgumentWithValue("--input");
+            cmd.setArgumentValue("--name", "AddLShortcutDir3Test");
+            cmd.addArguments("--app-image", predefinedAppImage[0]);
+            cmd.ignoreDefaultVerbose(true);
+        }).addInitializer(cmd -> {
+            cmd.addArguments(shortcutArgs);
+        }).addBundleVerifier(cmd -> {
+            TKit.assertEquals(shortcutArgs.getLast(), cmd.getAllArguments().getLast(),
+                    "Check the last argument of jpackage command line");
         }).run(RunnablePackageTest.Action.CREATE_AND_UNPACK);
     }
 
@@ -207,6 +264,7 @@ public class AddLShortcutTest {
 
     @Test(ifNotOS = OperatingSystem.MACOS)
     @Parameter(value = "DEFAULT")
+    @Parameter(value = "APP_DIR")
     public void testInvokeShortcuts(StartupDirectory startupDirectory) {
 
         var testApp = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");
@@ -219,82 +277,118 @@ public class AddLShortcutTest {
             cmd.addArguments("--arguments", "--print-workdir");
         }).addInitializer(JPackageCommand::ignoreFakeRuntime).addHelloAppInitializer(testApp + "*Hello");
 
-        var shortcutStartupDirectoryVerifier = new ShortcutStartupDirectoryVerifier(name, "a");
-
-        shortcutStartupDirectoryVerifier.applyTo(test, startupDirectory);
-
-        test.addInstallVerifier(cmd -> {
-            if (!cmd.isPackageUnpacked("Not invoking launcher shortcuts")) {
-                Collection<? extends InvokeShortcutSpec> invokeShortcutSpecs;
-                if (TKit.isLinux()) {
-                    invokeShortcutSpecs = LinuxHelper.getInvokeShortcutSpecs(cmd);
-                } else if (TKit.isWindows()) {
-                    invokeShortcutSpecs = WinShortcutVerifier.getInvokeShortcutSpecs(cmd);
-                } else {
-                    throw new UnsupportedOperationException();
-                }
-                shortcutStartupDirectoryVerifier.verify(invokeShortcutSpecs);
-            }
-        });
+        new ShortcutStartupDirectoryVerifier(name).add("a", startupDirectory).applyTo(test);
 
         test.run();
     }
 
 
-    private record ShortcutStartupDirectoryVerifier(String packageName, String launcherName) {
-        ShortcutStartupDirectoryVerifier {
-            Objects.requireNonNull(packageName);
-            Objects.requireNonNull(launcherName);
+    private static final class ShortcutStartupDirectoryVerifier {
+
+        ShortcutStartupDirectoryVerifier(String packageName) {
+            this.packageName = Objects.requireNonNull(packageName);
         }
 
-        void applyTo(PackageTest test, StartupDirectory startupDirectory) {
-            var al = new AdditionalLauncher(launcherName);
-            al.setShortcut(shortcut(), Objects.requireNonNull(startupDirectory));
-            al.addJavaOptions(String.format("-Djpackage.test.appOutput=${%s}/%s",
-                    outputDirVarName(), expectedOutputFilename()));
-            al.withoutVerifyActions(Action.EXECUTE_LAUNCHER).applyTo(test);
-        }
+        void applyTo(PackageTest test) {
+            verifiers.values().forEach(verifier -> {
+                verifier.applyTo(test);
+            });
+            test.addInstallVerifier(cmd -> {
+                if (!cmd.isPackageUnpacked("Not invoking launcher shortcuts")) {
+                    Collection<? extends InvokeShortcutSpec> invokeShortcutSpecs;
+                    if (TKit.isLinux()) {
+                        invokeShortcutSpecs = LinuxHelper.getInvokeShortcutSpecs(cmd);
+                    } else if (TKit.isWindows()) {
+                        invokeShortcutSpecs = WinShortcutVerifier.getInvokeShortcutSpecs(cmd);
+                    } else {
+                        throw new UnsupportedOperationException();
+                    }
 
-        void verify(Collection<? extends InvokeShortcutSpec> invokeShortcutSpecs) throws IOException {
+                    var invokeShortcutSpecsMap = invokeShortcutSpecs.stream().collect(Collectors.groupingBy(InvokeShortcutSpec::launcherName));
 
-            TKit.trace(String.format("Verify shortcut [%s]", launcherName));
-
-            var expectedOutputFile = Path.of(System.getenv(outputDirVarName())).resolve(expectedOutputFilename());
-
-            TKit.deleteIfExists(expectedOutputFile);
-
-            var invokeShortcutSpec = invokeShortcutSpecs.stream().filter(v -> {
-                return launcherName.equals(v.launcherName());
-            }).findAny().orElseThrow();
-
-            invokeShortcutSpec.execute();
-
-            // On Linux, "gtk-launch" is used to launch a .desktop file. It is async and there is no
-            // way to make it wait for exit of a process it triggers.
-            TKit.waitForFileCreated(expectedOutputFile, Duration.ofSeconds(10), Duration.ofSeconds(3));
-
-            TKit.assertFileExists(expectedOutputFile);
-            var actualStr = Files.readAllLines(expectedOutputFile).getFirst();
-
-            var outputPrefix = "$CD=";
-
-            TKit.assertTrue(actualStr.startsWith(outputPrefix), "Check output starts with '" + outputPrefix+ "' string");
-
-            invokeShortcutSpec.expectedWorkDirectory().ifPresent(expectedWorkDirectory -> {
-                TKit.assertEquals(
-                        expectedWorkDirectory,
-                        Path.of(actualStr.substring(outputPrefix.length())),
-                        String.format("Check work directory of %s of launcher [%s]",
-                                invokeShortcutSpec.shortcut().propertyName(),
-                                invokeShortcutSpec.launcherName()));
+                    for (var e : verifiers.entrySet()) {
+                        e.getValue().verify(invokeShortcutSpecsMap.get(e.getKey()));
+                    }
+                }
             });
         }
 
-        private String expectedOutputFilename() {
-            return String.format("%s-%s.out", packageName, launcherName);
+        ShortcutStartupDirectoryVerifier add(String launcherName, StartupDirectory startupDirectory) {
+            return add(new AdditionalLauncher(launcherName)
+                    .setShortcut(shortcut(), Objects.requireNonNull(Objects.requireNonNull(startupDirectory))));
         }
 
-        private String outputDirVarName() {
+        ShortcutStartupDirectoryVerifier add(AdditionalLauncher addLauncher) {
+            var launcherVerifier = new LauncherVerifier(addLauncher);
+            verifiers.put(launcherVerifier.launcherName(), launcherVerifier);
+            return this;
+        }
+
+
+        private final class LauncherVerifier {
+
+            private LauncherVerifier(AdditionalLauncher addLauncher) {
+                this.addLauncher = Objects.requireNonNull(addLauncher);
+            }
+
+            private String launcherName() {
+                return addLauncher.name();
+            }
+
+            private void applyTo(PackageTest test) {
+                addLauncher.addJavaOptions(String.format("-Djpackage.test.appOutput=${%s}/%s",
+                        outputDirVarName(), expectedOutputFilename()));
+                addLauncher.withoutVerifyActions(Action.EXECUTE_LAUNCHER).applyTo(test);
+            }
+
+            private void verify(Collection<? extends InvokeShortcutSpec> invokeShortcutSpecs) throws IOException {
+                Objects.requireNonNull(invokeShortcutSpecs);
+                if (invokeShortcutSpecs.isEmpty()) {
+                    throw new IllegalArgumentException();
+                }
+
+                TKit.trace(String.format("Verify shortcut [%s]", launcherName()));
+
+                var expectedOutputFile = Path.of(System.getenv(outputDirVarName())).resolve(expectedOutputFilename());
+
+                TKit.deleteIfExists(expectedOutputFile);
+
+                var invokeShortcutSpec = invokeShortcutSpecs.stream().filter(v -> {
+                    return launcherName().equals(v.launcherName());
+                }).findAny().orElseThrow();
+
+                invokeShortcutSpec.execute();
+
+                // On Linux, "gtk-launch" is used to launch a .desktop file. It is async and there is no
+                // way to make it wait for exit of a process it triggers.
+                TKit.waitForFileCreated(expectedOutputFile, Duration.ofSeconds(10), Duration.ofSeconds(3));
+
+                TKit.assertFileExists(expectedOutputFile);
+                var actualStr = Files.readAllLines(expectedOutputFile).getFirst();
+
+                var outputPrefix = "$CD=";
+
+                TKit.assertTrue(actualStr.startsWith(outputPrefix), "Check output starts with '" + outputPrefix+ "' string");
+
+                invokeShortcutSpec.expectedWorkDirectory().ifPresent(expectedWorkDirectory -> {
+                    TKit.assertEquals(
+                            expectedWorkDirectory,
+                            Path.of(actualStr.substring(outputPrefix.length())),
+                            String.format("Check work directory of %s of launcher [%s]",
+                                    invokeShortcutSpec.shortcut().propertyName(),
+                                    invokeShortcutSpec.launcherName()));
+                });
+            }
+
+            private String expectedOutputFilename() {
+                return String.format("%s-%s.out", packageName, launcherName());
+            }
+
+            private final AdditionalLauncher addLauncher;
+        }
+
+
+        private static String outputDirVarName() {
             if (TKit.isLinux()) {
                 return "HOME";
             } else if (TKit.isWindows()) {
@@ -304,7 +398,7 @@ public class AddLShortcutTest {
             }
         }
 
-        private LauncherShortcut shortcut() {
+        private static LauncherShortcut shortcut() {
             if (TKit.isLinux()) {
                 return LauncherShortcut.LINUX_SHORTCUT;
             } else if (TKit.isWindows()) {
@@ -313,6 +407,10 @@ public class AddLShortcutTest {
                 throw new UnsupportedOperationException();
             }
         }
+
+        private final String packageName;
+        // Keep the order
+        private final Map<String, LauncherVerifier> verifiers = new LinkedHashMap<>();
     }
 
 

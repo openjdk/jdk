@@ -29,6 +29,7 @@
 #include "logging/logMessageBuffer.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/defaultStream.hpp"
+
 #include <string.h>
 
 const char* const LogFileStreamOutput::FoldMultilinesOptionKey = "foldmultilines";

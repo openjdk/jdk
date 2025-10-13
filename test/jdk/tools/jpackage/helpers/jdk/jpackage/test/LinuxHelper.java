@@ -455,7 +455,7 @@ public final class LinuxHelper {
         var unpackedDir = cmd.appLayout().desktopIntegrationDirectory();
         var packageDir = cmd.pathToPackageFile(unpackedDir);
         return getPackageFiles(cmd).filter(path -> {
-            return path.getParent().equals(packageDir) && path.getFileName().toString().endsWith(".desktop");
+            return packageDir.equals(path.getParent()) && path.getFileName().toString().endsWith(".desktop");
         }).map(Path::getFileName).map(unpackedDir::resolve).toList();
     }
 
@@ -513,6 +513,9 @@ public final class LinuxHelper {
             switch (shortcutWorkDirType) {
                 case DEFAULT -> {
                     return (Path)null;
+                }
+                case APP_DIR -> {
+                    return cmd.pathToPackageFile(appLayout.appDirectory());
                 }
                 default -> {
                     throw new AssertionError();

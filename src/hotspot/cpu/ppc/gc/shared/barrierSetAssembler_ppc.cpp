@@ -183,12 +183,9 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
   assert_different_registers(tmp, R0);
 
-  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
+  __ align(8); // must align the following block which requires atomic updates
 
-  // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
-  __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
-                                       true, true, false); // 2 instructions
-  __ mtctr(tmp);
+  __ block_comment("nmethod_entry_barrier (nmethod_entry_barrier) {");
 
   // This is a compound instruction. Patching support is provided by NativeMovRegMem.
   // Actual patching is done in (platform-specific part of) BarrierSetNMethod.
@@ -197,6 +194,11 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Register t
   // Low order half of 64 bit value is currently used.
   __ ld(R0, in_bytes(bs_nm->thread_disarmed_guard_value_offset()), R16_thread);
   __ cmpw(CR0, R0, tmp);
+
+  // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
+  __ calculate_address_from_global_toc(tmp, StubRoutines::method_entry_barrier(),
+                                       true, true, false); // 2 instructions
+  __ mtctr(tmp);
 
   __ bnectrl(CR0);
 

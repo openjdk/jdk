@@ -153,9 +153,30 @@ final class ApplicationBuilder {
     }
 
     static Launcher overrideLauncherStartupInfo(Launcher launcher, LauncherStartupInfo startupInfo) {
-        return new Launcher.Stub(launcher.name(), Optional.of(startupInfo),
-                launcher.fileAssociations(), launcher.isService(), launcher.description(),
-                launcher.icon(), launcher.defaultIconResourceName(), launcher.extraAppImageFileData());
+        return new Launcher.Stub(
+                launcher.name(),
+                Optional.of(startupInfo),
+                launcher.fileAssociations(),
+                launcher.isService(),
+                launcher.description(),
+                launcher.icon(),
+                launcher.defaultIconResourceName(),
+                launcher.extraAppImageFileData());
+    }
+
+    static Application overrideAppImageLayout(Application app, AppImageLayout appImageLayout) {
+        return new Application.Stub(
+                app.name(),
+                app.description(),
+                app.version(),
+                app.vendor(),
+                app.copyright(),
+                app.srcDir(),
+                app.contentDirs(),
+                Objects.requireNonNull(appImageLayout),
+                app.runtimeBuilder(),
+                app.launchers(),
+                app.extraAppImageFileData());
     }
 
     record MainLauncherStartupInfo(String qualifiedClassName) implements LauncherStartupInfo {

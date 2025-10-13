@@ -32,7 +32,7 @@
  *          jdk.attach
  * @requires vm.jvmti
  *
- * @run main/othervm -Djdk.attach.allowAttachSelf compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
+ * @run main/othervm/timeout=480 -Djdk.attach.allowAttachSelf compiler.jsr292.RedefineMethodUsedByMultipleMethodHandles
  */
 
 package compiler.jsr292;
