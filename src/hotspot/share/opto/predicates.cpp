@@ -247,8 +247,9 @@ class ReplaceOpaqueStrideInput : public BFSActions {
     return node->is_OpaqueLoopStride();
   }
 
-  void target_node_action(Node* node, uint i) override {
-    _igvn.replace_input_of(node->in(i), 1, _new_opaque_stride_input);
+  void target_node_action(Node* child, uint i) override {
+    assert(child->in(i)->is_OpaqueLoopStride(), "must be OpaqueLoopStride");
+    _igvn.replace_input_of(child->in(i), 1, _new_opaque_stride_input);
   }
 };
 
@@ -277,8 +278,9 @@ class ReplaceOpaqueInitNode : public BFSActions {
     return node->is_OpaqueLoopInit();
   }
 
-  void target_node_action(Node* node, uint i) override {
-    _igvn.replace_input_of(node, i, _new_opaque_init_node);
+  void target_node_action(Node* child, uint i) override {
+    assert(child->in(i)->is_OpaqueLoopInit(), "must be old OpaqueLoopInit");
+    _igvn.replace_input_of(child, i, _new_opaque_init_node);
   }
 };
 
@@ -354,8 +356,8 @@ class OpaqueLoopNodesVerifier : public BFSActions {
     return node->is_Opaque1();
   }
 
-  void target_node_action(Node* node, uint i) override {
-    Node* target_node = node->in(i);
+  void target_node_action(Node* child, uint i) override {
+    Node* target_node = child->in(i);
     if (target_node->is_OpaqueLoopInit()) {
       assert(!_found_init, "should only find one OpaqueLoopInitNode");
       _found_init = true;

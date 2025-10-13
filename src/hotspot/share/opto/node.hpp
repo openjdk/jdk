@@ -2165,7 +2165,10 @@ class BFSActions : public StackObj {
   virtual bool is_target_node(Node* node) const = 0;
 
   // Defines an action that should be taken when we visit a target node in the BFS traversal.
-  virtual void target_node_action(Node* node, uint i) = 0;
+  // To give more freedom, we pass the direct child node to the target node such that
+  // child->in(i) == target node. This allows to also directly replace the target node instead
+  // of only updating its inputs.
+  virtual void target_node_action(Node* child, uint i) = 0;
 };
 
 // Class to perform a BFS traversal on the data nodes from a given start node. The provided BFSActions guide which
