@@ -167,9 +167,9 @@ static get_signal_t get_signal_action = nullptr;
 
 // suspend/resume support
 #if defined(__APPLE__)
-  static OSXSemaphore sr_semaphore;
+  static OSXSemaphore* sr_semaphore;
 #else
-  static PosixSemaphore sr_semaphore;
+  static PosixSemaphore* sr_semaphore;
 #endif
 
 // Signal number used to suspend/resume a thread
@@ -1696,7 +1696,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
       pthread_sigmask(SIG_BLOCK, nullptr, &suspend_set);
       sigdelset(&suspend_set, PosixSignals::SR_signum);
 
-      sr_semaphore.signal();
+      sr_semaphore->signal();
 
       // wait here until we are resumed
       while (1) {
@@ -1705,7 +1705,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
         SuspendResume::State result = osthread->sr.running();
         if (result == SuspendResume::SR_RUNNING) {
           // double check AIX doesn't need this!
-          sr_semaphore.signal();
+          sr_semaphore->signal();
           break;
         } else if (result != SuspendResume::SR_SUSPENDED) {
           ShouldNotReachHere();
@@ -1731,6 +1731,12 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 }
 
 static int SR_initialize() {
+#if defined(__APPLE__)
+  sr_semaphore = new OSXSemaphore(0);
+#else
+  sr_semaphore = new PosixSemaphore(0);
+#endif
+
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
@@ -1778,7 +1784,7 @@ static int sr_notify(OSThread* osthread) {
 // but this seems the normal response to library errors
 bool PosixSignals::do_suspend(OSThread* osthread) {
   assert(osthread->sr.is_running(), "thread should be running");
-  assert(!sr_semaphore.trywait(), "semaphore has invalid state");
+  assert(!sr_semaphore->trywait(), "semaphore has invalid state");
 
   // mark as suspended and send signal
   if (osthread->sr.request_suspend() != SuspendResume::SR_SUSPEND_REQUEST) {
@@ -1793,7 +1799,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
 
   // managed to send the signal and switch to SUSPEND_REQUEST, now wait for SUSPENDED
   while (true) {
-    if (sr_semaphore.timedwait(2)) {
+    if (sr_semaphore->timedwait(2)) {
       break;
     } else {
       // timeout
@@ -1802,7 +1808,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
         return false;
       } else if (cancelled == SuspendResume::SR_SUSPENDED) {
         // make sure that we consume the signal on the semaphore as well
-        sr_semaphore.wait();
+        sr_semaphore->wait();
         break;
       } else {
         ShouldNotReachHere();
@@ -1817,7 +1823,7 @@ bool PosixSignals::do_suspend(OSThread* osthread) {
 
 void PosixSignals::do_resume(OSThread* osthread) {
   assert(osthread->sr.is_suspended(), "thread should be suspended");
-  assert(!sr_semaphore.trywait(), "invalid semaphore state");
+  assert(!sr_semaphore->trywait(), "invalid semaphore state");
 
   if (osthread->sr.request_wakeup() != SuspendResume::SR_WAKEUP_REQUEST) {
     // failed to switch to WAKEUP_REQUEST
@@ -1827,7 +1833,7 @@ void PosixSignals::do_resume(OSThread* osthread) {
 
   while (true) {
     if (sr_notify(osthread) == 0) {
-      if (sr_semaphore.timedwait(2)) {
+      if (sr_semaphore->timedwait(2)) {
         if (osthread->sr.is_running()) {
           return;
         }
