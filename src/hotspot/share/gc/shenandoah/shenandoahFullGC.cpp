@@ -1165,7 +1165,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     heap->global_generation()->set_mark_incomplete();
 
-    heap->clear_cancelled_gc(true /* clear oom handler */);
+    heap->clear_cancelled_gc();
   }
 
   _preserved_marks->restore(heap->workers());
