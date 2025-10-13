@@ -154,6 +154,12 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 void ParallelScavengeHeap::safepoint_synchronize_begin() {
   if (UseStringDeduplication) {
+    SuspendibleThreadSet::synchronize_begin();
+  }
+}
+
+void ParallelScavengeHeap::safepoint_synchronize() {
+  if (UseStringDeduplication) {
     SuspendibleThreadSet::synchronize();
   }
 }

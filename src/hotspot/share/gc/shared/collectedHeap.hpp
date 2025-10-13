@@ -257,6 +257,7 @@ protected:
 
   // Stop and resume concurrent GC threads interfering with safepoint operations
   virtual void safepoint_synchronize_begin() {}
+  virtual void safepoint_synchronize() {}
   virtual void safepoint_synchronize_end() {}
 
   void add_vmthread_cpu_time(jlong time);

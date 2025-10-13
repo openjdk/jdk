@@ -257,6 +257,7 @@ bool G1ConcurrentRefineSweepState::swap_gc_threads_ct() {
         // For example in the rebuild remset process the marking threads write
         // marks into the card table, and that card table reference must be the
         // correct one.
+        SuspendibleThreadSet::synchronize_begin();
         SuspendibleThreadSet::synchronize();
         SuspendibleThreadSet::desynchronize();
       };

@@ -259,6 +259,9 @@ public:
                            OldGenScanClosure* old_cl);
 
   void safepoint_synchronize_begin() override;
+
+  void safepoint_synchronize() override;
+
   void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap

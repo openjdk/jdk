@@ -43,6 +43,7 @@ class SuspendibleThreadSet : public AllStatic {
 private:
   static uint          _nthreads;
   static uint          _nthreads_stopped;
+  static volatile bool _has_synchronized;
   static volatile bool _suspend_all;
   static double        _suspend_all_start;
 
@@ -68,7 +69,10 @@ public:
     }
   }
 
-  // Returns when all threads in the set are suspended.
+  // begin to synchronize suspendible threads,
+  static void synchronize_begin();
+
+  // synchronize all suspendible threads
   static void synchronize();
 
   // Resumes all suspended threads in the set.

@@ -24,12 +24,14 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
+#include "logging/log.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/semaphore.hpp"
 
 uint          SuspendibleThreadSet::_nthreads          = 0;
 uint          SuspendibleThreadSet::_nthreads_stopped  = 0;
+volatile bool SuspendibleThreadSet::_has_synchronized  = false;
 volatile bool SuspendibleThreadSet::_suspend_all       = false;
 double        SuspendibleThreadSet::_suspend_all_start = 0.0;
 
@@ -89,19 +91,27 @@ void SuspendibleThreadSet::yield_slow() {
   }
 }
 
-void SuspendibleThreadSet::synchronize() {
+void SuspendibleThreadSet::synchronize_begin() {
   if (ConcGCYieldTimeout > 0) {
     _suspend_all_start = os::elapsedTime();
   }
+
   {
     MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
     assert(!should_yield(), "Only one at a time");
     AtomicAccess::store(&_suspend_all, true);
     if (is_synchronized()) {
-      return;
+      AtomicAccess::store(&_has_synchronized, true);
     }
-  } // Release lock before semaphore wait.
+  }
+}
 
+void SuspendibleThreadSet::synchronize() {
+  assert(AtomicAccess::load(&_suspend_all), "synchronize must have begun.");
+  // If STS has synchronized when synchronize begin, all suspendible threads will be waiting on STS_lock.
+  if (AtomicAccess::load(&_has_synchronized)) {
+    return;
+  }
   // Semaphore initial count is zero.  To reach here, there must be at
   // least one not yielded thread in the set, e.g. is_synchronized()
   // was false before the lock was released.  A thread in the set will
@@ -114,7 +124,10 @@ void SuspendibleThreadSet::synchronize() {
   // being signaled until we get back here again for some later
   // synchronize call.  Hence, there is no need to re-check for
   // is_synchronized after the wait; it will always be true there.
+  log_trace(safepoint)("Waiting for %d suspendible threads to block", _nthreads - _nthreads_stopped);
   _synchronize_wakeup->wait();
+  AtomicAccess::store(&_has_synchronized, true);
+  log_trace(safepoint)("All suspendible threads have blocked");
 
 #ifdef ASSERT
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
@@ -127,6 +140,7 @@ void SuspendibleThreadSet::desynchronize() {
   MonitorLocker ml(STS_lock, Mutex::_no_safepoint_check_flag);
   assert(should_yield(), "STS not synchronizing");
   assert(is_synchronized(), "STS not synchronized");
+  AtomicAccess::store(&_has_synchronized, false);
   AtomicAccess::store(&_suspend_all, false);
   ml.notify_all();
 }
