@@ -470,9 +470,7 @@ void TrainingData::init_dumptime_table(TRAPS) {
   if (need_data()) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     TrainingDataLocker l;
-#if INCLUDE_CDS
     TrainingDataLocker::snapshot();
-#endif
     ResourceMark rm;
     Visitor visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {
