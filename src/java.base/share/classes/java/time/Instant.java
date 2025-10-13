@@ -808,11 +808,9 @@ public final class Instant
      */
     public Instant plusSaturating(Duration duration) {
         if (duration.isNegative()) {
-            return Duration.between(this, Instant.MIN).compareTo(duration) >= 0
-                    ? Instant.MIN : this.plus(duration);
+            return until(Instant.MIN).compareTo(duration) >= 0 ? Instant.MIN : plus(duration);
         } else {
-            return Duration.between(this, Instant.MAX).compareTo(duration) > 0
-                    ? this.plus(duration) : Instant.MAX;
+            return until(Instant.MAX).compareTo(duration) <= 0 ? Instant.MAX : plus(duration);
         }
     }
 
