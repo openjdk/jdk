@@ -1188,12 +1188,18 @@ public:
   }
 };
 
-// For a int counted loop, try_make_short_running_loop() transform the loop from:
-// for (int = start; i < stop; i+= stride) {
+// For an int counted loop, try_make_short_running_loop() transforms the loop from:
+//     for (int = start; i < stop; i+= stride) { ... }
 // to
-// for (int = 0; i < stop - start; i+= stride) {
-// Assertion Predicate added so far were with an init value of start. They need to be updated with the new init value of
-// 0.
+//     for (int = 0; i < stop - start; i+= stride) { ... }
+// Template Assertion Predicates added so far were with an init value of start. They need to be updated with the new 
+// init value of 0:
+//                                zero      
+//        init                     |       
+//         |           ===>   OpaqueLoopInit   init
+//  OpaqueLoopInit                         \   /
+//                                          AddI
+//
 Node* PhaseIdealLoop::new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero) {
   OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(C, int_zero);
   register_new_node(new_opaque_init, entry_control);
