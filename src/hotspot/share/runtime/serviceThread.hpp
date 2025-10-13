@@ -34,7 +34,6 @@
 class JvmtiDeferredEvent;
 
 class ServiceThread : public JavaThread {
-  friend class VMStructs;
  private:
   DEBUG_ONLY(static JavaThread* _instance;)
   static JvmtiDeferredEvent* _jvmti_event;
