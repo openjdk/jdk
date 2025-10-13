@@ -260,7 +260,7 @@ inline Node* make_and<TypeInt>(Node* a, Node* b) {
 
 class LShiftNode : public Node {
 public:
-  LShiftNode(Node *in1, Node *in2) : Node(nullptr,in1,in2) {
+  LShiftNode(Node* in1, Node* in2) : Node(nullptr,in1,in2) {
     init_class_id(Class_LShift);
   }
 
@@ -275,12 +275,12 @@ public:
 // Logical shift left
 class LShiftINode : public LShiftNode {
 public:
-  LShiftINode(Node *in1, Node *in2) : LShiftNode(in1,in2) {}
+  LShiftINode(Node* in1, Node* in2) : LShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeInt::INT; }
+  const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -291,9 +291,9 @@ public:
   LShiftLNode(Node *in1, Node *in2) : LShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 

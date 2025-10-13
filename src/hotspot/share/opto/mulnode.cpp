@@ -1049,14 +1049,14 @@ Node* LShiftINode::Identity(PhaseGVN* phase) {
   return IdentityIL(phase, T_INT);
 }
 
-Node* LShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
+Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   uint con = mask_and_replace_shift_amount(phase, this, bits_per_java_integer(bt));
   if (con == 0) {
     return nullptr;
   }
 
   // Left input is an add?
-  Node *add1 = in(1);
+  Node* add1 = in(1);
   int add1_op = add1->Opcode();
   if (add1_op == Op_Add(bt)) {    // Left input is an add?
     assert(add1 != add1->in(1), "dead loop in LShiftINode::Ideal");
@@ -1078,7 +1078,7 @@ Node* LShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
       }
 
       // Left input is an add of a constant?
-      const TypeInteger *t12 = phase->type(add1->in(2))->isa_integer(bt);
+      const TypeInteger* t12 = phase->type(add1->in(2))->isa_integer(bt);
       if (t12 && t12->is_con()) { // Left input is an add of a con?
         // Compute X << con0
         Node *lsh = phase->transform(LShiftNode::make( add1->in(1), in(2), bt));
@@ -1130,7 +1130,7 @@ Node* LShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
 
   // Check for "((x >> C1) & Y) << C2"
   if (add1_op == Op_And(bt)) {
-    Node *add2 = add1->in(1);
+    Node* add2 = add1->in(1);
     int add2_op = add2->Opcode();
     if (add2_op == Op_RShift(bt) || add2_op == Op_URShift(bt)) {
       // Special case C1 == C2, which just masks off low bits
@@ -1184,13 +1184,13 @@ Node* LShiftNode::IdealIL(PhaseGVN *phase, bool can_reshape, BasicType bt) {
 //
 // Also collapse nested left-shifts with constant rhs:
 // (X << con1) << con2 ==> X << (con1 + con2)
-Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return IdealIL(phase, can_reshape, T_INT);
 }
 
 const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
-  const Type *t1 = phase->type(in(1));
-  const Type *t2 = phase->type(in(2));
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
   // Either input is TOP ==> the result is TOP
   if (t1 == Type::TOP) {
     return Type::TOP;
@@ -1214,8 +1214,8 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
     return TypeInteger::bottom(bt);
   }
 
-  const TypeInteger *r1 = t1->is_integer(bt); // Handy access
-  const TypeInt *r2 = t2->is_int(); // Handy access
+  const TypeInteger* r1 = t1->is_integer(bt); // Handy access
+  const TypeInt* r2 = t2->is_int(); // Handy access
 
   if (!r2->is_con()) {
     return TypeInteger::bottom(bt);
@@ -1279,7 +1279,7 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 //
 // Also collapse nested left-shifts with constant rhs:
 // (X << con1) << con2 ==> X << (con1 + con2)
-Node *LShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* LShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealIL(phase, can_reshape, T_LONG);
 }
 
