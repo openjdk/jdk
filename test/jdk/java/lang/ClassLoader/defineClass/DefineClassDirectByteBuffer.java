@@ -47,12 +47,10 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class DefineClassDirectByteBuffer {
     // this is for the trusted/biltin classloader
@@ -60,188 +58,159 @@ public class DefineClassDirectByteBuffer {
     private static final int CLASSBYTES_OFFSET = 16;
 
     // -------- untrusted path (custom loader) --------
-    static Stream<Arguments> bytebuffers() throws Exception {
+    static Stream<ByteBuffer> bytebuffers() throws Exception {
         byte[] classBytes = getTestClassBytes();
         byte[] classBytesAtOffset = new byte[classBytes.length + CLASSBYTES_OFFSET];
         System.arraycopy(classBytes, 0, classBytesAtOffset, CLASSBYTES_OFFSET, classBytes.length);
 
         return Stream.of(
                 // WRAPPED_BUFFER
-                arguments(ByteBuffer.wrap(classBytes),
-                        false),
-                arguments(ByteBuffer.wrap(classBytes)
-                                .asReadOnlyBuffer(),
-                        true),
-                arguments(ByteBuffer.wrap(classBytesAtOffset)
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(ByteBuffer
-                                .wrap(classBytesAtOffset)
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        true),
+                ByteBuffer.wrap(classBytes),
+                ByteBuffer.wrap(classBytes)
+                        .asReadOnlyBuffer(),
+                ByteBuffer.wrap(classBytesAtOffset)
+                        .position(CLASSBYTES_OFFSET),
+                ByteBuffer.wrap(classBytesAtOffset)
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // ARRAY_BUFFER
-                arguments(ByteBuffer.allocate(classBytes.length)
-                                .put(classBytes)
-                                .flip(),
-                        false),
-                arguments(ByteBuffer.allocate(classBytes.length)
-                                .put(classBytes)
-                                .flip()
-                                .position(0)
-                                .asReadOnlyBuffer(),
-                        true),
-                arguments(ByteBuffer.allocate(classBytesAtOffset.length)
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(ByteBuffer.allocate(classBytesAtOffset.length)
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        true),
+                ByteBuffer.allocate(classBytes.length)
+                        .put(classBytes)
+                        .flip(),
+                ByteBuffer.allocate(classBytes.length)
+                        .put(classBytes)
+                        .flip()
+                        .position(0)
+                        .asReadOnlyBuffer(),
+                ByteBuffer.allocate(classBytesAtOffset.length)
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET),
+                ByteBuffer.allocate(classBytesAtOffset.length)
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // DIRECT_BUFFER
-                arguments(ByteBuffer.allocateDirect(classBytes.length)
-                                .put(classBytes)
-                                .flip(),
-                        false),
-                arguments(ByteBuffer.allocateDirect(classBytes.length)
-                                .put(classBytes)
-                                .flip()
-                                .asReadOnlyBuffer(),
-                        false),
-                arguments(ByteBuffer.allocateDirect(classBytesAtOffset.length)
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(ByteBuffer.allocateDirect(classBytesAtOffset.length)
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        false),
+                ByteBuffer.allocateDirect(classBytes.length)
+                        .put(classBytes)
+                        .flip(),
+                ByteBuffer.allocateDirect(classBytes.length)
+                        .put(classBytes)
+                        .flip()
+                        .asReadOnlyBuffer(),
+                ByteBuffer.allocateDirect(classBytesAtOffset.length)
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET),
+                ByteBuffer.allocateDirect(classBytesAtOffset.length)
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // FOREIGN_AUTO_BUFFER
-                arguments(Arena.ofAuto()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip(),
-                        false),
-                arguments(Arena.ofAuto()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip()
-                                .asReadOnlyBuffer(),
-                        false),
-                arguments(Arena.ofAuto()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(Arena.ofAuto()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        false),
+                Arena.ofAuto()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip(),
+                Arena.ofAuto()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .asReadOnlyBuffer(),
+                Arena.ofAuto()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET),
+                Arena.ofAuto()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // FOREIGN_CONFINED_BUFFER
-                arguments(Arena.ofConfined()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip(),
-                        false),
-                arguments(Arena.ofConfined()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip()
-                                .asReadOnlyBuffer(),
-                        false),
-                arguments(Arena.ofConfined()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(Arena.ofConfined()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        false),
+                Arena.ofConfined()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip(),
+                Arena.ofConfined()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .asReadOnlyBuffer(),
+                Arena.ofConfined()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET),
+                Arena.ofConfined()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // FOREIGN_GLOBAL_BUFFER
-                arguments(Arena.global()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip(),
-                        false),
-                arguments(Arena.global()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip()
-                                .asReadOnlyBuffer(),
-                        false),
-                arguments(Arena.global()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(Arena.global()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        false),
+                Arena.global()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip(),
+                Arena.global()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .asReadOnlyBuffer(),
+                Arena.global()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET),
+                Arena.global()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // FOREIGN_SHARED_BUFFER
-                arguments(Arena.ofShared()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip(),
-                        false),
-                arguments(Arena.ofShared()
-                                .allocate(classBytes.length)
-                                .asByteBuffer()
-                                .put(classBytes)
-                                .flip()
-                                .asReadOnlyBuffer(),
-                        false),
-                arguments(Arena.ofShared()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET),
-                        false),
-                arguments(Arena.ofShared()
-                                .allocate(classBytesAtOffset.length)
-                                .asByteBuffer()
-                                .put(classBytesAtOffset)
-                                .flip()
-                                .position(CLASSBYTES_OFFSET)
-                                .asReadOnlyBuffer(),
-                        false),
+                Arena.ofShared()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip(),
+                Arena.ofShared()
+                        .allocate(classBytes.length)
+                        .asByteBuffer()
+                        .put(classBytes)
+                        .flip()
+                        .asReadOnlyBuffer(),
+                Arena.ofShared()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET),
+                Arena.ofShared()
+                        .allocate(classBytesAtOffset.length)
+                        .asByteBuffer()
+                        .put(classBytesAtOffset)
+                        .flip()
+                        .position(CLASSBYTES_OFFSET)
+                        .asReadOnlyBuffer(),
                 // MAPPED_BUFFER:  MapMode.READ_ONLY from READ fc, the bb is readonly
-                arguments(getMappedByteBuffer(classBytes, 0), false),
-                arguments(getMappedByteBuffer(classBytesAtOffset, CLASSBYTES_OFFSET), false)
+                getMappedByteBuffer(classBytes, 0),
+                getMappedByteBuffer(classBytesAtOffset, CLASSBYTES_OFFSET)
         );
     }
 
@@ -258,12 +227,18 @@ public class DefineClassDirectByteBuffer {
 
     @ParameterizedTest()
     @MethodSource("bytebuffers")
-    void testDefineClassWithCustomLoaderByteBuffer(ByteBuffer bb, boolean posAtLimit)
-            throws Exception {
+    void testDefineClassWithCustomLoaderByteBuffer(ByteBuffer bb) throws Exception {
+        int originalPos = bb.position();
+        int originalLimit = bb.limit();
         CustomClassLoader loader = new CustomClassLoader();
         Class<?> clazz = loader.defineClassFromByteBuffer(bb);
         assertInvocating(clazz);
-        assertEquals(posAtLimit, bb.position() == bb.limit());
+        //  long-standing (and undocumented) behavior, see JDK-8352583
+        if (bb.isDirect() || bb.hasArray()) {
+            assertEquals(originalPos, bb.position());
+        } else {
+            assertEquals(originalLimit, bb.position());
+        }
     }
 
     // -------- trusted path (BuiltinClassLoader) --------
