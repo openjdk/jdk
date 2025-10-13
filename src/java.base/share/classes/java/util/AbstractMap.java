@@ -31,6 +31,7 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
+import jdk.internal.vm.annotation.Stable;
 
 /**
  * This class provides a skeletal implementation of the {@code Map}
@@ -330,6 +331,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * }
      *}</pre>
      */
+    @Stable
     transient Set<K>        keySet;
     transient Collection<V> values;
 

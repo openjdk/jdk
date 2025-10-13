@@ -357,8 +357,6 @@ final class LazyCollections {
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
         @Stable
-        private final Set<K> keySet;
-        @Stable
         final V[] values;
         @Stable
         Mutexes mutexes;
@@ -373,13 +371,13 @@ final class LazyCollections {
                                 int size,
                                 int backingSize,
                                 Function<? super K, ? extends V> computingFunction) {
-            this.keySet = keySet;
             this.size = size;
             this.functionHolder = new FunctionHolder<>(computingFunction, size);
             this.values = newGenericArray(backingSize);
             this.mutexes = new Mutexes(backingSize);
             super();
-            this.entrySet = new LazyMapEntrySet<>(this);
+            this.keySet = keySet;
+            this.entrySet = LazyMapEntrySet.of(this);
         }
 
         // Abstract methods
