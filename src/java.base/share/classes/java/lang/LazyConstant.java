@@ -142,22 +142,21 @@ import java.util.function.Supplier;
  *
  * <h2 id="thread-safety">Thread Safety</h2>
  * A lazy constant is guaranteed to be initialized atomically and at most once. If
- * competing threads are racing to initialize a lazy constant, only one updating
- * thread runs the computing function, while the other threads are blocked until
- * the constant is initialized, after which the other threads observe the lazy constant
- * is initialized and leave the constant unchanged and will never invoke any computation.
+ * competing threads are racing to initialize a lazy constant, only one updating thread
+ * runs the computing function (which is the caller's thread and is hereafter denoted
+ * <em>the computing thread</em>), while the other threads are blocked until the constant
+ * is initialized, after which the other threads observe the lazy constant is initialized
+ * and leave the constant unchanged and will never invoke any computation.
  * <p>
- * The invocation of the computing function and the resulting initialization of the constant
- * {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
+ * The invocation of the computing function and the resulting initialization of
+ * the constant {@linkplain java.util.concurrent##MemoryVisibility <em>happens-before</em>}
  * the initialized constant is read. Hence, the initialized constant, including any
  * {@code final} fields of any newly created objects, are safely published.
  * <p>
- * The computing function runs on the caller’s thread.
- * <p>
- * If a thread that is blocked by another computing thread is interrupted, this is not
- * acted upon by the lazy constant (e.g., the thread’s interrupted status is not
- * cleared, and it does not throw InterruptedException; interruption does not cancel
- * initialization).
+ * If the computing thread or any thread that is blocked by the computing thread
+ * is interrupted, this is not acted upon by the lazy constant (e.g., the interrupted
+ * thread’s interrupted status is not cleared, and it does not throw InterruptedException;
+ * interruption does not cancel initialization).
  * <p>
  * If the computing function blocks indefinitely, other threads operating on this
  * lazy constant may block indefinitely; no timeouts or cancellations are provided.
