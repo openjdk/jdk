@@ -3491,7 +3491,7 @@ TypeOopPtr::TypeOopPtr(TYPES t, PTR ptr, ciKlass* k, const TypeInterfaces* inter
           }
         } else {
           // Instance fields which contains a compressed oop references.
-          BasicType basic_elem_type = ik->get_field_type_by_offset(_offset, false);;
+          BasicType basic_elem_type = ik->get_field_type_by_offset(_offset, false);
           if (basic_elem_type != T_ILLEGAL) {
             _is_ptr_to_narrowoop = UseCompressedOops && ::is_reference_type(basic_elem_type);
           } else if (klass()->equals(ciEnv::current()->Object_klass())) {
