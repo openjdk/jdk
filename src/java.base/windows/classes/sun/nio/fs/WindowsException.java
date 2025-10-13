@@ -76,25 +76,21 @@ class WindowsException extends Exception {
     }
 
     private IOException translateToIOException(String file, String other) {
-        IOException ex;
-
-        switch (lastError()) {
+        return switch (lastError()) {
             // not created with last error
-            case 0 -> ex = new IOException(errorString());
+            case 0 -> new IOException(errorString());
 
             // handle specific cases
             case ERROR_FILE_NOT_FOUND, ERROR_PATH_NOT_FOUND
-                -> ex = new NoSuchFileException(file, other, null);
+                -> new NoSuchFileException(file, other, null);
             case ERROR_FILE_EXISTS, ERROR_ALREADY_EXISTS
-                -> ex = new FileAlreadyExistsException(file, other, null);
+                -> new FileAlreadyExistsException(file, other, null);
             case ERROR_ACCESS_DENIED, ERROR_NETWORK_ACCESS_DENIED, ERROR_PRIVILEGE_NOT_HELD
-                -> ex = new AccessDeniedException(file, other, null);
+                -> new AccessDeniedException(file, other, null);
 
             // fallback to the more general exception
-            default -> ex = new FileSystemException(file, other, errorString());
-        }
-
-        return ex;
+            default -> new FileSystemException(file, other, errorString());
+        };
     }
 
     void rethrowAsIOException(String file) throws IOException {
