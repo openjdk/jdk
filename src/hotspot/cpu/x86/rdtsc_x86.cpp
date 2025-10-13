@@ -23,17 +23,19 @@
  */
 
 #include "rdtsc_x86.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/orderAccess.hpp"
+#include "utilities/macros.hpp"
 #include "vm_version_x86.hpp"
 
-static jlong _epoch = 0;
-static bool rdtsc_elapsed_counter_enabled = false;
-static jlong tsc_frequency = 0;
+DEBUG_ONLY(volatile int Rdtsc::_initialized = 0;)
+jlong Rdtsc::_epoch = 0;
+jlong Rdtsc::_tsc_frequency = 0;
 
-static jlong set_epoch() {
+jlong Rdtsc::set_epoch() {
   assert(0 == _epoch, "invariant");
   _epoch = os::rdtsc();
   return _epoch;
@@ -41,7 +43,7 @@ static jlong set_epoch() {
 
 // Base loop to estimate ticks frequency for tsc counter from user mode.
 // Volatiles and sleep() are used to prevent compiler from applying optimizations.
-static void do_time_measurements(volatile jlong& time_base,
+void Rdtsc::do_time_measurements(volatile jlong& time_base,
                                  volatile jlong& time_fast,
                                  volatile jlong& time_base_elapsed,
                                  volatile jlong& time_fast_elapsed) {
@@ -82,8 +84,8 @@ static void do_time_measurements(volatile jlong& time_base,
   time_fast_elapsed /= loopcount;
 }
 
-static jlong initialize_frequency() {
-  assert(0 == tsc_frequency, "invariant");
+jlong Rdtsc::initialize_frequency() {
+  assert(0 == _tsc_frequency, "invariant");
   assert(0 == _epoch, "invariant");
   const jlong initial_counter = set_epoch();
   if (initial_counter == 0) {
@@ -136,9 +138,9 @@ static jlong initialize_frequency() {
   return (jlong)tsc_freq;
 }
 
-static bool initialize_elapsed_counter() {
-  tsc_frequency = initialize_frequency();
-  return tsc_frequency != 0 && _epoch != 0;
+bool Rdtsc::initialize_elapsed_counter() {
+  _tsc_frequency = initialize_frequency();
+  return _tsc_frequency != 0 && _epoch != 0;
 }
 
 static bool ergonomics() {
@@ -167,16 +169,23 @@ static bool ergonomics() {
   return ft_enabled;
 }
 
+bool Rdtsc::initialize() {
+  precond(AtomicAccess::xchg(&_initialized, 1) == 0);
+  assert(0 == _tsc_frequency, "invariant");
+  assert(0 == _epoch, "invariant");
+  bool result = initialize_elapsed_counter(); // init hw
+  if (result) {
+    result = ergonomics(); // check logical state
+  }
+  return result;
+}
+
 bool Rdtsc::is_supported() {
   return VM_Version::supports_tscinv_ext();
 }
 
-bool Rdtsc::is_elapsed_counter_enabled() {
-  return rdtsc_elapsed_counter_enabled;
-}
-
 jlong Rdtsc::frequency() {
-  return tsc_frequency;
+  return _tsc_frequency;
 }
 
 jlong Rdtsc::elapsed_counter() {
@@ -191,18 +200,7 @@ jlong Rdtsc::raw() {
   return os::rdtsc();
 }
 
-bool Rdtsc::initialize() {
-  static bool initialized = false;
-  if (!initialized) {
-    assert(!rdtsc_elapsed_counter_enabled, "invariant");
-    assert(0 == tsc_frequency, "invariant");
-    assert(0 == _epoch, "invariant");
-    bool result = initialize_elapsed_counter(); // init hw
-    if (result) {
-      result = ergonomics(); // check logical state
-    }
-    rdtsc_elapsed_counter_enabled = result;
-    initialized = true;
-  }
-  return rdtsc_elapsed_counter_enabled;
+bool Rdtsc::enabled() {
+  static bool enabled = initialize();
+  return enabled;
 }
