@@ -1162,7 +1162,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 class CloneShortLoopPredicateVisitor : public PredicateVisitor {
   ClonePredicateToTargetLoop _clone_predicate_to_loop;
   PhaseIdealLoop* const _phase;
-  Node* _new_init;
+  Node* const _new_init;
 
 public:
   CloneShortLoopPredicateVisitor(LoopNode* target_loop_head,
