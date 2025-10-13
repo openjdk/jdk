@@ -752,6 +752,10 @@ public class LocaleEnhanceTest {
         assertTrue(assertThrows(IllformedLocaleException.class,
                 () -> new Builder().setLanguageTag("und-u-nu-thai-cu-usd-NU-chinese-xx-1234"))
                 .getMessage().contains("Duplicate U-extension key: \"NU\""));
+        // redundant Unicode locale extension attributes cause a failure
+        assertTrue(assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLanguageTag("und-u-foo-bar-FOO"))
+                .getMessage().contains("Duplicate U-extension attribute: \"FOO\""));
     }
 
     // Test the values that should clear the builder
