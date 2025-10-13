@@ -312,21 +312,28 @@ public sealed interface LazyConstant<T>
     // Factories
 
     /**
-     * {@return a new lazy constant to be computed later via the provided
+     * {@return a lazy constant to be computed later via the provided
      *          {@code computingFunction}}
      * <p>
      * The returned lazy constant strongly references the provided
      * {@code computingFunction} until initialization completes successfully; after
      * which the computing function is no longer strongly referenced and becomes
      * eligible for garbage collection.
+     * <p>
+     * If the provided computing function already is an instance of LazyConstant, the
+     * method is free to return the provided computing function directly.
      *
      * @param computingFunction in the form of a Supplier to be used to compute
      *                          the constant
      * @param <T>               type of the constant
      *
      */
+    @SuppressWarnings("unchecked")
     static <T> LazyConstant<T> of(Supplier<? extends T> computingFunction) {
         Objects.requireNonNull(computingFunction);
+        if (computingFunction instanceof LazyConstant<? extends T> lc) {
+            return (LazyConstant<T>) lc;
+        }
         return LazyConstantImpl.ofLazy(computingFunction);
     }
 

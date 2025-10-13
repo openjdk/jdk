@@ -135,6 +135,13 @@ final class LazyConstantTest {
 
     @ParameterizedTest
     @MethodSource("lazyConstants")
+    void testLazyConstantAsComputingFunction(LazyConstant<Integer> constant) {
+        LazyConstant<Integer> c1 = LazyConstant.of(constant);
+        assertSame(constant, c1);
+    }
+
+    @ParameterizedTest
+    @MethodSource("lazyConstants")
     void toStringUnset(LazyConstant<Integer> constant) {
         assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, constant.toString());
         constant.get();
