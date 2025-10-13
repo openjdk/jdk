@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,18 +21,21 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * Defines native structures for timespec APIs.
+ * Generated with the following jextract command:
+ * {@snippet lang = "Shell Script":
+ *
+ * HEADER_NAME=timespec.h
+ * echo "#include <time.h>" > $HEADER_NAME
+ *
+ * jextract --target-package jdk.internal.ffi.generated.timespec \
+ *    --include-struct timespec \
+ *    $HEADER_NAME
+ * }
  *
  */
 
-#ifndef SHARE_GC_SHARED_STRONGROOTSSCOPE_HPP
-#define SHARE_GC_SHARED_STRONGROOTSSCOPE_HPP
-
-#include "memory/allocation.hpp"
-
-class MarkScope : public StackObj {
- protected:
-  MarkScope();
-  ~MarkScope();
-};
-
-#endif // SHARE_GC_SHARED_STRONGROOTSSCOPE_HPP
+package jdk.internal.ffi.generated.timespec;
