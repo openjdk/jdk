@@ -40,11 +40,17 @@ void VTransformGraph::add_vtnode(VTransformNode* vtnode) {
     }                                                 \
   )
 
+// This is similar to IGVN optimization. But we are a bit lazy, and don't care about
+// notification / worklist, since the list of nodes is rather small, and we don't
+// expect optimizations that trickle over the whole graph.
 void VTransformGraph::optimize(VTransform& vtransform) {
   TRACE_OPTIMIZE( tty->print_cr("\nVTransformGraph::optimize"); )
 
-  while (true) {
-    bool progress = false;
+  bool progress = true;
+  DEBUG_ONLY(int pass_count = 0;)
+  while (progress) {
+    progress = false;
+    assert(++pass_count < 10, "ensure we do not have endless loops");
     for (int i = 0; i < _vtnodes.length(); i++) {
       VTransformNode* vtn = _vtnodes.at(i);
       if (!vtn->is_alive()) { continue; }
@@ -63,7 +69,6 @@ void VTransformGraph::optimize(VTransform& vtransform) {
         progress = true;
       }
     }
-    if (!progress) { break; }
   }
 }
 
@@ -94,7 +99,7 @@ bool VTransformGraph::schedule() {
   VectorSet post_visited;
 
   collect_nodes_without_strong_in_edges(stack);
-  int num_alive_nodes = count_alive_vtnodes();
+  const int num_alive_nodes = count_alive_vtnodes();
 
   // We create a reverse-post-visit order. This gives us a linearization, if there are
   // no cycles. Then, we simply reverse the order, and we have a schedule.
@@ -1068,11 +1073,6 @@ bool VTransformReductionVectorNode::requires_strict_order() const {
 //       outside the loop, and instead cheaper element-wise vector accumulations
 //       are performed inside the loop.
 bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) {
-  int sopc     = scalar_opcode();
-  uint vlen    = vector_length();
-  BasicType bt = element_basic_type();
-  int ropc     = vector_reduction_opcode();
-
   // We have a phi with a single use.
   VTransformLoopPhiNode* phi = in_req(1)->isa_LoopPhi();
   if (phi == nullptr) {
@@ -1096,7 +1096,11 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
     return false;
   }
 
-  const int vopc = VectorNode::opcode(sopc, bt);
+  const int sopc     = scalar_opcode();
+  const uint vlen    = vector_length();
+  const BasicType bt = element_basic_type();
+  const int ropc     = vector_reduction_opcode();
+  const int vopc     = VectorNode::opcode(sopc, bt);
   if (!Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
     DEBUG_ONLY( this->print(); )
     assert(false, "do not have normal vector op for this reduction");
