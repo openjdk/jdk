@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,18 @@ public final class SecuritySettings {
             for (String s : ssls.getEnabledCipherSuites()) {
                 ostream.println(THREEINDENT + s);
             }
+
+            ostream.println("\n" + TWOINDENT + "Enabled Named Groups:");
+            String [] groups = ssls.getSSLParameters().getNamedGroups();
+            if (groups == null) {
+                ostream.println(THREEINDENT + "<none>");
+            } else {
+                for (String s : groups) {
+                    ostream.println(THREEINDENT + s);
+                }
+            }
         }
+
         ostream.println();
     }
 

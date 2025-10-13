@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,54 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
+ * @bug 6514990
  * @key headful
- * @bug 6514990 8198613
+ * @requires (os.family != "mac")
  * @summary Verifies that calling
  * Graphics2D.drawImage(BufferedImage, BufferedImageOp, x, y) to an
- * accelerated destination produces the same results when performed
+ * OpenGL-accelerated destination produces the same results when performed
  * in software via BufferedImageOp.filter().
- * @run main/othervm DrawBufImgOp -ignore
- * @author campbelc
+ * @run main/othervm -Dsun.java2d.opengl=True DrawBufImgOp -ignore
  */
 
-import java.awt.*;
-import java.awt.image.*;
+/*
+ * @test
+ * @bug 6514990
+ * @key headful
+ * @requires (os.family == "mac")
+ * @summary Verifies that calling
+ * Graphics2D.drawImage(BufferedImage, BufferedImageOp, x, y) to an
+ * OpenGL-accelerated destination produces the same results when performed
+ * in software via BufferedImageOp.filter().
+ * @run main/othervm -Dsun.java2d.opengl=True DrawBufImgOp -ignore
+ */
+
+import java.awt.AlphaComposite;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.image.BufferedImage;
+import java.awt.image.ByteLookupTable;
+import java.awt.image.ColorModel;
+import java.awt.image.ConvolveOp;
+import java.awt.image.IndexColorModel;
+import java.awt.image.Kernel;
+import java.awt.image.LookupOp;
+import java.awt.image.RescaleOp;
+import java.awt.image.ShortLookupTable;
+import java.awt.image.VolatileImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 
@@ -51,14 +85,16 @@ import javax.imageio.ImageIO;
  * any exceptions/crashes in the OGL code.  When we fix all of the
  * outstanding bugs with the software codepaths, we can remove the
  * "-ignore" flag and maybe even restore the "-compare" flag.  In the
- * meantime, it stil functions well as a manual testcase (with either
+ * meantime, it also functions well as a manual testcase (with either
  * the "-show" or "-dump" options).
  */
 public class DrawBufImgOp extends Canvas {
 
     private static final int TESTW = 600;
     private static final int TESTH = 500;
-    private static boolean done;
+
+    private static volatile DrawBufImgOp test;
+    private static volatile Frame frame;
 
     /*
      * If true, skips tests that are known to trigger bugs (which in
@@ -184,11 +220,6 @@ public class DrawBufImgOp extends Canvas {
     }
 
     public void paint(Graphics g) {
-        synchronized (this) {
-            if (done) {
-                return;
-            }
-        }
 
         VolatileImage vimg = createVolatileImage(TESTW, TESTH);
         vimg.validate(getGraphicsConfiguration());
@@ -198,13 +229,6 @@ public class DrawBufImgOp extends Canvas {
         g2d.dispose();
 
         g.drawImage(vimg, 0, 0, null);
-
-        Toolkit.getDefaultToolkit().sync();
-
-        synchronized (this) {
-            done = true;
-            notifyAll();
-        }
     }
 
     /*
@@ -379,6 +403,8 @@ public class DrawBufImgOp extends Canvas {
                 Color expected = new Color(refImg.getRGB(x, y));
                 Color actual   = new Color(testImg.getRGB(x, y));
                 if (!isSameColor(expected, actual, tolerance)) {
+                    saveImage("referenceimage", refImg);
+                    saveImage("testimage", testImg);
                     throw new RuntimeException("Test failed at x="+x+" y="+y+
                                                " (expected="+expected+
                                                " actual="+actual+
@@ -410,7 +436,20 @@ public class DrawBufImgOp extends Canvas {
         return false;
     }
 
+
+    static void createUI() {
+        test = new DrawBufImgOp();
+        Panel panel = new Panel();
+        panel.add(test);
+        frame = new Frame("OpenGL DrawBufImgOp Test");
+        frame.add(panel);
+        frame.setSize(TESTW+100, TESTH+100);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+
     public static void main(String[] args) throws Exception {
+
         boolean show = false;
         boolean dump = false;
         boolean compare = false;
@@ -427,43 +466,27 @@ public class DrawBufImgOp extends Canvas {
             }
         }
 
-        DrawBufImgOp test = new DrawBufImgOp();
-        Frame frame = new Frame();
-        frame.add(test);
-        frame.pack();
-        frame.setVisible(true);
+        Robot robot = new Robot();
 
-        // Wait until the component's been painted
-        synchronized (test) {
-            while (!done) {
-                try {
-                    test.wait();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException("Failed: Interrupted");
-                }
-            }
-        }
+        EventQueue.invokeAndWait(DrawBufImgOp::createUI);
 
-        GraphicsConfiguration gc = frame.getGraphicsConfiguration();
-        if (gc.getColorModel() instanceof IndexColorModel) {
-            System.out.println("IndexColorModel detected: " +
-                               "test considered PASSED");
-            frame.dispose();
-            return;
-        }
+        robot.waitForIdle();
+        robot.delay(2000);
 
-        // Grab the screen region
         BufferedImage capture = null;
         try {
-            Robot robot = new Robot();
+            GraphicsConfiguration gc = frame.getGraphicsConfiguration();
+            if (gc.getColorModel() instanceof IndexColorModel) {
+                System.out.println("IndexColorModel detected: " +
+                                   "test considered PASSED");
+                return;
+            }
             Point pt1 = test.getLocationOnScreen();
             Rectangle rect = new Rectangle(pt1.x, pt1.y, TESTW, TESTH);
             capture = robot.createScreenCapture(rect);
-        } catch (Exception e) {
-            throw new RuntimeException("Problems creating Robot");
         } finally {
-            if (!show) {
-                frame.dispose();
+            if (frame != null) {
+                 EventQueue.invokeAndWait(frame::dispose);
             }
         }
 
@@ -471,14 +494,21 @@ public class DrawBufImgOp extends Canvas {
         if (dump || compare) {
             BufferedImage ref = test.makeReferenceImage();
             if (dump) {
-                ImageIO.write(ref,     "png",
-                              new File("DrawBufImgOp.ref.png"));
-                ImageIO.write(capture, "png",
-                              new File("DrawBufImgOp.cap.png"));
+                saveImage("DrawBufImgOp_ref", ref);
+                saveImage("DrawBufImgOp_cap", capture);
             }
             if (compare) {
                 test.compareImages(ref, capture, 1);
             }
+        }
+    }
+
+    static void saveImage(String name, BufferedImage img) {
+        try {
+            File file = new File(name + ".png");
+            ImageIO.write(img, "png", file);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }
