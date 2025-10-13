@@ -25,7 +25,7 @@
  * @test TestEarlyDynamicLoadJcmd
  * @summary Test that jcmd fails gracefully when the JVM is not in live phase
  * @requires vm.jvmti
- * @library /test/lib /test/jdk
+ * @library /test/lib
  * @run driver/timeout=60 TestEarlyDynamicLoadJcmd
  */
 

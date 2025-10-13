@@ -21,16 +21,21 @@
  * questions.
  */
 
-#include <stdlib.h>
 #include <jvmti.h>
-#include <stdio.h>
+
 #include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <stdio.h>
+#ifdef _WINDOWS
+#include "process.h"
+#define PID() _getpid()
+#else
+#include "unistd.h"
+#define PID() getpid()
+#endif // _WINDOWS
 
 static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", getenv("JCMD_PATH"), getpid());
+    snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", getenv("JCMD_PATH"), PID());
     int res = system(cmd);
     printf("jcmd result = %d\n", res);
 }
@@ -38,7 +43,7 @@ static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
 static void JNICALL VMStartAttach(jvmtiEnv* jvmti, JNIEnv* env) {
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "%s -cp %s AttachAgent %d", getenv("JAVA_PATH"), getenv("CLASSPATH"),
-                                                           getpid());
+                                                           PID());
     int res = system(cmd);
     printf("attach result = %d\n", res);
 }
