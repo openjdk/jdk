@@ -168,15 +168,9 @@ class VM_Version : public Abstract_VM_Version {
       RVFeatureValue(pretty, linux_bit_num, fstring),
       _value(DISABLED_VALUE) {
     }
-    bool enabled() {
-      return _value != DISABLED_VALUE;
-    }
-    void enable_feature(int64_t value) {
-      _value = value;
-    }
-    void disable_feature() {
-      _value = DISABLED_VALUE;
-    }
+    bool enabled() { return _value != DISABLED_VALUE; }
+    void enable_feature(int64_t value) { _value = value; }
+    void disable_feature() { _value = DISABLED_VALUE; }
     int64_t value() { return _value; }
   };
 
