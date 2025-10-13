@@ -91,19 +91,10 @@ public class PacketLossRetransmission extends DTLSOverDatagram {
         testCase.setSocketTimeout(TIMEOUT);
 
         if (isResume) {
-            // Note: we must use the same context, host and port for initial
-            // and resuming sessions.
-            SSLEngine clientEngine = testCase.clientContext.createSSLEngine(
-                    HOST, CLIENT_PORT);
-            clientEngine.setUseClientMode(true);
-
-            SSLEngine serverEngine = testCase.serverContext.createSSLEngine(
-                    HOST, SERVER_PORT);
-            serverEngine.setUseClientMode(false);
-
-            // The initial session will populate the TLS session cache.
             System.out.println("Starting initial handshake");
-            initialSession(clientEngine, serverEngine);
+            // The initial session will populate the TLS session cache.
+            initialSession(testCase.createSSLEngine(true),
+                    testCase.createSSLEngine(false));
         }
 
         testCase.runTest(testCase);

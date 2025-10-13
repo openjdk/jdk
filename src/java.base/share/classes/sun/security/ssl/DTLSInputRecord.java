@@ -1448,8 +1448,7 @@ final class DTLSInputRecord extends InputRecord implements DTLSRecord {
                     boolean isReady = hasFinishedMessage();
                     if (SSLLogger.isOn && SSLLogger.isOn("verbose")) {
                         SSLLogger.fine(
-                                "Has the final flight been received? "
-                                        + isReady);
+                            "Has the final flight been received? " + isReady);
                     }
 
                     return isReady;

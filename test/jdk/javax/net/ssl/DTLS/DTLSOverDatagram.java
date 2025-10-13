@@ -58,9 +58,6 @@ public class DTLSOverDatagram {
     private static final String PATH_TO_STORES = "../etc";
     private static final String KEY_STORE_FILE = "keystore";
     private static final String TRUST_STORE_FILE = "truststore";
-    protected static final String HOST = "localhost";
-    protected static final int CLIENT_PORT = findAvailablePort();
-    protected static final int SERVER_PORT = findAvailablePort();
 
     private static final String KEY_FILENAME =
             System.getProperty("test.src", ".") + "/" + PATH_TO_STORES +
@@ -131,11 +128,16 @@ public class DTLSOverDatagram {
      * =============================================================
      * The remainder is support stuff for DTLS operations.
      */
-    SSLEngine createSSLEngine(boolean isClient) throws Exception {
+    protected SSLEngine createSSLEngine(boolean isClient) throws Exception {
         SSLContext context =
                 isClient ? getClientDTLSContext() : getServerDTLSContext();
-        SSLEngine engine = context.createSSLEngine(HOST,
-                isClient ? CLIENT_PORT : SERVER_PORT);
+
+        // Note: client and server ports are not to be used for network
+        // communication, but only to be set in client and server SSL engines.
+        // We must use the same context, host and port for initial and resuming
+        // sessions when testing session resumption (abbreviated handshake).
+        SSLEngine engine = context.createSSLEngine("localhost",
+                isClient ? 51111 : 52222);
 
         SSLParameters paras = engine.getSSLParameters();
         paras.setMaximumPacketSize(MAXIMUM_PACKET_SIZE);
@@ -535,10 +537,10 @@ public class DTLSOverDatagram {
 
 
     public final void runTest(DTLSOverDatagram testCase) throws Exception {
-        InetSocketAddress serverSocketAddress =
-                new InetSocketAddress(HOST, SERVER_PORT);
-        InetSocketAddress clientSocketAddress =
-                new InetSocketAddress(HOST, CLIENT_PORT);
+        InetSocketAddress serverSocketAddress = new InetSocketAddress
+                (InetAddress.getLoopbackAddress(), 0);
+        InetSocketAddress clientSocketAddress = new InetSocketAddress
+                (InetAddress.getLoopbackAddress(), 0);
 
         try (DatagramSocket serverSocket = new DatagramSocket(serverSocketAddress);
                 DatagramSocket clientSocket = new DatagramSocket(clientSocketAddress)) {
@@ -546,14 +548,20 @@ public class DTLSOverDatagram {
             serverSocket.setSoTimeout(socketTimeout);
             clientSocket.setSoTimeout(socketTimeout);
 
+            InetSocketAddress serverSocketAddr = new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(), serverSocket.getLocalPort());
+
+            InetSocketAddress clientSocketAddr = new InetSocketAddress(
+                    InetAddress.getLoopbackAddress(), clientSocket.getLocalPort());
+
             ExecutorService pool = Executors.newFixedThreadPool(1);
             Future<Void> server;
 
             server = pool.submit(() -> runServer(
-                    testCase, serverSocket, clientSocketAddress));
+                        testCase, serverSocket, clientSocketAddr));
             pool.shutdown();
 
-            runClient(testCase, clientSocket, serverSocketAddress);
+            runClient(testCase, clientSocket, serverSocketAddr);
             server.get();
         }
     }
@@ -623,13 +631,5 @@ public class DTLSOverDatagram {
 
     static void log(String side, String message) {
         System.out.println(side + ": " + message);
-    }
-
-    static int findAvailablePort() {
-        try (var socket = new DatagramSocket(0)) {
-            return socket.getLocalPort();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }
