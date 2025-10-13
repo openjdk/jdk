@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,10 @@ public enum NamedGroup {
     FFDHE4096("ffdhe4096"),
     FFDHE6144("ffdhe6144"),
     FFDHE8192("ffdhe8192");
+
+    X25519MLKEM768("X25519MLKEM768);
+    SecP256r1MLKEM768("SecP256r1MLKEM768");
+    SecP384r1MLKEM1024("SecP384r1MLKEM1024");
 
     public final String name;
 

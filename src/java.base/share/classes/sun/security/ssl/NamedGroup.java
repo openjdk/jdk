@@ -925,6 +925,8 @@ enum NamedGroup {
                         FFDHE_2048,
                         FFDHE_3072,
                         FFDHE_4096,
+                        FFDHE_6144,
+                        FFDHE_8192,
                     };
 
                 groupList = new ArrayList<>(groups.length);

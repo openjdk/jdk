@@ -72,7 +72,7 @@ public class Hybrid {
     }
 
     private static AlgorithmParameterSpec getSpec(String name) {
-        if (name.startsWith("secp")) {
+        if (APS.isGenericEC(name)) {
             return new ECGenParameterSpec(name);
         } else {
             return new NamedParameterSpec(name);
@@ -81,7 +81,7 @@ public class Hybrid {
 
     private static KeyPairGenerator getKeyPairGenerator(String name) throws
             NoSuchAlgorithmException {
-        if (name.startsWith("secp")) {
+        if (APS.isGenericEC(name)) {
             name = "EC";
         }
         return KeyPairGenerator.getInstance(name);
@@ -89,7 +89,7 @@ public class Hybrid {
 
     private static KeyFactory getKeyFactory(String name) throws
             NoSuchAlgorithmException {
-        if (name.startsWith("secp")) {
+        if (APS.isGenericEC(name)) {
             name = "EC";
         }
         return KeyFactory.getInstance(name);
@@ -103,7 +103,7 @@ public class Hybrid {
      * using the given algorithm name.
      */
     private static KEM getKEM(String name) throws NoSuchAlgorithmException {
-        if (name.startsWith("secp") || name.equals("X25519")) {
+        if (APS.isGenericEC(name) || APS.isXDH(name)) {
             return KEM.getInstance("DH", DH.PROVIDER);
         } else {
             return KEM.getInstance(name);
@@ -182,7 +182,7 @@ public class Hybrid {
                 PublicKey leftKey, rightKey;
 
                 try {
-                    if (leftname.startsWith("secp")) {
+                    if (APS.isGenericEC(leftname)) {
                         var curve = CurveDB.lookup(leftname);
                         var ecSpec = new ECPublicKeySpec(
                                 ECUtil.decodePoint(leftKeyBytes,
@@ -201,7 +201,7 @@ public class Hybrid {
                                 " algorithm" + leftname);
                     }
 
-                    if (rightname.equals("X25519")) {
+                    if (APS.isXDH(rightname)) {
                         ArrayUtil.reverse(rightKeyBytes);
                         var xecSpec = new XECPublicKeySpec(
                                 new NamedParameterSpec(rightname),
@@ -420,6 +420,16 @@ public class Hybrid {
         @Override
         public byte[] getEncoded() {
             return new byte[0];
+        }
+    }
+
+    private static final class APS {
+        static boolean isGenericEC(String name) {
+            return name != null && name.startsWith("secp");
+        }
+
+        static boolean isXDH(String name) {
+            return name != null && name.equals("X25519");
         }
     }
 }
