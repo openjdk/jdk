@@ -69,7 +69,7 @@ public final class Operations {
 
         ops.add(Expression.make(BYTES, "(", BOOLEANS, "?", BYTES, ":", BYTES, ")"));
 
-        // Arithmetic operations are not performned in byte, but rather promoted to int.
+        // Arithmetic operations are not performed in byte, but rather promoted to int.
 
         // ------------ Byte -------------
         ops.add(Expression.make(INTS,  "Byte.compare(",         BYTES, ", ", BYTES, ")"));

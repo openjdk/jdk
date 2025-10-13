@@ -41,7 +41,7 @@ import static compiler.lib.template_framework.Template.body;
  * {@link Expression} or use existing ones from {@link Operations}.
  *
  * <p>
- * The {@link Expression}s are composable, they can be explicitly {@link nest}ed, or randomly
+ * The {@link Expression}s are composable, they can be explicitly {@link #nest}ed, or randomly
  * combined using {@link #nestRandomly}.
  *
  * <p>
@@ -346,7 +346,7 @@ public class Expression {
             throw new IllegalArgumentException("Wrong number of arguments:" +
                                                " expected: " + argumentTypes.size() +
                                                " but got: " + arguments.size() +
-                                               " for " + this.toString());
+                                               " for " + this);
         }
 
         // List of tokens: interleave strings and arguments.
@@ -398,7 +398,7 @@ public class Expression {
                                           int maxNumberOfUsedExpressions) {
         List<Expression> filtered = expressions.stream().filter(e -> e.returnType.isSubtypeOf(returnType)).toList();
 
-        if (filtered.size() == 0) {
+        if (filtered.isEmpty()) {
             throw new IllegalArgumentException("Found no exception with the specified returnType.");
         }
 
@@ -423,7 +423,7 @@ public class Expression {
         CodeGenerationDataNameType argumentType = this.argumentTypes.get(argumentIndex);
         List<Expression> filtered = nestingExpressions.stream().filter(e -> e.returnType.isSubtypeOf(argumentType)).toList();
 
-        if (filtered.size() == 0) {
+        if (filtered.isEmpty()) {
             // Found no expression that has a matching returnType.
             return this;
         }
@@ -456,8 +456,8 @@ public class Expression {
             newArgumentTypes.add(this.argumentTypes.get(i));
         }
         newStrings.add(this.strings.get(argumentIndex) +
-                       nestingExpression.strings.get(0)); // concat s1 and S0
-        newArgumentTypes.add(nestingExpression.argumentTypes.get(0));
+                       nestingExpression.strings.getFirst()); // concat s1 and S0
+        newArgumentTypes.add(nestingExpression.argumentTypes.getFirst());
         for (int i = 1; i < nestingExpression.argumentTypes.size(); i++) {
             newStrings.add(nestingExpression.strings.get(i));
             newArgumentTypes.add(nestingExpression.argumentTypes.get(i));
