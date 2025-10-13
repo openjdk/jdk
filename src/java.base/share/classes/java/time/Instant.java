@@ -985,31 +985,6 @@ public final class Instant
     }
 
     /**
-     * Returns a copy of this instant with the specified duration subtracted.
-     * <p>
-     * This method behaves the same as {@link #minus(TemporalAmount)} passed
-     * with the specified duration as its argument, if no numeric overflow
-     * occurs. If it does, then instead of throwing {@link ArithmeticException}
-     * or {@link DateTimeException} like {@code minus} does, this method returns
-     * {@link Instant#MIN} or {@link Instant#MAX} if the result exceeds minimum
-     * or maximum instant respectively.
-     *
-     * @param duration the duration to subtract, not null
-     * @return an {@code Instant} based on this instant with the subtraction made, not null
-     *
-     * @since 26
-     */
-    public Instant minusSaturating(Duration duration) {
-        if (duration.isNegative()) {
-            return Duration.between(Instant.MAX, this).compareTo(duration) >= 0
-                    ? Instant.MAX : minus(duration);
-        } else {
-            return Duration.between(Instant.MIN, this).compareTo(duration) > 0
-                    ? minus(duration) : Instant.MIN;
-        }
-    }
-
-    /**
      * Returns a copy of this instant with the specified amount subtracted.
      * <p>
      * This returns an {@code Instant}, based on this one, with the amount
