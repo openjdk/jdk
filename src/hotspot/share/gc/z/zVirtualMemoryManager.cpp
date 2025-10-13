@@ -62,10 +62,13 @@ void ZVirtualMemoryReserver::unreserve(const ZVirtualMemory& vmem) {
   pd_unreserve(addr, vmem.size());
 }
 
-void ZVirtualMemoryReserver::unreserve_all() {
+size_t ZVirtualMemoryReserver::unreserve_all() {
+  size_t unreserved = 0;
   for (ZVirtualMemory vmem; _registry.unregister_first(&vmem);) {
     unreserve(vmem);
+    unreserved += vmem.size();
   }
+  return unreserved;
 }
 
 bool ZVirtualMemoryReserver::is_empty() const {
@@ -263,6 +266,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
 
   // Divide size_for_partitions virtual memory over the NUMA nodes
   initialize_partitions(&reserver, size_for_partitions);
+  size_t unreserved = 0;
 
   // Set up multi-partition or unreserve the surplus memory
   if (desired_for_multi_partition > 0 && reserved == desired) {
@@ -271,7 +275,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
     _is_multi_partition_enabled = true;
   } else {
     // Failed to reserve enough memory for multi-partition, unreserve unused memory
-    reserver.unreserve_all();
+    unreserved = reserver.unreserve_all();
   }
 
   assert(reserver.is_empty(), "Must have handled all reserved memory");
@@ -280,7 +284,7 @@ ZVirtualMemoryManager::ZVirtualMemoryManager(size_t max_capacity)
                        (is_contiguous ? "Contiguous" : "Discontiguous"),
                        (requested == desired ? "Unrestricted" : "Restricted"),
                        (reserved == desired ? "Complete" : ((reserved < desired_for_partitions) ? "Degraded"  : "NUMA-Degraded")));
-  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT, EXACTFMTARGS(reserved));
+  log_info_p(gc, init)("Reserved Space Size: " EXACTFMT, EXACTFMTARGS(reserved - unreserved));
 
   // Successfully initialized
   _initialized = true;

@@ -63,7 +63,7 @@ public:
 
   void initialize_partition_registry(ZVirtualMemoryRegistry* partition_registry, size_t size);
 
-  void unreserve_all();
+  size_t unreserve_all();
 
   bool is_empty() const;
   bool is_contiguous() const;
