@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary
+ * @bug 8369258
+ * @summary C2: enable ReassociateInvariants for all loop types
  * @library /test/lib /
  * @run driver compiler.loopopts.TestReassociateInvariants
  */

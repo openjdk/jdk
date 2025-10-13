@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8324751
+ * @bug 8324751 8369258
  * @summary Reported issue: JDK-8360204: C2 SuperWord: missing RCE with MemorySegment.getAtIndex
  *          The examples are generated from TestAliasingFuzzer.java
  *          So if you see something change here, you may want to investigate if we

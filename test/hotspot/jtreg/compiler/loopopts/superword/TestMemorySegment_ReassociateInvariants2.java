@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8324751
+ * @bug 8324751 8369258
  * @summary Reported issue: JDK-8365982: C2 SuperWord: missing RCE / strange Multiversioning with MemorySegment.set
  *          The examples are generated from TestAliasingFuzzer.java
  *          So if you see something change here, you may want to investigate if we
@@ -81,9 +81,6 @@ public class TestMemorySegment_ReassociateInvariants2 {
         applyIfPlatform = {"64-bit", "true"},
         applyIfAnd = {"AlignVector", "false", "ShortRunningLongLoop", "true"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
-    // If you see this IR rule fail: investigate JDK-8365982, possibly close it and fix this IR rule!
-    // Also: consider renaming the file to something more descriptive: what have you fixed with this?
-    // And: you may now be able to tighten IR rules in TestAliasingFuzzer.java
     public static void test(MemorySegment container_0, long invar0_0, MemorySegment container_1, long invar0_1, long ivLo, long ivHi) {
         for (long i = ivHi-1; i >= ivLo; i-=1) {
             container_0.set(ValueLayout.JAVA_CHAR_UNALIGNED, -47143L + -2L * i + -2L * invar0_0 + -1L * invar0_853 + -1L * invar1_853 + 0L * invar2_853, (char)0x0102030405060708L);
