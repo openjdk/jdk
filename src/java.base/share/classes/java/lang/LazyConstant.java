@@ -168,8 +168,8 @@ import java.util.function.Supplier;
  * observed. This is true if the reference to the lazy constant is a VM constant
  * (e.g. in cases where the lazy constant itself is stored in a
  * {@code static final} field) or forms a trusted chain to such a VM constant via
- * one or more layers of a {@linkplain Record record} fields or final fields
- * in hidden classes.
+ * one or more trusted fields (i.e., any combination of static final fields,
+ * {@linkplain Record record} fields, or final instance fields in hidden classes).
  *
  * @apiNote As a lazy constant can be initialized with an object but, it is not
  *          possible to ever remove that object, this can be a source of an unintended
