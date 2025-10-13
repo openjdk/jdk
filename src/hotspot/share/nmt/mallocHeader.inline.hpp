@@ -37,7 +37,7 @@
 inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker)
   : _size(size), _mst_marker(mst_marker), _mem_tag(mem_tag),
   #if INCLUDE_ASAN
-    _poisoned(false),
+    _poisoned(true),
   #else
     _unused(0),
   #endif

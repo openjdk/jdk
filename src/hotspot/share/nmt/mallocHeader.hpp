@@ -117,18 +117,23 @@ class MallocHeader {
 
   #if INCLUDE_ASAN
     uint16_t get_footer() const {
+      if (!_poisoned) {
+        return build_footer(footer_address()[0], footer_address()[1]);
+      }
       ASAN_UNPOISON_MEMORY_REGION(footer_address(), sizeof(uint16_t));
       uint16_t footer = build_footer(footer_address()[0], footer_address()[1]);
-      if (_poisoned) {
-        ASAN_POISON_MEMORY_REGION(footer_address(), sizeof(uint16_t));
-      }
+      ASAN_POISON_MEMORY_REGION(footer_address(), sizeof(uint16_t));
       return footer;
     }
     void set_footer(uint16_t v) {
-      bool poisoned_before = _poisoned;
-      set_poisoned(false);
+      if (_poisoned) {
+        set_poisoned(false);
+        footer_address()[0] = (uint8_t)(v >> 8);
+        footer_address()[1] = (uint8_t)v;
+        set_poisoned(true);
+        return;
+      }
       footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v;
-      set_poisoned(poisoned_before);
     }
   #else
     uint16_t get_footer() const { return build_footer(footer_address()[0], footer_address()[1]); }
@@ -164,6 +169,7 @@ public:
   #endif // _LP64
   #if INCLUDE_ASAN
     inline void set_poisoned(bool poison) {
+      _poisoned = poison;
       if (poison) {
         ASAN_POISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
         ASAN_POISON_MEMORY_REGION(footer_address(), sizeof(CanaryType));
@@ -173,33 +179,37 @@ public:
         ASAN_UNPOISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
         ASAN_UNPOISON_MEMORY_REGION(footer_address(), sizeof(CanaryType));
       }
-      _poisoned = poison;
     }
 
     inline bool is_poisoned() const { return _poisoned; }
 
     inline size_t size() const {
+      if (!_poisoned) {
+        return _size;
+      }
       ASAN_UNPOISON_MEMORY_REGION(&_size, sizeof(_size));
       size_t size = _size;
-      if (_poisoned) {
-        ASAN_POISON_MEMORY_REGION(&_size, sizeof(_size));
-      }
+      ASAN_POISON_MEMORY_REGION(&_size, sizeof(_size));
       return size;
     }
 
     inline void set_header_canary(uint16_t value) {
-      bool poisoned_before = _poisoned;
+      if(!_poisoned) {
+        _canary = value;
+        return;
+      }
       set_poisoned(false);
       _canary = value;
-      set_poisoned(poisoned_before);
+      set_poisoned(true);
     }
 
     inline CanaryType canary() const {
+      if (!_poisoned) {
+        return _canary;
+      }
       ASAN_UNPOISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
       CanaryType canary = _canary;
-      if (_poisoned) {
-        ASAN_POISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
-      }
+      ASAN_POISON_MEMORY_REGION(&_canary, sizeof(CanaryType));
       return canary ;
     }
   #else
