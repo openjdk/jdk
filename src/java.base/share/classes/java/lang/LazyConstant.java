@@ -165,11 +165,12 @@ import java.util.function.Supplier;
  * A lazy constant can never change after it has been initialized. Therefore,
  * a JVM implementation may, for an initialized lazy constant, elide all future reads
  * of that lazy constant, and instead directly use any constant that it has previously
- * observed. This is true if the reference to the lazy constant is a VM constant
- * (e.g. in cases where the lazy constant itself is stored in a
- * {@code static final} field) or forms a trusted chain to such a VM constant via
- * one or more trusted fields (i.e., any combination of static final fields,
- * {@linkplain Record record} fields, or final instance fields in hidden classes).
+ * observed. We call this optimization <em>constant folding</em>. This is only possible if
+ * the reference to the lazy constant is a VM constant (e.g. in cases where
+ * the lazy constant itself is stored in a {@code static final} field) or forms
+ * a trusted chain to such a VM constant via one or more trusted fields (i.e., any
+ * combination of static final fields, {@linkplain Record record} fields, or
+ * final instance fields in hidden classes).
  *
  * @apiNote As a lazy constant can be initialized with an object but, it is not
  *          possible to ever remove that object, this can be a source of an unintended
@@ -184,7 +185,7 @@ import java.util.function.Supplier;
  *          Instead, a {@linkplain List#ofLazy(int, IntFunction) lazy list} of
  *          arbitrary depth can be used, which provides constant components.
  *          More generally, a lazy constant can hold other lazy constants of
- *          arbitrary depth and still provide transitive constancy.
+ *          arbitrary depth and still provide transitive constant folding.
  *          <p>
  *          The {@code LazyConstant} type is not {@link Serializable}.
  *          <p>
