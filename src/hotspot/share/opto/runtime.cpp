@@ -343,7 +343,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
     Handle holder(current, klass->klass_holder()); // keep the klass alive
     result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
     current->set_vm_result_oop(result);
-    region_age_before_gc = ShenandoahHeap::heap()->heap_region_containing(result)->age();
+    if (UseShenandoahGC) {
+      region_age_before_gc = ShenandoahHeap::heap()->heap_region_containing(result)->age();
+    }
 
     // Pass oops back through thread local storage.  Our apparent type to Java
     // is that we return an oop, but we can block on exit from this routine and
@@ -354,14 +356,16 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
   deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
   JRT_BLOCK_END;
 
-  if (!ShenandoahHeap::heap()->is_in_young(current->vm_result_oop())) {
-    ShenandoahHeap* heap = ShenandoahHeap::heap();
-    oop relocated = current->vm_result_oop();
-    ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
-        p2i(result), heap->heap_region_containing(result)->index(), region_age_before_gc,
-        p2i(current->vm_result_oop()), heap->heap_region_containing(current->vm_result_oop())->index());
+  if (UseShenandoahGC) {
+    if (!ShenandoahHeap::heap()->is_in_young(current->vm_result_oop())) {
+      ShenandoahHeap* heap = ShenandoahHeap::heap();
+      oop relocated = current->vm_result_oop();
+      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
+          p2i(result), heap->heap_region_containing(result)->index(), region_age_before_gc,
+          p2i(current->vm_result_oop()), heap->heap_region_containing(current->vm_result_oop())->index());
 
-    report_vm_error(__FILE__, __LINE__, msg.buffer());
+      report_vm_error(__FILE__, __LINE__, msg.buffer());
+    }
   }
   // inform GC that we won't do card marks for initializing writes.
   SharedRuntime::on_slowpath_allocation_exit(current);
