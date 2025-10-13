@@ -95,11 +95,11 @@ import java.util.function.Supplier;
  * the lazy constant), an {@linkplain IllegalStateException} is thrown and the lazy
  * constant is not initialized.
  * <p>
- * If the computing function throws any unchecked exception or Error, that Throwable
- * is propagated to the caller, and the lazy constant remains uninitialized.
- * In other words, upon an unsuccessful invocation of the computing function,
- * neither a constant, the exception, nor the fact that an exception was thrown are ever
- * stored in the lazy constant.
+ * If the computing function throws any unchecked exception or {@linkplain Error}, that
+ * {@linkplain Throwable} is propagated to the caller, and the lazy constant remains
+ * uninitialized. In other words, upon an unsuccessful invocation of
+ * the computing function, neither a constant, the exception, nor the fact that
+ * an exception was thrown are ever stored in the lazy constant.
  *
  * <h2 id="composition">Composing lazy constants</h2>
  * A lazy constant can depend on other lazy constants, forming a dependency graph
