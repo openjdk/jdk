@@ -652,7 +652,7 @@ enum NamedGroup {
 
         // Post-Quantum Cryptography (PQC) KEM groups
         // Currently used for hybrid named groups
-        NAMED_GROUP_KEM("PQC", KEMScheme.instance),
+        NAMED_GROUP_KEM("KEM", KEMScheme.instance),
 
         // arbitrary prime and curves (ECDHE)
         NAMED_GROUP_ARBITRARY("EC", null),
