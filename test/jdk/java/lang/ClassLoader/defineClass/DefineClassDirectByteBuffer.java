@@ -80,7 +80,6 @@ public class DefineClassDirectByteBuffer {
                 ByteBuffer.allocate(classBytes.length)
                         .put(classBytes)
                         .flip()
-                        .position(0)
                         .asReadOnlyBuffer(),
                 ByteBuffer.allocate(classBytesAtOffset.length)
                         .put(classBytesAtOffset)
@@ -233,7 +232,7 @@ public class DefineClassDirectByteBuffer {
         CustomClassLoader loader = new CustomClassLoader();
         Class<?> clazz = loader.defineClassFromByteBuffer(bb);
         assertInvocating(clazz);
-        //  long-standing (and undocumented) behavior, see JDK-8352583
+        // long-standing (and undocumented) behavior, see JDK-8352583
         if (bb.isDirect() || bb.hasArray()) {
             assertEquals(originalPos, bb.position());
         } else {
