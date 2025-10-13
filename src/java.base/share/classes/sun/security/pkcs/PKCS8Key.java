@@ -106,9 +106,11 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     }
 
     /**
-     * Constructor that takes both public and private encodings.  If
-     * publicEncoding is null, a V1 PKCS8 encoding is created; otherwise, V2 is
-     * encoded.
+     * Constructor that takes both public and private encodings.
+     *
+     * If the private key includes a public key encoding (like an EC key in
+     * SEC1v2 format), and a specified public key matches it, the existing
+     * encoding is reused rather than recreated.
      */
     public PKCS8Key(byte[] publicEncoding, byte[] privateEncoding)
         throws InvalidKeyException {
@@ -121,7 +123,6 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
                         "encoding has a public key that does not match " +
                         "the given PublicKey");
                 }
-                version = V1;
             } else {
                 pubKeyEncoded = publicEncoding;
                 version = V2;

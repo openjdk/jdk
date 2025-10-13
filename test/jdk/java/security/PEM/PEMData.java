@@ -48,6 +48,16 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, KeyPair.class, "SunEC");
 
+    public static final Entry ecsecp256dom0 = new Entry("ecsecp256dom0",
+        """
+        -----BEGIN PRIVATE KEY-----
+        MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgkW3Jx561NlEgBnut
+        KwDdi3cNwu7YYD/QtJ+9+AEBdoqgCgYIKoZIzj0DAQehRANCAASL+REY4vvAI9M3
+        gonaml5K3lRgHq5w+OO4oO0VNduC44gUN1nrk7/wdNSpL+xXNEX52Dsff+2RD/fo
+        p224ANvB
+        -----END PRIVATE KEY-----
+        """, KeyPair.class, "SunEC");
+
     public static final Entry rsapriv = new Entry("rsapriv",
         """
         -----BEGIN PRIVATE KEY-----
@@ -578,6 +588,7 @@ class PEMData {
         privList.add(rsapsspriv);
         privList.add(rsaprivbc);
         privList.add(ecsecp256);
+        privList.add(ecsecp256dom0);
         privList.add(ecsecp384);
         privList.add(ed25519priv);
         privList.add(ed25519ekpi);  // The non-EKPI version needs decryption

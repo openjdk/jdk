@@ -75,6 +75,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
     @SuppressWarnings("serial") // Type of field is not Serializable
     private ECParameterSpec params;
     private byte[] domainParams;  //Currently unsupported
+    private final byte SEC1v2 = 1;
 
     /**
      * Construct a key from its encoding. Called by the ECKeyFactory.
@@ -175,7 +176,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             }
             DerInputStream data = derValue.data;
             int version = data.getInteger();
-            if (version != V2) {
+            if (version != SEC1v2) {
                 throw new IOException("Version must be 1");
             }
             byte[] privData = data.getOctetString();
@@ -256,8 +257,7 @@ public final class ECPrivateKeyImpl extends PKCS8Key implements ECPrivateKey {
             if (seq.tag == DerValue.tag_Sequence) {
                 int version = seq.data.getInteger();
                 if (version == 1) { // EC
-                    byte[] oct = seq.data.getOctetString();  // private key
-                    Arrays.fill(oct, (byte) 0x0);
+                    seq.data.getDerValue();  // read pass the private key
                     if (seq.data.available() != 0) {
                         DerValue derValue = seq.data.getDerValue();
                         // check for optional [0] EC domain parameters
