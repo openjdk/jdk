@@ -27,17 +27,20 @@
 
 package jdk.internal.ffi.generated.kqueue;
 
+import jdk.internal.ffi.util.FFMUtils;
+import jdk.internal.foreign.*;
+
 import java.lang.foreign.*;
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
 
 @SuppressWarnings("restricted")
-public class kqueue_h extends kqueue_h$shared {
+public class kqueue_h {
+
+    private static final String ERRNO_NAME = "errno";
 
     kqueue_h() {
         // Should not be called directly
     }
-
-    static final Arena LIBRARY_ARENA = Arena.ofAuto();
 
     static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
             .or(Linker.nativeLinker().defaultLookup());
@@ -69,6 +72,7 @@ public class kqueue_h extends kqueue_h$shared {
     public static int EV_ONESHOT() {
         return EV_ONESHOT;
     }
+
     private static final int EV_CLEAR = (int)32L;
     /**
      * {@snippet lang=c :
@@ -81,11 +85,14 @@ public class kqueue_h extends kqueue_h$shared {
 
     private static class kqueue {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            kqueue_h.C_INT    );
+                FFMUtils.C_INT);
 
-        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("kqueue");
+        public static final MemorySegment ADDR = FFMUtils.findOrThrow("kqueue");
 
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC,
+                Linker.Option.captureCallState(ERRNO_NAME));
+
+        public static final MethodHandle ADAPTED = CaptureStateUtil.adaptSystemCall(HANDLE, ERRNO_NAME);
     }
 
     /**
@@ -124,33 +131,28 @@ public class kqueue_h extends kqueue_h$shared {
      * }
      */
     public static int kqueue() {
-        var mh$ = kqueue.HANDLE;
         try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("kqueue");
-            }
-            return (int)mh$.invokeExact();
-        } catch (Error | RuntimeException ex) {
-           throw ex;
+            return (int) kqueue.ADAPTED.invokeExact();
         } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
+            throw new AssertionError("should not reach here", ex$);
         }
     }
 
     private static class kevent {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-            kqueue_h.C_INT,
-            kqueue_h.C_INT,
-            kqueue_h.C_POINTER,
-            kqueue_h.C_INT,
-            kqueue_h.C_POINTER,
-            kqueue_h.C_INT,
-            kqueue_h.C_POINTER
+                FFMUtils.C_INT,
+                FFMUtils.C_INT,
+                FFMUtils.C_POINTER,
+                FFMUtils.C_INT,
+                FFMUtils.C_POINTER,
+                FFMUtils.C_INT,
+                FFMUtils.C_POINTER
         );
 
-        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("kevent");
-
-        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+        public static final MemorySegment ADDR = FFMUtils.findOrThrow("kevent");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC,
+                Linker.Option.captureCallState(ERRNO_NAME));
+        public static final MethodHandle ADAPTED =  CaptureStateUtil.adaptSystemCall(HANDLE, ERRNO_NAME);
     }
 
     /**
@@ -189,18 +191,16 @@ public class kqueue_h extends kqueue_h$shared {
      * }
      */
     public static int kevent(int kq, MemorySegment changelist, int nchanges, MemorySegment eventlist, int nevents, MemorySegment timeout) {
-        var mh$ = kevent.HANDLE;
         try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("kevent", kq, changelist, nchanges, eventlist, nevents, timeout);
+            if (FFMUtils.TRACE_DOWNCALLS) {
+                FFMUtils.traceDowncall("kevent", kq, changelist, nchanges, eventlist, nevents, timeout);
             }
-            return (int)mh$.invokeExact(kq, changelist, nchanges, eventlist, nevents, timeout);
-        } catch (Error | RuntimeException ex) {
-           throw ex;
+            return (int) kevent.ADAPTED.invokeExact(kq, changelist, nchanges, eventlist, nevents, timeout);
         } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
+            throw new AssertionError("should not reach here", ex$);
         }
     }
+
     private static final int EVFILT_READ = (int)-1L;
     /**
      * {@snippet lang=c :

@@ -27,11 +27,20 @@
 
 package jdk.internal.ffi.generated.kqueue;
 
-import java.lang.foreign.*;
-import java.util.function.*;
+import jdk.internal.ffi.util.FFMUtils;
 
-import static java.lang.foreign.MemoryLayout.PathElement.*;
-import static java.lang.foreign.ValueLayout.*;
+import java.lang.foreign.GroupLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.AddressLayout;
+import java.lang.foreign.SegmentAllocator;
+import java.lang.foreign.Arena;
+import java.util.function.Consumer;
+
+import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.ValueLayout.OfLong;
+import static java.lang.foreign.ValueLayout.OfShort;
+import static java.lang.foreign.ValueLayout.OfInt;
 
 /**
  * {@snippet lang=c :
@@ -53,12 +62,12 @@ public class kevent {
     }
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-        kqueue_h.align(kqueue_h.C_LONG, 4).withName("ident"),
-        kqueue_h.C_SHORT.withName("filter"),
-        kqueue_h.C_SHORT.withName("flags"),
-        kqueue_h.C_INT.withName("fflags"),
-        kqueue_h.align(kqueue_h.C_LONG, 4).withName("data"),
-        kqueue_h.align(kqueue_h.C_POINTER, 4).withName("udata")
+            FFMUtils.align(FFMUtils.C_LONG, 4).withName("ident"),
+            FFMUtils.C_SHORT.withName("filter"),
+            FFMUtils.C_SHORT.withName("flags"),
+            FFMUtils.C_INT.withName("fflags"),
+            FFMUtils.align(FFMUtils.C_LONG, 4).withName("data"),
+            FFMUtils.align(FFMUtils.C_POINTER, 4).withName("udata")
     ).withName("kevent");
 
     /**

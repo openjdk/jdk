@@ -27,11 +27,13 @@
 
 package jdk.internal.ffi.generated.timespec;
 
-import java.lang.foreign.*;
-import java.util.function.*;
+import jdk.internal.ffi.util.*;
 
-import static java.lang.foreign.MemoryLayout.PathElement.*;
-import static java.lang.foreign.ValueLayout.*;
+import java.lang.foreign.*;
+import java.util.function.Consumer;
+
+import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
+import static java.lang.foreign.ValueLayout.OfLong;
 
 /**
  * {@snippet lang=c :
@@ -49,8 +51,8 @@ public class timespec {
     }
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-        timespec_h.C_LONG.withName("tv_sec"),
-        timespec_h.C_LONG.withName("tv_nsec")
+            FFMUtils.C_LONG.withName("tv_sec"),
+            FFMUtils.C_LONG.withName("tv_nsec")
     ).withName("timespec");
 
     /**

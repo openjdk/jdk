@@ -27,20 +27,17 @@
 
 package jdk.internal.ffi.generated.errno;
 
+import jdk.internal.ffi.util.FFMUtils;
+
 import java.lang.foreign.*;
 import java.lang.invoke.*;
 
 @SuppressWarnings("restricted")
-public class errno_h extends errno_h$shared {
+public class errno_h {
 
     errno_h() {
         // Should not be called directly
     }
-
-    static final Arena LIBRARY_ARENA = Arena.ofAuto();
-
-    static final SymbolLookup SYMBOL_LOOKUP = SymbolLookup.loaderLookup()
-            .or(Linker.nativeLinker().defaultLookup());
 
     private static final int EINTR = (int)4L;
     /**
@@ -54,13 +51,13 @@ public class errno_h extends errno_h$shared {
 
     private static class strerror_r {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-                C_INT,
-                C_INT,
-                C_POINTER,
-                C_LONG
+                FFMUtils.C_INT,
+                FFMUtils.C_INT,
+                FFMUtils.C_POINTER,
+                FFMUtils.C_LONG
         );
 
-        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("strerror_r");
+        public static final MemorySegment ADDR = FFMUtils.findOrThrow("strerror_r");
 
         public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
     }
@@ -103,14 +100,12 @@ public class errno_h extends errno_h$shared {
     public static int strerror_r(int __errnum, MemorySegment __strerrbuf, long __buflen) {
         var mh$ = strerror_r.HANDLE;
         try {
-            if (TRACE_DOWNCALLS) {
-                traceDowncall("strerror_r", __errnum, __strerrbuf, __buflen);
+            if (FFMUtils.TRACE_DOWNCALLS) {
+                FFMUtils.traceDowncall("strerror_r", __errnum, __strerrbuf, __buflen);
             }
             return (int)mh$.invokeExact(__errnum, __strerrbuf, __buflen);
-        } catch (Error | RuntimeException ex) {
-           throw ex;
         } catch (Throwable ex$) {
-           throw new AssertionError("should not reach here", ex$);
+            throw new AssertionError("should not reach here", ex$);
         }
     }
 }

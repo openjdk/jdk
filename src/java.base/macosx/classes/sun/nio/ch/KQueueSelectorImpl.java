@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,10 @@
 
 package sun.nio.ch;
 
+import jdk.internal.ffi.generated.kqueue.kqueue_h;
+
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
@@ -54,7 +57,7 @@ class KQueueSelectorImpl extends SelectorImpl {
     private final int kqfd;
 
     // address of poll array (event list) when polling for pending events
-    private final long pollArrayAddress;
+    private final MemorySegment pollArrayAddress;
 
     // file descriptors used for interrupt
     private final int fd0;
@@ -78,7 +81,7 @@ class KQueueSelectorImpl extends SelectorImpl {
     KQueueSelectorImpl(SelectorProvider sp) throws IOException {
         super(sp);
 
-        this.kqfd = KQueue.create();
+        this.kqfd = kqueue_h.kqueue();
         this.pollArrayAddress = KQueue.allocatePollArray(MAX_KEVENTS);
 
         try {
@@ -97,7 +100,7 @@ class KQueueSelectorImpl extends SelectorImpl {
 
     @Override
     protected int doSelect(Consumer<SelectionKey> action, long timeout)
-        throws IOException
+            throws IOException
     {
         assert Thread.holdsLock(this);
 
@@ -229,7 +232,7 @@ class KQueueSelectorImpl extends SelectorImpl {
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
     private int processEvents(int numEntries, Consumer<SelectionKey> action)
-        throws IOException
+            throws IOException
     {
         assert Thread.holdsLock(this);
 
@@ -245,15 +248,15 @@ class KQueueSelectorImpl extends SelectorImpl {
         pollCount++;
 
         for (int i = 0; i < numEntries; i++) {
-            long kevent = KQueue.getEvent(pollArrayAddress, i);
-            int fd = KQueue.getDescriptor(kevent);
+            MemorySegment eventMS = KQueue.getEvent(pollArrayAddress, i);
+            int fd = (int) KQueue.getDescriptor(eventMS);
             if (fd == fd0) {
                 interrupted = true;
             } else {
                 SelectionKeyImpl ski = fdToKey.get(fd);
                 if (ski != null) {
                     int rOps = 0;
-                    short filter = KQueue.getFilter(kevent);
+                    short filter = KQueue.getFilter(eventMS);
                     if (filter == EVFILT_READ) {
                         rOps |= Net.POLLIN;
                     } else if (filter == EVFILT_WRITE) {

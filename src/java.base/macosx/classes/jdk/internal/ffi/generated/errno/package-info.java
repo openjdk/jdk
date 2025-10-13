@@ -38,6 +38,10 @@
  *    $HEADER_NAME
  * }
  *
+ * After generation of native bindings, the layouts for the C builtin layouts and other
+ * variables/methods not specific to a component area are moved to the {@code BindingUtils} class
+ * for future reusability.
+ *
  */
 
 package jdk.internal.ffi.generated.errno;
