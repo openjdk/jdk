@@ -1141,7 +1141,8 @@ void ClonePredicateToTargetLoop::clone_template_assertion_predicate(
 }
 
 // Clones the provided Template Assertion Predicate to the head of the current predicate chain at the target loop and
-// replace current OpaqueLoopInit with the expression passed as argument.
+// replaces the current OpaqueLoopInit with 'new_init'.
+//  Note: 'new_init' could also have the 'OpaqueLoopInit` as parent node further up.
 void ClonePredicateToTargetLoop::clone_template_assertion_predicate_and_replace_init(
     const TemplateAssertionPredicate& template_assertion_predicate, Node* new_init) {
   TemplateAssertionPredicate cloned_template_assertion_predicate =
