@@ -1570,7 +1570,7 @@ Node* URShiftINode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-Node *URShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* URShiftINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaInteger);
   if (con == 0) {
     return nullptr;
@@ -1734,7 +1734,7 @@ Node* URShiftLNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-Node *URShiftLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+Node* URShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   int con = mask_and_replace_shift_amount(phase, this, BitsPerJavaLong);
   if (con == 0) {
     return nullptr;

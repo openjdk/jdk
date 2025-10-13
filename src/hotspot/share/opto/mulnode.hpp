@@ -372,7 +372,7 @@ public:
 // Logical shift right
 class URShiftBNode : public URShiftNode {
 public:
-  URShiftBNode(Node *in1, Node *in2) : URShiftNode(in1,in2) {
+  URShiftBNode(Node* in1, Node* in2) : URShiftNode(in1,in2) {
     ShouldNotReachHere(); // only vector variant is used
   }
   virtual int Opcode() const;
@@ -382,7 +382,7 @@ public:
 // Logical shift right
 class URShiftSNode : public URShiftNode {
 public:
-  URShiftSNode(Node *in1, Node *in2) : URShiftNode(in1,in2) {
+  URShiftSNode(Node* in1, Node* in2) : URShiftNode(in1,in2) {
     ShouldNotReachHere(); // only vector variant is used
   }
   virtual int Opcode() const;
@@ -392,12 +392,12 @@ public:
 // Logical shift right
 class URShiftINode : public URShiftNode {
 public:
-  URShiftINode(Node *in1, Node *in2) : URShiftNode(in1,in2) {}
+  URShiftINode(Node* in1, Node* in2) : URShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeInt::INT; }
+  const Type* bottom_type() const { return TypeInt::INT; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -405,12 +405,12 @@ public:
 // Logical shift right
 class URShiftLNode : public URShiftNode {
 public:
-  URShiftLNode(Node *in1, Node *in2) : URShiftNode(in1,in2) {}
+  URShiftLNode(Node* in1, Node* in2) : URShiftNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
-  const Type *bottom_type() const { return TypeLong::LONG; }
+  const Type* bottom_type() const { return TypeLong::LONG; }
   virtual uint ideal_reg() const { return Op_RegL; }
 };
 
