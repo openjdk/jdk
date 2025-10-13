@@ -437,8 +437,8 @@ JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
  *          manager is not installed.
  */
 JNIEXPORT jclass JNICALL
-JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
-                        jobject loader, jclass caller);
+JVM_FindClassFromLoader(JNIEnv *env, const char *name, jboolean init,
+                        jobject loader);
 
 /*
  * Find a class from a given class.
