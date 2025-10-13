@@ -25,13 +25,13 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#ifdef _WINDOWS
+#ifdef WINDOWS
 #include "process.h"
 #define PID() _getpid()
 #else
 #include "unistd.h"
 #define PID() getpid()
-#endif // _WINDOWS
+#endif // WINDOWS
 
 static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
     char cmd[256];
