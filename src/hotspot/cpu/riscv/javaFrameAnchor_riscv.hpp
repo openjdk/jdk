@@ -40,7 +40,7 @@ public:
 
   void clear(void) {
     // No hardware barriers are necessary. All members are volatile and the profiler
-    // is run from a signal handler and only observers the thread its running on.
+    // is run from a signal handler and the only observer is the thread its running on.
 
     // clearing _last_Java_sp must be first
     _last_Java_sp = nullptr;
@@ -50,7 +50,7 @@ public:
 
   void copy(JavaFrameAnchor* src) {
     // No hardware barriers are necessary. All members are volatile and the profiler
-    // is run from a signal handler and only observers the thread its running on.
+    // is run from a signal handler and the only observer is the thread its running on.
 
     // We must clear _last_Java_sp before copying the rest of the new data
     assert(src != nullptr, "Src should not be null.");
