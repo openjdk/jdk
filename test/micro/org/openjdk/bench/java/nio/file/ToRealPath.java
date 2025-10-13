@@ -22,33 +22,103 @@
  */
 package org.openjdk.bench.java.nio.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.FileVisitResult;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Random;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.TearDown;
 
 @State(Scope.Benchmark)
 public class ToRealPath {
 
-    static Random RND = new Random();
+    static Random RND = new Random(17_000_126);
 
+    static final String NAME = "RealPath";
+    static final int LEN = NAME.length();
+
+    Path root;
     Path[] files;
 
     @Setup
     public void init() throws IOException {
-        files = new Path[10000];
-        Path cwd = Path.of(".");
+        // root the test files at CWD/NAME
+        root = Path.of(System.getProperty("user.dir")).resolve(NAME);
+
+        // populate files array
+        StringBuilder sb = new StringBuilder();
+        files = new Path[100];
         for (int i = 0; i < files.length; i++) {
-            Path p = Files.createTempFile(cwd, "RealPath" + i, ".tmp");
-            p.toFile().deleteOnExit();
-            files[i] = p;
+            // create directories up to a depth of 9, inclusive
+            sb.setLength(0);
+            int depth = RND.nextInt(10);
+            for (int j = 0; j < depth; j++) {
+                sb.append("dir");
+                sb.append(j);
+                sb.append(File.separatorChar);
+            }
+            Path dir = root.resolve(sb.toString());
+            Files.createDirectories(dir);
+
+            // set the file prefix with random case conversion
+            String prefix;
+            if (RND.nextBoolean()) {
+                sb.setLength(0);
+                for (int k = 0; k < LEN; k++) {
+                    char c = NAME.charAt(k);
+                    sb.append(RND.nextBoolean()
+                              ? Character.toLowerCase(c)
+                              : Character.toUpperCase(c));
+                }
+                prefix = sb.append(i).toString();
+            } else {
+                prefix = NAME + i;
+            }
+
+            // create the file
+            Path tmpFile = Files.createTempFile(dir, prefix, ".tmp");
+
+            // set the array path to a version with a lower case name
+            String tmpName = tmpFile.getFileName().toString().toLowerCase();
+            files[i] = tmpFile.getParent().resolve(tmpName);
         }
+    }
+
+    @TearDown
+    public void cleanup() throws IOException {
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult visitFile(Path file,
+                                                 BasicFileAttributes attrs)
+                    throws IOException
+                {
+                    Files.delete(file);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult postVisitDirectory(Path dir,
+                                                          IOException e)
+                    throws IOException
+                {
+                    if (e == null) {
+                        Files.delete(dir);
+                        return FileVisitResult.CONTINUE;
+                    } else {
+                        // directory iteration failed
+                        throw e;
+                    }
+                }
+            });
     }
 
     @Benchmark
@@ -56,5 +126,4 @@ public class ToRealPath {
         int i = RND.nextInt(0, files.length);
         return files[i].toRealPath(LinkOption.NOFOLLOW_LINKS);
     }
-
 }

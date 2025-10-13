@@ -37,8 +37,6 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 import jdk.internal.access.JavaLangAccess;
@@ -952,26 +950,30 @@ class UnixPath implements Path {
             // to the path constructed thus far, and extract the entry whose
             // internal path bytes equal the internal path bytes of the current
             // element, or whose key is equal to the key  of the current element
+            boolean found = false;
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
-            String elementName = element.toString();
+            // compare path bytes until a match is found or no more entries
             try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
-                // compare path bytes until a match is found
-                List<Path> notMatched = new ArrayList<Path>();
-                boolean found = false;
                 for (Path entry : entries) {
                     Path name = entry.getFileName();
                     if (name.compareTo(element) == 0) {
                         found = true;
                         path = path.resolve(entry);
                         break;
-                    } else {
-                        notMatched.add(entry);
                     }
                 }
+            }
 
-                // if no path match found, compare file keys
-                if (!found) {
-                    for (Path entry : notMatched) {
+            // if no path match found, compare file keys
+            if (!found) {
+                try {
+                    dp = opendir(path);
+                } catch (UnixException x) {
+                    x.rethrowAsIOException(path);
+                }
+
+                try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
+                    for (Path entry : entries) {
                         Path name = entry.getFileName();
                         UnixPath p = path.resolve(name);
                         UnixFileAttributes attributes = null;
@@ -983,7 +985,7 @@ class UnixPath implements Path {
                                 path = path.resolve(entry);
                                 break;
                             }
-                        }catch (UnixException ignore) {
+                        } catch (UnixException ignore) {
                             continue;
                         }
                     }
