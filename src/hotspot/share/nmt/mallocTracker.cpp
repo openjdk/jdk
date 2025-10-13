@@ -188,7 +188,6 @@ void* MallocTracker::record_malloc(void* malloc_base, size_t size, MemTag mem_ta
   //                      16 bytes alignment for 64-bit systems.
   assert(((size_t)memblock & (sizeof(size_t) * 2 - 1)) == 0, "Alignment check");
 
-
 #ifdef ASSERT
   // Read back
   {
