@@ -24,8 +24,11 @@
  */
 
 import java.lang.invoke.MethodHandle;
+import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.foreign.ValueLayout;
 import java.util.concurrent.CountDownLatch;
 
@@ -40,12 +43,18 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
     private static final CountDownLatch signal = new CountDownLatch(1);
 
     static {
-        var linker = Linker.nativeLinker();
-        var func = linker.defaultLookup()
-                         .find("sleep")
-                         .get();
+        MemorySegment func;
+        if (System.getProperty("os.name").startsWith("Windows")) {
+            func = SymbolLookup.libraryLookup("Kernel32", Arena.global())
+                               .findOrThrow("Sleep");
+        } else {
+            func = Linker.nativeLinker()
+                         .defaultLookup()
+                         .findOrThrow("sleep");
+        }
+
         var desc = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT);
-        hndSleep = linker.downcallHandle(func, desc);
+        hndSleep = Linker.nativeLinker().downcallHandle(func, desc);
     }
 
     @Override

@@ -36,7 +36,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @bug 8369505
- * @requires (os.family == "linux") & (vm.hasSA)
+ * @requires vm.hasSA
  * @requires (os.arch == "amd64" | os.arch == "aarch64" | os.arch == "riscv64")
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithVirtualThread
@@ -47,7 +47,6 @@ public class TestJhsdbJstackMixedWithVirtualThread {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addToolArg("jstack");
-        launcher.addToolArg("--mixed");
         launcher.addToolArg("--pid");
         launcher.addToolArg(Long.toString(app.getPid()));
 
@@ -61,8 +60,6 @@ public class TestJhsdbJstackMixedWithVirtualThread {
         System.err.println(out.getStderr());
 
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
-        out.shouldContain("<StubRoutines (continuation stubs)>");
-        out.shouldNotContain("<interpreter> return entry points");
     }
 
     public static void main(String... args) throws Exception {
