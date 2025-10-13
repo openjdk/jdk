@@ -340,8 +340,7 @@ public class H3QuicTLSConnection {
         } catch (Exception e) {
             System.out.println("Got an exception:");
             e.printStackTrace(System.out);
-            if (expectedException != null
-                    && !expectedException.isAssignableFrom(e.getClass())) {
+            if (!throwableCausalChainContainsInstanceOf(expectedException, e)) {
                 System.out.printf("Failed: expected %s, but got %s%n",
                         expectedException.getName(),
                         e.getClass().getName());
@@ -359,5 +358,16 @@ public class H3QuicTLSConnection {
             System.out.println("Passed: expected exception");
             return true;
         }
+    }
+
+    private static boolean throwableCausalChainContainsInstanceOf(
+            Class<? extends Throwable> expectedClass,
+            Throwable throwable) {
+        for (Throwable t = throwable; t != null; t = t.getCause()) {
+            if (expectedClass.isInstance(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

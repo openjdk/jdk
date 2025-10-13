@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import javax.net.ssl.SSLContext;
@@ -159,12 +158,8 @@ public class StopSendingTest implements HttpServerAdapters {
             // in an ExecutionException which wraps the CancellationException.
             // TODO: fix the actual race condition and then expect only CancellationException here
             final Exception actualException = Assert.expectThrows(Exception.class, futureResp::get);
-            if (actualException instanceof CancellationException) {
-                // expected
-                System.out.println("Received the expected CancellationException");
-            } else if (actualException instanceof ExecutionException
-                    && actualException.getCause() instanceof CancellationException) {
-                System.out.println("Received CancellationException wrapped as ExecutionException");
+            if (throwableCausalChainContainsInstanceOf(CancellationException.class, actualException)) {
+                System.out.println("Received the expected `CancellationException` in the causal chain");
             } else {
                 // unexpected
                 throw actualException;
@@ -184,6 +179,17 @@ public class StopSendingTest implements HttpServerAdapters {
         System.gc();
         var error = TRACKER.check(tracker,1000);
         if (error != null) throw error;
+    }
+
+    private static boolean throwableCausalChainContainsInstanceOf(
+            Class<? extends Throwable> expectedClass,
+            Throwable throwable) {
+        for (Throwable t = throwable; t != null; t = t.getCause()) {
+            if (expectedClass.isInstance(t)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

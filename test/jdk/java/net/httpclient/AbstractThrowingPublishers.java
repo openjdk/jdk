@@ -667,8 +667,8 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                 default:
                     break;
             }
-            return UncheckedIOException.class.isInstance(throwable)
-                    && CustomIOException.class.isInstance(throwable.getCause());
+            // `UncheckedIOException` is peeled off by `HttpClientImpl::translateSendAsyncExecFailure`
+            return throwable instanceof CustomIOException;
         }
 
         @Override
