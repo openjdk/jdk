@@ -2568,10 +2568,6 @@ RegMask Matcher::modL_proj_mask() {
   return RegMask();
 }
 
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
-}
-
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
@@ -5965,9 +5961,6 @@ attributes %{
   instruction_unit_size = 4;         // An instruction is 4 bytes long
   instruction_fetch_unit_size = 64;  // The processor fetches one line
   instruction_fetch_units = 1;       // of 64 bytes
-
-  // List of nop instructions
-  nops( MachNop );
 %}
 
 // We don't use an actual pipeline model so don't care about resources

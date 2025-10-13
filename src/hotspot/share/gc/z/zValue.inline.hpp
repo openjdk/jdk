@@ -238,5 +238,4 @@ inline bool ZValueConstIterator<S, T>::next(const T** value) {
   return false;
 }
 
-
 #endif // SHARE_GC_Z_ZVALUE_INLINE_HPP

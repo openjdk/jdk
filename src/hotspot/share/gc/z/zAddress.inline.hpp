@@ -30,7 +30,7 @@
 #include "gc/z/zGlobals.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -149,18 +149,18 @@ inline bool operator>=(offset_type first, offset_type##_end second) {           
 
 inline uintptr_t untype(zoffset offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value < ZAddressOffsetMax, "must have no other bits");
+  assert(value < ZAddressOffsetMax, "Offset out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return value;
 }
 
 inline uintptr_t untype(zoffset_end offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value <= ZAddressOffsetMax, "must have no other bits");
+  assert(value <= ZAddressOffsetMax, "Offset out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return value;
 }
 
 inline zoffset to_zoffset(uintptr_t value) {
-  assert(value < ZAddressOffsetMax, "must have no other bits");
+  assert(value < ZAddressOffsetMax, "Value out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return zoffset(value);
 }
 
@@ -186,7 +186,7 @@ inline zoffset_end to_zoffset_end(zoffset start, size_t size) {
 }
 
 inline zoffset_end to_zoffset_end(uintptr_t value) {
-  assert(value <= ZAddressOffsetMax, "Overflow");
+  assert(value <= ZAddressOffsetMax, "Value out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return zoffset_end(value);
 }
 
@@ -200,18 +200,18 @@ CREATE_ZOFFSET_OPERATORS(zoffset)
 
 inline uintptr_t untype(zbacking_offset offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value < ZBackingOffsetMax, "must have no other bits");
+  assert(value < ZBackingOffsetMax, "Offset out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return value;
 }
 
 inline uintptr_t untype(zbacking_offset_end offset) {
   const uintptr_t value = static_cast<uintptr_t>(offset);
-  assert(value <= ZBackingOffsetMax, "must have no other bits");
+  assert(value <= ZBackingOffsetMax, "Offset out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return value;
 }
 
 inline zbacking_offset to_zbacking_offset(uintptr_t value) {
-  assert(value < ZBackingOffsetMax, "must have no other bits");
+  assert(value < ZBackingOffsetMax, "Value out of bounds (" PTR_FORMAT " < " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return zbacking_offset(value);
 }
 
@@ -228,7 +228,7 @@ inline zbacking_offset_end to_zbacking_offset_end(zbacking_offset start, size_t 
 }
 
 inline zbacking_offset_end to_zbacking_offset_end(uintptr_t value) {
-  assert(value <= ZBackingOffsetMax, "must have no other bits");
+  assert(value <= ZBackingOffsetMax, "Value out of bounds (" PTR_FORMAT " <= " PTR_FORMAT ")", value, ZAddressOffsetMax);
   return zbacking_offset_end(value);
 }
 
@@ -242,18 +242,18 @@ CREATE_ZOFFSET_OPERATORS(zbacking_offset)
 
 inline uint32_t untype(zbacking_index index) {
   const uint32_t value = static_cast<uint32_t>(index);
-  assert(value < ZBackingIndexMax, "must have no other bits");
+  assert(value < ZBackingIndexMax, "Offset out of bounds (" UINT32_FORMAT_X_0 " < " UINT32_FORMAT_X_0 ")", value, ZBackingIndexMax);
   return value;
 }
 
 inline uint32_t untype(zbacking_index_end index) {
   const uint32_t value = static_cast<uint32_t>(index);
-  assert(value <= ZBackingIndexMax, "must have no other bits");
+  assert(value <= ZBackingIndexMax, "Offset out of bounds (" UINT32_FORMAT_X_0 " <= " UINT32_FORMAT_X_0 ")", value, ZBackingIndexMax);
   return value;
 }
 
 inline zbacking_index to_zbacking_index(uint32_t value) {
-  assert(value < ZBackingIndexMax, "must have no other bits");
+  assert(value < ZBackingIndexMax, "Value out of bounds (" UINT32_FORMAT_X_0 " < " UINT32_FORMAT_X_0 ")", value, ZBackingIndexMax);
   return zbacking_index(value);
 }
 
@@ -266,12 +266,12 @@ inline zbacking_index_end to_zbacking_index_end(zbacking_index start, size_t siz
   const uint32_t start_value = untype(start);
   const uint32_t value = start_value + checked_cast<uint32_t>(size);
   assert(value <= ZBackingIndexMax && start_value <= value,
-         "Overflow start: %x size: %zu value: %x", start_value, size, value);
+         "Overflow start: " UINT32_FORMAT_X_0 " size: %zu value: " UINT32_FORMAT_X_0 "", start_value, size, value);
   return zbacking_index_end(value);
 }
 
 inline zbacking_index_end to_zbacking_index_end(uint32_t value) {
-  assert(value <= ZBackingIndexMax, "must have no other bits");
+  assert(value <= ZBackingIndexMax, "Value out of bounds (" UINT32_FORMAT_X_0 " <= " UINT32_FORMAT_X_0 ")", value, ZBackingIndexMax);
   return zbacking_index_end(value);
 }
 
@@ -287,7 +287,7 @@ CREATE_ZOFFSET_OPERATORS(zbacking_index)
 
 inline zbacking_index to_zbacking_index(zbacking_offset offset) {
   const uintptr_t value = untype(offset);
-  assert(is_aligned(value, ZGranuleSize), "must be granule aligned");
+  assert(is_aligned(value, ZGranuleSize), "Must be granule aligned: " PTR_FORMAT, value);
   return to_zbacking_index((uint32_t)(value >> ZGranuleSizeShift));
 }
 
@@ -420,7 +420,7 @@ inline bool is_null_any(zpointer ptr) {
 // Is it null - colored or not?
 inline bool is_null_assert_load_good(zpointer ptr) {
   const bool result = is_null_any(ptr);
-  assert(!result || ZPointer::is_load_good(ptr), "Got bad colored null");
+  assert(!result || ZPointer::is_load_good(ptr), "Got bad colored null: " PTR_FORMAT, untype(ptr));
   return result;
 }
 
@@ -475,7 +475,7 @@ inline uintptr_t untype(zaddress addr) {
 inline void dereferenceable_test(zaddress addr) {
   if (ZVerifyOops && !is_null(addr)) {
     // Intentionally crash if the address is pointing into unmapped memory
-    (void)Atomic::load((int*)(uintptr_t)addr);
+    (void)AtomicAccess::load((int*)(uintptr_t)addr);
   }
 }
 #endif
@@ -620,7 +620,7 @@ inline zaddress ZPointer::uncolor_store_good(zpointer ptr) {
 }
 
 inline zaddress_unsafe ZPointer::uncolor_unsafe(zpointer ptr) {
-  assert(ZPointer::is_store_bad(ptr), "Unexpected ptr");
+  assert(ZPointer::is_store_bad(ptr), "Should be store bad: " PTR_FORMAT, untype(ptr));
   const uintptr_t raw_addr = untype(ptr);
   return to_zaddress_unsafe(raw_addr >> ZPointer::load_shift_lookup(raw_addr));
 }
@@ -642,7 +642,7 @@ inline bool ZPointer::is_load_good_or_null(zpointer ptr) {
   // the barrier as if it was null. This should be harmless as such
   // addresses should ever be passed through the barrier.
   const bool result = !is_load_bad(ptr);
-  assert((is_load_good(ptr) || is_null(ptr)) == result, "Bad address");
+  assert((is_load_good(ptr) || is_null(ptr)) == result, "Bad address: " PTR_FORMAT, untype(ptr));
   return result;
 }
 
@@ -673,7 +673,7 @@ inline bool ZPointer::is_mark_good_or_null(zpointer ptr) {
   // the barrier as if it was null. This should be harmless as such
   // addresses should ever be passed through the barrier.
   const bool result = !is_mark_bad(ptr);
-  assert((is_mark_good(ptr) || is_null(ptr)) == result, "Bad address");
+  assert((is_mark_good(ptr) || is_null(ptr)) == result, "Bad address: " PTR_FORMAT, untype(ptr));
   return result;
 }
 
@@ -694,7 +694,7 @@ inline bool ZPointer::is_store_good_or_null(zpointer ptr) {
   // the barrier as if it was null. This should be harmless as such
   // addresses should ever be passed through the barrier.
   const bool result = !is_store_bad(ptr);
-  assert((is_store_good(ptr) || is_null(ptr)) == result, "Bad address");
+  assert((is_store_good(ptr) || is_null(ptr)) == result, "Bad address: " PTR_FORMAT, untype(ptr));
   return result;
 }
 
