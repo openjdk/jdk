@@ -431,7 +431,7 @@ ciField* ciInstanceKlass::get_field_by_name(ciSymbol* name, ciSymbol* signature,
 // ciInstanceKlass::get_field_type_by_offset
 //
 // This is essentially a shortcut for:
-//  get_field_type_by_offset(field_offset, is_static)->layout_type()
+//  get_field_by_offset(field_offset, is_static)->layout_type()
 // except this does not require allocating memory for a new ciField
 BasicType ciInstanceKlass::get_field_type_by_offset(int field_offset, bool is_static) {
   if (!is_static) {
