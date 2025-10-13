@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import com.sun.org.apache.bcel.internal.Const;
+import jdk.xml.internal.Utils;
 
 /**
  * This class represents a bootstrap method attribute, i.e., the bootstrap method ref, the number of bootstrap arguments
@@ -35,8 +35,11 @@ import com.sun.org.apache.bcel.internal.Const;
  * @see <a href="https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.23"> The class File Format :
  *      The BootstrapMethods Attribute</a>
  * @since 6.0
+ * @LastModified: Sept 2025
  */
 public class BootstrapMethod implements Cloneable {
+
+    static final BootstrapMethod[] EMPTY_ARRAY = {};
 
     /** Index of the CONSTANT_MethodHandle_info structure in the constant_pool table */
     private int bootstrapMethodRef;
@@ -54,7 +57,7 @@ public class BootstrapMethod implements Cloneable {
     }
 
     /**
-     * Construct object from input stream.
+     * Constructs object from input stream.
      *
      * @param input Input stream
      * @throws IOException if an I/O error occurs.
@@ -78,7 +81,7 @@ public class BootstrapMethod implements Cloneable {
      */
     public BootstrapMethod(final int bootstrapMethodRef, final int[] bootstrapArguments) {
         this.bootstrapMethodRef = bootstrapMethodRef;
-        this.bootstrapArguments = bootstrapArguments;
+        setBootstrapArguments(bootstrapArguments);
     }
 
     /**
@@ -87,7 +90,7 @@ public class BootstrapMethod implements Cloneable {
     public BootstrapMethod copy() {
         try {
             return (BootstrapMethod) clone();
-        } catch (final CloneNotSupportedException e) {
+        } catch (final CloneNotSupportedException ignore) {
             // TODO should this throw?
         }
         return null;
@@ -132,7 +135,7 @@ public class BootstrapMethod implements Cloneable {
      * @param bootstrapArguments int[] indices into constant_pool of CONSTANT_[type]_info
      */
     public void setBootstrapArguments(final int[] bootstrapArguments) {
-        this.bootstrapArguments = bootstrapArguments;
+        this.bootstrapArguments = Utils.createEmptyArrayIfNull(bootstrapArguments);
     }
 
     /**
