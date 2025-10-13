@@ -1254,30 +1254,6 @@ JAVA_INTEGER_SHIFT_OP(>>, java_shift_right_unsigned, jlong, julong)
 
 #undef JAVA_INTEGER_SHIFT_OP
 
-inline jlong java_shift_left(jlong lhs, jint rhs, BasicType bt) {
-  if (bt == T_INT) {
-    return java_shift_left(checked_cast<jint>(lhs), rhs);
-  }
-  assert(bt == T_LONG, "int or long only");
-  return java_shift_left(lhs, rhs);
-}
-
-inline jlong java_shift_right(jlong lhs, jint rhs, BasicType bt) {
-  if (bt == T_INT) {
-    return java_shift_right(checked_cast<jint>(lhs), rhs);
-  }
-  assert(bt == T_LONG, "int or long only");
-  return java_shift_right(lhs, rhs);
-}
-
-inline jlong java_shift_right_unsigned(jlong lhs, jint rhs, BasicType bt) {
-  if (bt == T_INT) {
-    return java_shift_right_unsigned(checked_cast<jint>(lhs), rhs);
-  }
-  assert(bt == T_LONG, "int or long only");
-  return java_shift_right_unsigned(lhs, rhs);
-}
-
 inline jlong java_negate(jlong v, BasicType bt) {
   if (bt == T_INT) {
     return java_negate(checked_cast<jint>(v));
@@ -1286,6 +1262,23 @@ inline jlong java_negate(jlong v, BasicType bt) {
   return java_negate(v);
 }
 
+// Some convenient bit shift operations that accepts a BasicType as the last
+// argument. These avoid potential mistakes with overloaded functions only
+// distinguished by lhs argument type.
+#define JAVA_INTEGER_SHIFT_BASIC_TYPE(FUNC)            \
+inline jlong FUNC(jlong lhs, jint rhs, BasicType bt) { \
+  if (bt == T_INT) {                                   \
+    return FUNC(checked_cast<jint>(lhs), rhs);         \
+  }                                                    \
+  assert(bt == T_LONG, "unsupported basic type");      \
+  return FUNC(lhs, rhs);                              \
+}
+
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_left)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right)
+JAVA_INTEGER_SHIFT_BASIC_TYPE(java_shift_right_unsigned)
+
+#undef JAVA_INTERGER_SHIFT_BASIC_TYPE
 
 //----------------------------------------------------------------------------------------------------
 // The goal of this code is to provide saturating operations for int/uint.

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -19,33 +21,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ */
+
+/**
+ * Defines native structures for errno APIs.
+ * Generated with the following jextract command:
+ * {@snippet lang = "Shell Script":
+ *
+ * HEADER_NAME=errno.h
+ * echo "#include <errno.h>" > $HEADER_NAME
+ * echo "#include <string.h>" >> $HEADER_NAME
+ *
+ * jextract --target-package jdk.internal.ffi.generated.errno \
+ *    --include-constant EINTR \
+ *    --include-function strerror_r \
+ *    $HEADER_NAME
+ * }
  *
  */
 
-#include "classfile/stringTable.hpp"
-#include "code/nmethod.hpp"
-#include "gc/shared/strongRootsScope.hpp"
-#include "runtime/threads.hpp"
-
-MarkScope::MarkScope() {
-  nmethod::oops_do_marking_prologue();
-}
-
-MarkScope::~MarkScope() {
-  nmethod::oops_do_marking_epilogue();
-}
-
-StrongRootsScope::StrongRootsScope(uint n_threads) : _n_threads(n_threads) {
-  // No need for thread claim for statically-known sequential case (_n_threads == 0)
-  // For positive values, clients of this class often unify sequential/parallel
-  // cases, so they expect the thread claim token to be updated.
-  if (_n_threads != 0) {
-    Threads::change_thread_claim_token();
-  }
-}
-
-StrongRootsScope::~StrongRootsScope() {
-  if (_n_threads != 0) {
-    Threads::assert_all_threads_claimed();
-  }
-}
+package jdk.internal.ffi.generated.errno;

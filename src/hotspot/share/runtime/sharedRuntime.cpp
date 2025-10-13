@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -264,6 +265,46 @@ void SharedRuntime::print_ic_miss_histogram() {
     tty->print_cr("Total IC misses: %7d", tot_misses);
   }
 }
+
+#ifdef COMPILER2
+// Runtime methods for printf-style debug nodes (same printing format as fieldDescriptor::print_on_for)
+void SharedRuntime::debug_print_value(jboolean x) {
+  tty->print_cr("boolean %d", x);
+}
+
+void SharedRuntime::debug_print_value(jbyte x) {
+  tty->print_cr("byte %d", x);
+}
+
+void SharedRuntime::debug_print_value(jshort x) {
+  tty->print_cr("short %d", x);
+}
+
+void SharedRuntime::debug_print_value(jchar x) {
+  tty->print_cr("char %c %d", isprint(x) ? x : ' ', x);
+}
+
+void SharedRuntime::debug_print_value(jint x) {
+  tty->print_cr("int %d", x);
+}
+
+void SharedRuntime::debug_print_value(jlong x) {
+  tty->print_cr("long " JLONG_FORMAT, x);
+}
+
+void SharedRuntime::debug_print_value(jfloat x) {
+  tty->print_cr("float %f", x);
+}
+
+void SharedRuntime::debug_print_value(jdouble x) {
+  tty->print_cr("double %lf", x);
+}
+
+void SharedRuntime::debug_print_value(oopDesc* x) {
+  x->print();
+}
+#endif // COMPILER2
+
 #endif // PRODUCT
 
 
@@ -637,10 +678,13 @@ address SharedRuntime::get_poll_stub(address pc) {
            "polling page safepoint stub not created yet");
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
-  log_debug(safepoint)("... found polling page %s exception at pc = "
-                       INTPTR_FORMAT ", stub =" INTPTR_FORMAT,
+  log_trace(safepoint)("Polling page exception: thread = " INTPTR_FORMAT " [%d], pc = "
+                       INTPTR_FORMAT " (%s), stub = " INTPTR_FORMAT,
+                       p2i(Thread::current()),
+                       Thread::current()->osthread()->thread_id(),
+                       p2i(pc),
                        at_poll_return ? "return" : "loop",
-                       (intptr_t)pc, (intptr_t)stub);
+                       p2i(stub));
   return stub;
 }
 
