@@ -211,7 +211,7 @@ public enum JDBCType implements SQLType {
     DECFLOAT(Types.DECFLOAT),
 
     /**
-     * Identifies the generic SQL type {@code DECFLOAT}.
+     * Identifies the generic SQL type {@code JSON}.
      * @since 26
      */
     JSON(Types.JSON);

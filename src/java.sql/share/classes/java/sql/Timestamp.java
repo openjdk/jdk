@@ -470,7 +470,7 @@ public class Timestamp extends java.util.Date {
      *   (int)(this.getTime()^(this.getTime() >>> 32))
      * }
      *
-     * @return  a hash code value for this Timestamp.
+     * @return a hash code value for this Timestamp.
      *
      */
     @Override

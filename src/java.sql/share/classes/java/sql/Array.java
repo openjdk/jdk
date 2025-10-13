@@ -365,21 +365,21 @@ public interface Array extends AutoCloseable {
      */
     void free() throws SQLException;
 
-  /**
-   * Closes and releases the resources held by this {@code Array} object.
-   * <p>
-   * If the {@code Array} object is already closed, then invoking this method
-   * has no effect.
-   *
-   * @throws SQLException                    if an error occurs releasing
-   *                                         the Array's resources
-   * @throws SQLFeatureNotSupportedException if the JDBC driver
-   *                                         does not support this method
-   * @implSpec The default implementation calls the {@link #free()} method.
-   * @see #free()
-   * @since 26
-   */
-  default void close() throws SQLException {
-    free();
-  };
+    /**
+     * Closes and releases the resources held by this {@code Array} object.
+     * <p>
+     * If the {@code Array} object is already closed, then invoking this method
+     * has no effect.
+     *
+     * @throws SQLException                    if an error occurs releasing
+     *                                         the Array's resources
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *                                         does not support this method
+     * @implSpec The default implementation calls the {@link #free()} method.
+     * @see #free()
+     * @since 26
+     */
+    default void close() throws SQLException {
+      free();
+    };
 }

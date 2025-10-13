@@ -307,22 +307,22 @@ public interface Blob extends AutoCloseable {
      */
     InputStream getBinaryStream(long pos, long length) throws SQLException;
 
-  /**
-   * Closes and releases the resources held by this {@code Blob} object.
-   * <p>
-   * If the {@code Blob} object is already closed, then invoking this method
-   * has no effect.
-   *
-   * @implSpec The default implementation calls the {@link #free()} method.
-   *
-   * @throws SQLException if an error occurs releasing
-   *         the Blob's resources
-   * @throws SQLFeatureNotSupportedException if the JDBC driver
-   *         does not support this method
-   * @since 26
-   * @see #free()
-   */
-  default void close() throws SQLException {
-    free();
-  };
+    /**
+     * Closes and releases the resources held by this {@code Blob} object.
+     * <p>
+     * If the {@code Blob} object is already closed, then invoking this method
+     * has no effect.
+     *
+     * @implSpec The default implementation calls the {@link #free()} method.
+     *
+     * @throws SQLException if an error occurs releasing
+     *         the Blob's resources
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *         does not support this method
+     * @since 26
+     * @see #free()
+     */
+    default void close() throws SQLException {
+      free();
+    };
 }

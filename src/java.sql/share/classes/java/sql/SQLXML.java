@@ -183,7 +183,7 @@ import javax.xml.transform.Source;
  * invoke a method other than {@link #free()} or {@link #close()} after the
  * {@code SQLXML} object has been closed, will result in a {@link SQLException}
  * being thrown.
- * <P>
+ * <p>
  * All methods on the {@code SQLXML} interface must be fully implemented if the
  * JDBC driver supports the data type.
  *
