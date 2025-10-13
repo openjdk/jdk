@@ -789,14 +789,17 @@ public final class Instant
     }
 
     /**
-     * Returns a copy of this instant with the specified duration added.
+     * Returns a copy of this instant with the specified duration added, with
+     * saturated semantics.
      * <p>
-     * This method behaves the same as {@link #plus(TemporalAmount)} passed
-     * with the specified duration as its argument, if no numeric overflow
-     * occurs. If it does, then instead of throwing {@link ArithmeticException}
-     * or {@link DateTimeException} like {@code plus} does, this method returns
-     * {@link Instant#MIN} or {@link Instant#MAX} if the result exceeds minimum
-     * or maximum instant respectively.
+     * If the result is "earlier" than {@link Instant#MIN}, this method returns
+     * {@code MIN}. If the result is "later" than {@link Instant#MAX}, it
+     * returns {@code MAX}. Otherwise it returns {@code this.}{@link #plus plus(duration)}.
+     *
+     * @apiNote This method can be used to calculate a deadline from
+     * this instant and a timeout. Unlike {@code plus(TemporalAmount)},
+     * this method never throws {@link ArithmeticException} or {@link DateTimeException}
+     * due to numeric overflow or {@code Instant} range violation.
      *
      * @param duration the duration to add, not null
      * @return an {@code Instant} based on this instant with the addition made, not null
