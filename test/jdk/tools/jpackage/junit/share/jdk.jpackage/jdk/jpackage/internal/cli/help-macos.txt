@@ -10,6 +10,7 @@ Sample usages:
                 --main-class className --main-jar myJar.jar
         From a pre-built application image:
             jpackage -n name --app-image appImageDir
+
     Generate an application image:
         For a modular application:
             jpackage --type app-image -n name -p modulePath \
@@ -23,8 +24,10 @@ Sample usages:
                 --no-header-files [<additional jlink options>...]
             jpackage --type app-image -n name \
                 -m moduleName/className --runtime-image appRuntimeImage
+
     Generate a Java runtime package:
         jpackage -n name --runtime-image <runtime-image>
+
     Sign the predefined application image:
         jpackage --type app-image --app-image <app-image> \
             --mac-sign [<additional signing options>...]
@@ -50,7 +53,7 @@ Generic Options:
           Path where generated output file is placed
           (absolute path or relative to the current directory)
           Defaults to the current working directory.
-  --help -h
+  --help -h -?
           Print the usage text with a list and description of each valid
           option for the current platform to the output stream, and exit
   --icon <file path>
@@ -86,7 +89,7 @@ Options for creating the runtime image:
           If not specified, defaults to "--strip-native-commands
           --strip-debug --no-man-pages --no-header-files".
           This option can be used multiple times.
-  --module-path -p <module path>...
+  --module-path -p <module path>[:<module path>...]
           A : separated list of paths
           Each path is either a directory of modules or the path to a
           modular jar.
@@ -122,11 +125,9 @@ Options for creating the application launcher(s):
           Name of launcher, and a path to a Properties file that contains
           a list of key, value pairs
           (absolute path or relative to the current directory)
-          The keys "module", "main-jar", "main-class", "description",
-          "arguments", "java-options", "app-version", "icon",
-          "launcher-as-service",
-          "win-console", "win-shortcut", "win-menu",
-          "linux-app-category", and "linux-shortcut" can be used.
+          The keys "arguments", "description", "icon", "java-options",
+          "launcher-as-service", "linux-shortcut", "main-class", "main-jar",
+          "module", "win-console", "win-menu", and "win-shortcut" can be used.
           These options are added to, or used to overwrite, the original
           command line options to build an additional alternative launcher.
           The main application launcher will be built from the command line
@@ -163,7 +164,7 @@ Options for creating the application package:
           to build an installable package or to sign the predefined
           application image
           (absolute path or relative to the current directory)
-  --file-associations <file path>
+  --file-associations <file path>[:<file path>...]
           Path to a Properties file that contains list of key, value pairs
           (absolute path or relative to the current directory)
           The keys "extension", "mime-type", "icon", and "description"
@@ -188,7 +189,7 @@ Options for creating the application package:
           Option is required when creating a runtime package.
 
 Platform dependent options for creating the application package:
-  --mac-app-category <category string>
+  --mac-app-category <category>
           String used to construct LSApplicationCategoryType in
           application plist.  The default value is "utilities".
   --mac-app-image-sign-identity <identity>
@@ -208,25 +209,25 @@ Platform dependent options for creating the application package:
           Identity used to sign "pkg" installer. This value will be passed
           directly to --sign option of "productbuild" tool. This option
           cannot be combined with --mac-signing-key-user-name.
-  --mac-package-identifier <ID string>
+  --mac-package-identifier <package identifier>
           An identifier that uniquely identifies the application for macOS
           Defaults to the main class name.
           May only use alphanumeric (A-Z,a-z,0-9), hyphen (-),
           and period (.) characters.
-  --mac-package-name <name string>
+  --mac-package-name <package name>
           Name of the application as it appears in the Menu Bar
           This can be different from the application name.
           This name must be less than 16 characters long and be suitable for
           displaying in the menu bar and the application Info window.
           Defaults to the application name.
-  --mac-package-signing-prefix <prefix string>
+  --mac-package-signing-prefix <prefix>
           When signing the application package, this value is prefixed
           to all components that need to be signed that don't have
           an existing package identifier.
-  --mac-sign
+  --mac-sign -s
           Request that the package or the predefined application image be
           signed.
-  --mac-signing-key-user-name <team name>
+  --mac-signing-key-user-name <name>
           Team or user name portion of Apple signing identities. For direct
           control of the signing identity used to sign application images or
           installers use --mac-app-image-sign-identity and/or

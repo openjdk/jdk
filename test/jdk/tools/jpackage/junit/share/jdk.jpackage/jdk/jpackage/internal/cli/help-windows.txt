@@ -10,6 +10,7 @@ Sample usages:
                 --main-class className --main-jar myJar.jar
         From a pre-built application image:
             jpackage -n name --app-image appImageDir
+
     Generate an application image:
         For a modular application:
             jpackage --type app-image -n name -p modulePath \
@@ -23,6 +24,7 @@ Sample usages:
                 --no-header-files [<additional jlink options>...]
             jpackage --type app-image -n name \
                 -m moduleName/className --runtime-image appRuntimeImage
+
     Generate a Java runtime package:
         jpackage -n name --runtime-image <runtime-image>
 
@@ -45,7 +47,7 @@ Generic Options:
           Path where generated output file is placed
           (absolute path or relative to the current directory)
           Defaults to the current working directory.
-  --help -h
+  --help -h -?
           Print the usage text with a list and description of each valid
           option for the current platform to the output stream, and exit
   --icon <file path>
@@ -81,7 +83,7 @@ Options for creating the runtime image:
           If not specified, defaults to "--strip-native-commands
           --strip-debug --no-man-pages --no-header-files".
           This option can be used multiple times.
-  --module-path -p <module path>...
+  --module-path -p <module path>[;<module path>...]
           A ; separated list of paths
           Each path is either a directory of modules or the path to a
           modular jar.
@@ -112,11 +114,9 @@ Options for creating the application launcher(s):
           Name of launcher, and a path to a Properties file that contains
           a list of key, value pairs
           (absolute path or relative to the current directory)
-          The keys "module", "main-jar", "main-class", "description",
-          "arguments", "java-options", "app-version", "icon",
-          "launcher-as-service",
-          "win-console", "win-shortcut", "win-menu",
-          "linux-app-category", and "linux-shortcut" can be used.
+          The keys "arguments", "description", "icon", "java-options",
+          "launcher-as-service", "linux-shortcut", "main-class", "main-jar",
+          "module", "win-console", "win-menu", and "win-shortcut" can be used.
           These options are added to, or used to overwrite, the original
           command line options to build an additional alternative launcher.
           The main application launcher will be built from the command line
@@ -157,14 +157,15 @@ Options for creating the application package:
           Location of the predefined application image that is used
           to build an installable package
           (absolute path or relative to the current directory)
-  --file-associations <file path>
+  --file-associations <file path>[;<file path>...]
           Path to a Properties file that contains list of key, value pairs
           (absolute path or relative to the current directory)
           The keys "extension", "mime-type", "icon", and "description"
           can be used to describe the association.
           This option can be used multiple times.
   --install-dir <directory path>
-          Relative sub-path under the default installation location
+          Relative sub-path of the installation location of
+          the application such as "Program Files" or "AppData".
   --launcher-as-service
           Request to create an installer that will register the main
           application launcher as a background service-type application.
@@ -187,18 +188,18 @@ Platform dependent options for creating the application package:
           the product is installed.
   --win-help-url <url>
           URL where user can obtain further information or technical support
-  --win-menu
+  --win-menu [<shortcut startup directory>]
           Request to add a Start menu shortcut for this application
   --win-menu-group <menu group name>
           Start Menu group this application is placed in
   --win-per-user-install
           Request to perform an install on a per-user basis
-  --win-shortcut
+  --win-shortcut [<shortcut startup directory>]
           Request to add desktop shortcut for this application
   --win-shortcut-prompt
           Adds a dialog to enable the user to choose if shortcuts
           will be created by installer.
   --win-update-url <url>
           URL of available application update information
-  --win-upgrade-uuid <id string>
+  --win-upgrade-uuid <uuid>
           UUID associated with upgrades for this package
