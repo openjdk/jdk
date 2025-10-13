@@ -26,7 +26,6 @@
  * @summary Test various cases of passing java.nio.ByteBuffers to defineClass().
  * @bug 8365588
  *
- * @library /lib/testlibrary/java/lang
  * @build DefineClassDirectByteBuffer
  * @run junit/othervm --add-opens java.base/java.lang=ALL-UNNAMED -Dmode=Direct DefineClassDirectByteBuffer
  * @run junit/othervm --add-opens java.base/java.lang=ALL-UNNAMED -Dmode=Heap DefineClassDirectByteBuffer
@@ -248,6 +247,7 @@ public class DefineClassDirectByteBuffer {
         var bb = mode.equals("Direct")
                 ? ByteBuffer.allocateDirect(classBytes.length).put(classBytes).flip()
                 : ByteBuffer.allocate(classBytes.length).put(classBytes).flip();
+        var originalPos = bb.position();
         // reflectively call protected defineClass(String, ByteBuffer, ProtectionDomain)
         Method m = ClassLoader.class.getDeclaredMethod(
                 "defineClass", String.class, ByteBuffer.class, ProtectionDomain.class
@@ -255,6 +255,7 @@ public class DefineClassDirectByteBuffer {
         m.setAccessible(true);
         Class<?> clazz = (Class<?>) m.invoke(builtin, null, bb, null);
         assertInvocating(clazz);
+        assertEquals(originalPos, bb.position());
     }
 
     // -------- shared helpers --------
