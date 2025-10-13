@@ -147,33 +147,10 @@ public class Lint {
 
     // Process command line options on demand to allow use of root Lint early during startup
     private void initializeRootIfNeeded() {
-
-        // Already initialized?
-        if (values != null)
-            return;
-
-        // Initialize enabled categories based on "-Xlint" flags
-        if (options.isSet(Option.XLINT) || options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_ALL)) {
-            // If -Xlint or -Xlint:all is given, enable all categories by default
-            values = EnumSet.allOf(LintCategory.class);
-        } else if (options.isSet(Option.XLINT_CUSTOM, Option.LINT_CUSTOM_NONE)) {
-            // if -Xlint:none is given, disable all categories by default
-            values = LintCategory.newEmptySet();
-        } else {
-            // otherwise, enable on-by-default categories
-            values = getDefaults();
+        if (values == null) {
+            values = options.getLintCategoriesOf(Option.XLINT, this::getDefaults);
+            suppressedValues = LintCategory.newEmptySet();
         }
-
-        // Look for specific overrides
-        for (LintCategory lc : LintCategory.values()) {
-            if (options.isLintExplicitlyEnabled(lc)) {
-                values.add(lc);
-            } else if (options.isLintExplicitlyDisabled(lc)) {
-                values.remove(lc);
-            }
-        }
-
-        suppressedValues = LintCategory.newEmptySet();
     }
 
     // Obtain the set of on-by-default categories. Note that for a few categories,
