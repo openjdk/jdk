@@ -128,7 +128,7 @@ public class DTLSOverDatagram {
      * =============================================================
      * The remainder is support stuff for DTLS operations.
      */
-    protected SSLEngine createSSLEngine(boolean isClient) throws Exception {
+    SSLEngine createSSLEngine(boolean isClient) throws Exception {
         SSLContext context =
                 isClient ? getClientDTLSContext() : getServerDTLSContext();
 
