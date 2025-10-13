@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,8 +43,6 @@ class MachOper;
 
 //---------------------------Matcher-------------------------------------------
 class Matcher : public PhaseTransform {
-  friend class VMStructs;
-
 public:
 
   // Machine-dependent definitions
@@ -179,7 +177,6 @@ public:
   static const RegMask *idealreg2regmask[];
   RegMask *idealreg2spillmask  [_last_machine_leaf];
   RegMask *idealreg2debugmask  [_last_machine_leaf];
-  RegMask *idealreg2mhdebugmask[_last_machine_leaf];
   void init_spill_mask( Node *ret );
   // Convert machine register number to register mask
   static uint mreg2regmask_max;
@@ -187,8 +184,6 @@ public:
   static RegMask STACK_ONLY_mask;
   static RegMask caller_save_regmask;
   static RegMask caller_save_regmask_exclude_soe;
-  static RegMask mh_caller_save_regmask;
-  static RegMask mh_caller_save_regmask_exclude_soe;
 
   MachNode* mach_null() const { return _mach_null; }
 
@@ -425,8 +420,6 @@ public:
   // Use hardware DIV instruction when it is faster than
   // a code which use multiply for division by constant.
   static bool use_asm_for_ldiv_by_con( jlong divisor );
-
-  static const RegMask method_handle_invoke_SP_save_mask();
 
   // Java-Interpreter calling convention
   // (what you use when calling between compiled-Java and Interpreted-Java
