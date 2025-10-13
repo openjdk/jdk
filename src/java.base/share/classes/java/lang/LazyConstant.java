@@ -309,7 +309,7 @@ public sealed interface LazyConstant<T>
     @Override
     String toString();
 
-    // Factories
+    // Factory
 
     /**
      * {@return a lazy constant to be computed later via the provided
