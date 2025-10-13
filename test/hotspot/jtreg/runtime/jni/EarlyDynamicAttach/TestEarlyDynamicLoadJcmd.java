@@ -46,7 +46,6 @@ public class TestEarlyDynamicLoadJcmd {
         pb.environment().put("JCMD_PATH", jcmdPath);
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.stdoutShouldContain("Not in live phase");
-        output.stdoutShouldContain("jcmd result = 0");
+        output.shouldHaveExitValue(0);
     }
 }

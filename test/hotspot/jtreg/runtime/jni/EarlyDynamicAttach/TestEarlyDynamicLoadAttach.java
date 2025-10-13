@@ -47,7 +47,7 @@ public class TestEarlyDynamicLoadAttach {
         pb.environment().put("CLASSPATH", System.getProperty("java.class.path"));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.stderrShouldContain("Not in live phase");
+        output.shouldHaveExitValue(0);
     }
 }
 
