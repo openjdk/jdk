@@ -393,7 +393,7 @@ bool ciInstanceKlass::contains_field_offset(int offset) {
 
 // ------------------------------------------------------------------
 // ciInstanceKlass::get_non_static_field_by_offset
-ciField* ciInstanceKlass::get_non_static_field_by_offset(int field_offset) {
+ciField* ciInstanceKlass::get_non_static_field_by_offset(const int field_offset) {
   for (int i = 0, len = nof_nonstatic_fields(); i < len; i++) {
     ciField* field = _nonstatic_fields->at(i);
     int  field_off = field->offset_in_bytes();
