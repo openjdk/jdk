@@ -105,12 +105,9 @@ void VM_Version::common_initialize() {
 
   // Enable vendor specific features
 
-  if (mvendorid.enabled()) {
-    // Rivos
-    if (mvendorid.value() == RIVOS) {
-      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
-        FLAG_SET_DEFAULT(UseConservativeFence, false);
-      }
+  if (mvendorid.value() == RIVOS) {
+    if (FLAG_IS_DEFAULT(UseConservativeFence)) {
+      FLAG_SET_DEFAULT(UseConservativeFence, false);
     }
   }
 
@@ -199,7 +196,7 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+  if (UseZicboz && zicboz_block_size.enabled()) {
     assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);

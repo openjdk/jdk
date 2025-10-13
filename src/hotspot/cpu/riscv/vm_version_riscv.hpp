@@ -52,24 +52,18 @@ class VM_Version : public Abstract_VM_Version {
     const char* const _pretty;
     const bool        _feature_string;
     const uint64_t    _linux_feature_bit;
-    int64_t           _value;
    public:
     RVFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
-      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)),
-      _value(-1) {
+      _pretty(pretty), _feature_string(fstring), _linux_feature_bit(nth_bit(linux_bit_num)) {
     }
-    virtual void enable_feature(int64_t value = 0) {
-      _value = value;
-    }
-    virtual void disable_feature() {
-      _value = -1;
-    }
+    virtual void enable_feature(int64_t value = 0) = 0;
+    virtual void disable_feature() = 0;
     const char* pretty()         { return _pretty; }
     uint64_t feature_bit()       { return _linux_feature_bit; }
     bool feature_string()        { return _feature_string; }
-    int64_t value()              { return _value; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
+    virtual int64_t value() = 0;
 
    protected:
     bool deps_all_enabled(RVFeatureValue* dep0, ...) {
@@ -158,31 +152,32 @@ class VM_Version : public Abstract_VM_Version {
       return RVExtFeatures::current()->support_feature(_cpu_feature_index);
     }
     void enable_feature(int64_t value = 0) {
-      RVFeatureValue::enable_feature(value);
       RVExtFeatures::current()->set_feature(_cpu_feature_index);
     }
     void disable_feature() {
-      RVFeatureValue::disable_feature();
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
+    int64_t value() { return enabled(); }
   };
 
   class RVNonExtFeatureValue : public RVFeatureValue {
-    bool _enabled;
+    int64_t _value;
+    static const int64_t DISABLED_VALUE = -1;
    public:
     RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
-      _enabled(false) {
+      _value(DISABLED_VALUE) {
     }
-    bool enabled()               { return _enabled; }
-    void enable_feature(int64_t value = 0) {
-      RVFeatureValue::enable_feature(value);
-      _enabled = true;
+    bool enabled() {
+      return _value != DISABLED_VALUE;
+    }
+    void enable_feature(int64_t value) {
+      _value = value;
     }
     void disable_feature() {
-      RVFeatureValue::disable_feature();
-      _enabled = false;
+      _value = DISABLED_VALUE;
     }
+    int64_t value() { return _value; }
   };
 
  public:
