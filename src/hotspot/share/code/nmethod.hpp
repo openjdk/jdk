@@ -646,12 +646,12 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address speculations_end      () const { return           immutable_data_end() - align_up(ImmutableDataReferencesCounterSize, oopSize) ; }
 #else
-  address scopes_data_end       () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address scopes_data_end       () const { return           immutable_data_end() - align_up(ImmutableDataReferencesCounterSize, oopSize) ; }
 #endif
 
-  address immutable_data_references_counter_begin () const { return immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address immutable_data_references_counter_begin () const { return immutable_data_end() - align_up(ImmutableDataReferencesCounterSize, oopSize) ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
