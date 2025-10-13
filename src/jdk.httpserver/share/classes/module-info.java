@@ -23,6 +23,8 @@
  * questions.
  */
 
+import module jdk.httpserver;
+
 /**
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
  * for running a minimal HTTP server.
@@ -99,15 +101,16 @@
  * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
  * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
  * socket option on all incoming connections.
- * </li>
- * <li><p><b>{@systemProperty jdk.httpserver.attributes}</b> (default: "")<br>
- * Prior to JDK 26, the HttpExchange attribute map was shared with the enclosing HttpContext.
- * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
- * be accessed by calling getHttpContext().getAttributes(). Set this property to "context"
- * to restore the pre JDK 26 behavior.
  * </li></ul>
  *
- * Additional system/networking properties may be defined in the {@code conf/net.properties} configuration file.
+ * @implNote
+ * Prior to JDK 26, in the JDK default implementation, the {@link HttpExchange} attribute map was
+ * shared with the enclosing {@link HttpContext}.
+ * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
+ * be accessed by calling {@link HttpExchange#getHttpContext() getHttpContext()}
+ * {@link HttpContext#getAttributes() HttpContext.getAttributes()}. <br>
+ * A new system property, {@systemProperty jdk.httpserver.attributes}</b> (default value: {@code ""})
+ * allows to revert this new behavior. Set this property to "context" to restore the pre JDK 26 behavior.
  *
  * @apiNote The API and SPI in this module are designed and implemented to support a minimal
  * HTTP server and simple HTTP semantics primarily.
