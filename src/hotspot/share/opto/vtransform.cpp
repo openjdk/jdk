@@ -1176,7 +1176,7 @@ bool VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_ou
 
   // Create a vector of identity values.
   Node* identity = ReductionNode::make_identity_con_scalar(phase->igvn(), sopc, bt);
-  phase->set_ctrl(identity, phase->C->root());
+  phase->set_root_as_ctrl(identity);
   VTransformNode* vtn_identity = new (vtransform.arena()) VTransformOuterNode(vtransform, identity);
 
   VTransformNode* vtn_identity_vector = new (vtransform.arena()) VTransformReplicateNode(vtransform, vlen, bt);
