@@ -325,7 +325,7 @@ public:
 
   static void vm_start();
   static void vm_init();
-  static void vm_stop_event_posting();
+  static void vm_death();
 
   static void trace_changed(JvmtiThreadState *state, jlong now_enabled, jlong changed);
   static void trace_changed(jlong now_enabled, jlong changed);
@@ -1056,7 +1056,7 @@ JvmtiEventControllerPrivate::vm_init() {
 
 
 void
-JvmtiEventControllerPrivate::vm_stop_event_posting() {
+JvmtiEventControllerPrivate::vm_death() {
   _execution_finished = true;
   JvmtiEventControllerPrivate::recompute_enabled();
 }
@@ -1216,18 +1216,18 @@ JvmtiEventController::vm_init() {
 }
 
 void
-JvmtiEventController::vm_stop_event_posting() {
+JvmtiEventController::vm_death() {
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
-    JvmtiEventControllerPrivate::vm_stop_event_posting();
+    JvmtiEventControllerPrivate::vm_death();
   }
 
   const double start = os::elapsedTime();
   const double max_wait_time = 60 * 60 * 1000;
-  while (JvmtiExport::current_event_count() > 0) {
+  while (JvmtiExport::in_callback_count() > 0) {
     os::naked_short_sleep(1000);
     if (os::elapsedTime() - start > max_wait_time) {
-      assert(JvmtiExport::current_event_count()== 0, "The event processing time is too long.");
+      assert(JvmtiExport::in_callback_count()== 0, "The event processing time is too long.");
       break;
     }
   }

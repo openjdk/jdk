@@ -111,7 +111,7 @@ private:
 
 public:
   JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
-    JvmtiExport::inc_current_event_count();
+    JvmtiExport::inc_in_callback_count();
     if (thread->is_Java_thread()) {
        _jthread = JavaThread::cast(thread);
        _saved_state = _jthread->thread_state();
@@ -129,7 +129,7 @@ public:
     if (_jthread != nullptr) {
       ThreadStateTransition::transition_from_native(_jthread, _saved_state);
     }
-    JvmtiExport::dec_current_event_count();
+    JvmtiExport::dec_in_callback_count();
   }
 };
 
@@ -294,7 +294,7 @@ bool              JvmtiExport::_can_hotswap_or_post_breakpoint            = fals
 bool              JvmtiExport::_can_modify_any_class                      = false;
 bool              JvmtiExport::_can_walk_any_space                        = false;
 
-volatile int      JvmtiExport::_current_events_count                      = 0;
+volatile int      JvmtiExport::_in_callback_count                      = 0;
 
 uint64_t          JvmtiExport::_redefinition_count                        = 0;
 bool              JvmtiExport::_all_dependencies_are_recorded             = false;
@@ -776,7 +776,7 @@ void JvmtiExport::post_vm_death() {
 
   // It is needed to disable event generation before setting DEAD phase.
   // The VM_DEATH should be the last posted event.
-  JvmtiEventController::vm_stop_event_posting();
+  JvmtiEventController::vm_death();
 
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
