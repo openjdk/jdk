@@ -215,7 +215,7 @@ class APITest {
             "resource-files/stylesheet.css",
             "resource-files/sun.svg",
             "resource-files/x.svg",
-            "resource-files/toggle.svg",
+            "resource-files/sort-a-z.svg",
             "resource-files/fonts/dejavu.css",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff2",

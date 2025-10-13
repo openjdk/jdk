@@ -22,8 +22,8 @@ const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
 const toggleMemberListing = "##REPLACE:doclet.Toggle_member_listing##";
 
-const sortLexicalLabel = "Sort lexicographically";
-const sortSourceLabel  = "Sort by source order";
+const sortLexicalLabel = "##REPLACE:doclet.Sort_lexicographically##";
+const sortSourceLabel  = "##REPLACE:doclet.Sort_by_source_order##";
 const TOC_ALPHA  = "alpha";
 const TOC_SOURCE = "source";
 var origOlOrder = new Map();
@@ -645,12 +645,25 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
 
     function nestedTocLists(scope) {
-        return Array.from(scope.querySelectorAll("ol.toc-list > li > ol"));
+        const listsToSort = [];
+        const sectionLinks = scope.querySelectorAll("ol.toc-list > li > a");
+
+        sectionLinks.forEach(function(link) {
+            const href = link.getAttribute("href");
+            if (href === "#constructor-detail" || href === "#method-detail"
+                || href === "#field-detail") {
+                const memberList = link.nextElementSibling;
+                if (memberList && memberList.tagName === 'OL') {
+                    listsToSort.push(memberList);
+                }
+            }
+        });
+
+        return listsToSort;
     }
 
     function textForLi(li) {
-        var a = li.querySelector(":scope > a");
-        return (a ? a.textContent : li.textContent).trim();
+        return li.querySelector(":scope > a").textContent.trim();
     }
 
     function alphaCompare(a, b) {
@@ -756,11 +769,18 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
 
     function updateToggleButtons(order){
-        var next = (order === TOC_ALPHA) ? sortSourceLabel : sortLexicalLabel;
+        const next = (order === TOC_ALPHA) ? sortSourceLabel : sortLexicalLabel;
         document.querySelectorAll(".toc-sort-toggle").forEach(function(btn){
             btn.setAttribute("aria-label", next);
             btn.setAttribute("title", next);
-            btn.setAttribute("aria-pressed", order === TOC_ALPHA ? "true" : "false");
+            btn.setAttribute("aria-pressed", order === TOC_ALPHA);
+
+            if (order === TOC_ALPHA) {
+                btn.classList.add("toc-sort-is-active");
+            } else {
+                btn.classList.remove("toc-sort-is-active");
+            }
+
             var img = btn.querySelector("img");
             if (img) img.alt = next;
         });
@@ -777,6 +797,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         updateToggleButtons(TOC_ALPHA);
         tocOrder = TOC_ALPHA;
     }
+
     function applySource(){
         snapshotAllOnce();
         restoreAllMemberContainers();

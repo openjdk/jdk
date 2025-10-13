@@ -109,6 +109,7 @@ body {
     /* Colors for invalid tag notifications */
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
+    --toc-highlight-color: #dee3e9;
 }
 
 body.theme-dark {
@@ -155,6 +156,7 @@ body.theme-dark {
     --button-focus-filter: brightness(104%);
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
+    --toc-highlight-color: #3d454d;
     div.main-grid img,
     .inherited-list h3 > button {
         filter: invert(100%) brightness(160%);
@@ -1969,8 +1971,6 @@ nav.toc div.toc-header .toc-sort-toggle {
     display: inline-flex;
     align-items: center;
     padding: .5em;
-    background: none;
-    border: none;
     cursor: pointer;
 }
 
@@ -1980,6 +1980,10 @@ nav.toc div.toc-header .toc-sort-toggle > img {
     vertical-align: middle;
 }
 
+nav.toc div.toc-header .toc-sort-toggle.toc-sort-is-active {
+    background-color: var(--toc-highlight-color);
+    border-radius: 4px;
+}
 
 /*
  * Hide navigation links and search box in print layout

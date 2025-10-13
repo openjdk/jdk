@@ -169,6 +169,11 @@ public enum HtmlStyles implements HtmlStyle {
      */
     tocSortToggle,
 
+     /**
+     * The class used to indicate the state of the lexical sort toggle.
+     */
+    tocSortIsActive,
+
     //</editor-fold>
 
     //<editor-fold desc="header (title block)">

@@ -115,8 +115,9 @@ public class TableOfContents {
 
             header.add(Entity.NO_BREAK_SPACE)
                     .add(HtmlTree.BUTTON(HtmlStyles.tocSortToggle)
-                            .put(HtmlAttr.ID, HtmlIds.TOC_ORDER_TOGGLE)
-                            .add(HtmlTree.IMG(writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES).resolve(DocPaths.TOGGLE_SVG),
+                            .setId(HtmlIds.TOC_ORDER_TOGGLE)
+                            .add(HtmlTree.IMG(writer.pathToRoot.resolve(DocPaths.RESOURCE_FILES)
+                                            .resolve(DocPaths.SORT_A_Z_SVG),
                                     writer.resources.getText("doclet.sort_table_of_contents")
                             ))
                     );

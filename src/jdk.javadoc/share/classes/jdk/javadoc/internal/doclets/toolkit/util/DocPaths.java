@@ -116,7 +116,7 @@ public class DocPaths {
     public static final DocPath LINK_SVG = DocPath.create("link.svg");
 
     /** The name of the table of contents toggle icon file. */
-    public static final DocPath TOGGLE_SVG = DocPath.create("toggle.svg");
+    public static final DocPath SORT_A_Z_SVG = DocPath.create("sort-a-z.svg");
 
     /** The name of the right pointing angle icon. */
     public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
