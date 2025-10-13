@@ -1052,6 +1052,14 @@ public class LocaleEnhanceTest {
                 .build()
                 .toLanguageTag();
         assertEquals("und-u-nu-thai-xx-1234", result, "duplicate keys");
+
+        // redundant locale attributes are ignored
+        result = builder
+                .clear()
+                .setExtension('u', "bar-foo-bar")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-bar-foo", result, "duplicate attributes");
     }
 
     @Test
