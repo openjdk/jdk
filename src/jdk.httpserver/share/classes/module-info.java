@@ -99,6 +99,12 @@
  * <li><p><b>{@systemProperty sun.net.httpserver.nodelay}</b> (default: false)<br>
  * Boolean value, which if true, sets the {@link java.net.StandardSocketOptions#TCP_NODELAY TCP_NODELAY}
  * socket option on all incoming connections.
+ * </li>
+ * <li><p><b>{@systemProperty jdk.httpserver.attributes}</b> (default: "")<br>
+ * Prior to JDK 26, the HttpExchange attribute map was shared with the enclosing HttpContext.
+ * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
+ * be accessed by calling getHttpContext().getAttributes(). Set this property to "context"
+ * to restore the pre JDK 26 behavior.
  * </li></ul>
  *
  * Additional system/networking properties may be defined in the {@code conf/net.properties} configuration file.
