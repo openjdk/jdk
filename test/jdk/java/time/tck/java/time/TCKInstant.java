@@ -1287,6 +1287,22 @@ public class TCKInstant extends AbstractDateTimeTest {
         }
     }
 
+    @DataProvider(name = "PlusSaturating_null")
+    Object[][] provider_plusSaturating_null() {
+        return new Object[][]{
+                {Instant.MIN},
+                {Instant.EPOCH},
+                {Instant.MAX},
+                // any non-random but also non-special instant
+                {Instant.parse("2025-10-13T20:47:50.369955Z")},
+        };
+    }
+
+    @Test(expectedExceptions = NullPointerException.class, dataProvider = "PlusSaturating_null")
+    public void test_plusSaturating_null(Instant i) {
+        i.plusSaturating(null);
+    }
+
     //-----------------------------------------------------------------------
     @DataProvider(name="Minus")
     Object[][] provider_minus() {
