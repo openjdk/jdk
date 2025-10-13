@@ -29,7 +29,7 @@
 #include "utilities/macros.hpp"
 #include "vm_version_x86.hpp"
 
-DEBUG_ONLY(volatile int Rdtsc::_initalized = 0;)
+DEBUG_ONLY(volatile int Rdtsc::_initialized = 0;)
 jlong Rdtsc::_epoch = 0;
 jlong Rdtsc::_tsc_frequency = 0;
 
@@ -97,7 +97,7 @@ static bool ergonomics() {
 }
 
 bool Rdtsc::initialize() {
-  precond(AtomicAccess::xchg(&_initalized, 1) == 0);
+  precond(AtomicAccess::xchg(&_initialized, 1) == 0);
   assert(0 == _tsc_frequency, "invariant");
   assert(0 == _epoch, "invariant");
 

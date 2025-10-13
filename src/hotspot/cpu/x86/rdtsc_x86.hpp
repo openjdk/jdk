@@ -39,7 +39,7 @@
 
 class Rdtsc : AllStatic {
  private:
-  DEBUG_ONLY(static volatile int _initalized;)
+  DEBUG_ONLY(static volatile int _initialized;)
   static jlong _epoch;
   static jlong _tsc_frequency;
 

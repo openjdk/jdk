@@ -371,24 +371,31 @@ public class JSplitPane extends JComponent implements Accessible
     public void setComponentOrientation(ComponentOrientation orientation) {
         ComponentOrientation curOrn = this.getComponentOrientation();
         super.setComponentOrientation(orientation);
+        Component comp = null;
         if (!orientation.equals(curOrn)) {
             Component leftComponent = this.getLeftComponent();
             Component rightComponent = this.getRightComponent();
             if (!this.getComponentOrientation().isLeftToRight()) {
                 if (rightComponent != null) {
-                    setLeftComponent(rightComponent);
-                }
-                if (leftComponent != null) {
-                    setRightComponent(leftComponent);
+                    comp = this.leftComponent;
+                    this.leftComponent = this.rightComponent;
+                    this.rightComponent = comp;
+                } else if (leftComponent != null) {
+                    comp = this.rightComponent;
+                    this.rightComponent = this.leftComponent;
+                    this.leftComponent = comp;
                 }
             } else {
                 if (leftComponent != null) {
-                    setLeftComponent(leftComponent);
+                    this.leftComponent = rightComponent;
                 }
                 if (rightComponent != null) {
-                    setRightComponent(rightComponent);
+                    this.rightComponent = leftComponent;
                 }
             }
+            firePropertyChange(ORIENTATION_PROPERTY, curOrn, orientation);
+            this.revalidate();
+            this.repaint();
         }
     }
 
