@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 
 /**
  * {@link Expression}s model Java expressions, that have a list of arguments with specified
@@ -357,7 +357,7 @@ public class Expression {
         }
         tokens.add(strings.getLast());
 
-        var template = Template.make(() -> body(
+        var template = Template.make(() -> scope(
             tokens
         ));
         return template.asToken();

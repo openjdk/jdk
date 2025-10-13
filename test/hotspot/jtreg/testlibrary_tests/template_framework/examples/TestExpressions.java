@@ -40,7 +40,7 @@ import java.util.Set;
 import compiler.lib.compile_framework.*;
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.TemplateToken;
-import static compiler.lib.template_framework.Template.body;
+import static compiler.lib.template_framework.Template.scope;
 import static compiler.lib.template_framework.Template.let;
 import compiler.lib.template_framework.library.Expression;
 import compiler.lib.template_framework.library.Operations;
@@ -71,7 +71,7 @@ public class TestExpressions {
             // Create a token: fill the expression with a fixed set of constants.
             // We then use the same token with the same constants, once compiled and once not compiled.
             TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
-            return body(
+            return scope(
                 let("returnType", expression.returnType),
                 """
                 @Test

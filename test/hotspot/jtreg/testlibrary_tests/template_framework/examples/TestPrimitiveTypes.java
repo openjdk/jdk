@@ -177,7 +177,7 @@ public class TestPrimitiveTypes {
         // Test runtime random value generation with LibraryRNG
         // Runtime random number generation of a given primitive type can be very helpful
         // when writing tests that require random inputs.
-        var libraryRNGWithTypeTemplate = Template.make("type", (PrimitiveType type) -> body(
+        var libraryRNGWithTypeTemplate = Template.make("type", (PrimitiveType type) -> scope(
             """
             {
                 // Fill an array with 1_000 random values. Every type has at least 2 values,
@@ -201,7 +201,7 @@ public class TestPrimitiveTypes {
             """
         ));
 
-        var libraryRNGTemplate = Template.make(() -> body(
+        var libraryRNGTemplate = Template.make(() -> scope(
             // Make sure we instantiate the LibraryRNG class.
             PrimitiveType.generateLibraryRNG(),
             // Now we can use it inside the test.
