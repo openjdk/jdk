@@ -200,6 +200,37 @@ inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
   *fp_addr = badAddressVal;
 }
 
+inline intptr_t* AnchorMark::anchor_mark_set_pd() {
+  intptr_t* sp = _top_frame.sp();
+  if (_top_frame.is_interpreted_frame()) {
+    // In case the top frame is interpreted we need to set up the anchor using
+    // the last_sp saved in the frame (remove possible alignment added while
+    // thawing, see ThawBase::finish_thaw()). We also need to clear the last_sp
+    // saved in the frame as it is not expected to be set in case we preempt again.
+    _last_sp_from_frame = _top_frame.interpreter_frame_last_sp();
+    assert(_last_sp_from_frame != nullptr, "");
+    _top_frame.interpreter_frame_set_last_sp(nullptr);
+    if (sp != _last_sp_from_frame) {
+      _last_sp_from_frame[-1] = (intptr_t)_top_frame.pc();
+      _last_sp_from_frame[-2] = (intptr_t)_top_frame.fp();
+    }
+    _is_interpreted = true;
+    sp = _last_sp_from_frame;
+  }
+  return sp;
+}
+
+inline void AnchorMark::anchor_mark_clear_pd() {
+  if (_is_interpreted) {
+    // Restore last_sp_from_frame and possibly overwritten pc.
+    _top_frame.interpreter_frame_set_last_sp(_last_sp_from_frame);
+    intptr_t* sp = _top_frame.sp();
+    if (sp != _last_sp_from_frame) {
+      sp[-1] = (intptr_t)_top_frame.pc();
+    }  
+  }
+}
+
 //////// Thaw
 
 // Fast path
@@ -306,8 +337,14 @@ inline intptr_t* ThawBase::push_cleanup_continuation() {
 
   sp[-1] = (intptr_t)ContinuationEntry::cleanup_pc();
   sp[-2] = (intptr_t)enterSpecial.fp();
+  return sp;
+}
 
-  log_develop_trace(continuations, preempt)("push_cleanup_continuation initial sp: " INTPTR_FORMAT " final sp: " INTPTR_FORMAT, p2i(sp + 2 * frame::metadata_words), p2i(sp));
+inline intptr_t* ThawBase::push_preempt_adapter() {
+  frame enterSpecial = new_entry_frame();
+  intptr_t* sp = enterSpecial.sp();
+
+  sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
   return sp;
 }
 

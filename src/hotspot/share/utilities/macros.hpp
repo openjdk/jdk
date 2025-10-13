@@ -643,4 +643,10 @@
 #define INCLUDE_ASAN 0
 #endif
 
+#if defined(AARCH64) || defined(AMD64)
+#define PREEMPT_ON_INIT_SUPPORTED_ONLY(code) code
+#else
+#define PREEMPT_ON_INIT_SUPPORTED_ONLY(code)
+#endif
+
 #endif // SHARE_UTILITIES_MACROS_HPP

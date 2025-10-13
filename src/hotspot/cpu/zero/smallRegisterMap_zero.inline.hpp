@@ -28,18 +28,17 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 
-// Java frames don't have callee saved registers (except for rfp), so we can use a smaller RegisterMap
-class SmallRegisterMap {
-  constexpr SmallRegisterMap() = default;
-  ~SmallRegisterMap() = default;
-  NONCOPYABLE(SmallRegisterMap);
+class SmallRegisterMap;
 
-public:
-  static const SmallRegisterMap* instance() {
-    static constexpr SmallRegisterMap the_instance{};
-    return &the_instance;
-  }
-private:
+// Java frames don't have callee saved registers (except for rfp), so we can use a smaller RegisterMap
+template <bool IncludeArgs>
+class SmallRegisterMapType {
+  friend SmallRegisterMap;
+
+  constexpr SmallRegisterMapType() = default;
+  ~SmallRegisterMapType() = default;
+  NONCOPYABLE(SmallRegisterMapType);
+
   static void assert_is_rfp(VMReg r) NOT_DEBUG_RETURN
                                      DEBUG_ONLY({ Unimplemented(); })
 public:
@@ -69,7 +68,7 @@ public:
 
   bool update_map()    const { return false; }
   bool walk_cont()     const { return false; }
-  bool include_argument_oops() const { return false; }
+  bool include_argument_oops() const { return IncludeArgs; }
   void set_include_argument_oops(bool f)  {}
   bool in_cont()       const { return false; }
   stackChunkHandle stack_chunk() const { return stackChunkHandle(); }

@@ -219,7 +219,7 @@ JRT_ENTRY(void, InterpreterRuntime::_new(JavaThread* current, ConstantPool* pool
   klass->check_valid_for_instantiation(true, CHECK);
 
   // Make sure klass is initialized
-  klass->initialize(CHECK);
+  klass->initialize_preemptable(CHECK_AND_CLEAR_PREEMPTED);
 
   oop obj = klass->allocate_instance(CHECK);
   current->set_vm_result_oop(obj);
@@ -647,17 +647,18 @@ JRT_END
 //
 
 void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code bytecode) {
+  JavaThread* THREAD = current;
   LastFrameAccessor last_frame(current);
   constantPoolHandle pool(current, last_frame.method()->constants());
   methodHandle m(current, last_frame.method());
 
-  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, true /*initialize_holder*/, current);
+  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, StaticMode::initialize_klass_preemptable, CHECK_AND_CLEAR_PREEMPTED);
 }
 
 void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_index,
                                          methodHandle& m,
                                          constantPoolHandle& pool,
-                                         bool initialize_holder, TRAPS) {
+                                         StaticMode static_mode, TRAPS) {
   fieldDescriptor info;
   bool is_put    = (bytecode == Bytecodes::_putfield  || bytecode == Bytecodes::_nofast_putfield ||
                     bytecode == Bytecodes::_putstatic);
@@ -666,7 +667,7 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   {
     JvmtiHideSingleStepping jhss(THREAD);
     LinkResolver::resolve_field_access(info, pool, field_index,
-                                       m, bytecode, initialize_holder, CHECK);
+                                       m, bytecode, static_mode, CHECK);
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
@@ -825,7 +826,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
     JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  method_index, bytecode,
-                                 THREAD);
+                                 StaticMode::initialize_klass_preemptable, THREAD);
 
     if (HAS_PENDING_EXCEPTION) {
       if (ProfileTraps && PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_NullPointerException()) {
@@ -834,6 +835,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
         // Recording the trap will help the compiler to potentially recognize this exception as "hot"
         note_trap(current, Deoptimization::Reason_null_check);
       }
+      CLEAR_PENDING_PREEMPTED_EXCEPTION;
       return;
     }
 
@@ -1523,3 +1525,11 @@ JRT_LEAF(intptr_t, InterpreterRuntime::trace_bytecode(JavaThread* current, intpt
   return preserve_this_value;
 JRT_END
 #endif // !PRODUCT
+
+#ifdef ASSERT
+bool InterpreterRuntime::is_preemptable_call(address entry_point) {
+  return entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter) ||
+         entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache) ||
+         entry_point == CAST_FROM_FN_PTR(address, InterpreterRuntime::_new);
+}
+#endif // ASSERT

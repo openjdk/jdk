@@ -176,7 +176,8 @@ inline int StackChunkFrameStream<frame_kind>::interpreter_frame_stack_argsize() 
 }
 
 template <ChunkFrames frame_kind>
-inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops() const {
+template <typename RegisterMapT>
+inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops(RegisterMapT* map) const {
   assert_is_interpreted_and_frame_type_mixed();
   ResourceMark rm;
   InterpreterOopMap mask;

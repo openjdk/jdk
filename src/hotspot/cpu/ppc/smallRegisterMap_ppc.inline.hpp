@@ -28,18 +28,18 @@
 #include "runtime/frame.inline.hpp"
 #include "runtime/registerMap.hpp"
 
+class SmallRegisterMap;
+
 // Java frames don't have callee saved registers, so we can use a smaller RegisterMap
-class SmallRegisterMap {
-  constexpr SmallRegisterMap() = default;
-  ~SmallRegisterMap() = default;
-  NONCOPYABLE(SmallRegisterMap);
+template <bool IncludeArgs>
+class SmallRegisterMapType {
+  friend SmallRegisterMap;
 
-public:
-  static const SmallRegisterMap* instance() {
-    static constexpr SmallRegisterMap the_instance{};
-    return &the_instance;
-  }
+  constexpr SmallRegisterMapType() = default;
+  ~SmallRegisterMapType() = default;
+  NONCOPYABLE(SmallRegisterMapType);
 
+ public:
   // as_RegisterMap is used when we didn't want to templatize and abstract over RegisterMap type to support SmallRegisterMap
   // Consider enhancing SmallRegisterMap to support those cases
   const RegisterMap* as_RegisterMap() const { return nullptr; }

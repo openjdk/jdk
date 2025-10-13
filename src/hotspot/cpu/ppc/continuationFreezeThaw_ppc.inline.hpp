@@ -337,6 +337,13 @@ inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
 inline void FreezeBase::patch_pd_unused(intptr_t* sp) {
 }
 
+inline intptr_t* AnchorMark::anchor_mark_set_pd() {
+  return _top_frame.sp();
+}
+
+inline void AnchorMark::anchor_mark_clear_pd() {
+}
+
 //////// Thaw
 
 // Fast path
@@ -564,6 +571,11 @@ inline intptr_t* ThawBase::push_cleanup_continuation() {
                                             p2i(ContinuationEntry::cleanup_pc()));
 
   return enterSpecial.sp();
+}
+
+inline intptr_t* ThawBase::push_preempt_adapter() {
+  Unimplemented();
+  return nullptr;
 }
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {

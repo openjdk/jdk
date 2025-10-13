@@ -146,7 +146,7 @@ class ContinuationEntry {
 #endif
 
 #ifdef ASSERT
-  static bool assert_entry_frame_laid_out(JavaThread* thread);
+  static bool assert_entry_frame_laid_out(JavaThread* thread, bool preempted = false);
 #endif
 };
 

@@ -34,6 +34,10 @@ inline ObjectMonitor* ObjectSynchronizer::read_monitor(markWord mark) {
   return mark.monitor();
 }
 
+inline ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj) {
+  return ObjectSynchronizer::read_monitor(current, obj, obj->mark());
+}
+
 inline ObjectMonitor* ObjectSynchronizer::read_monitor(Thread* current, oop obj, markWord mark) {
   if (!UseObjectMonitorTable) {
     return read_monitor(mark);
