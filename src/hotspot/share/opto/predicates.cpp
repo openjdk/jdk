@@ -203,7 +203,8 @@ TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_opaque_
   return clone_and_replace_init(new_control, new_opaque_init, new_loop_node, phase);
 }
 
-// Clone this Template Assertion Predicate and use the expression passed as argument as init.
+// Clone this Template Assertion Predicate and replace the old OpaqueLoopInit node with 'new_init'.
+// Note: 'new_init' could also have the 'OpaqueLoopInit` as parent node further up.
 TemplateAssertionPredicate TemplateAssertionPredicate::clone_and_replace_init(Node* new_control,
                                                                               Node* new_init,
                                                                               CountedLoopNode* new_loop_node,
