@@ -57,7 +57,7 @@ public final class Operations {
         Expression.Info withArithmeticException = new Expression.Info().withExceptions(Set.of("ArithmeticException"));
         Expression.Info withNondeterministicResult = new Expression.Info().withNondeterministicResult();
 
-        // Cast between all primitive types. Escept for Boolean, we cannot cast from and to.
+        // Cast between all primitive types. Except for Boolean, we cannot cast from and to.
         CodeGenerationDataNameType.INTEGRAL_AND_FLOATING_TYPES.stream().forEach(src -> {
             CodeGenerationDataNameType.INTEGRAL_AND_FLOATING_TYPES.stream().forEach(dst -> {
                 ops.add(Expression.make(dst, "(" + dst.name() + ")(", src,   ")"));
