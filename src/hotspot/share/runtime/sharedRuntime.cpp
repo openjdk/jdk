@@ -3214,6 +3214,7 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       CompileTask::print(tty, nm, msg);
     }
     if (!ServiceThread::has_started()) {
+      // Not ready to post JVMTI events yet.
       AOTLinkedClassBulkLoader::add_delayed_compiled_method_load_event(nm);
     } else {
       nm->post_compiled_method_load_event();

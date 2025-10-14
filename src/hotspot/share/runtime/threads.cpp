@@ -343,6 +343,7 @@ static void call_initPhase3(TRAPS) {
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
+  // This is before the execution of the very first Java bytecode.
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::link_classes(THREAD);
   }

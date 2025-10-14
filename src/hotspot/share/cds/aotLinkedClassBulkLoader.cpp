@@ -56,6 +56,8 @@ void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {
 // step in restoring the JVM's state from the snapshot recorded in the AOT cache: other AOT optimizations
 // such as AOT compiled methods can make direct references to the preloaded classes, knowing that
 // these classes are guaranteed to be in at least the "loaded" state.
+//
+// Note: we can't link the classes yet because SharedRuntime is not yet ready to generate adapters.
 void AOTLinkedClassBulkLoader::preload_classes(JavaThread* current) {
   preload_classes_impl(current);
   if (current->has_pending_exception()) {
@@ -139,6 +141,14 @@ void AOTLinkedClassBulkLoader::link_classes_impl(TRAPS) {
 void AOTLinkedClassBulkLoader::link_classes_in_table(Array<InstanceKlass*>* classes, TRAPS) {
   if (classes != nullptr) {
     for (int i = 0; i < classes->length(); i++) {
+      // NOTE: CDSConfig::is_preserving_verification_constraints() is required
+      // when storing ik in the AOT cache. This means we don't have to verify
+      // ik at all.
+      //
+      // Without is_preserving_verification_constraints(), ik->link_class() may cause
+      // class loading, which may result in invocation of ClassLoader::loadClass() calls,
+      // which CANNOT happen because we are not ready to execute any Java byecodes yet
+      // at this point.
       InstanceKlass* ik = classes->at(i);
       ik->link_class(CHECK);
     }
