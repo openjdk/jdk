@@ -355,14 +355,15 @@ void MacroAssembler::call_VM(Register oop_result,
 }
 
 void MacroAssembler::post_call_nop() {
+  assert(!in_compressible_scope(), "Must be");
+  assert_alignment(pc());
   if (!Continuations::enabled()) {
     return;
   }
-  relocate(post_call_nop_Relocation::spec(), [&] {
-    InlineSkippedInstructionsCounter skipCounter(this);
-    nop();
-    li32(zr, 0);
-  });
+  relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
+  nop();
+  li32(zr, 0);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -5013,7 +5014,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleScope scope(this); // relocations
+  assert(!in_compressible_scope(), "Must be");
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));
@@ -5871,13 +5872,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value) {
 // in cnt.
 //
 // NOTE: This is intended to be used in the zero_blocks() stub.  If
-// you want to use it elsewhere, note that cnt must be >= CacheLineSize.
+// you want to use it elsewhere, note that cnt must be >= zicboz_block_size.
 void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2) {
+  int zicboz_block_size = VM_Version::zicboz_block_size.value();
   Label initial_table_end, loop;
 
   // Align base with cache line size.
   neg(tmp1, base);
-  andi(tmp1, tmp1, CacheLineSize - 1);
+  andi(tmp1, tmp1, zicboz_block_size - 1);
 
   // tmp1: the number of bytes to be filled to align the base with cache line size.
   add(base, base, tmp1);
@@ -5887,16 +5889,16 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   la(tmp1, initial_table_end);
   sub(tmp2, tmp1, tmp2);
   jr(tmp2);
-  for (int i = -CacheLineSize + wordSize; i < 0; i += wordSize) {
+  for (int i = -zicboz_block_size + wordSize; i < 0; i += wordSize) {
     sd(zr, Address(base, i));
   }
   bind(initial_table_end);
 
-  mv(tmp1, CacheLineSize / wordSize);
+  mv(tmp1, zicboz_block_size / wordSize);
   bind(loop);
   cbo_zero(base);
   sub(cnt, cnt, tmp1);
-  addi(base, base, CacheLineSize);
+  addi(base, base, zicboz_block_size);
   bge(cnt, tmp1, loop);
 }
 

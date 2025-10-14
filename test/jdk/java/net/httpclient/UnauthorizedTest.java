@@ -30,7 +30,8 @@
  *      for the client. If no authenticator is configured the client
  *      should simply let the caller deal with the unauthorized response.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.httpclient.test.lib.common.HttpServerAdapters
+ *        jdk.test.lib.net.SimpleSSLContext ReferenceTracker
  * @run testng/othervm
  *       -Djdk.httpclient.HttpClient.log=headers
  *       UnauthorizedTest
@@ -60,6 +61,9 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -71,10 +75,12 @@ public class UnauthorizedTest implements HttpServerAdapters {
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
     HttpClient authClient;
     HttpClient noAuthClient;
 
@@ -97,6 +103,12 @@ public class UnauthorizedTest implements HttpServerAdapters {
     @DataProvider(name = "all")
     public Object[][] positive() {
         return new Object[][] {
+                { http3URI  + "/server", UNAUTHORIZED, true, ref(authClient)},
+                { http3URI  + "/server", UNAUTHORIZED, false, ref(authClient)},
+                { http3URI  + "/server", UNAUTHORIZED, true, ref(noAuthClient)},
+                { http3URI  + "/server", UNAUTHORIZED, false, ref(noAuthClient)},
+
+
                 { httpURI   + "/server", UNAUTHORIZED, true, ref(authClient)},
                 { httpsURI  + "/server", UNAUTHORIZED, true, ref(authClient)},
                 { http2URI  + "/server", UNAUTHORIZED, true, ref(authClient)},
@@ -137,6 +149,15 @@ public class UnauthorizedTest implements HttpServerAdapters {
     static final Authenticator authenticator = new Authenticator() {
     };
 
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "all")
     void test(String uriString, int code, boolean async, WeakReference<HttpClient> clientRef) throws Throwable {
         HttpClient client = clientRef.get();
@@ -145,8 +166,7 @@ public class UnauthorizedTest implements HttpServerAdapters {
                 client.authenticator().isPresent() ? "authClient" : "noAuthClient");
         URI uri = URI.create(uriString);
 
-        HttpRequest.Builder requestBuilder = HttpRequest
-                .newBuilder(uri)
+        HttpRequest.Builder requestBuilder = newRequestBuilder(uri)
                 .GET();
 
         HttpRequest request = requestBuilder.build();
@@ -163,6 +183,7 @@ public class UnauthorizedTest implements HttpServerAdapters {
                try {
                    response = client.sendAsync(request, BodyHandlers.ofString()).get();
                } catch (ExecutionException ex) {
+                   ex.printStackTrace();
                    throw ex.getCause();
                }
            }
@@ -204,13 +225,17 @@ public class UnauthorizedTest implements HttpServerAdapters {
         https2TestServer.addHandler(new UnauthorizedHandler(), "/https2/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2";
 
-        authClient = HttpClient.newBuilder()
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new UnauthorizedHandler(), "/http3/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3";
+
+        authClient = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .authenticator(authenticator)
                 .build();
 
-        noAuthClient = HttpClient.newBuilder()
+        noAuthClient = newClientBuilderForH3()
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .sslContext(sslContext)
                 .build();
@@ -219,6 +244,7 @@ public class UnauthorizedTest implements HttpServerAdapters {
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -236,6 +262,7 @@ public class UnauthorizedTest implements HttpServerAdapters {
         httpsTestServer.stop();
         http2TestServer.stop();
         https2TestServer.stop();
+        http3TestServer.stop();
         if (error != null) throw error;
     }
 

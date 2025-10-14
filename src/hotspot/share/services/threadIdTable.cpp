@@ -1,4 +1,3 @@
-
 /*
 * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +23,7 @@
 */
 
 #include "classfile/javaClasses.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/threadSMR.hpp"
@@ -120,12 +119,12 @@ void ThreadIdTable::create_table(size_t size) {
 }
 
 void ThreadIdTable::item_added() {
-  Atomic::inc(&_items_count);
+  AtomicAccess::inc(&_items_count);
   log_trace(thread, table) ("Thread entry added");
 }
 
 void ThreadIdTable::item_removed() {
-  Atomic::dec(&_items_count);
+  AtomicAccess::dec(&_items_count);
   log_trace(thread, table) ("Thread entry removed");
 }
 

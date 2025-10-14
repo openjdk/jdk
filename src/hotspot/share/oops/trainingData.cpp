@@ -250,7 +250,7 @@ void CompileTrainingData::dec_init_deps_left_release(KlassTrainingData* ktd) {
   assert(_init_deps.contains(ktd), "");
   assert(_init_deps_left > 0, "");
 
-  uint init_deps_left1 = Atomic::sub(&_init_deps_left, 1);
+  uint init_deps_left1 = AtomicAccess::sub(&_init_deps_left, 1);
 
   if (log.is_enabled()) {
     uint init_deps_left2 = compute_init_deps_left();
@@ -618,7 +618,7 @@ void CompileTrainingData::verify(bool verify_dep_counter) {
   for (int i = 0; i < init_dep_count(); i++) {
     KlassTrainingData* ktd = init_dep(i);
     if (ktd->has_holder() && ktd->holder()->defined_by_other_loaders()) {
-      LogStreamHandle(Warning, training) log;
+      LogStreamHandle(Info, training) log;
       if (log.is_enabled()) {
         ResourceMark rm;
         log.print("CTD "); print_value_on(&log);
