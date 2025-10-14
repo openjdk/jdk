@@ -462,23 +462,8 @@ void ShenandoahBarrierSet::arraycopy_marking(T* src, T* dst, size_t count, bool 
    *    may hold references to young-gen
    */
   if (ShenandoahSATBBarrier) {
-    T* array = dst;
-    HeapWord* array_addr = reinterpret_cast<HeapWord*>(array);
-    ShenandoahHeapRegion* r = _heap->heap_region_containing(array_addr);
-    if (is_old_marking) {
-      // Generational, old marking
-      assert(_heap->mode()->is_generational(), "Invariant");
-      if (r->is_old() && (array_addr < _heap->marking_context()->top_at_mark_start(r))) {
-        arraycopy_work<T, false, false, true>(array, count);
-      }
-    } else if (_heap->mode()->is_generational()) {
-      // Generational, young marking
-      if (r->is_old() || (array_addr < _heap->marking_context()->top_at_mark_start(r))) {
-        arraycopy_work<T, false, false, true>(array, count);
-      }
-    } else if (array_addr < _heap->marking_context()->top_at_mark_start(r)) {
-      // Non-generational, marking
-      arraycopy_work<T, false, false, true>(array, count);
+    if (!_heap->marking_context()->allocated_after_mark_start(reinterpret_cast<HeapWord*>(dst))) {
+      arraycopy_work<T, false, false, true>(dst, count);
     }
   }
 }
