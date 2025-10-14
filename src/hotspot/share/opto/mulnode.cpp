@@ -1055,7 +1055,8 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return nullptr;
   }
 
-  // Left input is an add?
+  // If the right input is a constant, and the left input is an add of a
+  // constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
   Node* add1 = in(1);
   int add1_op = add1->Opcode();
   if (add1_op == Op_Add(bt)) {    // Left input is an add?
@@ -1168,7 +1169,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
     return LShiftNode::make(add1->in(1), in(2), bt);
   }
 
-  // Performs:
+  // Collapse nested left-shifts with constant rhs:
   // (X << con1) << con2 ==> X << (con1 + con2)
   Node* doubleShift = collapse_nested_shift_left(phase, this, con, bt);
   if (doubleShift != nullptr) {
@@ -1179,11 +1180,6 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 }
 
 //------------------------------Ideal------------------------------------------
-// If the right input is a constant, and the left input is an add of a
-// constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
-//
-// Also collapse nested left-shifts with constant rhs:
-// (X << con1) << con2 ==> X << (con1 + con2)
 Node* LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return IdealIL(phase, can_reshape, T_INT);
 }
@@ -1253,7 +1249,6 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
 }
 
 //------------------------------Value------------------------------------------
-// A LShiftINode shifts its input2 left by input1 amount.
 const Type* LShiftINode::Value(PhaseGVN* phase) const {
   return ValueIL(phase, T_INT);
 }
@@ -1274,17 +1269,11 @@ Node* LShiftLNode::Identity(PhaseGVN* phase) {
 }
 
 //------------------------------Ideal------------------------------------------
-// If the right input is a constant, and the left input is an add of a
-// constant, flatten the tree: (X+con1)<<con0 ==> X<<con0 + con1<<con0
-//
-// Also collapse nested left-shifts with constant rhs:
-// (X << con1) << con2 ==> X << (con1 + con2)
 Node* LShiftLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return IdealIL(phase, can_reshape, T_LONG);
 }
 
 //------------------------------Value------------------------------------------
-// A LShiftLNode shifts its input2 left by input1 amount.
 const Type* LShiftLNode::Value(PhaseGVN* phase) const {
   return ValueIL(phase, T_LONG);
 }
