@@ -40,7 +40,7 @@ class UpgradeInputStream extends LeftOverInputStream {
 
     @Override
     protected int readImpl(byte[] b, int off, int len) throws IOException {
-        if (eof) {
+        if (!t.upgraded) {
             return -1;
         }
         return in.read(b, off, len);
@@ -48,7 +48,7 @@ class UpgradeInputStream extends LeftOverInputStream {
 
     @Override
     public int available() throws IOException {
-        if (eof) {
+        if (!t.upgraded) {
             return 0;
         }
         return in.available();
@@ -63,5 +63,13 @@ class UpgradeInputStream extends LeftOverInputStream {
     public void close() throws IOException {
         closed = true;
         t.getServerImpl().requestCompleted(t.getConnection());
+    }
+
+    @Override
+    public byte[] readAllBytes() throws IOException {
+        if (!t.upgraded) {
+          return new byte[0];
+        }
+        throw new IOException("readAllBytes not supported for upgraded requests");
     }
 }

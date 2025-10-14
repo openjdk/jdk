@@ -57,6 +57,7 @@ class ExchangeImpl {
     boolean closed;
     boolean http10 = false;
     boolean upgrade;
+    boolean upgraded;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -306,6 +307,7 @@ class ExchangeImpl {
             ros.flush();
             close();
         } else if (upgrade && rCode == 101) {
+            upgraded = true;
             ros.flush();
         }
         server.logReply (rCode, req.requestLine(), null);

@@ -81,6 +81,8 @@ public class SwitchingProtocolTest {
                     byte[] reply = RESPONSE_BODY.getBytes(UTF_8);
                     System.err.println("Handling request: " + msg.getRequestURI());
                     try {
+                    	assertEquals(-1, msg.getRequestBody().read());
+                        assertEquals(0, msg.getRequestBody().readAllBytes().length);
                         msg.sendResponseHeaders(msgCode, -1);
                         // Read and assert request body
                         byte[] requestBytes = msg.getRequestBody().readNBytes(REQUEST_LENGTH);
