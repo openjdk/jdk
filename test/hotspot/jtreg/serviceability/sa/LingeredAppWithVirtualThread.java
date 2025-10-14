@@ -40,6 +40,8 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
 
     private static final MethodHandle hndSleep;
 
+    private static final int sleepArg;
+
     private static final CountDownLatch signal = new CountDownLatch(1);
 
     static {
@@ -47,10 +49,12 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
         if (System.getProperty("os.name").startsWith("Windows")) {
             func = SymbolLookup.libraryLookup("Kernel32", Arena.global())
                                .findOrThrow("Sleep");
+            sleepArg = 3600_000; // 1h in milliseconds
         } else {
             func = Linker.nativeLinker()
                          .defaultLookup()
                          .findOrThrow("sleep");
+            sleepArg = 3600; // 1h in seconds
         }
 
         var desc = FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.JAVA_INT);
@@ -62,7 +66,7 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
         signal.countDown();
         Thread.yield();
         try {
-            hndSleep.invoke(3600);
+            hndSleep.invoke(sleepArg);
         } catch(Throwable t) {
             throw new RuntimeException(t);
         }
