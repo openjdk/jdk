@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileVisitResult;
@@ -29,11 +30,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+
+import static java.util.Comparator.comparing;
 
 /*
  * @test
@@ -52,8 +56,13 @@ public class AbsPathsInImage {
     private static final boolean IS_WINDOWS = System.getProperty("os.name").toLowerCase().contains("windows");
     private static final boolean IS_LINUX   = System.getProperty("os.name").toLowerCase().contains("linux");
     private static final int DEFAULT_BUFFER_SIZE = 8192;
+    private static List<byte[]> searchPatterns = new ArrayList<>();
+    private static List<int[]> prefixTables = new ArrayList<>();
+    private static boolean containsNonASCII = false;
 
     private boolean matchFound = false;
+
+    record Match(int begin, int end) { }
 
     public static void main(String[] args) throws Exception {
         String jdkPathString = System.getProperty("test.jdk");
@@ -108,9 +117,8 @@ public class AbsPathsInImage {
             throw new Error("Output root is not an absolute path: " + buildOutputRoot);
         }
 
-        List<byte[]> searchPatterns = new ArrayList<>();
-        expandPatterns(searchPatterns, buildWorkspaceRoot);
-        expandPatterns(searchPatterns, buildOutputRoot);
+        expandPatterns(buildWorkspaceRoot);
+        expandPatterns(buildOutputRoot);
 
         System.out.println("Looking for:");
         for (byte[] searchPattern : searchPatterns) {
@@ -118,8 +126,10 @@ public class AbsPathsInImage {
         }
         System.out.println();
 
+        createPrefixTables();
+
         AbsPathsInImage absPathsInImage = new AbsPathsInImage();
-        absPathsInImage.scanFiles(dirToScan, searchPatterns);
+        absPathsInImage.scanFiles(dirToScan);
 
         if (absPathsInImage.matchFound) {
             throw new Exception("Test failed");
@@ -130,7 +140,7 @@ public class AbsPathsInImage {
      * Add path pattern to list of patterns to search for. Create all possible
      * variants depending on platform.
      */
-    private static void expandPatterns(List<byte[]> searchPatterns, String pattern) {
+    private static void expandPatterns(String pattern) {
         if (IS_WINDOWS) {
             String forward = pattern.replace('\\', '/');
             String back = pattern.replace('/', '\\');
@@ -152,7 +162,33 @@ public class AbsPathsInImage {
         }
     }
 
-    private void scanFiles(Path root, List<byte[]> searchPatterns) throws IOException {
+    // KMP failure function
+    private static int getPrefixIndex(int patternIdx, int state, byte match) {
+        if (state == 0) {
+            return 0;
+        }
+        byte[] searchPattern = searchPatterns.get(patternIdx);
+        int[] prefixTable = prefixTables.get(patternIdx);
+        int i = prefixTable[state - 1];
+        while (i > 0 && searchPattern[i] != match) {
+            i = prefixTable[i - 1];
+        }
+        return searchPattern[i] == match ? i + 1 : i;
+    }
+
+    // precompute KMP prefixes
+    private static void createPrefixTables() {
+        for (int patternIdx = 0; patternIdx < searchPatterns.size(); patternIdx++) {
+            int patternSize = searchPatterns.get(patternIdx).size();
+            int[] prefixTable = new int[patternSize];
+            prefixTables.add(prefixTable);
+            for (int i = 1; i < patternSize; i++) {
+                prefixTable[i] = getPrefixIndex(patternIdx, i, searchPatterns.get(patternIdx)[i]);
+            }
+        }
+    }
+
+    private void scanFiles(Path root) throws IOException {
         Files.walkFileTree(root, new SimpleFileVisitor<>() {
             @Override
             public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
@@ -171,89 +207,79 @@ public class AbsPathsInImage {
                 } else if ((fileName.endsWith(".debuginfo") && !IS_LINUX) || fileName.endsWith(".pdb")) {
                     // Do nothing
                 } else if (fileName.endsWith(".zip")) {
-                    scanZipFile(file, searchPatterns);
+                    scanZipFile(file);
                 } else {
-                    scanFile(file, searchPatterns);
+                    scanFile(file);
                 }
                 return super.visitFile(file, attrs);
             }
         });
     }
 
-    private void scanFile(Path file, List<byte[]> searchPatterns) throws IOException {
-        List<String> matches;
+    private void scanFile(Path file) throws IOException {
         try (InputStream inputStream = Files.newInputStream(file)) {
-            matches = scanBytes(inputStream, searchPatterns);
-        }
-        if (matches.size() > 0) {
-            matchFound = true;
-            System.out.println(file + ":");
-            for (String match : matches) {
-                System.out.println(match);
-            }
-            System.out.println();
+            scanBytes(inputStream, file + ":");
         }
     }
 
-    private void scanZipFile(Path zipFile, List<byte[]> searchPatterns) throws IOException {
+    private void scanZipFile(Path zipFile) throws IOException {
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
             ZipEntry zipEntry;
             while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                List<String> matches = scanBytes(zipInputStream, searchPatterns);
-                if (matches.size() > 0) {
-                    matchFound = true;
-                    System.out.println(zipFile + ", " + zipEntry.getName() + ":");
-                    for (String match : matches) {
-                        System.out.println(match);
-                    }
-                    System.out.println();
-                }
+                scanBytes(zipInputStream, zipFile + ", " + zipEntry.getName() + ":");
             }
         }
     }
 
-    private List<String> scanBytes(InputStream input, List<byte[]> searchPatterns) throws IOException {
-        List<String> matches = new ArrayList<>();
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
+    private void scanBytes(InputStream input, final String HEADER) throws IOException {
+        List<Match> matches = new ArrayList<>();
         byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
         int[] states = new int[searchPatterns.size()];
-        int[] zeroes = new int[searchPatterns.size()];
-        int bytesRead;
-        boolean found = false;
+        int fileIdx = 0;
+        int bytesRead, patternLen;
         while ((bytesRead = input.read(buf)) != -1) {
-            int markpos = -1;
-            for (int i = 0; i < bytesRead; i++) {
-                byte datum = buf[i];
-                // match byte, saving the position of searchPatterns byte search
-                // can skip if a searchPattern already found
-                for (int j = 0; !found && j < searchPatterns.size(); j++) {
-                    if (datum != searchPatterns.get(j)[states[j]]) {
-                        states[j] = 0;
-                    } else if (++states[j] == searchPatterns.get(j).length) {
-                        Arrays.fill(states, 0);
-                        found = true;
+            for (int bufIdx = 0; bufIdx < bytesRead; bufIdx++, fileIdx++) {
+                byte datum = buf[bufIdx];
+                for (int i = 0; i < searchPatterns.size(); i++) {
+                    patternLen = searchPatterns.get(i).length;
+                    if (datum != searchPatterns.get(i)[states[i]]) {
+                        states[i] = getPrefixIndex(i, states[i], datum);
+                    } else if (++states[i] == patternLen) {
+                        states[i] = 0;
+                        matches.add(new Match(fileIdx - patternLen + 1, fileIdx));
                         break;
                     }
                 }
-                // use undesired bytes as delimiters
-                if (datum < 32 || datum > 126) {
-                    if (found) {
-                        markpos++;
-                        output.write(buf, markpos, i - markpos);
-                        matches.add(output.toString());
-                        found = false;
-                    }
-                    markpos = i;
+            }
+        }
+        // test succeeds; common case
+        if (matches.size() == 0) {
+            return;
+        }
+        // test fails; pay penalty and re-scan file
+        matchFound = true;
+        System.out.println(HEADER);
+        matches.sort(comparing(Match::begin));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        int matchIdx = 0;
+        fileIdx = 0;
+        input.reset();
+        while (matchIdx < matches.size() && (bytesRead = input.read(buf)) != -1) {
+            for (int i = 0; matchIdx < matches.size() && i < bytesRead; i++, fileIdx++) {
+                byte datum = buf[i];
+                if (datum >= 32 && datum <= 126) {
+                    output.write(datum);
+                } else if (fileIdx < matches.get(matchIdx).begin()) {
                     output.reset();
+                } else if (fileIdx > matches.get(matchIdx).end()) {
+                    System.println(output.toString());
+                    output.reset();
+                    for (; matchIdx < matches.size() && matches.get(matchIdx).end() < fileIdx; matchIdx++);
+                } else {
+                    output.write(datum);
                 }
             }
-            if (++markpos < bytesRead) {
-                output.write(buf, markpos, bytesRead - markpos);
-            }
         }
-        if (found) {
-            matches.add(output.toString());
-        }
-        return matches;
+        System.out.println();
     }
 }
