@@ -51,11 +51,11 @@ public class TestJvmtiSharedClose {
             .toAbsolutePath().toString();
 
     @Test
-    void runWithAgent() throws Throwable {
+    void eventDuringScopedAccess() throws Throwable {
         List<String> command = new ArrayList<>(List.of(
                 "-agentpath:" + JVMTI_AGENT_LIB,
                 "-Xcheck:jni",
-                Runner.class.getName()
+                EventDuringScopedAccessRunner.class.getName()
         ));
 
         try {
@@ -69,7 +69,7 @@ public class TestJvmtiSharedClose {
         }
     }
 
-    public static class Runner {
+    public static class EventDuringScopedAccessRunner {
         static final int ADDED_FRAMES = 10;
 
         static final CountDownLatch MAIN_LATCH = new CountDownLatch(1);

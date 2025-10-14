@@ -55,7 +55,11 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
 
     if (m->method_holder()->module()->name() != vmSymbols::java_base() && !agents_loaded) {
       // Stop walking if we see a frame outside of java.base.
-      // If any JVMTI agents are loaded, we have to keep walking, since
+      // Note that there is exactly 1 handshake that calls into Java (see HandshakeState::handle_unsafe_access_error)
+      // This may add extra Java frames to the stack during a @Scoped method.
+      // These are all on java.base though, so we just keep walking.
+
+      // If any JVMTI agents are loaded, we also have to keep walking, since
       // agents can add arbitrary Java frames to the stack inside a @Scoped method.
       return;
     }
@@ -73,9 +77,9 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
       func(stream);
       if (!agents_loaded) {
         // We may also have to keep walking after finding a @Scoped method,
-        // since there may be multiple @Scoped methods active on the stack.
-        // For example, a JVMTI agent runs during a scoped access, that then
-        // itself does a scoped access.
+        // since there may be multiple @Scoped methods active on the stack
+        // if a JVMTI agent callback runs during a scoped access and calls
+        // back into Java code, that then itself does a scoped access.
         return;
       }
     }
