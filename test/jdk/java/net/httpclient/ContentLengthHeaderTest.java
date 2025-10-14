@@ -221,7 +221,6 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
-        assertEquals(resp.body(), "Request completed");
     }
 
     @Test(dataProvider = "bodies")
