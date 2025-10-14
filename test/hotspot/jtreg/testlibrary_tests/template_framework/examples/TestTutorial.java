@@ -494,8 +494,8 @@ public class TestTutorial {
             """
             // We can do that by inserting a scope like above, or by inserting a template, like below.
             //
-            // Which method is used is up to the user. General guidance is if the same code may be
-            // inserted elsewhere, one should lean towards inserting templates. But in many cases
+            // Which method is used is up to the user. General guidance is if the same code may also
+            // be inserted elsewhere, one should lean towards inserting templates. But in many cases
             // it is nice to see the inserted code directly, and to be able to use hashtag replacements
             // from the outer scope directly, without having to route them via template arguments,
             // as we have to do below.
