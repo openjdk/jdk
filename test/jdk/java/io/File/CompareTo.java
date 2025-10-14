@@ -43,20 +43,29 @@ public class CompareTo {
 
         // U+0131 = ı 'LATIN SMALL LETTER DOTLESS I'
         File smallDotlessI = new File("\u0131");
+        File latinLowerI   = new File("i");
         // U+0130 = İ 'LATIN CAPITAL LETTER I WITH DOT ABOVE'
         File largeDotfullI = new File("\u0130");
         File latinCapitalI = new File("I");
 
-        boolean shouldBeEqual= smallDotlessI.equals(latinCapitalI);
-        if (!shouldBeEqual)
+        if (!smallDotlessI.equals(latinCapitalI))
             throw new Exception("Small dotless \"i\" does not equal \"I\"");
+        if (!smallDotlessI.equals(latinLowerI))
+            throw new Exception("Small dotless \"i\" does not equal \"i\"");
 
-        boolean legacyEquals = Boolean.getBoolean("jdk.io.File.legacyEquals");
-        boolean shouldNotBeEqual = largeDotfullI.equals(latinCapitalI);
-        if (shouldNotBeEqual && !legacyEquals)
+        boolean legacyEquals = !Boolean.getBoolean("jdk.io.File.windowsUseNIOStyleEquals");
+
+        boolean shouldNotBeEqualUpper = largeDotfullI.equals(latinCapitalI);
+        if (shouldNotBeEqualUpper && !legacyEquals)
             throw new Exception("Large dotted \"I\" equals \"I\"");
-        else if (!shouldNotBeEqual && legacyEquals)
+        else if (!shouldNotBeEqualUpper && legacyEquals)
             throw new Exception("Large dotted \"I\" does not equal \"I\"");
+
+        boolean shouldNotBeEqualLower = largeDotfullI.equals(latinLowerI);
+        if (shouldNotBeEqualLower && !legacyEquals)
+            throw new Exception("Large dotted \"I\" equals \"i\"");
+        else if (!shouldNotBeEqualLower && legacyEquals)
+            throw new Exception("Large dotted \"I\" does not equal \"i\"");
     }
 
     private static void testUnix() throws Exception {
