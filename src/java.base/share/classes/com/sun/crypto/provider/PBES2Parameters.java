@@ -32,6 +32,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
+import sun.security.util.PBKDF2Parameters;
 import sun.security.util.*;
 
 /**
@@ -227,7 +228,21 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
             kdf = pBES2_params.data.getDerValue();
         }
 
-        var kdfParams = new PBKDF2Parameters(kdf);
+        if (!pkcs5PBKDF2_OID.equals(kdf.data.getOID())) {
+            throw new IOException("PBE parameter parsing error: "
+                + "expecting the object identifier for PBKDF2");
+        }
+        if (kdf.tag != DerValue.tag_Sequence) {
+            throw new IOException("PBE parameter parsing error: "
+                + "not an ASN.1 SEQUENCE tag");
+        }
+        DerValue pBKDF2_params = kdf.data.getDerValue();
+        if (pBKDF2_params.tag != DerValue.tag_Sequence) {
+            throw new IOException("PBKDF2 parameter parsing error: "
+                + "not an ASN.1 SEQUENCE tag");
+        }
+
+        var kdfParams = new PBKDF2Parameters(pBKDF2_params);
         String kdfAlgo = kdfParams.getPrfAlgo();
         salt = kdfParams.getSalt();
         iCount = kdfParams.getIterationCount();
@@ -289,27 +304,8 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         DerOutputStream out = new DerOutputStream();
 
         DerOutputStream pBES2_params = new DerOutputStream();
-
-        DerOutputStream keyDerivationFunc = new DerOutputStream();
-        keyDerivationFunc.putOID(pkcs5PBKDF2_OID);
-
-        DerOutputStream pBKDF2_params = new DerOutputStream();
-        pBKDF2_params.putOctetString(salt); // choice: 'specified OCTET STRING'
-        pBKDF2_params.putInteger(iCount);
-
-        if (keysize > 0) {
-            pBKDF2_params.putInteger(keysize / 8); // derived key length (in octets)
-        }
-
-        DerOutputStream prf = new DerOutputStream();
-        // algorithm is id-hmacWith<MD>
-        prf.putOID(kdfAlgo_OID);
-        // parameters is 'NULL'
-        prf.putNull();
-        pBKDF2_params.write(DerValue.tag_Sequence, prf);
-
-        keyDerivationFunc.write(DerValue.tag_Sequence, pBKDF2_params);
-        pBES2_params.write(DerValue.tag_Sequence, keyDerivationFunc);
+        pBES2_params.write(DerValue.tag_Sequence,
+                PBKDF2Parameters.encode(salt, iCount, keysize, kdfAlgo_OID));
 
         DerOutputStream encryptionScheme = new DerOutputStream();
         // algorithm is id-aes128-CBC or id-aes256-CBC

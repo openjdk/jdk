@@ -2082,10 +2082,8 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     // Store MAC algorithm of keystore that was just loaded.
                     macAlgorithm = macData.getMacAlgorithm();
                     macIterationCount = ic;
-                    PBEParameterSpec params = new PBEParameterSpec(salt, ic);
                     RetryWithZero.run(pass -> {
-                        macData.processMacData(params, pass, authSafeData,
-                                macData.getMacAlgorithm());
+                        macData.processMacData(pass, authSafeData);
                         return (Void) null;
                     }, password);
                 } catch (Exception e) {

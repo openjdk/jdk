@@ -55,7 +55,7 @@ import sun.security.util.PBEUtil;
  * @author Valerie Peng
  *
  */
-final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
+public final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
 
     @java.io.Serial
     private static final long serialVersionUID = -2234868909660948157L;
@@ -67,7 +67,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
 
     // The following fields are not Serializable. See writeReplace method.
     private final transient Mac prf;
-    private transient Cleaner.Cleanable cleaner;
+    private final transient Cleaner.Cleanable cleaner;
 
     /**
      * Creates a PBE key from a given PBE key specification.
@@ -224,13 +224,6 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     public void clear() {
         cleaner.clean();
     }
-
-    public void destroy() { 
-        if (cleaner != null) {
-            cleaner.clean();
-            cleaner = null;
-        }   
-    }   
 
     public char[] getPassword() {
         try {

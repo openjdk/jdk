@@ -70,33 +70,25 @@ import java.io.IOException;
  */
 public final class PBKDF2Parameters {
 
-    public static final ObjectIdentifier pkcs5PBKDF2_OID =
-            ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1);
-
     private final byte[] salt;
 
     private final int iterationCount;
 
     // keyLength in bits, or -1 if not present
-    private int keyLength = -1;
+    private final int keyLength;
 
-    private String prfAlgo = "HmacSHA1";
+    private String prfAlgo;
 
-    public PBKDF2Parameters(DerValue keyDerivationFunc) throws IOException {
+    /**
+     * Initialize PBKDF2Parameters from a DER encoded
+     * parameter block.
+     * 
+     * @param keyDerivationFunc the DER encoding of the parameter block
+     *      
+     * @throws IOException for parsing errors in the input stream
+     */
+    public PBKDF2Parameters(DerValue pBKDF2_params) throws IOException {
 
-        if (!pkcs5PBKDF2_OID.equals(keyDerivationFunc.data.getOID())) {
-            throw new IOException("PBKDF2 parameter parsing error: "
-                + "expecting the object identifier for PBKDF2");
-        }
-        if (keyDerivationFunc.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBKDF2 parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
-        DerValue pBKDF2_params = keyDerivationFunc.data.getDerValue();
-        if (pBKDF2_params.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBKDF2 parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
         DerValue specified = pBKDF2_params.data.getDerValue();
         // the 'specified' ASN.1 CHOICE for 'salt' is supported
         if (specified.tag == DerValue.tag_OctetString) {
@@ -112,6 +104,8 @@ public final class PBKDF2Parameters {
         var ksDer = pBKDF2_params.data.getOptional(DerValue.tag_Integer);
         if (ksDer.isPresent()) {
             keyLength = ksDer.get().getInteger() * 8; // keyLength (in bits)
+        } else {
+            keyLength = -1;
         }
 
         // prf AlgorithmIdentifier {{PBKDF2-PRFs}} DEFAULT algid-hmacWithSHA1
@@ -135,7 +129,30 @@ public final class PBKDF2Parameters {
             prfAlgo = o.stdName();
             prf.data.getOptional(DerValue.tag_Null);
             prf.data.atEnd();
+        } else {
+            prfAlgo = "HmacSHA1";
         }
+    }
+
+    public static byte[] encode(byte[] salt, int iterationCount,
+            int keyLength, String kdfHmac) {
+        ObjectIdentifier kdfAlgo_OID =
+               ObjectIdentifier.of(KnownOIDs.findMatch(kdfHmac));
+        return PBKDF2Parameters.encode(salt, iterationCount, keyLength,
+                kdfAlgo_OID);
+    }
+
+    public static byte[] encode(byte[] salt, int iterationCount,
+            int keyLength, ObjectIdentifier kdfAlgo_OID) {
+        return new DerOutputStream()
+                .putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1))
+                .write(DerValue.tag_Sequence, new DerOutputStream()
+                        .putOctetString(salt)
+                        .putInteger(iterationCount)
+                        .putInteger(keyLength)
+                        .write(DerValue.tag_Sequence, new DerOutputStream()
+                                .putOID(kdfAlgo_OID)
+                                .putNull())).toByteArray();
     }
 
     /**
