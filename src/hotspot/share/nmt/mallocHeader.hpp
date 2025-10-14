@@ -103,12 +103,12 @@ class AsanPoisoningHelper {
       ASAN_POISON_MEMORY_REGION(_memory_region, sizeof(T));
     #endif
   }
-  static void register_memory(U* addr) {
+  static void poison_memory(U* addr) {
     #if INCLUDE_ASAN
       ASAN_POISON_MEMORY_REGION(addr, sizeof(T));
     #endif
   }
-  static void unregister_memory(U* addr) {
+  static void unpoison_memory(U* addr) {
     #if INCLUDE_ASAN
       ASAN_UNPOISON_MEMORY_REGION(addr, sizeof(T));
     #endif
@@ -122,8 +122,8 @@ class AsanPoisoningHelper<void> {
  public:
   AsanPoisoningHelper() = delete;
   AsanPoisoningHelper(void* addr) { }
-  static void register_memory(void* addr) { }
-  static void unregister_memory(void* addr) { }
+  static void poison_memory(void* addr) { }
+  static void unpoison_memory(void* addr) { }
   ~AsanPoisoningHelper() { }
 };
 
@@ -186,15 +186,15 @@ public:
   #endif
   inline void set_poisoned(bool poison) {
     if (poison) {
-      AsanPoisoningHelper<CanaryType>::register_memory(&_canary);
-      AsanPoisoningHelper<CanaryType>::register_memory(reinterpret_cast<CanaryType*>(footer_address()));
-      AsanPoisoningHelper<SizeType, const SizeType>::register_memory(&_size);
-      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::register_memory((char*)&_alt_canary));
+      AsanPoisoningHelper<CanaryType>::poison_memory(&_canary);
+      AsanPoisoningHelper<CanaryType>::poison_memory(reinterpret_cast<CanaryType*>(footer_address()));
+      AsanPoisoningHelper<SizeType, const SizeType>::poison_memory(&_size);
+      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::poison_memory((char*)&_alt_canary));
     } else {
-      AsanPoisoningHelper<CanaryType>::unregister_memory(&_canary);
-      AsanPoisoningHelper<CanaryType>::unregister_memory(reinterpret_cast<CanaryType*>(footer_address()));
-      AsanPoisoningHelper<SizeType, const SizeType>::unregister_memory(&_size);
-      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::unregister_memory((char*)&_alt_canary));
+      AsanPoisoningHelper<CanaryType>::unpoison_memory(&_canary);
+      AsanPoisoningHelper<CanaryType>::unpoison_memory(reinterpret_cast<CanaryType*>(footer_address()));
+      AsanPoisoningHelper<SizeType, const SizeType>::unpoison_memory(&_size);
+      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::unpoison_memory((char*)&_alt_canary));
     }
   }
 
