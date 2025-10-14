@@ -112,6 +112,42 @@ public class DebugOptions {
     }
 
     /**
+     * This will execute the test logic, but first change the param
+     * to be mixed case
+     * Additionally it will input a nonsensical input testing if
+     * the execution should be successful, but no debug output expected
+     *
+     * @param paramName   name of the parameter e.g. -Djava.security.debug=
+     * @param paramVal    value of the parameter
+     * @param expected    expected output
+     * @param notExpected not expected output
+     */
+    public void testMixedCaseBrokenParameter(String paramName,
+                                             String paramVal,
+                                             String notExpected) throws Exception {
+
+        final String formattedParam = makeFirstAndLastLetterUppercase(paramVal);
+
+        final String nonsenseParam = "NONSENSE" +
+                                     formattedParam.substring(0, formattedParam.length() - 2) +
+                                     "NONSENSE" +
+                                     formattedParam.substring(formattedParam.length() - 2) +
+                                     "NONSENSE";
+
+        System.out.printf("Executing: {%s%s DebugOptions}%n",
+                paramName,
+                nonsenseParam);
+
+        final OutputAnalyzer outputAnalyzer = ProcessTools.executeTestJava(
+                paramName + nonsenseParam,
+                "DebugOptions");
+
+        // shouldn't fail, but shouldn't give 'properties:' back
+        outputAnalyzer.shouldHaveExitValue(0)
+                .shouldNotMatch(notExpected);
+    }
+
+    /**
      * This method will change the input string to have
      * first and last letters uppercase
      * <p>
@@ -163,6 +199,44 @@ public class DebugOptions {
                 });
 
                 System.out.println("Option added to all mixed case tests " + Arrays.toString(params));
+            });
+
+            System.out.println("Starting all the threads");
+            final List<Future<Void>> res = executorService.invokeAll(testsCallables);
+            for (final Future<Void> future : res) {
+                future.get();
+            }
+        }
+    }
+
+    /**
+     * This test will run all options in parallel with all param names
+     * However all params will be automatically adjusted to be broken
+     * the expectation is to have a complete execution, but no debug output
+     */
+    @Test
+    public void debugOptionsBrokenTest() throws Exception {
+
+        try (final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+            final List<Callable<Void>> testsCallables = new ArrayList<>();
+
+            patternMatches.forEach(params -> {
+                testsCallables.add(() -> {
+                    testMixedCaseBrokenParameter(
+                            "-Djava.security.debug=",
+                            params[0],
+                            params[2]);
+                    return null;
+                });
+                testsCallables.add(() -> {
+                    testMixedCaseBrokenParameter(
+                            "-Djava.security.auth.debug=",
+                            params[0],
+                            params[2]);
+                    return null;
+                });
+
+                System.out.println("Option added to all broken case tests " + Arrays.toString(params));
             });
 
             System.out.println("Starting all the threads");

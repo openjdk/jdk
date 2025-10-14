@@ -169,6 +169,48 @@ public class TestPrimitiveTypes {
 
         tests.put("test_names", namesTemplate.asToken());
 
+        // Test runtime random value generation with LibraryRNG
+        // Runtime random number generation of a given primitive type can be very helpful
+        // when writing tests that require random inputs.
+        var libraryRNGWithTypeTemplate = Template.make("type", (PrimitiveType type) -> body(
+            """
+            {
+                // Fill an array with 1_000 random values. Every type has at least 2 values,
+                // so the chance that all values are the same is 2^-1_000 < 10^-300. This should
+                // never happen, even with a relatively weak PRNG.
+                #type[] a = new #type[1_000];
+                for (int i = 0; i < a.length; i++) {
+            """,
+            "       a[i] = ", type.callLibraryRNG(), ";\n",
+            """
+                }
+                boolean allSame = true;
+                for (int i = 0; i < a.length; i++) {
+                    if (a[i] != a[0]) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) { throw new RuntimeException("all values were the same for #type"); }
+            }
+            """
+        ));
+
+        var libraryRNGTemplate = Template.make(() -> body(
+            // Make sure we instantiate the LibraryRNG class.
+            PrimitiveType.generateLibraryRNG(),
+            // Now we can use it inside the test.
+            """
+            public static void test_LibraryRNG() {
+            """,
+            CodeGenerationDataNameType.PRIMITIVE_TYPES.stream().map(libraryRNGWithTypeTemplate::asToken).toList(),
+            """
+            }
+            """
+        ));
+
+        tests.put("test_LibraryRNG", libraryRNGTemplate.asToken());
+
         // Finally, put all the tests together in a class, and invoke all
         // tests from the main method.
         var template = Template.make(() -> body(
@@ -177,6 +219,11 @@ public class TestPrimitiveTypes {
 
             import compiler.lib.verify.*;
             import java.lang.foreign.MemorySegment;
+
+            // Imports for LibraryRNG
+            import java.util.Random;
+            import jdk.test.lib.Utils;
+            import compiler.lib.generators.*;
 
             public class InnerTest {
                 public static void main() {
