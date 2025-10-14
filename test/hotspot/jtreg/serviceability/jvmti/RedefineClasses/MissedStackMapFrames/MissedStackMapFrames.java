@@ -61,7 +61,11 @@ public class MissedStackMapFrames {
         for (MethodModel method : clazz.methods()) {
             var foundStackMapTable = method.code().flatMap(code -> code.findAttribute(Attributes.stackMapTable()));
             if (foundStackMapTable.isPresent()) {
-                count += foundStackMapTable.get().entries().size();
+                int methodFrames = foundStackMapTable.get().entries().size();
+                log("  method " + method.methodName() + " - " + methodFrames + " frames");
+                count += methodFrames;
+            } else {
+                log("  method " + method.methodName() + " - No StackMapTable");
             }
         }
         return count;
