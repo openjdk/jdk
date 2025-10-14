@@ -69,7 +69,7 @@ class UnalignedAccess : AllStatic {
 };
 
 template<>
-struct StoreImpl<1> {
+struct UnalignedAccess::StoreImpl<1> {
   template<typename T>
   void operator()(T* ptr, T value) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
@@ -78,7 +78,7 @@ struct StoreImpl<1> {
 };
 
 template<>
-struct LoadImpl<1> {
+struct UnalignedAccess::LoadImpl<1> {
   template<typename T>
   T operator()(const T* ptr) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
@@ -88,7 +88,7 @@ struct LoadImpl<1> {
 
 #ifdef SANITIZER_HAS_UNALIGNED_ACCESS
 template<>
-struct StoreImpl<2> {
+struct UnalignedAccess::StoreImpl<2> {
   template<typename T>
   void operator()(T* ptr, T value) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint16_t));
@@ -97,7 +97,7 @@ struct StoreImpl<2> {
 };
 
 template<>
-struct StoreImpl<4> {
+struct UnalignedAccess::StoreImpl<4> {
   template<typename T>
   void operator()(T* ptr, T value) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint32_t));
@@ -106,7 +106,7 @@ struct StoreImpl<4> {
 };
 
 template<>
-struct StoreImpl<8> {
+struct UnalignedAccess::StoreImpl<8> {
   template<typename T>
   void operator()(T* ptr, T value) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint64_t));
@@ -115,7 +115,7 @@ struct StoreImpl<8> {
 };
 
 template<>
-struct LoadImpl<2> {
+struct UnalignedAccess::LoadImpl<2> {
   template<typename T>
   T operator()(const T* ptr) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint16_t));
@@ -124,7 +124,7 @@ struct LoadImpl<2> {
 };
 
 template<>
-struct LoadImpl<4> {
+struct UnalignedAccess::LoadImpl<4> {
   template<typename T>
   T operator()(const T* ptr) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint32_t));
@@ -133,7 +133,7 @@ struct LoadImpl<4> {
 };
 
 template<>
-struct LoadImpl<8> {
+struct UnalignedAccess::LoadImpl<8> {
   template<typename T>
   T operator()(const T* ptr) const {
     STATIC_ASSERT(sizeof(T) == sizeof(uint64_t));
@@ -143,7 +143,7 @@ struct LoadImpl<8> {
 #endif
 
 template<size_t byte_size>
-struct StoreImpl {
+struct UnalignedAccess::StoreImpl {
   template<typename T>
   void operator()(T* ptr, T value) const {
     STATIC_ASSERT(sizeof(T) == byte_size);
@@ -157,7 +157,7 @@ struct StoreImpl {
 };
 
 template<size_t byte_size>
-struct LoadImpl {
+struct UnalignedAccess::LoadImpl {
   template<typename T>
   T operator()(const T* ptr) const {
     STATIC_ASSERT(sizeof(T) == byte_size);
