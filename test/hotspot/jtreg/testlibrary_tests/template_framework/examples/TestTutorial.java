@@ -416,6 +416,13 @@ public class TestTutorial {
             // Side note: We can simulate a "let" without lambda with a "let" that has a lambda.
             // That is not very useful, but a similar trick can be used for other queries, that
             // only provide a lambda version, and where we only want to use the hashtag replacement.
+            //
+            // Below we see the standard use of "let", where we add a hashtag replacement for "a"
+            // for the rest of the enclosing scope. We then also use a lambda version of "let"
+            // with a transparent scope, which means that "b" escapes that scope and is also
+            // available in the enclosing scope. In the implementation of the framework, we
+            // actually use a "transparentScope", so the standard "let" is really just syntactic
+            // sugar for the lambda "let" with "transparentScope".
             let("a", -x),
             let("b", -x, b -> transparentScope()),
             """
@@ -466,8 +473,13 @@ public class TestTutorial {
     // scopes. For example, we can reach out from inside a method body to a hook anchored at
     // the top of the class, and insert a field.
     //
-    // The choice of transparency of an insertion scope is quite important. A common use case
-    // is to insert a DataName.
+    // When we insert to a hook, we have 3 relevant scopes:
+    // - Anchor scope: the scope defined at "hook.anchor(scope(...))"
+    // - Insertion scope: the scope that is inserted, see "hook.insert(scope(...))"
+    // - Caller scope: the scope we insert from.
+    //
+    // The choice of transparency of an insertion scope (the scope that is inserted) is quite
+    // important. A common use case is to insert a DataName.
     // See: generateWithDataNamesForFieldsAndVariables
     // See: generateWithScopes1
     public static String generateWithCustomHooks() {
@@ -486,7 +498,7 @@ public class TestTutorial {
             """
             // Let us go back to where we anchored the hook with anchor() and define a field named $field1 there.
             """,
-            myHook.insert(scope(
+            myHook.insert(scope( // <- insertion scope
                 """
                 public static int $field1 = #x;
                 """
@@ -500,6 +512,7 @@ public class TestTutorial {
             // from the outer scope directly, without having to route them via template arguments,
             // as we have to do below.
             """,
+            // <- caller scope
             myHook.insert(template1.asToken($("field2"), x)),
             """
             System.out.println("$field1: " + $field1);
@@ -516,10 +529,11 @@ public class TestTutorial {
             public class InnerTest4 {
             """,
             // We anchor a Hook outside the main method, but inside the Class.
-            // Anchoring a Hook creates a scope, spanning the braces of the
-            // "anchor" call. Any Hook.insert that happens inside this scope
-            // goes to the top of that scope.
-            myHook.anchor(scope(
+            // Anchoring a Hook requires the definition of an inner scope,
+            // aka the "anchor scope", spanning the braces of the "anchor" call.
+            // Any Hook.insert that happens inside this scope goes to the top of
+            // that scope.
+            myHook.anchor(scope( // <- anchor scope
                 // Any Hook.insert goes here.
                 //
                 // <-------- field1_X = 5 -----------------+
@@ -570,17 +584,16 @@ public class TestTutorial {
             System.out.println("$var: " + $var);
             """,
             Hooks.CLASS_HOOK.insert(scope(
-                let("value", 5),
                 """
                 static { System.out.println("Defining static field $field"); }
-                public static int $field = #value;
+                public static int $field = 5;
                 """
             )),
             Hooks.METHOD_HOOK.insert(scope(
                 let("value", 11),
                 """
                 System.out.println("Defining local variable $var");
-                int $var = #value;
+                int $var = 11;
                 """
             )),
             """
@@ -829,6 +842,10 @@ public class TestTutorial {
         // Define a static field.
         // Note: it is very important that we use a "transparentScope" for the template here,
         //       so that the DataName can escape to outer scopes.
+        //       (We could also use "hashtagScope", since those are also transparent for
+        //        names. But it is not great style, because template boundaries are
+        //        non-transparent for hashtags and setFuelCost anyway. So we might as
+        //        well just use "transparentScope".)
         var templateStaticField = Template.make("type", (DataName.Type type) -> transparentScope(
             addDataName($("field"), type, MUTABLE), // escapes template because of "transparentScope"
             // Note: since we have overridden MyPrimitive::toString, we can use
