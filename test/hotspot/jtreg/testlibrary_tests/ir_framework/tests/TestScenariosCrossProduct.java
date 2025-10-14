@@ -24,10 +24,8 @@
 package ir_framework.tests;
 
 import java.lang.reflect.Field;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestFormatException;
@@ -219,9 +217,10 @@ public class TestScenariosCrossProduct {
         }
 
         public void runWithPreAddedScenarios(TestFramework testFramework) {
-            List<Scenario> scenarios = getScenarios(testFramework);
-            assertScenarioCount(expectedScenariosWithFlags.size(), scenarios);
-            assertScenariosWithFlags(scenarios, expectedScenariosWithFlags);
+            List<Scenario> scenariosFromCrossProduct = getScenarios(testFramework);
+            assertScenarioCount(expectedScenariosWithFlags.size(), scenariosFromCrossProduct);
+            assertScenariosWithFlags(scenariosFromCrossProduct, expectedScenariosWithFlags);
+            assertSameResultWhenManuallyAdding(scenariosFromCrossProduct, expectedScenariosWithFlags);
         }
 
         private static List<Scenario> getScenarios(TestFramework testFramework) {
@@ -239,22 +238,64 @@ public class TestScenariosCrossProduct {
             Asserts.assertEQ(expectedCount, scenarios.size(), "Scenario count is off");
         }
 
-        // Check that the added scenarios to the IR framework match the expectation.
-        private static void assertScenariosWithFlags(List<Scenario> scenarios, Set<Set<String>> expectedScenariosWithFlags) {
+        /**
+         * Check that the added scenarios to the IR framework with TestFramework.addCrossProductScenarios()
+         * (i.e. 'scenariosFromCrossProduct') match the expected flag combos (i.e. 'expectedScenariosWithFlags').
+         */
+        private static void assertScenariosWithFlags(List<Scenario> scenariosFromCrossProduct,
+                                                     Set<Set<String>> expectedScenariosWithFlags) {
             outer:
             for (Set<String> expectedScenarioFlags : expectedScenariosWithFlags) {
-                for (Scenario scenario : scenarios) {
+                for (Scenario scenario : scenariosFromCrossProduct) {
                     Set<String> scenarioFlags = new HashSet<>(scenario.getFlags());
                     if (scenarioFlags.equals(expectedScenarioFlags)) { // equals() ignores order
                         continue outer;
                     }
                 }
-                System.err.println("Found scenarios:");
-                for (Scenario s : scenarios) {
+                System.err.println("Scenarios from cross product:");
+                for (Scenario s : scenariosFromCrossProduct) {
                     System.err.println(Arrays.toString(s.getFlags().toArray()));
                 }
                 throw new RuntimeException("Could not find a scenario with the provided flags: " + Arrays.toString(expectedScenarioFlags.toArray()));
             }
+        }
+
+        /**
+         * Add scenarios for the provided flag sets in 'expectedScenariosWithFlags' by using TestFramework.addScenarios().
+         * We should end up with the same scenarios as if we added them with TestFramework.addCrossProductScenarios().
+         * This is verified by this method by comparing the flags of the scenarios, ignoring scenario indices.
+         */
+        private static void assertSameResultWhenManuallyAdding(List<Scenario> scenariosFromCrossProduct,
+                                                               Set<Set<String>> expectedScenariosWithFlags) {
+            List<Scenario> expectedScenarios = getScenariosWIthFlags(expectedScenariosWithFlags);
+            List<Scenario> fetchedScenarios = addScenariosAndFetchFromFramework(expectedScenarios);
+            assertSameScenarios(scenariosFromCrossProduct, fetchedScenarios);
+        }
+
+        private static List<Scenario> getScenariosWIthFlags(Set<Set<String>> expectedScenariosWithFlags) {
+            List<Scenario> expecedScenarioList = new ArrayList<>();
+            int index = -1; // Use some different indices - should not matter what we choose.
+            for (Set<String> expectedScenarioFlags : expectedScenariosWithFlags) {
+                expecedScenarioList.add(new Scenario(index--, expectedScenarioFlags.toArray(new String[0])));
+            }
+            return expecedScenarioList;
+        }
+
+        private static List<Scenario> addScenariosAndFetchFromFramework(List<Scenario> expecedScenarioList) {
+            TestFramework testFramework = new TestFramework();
+            testFramework.addScenarios(expecedScenarioList.toArray(new Scenario[0]));
+            return getScenarios(testFramework);
+        }
+
+        private static void assertSameScenarios(List<Scenario> scenariosFromCrossProduct,
+                                                List<Scenario> expectedScenarios) {
+            assertScenariosWithFlags(scenariosFromCrossProduct, fetchFlags(expectedScenarios));
+        }
+
+        private static Set<Set<String>> fetchFlags(List<Scenario> scenarios) {
+            return scenarios.stream()
+                    .map(scenario -> new HashSet<>(scenario.getFlags()))
+                    .collect(Collectors.toSet());
         }
     }
 
