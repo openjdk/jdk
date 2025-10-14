@@ -74,6 +74,9 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _gclab_allocs(0),
   _plab_allocs(0),
   _live_data(0),
+#ifdef KELVIN_EXPERIMENT
+  _original_live_data(0),
+#endif
   _critical_pins(0),
   _update_watermark(start),
   _age(0),
@@ -386,6 +389,11 @@ void ShenandoahHeapRegion::set_live_data_after_fullgc(size_t s) {
   ShenandoahMarkingContext* marking_context = ShenandoahHeap::heap()->marking_context();
   size_t words_allocated_above_tams = pointer_delta(top(), marking_context->top_at_mark_start(this));
   _live_data = (s >> LogHeapWordSize) - words_allocated_above_tams;
+#ifdef KELVIN_EXPERIMENT
+  _original_live_data = (s >> LogHeapWordSize);
+  log_info(gc)("set_live_data_after_fullgc() for region %zu, original_live: %zu, live: %zu (addjusted by %zu)",
+               index(), _original_live_data, _live_data, words_allocated_above_tams);
+#endif
 }
 
 void ShenandoahHeapRegion::print_on(outputStream* st) const {

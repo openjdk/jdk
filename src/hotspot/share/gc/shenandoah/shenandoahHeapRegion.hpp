@@ -39,6 +39,9 @@
 class VMStructs;
 class ShenandoahHeapRegionStateConstant;
 
+#define KELVIN_EXPERIMENT
+
+
 class ShenandoahHeapRegion {
   friend class VMStructs;
   friend class ShenandoahHeapRegionStateConstant;
@@ -257,6 +260,9 @@ private:
   size_t _plab_allocs;
 
   volatile size_t _live_data;
+#ifdef KELVIN_EXPERIMENT
+  volatile size_t _original_live_data;
+#endif
   volatile size_t _critical_pins;
 
   HeapWord* volatile _update_watermark;
@@ -371,7 +377,9 @@ public:
 
   // Increase live data for region scanned with GC
   inline void increase_live_data_gc_words(size_t s);
-
+#ifdef KELVIN_EXPERIMENT
+  inline void increase_original_live_data_alloc_words(size_t s);
+#endif
   inline bool has_marked() const;
 
   inline bool has_live() const;
