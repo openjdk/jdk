@@ -1147,7 +1147,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     + align_up(speculations_len                  , oopSize)
 #endif
     + align_up(debug_info->data_size()           , oopSize)
-    + align_up(ImmutableDataReferencesCounterSize, oopSize);
+    + ImmutableDataReferencesCounterSize;
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -1322,6 +1322,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = 0;
 #endif
+    _immutable_data_reference_counter_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
@@ -1420,15 +1421,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _method                       = nm._method;
   _osr_link                     = nullptr;
 
-  // Increment number of references to immutable data to share it between nmethods
-  _immutable_data_size          = nm._immutable_data_size;
-  if (_immutable_data_size > 0) {
-    _immutable_data             = nm._immutable_data;
-    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
-  } else {
-    _immutable_data             = blob_end();
-  }
-
   _exception_cache              = nullptr;
   _gc_data                      = nullptr;
   _oops_do_mark_nmethods        = nullptr;
@@ -1444,6 +1436,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _entry_offset                 = nm._entry_offset;
   _verified_entry_offset        = nm._verified_entry_offset;
   _entry_bci                    = nm._entry_bci;
+  _immutable_data_size          = nm._immutable_data_size;
 
   _skipped_instructions_size    = nm._skipped_instructions_size;
   _stub_offset                  = nm._stub_offset;
@@ -1462,6 +1455,15 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 #if INCLUDE_JVMCI
   _speculations_offset          = nm._speculations_offset;
 #endif
+  _immutable_data_reference_counter_offset = nm._immutable_data_reference_counter_offset;
+
+  // Increment number of references to immutable data to share it between nmethods
+  if (_immutable_data_size > 0) {
+    _immutable_data             = nm._immutable_data;
+    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
+  } else {
+    _immutable_data             = blob_end();
+  }
 
   _orig_pc_offset               = nm._orig_pc_offset;
   _compile_id                   = nm._compile_id;
@@ -1751,9 +1753,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset + align_up(speculations_len, oopSize) + align_up(ImmutableDataReferencesCounterSize, oopSize); )
+    _immutable_data_reference_counter_offset = _speculations_offset + align_up(speculations_len, oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
 #else
-    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize) + align_up(ImmutableDataReferencesCounterSize, oopSize); )
+    _immutable_data_reference_counter_offset =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
 #endif
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
