@@ -92,7 +92,6 @@ void ShenandoahBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop n
   assert(!ReduceInitialCardMarks || !ShenandoahCardBarrier || ShenandoahGenerationalHeap::heap()->is_in_young(new_obj),
          "Allocating new object outside of young generation: " INTPTR_FORMAT, p2i(new_obj));
 #endif // COMPILER2_OR_JVMCI
-  assert(thread->deferred_card_mark().is_empty(), "We don't use this");
 }
 
 void ShenandoahBarrierSet::on_thread_create(Thread* thread) {
