@@ -26,7 +26,7 @@
  * @summary Test that dynamic attach (via VirtualMachine) fails gracefully when the JVM is not in live phase
  * @requires vm.jvmti
  * @library /test/lib
- * @run driver/timeout=60 TestEarlyDynamicLoadAttach
+ * @run driver TestEarlyDynamicLoadAttach
  */
 
 import com.sun.tools.attach.VirtualMachine;
