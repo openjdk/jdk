@@ -571,6 +571,9 @@ void CompilerConfig::ergo_initialize() {
   return;
 #endif
 
+  // This property is also checked when selecting the heap size. Since client
+  // emulation mode influences Java heap memory usage, part of the logic must
+  // occur before choosing the heap size.
   if (should_set_client_emulation_mode_flags()) {
     set_client_emulation_mode_flags();
   }
