@@ -179,10 +179,10 @@ public class AbsPathsInImage {
     // precompute KMP prefixes
     private static void createPrefixTables() {
         for (int patternIdx = 0; patternIdx < searchPatterns.size(); patternIdx++) {
-            int patternSize = searchPatterns.get(patternIdx).size();
-            int[] prefixTable = new int[patternSize];
+            int patternLen = searchPatterns.get(patternIdx).length;
+            int[] prefixTable = new int[patternLen];
             prefixTables.add(prefixTable);
-            for (int i = 1; i < patternSize; i++) {
+            for (int i = 1; i < patternLen; i++) {
                 prefixTable[i] = getPrefixIndex(patternIdx, i, searchPatterns.get(patternIdx)[i]);
             }
         }
@@ -272,7 +272,7 @@ public class AbsPathsInImage {
                 } else if (fileIdx < matches.get(matchIdx).begin()) {
                     output.reset();
                 } else if (fileIdx > matches.get(matchIdx).end()) {
-                    System.println(output.toString());
+                    System.out.println(output.toString());
                     output.reset();
                     for (; matchIdx < matches.size() && matches.get(matchIdx).end() < fileIdx; matchIdx++);
                 } else {
