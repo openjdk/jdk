@@ -152,17 +152,6 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
-void ParallelScavengeHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void ParallelScavengeHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
-}
 class PSIsScavengable : public BoolObjectClosure {
   bool do_object_b(oop obj) {
     return ParallelScavengeHeap::heap()->is_in_young(obj);
@@ -282,9 +271,23 @@ HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_t
     return result;
   }
 
-  // Try allocating from the old gen for non-TLAB in certain scenarios.
+  // Try allocating from the old gen for non-TLAB and large allocations.
   if (!is_tlab) {
-    if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
+    if (!should_alloc_in_eden(size)) {
+      result = old_gen()->cas_allocate_noexpand(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  // In extreme cases, try allocating in from space also.
+  if (_is_heap_almost_full) {
+    result = young_gen()->from_space()->cas_allocate(size);
+    if (result != nullptr) {
+      return result;
+    }
+    if (!is_tlab) {
       result = old_gen()->cas_allocate_noexpand(size);
       if (result != nullptr) {
         return result;

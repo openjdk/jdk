@@ -177,16 +177,16 @@ void RiscvHwprobe::add_features_from_query_result() {
     VM_Version::mimpid.enable_feature(query[RISCV_HWPROBE_KEY_MIMPID].value);
   }
   if (is_set(RISCV_HWPROBE_KEY_BASE_BEHAVIOR, RISCV_HWPROBE_BASE_BEHAVIOR_IMA)) {
-    VM_Version::ext_I.enable_feature();
-    VM_Version::ext_M.enable_feature();
-    VM_Version::ext_A.enable_feature();
+    VM_Version::ext_i.enable_feature();
+    VM_Version::ext_m.enable_feature();
+    VM_Version::ext_a.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_FD)) {
-    VM_Version::ext_F.enable_feature();
-    VM_Version::ext_D.enable_feature();
+    VM_Version::ext_f.enable_feature();
+    VM_Version::ext_d.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_C)) {
-    VM_Version::ext_C.enable_feature();
+    VM_Version::ext_c.enable_feature();
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_IMA_V)) {
     // Linux signal return bug when using vector with vlen > 128b in pre 6.8.5.
@@ -199,7 +199,7 @@ void RiscvHwprobe::add_features_from_query_result() {
         log.info("Vector not enabled automatically via hwprobe, but can be turned on with -XX:+UseRVV.");
       }
     } else {
-      VM_Version::ext_V.enable_feature();
+      VM_Version::ext_v.enable_feature();
     }
   }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
