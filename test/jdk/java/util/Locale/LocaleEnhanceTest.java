@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,13 +42,17 @@ import java.util.Locale.Builder;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EmptySource;
+import org.junit.jupiter.params.provider.NullSource;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
- *    7044019 8008577 8176853 8255086 8263202 8287868 8174269
+ *      7044019 8008577 8176853 8255086 8263202 8287868 8174269 8369452
  * @summary test API changes to Locale
  * @modules jdk.localedata
  * @compile LocaleEnhanceTest.java
@@ -761,6 +765,20 @@ public class LocaleEnhanceTest {
 
         // redundant Unicode locale extension keys within an Unicode locale extension cause a failure
         new BuilderILE() { public void call() { b.setLanguageTag("und-u-nu-thai-NU-chinese-xx-1234"); }};
+    }
+
+    // Test the values that should clear the builder
+    @ParameterizedTest
+    @NullSource
+    @EmptySource
+    public void testBuilderSetLanguageTagClear(String tag) {
+        var empty = new Builder();
+        var bldr = new Builder();
+        bldr.setLanguageTag("en-US");
+        assertDoesNotThrow(() -> bldr.setLanguageTag(tag));
+        assertEquals("Setting a %s language tag did not clear the builder"
+                .formatted(tag == null ? "null" : "empty"),
+                empty.build(), bldr.build());
     }
 
     @Test
