@@ -28,10 +28,11 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false & vm.opt.TieredCompilation != false
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                   -XX:+SegmentedCodeCache -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions
  *                   -XX:+NMethodRelocation compiler.whitebox.StressNMethodRelocation
  */
 
