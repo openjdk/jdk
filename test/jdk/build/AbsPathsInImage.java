@@ -30,7 +30,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -58,7 +57,6 @@ public class AbsPathsInImage {
     private static final int DEFAULT_BUFFER_SIZE = 8192;
     private static List<byte[]> searchPatterns = new ArrayList<>();
     private static List<int[]> prefixTables = new ArrayList<>();
-    private static boolean containsNonASCII = false;
 
     private boolean matchFound = false;
 
