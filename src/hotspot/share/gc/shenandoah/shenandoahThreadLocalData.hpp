@@ -26,16 +26,17 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
-#include "gc/shared/plab.hpp"
-#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/plab.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
@@ -49,12 +50,13 @@ private:
 
   SATBMarkQueue           _satb_mark_queue;
 
+  // Current active CardTable's byte_map_base for this thread.
+  CardTable::CardValue*   _card_table;
+
   // Thread-local allocation buffer for object evacuations.
   // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
-
-  double _paced_time;
 
   // Thread-local allocation buffer only used in generational mode.
   // Used both by mutator threads and by GC worker threads
@@ -122,6 +124,17 @@ public:
     return is_gc_state(Thread::current(), state);
   }
 
+  static void set_card_table(Thread* thread, CardTable::CardValue* ct) {
+    assert(ct != nullptr, "trying to set thread local card_table pointer to nullptr.");
+    data(thread)->_card_table = ct;
+  }
+
+  static CardTable::CardValue* card_table(Thread* thread) {
+    CardTable::CardValue* ct = data(thread)->_card_table;
+    assert(ct != nullptr, "returning a null thread local card_table pointer.");
+    return ct;
+  }
+
   static void initialize_gclab(Thread* thread) {
     assert(data(thread)->_gclab == nullptr, "Only initialize once");
     data(thread)->_gclab = new PLAB(PLAB::min_size());
@@ -145,20 +158,15 @@ public:
     data(thread)->_gclab_size = v;
   }
 
-  static void begin_evacuation(Thread* thread, size_t bytes) {
-    data(thread)->_evacuation_stats->begin_evacuation(bytes);
+  static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->begin_evacuation(bytes, from, to);
   }
 
-  static void end_evacuation(Thread* thread, size_t bytes) {
-    data(thread)->_evacuation_stats->end_evacuation(bytes);
-  }
-
-  static void record_age(Thread* thread, size_t bytes, uint age) {
-    data(thread)->_evacuation_stats->record_age(bytes, age);
+  static void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->end_evacuation(bytes, from, to);
   }
 
   static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
-    shenandoah_assert_generational();
     return data(thread)->_evacuation_stats;
   }
 
@@ -223,18 +231,6 @@ public:
     return data(thread)->_plab_actual_size;
   }
 
-  static void add_paced_time(Thread* thread, double v) {
-    data(thread)->_paced_time += v;
-  }
-
-  static double paced_time(Thread* thread) {
-    return data(thread)->_paced_time;
-  }
-
-  static void reset_paced_time(Thread* thread) {
-    data(thread)->_paced_time = 0;
-  }
-
   // Evacuation OOM handling
   static bool is_oom_during_evac(Thread* thread) {
     return data(thread)->_oom_during_evac;
@@ -279,6 +275,10 @@ public:
 
   static ByteSize gc_state_offset() {
     return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _gc_state);
+  }
+
+  static ByteSize card_table_offset() {
+    return Thread::gc_data_offset() + byte_offset_of(ShenandoahThreadLocalData, _card_table);
   }
 };
 

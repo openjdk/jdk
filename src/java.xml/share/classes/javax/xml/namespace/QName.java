@@ -70,17 +70,17 @@ public class QName implements Serializable {
     private static final long serialVersionUID = -9120448754896609940L;
 
     /**
-     * <p>Namespace URI of this <code>QName</code>.</p>
+     * @serial <p>Namespace URI of this <code>QName</code>.</p>
      */
     private final String namespaceURI;
 
     /**
-     * <p>local part of this <code>QName</code>.</p>
+     * @serial <p>local part of this <code>QName</code>.</p>
      */
     private final String localPart;
 
     /**
-     * <p>prefix of this <code>QName</code>.</p>
+     * @serial <p>prefix of this <code>QName</code>.</p>
      */
     private final String prefix;
 

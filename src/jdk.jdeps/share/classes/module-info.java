@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-import jdk.internal.javac.ParticipatesInPreview;
 
 /**
  * Defines tools for analysing dependencies in Java libraries and programs,
@@ -62,15 +60,12 @@ import jdk.internal.javac.ParticipatesInPreview;
  * @moduleGraph
  * @since 9
  */
-@ParticipatesInPreview
 module jdk.jdeps {
     requires java.compiler;
     requires jdk.compiler;
     requires jdk.internal.opt;
 
     uses com.sun.tools.javac.platform.PlatformProvider;
-
-    exports com.sun.tools.classfile to jdk.jlink;
 
     provides java.util.spi.ToolProvider with
         com.sun.tools.javap.Main.JavapToolProvider,

@@ -32,7 +32,6 @@ void VM_Version_init() {
   guarantee(VM_Version::supports_cx8(), "Support for 64-bit atomic operations is required");
   if (log_is_enabled(Info, os, cpu)) {
     char buf[1024];
-    ResourceMark rm;
     LogStream ls(Log(os, cpu)::info());
     os::print_cpu_info(&ls, buf, sizeof(buf));
   }

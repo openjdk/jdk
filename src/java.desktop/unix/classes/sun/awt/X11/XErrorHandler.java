@@ -47,7 +47,7 @@ public abstract class XErrorHandler {
      * but temporary install this function as the error handler to ignore
      * BadWindow error.
      */
-    public static class IgnoreBadWindowHandler extends XBaseErrorHandler {
+    public static final class IgnoreBadWindowHandler extends XBaseErrorHandler {
         @Override
         public int handleError(long display, XErrorEvent err) {
             if (err.get_error_code() == XConstants.BadWindow) {
@@ -62,7 +62,7 @@ public abstract class XErrorHandler {
         }
     }
 
-    public static class VerifyChangePropertyHandler extends XBaseErrorHandler {
+    public static final class VerifyChangePropertyHandler extends XBaseErrorHandler {
         @Override
         public int handleError(long display, XErrorEvent err) {
             if (err.get_request_code() == XProtocolConstants.X_ChangeProperty) {

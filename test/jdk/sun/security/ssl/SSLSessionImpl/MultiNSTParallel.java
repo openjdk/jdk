@@ -73,7 +73,7 @@ public class MultiNSTParallel {
         public void run() {
             String name = Thread.currentThread().getName();
             SSLSession r;
-            System.err.println("waiting " + Thread.currentThread().getName());
+            System.err.println(name + " is ready");
             try {
                 wait.await();
                 r = new TLSBase.Client(client).connect().getSession();
@@ -84,6 +84,7 @@ public class MultiNSTParallel {
             sb.append("(").append(name).append(") id = ");
             sb.append(hex.formatHex(r.getId()));
             sb.append("\n(").append(name).append(") session = ").append(r);
+            System.err.println(sb);
             if (!client.getSession().toString().equalsIgnoreCase(r.toString())) {
                 throw new RuntimeException("(" + name +
                     ") Resumed session did not match");
@@ -133,7 +134,14 @@ public class MultiNSTParallel {
                 serverPSK.stream().forEach(s -> System.out.println("\t" + s));
                 System.out.println("found client: " + clientPSK.size());
                 clientPSK.stream().forEach(s -> System.out.println("\t" + s));
-
+                if (list.size() == 0 || serverPSK.size() == 0) {
+                    throw new Exception("Error setting up test.  No server " +
+                        "PSKs found in debug log.");
+                }
+                if (clientPSK.size() == 0) {
+                        throw new Exception("Error setting up test.  No " +
+                            "client PSKs found in debug log.");
+                }
                 // Must search all results as order is not guaranteed.
                 clientPSK.stream().forEach(cli -> {
                     for (int i = 0; i < serverPSK.size(); i++) {
@@ -171,21 +179,20 @@ public class MultiNSTParallel {
             System.getProperty("jdk.tls.server.newSessionTicketCount"));
 
         TLSBase.Server server = new TLSBase.Server();
-
-        System.out.println("------  Start connection");
-        TLSBase.Client initial = new TLSBase.Client();
-        SSLSession initialSession = initial.getSession();
+        server.serverLatch.await();
+        System.out.println("------  Server ready, starting initial client.");
+        TLSBase.Client initialClient = new TLSBase.Client();
+        SSLSession initialSession = initialClient.connect().getSession();
         System.out.println("id = " + hex.formatHex(initialSession.getId()));
         System.out.println("session = " + initialSession);
-
-        System.out.println("------  getNewSession from original client");
+        System.out.println("------  Initial client context ready.");
 
         ArrayList<Thread> slist = new ArrayList<>(ticketCount);
 
-        System.out.println("tx " + ticketCount);
+        System.out.println("Client count = " + ticketCount);
         for (int i = 0; ticketCount > i; i++) {
-            Thread t = new ClientThread(initial);
-            t.setName("Iteration " + i);
+            Thread t = new ClientThread(initialClient);
+            t.setName("client " + i);
             slist.add(t);
             t.start();
         }
@@ -197,7 +204,7 @@ public class MultiNSTParallel {
         }
 
         System.out.println("------  Closing connections");
-        initial.close();
+        initialClient.close();
         server.close();
         System.out.println("------  End");
         System.exit(0);

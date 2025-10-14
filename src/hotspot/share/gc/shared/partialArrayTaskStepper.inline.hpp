@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,10 @@
 #ifndef SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
 #define SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP
 
-#include "gc/shared/partialArrayState.hpp"
 #include "gc/shared/partialArrayTaskStepper.hpp"
-#include "runtime/atomic.hpp"
+
+#include "gc/shared/partialArrayState.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 
@@ -51,9 +52,9 @@ PartialArrayTaskStepper::next_impl(size_t length, volatile size_t* index_addr) c
   // Because we limit the number of enqueued tasks to being no more than the
   // number of remaining chunks to process, we can use an atomic add for the
   // claim, rather than a CAS loop.
-  size_t start = Atomic::fetch_then_add(index_addr,
-                                        _chunk_size,
-                                        memory_order_relaxed);
+  size_t start = AtomicAccess::fetch_then_add(index_addr,
+                                              _chunk_size,
+                                              memory_order_relaxed);
 
   assert(start < length, "invariant: start %zu, length %zu", start, length);
   assert(((length - start) % _chunk_size) == 0,

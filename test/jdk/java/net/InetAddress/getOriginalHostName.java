@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,9 @@ public class getOriginalHostName {
     public static void main(String[] args) throws Exception {
         final String HOST = "dummyserver.java.net";
         InetAddress ia = null;
-        ia = InetAddress.getByName(HOST);
+        ia = getInetAddress(HOST);
+        if (ia != null) testInetAddress(ia, HOST);
+        ia = InetAddress.getByAddress(HOST, new byte[] { 1, 2, 3, 4});
         testInetAddress(ia, HOST);
         ia = InetAddress.getByName("255.255.255.0");
         testInetAddress(ia, null);
@@ -53,6 +55,14 @@ public class getOriginalHostName {
         testInetAddress(ia, ia.getHostName());
     }
 
+    private static InetAddress getInetAddress(String host) {
+        try {
+            return InetAddress.getByName(host);
+        } catch (java.net.UnknownHostException uhe) {
+            System.out.println("Skipping " + host + " due to " + uhe);
+            return null;
+        }
+    }
 
     private static void testInetAddress(InetAddress ia, String expected)
         throws Exception {

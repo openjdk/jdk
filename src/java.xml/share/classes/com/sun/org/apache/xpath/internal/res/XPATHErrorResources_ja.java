@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +31,7 @@ import java.util.ListResourceBundle;
   * Also you need to  update the count of messages(MAX_CODE)or
  * the count of warnings(MAX_WARNING) [ Information purpose only]
  * @xsl.usage advanced
- * @LastModified: Nov 2024
+ * @LastModified: Apr 2025
  */
 public class XPATHErrorResources_ja extends ListResourceBundle
 {
@@ -305,7 +305,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
   public static final String ER_XPATH_ERROR = "ER_XPATH_ERROR";
 
   //BEGIN: Keys needed for exception messages of  JAXP 1.3 XPath API implementation
-  public static final String ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED = "ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED";
   public static final String ER_RESOLVE_VARIABLE_RETURNS_NULL = "ER_RESOLVE_VARIABLE_RETURNS_NULL";
   public static final String ER_NO_XPATH_VARIABLE_RESOLVER = "ER_NO_XPATH_VARIABLE_RESOLVER";
   public static final String ER_NO_XPATH_FUNCTION_PROVIDER = "ER_NO_XPATH_FUNCTION_PROVIDER";
@@ -765,11 +764,6 @@ public static final String ER_IGNORABLE_WHITESPACE_NOT_HANDLED =
         "XPath\u5F0F''{0}''\u306EXPathResult\u306F\u3001\u6570\u5024\u306B\u5909\u63DB\u3067\u304D\u306A\u3044{1}\u306EXPathResultType\u3092\u6301\u3061\u307E\u3059"},
 
   //BEGIN:  Definitions of error keys used  in exception messages of  JAXP 1.3 XPath API implementation
-
-  /** Field ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED                       */
-
-  { ER_EXTENSION_FUNCTION_CANNOT_BE_INVOKED,
-       "\u62E1\u5F35\u95A2\u6570: XMLConstants.FEATURE_SECURE_PROCESSING\u6A5F\u80FD\u304Ctrue\u306B\u8A2D\u5B9A\u3055\u308C\u308B\u3068''{0}''\u3092\u8D77\u52D5\u3067\u304D\u307E\u305B\u3093\u3002"},
 
   /** Field ER_RESOLVE_VARIABLE_RETURNS_NULL                       */
 

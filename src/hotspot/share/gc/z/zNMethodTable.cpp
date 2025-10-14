@@ -21,8 +21,8 @@
  * questions.
  */
 
-#include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/z/zHash.inline.hpp"
@@ -191,14 +191,6 @@ void ZNMethodTable::register_nmethod(nmethod* nm) {
     // false the nmethod was already in the table so we do not want
     // to increase number of registered entries in that case.
     _nregistered++;
-  }
-}
-
-void ZNMethodTable::wait_until_iteration_done() {
-  assert(CodeCache_lock->owned_by_self(), "Lock must be held");
-
-  while (_iteration.in_progress() || _iteration_secondary.in_progress()) {
-    CodeCache_lock->wait_without_safepoint_check();
   }
 }
 

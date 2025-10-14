@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,7 @@
 # questions.
 #
 
-################################################################################
-
-default: all
-
-include $(SPEC)
-include MakeBase.gmk
-
-include CopyFiles.gmk
-include Execute.gmk
+include MakeFileStart.gmk
 
 ################################################################################
 # This file is responsible for updating the generated sleef source code files
@@ -39,6 +31,9 @@ include Execute.gmk
 # This target needs to be re-run every time the source code of libsleef is
 # updated from upstream.
 ################################################################################
+
+include CopyFiles.gmk
+include Execute.gmk
 
 ifneq ($(COMPILE_TYPE), cross)
   $(error Only cross-compilation of libsleef is currently supported)
@@ -86,8 +81,8 @@ SLEEF_CMAKE_FILE := toolchains/$(OPENJDK_TARGET_CPU)-$(SLEEF_TOOLCHAIN_TYPE).cma
 $(eval $(call SetupExecute, sleef_native_config, \
     INFO := Configuring native sleef build, \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) -S . -B \
-        $(SLEEF_NATIVE_BUILD_DIR), \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) -S . -B $(SLEEF_NATIVE_BUILD_DIR), \
 ))
 
 TARGETS := $(sleef_native_config)
@@ -96,8 +91,8 @@ $(eval $(call SetupExecute, sleef_native_build, \
     INFO := Building native sleef, \
     DEPS := $(sleef_native_config), \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) --build \
-        $(SLEEF_NATIVE_BUILD_DIR) -j, \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) --build $(SLEEF_NATIVE_BUILD_DIR) -j, \
 ))
 
 TARGETS := $(sleef_native_build)
@@ -106,8 +101,8 @@ $(eval $(call SetupExecute, sleef_cross_config, \
     INFO := Configuring cross-compiling sleef build, \
     DEPS := $(sleef_native_build), \
     OUTPUT_DIR := $(SLEEF_CROSS_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) -S . -B \
-        $(SLEEF_CROSS_BUILD_DIR) \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) -S . -B $(SLEEF_CROSS_BUILD_DIR) \
         -DCMAKE_C_COMPILER=$(CC) \
         -DCMAKE_TOOLCHAIN_FILE=$(SLEEF_CMAKE_FILE) \
         -DNATIVE_BUILD_DIR=$(SLEEF_NATIVE_BUILD_DIR) \
@@ -121,8 +116,8 @@ $(eval $(call SetupExecute, sleef_cross_build, \
     INFO := Building cross-compiling sleef, \
     DEPS := $(sleef_cross_config), \
     OUTPUT_DIR := $(SLEEF_NATIVE_BUILD_DIR), \
-    COMMAND := cd $(SLEEF_SOURCE_DIR) && $(CMAKE) --build \
-        $(SLEEF_CROSS_BUILD_DIR) -j, \
+    WORKING_DIR := $(SLEEF_SOURCE_DIR), \
+    COMMAND := $(CMAKE) --build $(SLEEF_CROSS_BUILD_DIR) -j, \
 ))
 
 TARGETS := $(sleef_cross_build)
@@ -148,6 +143,4 @@ TARGETS := $(copy_generated_sleef_source)
 
 ################################################################################
 
-all: $(TARGETS)
-
-.PHONY: all default
+include MakeFileEnd.gmk

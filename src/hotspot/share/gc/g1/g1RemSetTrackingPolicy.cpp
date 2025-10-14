@@ -53,10 +53,10 @@ bool G1RemSetTrackingPolicy::update_humongous_before_rebuild(G1HeapRegion* r) {
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
   bool selected_for_rebuild = false;
-  // Humongous regions containing type-array objs are remset-tracked to
-  // support eager-reclaim. However, their remset state can be reset after
-  // Full-GC. Try to re-enable remset-tracking for them if possible.
-  if (cast_to_oop(r->bottom())->is_typeArray() && !r->rem_set()->is_tracked()) {
+  // Humongous regions are remset-tracked to support eager-reclaim. However, their
+  // remset state can be reset after Full-GC. Try to re-enable remset-tracking for
+  // them if possible.
+  if (!r->rem_set()->is_tracked()) {
     auto on_humongous_region = [] (G1HeapRegion* r) {
       r->rem_set()->set_state_updating();
     };
@@ -104,6 +104,17 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
                                            r->rem_set()->clear(true /* only_cardset */);
                                          });
     }
+
+    size_t remset_bytes = r->rem_set()->mem_size();
+    size_t occupied = 0;
+    // per region cardset details only valid if group contains a single region.
+    if (r->rem_set()->has_cset_group() &&
+        r->rem_set()->cset_group()->length() == 1 ) {
+        G1CardSet *card_set = r->rem_set()->cset_group()->card_set();
+        remset_bytes += card_set->mem_size();
+        occupied = card_set->occupied();
+    }
+
     G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
     log_trace(gc, remset, tracking)("After rebuild region %u "
                                     "(tams " PTR_FORMAT " "
@@ -113,7 +124,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
                                     r->hrm_index(),
                                     p2i(cm->top_at_mark_start(r)),
                                     cm->live_bytes(r->hrm_index()),
-                                    r->rem_set()->occupied(),
-                                    r->rem_set()->mem_size());
+                                    occupied,
+                                    remset_bytes);
   }
 }

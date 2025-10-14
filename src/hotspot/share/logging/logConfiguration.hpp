@@ -62,7 +62,14 @@ class LogConfiguration : public AllStatic {
 
   static UpdateListenerFunction*    _listener_callbacks;
   static size_t                     _n_listener_callbacks;
-  static bool                       _async_mode;
+
+public:
+  enum class AsyncMode {
+    Off, Stall, Drop
+  };
+
+private:
+  static AsyncMode _async_mode;
 
   // Create a new output. Returns null if failed.
   static LogOutput* new_output(const char* name, const char* options, outputStream* errstream);
@@ -90,6 +97,8 @@ class LogConfiguration : public AllStatic {
   static void describe_available(outputStream* out);
   static void describe_current_configuration(outputStream* out);
 
+  // Create a LogSelectionList given a level and a set of tags
+  static LogSelectionList create_selection_list(LogLevelType level, int exact_match, va_list ap);
 
  public:
   // Initialization and finalization of log configuration, to be run at vm startup and shutdown respectively.
@@ -101,6 +110,13 @@ class LogConfiguration : public AllStatic {
 
   // Disable all logging, equivalent to -Xlog:disable.
   static void disable_logging();
+
+  // Disables logging on all outputs for the given tags.
+  // If exact_match is true, only tagsets with precisely the specified tags will be disabled
+  // (exact_match=false is the same as "-Xlog:<tags>*=off", and exact_match=true is "-Xlog:<tags>=off").
+  // Tags should be specified using the LOG_TAGS macro, e.g.
+  // LogConfiguration::disable_tags(<true/false>, LOG_TAGS(<tags>));
+  static void disable_tags(int exact_match, ...);
 
   // Configures logging on stdout for the given tags and level combination.
   // Intended for mappings between -XX: flags and Unified Logging configuration.
@@ -120,6 +136,8 @@ class LogConfiguration : public AllStatic {
                                   const char* output_options,
                                   outputStream* errstream);
 
+  static bool parse_async_argument(const char* async_tail);
+
   // Prints log configuration to outputStream, used by JCmd/MBean.
   static void describe(outputStream* out);
 
@@ -129,9 +147,10 @@ class LogConfiguration : public AllStatic {
   // Rotates all LogOutput
   static void rotate_all_outputs();
 
-  static bool is_async_mode() { return _async_mode; }
-  static void set_async_mode(bool value) {
-    _async_mode = value;
+  static AsyncMode async_mode() { return _async_mode; }
+  static bool is_async_mode() { return _async_mode != AsyncMode::Off; }
+  static void set_async_mode(AsyncMode mode) {
+    _async_mode = mode;
   }
 };
 

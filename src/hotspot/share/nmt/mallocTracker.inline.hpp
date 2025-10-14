@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023 SAP SE. All rights reserved.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,9 @@
 #ifndef SHARE_NMT_MALLOCTRACKER_INLINE_HPP
 #define SHARE_NMT_MALLOCTRACKER_INLINE_HPP
 
-#include "nmt/mallocLimit.hpp"
 #include "nmt/mallocTracker.hpp"
+
+#include "nmt/mallocLimit.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -49,10 +50,10 @@ inline bool MallocMemorySummary::check_exceeds_limit(size_t s, MemTag mem_tag) {
         return total_limit_reached(s, so_far, l);
       }
     } else {
-      // Category Limit?
-      l = MallocLimitHandler::category_limit(mem_tag);
+      // MemTag Limit?
+      l = MallocLimitHandler::mem_tag_limit(mem_tag);
       if (l->sz > 0) {
-        const MallocMemory* mm = as_snapshot()->by_type(mem_tag);
+        const MallocMemory* mm = as_snapshot()->by_tag(mem_tag);
         size_t so_far = mm->malloc_size() + mm->arena_size();
         if ((so_far + s) > l->sz) {
           return category_limit_reached(mem_tag, s, so_far, l);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,8 @@
  */
 #define ACT_IF_NULL(ACTION, value)         \
     if ((value) == NULL) {                 \
-        J2dTraceLn1(J2D_TRACE_ERROR,       \
-                    "%s is null", #value); \
+        J2dTraceLn(J2D_TRACE_ERROR,        \
+                   "%s is null", #value);  \
         ACTION;                            \
     } else do { } while (0)
 #define RETURN_IF_NULL(value)   ACT_IF_NULL(return, value)

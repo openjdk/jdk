@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,6 @@ import java.util.stream.Stream;
  * @see Process
  * @since 9
  */
-@jdk.internal.ValueBased
 public interface ProcessHandle extends Comparable<ProcessHandle> {
 
     /**
@@ -114,7 +113,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * @throws UnsupportedOperationException if the implementation
      *         does not support this operation
      */
-    public static Optional<ProcessHandle> of(long pid) {
+    static Optional<ProcessHandle> of(long pid) {
         return ProcessHandleImpl.get(pid);
     }
 
@@ -126,7 +125,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * @throws UnsupportedOperationException if the implementation
      *         does not support this operation
      */
-    public static ProcessHandle current() {
+    static ProcessHandle current() {
         return ProcessHandleImpl.current();
     }
 
@@ -204,21 +203,21 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * and actions if the value is available.
      * @since 9
      */
-    public interface Info {
+    interface Info {
         /**
          * Returns the executable pathname of the process.
          *
          * @return an {@code Optional<String>} of the executable pathname
          *         of the process
          */
-        public Optional<String> command();
+        Optional<String> command();
 
         /**
          * Returns the command line of the process.
          * <p>
          * If {@link #command command()} and  {@link #arguments arguments()} return
          * non-empty optionals, this is simply a convenience method which concatenates
-         * the values of the two functions separated by spaces. Otherwise it will return a
+         * the values of the two functions separated by spaces. Otherwise, it will return a
          * best-effort, platform dependent representation of the command line.
          *
          * @apiNote Note that the returned executable pathname and the
@@ -233,7 +232,7 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
          * @return an {@code Optional<String>} of the command line
          *         of the process
          */
-        public Optional<String> commandLine();
+        Optional<String> commandLine();
 
         /**
          * Returns an array of Strings of the arguments of the process.
@@ -244,28 +243,28 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
          *
          * @return an {@code Optional<String[]>} of the arguments of the process
          */
-        public Optional<String[]> arguments();
+        Optional<String[]> arguments();
 
         /**
          * Returns the start time of the process.
          *
          * @return an {@code Optional<Instant>} of the start time of the process
          */
-        public Optional<Instant> startInstant();
+        Optional<Instant> startInstant();
 
         /**
          * Returns the total cputime accumulated of the process.
          *
          * @return an {@code Optional<Duration>} for the accumulated total cputime
          */
-        public Optional<Duration> totalCpuDuration();
+        Optional<Duration> totalCpuDuration();
 
         /**
          * Return the user of the process.
          *
          * @return an {@code Optional<String>} for the user of the process
          */
-        public Optional<String> user();
+        Optional<String> user();
     }
 
     /**
@@ -285,13 +284,11 @@ public interface ProcessHandle extends Comparable<ProcessHandle> {
      * {@link java.util.concurrent.CompletableFuture#isDone done} or to
      * {@link java.util.concurrent.Future#get() wait} for it to terminate.
      * {@link java.util.concurrent.Future#cancel(boolean) Cancelling}
-     * the CompleteableFuture does not affect the Process.
+     * the {@linkplain CompletableFuture CompletableFuture} does not affect the Process.
      * @apiNote
      * The process may be observed to have terminated with {@link #isAlive}
-     * before the ComputableFuture is completed and dependent actions are invoked.
-     *
+     * before the {@code CompletableFuture} is completed and dependent actions are invoked.
      * @return a new {@code CompletableFuture<ProcessHandle>} for the ProcessHandle
-     *
      * @throws IllegalStateException if the process is the current process
      */
     CompletableFuture<ProcessHandle> onExit();

@@ -969,7 +969,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             boolean isCurrentSymbolsAnnotation(Attribute.TypeCompound anno, int index) {
                 return (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
                         anno.position.type == TargetType.METHOD_TYPE_PARAMETER) &&
-                        anno.position.parameter_index == index;
+                        anno.position.parameter_index == index &&
+                        anno.type.tsym.flatName() != name.table.names.requiresIdentityInternal;
             }
 
 
@@ -1353,8 +1354,8 @@ public abstract class Symbol extends AnnoConstruct implements PoolConstant, Elem
             int index = Collections.binarySearch(permitted, element, java.util.Comparator.comparing(PermittedClassWithPos::pos));
             if (index < 0) {
                 index = -index - 1;
+                permitted.add(index, element);
             }
-            permitted.add(index, element);
         }
 
         public boolean isPermittedSubclass(Symbol csym) {

@@ -76,7 +76,7 @@ abstract class AbstractDCmd {
             if (log) {
                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "Executing " + this.getClass().getSimpleName() + ": " + arg);
             }
-            ArgumentParser parser = new ArgumentParser(getArgumentInfos(), arg, delimiter);
+            ArgumentParser parser = new ArgumentParser(getParseArguments(source), arg, delimiter);
             parser.parse();
             if (log) {
                 Logger.log(LogTag.JFR_DCMD, LogLevel.DEBUG, "DCMD options: " + parser.getOptions());
@@ -96,6 +96,10 @@ abstract class AbstractDCmd {
                JVM.include(Thread.currentThread());
            }
        }
+    }
+
+    protected Argument[] getParseArguments(String source) {
+        return getArgumentInfos();
     }
 
     // Diagnostic commands that are meant to be used interactively

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,14 @@ public class forceEarlyReturn002a extends AbstractJDIDebuggee {
     public String[] doInit(String args[]) {
         args = super.doInit(args);
 
-        Thread.currentThread().setName(mainThreadName);
+        mainThread = Thread.currentThread();
+        mainThread.setName(mainThreadName);
 
         return args;
     }
 
     public static String mainThreadName = "MainThread";
+    public static Thread mainThread = null;
 
     // call testClassMethod()
     public final static String COMMAND_CALL_OBJECT_METHOD = "callObjectMethod";

@@ -27,6 +27,7 @@
 #include "gc/shared/markBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "shenandoahGlobalGeneration.hpp"
 
 ShenandoahMarkingContext::ShenandoahMarkingContext(MemRegion heap_region, MemRegion bitmap_region, size_t num_regions) :
   _mark_bit_map(heap_region, bitmap_region),
@@ -95,16 +96,4 @@ void ShenandoahMarkingContext::clear_bitmap(ShenandoahHeapRegion* r) {
 
   assert(is_bitmap_range_within_region_clear(bottom, r->end()),
          "Region %zu should have no marks in bitmap", r->index());
-}
-
-bool ShenandoahMarkingContext::is_complete() {
-  return _is_complete.is_set();
-}
-
-void ShenandoahMarkingContext::mark_complete() {
-  _is_complete.set();
-}
-
-void ShenandoahMarkingContext::mark_incomplete() {
-  _is_complete.unset();
 }

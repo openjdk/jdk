@@ -1786,8 +1786,8 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WEmbeddedFrame_printBand
 //     ::PatBlt(hDC, destX+1, destY+1, destWidth-2, destHeight-2, PATCOPY);
 //     ::SelectObject(hDC, oldBrush);
 
-    /* This code is rarely used now. It used to be invoked by Java plugin browser
-     * printing. Today embedded frames are used only when a toolkit such as SWT
+    /* This code is rarely used now.
+     * Today embedded frames are used only when a toolkit such as SWT
      * needs to embed
      */
     TRY;

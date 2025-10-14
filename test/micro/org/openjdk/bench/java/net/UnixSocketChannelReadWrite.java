@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -48,35 +47,18 @@ import org.openjdk.jmh.annotations.*;
 public class UnixSocketChannelReadWrite {
 
     private ServerSocketChannel ssc;
+    private Path sscFilePath;
     private SocketChannel s1, s2;
     private ReadThread rt;
     private ByteBuffer bb = ByteBuffer.allocate(1);
 
-    private static volatile String tempDir;
-    private static final AtomicInteger count = new AtomicInteger(0);
-    private volatile Path socket;
-
-    static {
-        try {
-            Path p = Files.createTempDirectory("readWriteTest");
-            tempDir = p.toString();
-        } catch (IOException e) {
-            tempDir = null;
-        }
-    }
-
-    private ServerSocketChannel getServerSocketChannel() throws IOException {
-        int next = count.incrementAndGet();
-        socket = Paths.get(tempDir, Integer.toString(next));
-        UnixDomainSocketAddress addr = UnixDomainSocketAddress.of(socket);
-        ServerSocketChannel c = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
-        c.bind(addr);
-        return c;
-    }
-
     @Setup(Level.Trial)
     public void beforeRun() throws IOException {
-        ssc = getServerSocketChannel();
+        ssc = ServerSocketChannel.open(StandardProtocolFamily.UNIX).bind(null);
+        // Record the UDS file path right after binding, as the socket may be
+        // closed later due to a failure, and subsequent calls to `getPath()`
+        // will throw.
+        sscFilePath = ((UnixDomainSocketAddress) ssc.getLocalAddress()).getPath();
         s1 = SocketChannel.open(ssc.getLocalAddress());
         s2 = ssc.accept();
 
@@ -92,8 +74,7 @@ public class UnixSocketChannelReadWrite {
         s1.close();
         s2.close();
         ssc.close();
-        Files.delete(socket);
-        Files.delete(Path.of(tempDir));
+        Files.delete(sscFilePath);
         rt.join();
     }
 

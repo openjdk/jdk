@@ -53,9 +53,7 @@ div.example {
       necessary to create your own look and feel. A synth file is
       loaded by way of the <A
         HREF="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.io.InputStream,java.lang.Class)">
-      SynthLookAndFeel.load(InputStream, Class)</a> or
-      <a href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">
-        SynthLookAndFeel.load(URL)</a> methods.
+      SynthLookAndFeel.load(InputStream, Class)</a> method.
       The following example uses the <code>load</code> method to configure
       a <code>SynthLookAndFeel</code> and sets it as the current look
       and feel:
@@ -70,36 +68,6 @@ div.example {
     <p>
       This example loads the look and feel from an input stream, using
       the specified class as the resource base to resolve paths.
-    </p>
-    <p>
-      It is also possible to load a look and feel from an arbitrary URL
-      as in the following example.
-    </p>
-    <div class="example">
-      <pre>
-  SynthLookAndFeel laf = new SynthLookAndFeel();
-  laf.load(new URL("file:///C:/java/synth/laf/laf.xml"));
-  UIManager.setLookAndFeel(laf);
-      </pre>
-    </div>
-    <p>
-      The method <a
-        href="../../../../../javax/swing/plaf/synth/SynthLookAndFeel.html#load(java.net.URL)">
-      SynthLookAndFeel.load(URL)</a> can be used, for instance, to load a look
-      and feel from any of the following:
-    </p>
-    <ul>
-      <li>File, e.g. <code>file:///C:/java/synth/laf/laf.xml</code></li>
-      <li>Web server, e.g. <code>http://host/laf.xml</code></li>
-      <li>JAR file, e.g.
-        <code>jar:file:///C:/synth-laf.jar!/laf.xml</code></li>
-      <li>Remote JAR file, e.g.
-        <code>jar:http://host/synth-laf.jar!/laf.xml</code></li>
-    </ul>
-    <p>Note: Synth's file format allows for the definition of code to be executed.
-       Loading any code from a remote location should be used only
-       with extreme caution from a trusted source over a secure connection.
-       It is strongly discouraged for an application or a LookAndFeel to do so.
     </p>
     <p>
       While the DTD for synth is specified, the parser is not validating.
@@ -880,10 +848,9 @@ div.example {
 	a direction or orientation. If this is not specified the image is
 	used for all directions.</dd>
       <dt><a id="imagePainter.path"><samp>path</samp></a></dt>
-      <dd>Path to the image.  If SynthLookAndFeel.load is
-    passed a Class this will use the Class method getResource (with the
-    Class supplied to the load method). If load is passed a URL this will use the
-    URL constructor URL(context, path) to resolve the path.</dd>
+      <dd>Path to the image.  SynthLookAndFeel.load 
+    will use the Class method getResource (with the
+    Class supplied to the load method) to resolve the path.
       <dt><a id="imagePainter.sourceInsets"><samp>sourceInsets</samp></a></dt>
       <dd>Insets on the source image. This is top, left, bottom, right with
 	each component separated by a space.</dd>

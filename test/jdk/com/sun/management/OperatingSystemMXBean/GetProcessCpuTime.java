@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug     4858522
  * @summary Basic unit test of OperatingSystemMXBean.getProcessCpuTime()
+ * @library /test/lib
  * @author  Steve Bohne
  */
 
@@ -45,6 +46,7 @@
 
 import com.sun.management.OperatingSystemMXBean;
 import java.lang.management.*;
+import jdk.test.lib.Platform;
 
 public class GetProcessCpuTime {
 
@@ -55,9 +57,7 @@ public class GetProcessCpuTime {
 
     // Careful with these values.
     private static final long MIN_TIME_FOR_PASS = 1;
-    private static final long MAX_TIME_FOR_PASS = Long.MAX_VALUE;
-
-    // No max time.
+    private static final long MAX_TIME_FOR_PASS = Long.MAX_VALUE / 10_000_000;
 
     private static boolean trace = false;
 
@@ -74,9 +74,22 @@ public class GetProcessCpuTime {
         }
 
         long ns = mbean.getProcessCpuTime();
+        if (ns == -1 && Platform.isWindows()) {
+            // Some Windows 2019 systems can return -1 for the first few reads.
+            for (int i = 0; i < 10; i++) {
+                ns = mbean.getProcessCpuTime();
+                if (ns != -1) {
+                    break;
+                }
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
         if (ns == -1) {
-            System.out.println("getProcessCpuTime() is not supported");
-            return;
+            throw new RuntimeException("getProcessCpuTime() is not supported");
         }
 
         if (trace) {

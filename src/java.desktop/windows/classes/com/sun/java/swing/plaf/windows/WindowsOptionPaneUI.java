@@ -30,5 +30,5 @@ import javax.swing.plaf.basic.BasicOptionPaneUI;
 /**
  * Windows rendition of the component.
  */
-public class WindowsOptionPaneUI extends BasicOptionPaneUI {
+public final class WindowsOptionPaneUI extends BasicOptionPaneUI {
 }

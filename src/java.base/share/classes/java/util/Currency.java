@@ -38,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.spi.CurrencyNameProvider;
@@ -141,7 +142,8 @@ public final class Currency implements Serializable {
     // class data: instance map
 
     private static ConcurrentMap<String, Currency> instances = new ConcurrentHashMap<>(7);
-    private static HashSet<Currency> available;
+    private static final Supplier<HashSet<Currency>> available =
+            StableValue.supplier(Currency::computeAllCurrencies);
 
     // Class data: currency data obtained from currency.data file.
     // Purpose:
@@ -314,8 +316,8 @@ public final class Currency implements Serializable {
             // or in the list of other currencies.
             boolean found = false;
             if (currencyCode.length() != 3) {
-                throw new IllegalArgumentException("The input currency code must " +
-                        "have a length of 3 characters");
+                throw new IllegalArgumentException(
+                        "The input currency code: \"%s\" must have a length of 3 characters".formatted(currencyCode));
             }
             char char1 = currencyCode.charAt(0);
             char char2 = currencyCode.charAt(1);
@@ -338,8 +340,8 @@ public final class Currency implements Serializable {
             if (!found) {
                 OtherCurrencyEntry ocEntry = OtherCurrencyEntry.findEntry(currencyCode);
                 if (ocEntry == null) {
-                    throw new IllegalArgumentException("The input currency code" +
-                            " is not a valid ISO 4217 code");
+                    throw new IllegalArgumentException(
+                            "The input currency code: \"%s\" is not a valid ISO 4217 code".formatted(currencyCode));
                 }
                 defaultFractionDigits = ocEntry.fraction;
                 numericCode = ocEntry.numericCode;
@@ -394,8 +396,8 @@ public final class Currency implements Serializable {
         String country = CalendarDataUtility.findRegionOverride(locale).getCountry();
 
         if (country == null || !country.matches("^[a-zA-Z]{2}$")) {
-            throw new IllegalArgumentException("The country of the input locale" +
-                    " is not a valid ISO 3166 country code");
+            throw new IllegalArgumentException(
+                    "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
         }
 
         char char1 = country.charAt(0);
@@ -412,8 +414,8 @@ public final class Currency implements Serializable {
         } else {
             // special cases
             if (tableEntry == INVALID_COUNTRY_ENTRY) {
-                throw new IllegalArgumentException("The country of the input locale" +
-                        " is not a valid ISO 3166 country code");
+                throw new IllegalArgumentException(
+                        "The country of the input locale: \"%s\" is not a valid ISO 3166 country code".formatted(locale));
             }
             if (tableEntry == COUNTRY_WITHOUT_CURRENCY_ENTRY) {
                 return null;
@@ -447,7 +449,7 @@ public final class Currency implements Serializable {
      * @since 1.7
      */
     public static Set<Currency> getAvailableCurrencies() {
-        return new HashSet<>(getCurrencies());
+        return new HashSet<>(available.get());
     }
 
     /**
@@ -462,53 +464,52 @@ public final class Currency implements Serializable {
      * @since 25
      */
     public static Stream<Currency> availableCurrencies() {
-        return getCurrencies().stream();
+        return available.get().stream();
     }
 
-    // Returns the set of available Currencies which are lazily initialized
-    private static synchronized HashSet<Currency> getCurrencies() {
-        if (available == null) {
-            var sysTime = System.currentTimeMillis();
-            available = HashSet.newHashSet(256);
+    // Builds and returns the set of available Currencies
+    private static HashSet<Currency> computeAllCurrencies() {
+        var sysTime = System.currentTimeMillis();
+        HashSet<Currency> available = HashSet.newHashSet(256);
 
-            // Add simple currencies first
-            for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
-                for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
-                    int tableEntry = getMainTableEntry(c1, c2);
-                    if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
-                            && tableEntry != INVALID_COUNTRY_ENTRY) {
-                        char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
-                        int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
-                        int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
-                        StringBuilder sb = new StringBuilder();
-                        sb.append(c1);
-                        sb.append(c2);
-                        sb.append(finalChar);
-                        available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
-                    } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
-                            && tableEntry != INVALID_COUNTRY_ENTRY
-                            && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
-                        int index = SpecialCaseEntry.toIndex(tableEntry);
-                        SpecialCaseEntry scEntry = specialCasesList.get(index);
+        for (char c1 = 'A'; c1 <= 'Z'; c1 ++) {
+            for (char c2 = 'A'; c2 <= 'Z'; c2 ++) {
+                int tableEntry = getMainTableEntry(c1, c2);
+                if ((tableEntry & COUNTRY_TYPE_MASK) == SIMPLE_CASE_COUNTRY_MASK
+                        && tableEntry != INVALID_COUNTRY_ENTRY) {
+                    // Simple Currencies
+                    char finalChar = (char) ((tableEntry & SIMPLE_CASE_COUNTRY_FINAL_CHAR_MASK) + 'A');
+                    int defaultFractionDigits = (tableEntry & SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_MASK) >> SIMPLE_CASE_COUNTRY_DEFAULT_DIGITS_SHIFT;
+                    int numericCode = (tableEntry & NUMERIC_CODE_MASK) >> NUMERIC_CODE_SHIFT;
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(c1);
+                    sb.append(c2);
+                    sb.append(finalChar);
+                    available.add(getInstance(sb.toString(), defaultFractionDigits, numericCode));
+                } else if ((tableEntry & COUNTRY_TYPE_MASK) == SPECIAL_CASE_COUNTRY_MASK
+                        && tableEntry != INVALID_COUNTRY_ENTRY
+                        && tableEntry != COUNTRY_WITHOUT_CURRENCY_ENTRY) {
+                    // Special Currencies
+                    int index = SpecialCaseEntry.toIndex(tableEntry);
+                    SpecialCaseEntry scEntry = specialCasesList.get(index);
 
-                        if (scEntry.cutOverTime == Long.MAX_VALUE
-                                || sysTime < scEntry.cutOverTime) {
-                            available.add(getInstance(scEntry.oldCurrency,
-                                    scEntry.oldCurrencyFraction,
-                                    scEntry.oldCurrencyNumericCode));
-                        } else {
-                            available.add(getInstance(scEntry.newCurrency,
-                                    scEntry.newCurrencyFraction,
-                                    scEntry.newCurrencyNumericCode));
-                        }
+                    if (scEntry.cutOverTime == Long.MAX_VALUE
+                            || sysTime < scEntry.cutOverTime) {
+                        available.add(getInstance(scEntry.oldCurrency,
+                                scEntry.oldCurrencyFraction,
+                                scEntry.oldCurrencyNumericCode));
+                    } else {
+                        available.add(getInstance(scEntry.newCurrency,
+                                scEntry.newCurrencyFraction,
+                                scEntry.newCurrencyNumericCode));
                     }
                 }
             }
+        }
 
-            // Now add other currencies
-            for (OtherCurrencyEntry entry : otherCurrenciesList) {
-                available.add(getInstance(entry.currencyCode));
-            }
+        // Other Currencies
+        for (OtherCurrencyEntry entry : otherCurrenciesList) {
+            available.add(getInstance(entry.currencyCode));
         }
         return available;
     }
@@ -698,8 +699,8 @@ public final class Currency implements Serializable {
      */
     private static int getMainTableEntry(char char1, char char2) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException("The country code is not a " +
-                    "valid ISO 3166 code");
+            throw new IllegalArgumentException(
+                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
         }
         return mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')];
     }
@@ -710,8 +711,8 @@ public final class Currency implements Serializable {
      */
     private static void setMainTableEntry(char char1, char char2, int entry) {
         if (char1 < 'A' || char1 > 'Z' || char2 < 'A' || char2 > 'Z') {
-            throw new IllegalArgumentException("The country code is not a " +
-                    "valid ISO 3166 code");
+            throw new IllegalArgumentException(
+                    "The country code: \"%c%c\" is not a valid ISO 3166 code".formatted(char1, char2));
         }
         mainTable[(char1 - 'A') * A_TO_Z + (char2 - 'A')] = entry;
     }

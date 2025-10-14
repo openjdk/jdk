@@ -229,14 +229,12 @@ public:
   void verify_before_rebuilding_free_set();
 private:
   template<typename Scanner>
-  void help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r, ShenandoahMarkingContext* ctx,
+  void help_verify_region_rem_set(Scanner* scanner, ShenandoahHeapRegion* r,
                                   HeapWord* update_watermark, const char* message);
 
   void verify_rem_set_before_mark();
   void verify_rem_set_before_update_ref();
   void verify_rem_set_after_full_gc();
-
-  ShenandoahMarkingContext* get_marking_context_for_old();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP

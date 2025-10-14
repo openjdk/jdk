@@ -25,9 +25,10 @@
 #ifndef __APPLE__
 #include "os_posix.hpp"
 #include "runtime/os.hpp"
-#include "utilities/debug.hpp"
 // POSIX unnamed semaphores are not supported on OS X.
 #include "semaphore_posix.hpp"
+#include "utilities/debug.hpp"
+
 #include <semaphore.h>
 
 PosixSemaphore::PosixSemaphore(uint value) {

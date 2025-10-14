@@ -125,24 +125,6 @@ static inline Address at_tos_p5() {
   return Address(esp, Interpreter::expr_offset_in_bytes(5));
 }
 
-// Miscellaneous helper routines
-// Store an oop (or null) at the Address described by obj.
-// If val == noreg this means store a null
-static void do_oop_store(InterpreterMacroAssembler* _masm,
-                         Address dst,
-                         Register val,
-                         DecoratorSet decorators) {
-  assert(val == noreg || val == x10, "parameter is just for looks");
-  __ store_heap_oop(dst, val, x28, x29, x13, decorators);
-}
-
-static void do_oop_load(InterpreterMacroAssembler* _masm,
-                        Address src,
-                        Register dst,
-                        DecoratorSet decorators) {
-  __ load_heap_oop(dst, src, x28, x29, decorators);
-}
-
 Address TemplateTable::at_bcp(int offset) {
   assert(_desc->uses_bcp(), "inconsistent uses_bcp information");
   return Address(xbcp, offset);
@@ -460,7 +442,7 @@ void TemplateTable::condy_helper(Label& Done) {
   __ mv(rarg, (int) bytecode());
   __ call_VM(obj, entry, rarg);
 
-  __ get_vm_result_2(flags, xthread);
+  __ get_vm_result_metadata(flags, xthread);
 
   // VMr = obj = base address to find primitive value to push
   // VMr2 = flags = (tos, off) using format of CPCE::_flags
@@ -787,7 +769,7 @@ void TemplateTable::aaload() {
   index_check(x10, x11); // leaves index in x11
   __ addi(x11, x11, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
   __ shadd(x10, x11, x10, t0, LogBytesPerHeapOop);
-  do_oop_load(_masm, Address(x10), x10, IS_ARRAY);
+  __ load_heap_oop(x10, Address(x10), x28, x29, IS_ARRAY);
 }
 
 void TemplateTable::baload() {
@@ -1099,7 +1081,7 @@ void TemplateTable::aastore() {
   // Get the value we will store
   __ ld(x10, at_tos());
   // Now store using the appropriate barrier
-  do_oop_store(_masm, element_address, x10, IS_ARRAY);
+  __ store_heap_oop(element_address, x10, x28, x29, x13, IS_ARRAY);
   __ j(done);
 
   // Have a null in x10, x13=array, x12=index.  Store null at ary[idx]
@@ -1107,7 +1089,7 @@ void TemplateTable::aastore() {
   __ profile_null_seen(x12);
 
   // Store a null
-  do_oop_store(_masm, element_address, noreg, IS_ARRAY);
+  __ store_heap_oop(element_address, noreg, x28, x29, x13, IS_ARRAY);
 
   // Pop stack arguments
   __ bind(done);
@@ -1324,7 +1306,7 @@ void TemplateTable::idiv() {
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 idiv x10
-  __ corrected_idivl(x10, x11, x10, /* want_remainder */ false, /* is_signed */ true);
+  __ divw(x10, x11, x10);
 }
 
 void TemplateTable::irem() {
@@ -1337,7 +1319,7 @@ void TemplateTable::irem() {
   __ bind(no_div0);
   __ pop_i(x11);
   // x10 <== x11 irem x10
-  __ corrected_idivl(x10, x11, x10, /* want_remainder */ true, /* is_signed */ true);
+  __ remw(x10, x11, x10);
 }
 
 void TemplateTable::lmul() {
@@ -1356,7 +1338,7 @@ void TemplateTable::ldiv() {
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 ldiv x10
-  __ corrected_idivq(x10, x11, x10, /* want_remainder */ false, /* is_signed */ true);
+  __ div(x10, x11, x10);
 }
 
 void TemplateTable::lrem() {
@@ -1369,7 +1351,7 @@ void TemplateTable::lrem() {
   __ bind(no_div0);
   __ pop_l(x11);
   // x10 <== x11 lrem x10
-  __ corrected_idivq(x10, x11, x10, /* want_remainder */ true, /* is_signed */ true);
+  __ rem(x10, x11, x10);
 }
 
 void TemplateTable::lshl() {
@@ -1626,7 +1608,7 @@ void TemplateTable::float_cmp(bool is_float, int unordered_result) {
 }
 
 void TemplateTable::branch(bool is_jsr, bool is_wide) {
-  __ profile_taken_branch(x10, x11);
+  __ profile_taken_branch(x10);
   const ByteSize be_offset = MethodCounters::backedge_counter_offset() +
                              InvocationCounter::counter_offset();
   const ByteSize inv_offset = MethodCounters::invocation_counter_offset() +
@@ -1675,7 +1657,6 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
   if (UseLoopCounter) {
     // increment backedge counter for backward branches
     // x10: MDO
-    // x11: MDO bumped taken-count
     // x12: target offset
     __ bgtz(x12, dispatch); // count only if backward branch
 
@@ -1684,12 +1665,10 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ ld(t0, Address(xmethod, Method::method_counters_offset()));
     __ bnez(t0, has_counters);
     __ push_reg(x10);
-    __ push_reg(x11);
     __ push_reg(x12);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
             InterpreterRuntime::build_method_counters), xmethod);
     __ pop_reg(x12);
-    __ pop_reg(x11);
     __ pop_reg(x10);
     __ ld(t0, Address(xmethod, Method::method_counters_offset()));
     __ beqz(t0, dispatch); // No MethodCounters allocated, OutOfMemory
@@ -1757,6 +1736,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
 
     __ mv(x9, x10);                             // save the nmethod
 
+    JFR_ONLY(__ enter_jfr_critical_section();)
+
     call_VM(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::OSR_migration_begin));
 
     // x10 is OSR buffer, move it to expected parameter location
@@ -1765,9 +1746,12 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     // remove activation
     // get sender esp
     __ ld(esp,
-        Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize));
+          Address(fp, frame::interpreter_frame_sender_sp_offset * wordSize));
     // remove frame anchor
     __ leave();
+
+    JFR_ONLY(__ leave_jfr_critical_section();)
+
     // Ensure compiled code always sees stack at proper alignment
     __ andi(sp, esp, -16);
 
@@ -2560,7 +2544,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ subi(t0, tos_state, (u1)atos);
   __ bnez(t0, notObj);
   // atos
-  do_oop_load(_masm, field, x10, IN_HEAP);
+  __ load_heap_oop(x10, field, x28, x29, IN_HEAP);
   __ push(atos);
   if (rc == may_rewrite) {
     patch_bytecode(Bytecodes::_fast_agetfield, bc, x11);
@@ -2804,7 +2788,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     __ add(off, obj, off); // if static, obj from cache, else obj from stack.
     const Address field(off, 0);
     // Store into the field
-    do_oop_store(_masm, field, x10, IN_HEAP);
+    __ store_heap_oop(field, x10, x28, x29, x13, IN_HEAP);
     if (rc == may_rewrite) {
       patch_bytecode(Bytecodes::_fast_aputfield, bc, x11, true, byte_no);
     }
@@ -3046,10 +3030,10 @@ void TemplateTable::fast_storefield(TosState state) {
   __ add(x11, x12, x11);
   const Address field(x11, 0);
 
-  // access field
+  // access field, must not clobber x13 - flags
   switch (bytecode()) {
     case Bytecodes::_fast_aputfield:
-      do_oop_store(_masm, field, x10, IN_HEAP);
+      __ store_heap_oop(field, x10, x28, x29, x15, IN_HEAP);
       break;
     case Bytecodes::_fast_lputfield:
       __ access_store_at(T_LONG, IN_HEAP, field, x10, noreg, noreg, noreg);
@@ -3128,7 +3112,7 @@ void TemplateTable::fast_accessfield(TosState state) {
   // access field
   switch (bytecode()) {
     case Bytecodes::_fast_agetfield:
-      do_oop_load(_masm, field, x10, IN_HEAP);
+      __ load_heap_oop(x10, field, x28, x29, IN_HEAP);
       __ verify_oop(x10);
       break;
     case Bytecodes::_fast_lgetfield:
@@ -3186,7 +3170,7 @@ void TemplateTable::fast_xaccess(TosState state) {
       break;
     case atos:
       __ add(x10, x10, x11);
-      do_oop_load(_masm, Address(x10, 0), x10, IN_HEAP);
+      __ load_heap_oop(x10, Address(x10, 0), x28, x29, IN_HEAP);
       __ verify_oop(x10);
       break;
     case ftos:
@@ -3657,8 +3641,7 @@ void TemplateTable::checkcast() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(x10, xthread);
+  __ get_vm_result_metadata(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ j(resolved);
 
@@ -3712,8 +3695,7 @@ void TemplateTable::instanceof() {
 
   __ push(atos); // save receiver for result, and for GC
   call_VM(x10, CAST_FROM_FN_PTR(address, InterpreterRuntime::quicken_io_cc));
-  // vm_result_2 has metadata result
-  __ get_vm_result_2(x10, xthread);
+  __ get_vm_result_metadata(x10, xthread);
   __ pop_reg(x13); // restore receiver
   __ verify_oop(x13);
   __ load_klass(x13, x13);

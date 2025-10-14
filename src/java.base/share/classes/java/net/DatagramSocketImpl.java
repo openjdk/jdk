@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,30 +161,6 @@ public abstract class DatagramSocketImpl implements SocketOptions {
      *            exception will be thrown.
      */
     protected abstract void receive(DatagramPacket p) throws IOException;
-
-    /**
-     * Set the TTL (time-to-live) option.
-     * @param ttl a byte specifying the TTL value
-     *
-     * @deprecated use setTimeToLive instead.
-     * @throws    IOException if an I/O exception occurs while setting
-     * the time-to-live option.
-     * @see #getTTL()
-     */
-    @Deprecated(forRemoval = true, since = "1.2")
-    protected abstract void setTTL(byte ttl) throws IOException;
-
-    /**
-     * Retrieve the TTL (time-to-live) option.
-     *
-     * @throws    IOException if an I/O exception occurs
-     * while retrieving the time-to-live option
-     * @deprecated use getTimeToLive instead.
-     * @return a byte representing the TTL value
-     * @see #setTTL(byte)
-     */
-    @Deprecated(forRemoval = true, since = "1.2")
-    protected abstract byte getTTL() throws IOException;
 
     /**
      * Set the TTL (time-to-live) option.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  */
  /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -23,6 +23,7 @@ import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.parsers.XML11Configuration;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
@@ -49,7 +50,7 @@ import org.xml.sax.SAXException;
  *
  * @author Michael Glavassevich, IBM
  * @author Sunitha Reddy
- * @LastModified: July 2023
+ * @LastModified: May 2025
  */
 final class StreamValidatorHelper implements ValidatorHelper {
 
@@ -190,7 +191,7 @@ final class StreamValidatorHelper implements ValidatorHelper {
     private XMLParserConfiguration initialize() {
         XML11Configuration config = new XML11Configuration();
         if (fComponentManager.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING)) {
-            config.setProperty(SECURITY_MANAGER, new XMLSecurityManager());
+            config.setProperty(SECURITY_MANAGER, JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
         }
         config.setProperty(ENTITY_RESOLVER, fComponentManager.getProperty(ENTITY_RESOLVER));
         config.setProperty(ERROR_HANDLER, fComponentManager.getProperty(ERROR_HANDLER));

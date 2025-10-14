@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,11 @@
  */
 package jdk.jpackage.test;
 
-import java.io.IOException;
+import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.CONTAINS;
+import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.MATCH;
+import static jdk.jpackage.test.TKit.assertAssert;
+
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,16 +34,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
-import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
-import jdk.jpackage.test.Annotations.Parameters;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
-import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.CONTAINS;
-import static jdk.jpackage.test.DirectoryContentVerifierTest.AssertType.MATCH;
 import jdk.jpackage.test.TKit.DirectoryContentVerifier;
-import static jdk.jpackage.test.TKit.assertAssert;
 
-public class DirectoryContentVerifierTest {
+public class DirectoryContentVerifierTest extends JUnitAdapter {
 
     enum AssertType {
         MATCH(DirectoryContentVerifier::match),
@@ -105,8 +105,7 @@ public class DirectoryContentVerifierTest {
         private boolean success = true;
     }
 
-    @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         List<Object[]> data = new ArrayList<>();
         buildArgs().applyVariantsTo(data);
         buildArgs().actualPaths("foo").assertOp(CONTAINS).applyTo(data);
@@ -127,35 +126,23 @@ public class DirectoryContentVerifierTest {
         return data;
     }
 
-    public DirectoryContentVerifierTest(String[] expectedPaths, String[] actualPaths,
-            AssertType assertOp, Boolean success) {
-        this.expectedPaths = conv(expectedPaths);
-        this.actualPaths = conv(actualPaths);
-        this.assertOp = assertOp;
-        this.success = success;
-    }
-
     @Test
-    public void test() {
-        TKit.withTempDirectory("basedir", this::test);
-    }
+    @ParameterSupplier("input")
+    public void test(String[] expectedPaths, String[] actualPaths, AssertType assertOp, Boolean success) {
+        final var expectedPathsAsSet = conv(expectedPaths);
+        final var actualPathsAsSet = conv(actualPaths);
+        TKit.withTempDirectory("basedir", basedir -> {
+            for (var path : actualPathsAsSet) {
+                Files.createFile(basedir.resolve(path));
+            }
 
-    private void test(Path basedir) throws IOException {
-        for (var path : actualPaths) {
-            Files.createFile(basedir.resolve(path));
-        }
+            var testee = TKit.assertDirectoryContent(basedir);
 
-        var testee = TKit.assertDirectoryContent(basedir);
-
-        assertAssert(success, () -> assertOp.assertFunc.accept(testee, expectedPaths));
+            assertAssert(success, () -> assertOp.assertFunc.accept(testee, expectedPathsAsSet));
+        });
     }
 
     private static Set<Path> conv(String... paths) {
         return Stream.of(paths).map(Path::of).collect(toSet());
     }
-
-    private final Set<Path> expectedPaths;
-    private final Set<Path> actualPaths;
-    private final AssertType assertOp;
-    private final boolean success;
 }

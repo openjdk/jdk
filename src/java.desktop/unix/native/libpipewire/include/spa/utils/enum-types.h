@@ -10,6 +10,12 @@ extern "C" {
 #endif
 
 #include <spa/utils/type.h>
+#include <spa/pod/pod.h>
+
+/**
+ * \addtogroup spa_types
+ * \{
+ */
 
 #define SPA_TYPE_INFO_Direction            SPA_TYPE_INFO_ENUM_BASE "Direction"
 #define SPA_TYPE_INFO_DIRECTION_BASE        SPA_TYPE_INFO_Direction ":"
@@ -19,8 +25,6 @@ static const struct spa_type_info spa_type_direction[] = {
     { SPA_DIRECTION_OUTPUT, SPA_TYPE_Int, SPA_TYPE_INFO_DIRECTION_BASE "Output", NULL  },
     { 0, 0, NULL, NULL }
 };
-
-#include <spa/pod/pod.h>
 
 #define SPA_TYPE_INFO_Choice            SPA_TYPE_INFO_ENUM_BASE "Choice"
 #define SPA_TYPE_INFO_CHOICE_BASE        SPA_TYPE_INFO_Choice ":"

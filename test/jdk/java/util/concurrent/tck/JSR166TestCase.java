@@ -622,6 +622,7 @@ public class JSR166TestCase extends TestCase {
             String[] java20TestClassNames = {
                 "ForkJoinPool20Test",
                 "SynchronousQueue20Test",
+                "ReentrantReadWriteLock20Test"
             };
             addNamedTestClasses(suite, java20TestClassNames);
         }

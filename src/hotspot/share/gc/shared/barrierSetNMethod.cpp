@@ -35,8 +35,8 @@
 #include "oops/method.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/threadWXSetters.inline.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciRuntime.hpp"
@@ -75,8 +75,13 @@ void BarrierSetNMethod::disarm(nmethod* nm) {
   set_guard_value(nm, disarmed_guard_value());
 }
 
+void BarrierSetNMethod::guard_with(nmethod* nm, int value) {
+  assert((value & not_entrant) == 0, "not_entrant bit is reserved");
+  set_guard_value(nm, value);
+}
+
 bool BarrierSetNMethod::is_armed(nmethod* nm) {
-  return guard_value(nm) != disarmed_guard_value();
+  return (guard_value(nm) & ~not_entrant) != disarmed_guard_value();
 }
 
 bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
@@ -104,6 +109,8 @@ bool BarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     // and disarmed the nmethod. No need to continue.
     return true;
   }
+
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
 
   // If the nmethod is the only thing pointing to the oops, and we are using a
   // SATB GC, then it is important that this code marks them live.
@@ -152,7 +159,7 @@ void BarrierSetNMethod::arm_all_nmethods() {
   // seriously wrong.
   ++_current_phase;
   if (_current_phase == INT_MAX) {
-    _current_phase = 1;
+    _current_phase = initial;
   }
   BarrierSetNMethodArmClosure cl(_current_phase);
   Threads::threads_do(&cl);
@@ -165,10 +172,6 @@ void BarrierSetNMethod::arm_all_nmethods() {
 }
 
 int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
-  // Enable WXWrite: the function is called directly from nmethod_entry_barrier
-  // stub.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, Thread::current()));
-
   address return_address = *return_address_ptr;
   AARCH64_PORT_ONLY(return_address = pauth_strip_pointer(return_address));
   CodeBlob* cb = CodeCache::find_blob(return_address);
@@ -178,23 +181,25 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
 
   // Called upon first entry after being armed
-  bool may_enter = bs_nm->nmethod_entry_barrier(nm);
+  bool may_enter = !bs_nm->is_not_entrant(nm) && bs_nm->nmethod_entry_barrier(nm);
   assert(!nm->is_osr_method() || may_enter, "OSR nmethods should always be entrant after migration");
 
-  // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
-  // are made visible, by using a cross modify fence. Note that this is synchronous cross modifying
-  // code, where the existence of new instructions is communicated via data (the guard value).
-  // This cross modify fence is only needed when the nmethod entry barrier modifies the
-  // instructions. Not all platforms currently do that, so if this check becomes expensive,
-  // it can be made conditional on the nmethod_patching_type.
-  OrderAccess::cross_modify_fence();
+  if (may_enter) {
+    // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
+    // are made visible, by using a cross modify fence. Note that this is synchronous cross modifying
+    // code, where the existence of new instructions is communicated via data (the guard value).
+    // This cross modify fence is only needed when the nmethod entry barrier modifies the
+    // instructions. Not all platforms currently do that, so if this check becomes expensive,
+    // it can be made conditional on the nmethod_patching_type.
+    OrderAccess::cross_modify_fence();
 
-  // Diagnostic option to force deoptimization 1 in 10 times. It is otherwise
-  // a very rare event.
-  if (DeoptimizeNMethodBarriersALot && !nm->is_osr_method()) {
-    static volatile uint32_t counter=0;
-    if (Atomic::add(&counter, 1u) % 10 == 0) {
-      may_enter = false;
+    // Diagnostic option to force deoptimization 1 in 10 times. It is otherwise
+    // a very rare event.
+    if (DeoptimizeNMethodBarriersALot && !nm->is_osr_method()) {
+      static volatile uint32_t counter=0;
+      if (AtomicAccess::add(&counter, 1u) % 10 == 0) {
+        may_enter = false;
+      }
     }
   }
 
@@ -211,4 +216,25 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
   bool result = nmethod_entry_barrier(nm);
   OrderAccess::cross_modify_fence();
   return result;
+}
+
+oop BarrierSetNMethod::oop_load_no_keepalive(const nmethod* nm, int index) {
+  return NativeAccess<AS_NO_KEEPALIVE>::oop_load(nm->oop_addr_at(index));
+}
+
+oop BarrierSetNMethod::oop_load_phantom(const nmethod* nm, int index) {
+  return NativeAccess<ON_PHANTOM_OOP_REF>::oop_load(nm->oop_addr_at(index));
+}
+
+// Make the nmethod permanently not-entrant, so that nmethod_stub_entry_barrier() will call
+// deoptimize() to redirect the caller to SharedRuntime::get_handle_wrong_method_stub().
+// A sticky armed bit is set and other bits are preserved.  As a result, a call to
+// nmethod_stub_entry_barrier() may appear to be spurious, because is_armed() still returns
+// false and nmethod_entry_barrier() is not called.
+void BarrierSetNMethod::make_not_entrant(nmethod* nm) {
+  set_guard_value(nm, not_entrant, not_entrant);
+}
+
+bool BarrierSetNMethod::is_not_entrant(nmethod* nm) {
+  return (guard_value(nm) & not_entrant) != 0;
 }

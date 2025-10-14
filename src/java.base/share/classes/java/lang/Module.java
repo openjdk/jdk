@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,6 @@ import java.lang.reflect.AnnotatedElement;
 import java.net.URI;
 import java.net.URL;
 import java.security.CodeSource;
-import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -688,7 +687,6 @@ public final class Module implements AnnotatedElement {
         return implIsExportedOrOpen(pn, EVERYONE_MODULE, /*open*/true);
     }
 
-
     /**
      * Returns {@code true} if this module exports or opens the given package
      * to the given module. If the other module is {@code EVERYONE_MODULE} then
@@ -707,12 +705,12 @@ public final class Module implements AnnotatedElement {
         if (descriptor.isOpen() || descriptor.isAutomatic())
             return descriptor.packages().contains(pn);
 
-        // exported/opened via module declaration/descriptor
-        if (isStaticallyExportedOrOpen(pn, other, open))
+        // exported/opened via module declaration/descriptor or CLI options
+        if (isExplicitlyExportedOrOpened(pn, other, open))
             return true;
 
         // exported via addExports/addOpens
-        if (isReflectivelyExportedOrOpen(pn, other, open))
+        if (isReflectivelyExportedOrOpened(pn, other, open))
             return true;
 
         // not exported or open to other
@@ -723,7 +721,7 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module exports or opens a package to
      * the given module via its module declaration or CLI options.
      */
-    private boolean isStaticallyExportedOrOpen(String pn, Module other, boolean open) {
+    private boolean isExplicitlyExportedOrOpened(String pn, Module other, boolean open) {
         // test if package is open to everyone or <other>
         Map<String, Set<Module>> openPackages = this.openPackages;
         if (openPackages != null && allows(openPackages.get(pn), other)) {
@@ -764,7 +762,7 @@ public final class Module implements AnnotatedElement {
      * Returns {@code true} if this module reflectively exports or opens the
      * given package to the given module.
      */
-    private boolean isReflectivelyExportedOrOpen(String pn, Module other, boolean open) {
+    private boolean isReflectivelyExportedOrOpened(String pn, Module other, boolean open) {
         // exported or open to all modules
         Map<String, Boolean> exports = ReflectionData.exports.get(this, EVERYONE_MODULE);
         if (exports != null) {
@@ -809,7 +807,7 @@ public final class Module implements AnnotatedElement {
      * given package to the given module.
      */
     boolean isReflectivelyExported(String pn, Module other) {
-        return isReflectivelyExportedOrOpen(pn, other, false);
+        return isReflectivelyExportedOrOpened(pn, other, false);
     }
 
     /**
@@ -817,7 +815,7 @@ public final class Module implements AnnotatedElement {
      * given package to the given module.
      */
     boolean isReflectivelyOpened(String pn, Module other) {
-        return isReflectivelyExportedOrOpen(pn, other, true);
+        return isReflectivelyExportedOrOpened(pn, other, true);
     }
 
 
@@ -1033,50 +1031,38 @@ public final class Module implements AnnotatedElement {
             }
         }
 
-        // add package name to exports if absent
-        Map<String, Boolean> map = ReflectionData.exports
-            .computeIfAbsent(this, other,
-                             (m1, m2) -> new ConcurrentHashMap<>());
-        if (open) {
-            map.put(pn, Boolean.TRUE);  // may need to promote from FALSE to TRUE
-        } else {
-            map.putIfAbsent(pn, Boolean.FALSE);
-        }
-    }
-
-    /**
-     * Updates a module to open all packages in the given sets to all unnamed
-     * modules.
-     *
-     * @apiNote Used during startup to open packages for illegal access.
-     */
-    void implAddOpensToAllUnnamed(Set<String> concealedPkgs, Set<String> exportedPkgs) {
-        if (jdk.internal.misc.VM.isModuleSystemInited()) {
-            throw new IllegalStateException("Module system already initialized");
-        }
-
-        // replace this module's openPackages map with a new map that opens
-        // the packages to all unnamed modules.
-        Map<String, Set<Module>> openPackages = this.openPackages;
-        if (openPackages == null) {
-            openPackages = HashMap.newHashMap(concealedPkgs.size() + exportedPkgs.size());
-        } else {
-            openPackages = new HashMap<>(openPackages);
-        }
-        implAddOpensToAllUnnamed(concealedPkgs, openPackages);
-        implAddOpensToAllUnnamed(exportedPkgs, openPackages);
-        this.openPackages = openPackages;
-    }
-
-    private void implAddOpensToAllUnnamed(Set<String> pkgs, Map<String, Set<Module>> openPackages) {
-        for (String pn : pkgs) {
-            Set<Module> prev = openPackages.putIfAbsent(pn, ALL_UNNAMED_MODULE_SET);
-            if (prev != null) {
-                prev.add(ALL_UNNAMED_MODULE);
+        if (VM.isBooted()) {
+            // add package name to ReflectionData.exports if absent
+            Map<String, Boolean> map = ReflectionData.exports
+                .computeIfAbsent(this, other,
+                                 (m1, m2) -> new ConcurrentHashMap<>());
+            if (open) {
+                map.put(pn, Boolean.TRUE);  // may need to promote from FALSE to TRUE
+            } else {
+                map.putIfAbsent(pn, Boolean.FALSE);
             }
-
-            // update VM to export the package
-            addExportsToAllUnnamed0(this, pn);
+        } else {
+            // export/open packages during startup (--add-exports and --add-opens)
+            Map<String, Set<Module>> packageToTargets = (open) ? openPackages : exportedPackages;
+            if (packageToTargets != null) {
+                // copy existing map
+                packageToTargets = new HashMap<>(packageToTargets);
+                packageToTargets.compute(pn, (_, values) -> {
+                    var targets = new HashSet<Module>();
+                    if (values != null) {
+                        targets.addAll(values);
+                    }
+                    targets.add(other);
+                    return targets;
+                });
+            } else {
+                packageToTargets = Map.of(pn, Set.of(other));
+            }
+            if (open) {
+                this.openPackages = packageToTargets;
+            } else {
+                this.exportedPackages = packageToTargets;
+            }
         }
     }
 

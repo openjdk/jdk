@@ -25,7 +25,7 @@
  * @test
  * @bug     6180021
  * @summary CompletionFailure during TypeTrans
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile Super.java
  * @clean   Missing
  * @compile Sub.java

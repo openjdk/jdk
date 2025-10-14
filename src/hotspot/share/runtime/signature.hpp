@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,8 +28,6 @@
 
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
-#include "sanitizers/ub.hpp"
-
 
 // Static routines and parsing loops for processing field and method
 // descriptors.  In the HotSpot sources we call them "signatures".
@@ -339,11 +337,13 @@ class Fingerprinter: public SignatureIterator {
   void do_type_calling_convention(BasicType type);
 
   friend class SignatureIterator;  // so do_parameters_on can call do_type
-  ATTRIBUTE_NO_UBSAN
+
   void do_type(BasicType type) {
     assert(fp_is_valid_type(type), "bad parameter type");
-    _accumulator |= ((fingerprint_t)type << _shift_count);
-    _shift_count += fp_parameter_feature_size;
+    if (_param_size <= fp_max_size_of_parameters) {
+      _accumulator |= ((fingerprint_t)type << _shift_count);
+      _shift_count += fp_parameter_feature_size;
+    }
     _param_size += (is_double_word_type(type) ? 2 : 1);
     do_type_calling_convention(type);
   }

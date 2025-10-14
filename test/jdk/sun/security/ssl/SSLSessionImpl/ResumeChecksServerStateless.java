@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @bug 8211018
+ * @bug 8211018 8357033
  * @summary ensure that server only resumes a session if certain properties
  *    of the session are compatible with the new connection
+ * @modules java.base/sun.security.x509
  * @library /javax/net/ssl/templates
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer BASIC
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer CLIENT_AUTH
@@ -33,4 +34,5 @@
  * @run main/othervm ResumeChecksServer VERSION_3_TO_2
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer CIPHER_SUITE
  * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer SIGNATURE_SCHEME
+ * @run main/othervm -Djdk.tls.client.protocols=TLSv1.3 ResumeChecksServer LOCAL_CERTS
  */

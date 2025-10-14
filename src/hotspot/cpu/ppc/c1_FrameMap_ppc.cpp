@@ -189,7 +189,7 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 
 FloatRegister FrameMap::nr2floatreg (int rnr) {
   assert(_init_done, "tables not initialized");
-  debug_only(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(rnr);)
   return _fpu_regs[rnr];
 }
 
@@ -373,15 +373,6 @@ VMReg FrameMap::fpu_regname (int n) {
 LIR_Opr FrameMap::stack_pointer() {
   return SP_opr;
 }
-
-
-// JSR 292
-// On PPC64, there is no need to save the SP, because neither
-// method handle intrinsics, nor compiled lambda forms modify it.
-LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
-  return LIR_OprFact::illegalOpr;
-}
-
 
 bool FrameMap::validate_frame() {
   int max_offset = in_bytes(framesize_in_bytes());

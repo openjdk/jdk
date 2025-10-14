@@ -25,7 +25,7 @@
  * @test
  * @bug     6400303
  * @summary REGRESSION: javadoc crashes in b75
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp

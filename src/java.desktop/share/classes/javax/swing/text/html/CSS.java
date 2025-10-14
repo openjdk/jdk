@@ -735,12 +735,8 @@ public class CSS implements Serializable {
         valueConvertor.put(CSS.Attribute.BACKGROUND_ATTACHMENT,
                            valueMapper);
         Object generic = new CssValue();
-        int n = CSS.Attribute.allAttributes.length;
-        for (int i = 0; i < n; i++) {
-            CSS.Attribute key = CSS.Attribute.allAttributes[i];
-            if (valueConvertor.get(key) == null) {
-                valueConvertor.put(key, generic);
-            }
+        for (CSS.Attribute key : CSS.Attribute.allAttributes) {
+            valueConvertor.putIfAbsent(key, generic);
         }
     }
 

@@ -78,8 +78,8 @@ template <class E> class GrowableArray;
 class SystemDictionary : AllStatic {
   friend class AOTLinkedClassBulkLoader;
   friend class BootstrapInfo;
+  friend class LambdaProxyClassDictionary;
   friend class vmClasses;
-  friend class VMStructs;
 
  public:
 
@@ -326,26 +326,23 @@ private:
   static void restore_archived_method_handle_intrinsics_impl(TRAPS) NOT_CDS_RETURN;
 
 protected:
-  // Used by SystemDictionaryShared
+  // Used by AOTLinkedClassBulkLoader, LambdaProxyClassDictionary, and SystemDictionaryShared
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
   static void post_class_load_event(EventClassLoad* event, const InstanceKlass* k, const ClassLoaderData* init_cld);
-  static InstanceKlass* load_shared_lambda_proxy_class(InstanceKlass* ik,
-                                                       Handle class_loader,
-                                                       Handle protection_domain,
-                                                       PackageEntry* pkg_entry,
-                                                       TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
                                           const ClassFileStream *cfs,
                                           PackageEntry* pkg_entry,
                                           TRAPS);
+  static void preload_class(Handle class_loader, InstanceKlass* ik, TRAPS);
   static Handle get_loader_lock_or_null(Handle class_loader);
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
+
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);

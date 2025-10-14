@@ -25,8 +25,8 @@
 #define SHARE_GC_Z_ZMARK_HPP
 
 #include "gc/z/zAddress.hpp"
+#include "gc/z/zMarkingSMR.hpp"
 #include "gc/z/zMarkStack.hpp"
-#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zMarkStackEntry.hpp"
 #include "gc/z/zMarkTerminate.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -55,18 +55,18 @@ public:
   static const bool Finalizable   = true;
 
 private:
-  ZGeneration* const  _generation;
-  ZPageTable* const   _page_table;
-  ZMarkStackAllocator _allocator;
-  ZMarkStripeSet      _stripes;
-  ZMarkTerminate      _terminate;
-  volatile size_t     _work_nproactiveflush;
-  volatile size_t     _work_nterminateflush;
-  size_t              _nproactiveflush;
-  size_t              _nterminateflush;
-  size_t              _ntrycomplete;
-  size_t              _ncontinue;
-  uint                _nworkers;
+  ZGeneration* const _generation;
+  ZPageTable* const  _page_table;
+  ZMarkingSMR        _marking_smr;
+  ZMarkStripeSet     _stripes;
+  ZMarkTerminate     _terminate;
+  volatile size_t    _work_nproactiveflush;
+  volatile size_t    _work_nterminateflush;
+  size_t             _nproactiveflush;
+  size_t             _nterminateflush;
+  size_t             _ntrycomplete;
+  size_t             _ncontinue;
+  uint               _nworkers;
 
   size_t calculate_nstripes(uint nworkers) const;
 
@@ -101,8 +101,6 @@ private:
 public:
   ZMark(ZGeneration* generation, ZPageTable* page_table);
 
-  bool is_initialized() const;
-
   template <bool resurrect, bool gc_thread, bool follow, bool finalizable>
   void mark_object(zaddress addr);
 
@@ -113,8 +111,7 @@ public:
   bool end();
   void free();
 
-  void flush_and_free();
-  bool flush_and_free(Thread* thread);
+  bool flush(Thread* thread);
 
   // Following work
   void prepare_work();

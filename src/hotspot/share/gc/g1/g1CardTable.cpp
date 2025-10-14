@@ -28,18 +28,37 @@
 #include "logging/log.hpp"
 #include "runtime/os.hpp"
 
-void G1CardTable::g1_mark_as_young(const MemRegion& mr) {
-  CardValue *const first = byte_for(mr.start());
-  CardValue *const last = byte_after(mr.last());
+void G1CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
+  if (mr.is_empty()) {
+    return;
+  }
+  CardValue* start    = byte_for(mr.start());
+  CardValue* end      = byte_for(mr.last());
 
-  memset_with_concurrent_readers(first, g1_young_gen, pointer_delta(last, first, sizeof(CardValue)));
-}
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  G1HeapRegion* r = g1h->heap_region_containing(mr.start());
 
-#ifndef PRODUCT
-void G1CardTable::verify_g1_young_region(MemRegion mr) {
-  verify_region(mr, g1_young_gen,  true);
+  assert(r == g1h->heap_region_containing(mr.last()), "MemRegion crosses region");
+
+  bool failures = false;
+  for (CardValue* curr = start; curr <= end; ++curr) {
+    CardValue curr_val = *curr;
+    bool failed = (val_equals) ? (curr_val != val) : (curr_val == val);
+    if (failed) {
+      if (!failures) {
+        log_error(gc, verify)("== CT verification failed: [" PTR_FORMAT "," PTR_FORMAT "] r: %d (%s) %sexpecting value: %d",
+                              p2i(start), p2i(end), r->hrm_index(), r->get_short_type_str(),
+                              (val_equals) ? "" : "not ", val);
+        failures = true;
+      }
+      log_error(gc, verify)("==   card " PTR_FORMAT " [" PTR_FORMAT "," PTR_FORMAT "], val: %d",
+                            p2i(curr), p2i(addr_for(curr)),
+                            p2i((HeapWord*) (((size_t) addr_for(curr)) + _card_size)),
+                            (int) curr_val);
+    }
+  }
+  guarantee(!failures, "there should not have been any failures");
 }
-#endif
 
 void G1CardTableChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
   // Default value for a clean card on the card table is -1. So we cannot take advantage of the zero_filled parameter.
@@ -74,6 +93,5 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
 }
 
 bool G1CardTable::is_in_young(const void* p) const {
-  volatile CardValue* card = byte_for(p);
-  return *card == G1CardTable::g1_young_card_val();
+  return G1CollectedHeap::heap()->heap_region_containing(p)->is_young();
 }

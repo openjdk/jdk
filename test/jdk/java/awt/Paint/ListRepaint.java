@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,26 +30,27 @@ import java.awt.List;
  * @test
  * @key headful
  * @bug 7090424
- * @author Sergey Bylokhov
  */
 public final class ListRepaint extends List {
 
-    static ListRepaint listRepaint;
-    static Frame frame;
-
-    public static void main(final String[] args) throws Exception {
+    public static void main(final String[] args) {
         for (int i = 0; i < 10; ++i) {
+            Frame frame = new Frame();
             try {
-                EventQueue.invokeLater(ListRepaint::createAndShowGUI);
+                frame.setSize(300, 300);
+                frame.setLocationRelativeTo(null);
+                ListRepaint list = new ListRepaint();
+                list.add("1");
+                list.add("2");
+                list.add("3");
+                list.add("4");
+                list.select(0);
+                frame.add(list);
+                frame.setVisible(true);
                 sleep();
-                EventQueue.invokeAndWait(listRepaint::test);
+                list.test();
             } finally {
-                EventQueue.invokeAndWait(() -> {
-                    if (frame != null) {
-                        frame.dispose();
-                        frame = null;
-                    }
-                });
+                frame.dispose();
             }
         }
     }
@@ -59,22 +60,6 @@ public final class ListRepaint extends List {
             Thread.sleep(2000);
         } catch (InterruptedException ignored) {
         }
-    }
-
-    static void createAndShowGUI() {
-        frame = new Frame();
-        frame.setSize(300, 300);
-        frame.setLocationRelativeTo(null);
-
-        listRepaint = new ListRepaint();
-        listRepaint.add("1");
-        listRepaint.add("2");
-        listRepaint.add("3");
-        listRepaint.add("4");
-        listRepaint.select(0);
-
-        frame.add(listRepaint);
-        frame.setVisible(true);
     }
 
     @Override

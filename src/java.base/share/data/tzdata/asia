@@ -1523,6 +1523,16 @@ Zone Asia/Jayapura	9:22:48 -	LMT	1932 Nov
 # (UIT No. 143 17.XI.1977) and not 23 September (UIT No. 141 13.IX.1977).
 # UIT is the Operational Bulletin of International Telecommunication Union.
 
+# From Roozbeh Pournader (2025-03-18):
+# ... the exact time of Iran's transition from +0400 to +0330 ... was Friday
+# 1357/8/19 AP=1978-11-10. Here's a newspaper clip from the Ettela'at
+# newspaper, dated 1357/8/14 AP=1978-11-05, translated from Persian
+# (at https://w.wiki/DUEY):
+#	Following the government's decision about returning the official time
+#	to the previous status, the spokesperson for the Ministry of Energy
+#	announced today: At the hour 24 of Friday 19th of Aban (=1978-11-10),
+#	the country's time will be pulled back half an hour.
+#
 # From Roozbeh Pournader (2003-03-15):
 # This is an English translation of what I just found (originally in Persian).
 # The Gregorian dates in brackets are mine:
@@ -1650,7 +1660,7 @@ Rule	Iran	2021	2022	-	Sep	21	24:00	0	-
 Zone	Asia/Tehran	3:25:44	-	LMT	1916
 			3:25:44	-	TMT	1935 Jun 13 # Tehran Mean Time
 			3:30	Iran	%z	1977 Oct 20 24:00
-			4:00	Iran	%z	1979
+			4:00	Iran	%z	1978 Nov 10 24:00
 			3:30	Iran	%z
 
 

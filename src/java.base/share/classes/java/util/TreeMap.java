@@ -2982,7 +2982,7 @@ public class TreeMap<K,V>
             return t.keySpliterator();
         }
         if (m instanceof DescendingSubMap) {
-            @SuppressWarnings("unchecked") DescendingSubMap<K,?> dm =
+            DescendingSubMap<K,?> dm =
                 (DescendingSubMap<K,?>) m;
             TreeMap<K,?> tm = dm.m;
             if (dm == tm.descendingMap) {
@@ -2991,7 +2991,7 @@ public class TreeMap<K,V>
                 return t.descendingKeySpliterator();
             }
         }
-        @SuppressWarnings("unchecked") NavigableSubMap<K,?> sm =
+        NavigableSubMap<K,?> sm =
             (NavigableSubMap<K,?>) m;
         return sm.keySpliterator();
     }

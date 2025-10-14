@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,16 @@
  */
 
 
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
-import jdk.jpackage.test.Annotations.Parameters;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Comm;
+import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.TKit;
 
@@ -34,15 +40,14 @@ import jdk.jpackage.test.TKit;
  * @summary jpackage application version testing
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile JLinkOptionsTest.java
+ * @compile -Xlint:all -Werror JLinkOptionsTest.java
  * @run main/othervm/timeout=360 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=JLinkOptionsTest
  */
 
 public final class JLinkOptionsTest {
 
-    @Parameters
-    public static Collection input() {
+    public static Collection<?> input() {
         return List.of(new Object[][]{
             // default but with strip-native-commands removed
             {"Hello", new String[]{
@@ -53,6 +58,7 @@ public final class JLinkOptionsTest {
                     new String[]{"jdk.jartool", "jdk.unsupported"},
                     null,
                     },
+
             // multiple jlink-options
             {"com.other/com.other.Hello", new String[]{
                     "--jlink-options",
@@ -64,6 +70,7 @@ public final class JLinkOptionsTest {
                     new String[]{"java.smartcardio", "jdk.crypto.cryptoki"},
                     null,
                     },
+
             // bind-services
             {"Hello", new String[]{
                     "--jlink-options",
@@ -111,34 +118,59 @@ public final class JLinkOptionsTest {
         });
     }
 
-    public JLinkOptionsTest(String javaAppDesc, String[] jpackageArgs, String[] required, String[] prohibited) {
-        this.required = required;
-        this.prohibited = prohibited;
-        cmd = JPackageCommand
-                .helloAppImage(javaAppDesc)
-                .ignoreDefaultRuntime(true)
-                .addArguments(jpackageArgs);
-    }
-
     @Test
-    public void test() {
+    @ParameterSupplier("input")
+    public void test(String javaAppDesc, String[] jpackageArgs, String[] required, String[] prohibited) {
+        final var cmd = createJPackageCommand(javaAppDesc).addArguments(jpackageArgs);
+
         cmd.executeAndAssertHelloAppImageCreated();
 
         List<String> release = cmd.readRuntimeReleaseFile();
         List<String> mods = List.of(release.get(1));
         if (required != null) {
             for (String s : required) {
-                TKit.assertTextStream(s).label("mods").apply(mods.stream());
+                TKit.assertTextStream(s).label("mods").apply(mods);
             }
         }
         if (prohibited != null) {
             for (String s : prohibited) {
-                TKit.assertTextStream(s).label("mods").negate().apply(mods.stream());
+                TKit.assertTextStream(s).label("mods").negate().apply(mods);
             }
         }
     }
 
-    private final String[] required;
-    private final String[] prohibited;
-    private final JPackageCommand cmd;
+    @Test
+    public void testNoBindServicesByDefault() {
+        final var defaultModules = getModulesInRuntime("--limit-modules java.smartcardio,jdk.crypto.cryptoki,java.desktop");
+        final var modulesWithBindServices = getModulesInRuntime("--bind-services --limit-modules java.smartcardio,jdk.crypto.cryptoki,java.desktop");
+
+        final var moduleComm = Comm.compare(defaultModules, modulesWithBindServices);
+
+        TKit.assertStringListEquals(List.of(), moduleComm.unique1().stream().toList(),
+                "Check '--bind-services' option doesn't remove modules");
+        // with the limited set of modules, we expect that jdk.crypto.cryptoki be added through --bind-services
+        TKit.assertNotEquals("", moduleComm.unique2().stream().sorted().collect(Collectors.joining(",")),
+                "Check '--bind-services' option adds modules");
+    }
+
+    private final JPackageCommand createJPackageCommand(String javaAppDesc) {
+        return JPackageCommand.helloAppImage(javaAppDesc);
+    }
+
+    private final Set<String> getModulesInRuntime(String ... jlinkOptions) {
+        final var cmd = createJPackageCommand(PRINT_ENV_APP + "*");
+        if (jlinkOptions.length != 0) {
+            cmd.addArguments("--jlink-options");
+            cmd.addArguments(jlinkOptions);
+        }
+
+        cmd.executeAndAssertImageCreated();
+
+        final var output = HelloApp.assertApp(cmd.appLauncherPath())
+                .saveOutput(true).execute("--print-modules").getFirstLineOfOutput();
+
+        return Stream.of(output.split(",")).collect(Collectors.toSet());
+    }
+
+    private static final Path PRINT_ENV_APP = TKit.TEST_SRC_ROOT.resolve("apps/PrintEnv.java");
 }

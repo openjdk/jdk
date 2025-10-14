@@ -39,6 +39,7 @@ class ThreadIdentifier : AllStatic {
   static int64_t current();
   static int64_t unsafe_offset();
   static int64_t initial();
+  static void verify_id(int64_t id) NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_RUNTIME_THREADIDENTIFIER_HPP

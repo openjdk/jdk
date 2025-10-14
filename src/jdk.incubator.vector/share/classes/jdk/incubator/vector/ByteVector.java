@@ -84,7 +84,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     //       super.bOp((Byte128Vector) o);
     // The purpose of that is to forcibly inline
     // the generic definition from this file
-    // into a sharply type- and size-specific
+    // into a sharply-typed and size-specific
     // wrapper in the subclass file, so that
     // the JIT can specialize the code.
     // The code is only inlined and expanded
@@ -554,7 +554,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     // Note: A surprising behavior in javadoc
     // sometimes makes a lone /** {@inheritDoc} */
     // comment drop the method altogether,
-    // apparently if the method mentions an
+    // apparently if the method mentions a
     // parameter or return type of Vector<Byte>
     // instead of Vector<E> as originally specified.
     // Adding an empty HTML fragment appears to
@@ -689,7 +689,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return broadcast(-1).lanewise(XOR, this);
             }
         }
@@ -717,7 +717,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             if (op == ZOMO) {
                 return blend(broadcast(-1), compare(NE, 0, m));
             }
-            if (op == NOT) {
+            else if (op == NOT) {
                 return lanewise(XOR, broadcast(-1), m);
             }
         }
@@ -727,6 +727,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             this, m,
             UN_IMPL.find(op, opc, ByteVector::unaryOperations));
     }
+
 
     private static final
     ImplCache<Unary, UnaryOperation<ByteVector, VectorMask<Byte>>>
@@ -824,6 +825,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     = this.compare(EQ, (byte) 0, m);
                 return this.blend(that, mask);
             }
+
             if (opKind(op, VO_SHIFT)) {
                 // As per shift specification for Java, mask the shift count.
                 // This allows the JIT to ignore some ISA details.
@@ -849,6 +851,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             this, that, m,
             BIN_IMPL.find(op, opc, ByteVector::binaryOperations));
     }
+
 
     private static final
     ImplCache<Binary, BinaryOperation<ByteVector, VectorMask<Byte>>>
@@ -1748,7 +1751,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1781,7 +1784,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical conjunction ({@code &})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "and" operation ({@code &})
      * to each pair of corresponding lane values.
      *
@@ -1805,7 +1808,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a second input vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1838,7 +1841,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical disjunction ({@code |})
      * of this vector and a scalar.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "or" operation ({@code |})
      * to each pair of corresponding lane values.
      *
@@ -1906,7 +1909,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
      * Computes the bitwise logical complement ({@code ~})
      * of this vector.
      *
-     * This is a lane-wise binary operation which applies the
+     * This is a lane-wise binary operation which applies
      * the primitive bitwise "not" operation ({@code ~})
      * to each lane value.
      *
@@ -2873,6 +2876,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
                     toBits(v.rOp(MAX_OR_INF, m, (i, a, b) -> (byte) VectorMath.minUnsigned(a, b)));
             case VECTOR_OP_UMAX: return (v, m) ->
                     toBits(v.rOp(MIN_OR_INF, m, (i, a, b) -> (byte) VectorMath.maxUnsigned(a, b)));
+            case VECTOR_OP_SUADD: return (v, m) ->
+                    toBits(v.rOp((byte)0, m, (i, a, b) -> (byte) VectorMath.addSaturatingUnsigned(a, b)));
             case VECTOR_OP_AND: return (v, m) ->
                     toBits(v.rOp((byte)-1, m, (i, a, b) -> (byte)(a & b)));
             case VECTOR_OP_OR: return (v, m) ->
@@ -2950,7 +2955,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ByteVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2970,7 +2975,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ByteVector},
      * there will be no loss of precision or range,
      * and so no {@code UnsupportedOperationException} will
@@ -2990,7 +2995,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
     /** {@inheritDoc} <!--workaround-->
      * @implNote
-     * When this method is used on used on vectors
+     * When this method is used on vectors
      * of type {@code ByteVector},
      * there will be no loss of precision.
      */
@@ -3060,7 +3065,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Byte>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3116,17 +3122,30 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         }
 
         // Check indices are within array bounds.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
+        }
+
+        IntVector vix2 = null;
+        IntVector vix3 = null;
+        if (vlen == idx_vlen * 4) {
+            vix2 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 2).add(offset);
+            VectorIntrinsics.checkIndex(vix2, a.length);
+            vix3 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 3).add(offset);
+            VectorIntrinsics.checkIndex(vix3, a.length);
         }
 
         return VectorSupport.loadWithMap(
             vectorType, null, byte.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, null,
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, vix2, vix3, null,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(n -> c[idx + iMap[idy+n]]));
@@ -3249,7 +3268,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_IN_RANGE);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+        ((AbstractMask<Byte>)m)
+            .checkIndexByLane(offset, a.length, vsp.iota(), 1);
         return vsp.dummyVector().fromBooleanArray0(a, offset, m, OFFSET_OUT_OF_RANGE);
     }
 
@@ -3431,7 +3451,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_IN_RANGE).maybeSwap(bo);
         }
 
-        checkMaskFromIndexSize(offset, vsp, m, 1, ms.byteSize());
+        ((AbstractMask<Byte>)m)
+            .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 1);
         return vsp.dummyVector().fromMemorySegment0(ms, offset, m, OFFSET_OUT_OF_RANGE).maybeSwap(bo);
     }
 
@@ -3499,7 +3520,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         } else {
             ByteSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Byte>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoArray0(a, offset, m);
         }
@@ -3656,7 +3678,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         } else {
             ByteSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.length(), a.length)) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, a.length);
+                ((AbstractMask<Byte>)m)
+                    .checkIndexByLane(offset, a.length, vsp.iota(), 1);
             }
             intoBooleanArray0(a, offset, m);
         }
@@ -3788,7 +3811,8 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             }
             ByteSpecies vsp = vspecies();
             if (!VectorIntrinsics.indexInRange(offset, vsp.vectorByteSize(), ms.byteSize())) {
-                checkMaskFromIndexSize(offset, vsp, m, 1, ms.byteSize());
+                ((AbstractMask<Byte>)m)
+                    .checkIndexByLane(offset, ms.byteSize(), vsp.iota(), 1);
             }
             maybeSwap(bo).intoMemorySegment0(ms, offset, m);
         }
@@ -3873,17 +3897,30 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
         // Check indices are within array bounds.
         // FIXME: Check index under mask controlling.
-        for (int i = 0; i < vsp.length(); i += lsp.length()) {
-            IntVector vix = IntVector
-                .fromArray(lsp, indexMap, mapOffset + i)
-                .add(offset);
-            VectorIntrinsics.checkIndex(vix, a.length);
+        IntVector vix0 = IntVector.fromArray(lsp, indexMap, mapOffset).add(offset);
+        VectorIntrinsics.checkIndex(vix0, a.length);
+
+        int vlen = vsp.length();
+        int idx_vlen = lsp.length();
+        IntVector vix1 = null;
+        if (vlen >= idx_vlen * 2) {
+            vix1 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen).add(offset);
+            VectorIntrinsics.checkIndex(vix1, a.length);
+        }
+
+        IntVector vix2 = null;
+        IntVector vix3 = null;
+        if (vlen == idx_vlen * 4) {
+            vix2 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 2).add(offset);
+            VectorIntrinsics.checkIndex(vix2, a.length);
+            vix3 = IntVector.fromArray(lsp, indexMap, mapOffset + idx_vlen * 3).add(offset);
+            VectorIntrinsics.checkIndex(vix3, a.length);
         }
 
         return VectorSupport.loadWithMap(
             vectorType, maskClass, byte.class, vsp.laneCount(),
-            lsp.vectorType(),
-            a, ARRAY_BASE, null, m,
+            lsp.vectorType(), lsp.length(),
+            a, ARRAY_BASE, vix0, vix1, vix2, vix3, m,
             a, offset, indexMap, mapOffset, vsp,
             (c, idx, iMap, idy, s, vm) ->
             s.vOp(vm, n -> c[idx + iMap[idy+n]]));
@@ -4039,26 +4076,6 @@ public abstract class ByteVector extends AbstractVector<Byte> {
 
 
     // End of low-level memory operations.
-
-    private static
-    void checkMaskFromIndexSize(int offset,
-                                ByteSpecies vsp,
-                                VectorMask<Byte> m,
-                                int scale,
-                                int limit) {
-        ((AbstractMask<Byte>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
-
-    private static
-    void checkMaskFromIndexSize(long offset,
-                                ByteSpecies vsp,
-                                VectorMask<Byte> m,
-                                int scale,
-                                long limit) {
-        ((AbstractMask<Byte>)m)
-            .checkIndexByLane(offset, limit, vsp.iota(), scale);
-    }
 
     @ForceInline
     private void conditionalStoreNYI(int offset,

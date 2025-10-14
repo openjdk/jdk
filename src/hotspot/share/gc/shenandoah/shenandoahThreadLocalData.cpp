@@ -34,19 +34,16 @@ ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
   _oom_scope_nesting_level(0),
   _oom_during_evac(false),
   _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
+  _card_table(nullptr),
   _gclab(nullptr),
   _gclab_size(0),
-  _paced_time(0),
   _plab(nullptr),
   _plab_desired_size(0),
   _plab_actual_size(0),
   _plab_promoted(0),
   _plab_allows_promotion(true),
   _plab_retries_enabled(true),
-  _evacuation_stats(nullptr) {
-  if (ShenandoahHeap::heap()->mode()->is_generational()) {
-    _evacuation_stats = new ShenandoahEvacuationStats();
-  }
+  _evacuation_stats(new ShenandoahEvacuationStats()) {
 }
 
 ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {

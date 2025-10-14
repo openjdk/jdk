@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,19 +22,16 @@
  */
 
 import java.lang.Integer;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.Random;
-import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntFunction;
 import java.util.function.IntUnaryOperator;
 import java.util.stream.Stream;
+import java.util.List;
 import java.util.stream.Collectors;
 
+import jdk.incubator.vector.VectorSpecies;
 import jdk.test.lib.Utils;
 
 import org.testng.Assert;
@@ -226,5 +223,19 @@ public class AbstractVectorTest {
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], f.apply(a[i], b[i]), "(" + a[i] + ", " + b[i] + ") at index #" + i);
         }
+    }
+
+    // Non-optimized test partial wrap derived from the Spec:
+    // Validation function for lane indexes which may be out of the valid range of [0..VLENGTH-1].
+    // The index is forced into this range by adding or subtracting a suitable multiple of VLENGTH.
+    // Specifically, the index is reduced into the required range by computing the value of length-floor, where
+    // floor=vectorSpecies().loopBound(length) is the next lower multiple of VLENGTH.
+    // As long as VLENGTH is a power of two, then the reduced index also equal to index & (VLENGTH - 1).
+    static int testPartiallyWrapIndex(VectorSpecies<?> vsp, int index) {
+        if (index >= 0 && index < vsp.length()) {
+            return index;
+        }
+        int wrapped = Math.floorMod(index, vsp.length());
+        return wrapped - vsp.length();
     }
 }

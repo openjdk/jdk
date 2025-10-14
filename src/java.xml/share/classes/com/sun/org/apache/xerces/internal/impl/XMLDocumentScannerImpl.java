@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -71,7 +71,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * Refer to the table in unit-test javax.xml.stream.XMLStreamReaderTest.SupportDTD for changes
  * related to property SupportDTD.
  * @author Joe Wang, Sun Microsystems
- * @LastModified: Nov 2023
+ * @LastModified: Feb 2025
  */
 public class XMLDocumentScannerImpl
         extends XMLDocumentFragmentScannerImpl{
@@ -1225,7 +1225,6 @@ public class XMLDocumentScannerImpl
             }
             // premature end of file
             catch (EOFException e) {
-                e.printStackTrace();
                 reportFatalError("PrematureEOF", null);
                 return false;
                 //throw e;

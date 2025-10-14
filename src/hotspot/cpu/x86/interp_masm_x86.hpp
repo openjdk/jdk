@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
  protected:
 
   virtual void call_VM_base(Register oop_result,
-                            Register java_thread,
                             Register last_java_sp,
                             address  entry_point,
                             int number_of_arguments,
@@ -53,13 +52,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
  public:
   InterpreterMacroAssembler(CodeBuffer* code) : MacroAssembler(code),
-    _locals_register(LP64_ONLY(r14) NOT_LP64(rdi)),
-    _bcp_register(LP64_ONLY(r13) NOT_LP64(rsi)) {}
+    _locals_register(r14),
+    _bcp_register(r13) {}
 
   void jump_to_entry(address entry);
 
- virtual void check_and_handle_popframe(Register java_thread);
- virtual void check_and_handle_earlyret(Register java_thread);
+ virtual void check_and_handle_popframe();
+ virtual void check_and_handle_earlyret();
 
   void load_earlyret_value(TosState state);
 
@@ -121,9 +120,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
                                     Register cpool,  // the constant pool (corrupted on return)
                                     Register index); // the constant pool index (corrupted on return)
 
-  NOT_LP64(void f2ieee();)        // truncate ftos to 32bits
-  NOT_LP64(void d2ieee();)        // truncate dtos to 64bits
-
   // Expression stack
   void pop_ptr(Register r = rax);
   void pop_i(Register r = rax);
@@ -143,18 +139,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void pop_f(XMMRegister r);
   void pop_d(XMMRegister r);
   void push_d(XMMRegister r);
-#ifdef _LP64
   void pop_l(Register r = rax);
   void push_l(Register r = rax);
-#else
-  void pop_l(Register lo = rax, Register hi = rdx);
-  void pop_f();
-  void pop_d();
-
-  void push_l(Register lo = rax, Register hi = rdx);
-  void push_d();
-  void push_f();
-#endif // _LP64
 
   void pop(Register r) { ((MacroAssembler*)this)->pop(r); }
   void push(Register r) { ((MacroAssembler*)this)->push(r); }
@@ -168,7 +154,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
     lea(rsp, Address(rbp, rcx, Address::times_ptr));
     // null last_sp until next java call
     movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
-    NOT_LP64(empty_FPU_stack());
   }
 
   // Helpers for swap and dup
@@ -227,11 +212,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void verify_method_data_pointer();
 
   void set_mdp_data_at(Register mdp_in, int constant, Register value);
-  void increment_mdp_data_at(Address data, bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, int constant,
-                             bool decrement = false);
-  void increment_mdp_data_at(Register mdp_in, Register reg, int constant,
-                             bool decrement = false);
+  void increment_mdp_data_at(Register mdp_in, int constant);
+  void increment_mdp_data_at(Register mdp_in, Register index, int constant);
   void increment_mask_and_jump(Address counter_addr, Address mask,
                                Register scratch, Label* where);
   void set_mdp_flag_at(Register mdp_in, int flag_constant);
@@ -254,7 +236,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_by_constant(Register mdp_in, int constant);
   void update_mdp_for_ret(Register return_bci);
 
-  void profile_taken_branch(Register mdp, Register bumped_count);
+  void profile_taken_branch(Register mdp);
   void profile_not_taken_branch(Register mdp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
@@ -273,14 +255,15 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // only if +VerifyOops && state == atos
 #define interp_verify_oop(reg, state) _interp_verify_oop(reg, state, __FILE__, __LINE__);
   void _interp_verify_oop(Register reg, TosState state, const char* file, int line);
-  // only if +VerifyFPU  && (state == ftos || state == dtos)
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   typedef enum { NotifyJVMTI, SkipNotifyJVMTI } NotifyMethodExitMode;
 
   // support for jvmti/dtrace
   void notify_method_entry();
   void notify_method_exit(TosState state, NotifyMethodExitMode mode);
+
+  JFR_ONLY(void enter_jfr_critical_section();)
+  JFR_ONLY(void leave_jfr_critical_section();)
 
  private:
 

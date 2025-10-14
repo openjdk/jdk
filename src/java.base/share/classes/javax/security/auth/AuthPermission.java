@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,13 @@ package javax.security.auth;
  * contains a name (also referred to as a "target name") but no actions
  * list; you either have the named permission or you don't.
  *
- * @apiNote
+ * @deprecated
  * This permission cannot be used for controlling access to resources
  * as the Security Manager is no longer supported.
  *
  * @since 1.4
  */
+@Deprecated(since="25", forRemoval=true)
 public final class AuthPermission extends
 java.security.BasicPermission {
 

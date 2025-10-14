@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ public class filter_rt001 extends TestDebuggerType1 {
 
                 case 0:
                 testClassReference = (ReferenceType)debuggee.classByName(testedClassName);
-                thread1 = debuggee.threadByName(threadName1);
+                thread1 = debuggee.threadByFieldName(debuggeeClass, threadName1);
                 if (thread1 == null)
                     throw new Failure("Cannot get ThreadReference for " + threadName1);
                 eventRequest1 = setting21StepRequest(thread1, testClassReference,

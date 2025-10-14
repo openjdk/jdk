@@ -23,6 +23,9 @@
 # questions.
 #
 
+include $(TOPDIR)/make/common/MakeIncludeStart.gmk
+ifeq ($(INCLUDE), true)
+
 ################################################################################
 # This file contains helper functions for logging.
 ################################################################################
@@ -61,12 +64,6 @@ define ParseLogValue
 endef
 
 define ParseLogLevel
-  # Catch old-style VERBOSE= command lines.
-  ifneq ($$(origin VERBOSE), undefined)
-    $$(info Error: VERBOSE is deprecated. Use LOG=<warn|info|debug|trace> instead.)
-    $$(error Cannot continue)
-  endif
-
   # Setup logging according to LOG
 
   # If "nofile" is present, do not log to a file
@@ -93,6 +90,9 @@ define ParseLogLevel
   # parsing of 'LOG=debug,profile-to-log,nofile' ends up in the following error:
   # Error: LOG contains unknown option or log level: debug-to-log.
   $$(eval $$(call ParseLogOption, profile, LOG_PROFILE_TIMES_FILE))
+
+  # If "flow" is present, log makefile execution flow
+  $$(eval $$(call ParseLogOption, flow, LOG_FLOW))
 
   # Treat LOG=profile-to-log as if it were LOG=profile,profile-to-log
   LOG_PROFILE_TIMES_FILE := $$(firstword $$(LOG_PROFILE_TIMES_FILE) $$(LOG_PROFILE_TIMES_LOG))
@@ -122,6 +122,11 @@ endef
 
 MAKE_LOG_VARS = $(foreach v, \
     LOG_LEVEL LOG_NOFILE LOG_CMDLINES LOG_REPORT LOG_PROFILE_TIMES_LOG \
-    LOG_PROFILE_TIMES_FILE, \
+    LOG_PROFILE_TIMES_FILE LOG_FLOW, \
     $v=$($v) \
 )
+
+################################################################################
+
+endif # include guard
+include $(TOPDIR)/make/common/MakeIncludeEnd.gmk

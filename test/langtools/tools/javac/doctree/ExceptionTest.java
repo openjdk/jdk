@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244
+ * @bug 7021614 8273244 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,13 +39,13 @@ class ExceptionTest {
      */
     void exception() throws Exception { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Throws[EXCEPTION, pos:1
+    Throws[EXCEPTION, pos:0
       exceptionName:
-        Reference[REFERENCE, pos:12, Exception]
+        Reference[REFERENCE, pos:11, Exception]
       description: empty
     ]
 ]
@@ -56,15 +56,15 @@ DocComment[DOC_COMMENT, pos:1
      */
     void exception_text() throws Exception { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: empty
   body: empty
   block tags: 1
-    Throws[EXCEPTION, pos:1
+    Throws[EXCEPTION, pos:0
       exceptionName:
-        Reference[REFERENCE, pos:12, Exception]
+        Reference[REFERENCE, pos:11, Exception]
       description: 1
-        Text[TEXT, pos:22, text]
+        Text[TEXT, pos:21, text]
     ]
 ]
 */
