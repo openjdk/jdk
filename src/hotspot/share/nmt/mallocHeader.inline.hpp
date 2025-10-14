@@ -35,12 +35,7 @@
 #include "utilities/nativeCallStack.hpp"
 
 inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_marker)
-  : _size(size), _mst_marker(mst_marker), _mem_tag(mem_tag),
-  #if INCLUDE_ASAN
-    _poisoned(false),
-  #else
-    _unused(0),
-  #endif
+  : _size(size), _mst_marker(mst_marker), _mem_tag(mem_tag), _unused(0),
    _canary(_header_canary_live_mark)
 {
   assert(size < max_reasonable_malloc_size, "Too large allocation size?");
@@ -48,6 +43,7 @@ inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_mark
   // guarding the start of the header.
   NOT_LP64(set_alt_canary(_header_alt_canary_live_mark);)
   set_footer(_footer_canary_live_mark); // set after initializing _size
+  set_poisoned(true);
 }
 
 inline void MallocHeader::revive() {
@@ -57,10 +53,12 @@ inline void MallocHeader::revive() {
   set_header_canary(_header_canary_live_mark);
   NOT_LP64(set_alt_canary(_header_alt_canary_live_mark);)
   set_footer(_footer_canary_live_mark);
+  set_poisoned(true);
 }
 
 // The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
+  set_poisoned(false);
   set_header_canary(_header_canary_dead_mark);
   NOT_LP64(set_alt_canary(_header_alt_canary_dead_mark);)
   set_footer(_footer_canary_dead_mark);

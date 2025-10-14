@@ -164,51 +164,178 @@ TEST_VM(NMT, test_realloc) {
   }
 }
 #else
-TEST_VM(NMT_ASAN, poisoned_memory_access) {
-  if (!MemTracker::enabled()) {
-    tty->print_cr("skipped.");
-    return;
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#else
+#error "No ASAN"
+#endif
+#define TEST_VM_FATAL_ASAN_MSG(category, name, msg)                \
+  static void test_  ## category ## _ ## name ## _();               \
+                                                                    \
+  static void child_ ## category ## _ ## name ## _() {              \
+    ::testing::GTEST_FLAG(throw_on_failure) = true;                 \
+    test_ ## category ## _ ## name ## _();                          \
+    gtest_exit_from_child_vm(0);                                    \
+  }                                                                 \
+                                                                    \
+  TEST(category, CONCAT(name, _vm_assert)) {                        \
+    ASSERT_EXIT(child_ ## category ## _ ## name ## _(),             \
+                ::testing::KilledBySignal(SIGABRT),                 \
+                msg);                                               \
+  }                                                                 \
+                                                                    \
+  void test_ ## category ## _ ## name ## _()
+
+#define DEFINE_ASAN_TEST(test_function)                            \
+  TEST_VM_FATAL_ASAN_MSG(NMT_ASAN, test_function, ".*AddressSanitizer.*") {     \
+    if (MemTracker::tracking_level() > NMT_off) {                                         \
+      test_function ();                                                                   \
+    } else {                                                                              \
+      /* overflow detection requires NMT to be on. If off, fake assert. */                \
+      guarantee(false,                                                                    \
+                "fake message ignore this - .*AddresssSanitizer.*");                      \
+    }                                                                                     \
   }
+
+static void test_write_canary() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  tty->print_cr("p : " INTPTR_FORMAT, p2i(p));
+  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
+  *canary_ptr = 1;
+}
 
+static void test_read_canary() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
+  CanaryType read_canary = 0;
+  read_canary = *canary_ptr;
+}
+
+static void test_write_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  tty->print_cr("mh : " INTPTR_FORMAT, p2i(mh));
-  EXPECT_TRUE(mh->is_poisoned());
-  size_t s = mh->size();
-  tty->print_cr("after reading size");
-  EXPECT_EQ(s, SIZE);
-  //reading size won't change the poisoned state
-  EXPECT_TRUE(mh->is_poisoned());
-  mh->set_poisoned(true);
-  const char* msg= ".*AddressSanitizer.*";
+  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
+  *footer_ptr = 1;
+}
 
-  // reading/writing '_canary' of MallocHeader and will cause 'use-after-poison' ASAN error
-  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
-  tty->print_cr("canary : " INTPTR_FORMAT, p2i(canary_ptr));
-  MallocHeader::CanaryType read_canary = 0;
-  EXPECT_EXIT(read_canary = *canary_ptr, testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(*canary_ptr = 1, testing::KilledBySignal(SIGABRT), msg);
+static void test_read_footer() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
+  CanaryType read_footer = *footer_ptr;
+}
 
-  // same for footer canary
-  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
-  EXPECT_EXIT(*footer_ptr = 1, testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(read_canary = *footer_ptr, testing::KilledBySignal(SIGABRT), msg);
+static void test_write_size() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  size_t* size_ptr = (size_t*)(mh);
+  *size_ptr = 1;
+}
 
-  // same for '_size'
-  EXPECT_EXIT(*((char*)mh    ) = 0, testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(*((char*)mh + 1) = 0, testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(*((char*)mh + 2) = 0, testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(*((char*)mh + 3) = 0, testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(*((char*)mh + sizeof(size_t) - 1) = 0, testing::KilledBySignal(SIGABRT), msg);
-  char c = 'c';
-  EXPECT_EXIT(c = *((char*)mh    ), testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(c = *((char*)mh + 1), testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(c = *((char*)mh + 2), testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(c = *((char*)mh + 3), testing::KilledBySignal(SIGABRT), msg);
-  EXPECT_EXIT(c = *((char*)mh + sizeof(size_t) - 1), testing::KilledBySignal(SIGABRT), msg);
-  os::free(p);
-  EXPECT_EXIT(*footer_ptr = 1, testing::KilledBySignal(SIGABRT), msg);
+static void test_read_size() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  size_t* size_ptr = (size_t*)(mh);
+  size_t read_size = *size_ptr;
+}
+
+static void test_write_canary_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
+  *canary_ptr = 1;
+}
+
+static void test_read_canary_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
+  CanaryType read_canary = 0;
+  read_canary = *canary_ptr;
+}
+
+static void test_write_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
+  *footer_ptr = 1;
+}
+
+static void test_read_footer_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
+  CanaryType read_footer = *footer_ptr;
+}
+
+static void test_write_size_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  size_t* size_ptr = (size_t*)(mh);
+  *size_ptr = 1;
+}
+
+static void test_read_size_after_realloc() {
+  const size_t SIZE = 10;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  p = (char*)os::realloc(p, 2 * SIZE, mtTest);
+  MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
+  size_t* size_ptr = (size_t*)(mh);
+  size_t read_size = *size_ptr;
+}
+
+
+DEFINE_ASAN_TEST(test_write_canary);
+DEFINE_ASAN_TEST(test_read_canary);
+DEFINE_ASAN_TEST(test_write_footer);
+DEFINE_ASAN_TEST(test_read_footer);
+DEFINE_ASAN_TEST(test_write_size);
+DEFINE_ASAN_TEST(test_read_size);
+DEFINE_ASAN_TEST(test_write_canary_after_realloc);
+DEFINE_ASAN_TEST(test_read_canary_after_realloc);
+DEFINE_ASAN_TEST(test_write_footer_after_realloc);
+DEFINE_ASAN_TEST(test_read_footer_after_realloc);
+DEFINE_ASAN_TEST(test_write_size_after_realloc);
+DEFINE_ASAN_TEST(test_read_size_after_realloc);
+
+static void test_poison_local() {
+  uint16_t a;
+  ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
+  a = 2;
+}
+
+DEFINE_ASAN_TEST(test_poison_local);
+
+TEST_VM(NMT_ASAN, test_poison_when_no_asan) {
+  uint16_t a;
+  {
+    AsanPoisoner<void> pm((char*)&a);
+    a = 2;
+    EXPECT_EQ(a, 2);
+  }
+  a = 3;
+  EXPECT_EQ(a, 3);
+}
+
+TEST_VM(NMT_ASAN, poison_no_death) {
+  uint16_t a;
+  ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
+  {
+    AsanPoisoner<uint16_t> pm((char*)&a);
+    a = 2;
+    EXPECT_EQ(a, 2);
+  }
 }
 #endif // !INCLUDE_ASAN
