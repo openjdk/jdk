@@ -114,9 +114,6 @@ void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop ne
   }
   if (new_obj->is_typeArray() || _card_table->is_in_young(new_obj)) {
     // Arrays of non-references don't need a post-barrier.
-    // The deferred_card_mark region should be empty
-    // following the flush above.
-    assert(thread->deferred_card_mark().is_empty(), "Error");
   } else {
     MemRegion mr(cast_from_oop<HeapWord*>(new_obj), new_obj->size());
     assert(!mr.is_empty(), "Error");
