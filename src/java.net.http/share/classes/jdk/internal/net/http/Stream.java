@@ -1877,6 +1877,9 @@ class Stream<T> extends ExchangeImpl<T> {
             // We arrange for the request to be retried on a new connection as allowed by the RFC-9113
             this.exchange.markUnprocessedByPeer();
             this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
+            // an unprocessed request must never have been marked as responseReceived
+            assert responseReceived == false :
+                    "unexpected state - responseReceived=true for a request marked as unprocessed";
             if (debug.on()) {
                 debug.log("closing " + this.request + " as unprocessed by peer");
             }
