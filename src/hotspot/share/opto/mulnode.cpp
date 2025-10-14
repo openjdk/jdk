@@ -1222,7 +1222,7 @@ const Type* LShiftNode::ValueIL(PhaseGVN* phase, BasicType bt) const {
   }
 
   uint shift = r2->get_con();
-  shift &= bits_per_java_integer(bt)-1;  // semantics of Java shifts
+  shift &= bits_per_java_integer(bt) - 1;  // semantics of Java shifts
   // Shift by a multiple of 32/64 does nothing:
   if (shift == 0) {
     return t1;
