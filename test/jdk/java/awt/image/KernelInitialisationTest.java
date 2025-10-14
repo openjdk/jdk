@@ -65,8 +65,8 @@ public class KernelInitialisationTest {
         testKernel(-1, -1, new float[100], IllegalArgumentException.class);
         testKernel(1, 1, null, IllegalArgumentException.class);
 
-        int width = 5000;
-        int height = Integer.MAX_VALUE;
+        int width = 65536;
+        int height = 65536;
         testKernel(width, height, new float[100], ArithmeticException.class);
 
         if (failed) {
