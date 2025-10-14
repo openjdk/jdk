@@ -46,7 +46,7 @@ import java.util.Arrays;
  *
  * Note, you may want to play with "-XX:-OptimizeFill" for the fill benchmarks, so that we do
  * not use the fill-intrinsic, but auto-vectorize. Though I'm currently not seeing a difference,
- * maybe the loop is not recognized properly? TODO: investigate.
+ * maybe the loop is not recognized properly? Maybe the alignment "randomization" prevents it.
  *
  * Please also look at the companion benchmark:
  *   VectorBulkOperationsMemorySegment.java
