@@ -313,10 +313,11 @@ enum NamedGroup {
             try {
                 // Skip AlgorithmParameters for KEMs (not supported)
                 if (namedGroupSpec == NamedGroupSpec.NAMED_GROUP_KEM) {
-                    if (defaultProviderName == null) {
+                    Provider p = getProvider();
+                    if (p == null) {
                         KeyFactory.getInstance(name);
                     } else {
-                        KeyFactory.getInstance(name, DH.PROVIDER);
+                        KeyFactory.getInstance(name, p);
                     }
                 } else {
                     // ECDHE or others: use AlgorithmParameters as before
