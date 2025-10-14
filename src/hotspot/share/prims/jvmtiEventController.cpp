@@ -35,7 +35,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1223,21 +1222,13 @@ JvmtiEventController::vm_death() {
     JvmtiEventControllerPrivate::vm_death();
   }
 
-  // The deferred events are already posted, so it is needed to wait until
-  // they are actually posted on the ServiceThrea
-  ServiceThread::flush_deferred_events_queue();
-
   const double start = os::elapsedTime();
   const double max_wait_time = 60 * 60 * 1000;
-
-  for (JavaThreadIteratorWithHandle jtiwh; JavaThread *t = jtiwh.next(); ) {
-    if (t->is_inside_jvmti_env_iteration()) {
-      os::naked_short_sleep(100);
-      if (os::elapsedTime() - start > max_wait_time) {
-        assert(!t->is_inside_jvmti_env_iteration(), "The event processing time is too long.");
-        break;
-      }
+  while (JvmtiExport::in_callback_count() > 0) {
+    os::naked_short_sleep(1000);
+    if (os::elapsedTime() - start > max_wait_time) {
+      assert(JvmtiExport::in_callback_count()== 0, "The event processing time is too long.");
+      break;
     }
   }
-
 }
