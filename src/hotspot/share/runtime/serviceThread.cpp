@@ -192,7 +192,7 @@ void ServiceThread::flush_deferred_events_queue() {
   // All jvmti events should be already disabled before calling this method.
   while (true) {
     MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    if (!_jvmti_service_queue.has_events()) {
+    if (!_jvmti_service_queue.has_events() && _jvmti_event == nullptr) {
       break;
     }
     Service_lock->notify_all();
