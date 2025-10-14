@@ -37,11 +37,11 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @test
  * @bug 8369505
  * @requires vm.hasSA
- * @requires (os.arch == "amd64" | os.arch == "aarch64" | os.arch == "riscv64")
+ * @requires (os.arch == "amd64" | os.arch == "x86_64" | os.arch == "aarch64" | os.arch == "riscv64")
  * @library /test/lib
- * @run driver TestJhsdbJstackMixedWithVirtualThread
+ * @run driver TestJhsdbJstackWithVirtualThread
  */
-public class TestJhsdbJstackMixedWithVirtualThread {
+public class TestJhsdbJstackWithVirtualThread {
 
     private static void runJstackMixed(LingeredApp app) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
@@ -60,6 +60,7 @@ public class TestJhsdbJstackMixedWithVirtualThread {
         System.err.println(out.getStderr());
 
         out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.shouldNotContain("must have non-zero frame size");
     }
 
     public static void main(String... args) throws Exception {
