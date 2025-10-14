@@ -1626,7 +1626,7 @@ static void invalidate_jvmti_stack(JavaThread* thread) {
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::has_frame_pops(thread)) {
+  if (!cont.entry()->is_virtual_thread() && JvmtiExport::has_frame_pops(thread)) {
     int num_frames = num_java_frames(cont);
 
     ContinuationWrapper::SafepointOp so(Thread::current(), cont);
