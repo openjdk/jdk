@@ -209,7 +209,7 @@ public final class InternalLocaleBuilder {
             }
 
             if (UnicodeLocaleExtension.isSingletonChar(key.value())) {
-                setUnicodeLocaleExtension(val, true);
+                setUnicodeLocaleExtension(val, false);
             } else {
                 if (extensions == null) {
                     extensions = new HashMap<>(4);
