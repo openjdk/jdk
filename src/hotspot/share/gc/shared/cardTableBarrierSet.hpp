@@ -47,9 +47,6 @@ class CardTableBarrierSet: public ModRefBarrierSet {
 
 protected:
   typedef CardTable::CardValue CardValue;
-  // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2
-  // or INCLUDE_JVMCI is being used
-  bool       _defer_initial_card_mark;
   CardTable* _card_table;
 
   CardTableBarrierSet(BarrierSetAssembler* barrier_set_assembler,
@@ -64,13 +61,10 @@ public:
 
   CardTable* card_table() const { return _card_table; }
 
-  void initialize();
-
   void write_region(JavaThread* thread, MemRegion mr) {
     write_region(mr);
   }
 
- public:
   // Record a reference update. Note that these versions are precise!
   // The scanning code has to handle the fact that the write barrier may be
   // either precise or imprecise. We make non-virtual inline variants of
@@ -80,18 +74,7 @@ public:
 
   virtual void write_region(MemRegion mr);
 
-  // ReduceInitialCardMarks
-  void initialize_deferred_card_mark_barriers();
-
-  // If the CollectedHeap was asked to defer a store barrier above,
-  // this informs it to flush such a deferred store barrier to the
-  // remembered set.
-  void flush_deferred_card_mark_barrier(JavaThread* thread);
-
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
-  virtual void on_thread_detach(Thread* thread);
-
-  virtual void make_parsable(JavaThread* thread) { flush_deferred_card_mark_barrier(thread); }
 
   virtual void print_on(outputStream* st) const;
 
