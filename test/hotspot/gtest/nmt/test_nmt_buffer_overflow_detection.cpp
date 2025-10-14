@@ -321,7 +321,7 @@ DEFINE_ASAN_TEST(test_poison_local);
 TEST_VM(NMT_ASAN, test_poison_when_no_asan) {
   uint16_t a;
   {
-    AsanPoisoner<void> pm((char*)&a);
+    AsanPoisoningHelper<void> pm((char*)&a);
     a = 2;
     EXPECT_EQ(a, 2);
   }
@@ -333,7 +333,7 @@ TEST_VM(NMT_ASAN, poison_no_death) {
   uint16_t a;
   ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
   {
-    AsanPoisoner<uint16_t> pm((char*)&a);
+    AsanPoisoningHelper<uint16_t> pm(&a);
     a = 2;
     EXPECT_EQ(a, 2);
   }
