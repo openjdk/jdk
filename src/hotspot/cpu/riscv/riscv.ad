@@ -2152,10 +2152,6 @@ RegMask Matcher::modL_proj_mask() {
   return RegMask();
 }
 
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
-}
-
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
   assert_cond(addp != nullptr);
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
@@ -10995,6 +10991,7 @@ instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI ba
                          iRegLNoSp tmp3, iRegLNoSp tmp4,
                          iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
 %{
+  predicate(!UseRVV);
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
          USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);
