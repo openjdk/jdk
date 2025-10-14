@@ -111,7 +111,6 @@ body {
     --invalid-tag-text-color: #000000;
     --icon-filter: none;
     --caption-link-color: var(--subnav-link-color);
-    --toc-highlight-color: #dee3e9;
 }
 
 body.theme-dark {
@@ -158,7 +157,6 @@ body.theme-dark {
     --button-focus-filter: brightness(104%);
     --invalid-tag-background-color: #ffe6e6;
     --invalid-tag-text-color: #000000;
-    --toc-highlight-color: #3d454d;
     --icon-filter: invert(100%) brightness(160%);
     --caption-link-color: var(--link-color);
 }
@@ -695,7 +693,6 @@ dl.name-value > dd {
     background-color: var(--toc-background-color);
     color: #666666;
     font-size: 0.76rem;
-    border: none;
     cursor: pointer;
     padding: 6px 10px;
     white-space: nowrap;
