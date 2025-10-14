@@ -40,19 +40,48 @@ public class TestCountBitsRange {
     private static final Generator<Integer> INTS = Generators.G.ints();
     private static final Generator<Long> LONGS = Generators.G.longs();
 
-    private static final int[] LIMITS_32 = new int[8];
-    private static final int[] LIMITS_64 = new int[8];
+    private static final int LIMITS_32_0;
+    private static final int LIMITS_32_1;
+    private static final int LIMITS_32_2;
+    private static final int LIMITS_32_3;
+    private static final int LIMITS_32_4;
+    private static final int LIMITS_32_5;
+    private static final int LIMITS_32_6;
+    private static final int LIMITS_32_7;
 
-    private static final Range<Integer> RANGE_INT = Range.generate(INTS);
-    private static final Range<Long> RANGE_LONG = Range.generate(LONGS);
+    private static final int LIMITS_64_0;
+    private static final int LIMITS_64_1;
+    private static final int LIMITS_64_2;
+    private static final int LIMITS_64_3;
+    private static final int LIMITS_64_4;
+    private static final int LIMITS_64_5;
+    private static final int LIMITS_64_6;
+    private static final int LIMITS_64_7;
+
+    private static final IntRange RANGE_INT = IntRange.generate(INTS);
+    private static final LongRange RANGE_LONG = LongRange.generate(LONGS);
 
     static {
         var INTS_32 = Generators.G.ints().restricted(0, 32);
         var INTS_64 = Generators.G.ints().restricted(0, 64);
-        for (int i = 0; i < 8; ++i) {
-            LIMITS_32[i] = INTS_32.next();
-            LIMITS_64[i] = INTS_64.next();
-        }
+
+        LIMITS_32_0 = INTS_32.next();
+        LIMITS_32_1 = INTS_32.next();
+        LIMITS_32_2 = INTS_32.next();
+        LIMITS_32_3 = INTS_32.next();
+        LIMITS_32_4 = INTS_32.next();
+        LIMITS_32_5 = INTS_32.next();
+        LIMITS_32_6 = INTS_32.next();
+        LIMITS_32_7 = INTS_32.next();
+
+        LIMITS_64_0 = INTS_64.next();
+        LIMITS_64_1 = INTS_64.next();
+        LIMITS_64_2 = INTS_64.next();
+        LIMITS_64_3 = INTS_64.next();
+        LIMITS_64_4 = INTS_64.next();
+        LIMITS_64_5 = INTS_64.next();
+        LIMITS_64_6 = INTS_64.next();
+        LIMITS_64_7 = INTS_64.next();
     }
 
     public static void main(String[] args) {
@@ -180,17 +209,17 @@ public class TestCountBitsRange {
 
     // Test the output range of CLZ with random input range.
     @Test
-    public int clzRandLimitInt(int randInt) {
+     public int clzRandLimitInt(int randInt) {
         randInt = RANGE_INT.clamp(randInt);
         int result = Integer.numberOfLeadingZeros(randInt);
-        return getResultChecksum(result, LIMITS_32);
+        return getResultChecksum32(result);
     }
 
     @DontCompile
     public int clzRandLimitInterpretedInt(int randInt) {
         randInt = RANGE_INT.clamp(randInt);
         int result = Integer.numberOfLeadingZeros(randInt);
-        return getResultChecksum(result, LIMITS_32);
+        return getResultChecksum32(result);
     }
 
     // Test CLZ with constant long inputs.
@@ -294,14 +323,14 @@ public class TestCountBitsRange {
     public int clzRandLimitLong(long randLong) {
         randLong = RANGE_LONG.clamp(randLong);
         int result = Long.numberOfLeadingZeros(randLong);
-        return getResultChecksum(result, LIMITS_64);
+        return getResultChecksum64(result);
     }
 
     @DontCompile
     public int clzRandLimitInterpretedLong(long randLong) {
         randLong = RANGE_LONG.clamp(randLong);
         int result = Long.numberOfLeadingZeros(randLong);
-        return getResultChecksum(result, LIMITS_64);
+        return getResultChecksum64(result);
     }
 
     // Test CTZ with constant integer inputs.
@@ -373,14 +402,14 @@ public class TestCountBitsRange {
     public int ctzRandLimitInt(int randInt) {
         randInt = RANGE_INT.clamp(randInt);
         int result = Integer.numberOfTrailingZeros(randInt);
-        return getResultChecksum(result, LIMITS_32);
+        return getResultChecksum32(result);
     }
 
     @DontCompile
     public int ctzRandLimitInterpretedInt(int randInt) {
         randInt = RANGE_INT.clamp(randInt);
         int result = Integer.numberOfTrailingZeros(randInt);
-        return getResultChecksum(result, LIMITS_32);
+        return getResultChecksum32(result);
     }
 
     // Test CTZ with constant long inputs.
@@ -484,41 +513,77 @@ public class TestCountBitsRange {
     public int ctzRandLimitLong(long randLong) {
         randLong = RANGE_LONG.clamp(randLong);
         int result = Long.numberOfLeadingZeros(randLong);
-        return getResultChecksum(result, LIMITS_64);
+        return getResultChecksum64(result);
     }
 
     @DontCompile
     public int ctzRandLimitInterpretedLong(long randLong) {
         randLong = RANGE_LONG.clamp(randLong);
         int result = Long.numberOfLeadingZeros(randLong);
-        return getResultChecksum(result, LIMITS_64);
+        return getResultChecksum64(result);
     }
 
-    record Range<T extends Comparable<T>>(T lo, T hi) {
-        Range {
-            if (lo.compareTo(hi) > 0) {
+    record IntRange(int lo, int hi) {
+        IntRange {
+            if (lo > hi) {
                 throw new IllegalArgumentException("lo > hi");
             }
         }
 
         @ForceInline
-        T clamp(T v) {
-            return v.compareTo(lo) < 0 ? lo :
-                   v.compareTo(hi) > 0 ? hi : v;
+        int clamp(int v) {
+            return v < lo ? lo : v > hi ? hi : v;
         }
 
-        static <T extends Comparable<T>> Range generate(Generator<T> g) {
-            T a = g.next(), b = g.next();
-            return a.compareTo(b) < 0 ? new Range(a, b) : new Range(b, a);
+        static IntRange generate(Generator<Integer> g) {
+            int a = g.next(), b = g.next();
+            return a < b ? new IntRange(a, b) : new IntRange(b, a);
         }
     }
 
-    int getResultChecksum(int result, int[] LIMITS) {
-        int sum = 0;
-        for (int i = 0; i < LIMITS.length; i += 2) {
-            if (result < LIMITS[i]) sum += 1 << i;
-            if (result > LIMITS[i + 1]) sum += 1 << (i + 1);
+    record LongRange(long lo, long hi) {
+        LongRange {
+            if (lo > hi) {
+                throw new IllegalArgumentException("lo > hi");
+            }
         }
+
+        @ForceInline
+        long clamp(long v) {
+            return v < lo ? lo : v > hi ? hi : v;
+        }
+
+        static LongRange generate(Generator<Long> g) {
+            long a = g.next(), b = g.next();
+            return a < b ? new LongRange(a, b) : new LongRange(b, a);
+        }
+    }
+
+    @ForceInline
+    int getResultChecksum32(int result) {
+        int sum = 0;
+        if (result < LIMITS_32_0) sum += 1;
+        if (result < LIMITS_32_1) sum += 2;
+        if (result < LIMITS_32_2) sum += 4;
+        if (result < LIMITS_32_3) sum += 8;
+        if (result > LIMITS_32_4) sum += 16;
+        if (result > LIMITS_32_5) sum += 32;
+        if (result > LIMITS_32_6) sum += 64;
+        if (result > LIMITS_32_7) sum += 128;
+        return sum;
+    }
+
+    @ForceInline
+    int getResultChecksum64(int result) {
+        int sum = 0;
+        if (result < LIMITS_64_0) sum += 1;
+        if (result < LIMITS_64_1) sum += 2;
+        if (result < LIMITS_64_2) sum += 4;
+        if (result < LIMITS_64_3) sum += 8;
+        if (result > LIMITS_64_4) sum += 16;
+        if (result > LIMITS_64_5) sum += 32;
+        if (result > LIMITS_64_6) sum += 64;
+        if (result > LIMITS_64_7) sum += 128;
         return sum;
     }
 }
