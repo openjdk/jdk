@@ -2627,7 +2627,7 @@ void G1CollectedHeap::flush_region_pin_cache() {
 
 void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) {
   assert_at_safepoint_on_vm_thread();
-  guarantee(!is_stw_gc_active(), "collection is not reentrant");
+  assert(!is_stw_gc_active(), "collection is not reentrant");
 
   ResourceMark rm;
 
