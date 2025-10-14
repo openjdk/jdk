@@ -56,7 +56,6 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -143,18 +142,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
-}
-
-void SerialHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void SerialHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
 }
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
@@ -292,27 +279,44 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   return result;
 }
 
+HeapWord* SerialHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
+  HeapWord* result = _young_gen->par_allocate(size);
+  if (result != nullptr) {
+    return result;
+  }
+  // Try old-gen allocation for non-TLAB.
+  if (!is_tlab) {
+    // If it's too large for young-gen or heap is too full.
+    if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
+      result = _old_gen->par_allocate(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
 
   for (uint try_count = 1; /* break */; try_count++) {
-    result = _young_gen->par_allocate(size);
+    result = mem_allocate_cas_noexpand(size, is_tlab);
     if (result != nullptr) {
       break;
-    }
-    // Try old-gen allocation for non-TLAB.
-    if (!is_tlab) {
-      // If it's too large for young-gen or heap is too full.
-      if (size > heap_word_size(_young_gen->capacity_before_gc()) || _is_heap_almost_full) {
-        result = _old_gen->par_allocate(size);
-        if (result != nullptr) {
-          break;
-        }
-      }
     }
     uint gc_count_before;  // Read inside the Heap_lock locked region.
     {
       MutexLocker ml(Heap_lock);
+
+      // Re-try after acquiring the lock, because a GC might have occurred
+      // while waiting for this lock.
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        break;
+      }
+
       gc_count_before = total_collections();
     }
 
@@ -321,6 +325,11 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size, bool is_tlab) {
     if (op.gc_succeeded()) {
       result = op.result();
       break;
+    }
+
+    if (is_shutting_down()) {
+      stall_for_vm_shutdown();
+      return nullptr;
     }
 
     // Give a warning if we seem to be looping forever.
@@ -757,7 +766,7 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  _young_gen->gc_epilogue(full);
+  _young_gen->gc_epilogue();
   _old_gen->gc_epilogue();
 
   if (_is_heap_almost_full) {

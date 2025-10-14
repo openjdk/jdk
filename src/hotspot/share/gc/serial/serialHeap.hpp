@@ -222,6 +222,7 @@ private:
   // Try to allocate space by expanding the heap.
   HeapWord* expand_heap_and_allocate(size_t size, bool is_tlab);
 
+  HeapWord* mem_allocate_cas_noexpand(size_t size, bool is_tlab);
   HeapWord* mem_allocate_work(size_t size, bool is_tlab);
 
   MemoryPool* _eden_pool;
@@ -256,9 +257,6 @@ public:
 
   void scan_evacuated_objs(YoungGenScanClosure* young_cl,
                            OldGenScanClosure* old_cl);
-
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
 
   // Support for loading objects from CDS archive into the heap
   bool can_load_archived_objects() const override { return true; }

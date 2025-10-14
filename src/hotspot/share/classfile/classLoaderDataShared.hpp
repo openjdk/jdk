@@ -27,6 +27,7 @@
 
 #include "memory/allStatic.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/macros.hpp"
 
 class ClassLoaderData;
 class MetaspaceClosure;
@@ -37,6 +38,7 @@ class ClassLoaderDataShared : AllStatic {
   static bool _full_module_graph_loaded;
   CDS_JAVA_HEAP_ONLY(static void ensure_module_entry_table_exists(oop class_loader);)
 public:
+  static void restore_archived_modules_for_preloading_classes(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN;
 #if INCLUDE_CDS_JAVA_HEAP
   static void ensure_module_entry_tables_exist();
   static void allocate_archived_tables();

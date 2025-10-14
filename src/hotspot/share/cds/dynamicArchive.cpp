@@ -395,11 +395,6 @@ public:
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit() {
     ResourceMark rm;
-    if (AllowArchivingWithJavaAgent) {
-      aot_log_warning(aot)("This %s was created with AllowArchivingWithJavaAgent. It should be used "
-                       "for testing purposes only and should not be used in a production environment",
-                       CDSConfig::type_of_archive_being_loaded());
-    }
     AOTClassLocationConfig::dumptime_check_nonempty_dirs();
     _builder.doit();
   }
@@ -443,8 +438,6 @@ void DynamicArchive::setup_array_klasses() {
   if (_dynamic_archive_array_klasses != nullptr) {
     for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
       ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
-      assert(!oak->is_typeArray_klass(), "all type array classes must be in static archive");
-
       Klass* elm = oak->element_klass();
       assert(AOTMetaspace::in_aot_cache_static_region((void*)elm), "must be");
 
