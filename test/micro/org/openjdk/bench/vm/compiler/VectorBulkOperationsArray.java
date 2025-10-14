@@ -60,8 +60,8 @@ import java.util.Arrays;
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 2, time = 500, timeUnit = TimeUnit.MILLISECONDS)
-@Measurement(iterations = 3, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Warmup(iterations = 3, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(value = 1)
 public class VectorBulkOperationsArray {
     @Param({  "0", "8", "256", "10000" })
@@ -111,7 +111,10 @@ public class VectorBulkOperationsArray {
     // - write region
     // We should make sure that the region is a multiple of 4k, so that the
     // 4k-aliasing prevention trick can work.
-    public static final int REGION_SIZE = 1024 * 1024 * 32;
+    //
+    // It would be ince to set REGION_SIZE statically, but we want to keep it rather small if possible,
+    // to avoid running out of cache. But it might be quite large if NUM_ACCESS_ELEMENTS is large.
+    public static int REGION_SIZE = -1024;
     public static final int REGION_2_BYTE_OFFSET = 1024 * 2; // prevent 4k-aliasing
 
     // The arrays with the two regions each
@@ -134,15 +137,25 @@ public class VectorBulkOperationsArray {
 
     // Number of repetitions, to randomize the offsets.
     public static final int REPETITIONS = 64 * 64;
-    private int[] offsets_load;
-    private int[] offsets_store;
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int offsetLoad(int i) { return i % 64; }
+
+    @CompilerControl(CompilerControl.Mode.INLINE)
+    public static int offsetStore(int i) { return (i / 64) % 64; }
 
     @Param("42")
     private int seed;
     private Random r = new Random(seed);
 
+    public static int roundUp4k(int i) {
+        return (i + 4*1024-1) & (-4*1024);
+    }
+
     @Setup
     public void init() {
+        // Make sure we can fit the longs, and then some whiggle room for alignment.
+        REGION_SIZE = roundUp4k(NUM_ACCESS_ELEMENTS * 8 + 1024 + REGION_2_BYTE_OFFSET);
         aB = new byte[2 * REGION_SIZE];
         aC = new char[2 * REGION_SIZE];
         aS = new short[2 * REGION_SIZE];
@@ -160,20 +173,12 @@ public class VectorBulkOperationsArray {
             aF[i] = r.nextFloat();
             aD[i] = r.nextDouble();
         }
-
-        offsets_load = new int[REPETITIONS];
-        offsets_store = new int[REPETITIONS];
-        for (int i = 0; i < REPETITIONS; i++) {
-            // Make sure it is predictable and uniform.
-            offsets_load[i] = i % 64;
-            offsets_store[i] = (i / 64) % 64;
-        }
     }
 
     @Benchmark
     public void fill_zero_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
-            int offset_store = offsets_store[r] + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
                 aB[i + offset_store] = 0;
             }
@@ -183,7 +188,7 @@ public class VectorBulkOperationsArray {
     @Benchmark
     public void fill_var_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
-            int offset_store = offsets_store[r] + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
                 aB[i + offset_store] = varB;
             }
@@ -193,7 +198,7 @@ public class VectorBulkOperationsArray {
     @Benchmark
     public void fill_zero_byte_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
-            int offset_store = offsets_store[r] + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             Arrays.fill(aB, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (byte)0);
         }
     }
@@ -201,7 +206,7 @@ public class VectorBulkOperationsArray {
     @Benchmark
     public void fill_var_byte_arrays_fill() {
         for (int r = 0; r < REPETITIONS; r++) {
-            int offset_store = offsets_store[r] + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             Arrays.fill(aB, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varB);
         }
     }
@@ -209,8 +214,8 @@ public class VectorBulkOperationsArray {
     @Benchmark
     public void copy_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
-            int offset_load = offsets_load[r];
-            int offset_store = offsets_store[r] + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
                 aB[i + offset_store] = aB[i + offset_load];
             }
@@ -220,8 +225,8 @@ public class VectorBulkOperationsArray {
     @Benchmark
     public void copy_byte_system_arraycopy() {
         for (int r = 0; r < REPETITIONS; r++) {
-            int offset_load = offsets_load[r];
-            int offset_store = offsets_store[r] + REGION_SIZE + REGION_2_BYTE_OFFSET;
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             System.arraycopy(aB, offset_load, aB, offset_store, NUM_ACCESS_ELEMENTS);
         }
     }
