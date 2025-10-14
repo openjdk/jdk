@@ -68,62 +68,8 @@ class VM_Version : public Abstract_VM_Version {
     uint64_t feature_bit()        { return _linux_feature_bit; }
     bool feature_string()         { return _feature_string; }
     int64_t value()               { return _value; }
-    // For non-ext flags, they don't have dependency relationship among each other,
-    // in this situation, just return the default value -1.
-    virtual int dependent_index() { return -1; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
-
-   protected:
-    bool deps_all_enabled(RVFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-
-      va_list va;
-      va_start(va, dep0);
-      RVFeatureValue* next = dep0;
-      bool enabled = true;
-      while (next != nullptr && enabled) {
-        enabled = next->enabled();
-        next = va_arg(va, RVFeatureValue*);
-      }
-      va_end(va);
-      return enabled;
-    }
-
-    void deps_string(stringStream& ss, RVFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
-
-      va_list va;
-      va_start(va, dep0);
-      RVFeatureValue* next = nullptr;
-      while ((next = va_arg(va, RVFeatureValue*)) != nullptr) {
-        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
-      }
-      va_end(va);
-    }
-
-#ifndef PRODUCT
-    void verify_deps(RVFeatureValue* dep0, ...) {
-      assert(dep0 != nullptr, "must not");
-      assert(dependent_index() >= 0, "must");
-
-      va_list va;
-      va_start(va, dep0);
-      RVFeatureValue* next = dep0;
-      while (next != nullptr) {
-        assert(next->dependent_index() >= 0, "must");
-        // We only need to check depenency relationship for extension flags.
-        // The dependant ones must be declared before this, for example, v must be declared
-        // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
-        // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
-        // based on v.
-        assert(dependent_index() > next->dependent_index(), "Invalid");
-        next = va_arg(va, RVFeatureValue*);
-      }
-      va_end(va);
-    }
-#endif // PRODUCT
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -175,6 +121,7 @@ class VM_Version : public Abstract_VM_Version {
 
   class RVExtFeatureValue : public RVFeatureValue {
     const uint32_t _cpu_feature_index;
+
    public:
     RVExtFeatureValue(const char* pretty, int linux_bit_num, uint32_t cpu_feature_index, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
@@ -196,6 +143,57 @@ class VM_Version : public Abstract_VM_Version {
       RVFeatureValue::disable_feature();
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
+
+   protected:
+    bool deps_all_enabled(RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = dep0;
+      bool enabled = true;
+      while (next != nullptr && enabled) {
+        enabled = next->enabled();
+        next = va_arg(va, RVExtFeatureValue*);
+      }
+      va_end(va);
+      return enabled;
+    }
+
+    void deps_string(stringStream& ss, RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      ss.print("%s (%s)", dep0->pretty(), dep0->enabled() ? "enabled" : "disabled");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = nullptr;
+      while ((next = va_arg(va, RVExtFeatureValue*)) != nullptr) {
+        ss.print(", %s (%s)", next->pretty(), next->enabled() ? "enabled" : "disabled");
+      }
+      va_end(va);
+    }
+
+#ifndef PRODUCT
+    void verify_deps(RVExtFeatureValue* dep0, ...) {
+      assert(dep0 != nullptr, "must not");
+      assert(dependent_index() >= 0, "must");
+
+      va_list va;
+      va_start(va, dep0);
+      RVExtFeatureValue* next = dep0;
+      while (next != nullptr) {
+        assert(next->dependent_index() >= 0, "must");
+        // We only need to check depenency relationship for extension flags.
+        // The dependant ones must be declared before this, for example, v must be declared
+        // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
+        // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
+        // based on v.
+        assert(dependent_index() > next->dependent_index(), "Invalid");
+        next = va_arg(va, RVExtFeatureValue*);
+      }
+      va_end(va);
+    }
+#endif // PRODUCT
   };
 
   class RVNonExtFeatureValue : public RVFeatureValue {
