@@ -43,7 +43,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  */
 public class TestJhsdbJstackWithVirtualThread {
 
-    private static void runJstackMixed(LingeredApp app) throws Exception {
+    private static void runJstack(LingeredApp app) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
         launcher.addVMArgs(Utils.getTestJavaOpts());
         launcher.addToolArg("jstack");
@@ -71,7 +71,7 @@ public class TestJhsdbJstackWithVirtualThread {
             app = new LingeredAppWithVirtualThread();
             LingeredApp.startApp(app);
             System.out.println("Started LingeredApp with pid " + app.getPid());
-            runJstackMixed(app);
+            runJstack(app);
             System.out.println("Test Completed");
         } catch (Throwable e) {
             e.printStackTrace();
