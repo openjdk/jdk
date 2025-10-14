@@ -28,7 +28,7 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm -Duser.language=en i18n
+ * @run main/manual/othervm -Duser.language=en -Duser.country=USA i18n
  */
 
 /*
@@ -38,7 +38,7 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm -Duser.language=de i18n
+ * @run main/manual/othervm -Duser.language=de -Duser.country=DE i18n
  */
 
 /*
@@ -48,7 +48,7 @@
  * @author charlie lai
  * @modules java.base/sun.security.tools.keytool
  * @library /test/lib
- * @run main/manual/othervm -Duser.language=ja i18n
+ * @run main/manual/othervm -Duser.language=ja -Duser.country=JP i18n
  */
 
 /*
