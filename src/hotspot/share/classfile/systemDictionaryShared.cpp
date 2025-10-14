@@ -855,19 +855,14 @@ public:
   }
 };
 
-void SystemDictionaryShared::link_if_necessary(InstanceKlass* ik) {
+void SystemDictionaryShared::link_all_exclusion_check_candidates(InstanceKlass* ik) {
   bool need_to_link = false;
   {
     MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
     ExclusionCheckCandidates candidates(ik);
 
     candidates.iterate_all([&] (InstanceKlass* k, DumpTimeClassInfo* info) {
-      if (!k->is_linked() && k != ik) {
-        if (log_is_enabled(Info, aot, link)) {
-          ResourceMark rm;
-          log_info(aot, link)("For %s, the dependency %s is not linked",
-                               ik->external_name(), k->external_name());
-        }
+      if (!k->is_linked()) {
         need_to_link = true;
       }
     });
@@ -914,7 +909,7 @@ bool SystemDictionaryShared::should_be_excluded(Klass* k) {
         }
       }
 
-      link_if_necessary(ik);
+      link_all_exclusion_check_candidates(ik);
 
       MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
       DumpTimeClassInfo* p = get_info_locked(ik);
