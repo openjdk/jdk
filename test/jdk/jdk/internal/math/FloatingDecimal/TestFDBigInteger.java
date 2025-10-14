@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import jdk.internal.math.FDBigIntegerChecker;
 
 /*
