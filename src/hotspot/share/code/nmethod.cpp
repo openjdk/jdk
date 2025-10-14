@@ -65,7 +65,6 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/init.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -2520,11 +2519,6 @@ void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
       m->signature()->utf8_length(),
       insts_begin(), insts_size());
 
-  if (!is_init_completed()) {
-    // We may come here from AOTLinkedClassBulkLoader::link_classes(). At that point,
-    // init is not completed and JVMTI events cannot be posted.
-    return;
-  }
 
   if (JvmtiExport::should_post_compiled_method_load()) {
     // Only post unload events if load events are found.

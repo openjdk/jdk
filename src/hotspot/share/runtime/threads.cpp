@@ -746,6 +746,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // and other cleanups.  Needs to start before the compilers start posting events.
   ServiceThread::initialize();
 
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::post_delayed_events();
+  }
+
   // Start the monitor deflation thread:
   MonitorDeflationThread::initialize();
 

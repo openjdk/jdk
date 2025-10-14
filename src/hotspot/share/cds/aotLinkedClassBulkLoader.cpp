@@ -34,6 +34,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmClasses.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "memory/resourceArea.hpp"
@@ -42,6 +43,8 @@
 #include "oops/trainingData.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/serviceThread.hpp"
+#include "utilities/growableArray.hpp"
 
 void AOTLinkedClassBulkLoader::serialize(SerializeClosure* soc) {
   AOTLinkedClassTable::get()->serialize(soc);
@@ -328,6 +331,32 @@ void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Arra
   }
 
   HeapShared::init_classes_for_special_subgraph(class_loader, CHECK);
+}
+
+static GrowableArrayCHeap<nmethod*, mtClassShared>* _delayed_compiled_method_load_events = nullptr;
+
+// With AOT-linked classes, we could compile nmethods before the ServiceThread
+// has been started, so we must delay the events to be posted later.
+void AOTLinkedClassBulkLoader::add_delayed_compiled_method_load_event(nmethod* nm) {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  precond(!ServiceThread::has_started());
+
+  // We are still in single threaded stage of VM bootstrap. No need to lock.
+  if (_delayed_compiled_method_load_events == nullptr) {
+    _delayed_compiled_method_load_events = new GrowableArrayCHeap<nmethod*, mtClassShared>();
+  }
+  _delayed_compiled_method_load_events->append(nm);
+}
+
+void AOTLinkedClassBulkLoader::post_delayed_events() {
+  if (_delayed_compiled_method_load_events != nullptr) {
+    for (int i = 0; i < _delayed_compiled_method_load_events->length(); i++) {
+      nmethod* nm = _delayed_compiled_method_load_events->at(i);
+      nm->post_compiled_method_load_event();
+    }
+    delete _delayed_compiled_method_load_events;
+    _delayed_compiled_method_load_events = nullptr;
+  }
 }
 
 void AOTLinkedClassBulkLoader::replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) {

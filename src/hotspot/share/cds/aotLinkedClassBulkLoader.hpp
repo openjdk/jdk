@@ -34,6 +34,7 @@
 class AOTLinkedClassTable;
 class ClassLoaderData;
 class InstanceKlass;
+class nmethod;
 class SerializeClosure;
 template <typename T> class Array;
 enum class AOTLinkedClassCategory : int;
@@ -74,6 +75,8 @@ public:
   static void init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
 
+  static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
+  static void post_delayed_events() NOT_CDS_RETURN;
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;
 };
 

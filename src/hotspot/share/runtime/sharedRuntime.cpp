@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "classfile/classLoader.hpp"
@@ -69,6 +70,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -3211,7 +3213,11 @@ void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
       ttyLocker ttyl;
       CompileTask::print(tty, nm, msg);
     }
-    nm->post_compiled_method_load_event();
+    if (!ServiceThread::has_started()) {
+      AOTLinkedClassBulkLoader::add_delayed_compiled_method_load_event(nm);
+    } else {
+      nm->post_compiled_method_load_event();
+    }
   }
 }
 
