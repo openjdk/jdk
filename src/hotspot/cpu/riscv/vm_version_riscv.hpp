@@ -103,6 +103,7 @@ class VM_Version : public Abstract_VM_Version {
       va_end(va);
     }
 
+#ifndef PRODUCT
     void verify_deps(RVFeatureValue* dep0, ...) {
       assert(dep0 != nullptr, "must not");
       assert(dependent_index() >= 0, "must");
@@ -122,6 +123,7 @@ class VM_Version : public Abstract_VM_Version {
       }
       va_end(va);
     }
+#endif // PRODUCT
   };
 
   #define UPDATE_DEFAULT(flag)           \
@@ -140,7 +142,7 @@ class VM_Version : public Abstract_VM_Version {
   #define UPDATE_DEFAULT_DEP(flag, dep0, ...)                                                               \
   void update_flag() {                                                                                      \
       assert(enabled(), "Must be.");                                                                        \
-      verify_deps(dep0, ##__VA_ARGS__);                                                                     \
+      DEBUG_ONLY(verify_deps(dep0, ##__VA_ARGS__));                                                         \
       if (FLAG_IS_DEFAULT(flag)) {                                                                          \
         if (deps_all_enabled(dep0, ##__VA_ARGS__)) {                                                        \
           FLAG_SET_DEFAULT(flag, true);                                                                     \
