@@ -215,21 +215,52 @@ public class AbsPathsInImage {
     }
 
     private void scanFile(Path file) throws IOException {
+        List<Match> matches;
         try (InputStream inputStream = Files.newInputStream(file)) {
-            scanBytes(inputStream, file + ":");
+            matches = scanBytes(inputStream);
+        }
+        // test succeeds
+        if (matches.size() == 0) {
+            return;
+        }
+        // test fails; pay penalty and re-scan file for debug output
+        try (InputStream inputStream = Files.newInputStream(file)) {
+            printDebugOutput(inputStream, matches, file + ":");
         }
     }
 
     private void scanZipFile(Path zipFile) throws IOException {
+        List<List<Match>> entryMatches = new ArrayList<>();
+        boolean found = false;
+        ZipEntry zipEntry;
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
-            ZipEntry zipEntry;
             while ((zipEntry = zipInputStream.getNextEntry()) != null) {
-                scanBytes(zipInputStream, zipFile + ", " + zipEntry.getName() + ":");
+                List<Match> matches = scanBytes(zipInputStream);
+                if (matches.size() > 0) {
+                    entryMatches.add(matches);
+                    found = true;
+                } else {
+                    entryMatches.add(null);
+                }
+            }
+        }
+        // test succeeds
+        if (!found) {
+            return;
+        }
+        try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
+            int i = 0;
+            while ((zipEntry = zipInputStream.getNextEntry()) != null) {
+                List<Match> matches = entryMatches.get(i);
+                i++;
+                if (matches != null) {
+                    printDebugOutput(zipInputStream, matches, zipFile + ", " + zipEntry.getName() + ":");
+                }
             }
         }
     }
 
-    private void scanBytes(InputStream input, final String HEADER) throws IOException {
+    private List<Match> scanBytes(InputStream input) throws IOException {
         List<Match> matches = new ArrayList<>();
         byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
         int[] states = new int[searchPatterns.size()];
@@ -250,18 +281,18 @@ public class AbsPathsInImage {
                 }
             }
         }
-        // test succeeds; common case
-        if (matches.size() == 0) {
-            return;
-        }
-        // test fails; pay penalty and re-scan file
+        return matches;
+    }
+
+    private void printDebugOutput(InputStream input, List<Match> matches, final String HEADER) throws IOException{
         matchFound = true;
         System.out.println(HEADER);
         matches.sort(comparing(Match::begin));
         ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
         int matchIdx = 0;
-        fileIdx = 0;
-        input.reset();
+        int fileIdx = 0;
+        int bytesRead;
         while (matchIdx < matches.size() && (bytesRead = input.read(buf)) != -1) {
             for (int i = 0; matchIdx < matches.size() && i < bytesRead; i++, fileIdx++) {
                 byte datum = buf[i];
