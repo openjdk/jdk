@@ -127,9 +127,8 @@ class VM_Version : public Abstract_VM_Version {
       RVFeatureValue(pretty, linux_bit_num, fstring),
       _cpu_feature_index(cpu_feature_index) {
     }
-    int dependent_index() {
-      // Use _cpu_feature_index as dependent_index, it can be used to check for example v is declared
-      // before Zvfh in RV_EXT_FEATURE_FLAGS.
+    int cpu_feature_index() {
+      // Can be used to check, for example, v is declared before Zvfh in RV_EXT_FEATURE_FLAGS.
       return _cpu_feature_index;
     }
     bool enabled() {
@@ -176,19 +175,19 @@ class VM_Version : public Abstract_VM_Version {
 #ifndef PRODUCT
     void verify_deps(RVExtFeatureValue* dep0, ...) {
       assert(dep0 != nullptr, "must not");
-      assert(dependent_index() >= 0, "must");
+      assert(cpu_feature_index() >= 0, "must");
 
       va_list va;
       va_start(va, dep0);
       RVExtFeatureValue* next = dep0;
       while (next != nullptr) {
-        assert(next->dependent_index() >= 0, "must");
+        assert(next->cpu_feature_index() >= 0, "must");
         // We only need to check depenency relationship for extension flags.
         // The dependant ones must be declared before this, for example, v must be declared
         // before Zvfh in RV_EXT_FEATURE_FLAGS. The reason is in setup_cpu_available_features
         // we need to make sure v is `update_flag`ed before Zvfh, so Zvfh is `update_flag`ed
         // based on v.
-        assert(dependent_index() > next->dependent_index(), "Invalid");
+        assert(cpu_feature_index() > next->cpu_feature_index(), "Invalid");
         next = va_arg(va, RVExtFeatureValue*);
       }
       va_end(va);
