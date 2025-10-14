@@ -57,6 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
+ * @bug 8369812
  * @summary verify that when the server sends a request reset with H3_REQUEST_REJECTED as the
  *          error code, then the HttpClient rightly reissues that request afresh
  * @library /test/lib /test/jdk/java/net/httpclient/lib
