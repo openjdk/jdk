@@ -170,7 +170,7 @@ TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") 
   }
   const size_t SIZE = 1024;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  *(p -1) = 0;
+  *(p - 1) = 0;
   os::free(p);
 }
 
