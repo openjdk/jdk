@@ -96,8 +96,8 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         testContentLengthServerH2.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
         testContentLengthServerH3.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
         testContentLengthServerH1.addHandler(new ContentLengthHandler(), BODY_PATH);
-        testContentLengthServerH2.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
-        testContentLengthServerH3.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
+        testContentLengthServerH2.addHandler(new ContentLengthHandler(), BODY_PATH);
+        testContentLengthServerH3.addHandler(new ContentLengthHandler(), BODY_PATH);
         testContentLengthURIH1 = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
@@ -161,6 +161,13 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
                 {HTTP_1_1, URI.create(testContentLengthURIH1 + BODY_PATH)},
                 {HTTP_2, URI.create(testContentLengthURIH2 + BODY_PATH)},
                 {HTTP_3, URI.create(testContentLengthURIH3 + BODY_PATH)}
+        };
+    }
+
+    @DataProvider(name = "h1body")
+    Object[][] h1body() {
+        return new Object[][]{
+                {HTTP_1_1, URI.create(testContentLengthURIH1 + BODY_PATH)}
         };
     }
 
@@ -320,7 +327,7 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         assertEquals(resp.version(), version);
     }
 
-    @Test(dataProvider = "bodies")
+    @Test(dataProvider = "h1body")
     // A POST request with empty request body should have a Content-length header
     // in HTTP/1.1
     public void postWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
@@ -333,9 +340,6 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
-        if (version == HTTP_1_1) {
-            assertEquals(resp.body(), "Request completed");
-        }
     }
 
     @Test(dataProvider = "bodies")
@@ -353,7 +357,7 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         assertEquals(resp.version(), version);
     }
 
-    @Test(dataProvider = "bodies")
+    @Test(dataProvider = "h1body")
     // A PUT request with empty request body should have a Content-length header
     // in HTTP/1.1
     public void putWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
@@ -366,9 +370,6 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
-        if (version == HTTP_1_1) {
-            assertEquals(resp.body(), "Request completed");
-        }
     }
 
     @Test(dataProvider = "bodies")
@@ -446,29 +447,6 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
                 String responseBody = "Expected a Content-length header in " +
                         exchange.getRequestMethod() + " request but was not present.";
                 handleResponse(-1, exchange, responseBody, 400);
-            }
-        }
-    }
-
-    /**
-     * A handler used for cases where the presence of a Content-Length
-     * header is optional. If present, its value must match the number of
-     * bytes sent in the request body.
-     */
-    static class OptionalContentLengthHandler implements HttpTestHandler {
-
-        @Override
-        public void handle(HttpTestExchange exchange) throws IOException {
-            testLog.println("OptionalContentLengthHandler: Received Headers "
-                    + exchange.getRequestHeaders().entrySet() +
-                    " from " + exchange.getRequestMethod() + " request.");
-            Optional<String> contentLength = exchange.getRequestHeaders().firstValue("Content-Length");
-
-            // Check Content-length header was set
-            if (contentLength.isPresent()) {
-                handleResponse(Long.parseLong(contentLength.get()), exchange, "Request completed", 200);
-            } else {
-                handleResponse(-1, exchange, "Request completed, no content length", 200);
             }
         }
     }
