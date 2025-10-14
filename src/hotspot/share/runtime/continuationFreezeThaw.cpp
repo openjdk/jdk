@@ -2739,9 +2739,9 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
 
   if (UNLIKELY(seen_by_gc())) {
     if (is_top && _process_args_at_top) {
-      _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_with_args());  
+      _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_with_args());
     } else {
-      _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_no_args());  
+      _cont.tail()->do_barriers<stackChunkOopDesc::BarrierType::Store>(_stream, SmallRegisterMap::instance_no_args());
     }
   }
 
@@ -2998,7 +2998,7 @@ void ThawBase::finish_thaw(frame& f) {
   if (_process_args_at_top) {
     chunk->fix_thawed_frame(f, SmallRegisterMap::instance_with_args());
   } else {
-    chunk->fix_thawed_frame(f, SmallRegisterMap::instance_no_args());  
+    chunk->fix_thawed_frame(f, SmallRegisterMap::instance_no_args());
   }
 
   assert(_cont.is_empty() == _cont.last_frame().is_empty(), "");

@@ -218,7 +218,7 @@ inline void AnchorMark::anchor_mark_clear_pd() {
     intptr_t* sp = _top_frame.sp();
     if (sp != _last_sp_from_frame) {
       sp[-1] = (intptr_t)_top_frame.pc();
-    }  
+    }
   }
 }
 
