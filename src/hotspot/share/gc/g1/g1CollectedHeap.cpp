@@ -2564,13 +2564,6 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 
-void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) {
-  assert_at_safepoint_on_vm_thread();
-  guarantee(!is_stw_gc_active(), "collection is not reentrant");
-
-  do_collection_pause_at_safepoint_helper(allocation_word_size);
-}
-
 G1HeapPrinterMark::G1HeapPrinterMark(G1CollectedHeap* g1h) : _g1h(g1h), _heap_transition(g1h) {
   // This summary needs to be printed before incrementing total collections.
   _g1h->rem_set()->print_periodic_summary_info("Before GC RS summary",
@@ -2632,7 +2625,10 @@ void G1CollectedHeap::flush_region_pin_cache() {
   }
 }
 
-void G1CollectedHeap::do_collection_pause_at_safepoint_helper(size_t allocation_word_size) {
+void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_size) {
+  assert_at_safepoint_on_vm_thread();
+  guarantee(!is_stw_gc_active(), "collection is not reentrant");
+
   ResourceMark rm;
 
   IsSTWGCActiveMark active_gc_mark;
