@@ -976,6 +976,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             }
             throw ie;
         } catch (ExecutionException e) {
+            // Exceptions are often thrown from asynchronous code, making it
+            // difficult to trace back to the user's original entry point.
+            // Wrap exceptions explicitly to preserve that context.
             final Throwable throwable = e.getCause();
             final String msg = throwable.getMessage();
 
