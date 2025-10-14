@@ -100,7 +100,7 @@ class KQueueSelectorImpl extends SelectorImpl {
 
     @Override
     protected int doSelect(Consumer<SelectionKey> action, long timeout)
-            throws IOException
+        throws IOException
     {
         assert Thread.holdsLock(this);
 
@@ -232,7 +232,7 @@ class KQueueSelectorImpl extends SelectorImpl {
      * If the interrupt fd has been selected, drain it and clear the interrupt.
      */
     private int processEvents(int numEntries, Consumer<SelectionKey> action)
-            throws IOException
+        throws IOException
     {
         assert Thread.holdsLock(this);
 

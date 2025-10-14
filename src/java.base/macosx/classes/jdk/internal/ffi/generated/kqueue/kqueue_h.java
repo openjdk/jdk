@@ -84,8 +84,7 @@ public class kqueue_h {
     }
 
     private static class kqueue {
-        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-                FFMUtils.C_INT);
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(FFMUtils.C_INT);
 
         public static final MemorySegment ADDR = FFMUtils.findOrThrow("kqueue");
 
@@ -140,13 +139,13 @@ public class kqueue_h {
 
     private static class kevent {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-                FFMUtils.C_INT,
-                FFMUtils.C_INT,
-                FFMUtils.C_POINTER,
-                FFMUtils.C_INT,
-                FFMUtils.C_POINTER,
-                FFMUtils.C_INT,
-                FFMUtils.C_POINTER
+            FFMUtils.C_INT,
+            FFMUtils.C_INT,
+            FFMUtils.C_POINTER,
+            FFMUtils.C_INT,
+            FFMUtils.C_POINTER,
+            FFMUtils.C_INT,
+            FFMUtils.C_POINTER
         );
 
         public static final MemorySegment ADDR = FFMUtils.findOrThrow("kevent");

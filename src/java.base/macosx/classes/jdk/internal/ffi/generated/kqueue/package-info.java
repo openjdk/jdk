@@ -47,7 +47,7 @@
  * }
  *
  * After generation of native bindings, the layouts for the C builtin layouts and other
- * variables/methods not specific to a component area are moved to the {@code BindingUtils} class
+ * variables/methods not specific to a component area are moved to the {@code FFMUtils} class
  * for future reusability.
  *
  */

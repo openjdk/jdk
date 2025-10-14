@@ -62,12 +62,12 @@ public class kevent {
     }
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-            FFMUtils.align(FFMUtils.C_LONG, 4).withName("ident"),
-            FFMUtils.C_SHORT.withName("filter"),
-            FFMUtils.C_SHORT.withName("flags"),
-            FFMUtils.C_INT.withName("fflags"),
-            FFMUtils.align(FFMUtils.C_LONG, 4).withName("data"),
-            FFMUtils.align(FFMUtils.C_POINTER, 4).withName("udata")
+        FFMUtils.align(FFMUtils.C_LONG, 4).withName("ident"),
+        FFMUtils.C_SHORT.withName("filter"),
+        FFMUtils.C_SHORT.withName("flags"),
+        FFMUtils.C_INT.withName("fflags"),
+        FFMUtils.align(FFMUtils.C_LONG, 4).withName("data"),
+        FFMUtils.align(FFMUtils.C_POINTER, 4).withName("udata")
     ).withName("kevent");
 
     /**

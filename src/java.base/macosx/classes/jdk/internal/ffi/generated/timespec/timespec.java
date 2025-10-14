@@ -51,8 +51,8 @@ public class timespec {
     }
 
     private static final GroupLayout $LAYOUT = MemoryLayout.structLayout(
-            FFMUtils.C_LONG.withName("tv_sec"),
-            FFMUtils.C_LONG.withName("tv_nsec")
+        FFMUtils.C_LONG.withName("tv_sec"),
+        FFMUtils.C_LONG.withName("tv_nsec")
     ).withName("timespec");
 
     /**

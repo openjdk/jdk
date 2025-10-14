@@ -51,10 +51,10 @@ public class errno_h {
 
     private static class strerror_r {
         public static final FunctionDescriptor DESC = FunctionDescriptor.of(
-                FFMUtils.C_INT,
-                FFMUtils.C_INT,
-                FFMUtils.C_POINTER,
-                FFMUtils.C_LONG
+            FFMUtils.C_INT,
+            FFMUtils.C_INT,
+            FFMUtils.C_POINTER,
+            FFMUtils.C_LONG
         );
 
         public static final MemorySegment ADDR = FFMUtils.findOrThrow("strerror_r");
