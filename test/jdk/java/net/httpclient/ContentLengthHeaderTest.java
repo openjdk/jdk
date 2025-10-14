@@ -333,6 +333,9 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
+        if (version == HTTP_1_1) {
+            assertEquals(resp.body(), "Request completed");
+        }
     }
 
     @Test(dataProvider = "bodies")
@@ -363,6 +366,9 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
+        if (version == HTTP_1_1) {
+            assertEquals(resp.body(), "Request completed");
+        }
     }
 
     @Test(dataProvider = "bodies")
