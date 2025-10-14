@@ -5135,7 +5135,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         r.assertInvoked();
     }}
 
-    public void testJoinOnlyAssistsIfInTheSamePool() throws Exception{
+    public void testOnlyAssistsIfInTheSamePool() throws Exception{
         class Logic {
             interface Extractor { ForkJoinPool pool(CompletableFuture<ForkJoinPool> cf) throws Exception; }
             static final List<ForkJoinPool> executeInnerOuter(
