@@ -958,9 +958,6 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         // by RFC-9114, section 5.2
         this.exchange.markUnprocessedByPeer();
         this.errorRef.compareAndSet(null, new IOException("request not processed by peer"));
-        // an unprocessed request must never have been marked as responseReceived
-        assert responseReceived == false :
-                "unexpected state - responseReceived=true for a request marked as unprocessed";
         // close the exchange and complete the response CF exceptionally
         close();
         completeResponseExceptionally(this.errorRef.get());
