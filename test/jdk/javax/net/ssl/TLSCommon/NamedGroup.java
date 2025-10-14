@@ -37,10 +37,10 @@ public enum NamedGroup {
     FFDHE3072("ffdhe3072"),
     FFDHE4096("ffdhe4096"),
     FFDHE6144("ffdhe6144"),
-    FFDHE8192("ffdhe8192");
+    FFDHE8192("ffdhe8192"),
 
-    X25519MLKEM768("X25519MLKEM768);
-    SecP256r1MLKEM768("SecP256r1MLKEM768");
+    X25519MLKEM768("X25519MLKEM768"),
+    SecP256r1MLKEM768("SecP256r1MLKEM768"),
     SecP384r1MLKEM1024("SecP384r1MLKEM1024");
 
     public final String name;
