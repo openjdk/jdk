@@ -1079,7 +1079,7 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
 
       // Left input is an add of a constant?
       const TypeInteger* t12 = phase->type(add1->in(2))->isa_integer(bt);
-      if (t12 && t12->is_con()) { // Left input is an add of a con?
+      if (t12 != nullptr && t12->is_con()) { // Left input is an add of a con?
         // Compute X << con0
         Node *lsh = phase->transform(LShiftNode::make( add1->in(1), in(2), bt));
         // Compute X<<con0 + (con1<<con0)
