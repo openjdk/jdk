@@ -210,9 +210,6 @@ class JvmtiExport : public AllStatic {
   // dependency information is complete or not.
   static bool _all_dependencies_are_recorded;
 
-  // This field is used to wait until all event callbacks are finished.
-  volatile static int   _in_callback_count;
-
   static void post_method_exit_inner(JavaThread* thread,
                                      methodHandle& mh,
                                      JvmtiThreadState *state,
@@ -417,18 +414,6 @@ class JvmtiExport : public AllStatic {
     if (should_post_vm_object_alloc()) {
       record_vm_internal_object_allocation(object);
     }
-  }
-
-  static void inc_in_callback_count() {
-    AtomicAccess::inc(&_in_callback_count);
-  }
-  static void dec_in_callback_count() {
-    AtomicAccess::dec(&_in_callback_count);
-  }
-  static int in_callback_count() {
-    int result = AtomicAccess::load(&_in_callback_count);
-    assert(result >= 0, "Should be positive");
-    return result;
   }
 
   // Used by C2 to deoptimize allocation intrinsics and post vm_object_alloc

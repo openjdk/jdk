@@ -111,7 +111,6 @@ private:
 
 public:
   JvmtiThreadEventTransition(Thread *thread) : _rm(), _hm(thread) {
-    JvmtiExport::inc_in_callback_count();
     if (thread->is_Java_thread()) {
        _jthread = JavaThread::cast(thread);
        _saved_state = _jthread->thread_state();
@@ -126,10 +125,8 @@ public:
   }
 
   ~JvmtiThreadEventTransition() {
-    if (_jthread != nullptr) {
+    if (_jthread != nullptr)
       ThreadStateTransition::transition_from_native(_jthread, _saved_state);
-    }
-    JvmtiExport::dec_in_callback_count();
   }
 };
 

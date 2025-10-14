@@ -186,7 +186,19 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   assert(_instance != nullptr, "cannot enqueue events before the service thread runs");
   _jvmti_service_queue.enqueue(*event);
   Service_lock->notify_all();
- }
+}
+
+void ServiceThread::flush_deferred_events_queue() {
+  // All jvmti events should be already disabled before calling this method.
+  while (true) {
+      MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+      if (!_jvmti_service_queue.has_events()) {
+        break;
+      }
+      Service_lock->notify_all();
+      os::naked_short_sleep(100);
+  }
+}
 
 void ServiceThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   JavaThread::oops_do_no_frames(f, cf);
