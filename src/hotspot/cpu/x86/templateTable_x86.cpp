@@ -2196,7 +2196,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   const Register temp = rbx;
   assert_different_registers(cache, index, temp);
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
 
@@ -2220,13 +2220,13 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
     const Register method = temp;
     const Register klass  = temp;
 
-    __ jcc(Assembler::notEqual, Lclinit_barrier_slow);
+    __ jcc(Assembler::notEqual, L_clinit_barrier_slow);
     __ movptr(method, Address(cache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, &Ldone, /*L_slow_path*/ nullptr);
-    __ bind(Lclinit_barrier_slow);
+    __ clinit_barrier(klass, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
   } else {
-    __ jcc(Assembler::equal, Ldone);
+    __ jcc(Assembler::equal, L_done);
   }
 
   // resolve first time through
@@ -2236,7 +2236,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ call_VM(noreg, entry, temp);
   // Update registers with resolved info
   __ load_method_entry(cache, index);
-  __ bind(Ldone);
+  __ bind(L_done);
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
@@ -2245,7 +2245,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   const Register temp = rbx;
   assert_different_registers(cache, index, temp);
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2268,12 +2268,12 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
       (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
     const Register field_holder = temp;
 
-    __ jcc(Assembler::notEqual, Lclinit_barrier_slow);
+    __ jcc(Assembler::notEqual, L_clinit_barrier_slow);
     __ movptr(field_holder, Address(cache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-    __ clinit_barrier(field_holder, &Ldone, /*L_slow_path*/ nullptr);
-    __ bind(Lclinit_barrier_slow);
+    __ clinit_barrier(field_holder, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
   } else {
-    __ jcc(Assembler::equal, Ldone);
+    __ jcc(Assembler::equal, L_done);
   }
 
   // resolve first time through
@@ -2283,7 +2283,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   __ call_VM(noreg, entry, temp);
   // Update registers with resolved info
   __ load_field_entry(cache, index);
-  __ bind(Ldone);
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,

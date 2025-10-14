@@ -2180,7 +2180,7 @@ void TemplateTable::_return(TosState state) {
 void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rcache, Register Rscratch) {
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
   Register Rindex = Rscratch;
 
   Bytecodes::Code code = bytecode();
@@ -2191,7 +2191,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
   __ lbz(Rscratch, bytecode_offset, Rcache);
   // Acquire by cmp-br-isync (see below).
   __ cmpdi(CR0, Rscratch, (int)code);
-  __ bne(CR0, Lclinit_barrier_slow);
+  __ bne(CR0, L_clinit_barrier_slow);
 
   __ isync(); // Order load wrt. succeeding loads.
 
@@ -2202,26 +2202,26 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no, Register Rca
 
     __ ld(method, in_bytes(ResolvedMethodEntry::method_offset()), Rcache);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
+    __ clinit_barrier(klass, R16_thread, &L_done, /*L_slow_path*/ nullptr);
   } else {
-    __ b(Ldone);
+    __ b(L_done);
   }
 
   // Class initialization barrier slow path lands here as well.
-  __ bind(Lclinit_barrier_slow);
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
   __ call_VM(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info.
   __ load_method_entry(Rcache, Rindex);
-  __ bind(Ldone);
+  __ bind(L_done);
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcache, Register index) {
   assert_different_registers(Rcache, index);
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2236,7 +2236,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
                                          : in_bytes(ResolvedFieldEntry::put_code_offset());
   __ lbz(R0, code_offset, Rcache);
   __ cmpwi(CR0, R0, (int)code); // have we resolved this bytecode?
-  __ bne(CR0, Lclinit_barrier_slow);
+  __ bne(CR0, L_clinit_barrier_slow);
 
   __ isync(); // Order load wrt. succeeding loads.
 
@@ -2249,21 +2249,21 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no, Register Rcac
     // We have seen the released put_code above and will read the corresponding field_holder and init_state
     // (ordered by compare-branch-isync).
     __ ld(field_holder, ResolvedFieldEntry::field_holder_offset(), Rcache);
-    __ clinit_barrier(field_holder, R16_thread, &Ldone, /*L_slow_path*/ nullptr);
+    __ clinit_barrier(field_holder, R16_thread, &L_done, /*L_slow_path*/ nullptr);
   } else {
-    __ b(Ldone);
+    __ b(L_done);
   }
 
   // resolve first time through
   // Class initialization barrier slow path lands here as well.
-  __ bind(Lclinit_barrier_slow);
+  __ bind(L_clinit_barrier_slow);
   address entry = CAST_FROM_FN_PTR(address, InterpreterRuntime::resolve_from_cache);
   __ li(R4_ARG2, code);
   __ call_VM(noreg, entry, R4_ARG2);
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
-  __ bind(Ldone);
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,

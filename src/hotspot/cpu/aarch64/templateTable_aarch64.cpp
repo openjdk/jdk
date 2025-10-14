@@ -2269,7 +2269,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index, temp);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   __ load_method_entry(Rcache, index);
@@ -2287,13 +2287,13 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
 
   // Class initialization barrier for static methods
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
-    __ br(Assembler::NE, Lclinit_barrier_slow);
+    __ br(Assembler::NE, L_clinit_barrier_slow);
     __ ldr(temp, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(temp, temp);
-    __ clinit_barrier(temp, rscratch1, &Ldone, /*L_slow_path*/ nullptr);
-    __ bind(Lclinit_barrier_slow);
+    __ clinit_barrier(temp, rscratch1, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
   } else {
-    __ br(Assembler::EQ, Ldone);
+    __ br(Assembler::EQ, L_done);
   }
 
   // resolve first time through
@@ -2306,7 +2306,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   __ load_method_entry(Rcache, index);
   // n.b. unlike x86 Rcache is now rcpool plus the indexed offset
   // so all clients ofthis method must be modified accordingly
-  __ bind(Ldone);
+  __ bind(L_done);
 }
 
 void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
@@ -2315,7 +2315,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   const Register temp = r19;
   assert_different_registers(Rcache, index, temp);
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2340,12 +2340,12 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
       (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
     const Register field_holder = temp;
 
-    __ br(Assembler::NE, Lclinit_barrier_slow);
+    __ br(Assembler::NE, L_clinit_barrier_slow);
     __ ldr(field_holder, Address(Rcache, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-    __ clinit_barrier(field_holder, rscratch1, &Ldone, /*L_slow_path*/ nullptr);
-    __ bind(Lclinit_barrier_slow);
+    __ clinit_barrier(field_holder, rscratch1, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
   } else {
-    __ br(Assembler::EQ, Ldone);
+    __ br(Assembler::EQ, L_done);
   }
 
   // resolve first time through
@@ -2356,7 +2356,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
 
   // Update registers with resolved info
   __ load_field_entry(Rcache, index);
-  __ bind(Ldone);
+  __ bind(L_done);
 }
 
 void TemplateTable::load_resolved_field_entry(Register obj,

@@ -2360,7 +2360,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   assert_different_registers(Rcache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2380,13 +2380,13 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   if (VM_Version::supports_fast_class_init_checks() && bytecode() == Bytecodes::_invokestatic) {
     const Register method = Z_R1_scratch;
     const Register klass  = Z_R1_scratch;
-    __ z_brne(Lclinit_barrier_slow);
+    __ z_brne(L_clinit_barrier_slow);
     __ z_lg(method, Address(Rcache, in_bytes(ResolvedMethodEntry::method_offset())));
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, Z_thread, &Ldone, /*L_slow_path*/ nullptr);
-    __ bind(Lclinit_barrier_slow);
+    __ clinit_barrier(klass, Z_thread, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
   } else {
-    __ z_bre(Ldone);
+    __ z_bre(L_done);
   }
 
   // Resolve first time through
@@ -2398,7 +2398,7 @@ void TemplateTable::resolve_cache_and_index_for_method(int byte_no,
   // Update registers with resolved info.
   __ load_method_entry(Rcache, index);
 
-  __ bind(Ldone);
+  __ bind(L_done);
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_method");
 }
@@ -2411,7 +2411,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   assert_different_registers(cache, index);
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
 
-  Label Lclinit_barrier_slow, Ldone;
+  Label L_clinit_barrier_slow, L_done;
 
   Bytecodes::Code code = bytecode();
   switch (code) {
@@ -2431,12 +2431,12 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
       (bytecode() == Bytecodes::_getstatic || bytecode() == Bytecodes::_putstatic)) {
     const Register field_holder = index;
 
-    __ z_brne(Lclinit_barrier_slow);
+    __ z_brne(L_clinit_barrier_slow);
     __ load_sized_value(field_holder, Address(cache, ResolvedFieldEntry::field_holder_offset()), sizeof(void*), false);
-    __ clinit_barrier(field_holder, Z_thread, &Ldone, /*L_slow_path*/ nullptr);
-    __ bind(Lclinit_barrier_slow);
+    __ clinit_barrier(field_holder, Z_thread, &L_done, /*L_slow_path*/ nullptr);
+    __ bind(L_clinit_barrier_slow);
   } else {
-    __ z_bre(Ldone);
+    __ z_bre(L_done);
   }
 
   // resolve first time through
@@ -2448,7 +2448,7 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
   // Update registers with resolved info.
   __ load_field_entry(cache, index);
 
-  __ bind(Ldone);
+  __ bind(L_done);
 
   BLOCK_COMMENT("} resolve_cache_and_index_for_field");
 }
