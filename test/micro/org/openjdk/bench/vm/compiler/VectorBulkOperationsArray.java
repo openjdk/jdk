@@ -49,6 +49,8 @@ import java.util.Arrays;
  * make test TEST="micro:vm.compiler.VectorBulkOperationsArray.copy_byte.*" CONF=linux-x64 TEST_VM_OPTS="-XX:+OptimizeFill -XX:UseAVX=2" MICRO="FORK=3;OPTIONS=-prof perfasm -p NUM_ACCESS_ELEMENTS=10000"
  * make test TEST="micro:vm.compiler.VectorBulkOperationsArray.copy_byte.*" CONF=linux-x64 TEST_VM_OPTS="-XX:+OptimizeFill -XX:UseAVX=3 -XX:LoopMaxUnroll=64" MICRO="FORK=3;OPTIONS=-prof perfasm -p NUM_ACCESS_ELEMENTS=10000"
  *
+ * make test TEST="micro:VectorBulkOperationsArray.copy_.*_loop" CONF=linux-x64 TEST_VM_OPTS="-XX:+UnlockDiagnosticVMOptions -XX:AutoVectorizationOverrideProfitability=1" MICRO="OPTIONS=-p NUM_ACCESS_ELEMENTS=1,2,3,4,8,16,32,64"
+ *
  * TODO: observations
  * - Arrays.fill is sensitive to OptimizeFill, loop version not. That's a little strange, would have expected it to get replaced by stub.
  *   They do use different vector instructions though on AVX512, but same vector length. Maybe it is also the loops of auto-vec that
@@ -115,7 +117,13 @@ public class VectorBulkOperationsArray {
     // It would be ince to set REGION_SIZE statically, but we want to keep it rather small if possible,
     // to avoid running out of cache. But it might be quite large if NUM_ACCESS_ELEMENTS is large.
     public static int REGION_SIZE = -1024;
-    public static final int REGION_2_BYTE_OFFSET = 1024 * 2; // prevent 4k-aliasing
+    public static final int REGION_2_BYTE_OFFSET   = 1024 * 2; // prevent 4k-aliasing
+    public static final int REGION_2_SHORT_OFFSET  = REGION_2_BYTE_OFFSET / 2;
+    public static final int REGION_2_CHAR_OFFSET   = REGION_2_BYTE_OFFSET / 2;
+    public static final int REGION_2_INT_OFFSET    = REGION_2_BYTE_OFFSET / 4;
+    public static final int REGION_2_LONG_OFFSET   = REGION_2_BYTE_OFFSET / 8;
+    public static final int REGION_2_FLOAT_OFFSET  = REGION_2_BYTE_OFFSET / 4;
+    public static final int REGION_2_DOUBLE_OFFSET = REGION_2_BYTE_OFFSET / 8;
 
     // The arrays with the two regions each
     private byte[] aB;
@@ -175,6 +183,8 @@ public class VectorBulkOperationsArray {
         }
     }
 
+    // -------------------------------- BYTE ------------------------------
+
     @Benchmark
     public void fill_zero_byte_loop() {
         for (int r = 0; r < REPETITIONS; r++) {
@@ -228,6 +238,354 @@ public class VectorBulkOperationsArray {
             int offset_load = offsetLoad(r);
             int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_BYTE_OFFSET;
             System.arraycopy(aB, offset_load, aB, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- CHAR ------------------------------
+
+    @Benchmark
+    public void fill_zero_char_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aC[i + offset_store] = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_var_char_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aC[i + offset_store] = varC;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_zero_char_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
+            Arrays.fill(aC, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (char)0);
+        }
+    }
+
+    @Benchmark
+    public void fill_var_char_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
+            Arrays.fill(aC, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varC);
+        }
+    }
+
+    @Benchmark
+    public void copy_char_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aC[i + offset_store] = aC[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_char_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_CHAR_OFFSET;
+            System.arraycopy(aC, offset_load, aC, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- SHORT ------------------------------
+
+    @Benchmark
+    public void fill_zero_short_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aS[i + offset_store] = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_var_short_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aS[i + offset_store] = varS;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_zero_short_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
+            Arrays.fill(aS, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (short)0);
+        }
+    }
+
+    @Benchmark
+    public void fill_var_short_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
+            Arrays.fill(aS, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varS);
+        }
+    }
+
+    @Benchmark
+    public void copy_short_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aS[i + offset_store] = aS[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_short_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_SHORT_OFFSET;
+            System.arraycopy(aS, offset_load, aS, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- INT ------------------------------
+
+    @Benchmark
+    public void fill_zero_int_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aI[i + offset_store] = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_var_int_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aI[i + offset_store] = varI;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_zero_int_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
+            Arrays.fill(aI, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (int)0);
+        }
+    }
+
+    @Benchmark
+    public void fill_var_int_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
+            Arrays.fill(aI, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varI);
+        }
+    }
+
+    @Benchmark
+    public void copy_int_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aI[i + offset_store] = aI[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_int_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_INT_OFFSET;
+            System.arraycopy(aI, offset_load, aI, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- LONG ------------------------------
+
+    @Benchmark
+    public void fill_zero_long_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aL[i + offset_store] = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_var_long_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aL[i + offset_store] = varL;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_zero_long_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
+            Arrays.fill(aL, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (long)0);
+        }
+    }
+
+    @Benchmark
+    public void fill_var_long_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
+            Arrays.fill(aL, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varL);
+        }
+    }
+
+    @Benchmark
+    public void copy_long_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aL[i + offset_store] = aL[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_long_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_LONG_OFFSET;
+            System.arraycopy(aL, offset_load, aL, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- FLOAT ------------------------------
+
+    @Benchmark
+    public void fill_zero_float_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aF[i + offset_store] = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_var_float_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aF[i + offset_store] = varF;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_zero_float_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
+            Arrays.fill(aF, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (float)0);
+        }
+    }
+
+    @Benchmark
+    public void fill_var_float_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
+            Arrays.fill(aF, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varF);
+        }
+    }
+
+    @Benchmark
+    public void copy_float_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aF[i + offset_store] = aF[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_float_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_FLOAT_OFFSET;
+            System.arraycopy(aF, offset_load, aF, offset_store, NUM_ACCESS_ELEMENTS);
+        }
+    }
+
+    // -------------------------------- DOUBLE ------------------------------
+
+    @Benchmark
+    public void fill_zero_double_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aD[i + offset_store] = 0;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_var_double_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aD[i + offset_store] = varD;
+            }
+        }
+    }
+
+    @Benchmark
+    public void fill_zero_double_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
+            Arrays.fill(aD, offset_store, offset_store + NUM_ACCESS_ELEMENTS, (double)0);
+        }
+    }
+
+    @Benchmark
+    public void fill_var_double_arrays_fill() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
+            Arrays.fill(aD, offset_store, offset_store + NUM_ACCESS_ELEMENTS, varD);
+        }
+    }
+
+    @Benchmark
+    public void copy_double_loop() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
+            for (int i = 0; i < NUM_ACCESS_ELEMENTS; i++) {
+                aD[i + offset_store] = aD[i + offset_load];
+            }
+        }
+    }
+
+    @Benchmark
+    public void copy_double_system_arraycopy() {
+        for (int r = 0; r < REPETITIONS; r++) {
+            int offset_load = offsetLoad(r);
+            int offset_store = offsetStore(r) + REGION_SIZE + REGION_2_DOUBLE_OFFSET;
+            System.arraycopy(aD, offset_load, aD, offset_store, NUM_ACCESS_ELEMENTS);
         }
     }
 }
