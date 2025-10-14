@@ -5287,16 +5287,6 @@ void PhaseIdealLoop::build_and_optimize() {
     }
   }
 
-  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
-  if (C->has_loops() && !C->major_progress()) {
-    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-      IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted() && lpt->is_innermost()) {
-        move_unordered_reduction_out_of_loop(lpt);
-      }
-    }
-  }
-
   // Keep loop predicates and perform optimizations with them
   // until no more loop optimizations could be done.
   // After that switch predicates off and do more loop optimizations.
