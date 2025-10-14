@@ -534,13 +534,6 @@ static unsigned thread_native_entry(void* t) {
   OSThread* osthr = thread->osthread();
   assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
 
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
-
   // Diagnostic code to investigate JDK-6573254
   int res = 30115;  // non-java thread
   if (thread->is_Java_thread()) {
@@ -597,13 +590,6 @@ static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle,
   // Store info on the Win32 thread into the OSThread
   osthread->set_thread_handle(thread_handle);
   osthread->set_thread_id(thread_id);
-
-  if (UseNUMA) {
-    int lgrp_id = os::numa_get_group_id();
-    if (lgrp_id != -1) {
-      thread->set_lgrp_id(lgrp_id);
-    }
-  }
 
   // Initial thread state is INITIALIZED, not SUSPENDED
   osthread->set_state(INITIALIZED);
@@ -848,22 +834,22 @@ jlong os::elapsed_frequency() {
 }
 
 
-bool os::available_memory(size_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::free_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
   return win32::available_memory(value);
 }
 
-bool os::win32::available_memory(size_t& value) {
+bool os::win32::available_memory(physical_memory_size_type& value) {
   // Use GlobalMemoryStatusEx() because GlobalMemoryStatus() may return incorrect
   // value if total memory is larger than 4GB
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPhys);
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPhys);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::available_memory(): %lu", ::GetLastError());
@@ -871,12 +857,12 @@ bool os::win32::available_memory(size_t& value) {
   }
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullTotalPageFile);
+    value = static_cast<physical_memory_size_type>(ms.ullTotalPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::total_swap_space(): %lu", ::GetLastError());
@@ -884,12 +870,12 @@ bool os::total_swap_space(size_t& value) {
   }
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
   MEMORYSTATUSEX ms;
   ms.dwLength = sizeof(ms);
   BOOL res = GlobalMemoryStatusEx(&ms);
   if (res == TRUE) {
-    value = static_cast<size_t>(ms.ullAvailPageFile);
+    value = static_cast<physical_memory_size_type>(ms.ullAvailPageFile);
     return true;
   } else {
     assert(false, "GlobalMemoryStatusEx failed in os::free_swap_space(): %lu", ::GetLastError());
@@ -897,7 +883,7 @@ bool os::free_swap_space(size_t& value) {
   }
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   return win32::physical_memory();
 }
 
@@ -2644,14 +2630,13 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   DWORD exception_code = exception_record->ExceptionCode;
 #if defined(_M_ARM64)
   address pc = (address) exceptionInfo->ContextRecord->Pc;
+
+  if (handle_safefetch(exception_code, pc, (void*)exceptionInfo->ContextRecord)) {
+    return EXCEPTION_CONTINUE_EXECUTION;
+  }
 #elif defined(_M_AMD64)
   address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-  Thread* t = Thread::current_or_null_safe();
 
-#if defined(_M_AMD64)
   if ((exception_code == EXCEPTION_ACCESS_VIOLATION) &&
       VM_Version::is_cpuinfo_segv_addr(pc)) {
     // Verify that OS save/restore AVX registers.
@@ -2664,6 +2649,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     VM_Version::clear_apx_test_state();
     return Handle_Exception(exceptionInfo, VM_Version::cpuinfo_cont_addr_apx());
   }
+#else
+  #error unknown architecture
 #endif
 
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
@@ -2674,6 +2661,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   }
 #endif
 
+  Thread* t = Thread::current_or_null_safe();
   if (t != nullptr && t->is_Java_thread()) {
     JavaThread* thread = JavaThread::cast(t);
     bool in_java = thread->thread_state() == _thread_in_Java;
@@ -2704,10 +2692,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
         report_error(t, exception_code, pc, exception_record,
                       exceptionInfo->ContextRecord);
-#endif
         return EXCEPTION_CONTINUE_SEARCH;
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
@@ -2759,10 +2745,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
       report_error(t, exception_code, pc, exception_record,
                    exceptionInfo->ContextRecord);
-#endif
       return EXCEPTION_CONTINUE_SEARCH;
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -2811,9 +2795,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         if (cb != nullptr && cb->is_nmethod()) {
           nmethod* nm = cb->as_nmethod();
           frame fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
-          address deopt = nm->is_method_handle_return(pc) ?
-            nm->deopt_mh_handler_begin() :
-            nm->deopt_handler_begin();
+          address deopt = nm->deopt_handler_begin();
           assert(nm->insts_contains_inclusive(pc), "");
           nm->set_original_pc(&fr, pc);
           // Set pc to handler
@@ -2824,41 +2806,21 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     }
   }
 
-#if !defined(USE_VECTORED_EXCEPTION_HANDLING)
-  if (exception_code != EXCEPTION_BREAKPOINT) {
+  bool should_report_error = (exception_code != EXCEPTION_BREAKPOINT);
+
+#if defined(_M_ARM64)
+  should_report_error = should_report_error &&
+                        FAILED(exception_code) &&
+                        (exception_code != EXCEPTION_UNCAUGHT_CXX_EXCEPTION);
+#endif
+
+  if (should_report_error) {
     report_error(t, exception_code, pc, exception_record,
                  exceptionInfo->ContextRecord);
   }
-#endif
-  return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#if defined(USE_VECTORED_EXCEPTION_HANDLING)
-LONG WINAPI topLevelVectoredExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
-  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
-#if defined(_M_ARM64)
-  address pc = (address) exceptionInfo->ContextRecord->Pc;
-#elif defined(_M_AMD64)
-  address pc = (address) exceptionInfo->ContextRecord->Rip;
-#else
-  #error unknown architecture
-#endif
-
-  // Fast path for code part of the code cache
-  if (CodeCache::low_bound() <= pc && pc < CodeCache::high_bound()) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
-
-  // If the exception occurred in the codeCache, pass control
-  // to our normal exception handler.
-  CodeBlob* cb = CodeCache::find_blob(pc);
-  if (cb != nullptr) {
-    return topLevelExceptionFilter(exceptionInfo);
-  }
 
   return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
 LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -3961,25 +3923,25 @@ int os::current_process_id() {
   return (_initial_pid ? _initial_pid : _getpid());
 }
 
-int    os::win32::_processor_type            = 0;
+int                       os::win32::_processor_type            = 0;
 // Processor level is not available on non-NT systems, use vm_version instead
-int    os::win32::_processor_level           = 0;
-size_t os::win32::_physical_memory           = 0;
+int                       os::win32::_processor_level           = 0;
+physical_memory_size_type os::win32::_physical_memory           = 0;
 
-bool   os::win32::_is_windows_server         = false;
+bool                      os::win32::_is_windows_server         = false;
 
 // 6573254
 // Currently, the bug is observed across all the supported Windows releases,
 // including the latest one (as of this writing - Windows Server 2012 R2)
-bool   os::win32::_has_exit_bug              = true;
+bool                      os::win32::_has_exit_bug              = true;
 
-int    os::win32::_major_version             = 0;
-int    os::win32::_minor_version             = 0;
-int    os::win32::_build_number              = 0;
-int    os::win32::_build_minor               = 0;
+int                       os::win32::_major_version             = 0;
+int                       os::win32::_minor_version             = 0;
+int                       os::win32::_build_number              = 0;
+int                       os::win32::_build_minor               = 0;
 
-bool   os::win32::_processor_group_warning_displayed = false;
-bool   os::win32::_job_object_processor_group_warning_displayed = false;
+bool                      os::win32::_processor_group_warning_displayed = false;
+bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
 void getWindowsInstallationType(char* buffer, int bufferSize) {
   HKEY hKey;
@@ -4198,7 +4160,7 @@ void os::win32::initialize_system_info() {
   if (res != TRUE) {
     assert(false, "GlobalMemoryStatusEx failed in os::win32::initialize_system_info(): %lu", ::GetLastError());
   }
-  _physical_memory = static_cast<size_t>(ms.ullTotalPhys);
+  _physical_memory = static_cast<physical_memory_size_type>(ms.ullTotalPhys);
 
   if (FLAG_IS_DEFAULT(MaxRAM)) {
     // Adjust MaxRAM according to the maximum virtual address space available.
@@ -4535,7 +4497,7 @@ jint os::init_2(void) {
   // Setup Windows Exceptions
 
 #if defined(USE_VECTORED_EXCEPTION_HANDLING)
-  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelVectoredExceptionFilter);
+  topLevelVectoredExceptionHandler = AddVectoredExceptionHandler(1, topLevelExceptionFilter);
   previousUnhandledExceptionFilter = SetUnhandledExceptionFilter(topLevelUnhandledExceptionFilter);
 #endif
 

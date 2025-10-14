@@ -35,15 +35,28 @@
 
 uint32_t VM_Version::_initial_vector_length = 0;
 
-#define DEF_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)       \
-VM_Version::NAME##RVFeatureValue VM_Version::NAME(PRETTY, BIT, FSTRING);
-RV_FEATURE_FLAGS(DEF_RV_FEATURE)
+#define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
+RV_EXT_FEATURE_FLAGS(DEF_RV_EXT_FEATURE)
+#undef DEF_RV_EXT_FEATURE
 
-#define ADD_RV_FEATURE_IN_LIST(NAME, PRETTY, BIT, FSTRING, FLAGF) \
-    &VM_Version::NAME,
-VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
-RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
+#define DEF_RV_NON_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+VM_Version::PRETTY##RVNonExtFeatureValue VM_Version::PRETTY;
+RV_NON_EXT_FEATURE_FLAGS(DEF_RV_NON_EXT_FEATURE)
+#undef DEF_RV_NON_EXT_FEATURE
+
+#define ADD_RV_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::ext_##PRETTY,
+#define ADD_RV_NON_EXT_FEATURE_IN_LIST(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
+     &VM_Version::PRETTY,
+ VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
+ RV_EXT_FEATURE_FLAGS(ADD_RV_EXT_FEATURE_IN_LIST)
+ RV_NON_EXT_FEATURE_FLAGS(ADD_RV_NON_EXT_FEATURE_IN_LIST)
   nullptr};
+#undef ADD_RV_NON_EXT_FEATURE_IN_LIST
+#undef ADD_RV_EXT_FEATURE_IN_LIST
+
+VM_Version::RVExtFeatures* VM_Version::_rv_ext_features = new VM_Version::RVExtFeatures();
 
 void VM_Version::useRVA20U64Profile() {
   RV_USE_RVA20U64;
@@ -135,7 +148,7 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
   }
 
-  if (UseRVC && !ext_C.enabled()) {
+  if (UseRVC && !ext_c.enabled()) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
@@ -147,7 +160,7 @@ void VM_Version::common_initialize() {
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
-      unaligned_access.value() != MISALIGNED_FAST);
+      unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
   }
 
   if (!AvoidUnalignedAccesses) {
@@ -162,7 +175,12 @@ void VM_Version::common_initialize() {
   // This machine has fast unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      unaligned_access.value() == MISALIGNED_FAST);
+      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
 #ifdef __riscv_ztso
@@ -195,13 +213,8 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!ext_V.enabled() && FLAG_IS_DEFAULT(UseRVV)) {
-      warning("RVV is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseRVV, false);
-    } else {
-      // read vector length from vector CSR vlenb
-      _initial_vector_length = cpu_vector_length();
-    }
+    // read vector length from vector CSR vlenb
+    _initial_vector_length = cpu_vector_length();
   }
 
   // Misc Intrinsics that could depend on RVV.
@@ -220,36 +233,6 @@ void VM_Version::common_initialize() {
   if (UseCRC32CIntrinsics) {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
-  // UseZvbb (depends on RVV).
-  if (UseZvbb && !UseRVV) {
-    warning("Cannot enable UseZvbb on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbb, false);
-  }
-
-  // UseZvbc (depends on RVV).
-  if (UseZvbc && !UseRVV) {
-    warning("Cannot enable UseZvbc on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvbc, false);
-  }
-
-  // UseZvkn (depends on RVV).
-  if (UseZvkn && !UseRVV) {
-    warning("Cannot enable UseZvkn on cpu without RVV support.");
-    FLAG_SET_DEFAULT(UseZvkn, false);
-  }
-
-  // UseZvfh (depends on RVV)
-  if (UseZvfh) {
-    if (!UseRVV) {
-      warning("Cannot enable UseZvfh on cpu without RVV support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
-    if (!UseZfh) {
-      warning("Cannot enable UseZvfh on cpu without Zfh support.");
-      FLAG_SET_DEFAULT(UseZvfh, false);
-    }
   }
 }
 
@@ -476,10 +459,6 @@ void VM_Version::c2_initialize() {
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector, AvoidUnalignedAccesses);
   }
 }
 

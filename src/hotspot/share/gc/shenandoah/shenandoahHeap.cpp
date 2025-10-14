@@ -1441,6 +1441,27 @@ void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   }
 }
 
+void ShenandoahHeap::process_gc_stats() const {
+  // Commit worker statistics to cycle data
+  phase_timings()->flush_par_workers_to_cycle();
+
+  // Print GC stats for current cycle
+  LogTarget(Info, gc, stats) lt;
+  if (lt.is_enabled()) {
+    ResourceMark rm;
+    LogStream ls(lt);
+    phase_timings()->print_cycle_on(&ls);
+    if (ShenandoahEvacTracking) {
+      ShenandoahCycleStats  evac_stats = evac_tracker()->flush_cycle_to_global();
+      evac_tracker()->print_evacuations_on(&ls, &evac_stats.workers,
+                                               &evac_stats.mutators);
+    }
+  }
+
+  // Commit statistics to globals
+  phase_timings()->flush_cycle_to_global();
+}
+
 size_t ShenandoahHeap::trash_humongous_region_at(ShenandoahHeapRegion* start) const {
   assert(start->is_humongous_start(), "reclaim regions starting with the first one");
   assert(!start->has_live(), "liveness must be zero");
@@ -2238,8 +2259,7 @@ void ShenandoahHeap::stw_unload_classes(bool full_gc) {
       // Clean JVMCI metadata handles.
       JVMCI_ONLY(JVMCI::do_unloading(unloading_occurred));
 
-      uint num_workers = _workers->active_workers();
-      ShenandoahClassUnloadingTask unlink_task(phase, num_workers, unloading_occurred);
+      ShenandoahClassUnloadingTask unlink_task(phase, unloading_occurred);
       _workers->run_task(&unlink_task);
     }
     // Release unloaded nmethods's memory.
@@ -2319,12 +2339,27 @@ address ShenandoahHeap::in_cset_fast_test_addr() {
 }
 
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
-  if (mode()->is_generational()) {
-    young_generation()->reset_bytes_allocated_since_gc_start();
-    old_generation()->reset_bytes_allocated_since_gc_start();
-  }
+  // It is important to force_alloc_rate_sample() before the associated generation's bytes_allocated has been reset.
+  // Note that there is no lock to prevent additional alloations between sampling bytes_allocated_since_gc_start() and
+  // reset_bytes_allocated_since_gc_start().  If additional allocations happen, they will be ignored in the average
+  // allocation rate computations.  This effect is considered to be be negligible.
 
-  global_generation()->reset_bytes_allocated_since_gc_start();
+  // unaccounted_bytes is the bytes not accounted for by our forced sample.  If the sample interval is too short,
+  // the "forced sample" will not happen, and any recently allocated bytes are "unaccounted for".  We pretend these
+  // bytes are allocated after the start of subsequent gc.
+  size_t unaccounted_bytes;
+  if (mode()->is_generational()) {
+    size_t bytes_allocated = young_generation()->bytes_allocated_since_gc_start();
+    unaccounted_bytes = young_generation()->heuristics()->force_alloc_rate_sample(bytes_allocated);
+    young_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+    unaccounted_bytes = 0;
+    old_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
+  } else {
+    size_t bytes_allocated = global_generation()->bytes_allocated_since_gc_start();
+    // Single-gen Shenandoah uses global heuristics.
+    unaccounted_bytes = heuristics()->force_alloc_rate_sample(bytes_allocated);
+  }
+  global_generation()->reset_bytes_allocated_since_gc_start(unaccounted_bytes);
 }
 
 void ShenandoahHeap::set_degenerated_gc_in_progress(bool in_progress) {

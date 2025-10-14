@@ -56,7 +56,6 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -143,18 +142,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
-}
-
-void SerialHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void SerialHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
 }
 
 HeapWord* SerialHeap::allocate_loaded_archive_space(size_t word_size) {
@@ -779,7 +766,7 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  _young_gen->gc_epilogue(full);
+  _young_gen->gc_epilogue();
   _old_gen->gc_epilogue();
 
   if (_is_heap_almost_full) {
