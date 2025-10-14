@@ -109,7 +109,9 @@ public class VectorBulkOperationsArray {
     // Every array has two regions:
     // - read region
     // - write region
-    public static final int REGION_SIZE = 1024 * 32;
+    // We should make sure that the region is a multiple of 4k, so that the
+    // 4k-aliasing prevention trick can work.
+    public static final int REGION_SIZE = 1024 * 1024 * 32;
     public static final int REGION_2_BYTE_OFFSET = 1024 * 2; // prevent 4k-aliasing
 
     // The arrays with the two regions each
