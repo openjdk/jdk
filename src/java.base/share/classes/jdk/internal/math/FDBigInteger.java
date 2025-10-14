@@ -31,7 +31,7 @@ import java.util.Arrays;
 /**
  * A simple big integer class specifically for floating point base conversion.
  */
-public class FDBigInteger {
+class FDBigInteger {
 
     static final int[] SMALL_5_POW;
 
@@ -215,68 +215,65 @@ public class FDBigInteger {
         if (bitcount == 0) {
             return new FDBigInteger(new int[] {pow5}, offset);
         }
-        return new FDBigInteger(new int[] {pow5 << bitcount, pow5 >>> -bitcount}, offset);
+        return new FDBigInteger(new int[] {
+                pow5 << bitcount,
+                pow5 >>> -bitcount
+            }, offset);
     }
 
     /**
      * Returns an {@link FDBigInteger} with the numerical value:
-     * value * 5<sup>{@code p5}</sup> * 2<sup>{@code p2}</sup>.
+     * value * 5<sup>{@code e5}</sup> * 2<sup>{@code e2}</sup>.
      *
      * @param value The constant factor.
-     * @param p5 The exponent of the power-of-five factor.
-     * @param p2 The exponent of the power-of-two factor.
-     * @return value * 5<sup>{@code p5}</sup> * 2<sup>{@code p2}</sup>
+     * @param e5 The exponent of the power-of-five factor.
+     * @param e2 The exponent of the power-of-two factor.
+     * @return value * 5<sup>{@code e5}</sup> * 2<sup>{@code e2}</sup>
      */
-    public static FDBigInteger valueOfMulPow52(long value, int p5, int p2) {
-        assert p5 >= 0 : p5;
-        assert p2 >= 0 : p2;
+    public static FDBigInteger valueOfMulPow52(long value, int e5, int e2) {
         int v0 = (int) value;
         int v1 = (int) (value >>> 32);
-        int wordcount = p2 >> 5;
-        int bitcount = p2 & 0x1f;
-        if (p5 != 0) {
-            if (p5 < SMALL_5_POW.length) {
-                long pow5 = SMALL_5_POW[p5] & LONG_MASK;
+        int offset = e2 >> 5;
+        int bitcount = e2 & 0x1f;
+        if (e5 != 0) {
+            if (e5 < SMALL_5_POW.length) {
+                long pow5 = SMALL_5_POW[e5] & LONG_MASK;
                 long carry = (v0 & LONG_MASK) * pow5;
                 v0 = (int) carry;
                 carry >>>= 32;
                 carry = (v1 & LONG_MASK) * pow5 + carry;
                 v1 = (int) carry;
                 int v2 = (int) (carry >>> 32);
-                if (bitcount == 0) {
-                    return new FDBigInteger(new int[]{v0, v1, v2}, wordcount);
-                } else {
-                    return new FDBigInteger(new int[]{
-                            v0 << bitcount,
-                            (v1 << bitcount) | (v0 >>> (32 - bitcount)),
-                            (v2 << bitcount) | (v1 >>> (32 - bitcount)),
-                            v2 >>> (32 - bitcount)
-                    }, wordcount);
-                }
-            } else {
-                FDBigInteger pow5 = pow5(p5);
-                int[] r;
-                if (v1 == 0) {
-                    r = new int[pow5.nWords + 1 + ((p2 != 0) ? 1 : 0)];
-                    mult(pow5.data, pow5.nWords, v0, r);
-                } else {
-                    r = new int[pow5.nWords + 2 + ((p2 != 0) ? 1 : 0)];
-                    mult(pow5.data, pow5.nWords, v0, v1, r);
-                }
-                return (new FDBigInteger(r, pow5.offset)).leftShift(p2);
+                return bitcount == 0
+                        ? new FDBigInteger(new int[] {v0, v1, v2}, offset)
+                        : new FDBigInteger(new int[] {
+                                v0 << bitcount,
+                                (v1 << bitcount) | (v0 >>> -bitcount),
+                                (v2 << bitcount) | (v1 >>> -bitcount),
+                                v2 >>> -bitcount
+                            }, offset);
             }
-        } else if (p2 != 0) {
-            if (bitcount == 0) {
-                return new FDBigInteger(new int[]{v0, v1}, wordcount);
+            FDBigInteger pow5 = pow5(e5);
+            int[] r;
+            if (v1 == 0) {
+                r = new int[pow5.nWords + 1 + ((e2 != 0) ? 1 : 0)];
+                mult(pow5.data, pow5.nWords, v0, r);
             } else {
-                return new FDBigInteger(new int[]{
-                         v0 << bitcount,
-                        (v1 << bitcount) | (v0 >>> (32 - bitcount)),
-                        v1 >>> (32 - bitcount)
-                }, wordcount);
+                r = new int[pow5.nWords + 2 + ((e2 != 0) ? 1 : 0)];
+                mult(pow5.data, pow5.nWords, v0, v1, r);
             }
+            return (new FDBigInteger(r, 0)).leftShift(e2);
         }
-        return new FDBigInteger(new int[]{v0, v1}, 0);
+        if (e2 != 0) {
+            return bitcount == 0
+                    ? new FDBigInteger(new int[] {v0, v1}, offset)
+                    : new FDBigInteger(new int[] {
+                            v0 << bitcount,
+                            (v1 << bitcount) | (v0 >>> -bitcount),
+                            v1 >>> -bitcount
+                        }, offset);
+        }
+        return new FDBigInteger(new int[] {v0, v1}, 0);
     }
 
     /**
@@ -560,18 +557,16 @@ public class FDBigInteger {
             if (e5 < SMALL_5_POW.length) {
                 r = new int[nWords + 1 + extraSize];
                 mult(data, nWords, SMALL_5_POW[e5], r);
-                res = new FDBigInteger(r, offset);
             } else if (e5 < LONG_5_POW.length) {
-                long p5 = LONG_5_POW[e5];
+                long pow5 = LONG_5_POW[e5];
                 r = new int[nWords + 2 + extraSize];
-                mult(data, nWords, (int) p5, (int) (p5 >>> 32), r);
-                res = new FDBigInteger(r, offset);
+                mult(data, nWords, (int) pow5, (int) (pow5 >>> 32), r);
             } else {
                 FDBigInteger pow5 = pow5(e5);
                 r = new int[nWords + pow5.nWords + extraSize];
                 mult(data, nWords, pow5.data, pow5.nWords, r);
-                res = new FDBigInteger(r, offset);
             }
+            res = new FDBigInteger(r, offset);
         }
         return res.leftShift(e2);
     }
@@ -762,15 +757,6 @@ public class FDBigInteger {
         return new FDBigInteger(r, offset);
     }
 
-    public FDBigInteger mult(long v) {
-        if (nWords == 0 || v == 0) {
-            return this;
-        }
-        int[] r = new int[nWords + 2];
-        mult(data, nWords, (int) v, (int) (v >>> 32), r);
-        return new FDBigInteger(r, offset);
-    }
-
     /**
      * Multiplies this {@link FDBigInteger} by another {@link FDBigInteger}.
      *
@@ -779,8 +765,8 @@ public class FDBigInteger {
      */
     private FDBigInteger mult(FDBigInteger other) {
         int[] r = new int[nWords + other.nWords];
-        mult(this.data, this.nWords, other.data, other.nWords, r);
-        return new FDBigInteger(r, this.offset + other.offset);
+        mult(data, nWords, other.data, other.nWords, r);
+        return new FDBigInteger(r, offset + other.offset);
     }
 
     /**
@@ -1028,14 +1014,14 @@ public class FDBigInteger {
     // for debugging ...
     /**
      * Converts this {@link FDBigInteger} to a {@code byte[]} suitable
-     * for use in {@link java.math.BigInteger#BigInteger(byte[])}.
+     * for use with {@link java.math.BigInteger#BigInteger(byte[])}.
      *
      * @return The {@code byte[]} representation.
      */
     /*
-     * A toBigInteger() method would be more convenient, but it would
-     * introduce a dependency on java.math, which is not desirable in such
-     * a basic layer like this one used in java.lang, javac, and other tools.
+     * A toBigInteger() method would be more convenient, but it would introduce
+     * a dependency on java.math, which is not desirable in such a basic layer
+     * like this one used in components as java.lang, javac, and others.
      */
     public byte[] toByteArray() {
         byte[] magnitude = new byte[4 * size() + 1];  // +1 for the "sign" byte

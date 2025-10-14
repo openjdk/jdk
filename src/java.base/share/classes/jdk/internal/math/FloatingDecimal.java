@@ -27,13 +27,14 @@ package jdk.internal.math;
 
 import jdk.internal.vm.annotation.Stable;
 
+import static jdk.internal.math.FDBigInteger.valueOfMulPow52;
 import static jdk.internal.math.FDBigInteger.valueOfPow52;
 
 /**
  * A class for converting between ASCII and decimal representations of a single
  * or double precision floating point number. Most conversions are provided via
  * static convenience methods, although a {@link BinaryToASCIIBuffer}
- * instance may be obtained and reused.
+ * instance may be obtained.
  */
 public class FloatingDecimal {
     //
@@ -45,7 +46,7 @@ public class FloatingDecimal {
     private static final long   EXP_ONE   = (long) DoubleConsts.EXP_BIAS << EXP_SHIFT; // exponent of 1.0
     private static final int    MAX_SMALL_BIN_EXP = 62;
     private static final int    MIN_SMALL_BIN_EXP = -63 / 3;
-    private static final int    MAX_DECIMAL_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
+    private static final int    MAX_DEC_DIGITS = 15;  // max{n : 10^n ≤ 2^P}
     private static final int    FLOG_10_MAX_LONG = 18;  // max{i : 10^i ≤ Long.MAX_VALUE}
 
     /**
@@ -116,14 +117,14 @@ public class FloatingDecimal {
          * Default constructor; used for non-zero values,
          * {@link BinaryToASCIIBuffer} may be thread-local and reused
          */
-        BinaryToASCIIBuffer() {
+        private BinaryToASCIIBuffer() {
             this.digits = new byte[20];
         }
 
         /**
          * Creates a specialized value (positive and negative zeros).
          */
-        BinaryToASCIIBuffer(byte[] digits){
+        private BinaryToASCIIBuffer(byte[] digits){
             this.decExponent  = 0;
             this.digits = digits;
             this.firstDigitIndex = 0;
@@ -510,7 +511,7 @@ public class FloatingDecimal {
                 int shiftBias = Sval.getNormalizationBias();
                 Sval = Sval.leftShift(shiftBias); // normalize so that division works better
 
-                FDBigInteger Bval = FDBigInteger.valueOfMulPow52(fractBits, B5, B2 + shiftBias);
+                FDBigInteger Bval = valueOfMulPow52(fractBits, B5, B2 + shiftBias);
                 FDBigInteger Mval = valueOfPow52(M5 + 1, M2 + shiftBias + 1);
 
                 FDBigInteger tenSval = valueOfPow52(S5 + 1, S2 + shiftBias + 1); //Sval.mult( 10 );
@@ -615,7 +616,7 @@ public class FloatingDecimal {
          *      log10(d) ~=~ log10(d2) + binExp * log10(2)
          * take the floor and call it decExp.
          */
-        static int estimateDecExp(long fractBits, int binExp) {
+        private static int estimateDecExp(long fractBits, int binExp) {
             double d2 = Double.longBitsToDouble( EXP_ONE | ( fractBits & DoubleConsts.SIGNIF_BIT_MASK ) );
             double d = (d2-1.5D)*0.289529654D + 0.176091259 + (double)binExp * 0.301029995663981;
             long dBits = Double.doubleToRawLongBits(d);  //can't be NaN here so use raw
@@ -702,7 +703,7 @@ public class FloatingDecimal {
         return threadLocalBinaryToASCIIBuffer.get();
     }
 
-    /**
+    /*
      * The mathematical value x of an instance is
      *      ±<0.d_1...d_n> 10^e
      * where d_i = d[i-1] - '0' (0 < i ≤ n) is the i-th digit.
@@ -723,182 +724,135 @@ public class FloatingDecimal {
             this.n = n;
         }
 
-        /* When n ≤ 19, return the decimal in d as an unsigned long. */
+        /* Assumes n ≤ 19 and returns a decimal prefix of f as an unsigned long. */
         private long toLong(int n) {
             long f = 0;
             for (int i = 0; i < n; ++i) {
-                f = 10 * f + d[i] - '0';
+                f = 10 * f + (d[i] - '0');
             }
             return f;
         }
 
-        public double doubleValue() {
+        private double doubleValue() {
             /*
              * As described above, the magnitude of the mathematical value is
-             *      x = <0.d_1...d_n> 10^e = <d_1...d_n> 10^(e-n) = fl 10^ep
-             * where fl = <d_1...d_n> and ep = e - n are integers.
+             *      x = <0.d_1...d_n> 10^e = <d_1...d_n> 10^(e-n) = f 10^ep
+             * where f = <d_1...d_n> and ep = e - n are integers.
              *
-             * First filter out extremely tiny or extremely large x.
+             * Let r_e denote the roundTiesToEven rounding.
+             * This method returns ±r_e(x).
              */
+
+             /* Filter out extremely small or extremely large x. */
             if (e <= DoubleToDecimal.E_THR_Z) {
-                return isNegative ? -0.0 : 0.0;
+                return signed(0.0);
             }
             if (e >= DoubleToDecimal.E_THR_I) {
-                return isNegative ? Double.NEGATIVE_INFINITY : Double.POSITIVE_INFINITY;
+                return signed(Double.POSITIVE_INFINITY);
             }
+
             /*
              * Attempt some fast paths before resorting to higher precision.
              * Here, let P = Double.PRECISION = 53.
              *
-             * Below, fl is a (signed) long, thus we require n ≤ 18.
-             * In fact, not all fl values fit in a (signed) long when n > 18.
-             *
-             * However, when n = 19 then d fits in an unsigned long.
-             * The method highPrecisionDoubleValue() can deal with them.
+             * Below, fl is an unsigned long, thus we require n ≤ 19 because
+             * 10^19 < 2^64 < 10^20.
              */
             int n = this.n;
             int ep = e - n;
-            int nl = Math.min(n, MathUtils.N);
-            long fl = toLong(nl);
-            if (n <= FLOG_10_MAX_LONG && -MAX_SMALL_TEN <= ep) {
+            double v;
+            int m = Math.min(n, MathUtils.N);
+            long fl = toLong(m);  // unsigned
+            if (n <= MathUtils.N && 0 <= ep && e <= MathUtils.N) {
                 /*
-                 * Here we have n ≤ 18, hence fl < 10^18.
-                 * If 0 < ep & n + ep ≤ 18 then x = fl 10^ep < 10^n 10^ep ≤ 10^18.
-                 * Thus, x = (fl 10^ep) 10^0 fits in a long as well.
+                 * Here, n ≤ 19, hence f = fl < 10^19.
+                 * Since e = n + ep and 0 ≤ ep ∧ n + ep ≤ 19 we see that
+                 * x = f 10^ep < 10^n 10^ep = 10^(n+ep) ≤ 10^19.
+                 * Thus, x = fl 10^ep fits in an unsigned long as well.
+                 * If its most significant bit is 0, the long is non-negative.
+                 * Otherwise, fl ≥ 2^63, so there's room for P precision bits,
+                 * +1 rounding bit, +1 sticky bit.
+                 * In both cases, correct rounding is achieved as below.
+                 * All integer x < 10^19 are covered here.
                  */
-                if (0 < ep && n + ep <= FLOG_10_MAX_LONG) {
-                    /* 0 < ep < 18, hence the arg to pow10() is safe. */
-                    fl *= MathUtils.pow10(ep);
-                    ep = 0;
-                }
-                double v = fl;
-                if (ep == 0) {
-                    /*
-                     * Even if fl might not be an exact double, nevertheless
-                     * v is correctly rounded.
-                     * This case includes precisely all x values that are
-                     * integers meeting x < 10^18.
-                     */
-                    return isNegative ? -v : v;
-                }
+                fl *= MathUtils.pow10(ep);  // 0 ≤ ep < 19
+                v = fl >= 0 ? fl : 2.0 * (fl >>> 1 | fl & 0b1);
+                return signed(v);
+            }
 
+            if (n <= FLOG_10_MAX_LONG && -MAX_SMALL_TEN <= ep) {
+                v = fl;
                 /*
-                 * Here -22 ≤ ep.
-                 * Since fl < 10^18, fl is an exact double iff (long) v == fl holds.
-                 *
+                 * Here, -22 ≤ ep.
+                 * Further, fl < 10^18, so fl is an exact double iff
+                 * (long) v == fl holds.
                  * If fl is not an exact double, resort to higher precision.
-                 *
-                 * Otherwise, if ep ≤ 22, then fl 10^ep incurs at most one
-                 * rounding error when computed in double arithmetic.
                  */
                 boolean isExact = (long) v == fl;
                 if (isExact && ep <= MAX_SMALL_TEN) {
                     /*
-                     * Since -22 ≤ ep ≤ 22, 10^|ep| is an exact double.
+                     * Here, -22 ≤ ep ≤ 22, so 10^|ep| is an exact double.
                      * The product or quotient below operate on exact doubles,
                      * so the result is correctly rounded.
                      */
                     v = ep >= 0 ? v * SMALL_10_POW[ep] : v / SMALL_10_POW[-ep];
-                    return isNegative ? -v : v;
+                    return signed(v);
                 }
 
                 /*
-                 * Here, fl < 10^18 is not an exact double or ep > 22.
-                 * If fl is not an exact double, resort to high precision.
-                 *
-                 * Otherwise, ep > 22.
-                 * When n ≤ 15 let ef = 15 - n.
-                 * Then fl 10^ef < 10^15 < 2^P, so fl 10^ef is an exact double.
-                 * When n ≤ 16 and d_1 < 9 let ef = 16 - n.
-                 * Then fl 10^ef < 9 10^15 < 2^P, thus fl 10^ef is an exact double.
-                 * Otherwise, let ef be negative.
-                 *
-                 * Thus, when ef ≥ 0 and ep - ef ≤ 22 we know that
-                 * fl 10^ep = (fl 10^ef) 10^(ep-ef), with (fl 10^ef) and 10^(ep-ef)
-                 * both exact doubles.
+                 * Here, fl < 10^18 is not an exact double, or ep > 22.
+                 * If fl is not an exact double, resort to higher precision.
                  */
                 if (isExact) {  // v and fl are mathematically equal.
-                    int ef = (d[0] < '9' ? MAX_DECIMAL_DIGITS + 1 : MAX_DECIMAL_DIGITS) - n;
-                    if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {  // e.g., x = .89e38
-                        /* Relies on left-to-right evaluation. */
+                    /*
+                     * Here, ep > 22.
+                     * We have f = fl = v.
+                     * Note that 2^P = 9007199254740992 has 16 digits.
+                     * If f does not start with 9 let ef = 16 - n, otherwise
+                     * let ef = 15 - n.
+                     * If ef < 0 then resort to higher precision.
+                     * Otherwise, if f does not start with 9 we have n ≤ 16,
+                     * so f 10^ef < 9 10^(n-1) 10^ef = 9 10^15 < 2^P.
+                     * If f starts with 9 we have n ≤ 15, hence f 10^ef <
+                     * 10^n 10^ef = 10^15 < 2^P.
+                     *
+                     * Hence, when ef ≥ 0 and ep - ef ≤ 22 we know that
+                     * fl 10^ep = (fl 10^ef) 10^(ep-ef), with fl, (fl 10^ef),
+                     * and 10^(ep-ef) all exact doubles.
+                     */
+                    int ef = (d[0] < '9' ? MAX_DEC_DIGITS + 1 : MAX_DEC_DIGITS) - n;
+                    if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {
+                        /* Rely on left-to-right evaluation. */
                         v = v * SMALL_10_POW[ef] * SMALL_10_POW[ep - ef];
-                        return isNegative ? -v : v;
+                        return signed(v);
                     }
                 }
             }
 
-            double v = highPrecisionDoubleValue(fl);
-            long bits = Double.doubleToRawLongBits(v);
-            if (bits >= 0) {
-                return isNegative ? -v : v;
-            }
-            bits ^= DoubleConsts.SIGN_BIT_MASK;
-
-            /* Split the double represented by bits into c 2^q. */
-            int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
-            int qr = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
-                    - (be != 0 ? 2 : 1);
-            long cr = 4 * (bits & DoubleConsts.SIGNIF_BIT_MASK | (be != 0 ? DoubleToDecimal.C_MIN : 0)) + 2;
-            long s = 4;  // step
-
-            FDBigInteger lhs = valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0))
-                    .makeImmutable();
-            FDBigInteger rhs = new FDBigInteger(fl, d, nl, n)
-                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0))
-                    .makeImmutable();
-
-            int cmp = lhs.mult(cr).cmp(rhs);
-            if (cmp <= 0) {
-                while (cmp < 0) {
-                    bits += 1;
-                    if (cr != (1L << DoubleToDecimal.P + 2) - 2) {
-                        cr += s;
-                    } else {
-                        cr += 6;
-                        s = 8;
-                    }
-                    cmp = lhs.mult(cr).cmp(rhs);
-                }
-                // vr ≥ x
-                v = Double.longBitsToDouble(bits + (cmp != 0 ? 0 : bits & 0b1));
-            } else {
-                while (cmp > 0) {
-                    bits -= 1;
-                    if (qr == DoubleToDecimal.Q_MIN - 2 ||
-                            cr != (1L << DoubleToDecimal.P + 1) + 2) {
-                        cr -= s;
-                    } else {
-                        cr -= 3;
-                        s = 2;
-                    }
-                    cmp = lhs.mult(cr).cmp(rhs);
-                }
-                // vr ≤ x
-                v = Double.longBitsToDouble(bits + (cmp != 0 ? 1 : bits & 0b1));
-            }
-            return isNegative ? -v : v;
-        }
-
-        private double highPrecisionDoubleValue(long fl) {
-            /* We force fl, fh in [10^(N-1), 10^N] to have more high order bits. */
-            long fh;
-            if (n <= MathUtils.N) {  // fl = f
-                fl *= MathUtils.pow10(MathUtils.N - n);
-                fh = fl;
-            } else {  // fl is just a N digits long prefix of f
-                fh = fl + 1;
-            }
-            int ep = e - MathUtils.N;
             /*
-             * As N = 19, we now have
+             * Here, the above fast paths have failed to return.
+             * Force ll, lh in [10^(N-1), 10^N] to have more high order bits.
+             */
+            long ll = fl;  // unsigned
+            long lh;  // unsigned
+            if (n <= MathUtils.N) {  // ll = f
+                ll *= MathUtils.pow10(MathUtils.N - n);
+                lh = ll;
+            } else {  // ll is an N digits long prefix of f
+                lh = ll + 1;
+            }
+            int el = e - MathUtils.N;
+            /*
+             * We now have
              *      x = f 10^ep
-             *      2^59 < 10^(N-1) ≤ f < 10^N < 2^64
+             *      ll 10^el ≤ x ≤ lh 10^el
+             *      2^59 < 10^(N-1) ≤ ll ≤ lh ≤ 10^N < 2^64
              *
              * Rather than rounding x directly, which requires full precision
-             * arithmetic, approximate x as follows (see comments in MathUtils).
-             * Let integers g and r such that
-             *      (g - 1) 2^r ≤ 10^ep < g 2^r
-             * and split g into g1 and g0
+             * arithmetic, approximate x as follows.
+             * Let integers g and r such that (see comments in MathUtils)
+             *      (g - 1) 2^r ≤ 10^el < g 2^r
+             * and split g into the lower 63 bits g0 and the higher bits g1:
              *      g = g1 2^63 + g0
              * where
              *      2^62 < g1 + 1 < 2^63, 0 < g0 < 2^63
@@ -906,84 +860,64 @@ public class FloatingDecimal {
              *      g - 1 = g1 2^63 + g0 - 1 ≥ g1 2^63
              *      g = g1 2^63 + g0 < g1 2^63 + 2^63 = (g1 + 1) 2^63
              * Let
-             *      pl = f (g - 1)          ph = f g
-             *      nl = f g1               nh = f (g1 + 1)
+             *      nl = ll g1          nh = lh (g1 + 1)
              * These lead to
-             *      nl 2^(r+63) ≤ pl 2^r ≤ x < ph 2^r < nh 2^(r+63)
-             * There are 2 intervals containing x, in increasing size
-             *      [pl 2^r, ph 2^r]
-             *      [nl 2^(r+63), nh 2^(r+63)]
-             * We see that if the boundaries of the 1st interval round to the
-             * same double v, then so does x, and we just return v.
-             * The same holds for the 2nd interval.
-             * We also see that the 2nd interval is about 2^63 times wider
-             * than the 1st.
-             * The chances that the boundaries round to the same double are
-             * therefore highest for the 1st interval and lowest for the 2nd.
-             * On the other hand, the amount of computations increases going
-             * from the 2nd to the 1st.
-             * Indeed, the 1st requires 64 x 128 bit products, the 2nd just
-             * 64 x 64 products.
-             * Hence, we first attempt with the 2nd interval, and fail over to
-             * the 1st when the former boundaries don't round to the same double.
-             * Measurements show that the failure rate on the outcomes of
-             * Double.toString() on uniformly distributed double bit patterns
-             * is around 0.04%, so this is a worthwhile attempt.
+             *      nl 2^(r+63) ≤ x < nh 2^(r+63)
+             * Let
+             *      v = r_e(nl 2^(r+63))        vh = r_e(nh 2^(r+63))
+             * If v = vh then r_e(x) = v.
              *
-             * We further have
+             * We also have
              *      2^121 = 2^59 2^62 < nl < nh < 2^64 2^63 = 2^127
-             * Thus, both nl and nh are well inside the normal double range,
-             * and have bit lengths in the interval [122, 127], so each of them
-             * fits in two longs.
-             * We split nl and nh into the lower 64 bits and the higher bits.
-             *      nl1 = unsignedMultiplyHigh(f, g1)
-             *      nl0 = f * g1  (long arithmetic)
-             *      nh1 = unsignedMultiplyHigh(f, g1 + 1)
-             *      nh0 = f * (g1 + 1)  (long arithmetic)
-             * hence
+             * Therefore, each of nl and nh fits in two longs.
+             * Split them into the lower 64 bits and the higher bits.
              *      nl = nl1 2^64 + nl0     2^57 ≤ nl1 < 2^63
              *      nh = nh1 2^64 + nh0     2^57 ≤ nh1 < 2^63
              * Let bl and bh be the bitlength of nl1 and nh1, resp.
-             * As nh = nl + f, either bh = bl + 1, or much more commonly, bh = bl.
-             * Both bl and bh lie in the interval [122 - 64, 127 - 64] = [58, 63].
-             * All of nl, nh, nl1, and nh1 are in the double normal range.
+             * Both bl and bh lie in the interval [58, 63], and all of nl1, nh1,
+             * nl, and nh are in the normal range of double.
+             * As nl ≤ nh ≤ nl + 2 ll, and as ll < 2^64, then either bh = bl,
+             * or more rarely bh = bl + 1.
              *
-             * Instead of rounding the boundaries nl 2^(r+63) and nh 2^(r+63)
-             * directly, first round nl and nh to obtain doubles wl and wh, resp.
-             * If wl = wh, there's a good chance that v = scalb(wl, r + 63) holds.
-             * Indeed, when x ≥ MIN_NORMAL then it can be (tediously) shown that
-             * v = scalb(wl, r + 63) holds, even when rounding overflows.
-             * When x < MIN_NORMAL, though, by just returning scalb(wl, r + 63)
-             * we face the risk of double-rounding, so we need corrective
-             * actions to avoid a (slightly) incorrect outcomes.
+             * As mentioned above, if v = vh then r_e(x) = v.
+             * Rather than rounding nl 2^(r+63), nh 2^(r+63) boundaries directly,
+             * first round nl and nh to obtain doubles wl and wh, resp.
+             *      wl = r_e(nl)        wh = r_e(nh)
+             * Note that both wl and wh are normal doubles.
              *
-             * We have
-             *      x ≥ nl1 2^(r+127) ≥ 2^(bl-1) 2^(r+127) = 2^(bl+r+126)
-             *      x < (nh1 + 1) 2^(r+127) ≤ 2^bh 2^(r+127) = 2^(bh+r+127)
-             * Thus, when bl + r > MIN_EXPONENT - 127 then x ≥ MIN_NORMAL,
-             * and when bh + r ≤ MIN_EXPONENT - 127 then x < MIN_NORMAL for sure.
+             * Assume wl = wh.
+             * There's a good chance that v = scalb(wl, r + 63) holds.
+             * In fact, if x ≥ MIN_NORMAL then it can be (tediously) shown that
+             * v = scalb(wl, r + 63) holds, even when v overflows.
+             * If x < MIN_NORMAL, and since wl is normal and v ≤ MIN_NORMAL,
+             * the precision might be lowered, so scalb(wl, r + 63) might incur
+             * two rounding errors and could slightly differ from v.
+             *
+             * It is costly to precisely determine whether x ≥ MIN_NORMAL.
+             * However, bl + r > MIN_EXPONENT - 127 implies x ≥ MIN_NORMAL,
+             * and bh + r ≤ MIN_EXPONENT - 127 entails x < MIN_NORMAL.
              * Finally, when bl + r ≤ MIN_EXPONENT - 127 < bh + r we see that
-             * bh ≠ bl, so bh = bl + 1 must hold instead.
-             * But we fail over to full precision in such case.
+             * bl + r = MIN_EXPONENT - 127 and bh = bl + 1 must hold.
              *
-             * Now assume bh + r ≤ MIN_EXPONENT - 127, entailing x < MIN_NORMAL.
-             * We need to tweak nl1 to nl1' and nh1 to nh1' so that rounding
-             * them to ul and uh ensures v = scalb(ul, r + 127) in case ul = uh.
-             * Then we can return v as above.
+             * As noted, nh ≤ nl + 2 ll.
+             * This means
+             *      nh1 ≤ nh 2^(-64) ≤ (nl + 2 ll) 2^(-64) < (nl1 + 1) + 2
+             * and thus
+             *      nh1 ≤ nl1 + 2
              */
-            int rp = MathUtils.flog2pow10(ep) + 2;  // r + 127
-            long g1 = MathUtils.g1(ep);
-            long nl1 = Math.unsignedMultiplyHigh(fl, g1);
-            long nl0 = fl * g1;
-            long nh1 = Math.unsignedMultiplyHigh(fh, g1 + 1);
-            long nh0 = fh * (g1 + 1);
-
+            int rp = MathUtils.flog2pow10(el) + 2;  // r + 127
+            long g1 = MathUtils.g1(el);
+            long nl1 = Math.unsignedMultiplyHigh(ll, g1);
+            long nl0 = ll * g1;
+            long nh1 = Math.unsignedMultiplyHigh(lh, g1 + 1);
+            long nh0 = lh * (g1 + 1);
             int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
             if (bl + rp > Double.MIN_EXPONENT) {  // implies x is normal
                 /*
                  * To round nl we need its most significant P bits, the rounding
                  * bit immediately to the right, and an indication (sticky bit)
                  * of whether there are "1" bits following the rounding bit.
+                 * The sticky bit can be placed anywhere after the rounding bit.
                  * Since bl ≥ 58, the P = 53 bits, the rounding bit, and space
                  * for the sticky bit are all located in nl1.
                  *
@@ -991,6 +925,8 @@ public class FloatingDecimal {
                  * to the right of the rounding bit is already contained in nl1.
                  * Rounding nl to wl is the same as rounding nl1 to ul and then
                  * multiplying this by 2^64.
+                 * that is, given wl = r_e(nl), ul = r_e(nl1), we get
+                 * wl = scalb(ul, 64).
                  * The same holds for nh, wh, nh1, and uh.
                  * So, if ul = uh then wl = wh, thus v = scalb(ul, r + 127).
                  *
@@ -1001,164 +937,203 @@ public class FloatingDecimal {
                  * to ul and multiplying this by 2^64.
                  * Analogously for nh, wh, nh1, and uh.
                  * Again, if ul = uh then wl = wh, thus v = scalb(ul, r + 127).
+                 *
+                 * Since nh1 ≤ nl1 + 2, then either uh = ul or uh = nextUp(ul).
+                 * This means that when ul ≠ uh then
+                 *      v ≤ r_e(x) ≤ nextUp(v)
                  */
                 double ul = nl1 | (nl0 != 0 ? 1 : 0);
                 double uh = nh1 | (nh0 != 0 ? 1 : 0);
-                double v = Math.scalb(ul, rp);
-                return ul == uh ? v : -v;
-            }
-            int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
-            if (bh + rp <= Double.MIN_EXPONENT) {  // implies x is subnormal
-                int sh = DoubleToDecimal.Q_MIN - rp;  // shift distance
-                long sbMask = -1L >>> 1 - sh;
+                v = Math.scalb(ul, rp);
+                if (ul == uh) {
+                    return signed(v);
+                }
+            } else {
+                int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
+                if (bh + rp <= Double.MIN_EXPONENT) {  // implies x is subnormal
+                    /*
+                     * We need to reduce the precision to avoid double rounding
+                     * issues.
+                     * Shifting to the right while keeping room for the rounding
+                     * and the sticky bit is one way to go.
+                     * Other than that, the reasoning is similar to the above case.
+                     */
+                    int sh = DoubleToDecimal.Q_MIN - rp;  // shift distance
+                    long sbMask = -1L >>> 1 - sh;
 
-                long nl1p = nl1 >>> sh;
-                long rb = nl1 >>> sh - 1;
-                long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
-                long corr = rb & (sb | nl1p) & 0b1;
-                double ul = nl1p + corr;
+                    long nl1p = nl1 >>> sh;
+                    long rb = nl1 >>> sh - 1;
+                    long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
+                    long corr = rb & (sb | nl1p) & 0b1;
+                    double ul = nl1p + corr;
 
-                long nh1p = nh1 >>> sh;
-                rb = nh1 >>> sh - 1;
-                sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
-                corr = rb & (sb | nh1p) & 0b1;
-                double uh = nh1p + corr;
-                double v = Math.scalb(ul, rp + sh);
-                return ul == uh ? v : -v;
+                    long nh1p = nh1 >>> sh;
+                    rb = nh1 >>> sh - 1;
+                    sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
+                    corr = rb & (sb | nh1p) & 0b1;
+                    double uh = nh1p + corr;
+                    v = Math.scalb(ul, rp + sh);
+                    if (ul == uh) {
+                        return signed(v);
+                    }
+                } else {
+                    /*
+                     * Here, bl + r ≤ MIN_EXPONENT - 127 < bh + r.
+                     * As mentioned before, this means bh = bl + 1 and
+                     * rp = MIN_EXPONENT - bl.
+                     * As nh1 ≤ nl1 + 2, nl1 ≥ 2^57, bh = bl + 1 happens only if
+                     * the most significant P + 2 bits in nl1 are all "1" bits,
+                     * so wl = r_e(nl) = r_e(nh) = wh = 2^(bl+64), and
+                     * thus v = vh = 2^(bl+127) = 2^MIN_EXPONENT = MIN_NORMAL.
+                     */
+                    return signed(Double.MIN_NORMAL);
+                }
             }
-            return -Double.MIN_NORMAL;
+
+            /*
+             * Measurements show that the failure rate of the above fast paths
+             * on the outcomes of Double.toString() on uniformly distributed
+             * double bit patterns is around 0.04%.
+             *
+             * Here, v ≤ r_e(x) ≤ nextUp(v), with v = c 2^q (c, q are as in
+             * IEEE-754 2019).
+             *
+             * Let vr = v + ulp(v)/2 = (c + 1/2) 2^q, the number halfway between
+             * v and nextUp(v).
+             * With cr = (2 c + 1), qr = q - 1 we get vr = cr 2^qr.
+             */
+            long bits = Double.doubleToRawLongBits(v);
+            int be = (int) ((bits & DoubleConsts.EXP_BIT_MASK) >>> DoubleConsts.SIGNIFICAND_WIDTH - 1);
+            int qr = be - (DoubleConsts.EXP_BIAS + DoubleConsts.SIGNIFICAND_WIDTH - 1)
+                    - (be != 0 ? 1 : 0);
+            long cr = 2 * (bits & DoubleConsts.SIGNIF_BIT_MASK | (be != 0 ? DoubleToDecimal.C_MIN : 0)) + 1;
+
+            /*
+             * The test vr ⋚ x is equivalent to cr 2^qr ⋚ f 10^ep.
+             * This is in turn equivalent to one of 4 cases, where all exponents
+             * are non-negative:
+             *      ep ≥ 0 ∧ ep ≥ qr:                     cr ⋚ f 5^ep 2^(ep-qr)
+             *      ep ≥ 0 ∧ ep < qr:           cr 2^(qr-ep) ⋚ f 5^ep
+             *      ep < 0 ∧ ep ≥ qr:             cr 5^(-ep) ⋚ f 2^(ep-qr)
+             *      ep < 0 ∧ ep < qr:   cr 5^(-ep) 2^(qr-ep) ⋚ f
+             */
+            FDBigInteger lhs = valueOfMulPow52(cr, Math.max(-ep, 0), Math.max(qr - ep, 0));
+            FDBigInteger rhs = new FDBigInteger(fl, d, m, n)
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0));
+            int cmp = lhs.cmp(rhs);
+            v = Double.longBitsToDouble(cmp < 0
+                    ? bits + 1
+                    : cmp > 0
+                    ? bits
+                    : bits + (bits & 0b1));
+            return signed(v);
         }
 
-        public float floatValue() {
-            /* For details not covered here, see doubleValue() and friends. */
+        private double signed(double v) {
+            return isNegative ? -v : v;
+        }
+
+        private float floatValue() {
+            /* For details not covered here, see comments in doubleValue(). */
             if (e <= E_THR_Z[BINARY_32_IX]) {
-                return isNegative ? -0.0f : 0.0f;
+                return signed(0.0f);
             }
             if (e >= E_THR_I[BINARY_32_IX]) {
-                return isNegative ? Float.NEGATIVE_INFINITY : Float.POSITIVE_INFINITY;
+                return signed(Float.POSITIVE_INFINITY);
             }
             int n = this.n;
             int ep = e - n;
-            int nl = Math.min(n, MathUtils.N);
-            long fl = toLong(nl);
+            float v;
+            int m = Math.min(n, MathUtils.N);
+            long fl = toLong(m);
+            if (n <= MathUtils.N && 0 <= ep && e <= MathUtils.N) {
+                fl *= MathUtils.pow10(ep);  // 0 ≤ ep < 19
+                v = fl >= 0 ? fl : 2.0f * (fl >>> 1 | fl & 0b1);
+                return signed(v);
+            }
             if (n <= FLOG_10_MAX_LONG && -SINGLE_MAX_SMALL_TEN <= ep) {
-                if (0 < ep && n + ep <= FLOG_10_MAX_LONG) {
-                    fl *= MathUtils.pow10(ep);
-                    ep = 0;
-                }
-                float v = fl;
-                if (ep == 0) {
-                    return isNegative ? -v : v;
-                }
+                v = fl;
                 boolean isExact = (long) v == fl;
                 if (isExact && ep <= SINGLE_MAX_SMALL_TEN) {
                     v = ep >= 0 ? v * SINGLE_SMALL_10_POW[ep] : v / SINGLE_SMALL_10_POW[-ep];
-                    return isNegative ? -v : v;
+                    return signed(v);
                 }
                 /* As in doubleValue(), but here 10^8 < 2^P and nothing more. */
                 if (isExact) {
                     int ef = 8 - n;
                     if (ef >= 0 && ep - ef <= SINGLE_MAX_SMALL_TEN) {
                         v = v * SINGLE_SMALL_10_POW[ef] * SINGLE_SMALL_10_POW[ep - ef];
-                        return isNegative ? -v : v;
+                        return signed(v);
                     }
                 }
             }
-
-            float v = highPrecisionFloatValue(fl);
-            int bits = Float.floatToRawIntBits(v);
-            if (bits >= 0) {
-                return isNegative ? -v : v;
-            }
-            bits ^= FloatConsts.SIGN_BIT_MASK;
-
-            int be = (bits & FloatConsts.EXP_BIT_MASK) >>> FloatConsts.SIGNIFICAND_WIDTH - 1;
-            int qr = be - (FloatConsts.EXP_BIAS + FloatConsts.SIGNIFICAND_WIDTH - 1)
-                    - (be != 0 ? 2 : 1);
-            int cr = 4 * (bits & FloatConsts.SIGNIF_BIT_MASK | (be != 0 ? FloatToDecimal.C_MIN : 0)) + 2;
-            int s = 4;
-
-            FDBigInteger lhs = valueOfPow52(Math.max(-ep, 0), Math.max(qr - ep, 0))
-                    .makeImmutable();
-            FDBigInteger rhs = new FDBigInteger(fl, d, nl, n)
-                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0))
-                    .makeImmutable();
-
-            int cmp = lhs.mult(cr).cmp(rhs);
-            if (cmp <= 0) {
-                while (cmp < 0) {
-                    bits += 1;
-                    if (cr != (1 << FloatToDecimal.P + 2) - 2) {
-                        cr += s;
-                    } else {
-                        cr += 6;
-                        s = 8;
-                    }
-                    cmp = lhs.mult(cr).cmp(rhs);
-                }
-                // vr ≥ x
-                v = Float.intBitsToFloat(bits + (cmp != 0 ? 0 : bits & 0b1));
-            } else {
-                while (cmp > 0) {
-                    bits -= 1;
-                    if (qr == FloatToDecimal.Q_MIN - 2 ||
-                            cr != (1L << FloatToDecimal.P + 1) + 2) {
-                        cr -= s;
-                    } else {
-                        cr -= 3;
-                        s = 2;
-                    }
-                    cmp = lhs.mult(cr).cmp(rhs);
-                }
-                // vr ≤ x
-                v = Float.intBitsToFloat(bits + (cmp != 0 ? 1 : bits & 0b1));
-            }
-            return isNegative ? -v : v;
-        }
-
-        private float highPrecisionFloatValue(long fl) {
-            long fh;
+            long ll = fl;
+            long lh;
             if (n <= MathUtils.N) {
-                fl *= MathUtils.pow10(MathUtils.N - n);
-                fh = fl;
+                ll *= MathUtils.pow10(MathUtils.N - n);
+                lh = ll;
             } else {
-                fh = fl + 1;
+                lh = ll + 1;
             }
-            int ep = e - MathUtils.N;
-            int rp = MathUtils.flog2pow10(ep) + 2;  // r + 127
-            long g1 = MathUtils.g1(ep);
-            long nl1 = Math.unsignedMultiplyHigh(fl, g1);
-            long nl0 = fl * g1;
-            long nh1 = Math.unsignedMultiplyHigh(fh, g1 + 1);
-            long nh0 = fh * (g1 + 1);
-
+            int el = e - MathUtils.N;
+            int rp = MathUtils.flog2pow10(el) + 2;
+            long g1 = MathUtils.g1(el);
+            long nl1 = Math.unsignedMultiplyHigh(ll, g1);
+            long nl0 = ll * g1;
+            long nh1 = Math.unsignedMultiplyHigh(lh, g1 + 1);
+            long nh0 = lh * (g1 + 1);
             int bl = Long.SIZE - Long.numberOfLeadingZeros(nl1);
             if (bl + rp > Float.MIN_EXPONENT) {
                 float ul = nl1 | (nl0 != 0 ? 1 : 0);
                 float uh = nh1 | (nh0 != 0 ? 1 : 0);
-                float v = Math.scalb(ul, rp);
-                return ul == uh ? v : -v;
-            }
-            int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
-            if (bh + rp <= Float.MIN_EXPONENT) {
-                int sh = FloatToDecimal.Q_MIN - rp;
-                long sbMask = -1L >>> 1 - sh;
+                v = Math.scalb(ul, rp);
+                if (ul == uh) {
+                    return signed(v);
+                }
+            } else {
+                int bh = Long.SIZE - Long.numberOfLeadingZeros(nh1);
+                if (bh + rp <= Float.MIN_EXPONENT) {
+                    int sh = FloatToDecimal.Q_MIN - rp;
+                    long sbMask = -1L >>> 1 - sh;
 
-                long nl1p = nl1 >>> sh;
-                long rb = nl1 >>> sh - 1;
-                long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
-                long corr = rb & (sb | nl1p) & 0b1;
-                float ul = nl1p + corr;
+                    long nl1p = nl1 >>> sh;
+                    long rb = nl1 >>> sh - 1;
+                    long sb = (nl1 & sbMask | nl0) != 0 ? 1 : 0;
+                    long corr = rb & (sb | nl1p) & 0b1;
+                    float ul = nl1p + corr;
 
-                long nh1p = nh1 >>> sh;
-                rb = nh1 >>> sh - 1;
-                sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
-                corr = rb & (sb | nh1p) & 0b1;
-                float uh = nh1p + corr;
-                float v = Math.scalb(ul, rp + sh);
-                return ul == uh ? v : -v;
+                    long nh1p = nh1 >>> sh;
+                    rb = nh1 >>> sh - 1;
+                    sb = (nh1 & sbMask | nh0) != 0 ? 1 : 0;
+                    corr = rb & (sb | nh1p) & 0b1;
+                    float uh = nh1p + corr;
+                    v = Math.scalb(ul, rp + sh);
+                    if (ul == uh) {
+                        return signed(v);
+                    }
+                } else {
+                    return signed(Float.MIN_NORMAL);
+                }
             }
-            return -Float.MIN_NORMAL;
+            int bits = Float.floatToRawIntBits(v);
+            int be = (bits & FloatConsts.EXP_BIT_MASK) >>> FloatConsts.SIGNIFICAND_WIDTH - 1;
+            int qr = be - (FloatConsts.EXP_BIAS + FloatConsts.SIGNIFICAND_WIDTH - 1)
+                    - (be != 0 ? 1 : 0);
+            int cr = 2 * (bits & FloatConsts.SIGNIF_BIT_MASK | (be != 0 ? FloatToDecimal.C_MIN : 0)) + 1;
+            FDBigInteger lhs = valueOfMulPow52(cr, Math.max(-ep, 0), Math.max(qr - ep, 0));
+            FDBigInteger rhs = new FDBigInteger(fl, d, m, n)
+                    .multByPow52(Math.max(ep, 0), Math.max(ep - qr, 0));
+            int cmp = lhs.cmp(rhs);
+            v = Float.intBitsToFloat(cmp < 0
+                    ? bits + 1
+                    : cmp > 0
+                    ? bits
+                    : bits + (bits & 0b1));
+            return signed(v);
+        }
+
+        private float signed(float v) {
+            return isNegative ? -v : v;
         }
 
         /* All the powers of 10 that can be represented exactly in double. */
@@ -1195,7 +1170,7 @@ public class FloatingDecimal {
                 : getBinaryToASCIIConverter(d);
     }
 
-    public static BinaryToASCIIBuffer getBinaryToASCIIConverter(double d) {
+    private static BinaryToASCIIBuffer getBinaryToASCIIConverter(double d) {
         assert Double.isFinite(d);
 
         FormattedFPDecimal dec = FormattedFPDecimal.split(d);
@@ -1272,7 +1247,7 @@ public class FloatingDecimal {
      * @throws NullPointerException  if the input is null
      * @throws NumberFormatException if the input is malformed
      */
-    static double readJavaFormatString(String in, int ix) {
+    private static double readJavaFormatString(String in, int ix) {
         /*
          * The scanning proper does not allocate any object,
          * nor does it perform any costly computation.
