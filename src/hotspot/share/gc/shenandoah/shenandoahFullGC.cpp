@@ -105,21 +105,18 @@ void ShenandoahFullGC::entry_full(GCCause::Cause cause) {
 }
 
 void ShenandoahFullGC::op_full(GCCause::Cause cause) {
-  ShenandoahMetricsSnapshot metrics;
-  metrics.snap_before();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
+  ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   // Perform full GC
   do_it(cause);
-
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   if (heap->mode()->is_generational()) {
     ShenandoahGenerationalFullGC::handle_completion(heap);
   }
 
-  metrics.snap_after();
-
-  if (metrics.is_good_progress(_generation)) {
+  if (metrics.is_good_progress()) {
     heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
@@ -1171,7 +1168,7 @@ ShenandoahGenerationalHeap::TransferResult ShenandoahFullGC::phase5_epilog() {
     // Set mark incomplete because the marking bitmaps have been reset except pinned regions.
     _generation->set_mark_incomplete();
 
-    heap->clear_cancelled_gc(true /* clear oom handler */);
+    heap->clear_cancelled_gc();
   }
 
   _preserved_marks->restore(heap->workers());
