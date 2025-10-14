@@ -48,6 +48,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpRequest.BodyPublishers;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -146,6 +147,11 @@ class H3RequestRejectedTest {
             for (int i = 1; i <= 5; i++) {
                 final HttpRequest req = HttpRequest.newBuilder()
                         .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY)
+                        // using POST introduces additional guarantees that
+                        // the request will be retried only because it was
+                        // unprocessed and not for some other retryable reasons
+                        // which are allowed for idempotent methods like GET
+                        .POST(BodyPublishers.noBody())
                         .uri(new URI(reqURI.toString() + "?iteration=" + i))
                         .build();
                 System.err.println("iteration " + i + " issuing request " + req);
