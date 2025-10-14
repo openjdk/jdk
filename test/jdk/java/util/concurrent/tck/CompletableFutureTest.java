@@ -41,6 +41,7 @@ import static java.util.concurrent.CompletableFuture.failedFuture;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,17 +50,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
-import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -5133,4 +5123,46 @@ public class CompletableFutureTest extends JSR166TestCase {
         checkCompletedWithWrappedException(g.toCompletableFuture(), r.ex);
         r.assertInvoked();
     }}
+
+    public void testJoinOnlyAssistsIfInTheSamePool() throws Exception{
+        class Logic {
+            interface Extractor { ForkJoinPool pool(CompletableFuture<ForkJoinPool> cf) throws Exception; }
+            static final List<ForkJoinPool> executeInnerOuter(
+                ForkJoinPool outer, ForkJoinPool inner, Logic.Extractor extractor
+            ) throws Exception {
+                return CompletableFuture.supplyAsync(() ->
+                    Stream.iterate(1, i -> i + 1)
+                        .limit(64)
+                        .map(i -> CompletableFuture.supplyAsync(
+                            () -> Thread.currentThread() instanceof ForkJoinWorkerThread wt ? wt.getPool() : null, inner)
+                        )
+                        .map(cf -> {
+                            try {
+                                return extractor.pool(cf);
+                            } catch(Exception ex) {
+                                throw new AssertionError("Unexpected", ex);
+                            }
+                        })
+                        .toList()
+                , outer).join();
+            }
+        }
+
+        List<Logic.Extractor> extractors =
+            List.of(
+                c -> c.get(60, SECONDS),
+                CompletableFuture::get,
+                CompletableFuture::join
+            );
+
+        try (var pool = new ForkJoinPool(2)) {
+            for(var extractor : extractors) {
+                for (var p : Logic.executeInnerOuter(pool, ForkJoinPool.commonPool(), extractor))
+                    assertTrue(p != pool); // The inners should have all been executed by commonPool
+
+                for (var p : Logic.executeInnerOuter(pool, pool, extractor))
+                    assertTrue(p == pool); // The inners could have been assisted by the outer
+            }
+        }
+    }
 }
