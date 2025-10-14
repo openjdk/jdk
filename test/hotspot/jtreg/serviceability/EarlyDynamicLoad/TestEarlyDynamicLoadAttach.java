@@ -23,7 +23,8 @@
 
 /*
  * @test TestEarlyDynamicLoadAttach
- * @summary Test that dynamic attach (via VirtualMachine) fails gracefully when the JVM is not in live phase
+ * @summary Test that dynamic attach (via VirtualMachine) fails gracefully when the JVM is not in live phase.
+ *          The test sets up a callback for VMStart in Agent_OnLoad, which then tries to attach with VirtualMachine.
  * @requires vm.jvmti
  * @library /test/lib
  * @run driver TestEarlyDynamicLoadAttach

@@ -23,7 +23,8 @@
 
 /*
  * @test TestEarlyDynamicLoadJcmd
- * @summary Test that jcmd fails gracefully when the JVM is not in live phase
+ * @summary Test that jcmd fails gracefully when the JVM is not in live phase.
+ *          The test sets up a callback for VMStart in Agent_OnLoad, which then invokes jcmd.
  * @requires vm.jvmti
  * @library /test/lib
  * @run driver TestEarlyDynamicLoadJcmd
