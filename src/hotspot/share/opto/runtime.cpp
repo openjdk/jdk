@@ -322,6 +322,7 @@ void OptoRuntime::complete_monitor_locking_C(oopDesc* obj, BasicLock* lock, Java
 JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* current))
   oop result = nullptr;
   size_t region_age_before_gc = 0;
+  ShenandoahAffiliation region_affiliation_before_gc = ShenandoahAffiliation::FREE;
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_instance_ctr++;         // new instance requires GC
@@ -344,7 +345,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
     result = InstanceKlass::cast(klass)->allocate_instance(THREAD);
     current->set_vm_result_oop(result);
     if (UseShenandoahGC && result != nullptr) {
-      region_age_before_gc = ShenandoahHeap::heap()->heap_region_containing(result)->age();
+      auto heap_region = ShenandoahHeap::heap()->heap_region_containing(result);
+      region_age_before_gc = heap_region->age();
+      region_affiliation_before_gc = heap_region->affiliation();
     }
 
     // Pass oops back through thread local storage.  Our apparent type to Java
@@ -360,8 +363,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_instance_C(Klass* klass, JavaThread* curr
     if (!ShenandoahHeap::heap()->is_in_young(current->vm_result_oop())) {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       oop relocated = current->vm_result_oop();
-      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", size: %zu, region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
-          p2i(result), result->size(), heap->heap_region_containing(result)->index(), region_age_before_gc,
+      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", size: %zu, region %zu (aff was: %s, age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
+          p2i(result), result->size(), heap->heap_region_containing(result)->index(),
+          shenandoah_affiliation_name(region_affiliation_before_gc), region_age_before_gc,
           p2i(current->vm_result_oop()), heap->heap_region_containing(current->vm_result_oop())->index());
 
       report_vm_error(__FILE__, __LINE__, msg.buffer());
@@ -378,6 +382,8 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   // Scavenge and allocate an instance.
   oop result;
   size_t region_age_before_gc = 0;
+  ShenandoahAffiliation region_affiliation_before_gc = ShenandoahAffiliation::FREE;
+
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_array_ctr++;            // new array requires GC
@@ -399,7 +405,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
   }
 
   if (UseShenandoahGC && result != nullptr) {
-    region_age_before_gc = ShenandoahHeap::heap()->heap_region_containing(result)->age();
+    auto heap_region = ShenandoahHeap::heap()->heap_region_containing(result);
+    region_age_before_gc = heap_region->age();
+    region_affiliation_before_gc = heap_region->affiliation();
   }
 
   // Pass oops back through thread local storage.  Our apparent type to Java
@@ -414,8 +422,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
     if (!ShenandoahHeap::heap()->is_in_young(current->vm_result_oop())) {
       ShenandoahHeap* heap = ShenandoahHeap::heap();
       oop relocated = current->vm_result_oop();
-      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", size: %d, region %zu (age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
-          p2i(result), len, heap->heap_region_containing(result)->index(), region_age_before_gc,
+      ShenandoahMessageBuffer msg("Newly allocated object (" PTR_FORMAT ", size: %d, region %zu (aff was: %s, age was: %zu)) is not in young (" PTR_FORMAT ", region %zu)",
+          p2i(result), len, heap->heap_region_containing(result)->index(),
+          shenandoah_affiliation_name(region_affiliation_before_gc), region_age_before_gc,
           p2i(current->vm_result_oop()), heap->heap_region_containing(current->vm_result_oop())->index());
 
       report_vm_error(__FILE__, __LINE__, msg.buffer());
