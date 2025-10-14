@@ -88,6 +88,7 @@ public class VectorBulkOperationsMemorySegment {
             "300"})
     public static long NUM_ACCESS_ELEMENTS;
 
+    // TODO: add more?
     @Param({"native", "array_byte"})
     public static String BACKING_TYPE;
 
@@ -146,6 +147,7 @@ public class VectorBulkOperationsMemorySegment {
 
         ms = switch(BACKING_TYPE) {
             case "native" -> Arena.ofAuto().allocate(2 * REGION_SIZE, 4 * 1024);
+            case "array_byte" -> MemorySegment.ofArray(new byte[(int)(2 * REGION_SIZE)]);
             default -> throw new RuntimeException("not implemented: " + BACKING_TYPE);
         };
     }
@@ -172,6 +174,7 @@ public class VectorBulkOperationsMemorySegment {
         }
     }
 
+    // TODO: fix or remove
     // @Benchmark
     // public void fill_zero_byte_arrays_fill() {
     //     for (int r = 0; r < REPETITIONS; r++) {
@@ -209,4 +212,6 @@ public class VectorBulkOperationsMemorySegment {
             MemorySegment.copy(ms, offset_load, ms, offset_store, NUM_ACCESS_ELEMENTS);
         }
     }
+
+    // TODO: more types?
 }
