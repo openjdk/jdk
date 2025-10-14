@@ -52,6 +52,11 @@ class ObjArrayKlass : public ArrayKlass {
   static ObjArrayKlass* allocate_klass(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS);
 
   objArrayOop allocate_instance(int length, TRAPS);
+
+ protected:
+  // Create array_name for element klass
+  static Symbol* create_element_klass_array_name(JavaThread* current, Klass* element_klass);
+
  public:
   // For dummy objects
   ObjArrayKlass() {}
@@ -59,7 +64,9 @@ class ObjArrayKlass : public ArrayKlass {
   // Instance variables
   Klass* element_klass() const      { return _element_klass; }
   void set_element_klass(Klass* k)  { _element_klass = k; }
-  Klass** element_klass_addr()      { return &_element_klass; }
+
+  // Compiler/Interpreter offset
+  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
 
   Klass* bottom_klass() const       { return _bottom_klass; }
   void set_bottom_klass(Klass* k)   { _bottom_klass = k; }
@@ -67,9 +74,6 @@ class ObjArrayKlass : public ArrayKlass {
 
   ModuleEntry* module() const;
   PackageEntry* package() const;
-
-  // Compiler/Interpreter offset
-  static ByteSize element_klass_offset() { return byte_offset_of(ObjArrayKlass, _element_klass); }
 
   // Dispatched operation
   bool can_be_primary_super_slow() const;

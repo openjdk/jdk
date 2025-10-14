@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,6 @@
  *       RetryWithCookie
  */
 
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
-import com.sun.net.httpserver.HttpsServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
@@ -48,8 +45,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.CookieManager;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpClient.Redirect;
@@ -63,12 +58,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 
 import static java.lang.System.out;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
+import static java.net.http.HttpClient.Version.HTTP_3;
+import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -76,14 +73,16 @@ import static org.testng.Assert.assertTrue;
 public class RetryWithCookie implements HttpServerAdapters {
 
     SSLContext sslContext;
-    HttpTestServer httpTestServer;        // HTTP/1.1    [ 4 servers ]
+    HttpTestServer httpTestServer;        // HTTP/1.1    [ 5 servers ]
     HttpTestServer httpsTestServer;       // HTTPS/1.1
     HttpTestServer http2TestServer;       // HTTP/2 ( h2c )
     HttpTestServer https2TestServer;      // HTTP/2 ( h2  )
+    HttpTestServer http3TestServer;       // HTTP/3 ( h3  )
     String httpURI;
     String httpsURI;
     String http2URI;
     String https2URI;
+    String http3URI;
 
     static final String MESSAGE = "BasicRedirectTest message body";
     static final int ITERATIONS = 3;
@@ -91,6 +90,7 @@ public class RetryWithCookie implements HttpServerAdapters {
     @DataProvider(name = "positive")
     public Object[][] positive() {
         return new Object[][] {
+                { http3URI,   },
                 { httpURI,    },
                 { httpsURI,   },
                 { http2URI,   },
@@ -101,11 +101,23 @@ public class RetryWithCookie implements HttpServerAdapters {
     static final AtomicLong requestCounter = new AtomicLong();
     final ReferenceTracker TRACKER = ReferenceTracker.INSTANCE;
 
+    private HttpRequest.Builder newRequestBuilder(URI uri) {
+        var builder = HttpRequest.newBuilder(uri);
+        if (uri.getRawPath().contains("/http3/")) {
+            builder = builder.version(HTTP_3)
+                    .setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return builder;
+    }
+
     @Test(dataProvider = "positive")
     void test(String uriString) throws Exception {
         out.printf("%n---- starting (%s) ----%n", uriString);
         CookieManager cookieManager = new CookieManager();
-        HttpClient client = HttpClient.newBuilder()
+        var builder = uriString.contains("/http3/")
+                ? newClientBuilderForH3()
+                : HttpClient.newBuilder();
+        HttpClient client = builder
                 .proxy(NO_PROXY)
                 .followRedirects(Redirect.ALWAYS)
                 .cookieHandler(cookieManager)
@@ -121,7 +133,7 @@ public class RetryWithCookie implements HttpServerAdapters {
         cookieHeaders.put("Set-Cookie", cookies);
         cookieManager.put(uri, cookieHeaders);
 
-        HttpRequest request = HttpRequest.newBuilder(uri)
+        HttpRequest request = newRequestBuilder(uri)
                 .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
                 .build();
         out.println("Initial request: " + request.uri());
@@ -136,7 +148,7 @@ public class RetryWithCookie implements HttpServerAdapters {
             assertEquals(response.statusCode(), 200);
             assertEquals(response.body(), MESSAGE);
             assertEquals(response.headers().allValues("X-Request-Cookie"), cookies);
-            request = HttpRequest.newBuilder(uri)
+            request = newRequestBuilder(uri)
                     .header("X-uuid", "uuid-" + requestCounter.incrementAndGet())
                     .build();
         }
@@ -164,10 +176,15 @@ public class RetryWithCookie implements HttpServerAdapters {
         https2TestServer.addHandler(new CookieRetryHandler(), "/https2/cookie/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/cookie/retry";
 
+        http3TestServer = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
+        http3TestServer.addHandler(new CookieRetryHandler(), "/http3/cookie/");
+        http3URI = "https://" + http3TestServer.serverAuthority() + "/http3/cookie/retry";
+
         httpTestServer.start();
         httpsTestServer.start();
         http2TestServer.start();
         https2TestServer.start();
+        http3TestServer.start();
     }
 
     @AfterTest
@@ -179,6 +196,7 @@ public class RetryWithCookie implements HttpServerAdapters {
             httpsTestServer.stop();
             http2TestServer.stop();
             https2TestServer.stop();
+            http3TestServer.stop();
         } finally {
             if (fail != null) throw fail;
         }

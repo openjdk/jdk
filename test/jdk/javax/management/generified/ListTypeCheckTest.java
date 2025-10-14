@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 6250772
- * @summary Test that *List objects are checked after asList is called.
+ * @bug 6250772 8359809
+ * @summary Test that *List objects are checked
  * @author Eamonn McManus
  *
  * @run clean ListTypeCheckTest
@@ -39,39 +39,45 @@ import javax.management.relation.*;
 
 /* For compatibility reasons, the classes AttributeList, RoleList,
  * and RoleUnresolvedList all extend ArrayList<Object> even though
- * logically they should extend ArrayList<Attribute> etc.  They are
- * all specified to have a method asList() with return type
- * List<Attribute> etc, and to refuse to add any object other than
- * an Attribute etc once this method has been called, but not before.
+ * logically they should extend ArrayList<Attribute> etc.
+ *
+ * Before JDK-8359809, their method asList() had to be called, to make
+ * the class refuse to add any object other than the intended type.
  */
 public class ListTypeCheckTest {
     public static void main(String[] args) throws Exception {
         Class[] classes = {
             AttributeList.class, RoleList.class, RoleUnresolvedList.class,
         };
-        for (Class c : classes)
-            test((Class<? extends ArrayList>) c);
+        Object[] objects =  {
+            new Attribute("myAttr", "myVal"), new Role("myRole", new ArrayList<ObjectName>()),
+            new RoleUnresolved("myRoleUnresolved", new ArrayList<ObjectName>(), RoleStatus.NO_ROLE_WITH_NAME)
+        };
+        for (int i = 0; i < classes.length; i++) {
+            test((Class<? extends ArrayList>) classes[i], objects[i]);
+        }
     }
 
-    private static void test(Class<? extends ArrayList> c) throws Exception {
+    private static void test(Class<? extends ArrayList> c, Object o) throws Exception {
         System.out.println("Testing " + c.getName());
         ArrayList al = c.newInstance();
-        test(al);
+        test(al, o);
     }
 
-    private static void test(ArrayList al) throws Exception {
-        test(al, true);
+    private static void test(ArrayList al, Object o) throws Exception {
+        test0(al, o);
         al.clear();
         Method m = al.getClass().getMethod("asList");
-        m.invoke(al);
-        test(al, false);
+        m.invoke(al); // Calling asList() does not change behaviour
+        test0(al, o);
     }
 
-    private static void test(ArrayList al, boolean allowsBogus) throws Exception {
-        for (int i = 0; i < 5; i++) {
+    private static void test0(ArrayList al, Object o) throws Exception {
+        for (int i = 0; i < 7; i++) {
             try {
                 switch (i) {
                     case 0:
+                        // Add the wrong kind of element, will fail:
                         al.add("yo");
                         break;
                     case 1:
@@ -86,14 +92,27 @@ public class ListTypeCheckTest {
                     case 4:
                         al.set(0, "foo");
                         break;
+                    case 5:
+                        // Add the correct kind of element, so we can test ListIterator.
+                        al.add(o);
+                        ListIterator iter = al.listIterator();
+                        Object x = iter.next();
+                        iter.set("blah"); // Test "set", should fail like the others.
+                        break;
+                    case 6:
+                        // Add the correct kind of element, so we can test ListIterator.
+                        al.add(o);
+                        ListIterator iter2 = al.listIterator();
+                        Object x2 = iter2.next();
+                        iter2.add("blah"); // Test "add", should fail like the others.
+                        break;
                     default:
                         throw new Exception("test wrong");
                 }
-                if (!allowsBogus)
-                    throw new Exception("op allowed but should fail");
+                // All cases above should have caused an Exception:
+                throw new Exception("op " + i + " allowed but should fail on " + al.getClass());
             } catch (IllegalArgumentException e) {
-                if (allowsBogus)
-                    throw new Exception("got exception but should not", e);
+                System.out.println("op " + i + " got expected " + e + " on " + al.getClass());
             }
         }
     }

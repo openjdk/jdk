@@ -472,9 +472,6 @@ class MacroAssembler: public Assembler {
   void push_cont_fastpath();
   void pop_cont_fastpath();
 
-  void inc_held_monitor_count();
-  void dec_held_monitor_count();
-
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two
@@ -988,6 +985,9 @@ public:
   void pop_f(XMMRegister r);
   void push_d(XMMRegister r);
   void pop_d(XMMRegister r);
+
+  void push_ppx(Register src);
+  void pop_ppx(Register dst);
 
   void andpd(XMMRegister dst, XMMRegister    src) { Assembler::andpd(dst, src); }
   void andpd(XMMRegister dst, Address        src) { Assembler::andpd(dst, src); }

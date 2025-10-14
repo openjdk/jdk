@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,13 +37,9 @@ import java.util.Map;
  * {@link MBeanServerConnection#setAttributes setAttributes} methods of
  * {@link MBeanServer} and {@link MBeanServerConnection}.</p>
  *
- * <p id="type-safe">For compatibility reasons, it is possible, though
- * highly discouraged, to add objects to an {@code AttributeList} that are
- * not instances of {@code Attribute}.  However, an {@code AttributeList}
- * can be made <em>type-safe</em>, which means that an attempt to add
- * an object that is not an {@code Attribute} will produce an {@code
- * IllegalArgumentException}.  An {@code AttributeList} becomes type-safe
- * when the method {@link #asList()} is called on it.</p>
+ * <p>It is not permitted to add objects to an {@code AttributeList} that are
+ * not instances of {@code Attribute}.  This will produce an {@code IllegalArgumentException}
+ * when calling methods in this class, or when using {@code listIterator} and {@code add} or {@code set}.</p>
  *
  * @since 1.5
  */
@@ -63,9 +59,6 @@ import java.util.Map;
        for (Attribute a : attributeList.asList())
 */
 public class AttributeList extends ArrayList<Object> {
-
-    private transient volatile boolean typeSafe;
-    private transient volatile boolean tainted;
 
     /* Serial version */
     private static final long serialVersionUID = -4077085769279709076L;
@@ -145,14 +138,6 @@ public class AttributeList extends ArrayList<Object> {
      * @return a {@code List<Attribute>} whose contents
      * reflect the contents of this {@code AttributeList}.
      *
-     * <p>If this method has ever been called on a given
-     * {@code AttributeList} instance, a subsequent attempt to add
-     * an object to that instance which is not an {@code Attribute}
-     * will fail with an {@code IllegalArgumentException}. For compatibility
-     * reasons, an {@code AttributeList} on which this method has never
-     * been called does allow objects other than {@code Attribute}s to
-     * be added.</p>
-     *
      * @throws IllegalArgumentException if this {@code AttributeList} contains
      * an element that is not an {@code Attribute}.
      *
@@ -160,9 +145,7 @@ public class AttributeList extends ArrayList<Object> {
      */
     @SuppressWarnings("unchecked")
     public List<Attribute> asList() {
-        typeSafe = true;
-        if (tainted)
-            adding((Collection<?>) this);  // will throw IllegalArgumentException
+        adding((Collection<?>) this);
         return (List<Attribute>) (List<?>) this;
     }
 
@@ -257,15 +240,12 @@ public class AttributeList extends ArrayList<Object> {
 
     /*
      * Override all of the methods from ArrayList<Object> that might add
-     * a non-Attribute to the List, and disallow that if asList has ever
-     * been called on this instance.
+     * a non-Attribute to the List, and disallow.
      */
 
     /**
      * {@inheritDoc}
-     * @throws IllegalArgumentException if this {@code AttributeList} is
-     * <a href="#type-safe">type-safe</a> and {@code element} is not an
-     * {@code Attribute}.
+     * @throws IllegalArgumentException if {@code element} is not an {@code Attribute}.
      */
     @Override
     public boolean add(Object element) {
@@ -275,9 +255,7 @@ public class AttributeList extends ArrayList<Object> {
 
     /**
      * {@inheritDoc}
-     * @throws IllegalArgumentException if this {@code AttributeList} is
-     * <a href="#type-safe">type-safe</a> and {@code element} is not an
-     * {@code Attribute}.
+     * @throws IllegalArgumentException if {@code element} is not an {@code Attribute}.
      */
     @Override
     public void add(int index, Object element) {
@@ -287,9 +265,7 @@ public class AttributeList extends ArrayList<Object> {
 
     /**
      * {@inheritDoc}
-     * @throws IllegalArgumentException if this {@code AttributeList} is
-     * <a href="#type-safe">type-safe</a> and {@code c} contains an
-     * element that is not an {@code Attribute}.
+     * @throws IllegalArgumentException if {@code c} contains an element that is not an {@code Attribute}.
      */
     @Override
     public boolean addAll(Collection<?> c) {
@@ -299,9 +275,7 @@ public class AttributeList extends ArrayList<Object> {
 
     /**
      * {@inheritDoc}
-     * @throws IllegalArgumentException if this {@code AttributeList} is
-     * <a href="#type-safe">type-safe</a> and {@code c} contains an
-     * element that is not an {@code Attribute}.
+     * @throws IllegalArgumentException if {@code c} contains an element that is not an {@code Attribute}.
      */
     @Override
     public boolean addAll(int index, Collection<?> c) {
@@ -311,9 +285,7 @@ public class AttributeList extends ArrayList<Object> {
 
     /**
      * {@inheritDoc}
-     * @throws IllegalArgumentException if this {@code AttributeList} is
-     * <a href="#type-safe">type-safe</a> and {@code element} is not an
-     * {@code Attribute}.
+     * @throws IllegalArgumentException if {@code element} is not an {@code Attribute}.
      */
     @Override
     public Object set(int index, Object element) {
@@ -324,10 +296,7 @@ public class AttributeList extends ArrayList<Object> {
     private void adding(Object x) {
         if (x == null || x instanceof Attribute)
             return;
-        if (typeSafe)
-            throw new IllegalArgumentException("Not an Attribute: " + x);
-        else
-            tainted = true;
+        throw new IllegalArgumentException("Not an Attribute: " + x);
     }
 
     private void adding(Collection<?> c) {

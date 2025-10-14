@@ -22,10 +22,10 @@
  *
  */
 
-#include "memory/resourceArea.hpp"
 #include "cds/cdsConfig.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/fieldInfo.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/packedTable.hpp"
 
 void FieldInfo::print(outputStream* os, ConstantPool* cp) {

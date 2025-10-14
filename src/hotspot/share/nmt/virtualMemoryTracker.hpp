@@ -26,9 +26,9 @@
 #define SHARE_NMT_VIRTUALMEMORYTRACKER_HPP
 
 #include "nmt/allocationSite.hpp"
-#include "nmt/vmatree.hpp"
 #include "nmt/regionsTree.hpp"
-#include "runtime/atomic.hpp"
+#include "nmt/vmatree.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
 
@@ -82,7 +82,7 @@ class VirtualMemory {
   inline size_t reserved()  const { return _reserved;  }
   inline size_t committed() const { return _committed; }
   inline size_t peak_size() const {
-    return Atomic::load(&_peak_size);
+    return AtomicAccess::load(&_peak_size);
   }
 };
 
@@ -330,12 +330,6 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
   inline MemTag mem_tag() const            { return _mem_tag;  }
 
-  // uncommitted thread stack bottom, above guard pages if there is any.
-  address thread_stack_uncommitted_bottom() const;
-
-  size_t committed_size() const;
-
-
   ReservedMemoryRegion& operator= (const ReservedMemoryRegion& other) {
     set_base(other.base());
     set_size(other.size());
@@ -351,7 +345,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
 class VirtualMemoryWalker : public StackObj {
  public:
-   virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
+  virtual bool do_allocation_site(const ReservedMemoryRegion* rgn) { return false; }
 };
 
 
@@ -382,6 +376,9 @@ class VirtualMemoryTracker {
   // Snapshot current thread stacks
   void snapshot_thread_stacks();
   void apply_summary_diff(VMATree::SummaryDiff diff);
+  size_t committed_size(const ReservedMemoryRegion* rmr);
+  address thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr);
+
   RegionsTree* tree() { return &_tree; }
 
   class Instance : public AllStatic {
@@ -404,6 +401,9 @@ class VirtualMemoryTracker {
     static bool print_containing_region(const void* p, outputStream* st);
     static void snapshot_thread_stacks();
     static void apply_summary_diff(VMATree::SummaryDiff diff);
+    static size_t committed_size(const ReservedMemoryRegion* rmr);
+    // uncommitted thread stack bottom, above guard pages if there is any.
+    static address thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr);
 
     static RegionsTree* tree() { return _tracker->tree(); }
   };

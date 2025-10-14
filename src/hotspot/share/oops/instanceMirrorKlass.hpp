@@ -41,7 +41,6 @@ class ClassFileParser;
 
 
 class InstanceMirrorKlass: public InstanceKlass {
-  friend class VMStructs;
   friend class InstanceKlass;
 
  public:
@@ -51,6 +50,9 @@ class InstanceMirrorKlass: public InstanceKlass {
   static int _offset_of_static_fields;
 
   InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, Kind) {}
+
+  template <class OopClosureType>
+  inline void do_metadata(oop obj, OopClosureType* closure);
 
  public:
   InstanceMirrorKlass();
