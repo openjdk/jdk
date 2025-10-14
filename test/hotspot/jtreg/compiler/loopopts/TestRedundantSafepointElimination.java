@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.loopopts;
 
 import compiler.lib.ir_framework.*;
 
@@ -30,10 +30,9 @@ import compiler.lib.ir_framework.*;
  * @bug 8347499
  * @summary Tests that redundant safepoints can be eliminated in loops.
  * @library /test/lib /
- * @requires vm.compiler2.enabled
- * @run main compiler.c2.irTests.TestLoopSafepoint
+ * @run main compiler.loopopts.TestRedundantSafepointElimination
  */
-public class TestLoopSafepoint {
+public class TestRedundantSafepointElimination {
     public static void main(String[] args) {
         TestFramework.run();
     }
