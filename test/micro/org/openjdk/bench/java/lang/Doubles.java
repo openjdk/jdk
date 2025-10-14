@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(3)
-public class FloatingDecimal {
+public class Doubles {
 
     private double[] randomArray, twoDecimalsArray, integerArray;
     private static final int TESTSIZE = 1000;
@@ -62,6 +62,14 @@ public class FloatingDecimal {
             randomArray[i] = r.nextDouble() * 10000.0D;
             twoDecimalsArray[i] = ((double) (10000 - r.nextInt(20000))) / 100;
             integerArray[i] = (double) (100 - r.nextInt(200));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void toHexString(Blackhole bh) {
+        for (double d : randomArray) {
+            bh.consume(Double.toHexString(d));
         }
     }
 
