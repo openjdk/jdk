@@ -22,30 +22,39 @@
  */
 
 /*
- * @test TestEarlyDynamicLoadJcmd
- * @summary Test that jcmd fails gracefully when the JVM is not in live phase
+ * @test TestEarlyDynamicLoadAttach
+ * @summary Test that dynamic attach (via VirtualMachine) fails gracefully when the JVM is not in live phase
  * @requires vm.jvmti
  * @library /test/lib
- * @run driver TestEarlyDynamicLoadJcmd
+ * @run driver TestEarlyDynamicLoadAttach
  */
 
+import com.sun.tools.attach.VirtualMachine;
 import java.io.File;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.JDKToolFinder;
 
-public class TestEarlyDynamicLoadJcmd {
+public class TestEarlyDynamicLoadAttach {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+StartAttachListener",
-                "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicAttach"),
+                "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
                 "-version");
-        pb.environment().put("MODE", "jcmd");
-        String jcmdPath = JDKToolFinder.getJDKTool("jcmd");
-        pb.environment().put("JCMD_PATH", jcmdPath);
+        String javaPath = JDKToolFinder.getJDKTool("java");
+        pb.environment().put("JAVA_PATH", javaPath);
+        pb.environment().put("CLASSPATH", System.getProperty("java.class.path"));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
+    }
+}
+
+class AttachAgent {
+    public static void main(String... args) throws Exception {
+        VirtualMachine vm = VirtualMachine.attach(args[0]);
+        vm.loadAgent("some.jar");
+        vm.detach();
     }
 }
