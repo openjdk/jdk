@@ -146,7 +146,7 @@ void CardTableBarrierSet::initialize_deferred_card_mark_barriers() {
   // otherwise remains unused.
 #if COMPILER2_OR_JVMCI
   _defer_initial_card_mark = CompilerConfig::is_c2_or_jvmci_compiler_enabled() && ReduceInitialCardMarks
-                             && (DeferInitialCardMark || card_mark_must_follow_store());
+                             && DeferInitialCardMark;
 #else
   assert(_defer_initial_card_mark == false, "Who would set it?");
 #endif
@@ -184,8 +184,4 @@ void CardTableBarrierSet::on_thread_detach(Thread* thread) {
   if (thread->is_Java_thread()) { // Only relevant for Java threads.
     flush_deferred_card_mark_barrier(JavaThread::cast(thread));
   }
-}
-
-bool CardTableBarrierSet::card_mark_must_follow_store() const {
-  return false;
 }

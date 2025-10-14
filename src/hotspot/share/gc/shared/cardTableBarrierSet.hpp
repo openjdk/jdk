@@ -88,17 +88,6 @@ public:
   // remembered set.
   void flush_deferred_card_mark_barrier(JavaThread* thread);
 
-  // If a compiler is eliding store barriers for TLAB-allocated objects,
-  // we will be informed of a slow-path allocation by a call
-  // to on_slowpath_allocation_exit() below. Such a call precedes the
-  // initialization of the object itself, and no post-store-barriers will
-  // be issued. Some heap types require that the barrier strictly follows
-  // the initializing stores. (This is currently implemented by deferring the
-  // barrier until the next slow-path allocation or gc-related safepoint.)
-  // This interface answers whether a particular barrier type needs the card
-  // mark to be thus strictly sequenced after the stores.
-  virtual bool card_mark_must_follow_store() const;
-
   virtual void on_slowpath_allocation_exit(JavaThread* thread, oop new_obj);
   virtual void on_thread_detach(Thread* thread);
 
