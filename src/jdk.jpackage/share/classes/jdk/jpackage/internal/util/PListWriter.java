@@ -90,7 +90,13 @@ public final class PListWriter {
 
     public static void writePList(XMLStreamWriter xml, XmlConsumer content)
             throws XMLStreamException, IOException {
-        xml.writeDTD("plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"https://www.apple.com/DTDs/PropertyList-1.0.dtd\"");
+        try {
+            xml.writeDTD("<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"https://www.apple.com/DTDs/PropertyList-1.0.dtd\">");
+        } catch (UnsupportedOperationException ex) {
+            // Silently ignore.
+            // This would normally be thrown by com.sun.xml.internal.stream.writers.XMLDOMWriterImpl.writeDTD()
+            // or (presumably) any other DOM tree-backed XML stream writer implementation.
+        }
         xml.writeStartElement("plist");
         xml.writeAttribute("version", "1.0");
         content.accept(xml);
