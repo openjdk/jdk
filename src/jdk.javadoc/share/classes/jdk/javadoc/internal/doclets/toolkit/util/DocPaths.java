@@ -106,6 +106,9 @@ public class DocPaths {
     /** The name of the copy-to-clipboard icon file. */
     public static final DocPath CLIPBOARD_SVG = DocPath.create("copy.svg");
 
+    /** The name of the downwards pointing angle icon. */
+    public static final DocPath DOWN_SVG = DocPath.create("down.svg");
+
     /** The name of the left pointing angle icon. */
     public static final DocPath LEFT_SVG = DocPath.create("left.svg");
 
@@ -114,6 +117,12 @@ public class DocPaths {
 
     /** The name of the right pointing angle icon. */
     public static final DocPath RIGHT_SVG = DocPath.create("right.svg");
+
+    /** The name of the moon icon for the dark theme. */
+    public static final DocPath MOON_SVG = DocPath.create("moon.svg");
+
+    /** The name of the sun icon for the light theme. */
+    public static final DocPath SUN_SVG = DocPath.create("sun.svg");
 
     /** The name of the syntax highlighting style sheet. */
     public static final DocPath HIGHLIGHT_CSS = DocPath.create("highlight.css");

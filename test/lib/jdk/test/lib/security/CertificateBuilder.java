@@ -24,12 +24,10 @@
 package jdk.test.lib.security;
 
 import java.io.*;
+import java.security.cert.*;
+import java.security.cert.Extension;
 import java.util.*;
 import java.security.*;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.Extension;
 import java.time.temporal.ChronoUnit;
 import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
@@ -55,6 +53,7 @@ import sun.security.x509.KeyUsageExtension;
 import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.URIName;
 import sun.security.x509.KeyIdentifier;
+
 
 /**
  * Helper class that builds and signs X.509 certificates.
@@ -99,6 +98,89 @@ public class CertificateBuilder {
     private final Map<String, Extension> extensions = new HashMap<>();
     private byte[] tbsCertBytes;
     private byte[] signatureBytes;
+
+    public enum KeyUsage {
+        DIGITAL_SIGNATURE,
+        NONREPUDIATION,
+        KEY_ENCIPHERMENT,
+        DATA_ENCIPHERMENT,
+        KEY_AGREEMENT,
+        KEY_CERT_SIGN,
+        CRL_SIGN,
+        ENCIPHER_ONLY,
+        DECIPHER_ONLY;
+    }
+
+    /**
+     * Create a new CertificateBuilder instance. This method sets the subject name,
+     * public key, authority key id, and serial number.
+     *
+     * @param subjectName entity associated with the public key
+     * @param publicKey the entity's public key
+     * @param caKey public key of certificate signer
+     * @param keyUsages list of key uses
+     * @return
+     * @throws CertificateException
+     * @throws IOException
+     */
+    public static CertificateBuilder newCertificateBuilder(String subjectName,
+                           PublicKey publicKey, PublicKey caKey, KeyUsage... keyUsages)
+            throws CertificateException, IOException {
+        SecureRandom random = new SecureRandom();
+
+        boolean [] keyUsage = new boolean[KeyUsage.values().length];
+        for (KeyUsage ku : keyUsages) {
+            keyUsage[ku.ordinal()] = true;
+        }
+
+        CertificateBuilder builder = new CertificateBuilder()
+                .setSubjectName(subjectName)
+                .setPublicKey(publicKey)
+                .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
+                .addSubjectKeyIdExt(publicKey)
+                .addAuthorityKeyIdExt(caKey);
+        if (keyUsages.length != 0) {
+            builder.addKeyUsageExt(keyUsage);
+        }
+        return builder;
+    }
+
+    /**
+     * Create a Subject Alternative Name extension for the given DNS name
+     * @param critical Sets the extension to critical or non-critical
+     * @param dnsName DNS name to use in the extension
+     * @throws IOException
+     */
+    public static SubjectAlternativeNameExtension createDNSSubjectAltNameExt(
+            boolean critical, String dnsName) throws IOException {
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new DNSName(dnsName)));
+        return new SubjectAlternativeNameExtension(critical, gns);
+    }
+
+    /**
+     * Create a Subject Alternative Name extension for the given IP address
+     * @param critical Sets the extension to critical or non-critical
+     * @param ipAddress IP address to use in the extension
+     * @throws IOException
+     */
+    public static SubjectAlternativeNameExtension createIPSubjectAltNameExt(
+            boolean critical, String ipAddress) throws IOException {
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new IPAddressName(ipAddress)));
+        return new SubjectAlternativeNameExtension(critical, gns);
+    }
+
+    public static void printCertificate(X509Certificate certificate, PrintStream ps) {
+        try {
+            Base64.Encoder encoder = Base64.getEncoder();
+            ps.println("-----BEGIN CERTIFICATE-----");
+            ps.println(encoder.encodeToString(certificate.getEncoded()));
+            ps.println("-----END CERTIFICATE-----");
+        } catch (CertificateEncodingException exc) {
+            exc.printStackTrace(ps);
+        }
+    }
 
     /**
      * Default constructor for a {@code CertificateBuilder} object.
@@ -175,6 +257,11 @@ public class CertificateBuilder {
      */
     public CertificateBuilder setValidity(Date nbDate, Date naDate) {
         return setNotBefore(nbDate).setNotAfter(naDate);
+    }
+
+    public CertificateBuilder setOneHourValidity() {
+        return setNotBefore(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)))
+                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)));
     }
 
     /**

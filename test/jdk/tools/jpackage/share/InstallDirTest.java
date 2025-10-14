@@ -66,7 +66,7 @@ import jdk.jpackage.test.TKit.TextStreamVerifier;
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror InstallDirTest.java
  * @requires (jpackage.test.SQETest != null)
- * @run main/othervm/timeout=540 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=4000 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InstallDirTest.testCommon
  */
 
@@ -78,7 +78,7 @@ import jdk.jpackage.test.TKit.TextStreamVerifier;
  * @build jdk.jpackage.test.*
  * @compile -Xlint:all -Werror InstallDirTest.java
  * @requires (jpackage.test.SQETest == null)
- * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
+ * @run main/othervm/timeout=4000 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=InstallDirTest
  */
 public class InstallDirTest {

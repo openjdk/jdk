@@ -45,9 +45,9 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
+#include "utilities/hashTable.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
-#include "utilities/resourceHash.hpp"
 
 ModuleEntry* ModuleEntryTable::_javabase_module = nullptr;
 
@@ -403,7 +403,7 @@ void ModuleEntry::set_loader_data(ClassLoaderData* cld) {
 }
 
 #if INCLUDE_CDS_JAVA_HEAP
-typedef ResourceHashtable<
+typedef HashTable<
   const ModuleEntry*,
   ModuleEntry*,
   557, // prime number
@@ -697,6 +697,8 @@ void ModuleEntryTable::finalize_javabase(Handle module_handle, Symbol* version, 
 // classes needing their module field set are added to the fixup_module_list.
 // Their module field is set once java.base's java.lang.Module is known to the VM.
 void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module_handle) {
+  assert(!CDSConfig::is_using_aot_linked_classes(), "patching is not necessary with AOT-linked classes");
+
   if (module_handle.is_null()) {
     fatal("Unable to patch the module field of classes loaded prior to "
           JAVA_BASE_NAME "'s definition, invalid java.lang.Module");

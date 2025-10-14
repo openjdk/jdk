@@ -24,7 +24,7 @@
  *
  */
 
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
@@ -43,7 +43,7 @@
 #include "oops/compressedOops.hpp"
 #include "prims/whitebox.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/init.hpp"
@@ -104,8 +104,8 @@ int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 const intptr_t    VMError::segfault_address = pd_segfault_address;
-volatile intptr_t VMError::_handshake_timed_out_thread = p2i(nullptr);
-volatile intptr_t VMError::_safepoint_timed_out_thread = p2i(nullptr);
+Thread* volatile VMError::_handshake_timed_out_thread = nullptr;
+Thread* volatile VMError::_safepoint_timed_out_thread = nullptr;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -559,24 +559,24 @@ jlong VMError::get_current_timestamp() {
 
 void VMError::record_reporting_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(&_reporting_start_time, now);
+  AtomicAccess::store(&_reporting_start_time, now);
 }
 
 jlong VMError::get_reporting_start_time() {
-  return Atomic::load(&_reporting_start_time);
+  return AtomicAccess::load(&_reporting_start_time);
 }
 
 void VMError::record_step_start_time() {
   const jlong now = get_current_timestamp();
-  Atomic::store(&_step_start_time, now);
+  AtomicAccess::store(&_step_start_time, now);
 }
 
 jlong VMError::get_step_start_time() {
-  return Atomic::load(&_step_start_time);
+  return AtomicAccess::load(&_step_start_time);
 }
 
 void VMError::clear_step_start_time() {
-  return Atomic::store(&_step_start_time, (jlong)0);
+  return AtomicAccess::store(&_step_start_time, (jlong)0);
 }
 
 // This is the main function to report a fatal error. Only one thread can
@@ -821,10 +821,10 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->print(" (0x%x)", _id);                // signal number
       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
       if (_siginfo != nullptr && os::signal_sent_by_kill(_siginfo)) {
-        if (_handshake_timed_out_thread == p2i(_thread)) {
-          st->print(" (sent by handshake timeout handler");
-        } else if (_safepoint_timed_out_thread == p2i(_thread)) {
-          st->print(" (sent by safepoint timeout handler");
+        if (get_handshake_timed_out_thread() == _thread) {
+          st->print(" (sent by handshake timeout handler)");
+        } else if (get_safepoint_timed_out_thread() == _thread) {
+          st->print(" (sent by safepoint timeout handler)");
         } else {
           st->print(" (sent by kill)");
         }
@@ -1078,7 +1078,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     print_stack_location(st, _context, continuation);
     st->cr();
 
-  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread() && LockingMode == LM_LIGHTWEIGHT);
+  STEP_IF("printing lock stack", _verbose && _thread != nullptr && _thread->is_Java_thread());
     st->print_cr("Lock stack of current Java thread (top to bottom):");
     JavaThread::cast(_thread)->lock_stack().print_on(st);
     st->cr();
@@ -1143,9 +1143,11 @@ void VMError::report(outputStream* st, bool _verbose) {
     }
 
   STEP_IF("printing registered callbacks", _verbose && _thread != nullptr);
+    size_t count = 0;
     for (VMErrorCallback* callback = _thread->_vm_error_callbacks;
         callback != nullptr;
         callback = callback->_next) {
+      st->print_cr("VMErrorCallback %zu:", ++count);
       callback->call(st);
       st->cr();
     }
@@ -1199,7 +1201,7 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing compressed klass pointers mode", _verbose && UseCompressedClassPointers)
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1338,12 +1340,24 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef END
 }
 
-void VMError::set_handshake_timed_out_thread(intptr_t thread_addr) {
-  _handshake_timed_out_thread = thread_addr;
+void VMError::set_handshake_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
+  AtomicAccess::replace_if_null(&_handshake_timed_out_thread, thread);
 }
 
-void VMError::set_safepoint_timed_out_thread(intptr_t thread_addr) {
-  _safepoint_timed_out_thread = thread_addr;
+void VMError::set_safepoint_timed_out_thread(Thread* thread) {
+  // Only preserve the first thread to time-out this way. The atomic operation ensures
+  // visibility to the target thread.
+  AtomicAccess::replace_if_null(&_safepoint_timed_out_thread, thread);
+}
+
+Thread* VMError::get_handshake_timed_out_thread() {
+  return AtomicAccess::load(&_handshake_timed_out_thread);
+}
+
+Thread* VMError::get_safepoint_timed_out_thread() {
+  return AtomicAccess::load(&_safepoint_timed_out_thread);
 }
 
 // Report for the vm_info_cmd. This prints out the information above omitting
@@ -1402,7 +1416,7 @@ void VMError::print_vm_info(outputStream* st) {
 
   // STEP("printing compressed class ptrs mode")
   if (UseCompressedClassPointers) {
-    CDS_ONLY(MetaspaceShared::print_on(st);)
+    CDS_ONLY(AOTMetaspace::print_on(st);)
     Metaspace::print_compressed_class_space(st);
     CompressedKlassPointers::print_mode(st);
     st->cr();
@@ -1679,7 +1693,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
 
   intptr_t mytid = os::current_thread_id();
   if (_first_error_tid == -1 &&
-      Atomic::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
+      AtomicAccess::cmpxchg(&_first_error_tid, (intptr_t)-1, mytid) == -1) {
 
     if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
