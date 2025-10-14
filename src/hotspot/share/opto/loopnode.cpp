@@ -4165,20 +4165,20 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
 // backedge (arc 3->2).  So it deletes the ncsfpt (non-call safepoint)
 // in block 2, _but_ this leaves the outer loop without a safepoint.
 //
-//          entry  0
-//                 |
-//                 v
-// outer 1,2    +->1
-//              |  |
-//              |  v
-//              |  2<---+  ncsfpt in 2
-//              |_/|\   |
-//                 | v  |
-// inner 2,3      /  3  |  call in 3
-//               /   |  |
-//              v    +--+
-//        exit  4
-//
+//             entry  0
+//                    |
+//                    v
+//   outer 1,2,4  +-> 1
+//                |    \
+//                |     v
+//    inner 2,3   |     2 <---+  ncsfpt in 2
+//                |    / \    |
+//                |   v   v   |
+//                |  4     3  |  call in 3
+//                |_/ \     \_|
+//                     |
+//                     v
+//               exit  5
 //
 // This method maintains a list (_required_safept) of ncsfpts that must
 // be protected for each loop. It only marks ncsfpts for prevervation,
@@ -4189,8 +4189,11 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
 // See `PhaseIdealLoop::is_deleteable_safept`.
 //
 // The insights into the problem:
-//  A) Counted loops are okay
-//  B) Innermost loops are okay because there's no inner loops can delete
+//  A) Counted loops are okay (i.e. do not need to preserve ncsfpts),
+//     because they will only execute for a short time
+//  B) Innermost loops are okay because there's no inner loops that can
+//     delete their ncsfpts. Only outer loops need to mark safepoints for
+//     protection, because only loops further in can accidentally delete
 //     their ncsfpts
 //  C) If an outer loop has a call that's guaranteed to execute (on the
 //     idom-path), then that loop is okay. Because the call will always
