@@ -263,12 +263,12 @@ public class TestScenariosCrossProduct {
          */
         private static void assertSameResultWhenManuallyAdding(List<Scenario> scenariosFromCrossProduct,
                                                                Set<Set<String>> expectedScenariosWithFlags) {
-            List<Scenario> expectedScenarios = getScenariosWIthFlags(expectedScenariosWithFlags);
+            List<Scenario> expectedScenarios = getScenariosWithFlags(expectedScenariosWithFlags);
             List<Scenario> fetchedScenarios = addScenariosAndFetchFromFramework(expectedScenarios);
             assertSameScenarios(scenariosFromCrossProduct, fetchedScenarios);
         }
 
-        private static List<Scenario> getScenariosWIthFlags(Set<Set<String>> expectedScenariosWithFlags) {
+        private static List<Scenario> getScenariosWithFlags(Set<Set<String>> expectedScenariosWithFlags) {
             List<Scenario> expecedScenarioList = new ArrayList<>();
             int index = -1; // Use some different indices - should not matter what we choose.
             for (Set<String> expectedScenarioFlags : expectedScenariosWithFlags) {
@@ -329,7 +329,7 @@ public class TestScenariosCrossProduct {
         } catch (TestRunException e) {
             // Expected.
             System.setErr(originalErr);
-            Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3"));
+            Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3."));
             String stdErr = outputStream.toString();
             Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:+UseNewCode, -XX:+UseNewCode2]"));
             Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:-UseNewCode, -XX:-UseNewCode2]"));
