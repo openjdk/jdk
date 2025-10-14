@@ -77,7 +77,7 @@ class ExecutableJarTest {
     }
 
     /**
-     * Test executable JAR with code thatyses  Lookup.unreflectSetter to get MH to a
+     * Test executable JAR with code that uses Lookup.unreflectSetter to get MH to a
      * final field. A warning should be printed.
      */
     @Test
