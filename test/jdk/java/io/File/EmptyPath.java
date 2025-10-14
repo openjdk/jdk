@@ -382,7 +382,7 @@ public class EmptyPath {
     }
 
     @Test
-    public void callToString() {
+    public void testToString() {
         assertEquals(EMPTY_STRING, f.toString());
     }
 
