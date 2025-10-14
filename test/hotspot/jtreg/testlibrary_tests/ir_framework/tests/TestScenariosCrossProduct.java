@@ -23,12 +23,15 @@
 
 package ir_framework.tests;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.ir_framework.shared.TestFormatException;
+import compiler.lib.ir_framework.shared.TestRunException;
 import jdk.test.lib.Asserts;
 
 /*
@@ -50,7 +53,10 @@ public class TestScenariosCrossProduct {
             TestFramework t = new TestFramework();
             t.addCrossProductScenarios(Set.of("blub"), Set.of("foo", null));
             shouldHaveThrown();
-        } catch (NullPointerException e) {} // Set.of prevents null elements
+        } catch (NullPointerException _) {
+            // Expected: Set.of prevents null elements
+        }
+
 
         try {
             TestFramework t = new TestFramework();
@@ -180,6 +186,8 @@ public class TestScenariosCrossProduct {
                         Set.of("-XX:+UseNewCode3")
                 ))
                 .runWithPreAddedScenarios(testFramework);
+
+        runEndToEndTest();
     }
 
     private static void expectFormatFailure(Set<String>... flagSets) {
@@ -223,17 +231,6 @@ public class TestScenariosCrossProduct {
             assertSameResultWhenManuallyAdding(scenariosFromCrossProduct, expectedScenariosWithFlags);
         }
 
-        private static List<Scenario> getScenarios(TestFramework testFramework) {
-            Field field;
-            try {
-                field = TestFramework.class.getDeclaredField("scenarios");
-                field.setAccessible(true);
-                return (List<Scenario>)field.get(testFramework);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         private static void assertScenarioCount(int expectedCount, List<Scenario> scenarios) {
             Asserts.assertEQ(expectedCount, scenarios.size(), "Scenario count is off");
         }
@@ -244,13 +241,12 @@ public class TestScenariosCrossProduct {
          */
         private static void assertScenariosWithFlags(List<Scenario> scenariosFromCrossProduct,
                                                      Set<Set<String>> expectedScenariosWithFlags) {
-            outer:
             for (Set<String> expectedScenarioFlags : expectedScenariosWithFlags) {
-                for (Scenario scenario : scenariosFromCrossProduct) {
-                    Set<String> scenarioFlags = new HashSet<>(scenario.getFlags());
-                    if (scenarioFlags.equals(expectedScenarioFlags)) { // equals() ignores order
-                        continue outer;
-                    }
+                if (scenariosFromCrossProduct.stream()
+                        .map(Scenario::getFlags)
+                        .map(Set::copyOf)
+                        .anyMatch(flags -> flags.equals(expectedScenarioFlags))) {
+                    continue;
                 }
                 System.err.println("Scenarios from cross product:");
                 for (Scenario s : scenariosFromCrossProduct) {
@@ -299,6 +295,51 @@ public class TestScenariosCrossProduct {
         }
     }
 
+    private static List<Scenario> getScenarios(TestFramework testFramework) {
+        Field field;
+        try {
+            field = TestFramework.class.getDeclaredField("scenarios");
+            field.setAccessible(true);
+            return (List<Scenario>)field.get(testFramework);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     *  Also run a simple end-to-end test to sanity check the API method. We capture the stderr to fetch the
+     *  scenario flags.
+     */
+    private static void runEndToEndTest() {
+        TestFramework testFramework = new TestFramework();
+
+        // Capture stderr
+        PrintStream originalErr = System.err;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream printStream = new PrintStream(outputStream);
+        System.setErr(printStream);
+
+        try {
+            testFramework
+                    .addCrossProductScenarios(Set.of("-XX:+UseNewCode", "-XX:-UseNewCode"),
+                                              Set.of("-XX:+UseNewCode2", "-XX:-UseNewCode2"))
+                    .addFlags()
+                    .start();
+            shouldHaveThrown();
+        } catch (TestRunException e) {
+            // Expected.
+            System.setErr(originalErr);
+            Asserts.assertTrue(e.getMessage().contains("The following scenarios have failed: #0, #1, #2, #3"));
+            String stdErr = outputStream.toString();
+            Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:+UseNewCode, -XX:+UseNewCode2]"));
+            Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:-UseNewCode, -XX:-UseNewCode2]"));
+            Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:+UseNewCode, -XX:-UseNewCode2]"));
+            Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:-UseNewCode, -XX:+UseNewCode2]"));
+        }
+    }
+
     @Test
-    public void notActuallyRun() {}
+    public void endToEndTest() {
+        throw new RuntimeException("executed test");
+    }
 }
