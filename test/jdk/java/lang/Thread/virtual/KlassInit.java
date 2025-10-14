@@ -25,7 +25,7 @@
  * @test id=default
  * @library /test/lib
  * @requires vm.continuations
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @run junit/othervm/timeout=480 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
@@ -33,7 +33,7 @@
  * @test id=Xint
  * @library /test/lib
  * @requires vm.continuations
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @run junit/othervm/timeout=480 -Xint -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
@@ -41,7 +41,7 @@
  * @test id=Xcomp
  * @library /test/lib
  * @requires vm.continuations
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @run junit/othervm/timeout=480 -Xcomp -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
@@ -49,7 +49,7 @@
  * @test id=Xcomp-TieredStopAtLevel1
  * @library /test/lib
  * @requires vm.continuations
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @run junit/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
@@ -57,7 +57,7 @@
  * @test id=Xcomp-noTieredCompilation
  * @library /test/lib
  * @requires vm.continuations
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
@@ -65,7 +65,7 @@
  * @test id=gc
  * @library /test/lib
  * @requires vm.debug == true & vm.continuations
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
+ * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
  * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 

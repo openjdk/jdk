@@ -41,6 +41,7 @@ class SmallRegisterMapType {
 
   static void assert_is_fp(VMReg r) NOT_DEBUG_RETURN
                                     DEBUG_ONLY({ assert (r == fp->as_VMReg() || r == fp->as_VMReg()->next(), "Reg: %s", r->name()); })
+
 public:
   // as_RegisterMap is used when we didn't want to templatize and abstract over RegisterMap type to support SmallRegisterMap
   // Consider enhancing SmallRegisterMap to support those cases
