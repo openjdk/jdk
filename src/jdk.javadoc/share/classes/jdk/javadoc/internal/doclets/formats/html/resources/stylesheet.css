@@ -699,6 +699,7 @@ dl.name-value > dd {
     cursor: pointer;
     padding: 6px 10px;
     white-space: nowrap;
+    border: 1px solid transparent;
 }
 .main-grid nav.toc button > img {
     vertical-align: middle;
