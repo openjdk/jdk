@@ -84,6 +84,15 @@ if [ -f "${old_reg_record}" ]; then
   Reg import ${old_reg_record}
 fi
 
+echo Restore EUDC.tte
+if [ -n "${old_eudc_tte}" ]; then
+    echo ...Restore original EUDC.tte
+    cp "${old_eudc_tte}" "${windows_eudc_tte}"
+else
+    echo ...Delete test EUDC.tte
+    rm "${windows_eudc_tte}"
+fi
+
 if [ $result -ne 0 ]; then
       echo "Test fails: exception thrown!"
       exit 1
