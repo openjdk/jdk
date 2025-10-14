@@ -27,10 +27,10 @@
 #define SHARE_NMT_MALLOCHEADER_HPP
 
 #include "nmt/memTag.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
-#include "sanitizers/address.hpp"
 
 class outputStream;
 
@@ -176,11 +176,11 @@ class MallocHeader {
 public:
   #ifndef _LP64
   inline uint32_t alt_canary() const {
-    AsanPoisoningHelper<AltCanaryType> _temp(reinterpret_cast<CanaryType*>(&_alt_canary));
+    AsanPoisoningHelper<AltCanaryType, const AltCanaryType> _temp(&_alt_canary);
     return _alt_canary;
   }
   inline void set_alt_canary(uint32_t value) {
-    AsanPoisoningHelper<AltCanaryType> _temp(reinterpret_cast<CanaryType*>(&_alt_canary));
+    AsanPoisoningHelper<AltCanaryType, const AltCanaryType> _temp(&_alt_canary);
       _alt_canary = value;
   }
   #endif
