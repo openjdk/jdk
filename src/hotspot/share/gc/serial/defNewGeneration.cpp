@@ -45,7 +45,6 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/strongRootsScope.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
@@ -600,13 +599,11 @@ bool DefNewGeneration::collect(bool clear_all_soft_refs) {
                                                   &old_gen_cl);
 
   {
-    StrongRootsScope srs(0);
     RootScanClosure oop_closure{this};
     CLDScanClosure cld_closure{this};
 
-    MarkingNMethodClosure nmethod_closure(&oop_closure,
-                                          NMethodToOopClosure::FixRelocations,
-                                          false /* keepalive_nmethods */);
+    NMethodToOopClosure nmethod_closure(&oop_closure,
+                                        NMethodToOopClosure::FixRelocations);
 
     // Starting tracing from roots, there are 4 kinds of roots in young-gc.
     //
@@ -809,7 +806,7 @@ void DefNewGeneration::reset_scratch() {
   }
 }
 
-void DefNewGeneration::gc_epilogue(bool full) {
+void DefNewGeneration::gc_epilogue() {
   assert(!GCLocker::is_active(), "We should not be executing here");
   // update the generation and space performance counters
   update_counters();

@@ -152,17 +152,6 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
-void ParallelScavengeHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void ParallelScavengeHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
-}
 class PSIsScavengable : public BoolObjectClosure {
   bool do_object_b(oop obj) {
     return ParallelScavengeHeap::heap()->is_in_young(obj);
@@ -275,38 +264,60 @@ HeapWord* ParallelScavengeHeap::mem_allocate(size_t size) {
   return mem_allocate_work(size, is_tlab);
 }
 
+HeapWord* ParallelScavengeHeap::mem_allocate_cas_noexpand(size_t size, bool is_tlab) {
+  // Try young-gen first.
+  HeapWord* result = young_gen()->allocate(size);
+  if (result != nullptr) {
+    return result;
+  }
+
+  // Try allocating from the old gen for non-TLAB and large allocations.
+  if (!is_tlab) {
+    if (!should_alloc_in_eden(size)) {
+      result = old_gen()->cas_allocate_noexpand(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  // In extreme cases, try allocating in from space also.
+  if (_is_heap_almost_full) {
+    result = young_gen()->from_space()->cas_allocate(size);
+    if (result != nullptr) {
+      return result;
+    }
+    if (!is_tlab) {
+      result = old_gen()->cas_allocate_noexpand(size);
+      if (result != nullptr) {
+        return result;
+      }
+    }
+  }
+
+  return nullptr;
+}
+
 HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
   for (uint loop_count = 0; /* empty */; ++loop_count) {
-    // Try young-gen first.
-    HeapWord* result = young_gen()->allocate(size);
+    HeapWord* result = mem_allocate_cas_noexpand(size, is_tlab);
     if (result != nullptr) {
       return result;
     }
 
-    // Try allocating from the old gen for non-TLAB in certain scenarios.
-    if (!is_tlab) {
-      if (!should_alloc_in_eden(size) || _is_heap_almost_full) {
-        result = old_gen()->cas_allocate_noexpand(size);
-        if (result != nullptr) {
-          return result;
-        }
-      }
-    }
-
-    // We don't want to have multiple collections for a single filled generation.
-    // To prevent this, each thread tracks the total_collections() value, and if
-    // the count has changed, does not do a new collection.
-    //
-    // The collection count must be read only while holding the heap lock. VM
-    // operations also hold the heap lock during collections. There is a lock
-    // contention case where thread A blocks waiting on the Heap_lock, while
-    // thread B is holding it doing a collection. When thread A gets the lock,
-    // the collection count has already changed. To prevent duplicate collections,
-    // The policy MUST attempt allocations during the same period it reads the
-    // total_collections() value!
+    // Read total_collections() under the lock so that multiple
+    // allocation-failures result in one GC.
     uint gc_count;
     {
       MutexLocker ml(Heap_lock);
+
+      // Re-try after acquiring the lock, because a GC might have occurred
+      // while waiting for this lock.
+      result = mem_allocate_cas_noexpand(size, is_tlab);
+      if (result != nullptr) {
+        return result;
+      }
+
       gc_count = total_collections();
     }
 
@@ -317,6 +328,11 @@ HeapWord* ParallelScavengeHeap::mem_allocate_work(size_t size, bool is_tlab) {
       if (op.gc_succeeded()) {
         assert(is_in_or_null(op.result()), "result not in heap");
         return op.result();
+      }
+
+      if (is_shutting_down()) {
+        stall_for_vm_shutdown();
+        return nullptr;
       }
     }
 
@@ -469,14 +485,9 @@ void ParallelScavengeHeap::collect(GCCause::Cause cause) {
   VMThread::execute(&op);
 }
 
-bool ParallelScavengeHeap::must_clear_all_soft_refs() {
-  return _gc_cause == GCCause::_metadata_GC_clear_soft_refs ||
-         _gc_cause == GCCause::_wb_full_gc;
-}
-
 void ParallelScavengeHeap::collect_at_safepoint(bool full) {
   assert(!GCLocker::is_active(), "precondition");
-  bool clear_soft_refs = must_clear_all_soft_refs();
+  bool clear_soft_refs = GCCause::should_clear_all_soft_refs(_gc_cause);
 
   if (!full) {
     bool success = PSScavenge::invoke(clear_soft_refs);

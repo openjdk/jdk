@@ -267,6 +267,7 @@
 +com/sun/management/
 +com/sun/nio/sctp/
 +jdk/
++jdk/net/
 #
 #Exported(true) in 8u40:
 #
