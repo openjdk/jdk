@@ -25,6 +25,10 @@
 
 package java.lang.reflect;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.AnnotationFormatError;
+import java.util.StringJoiner;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
@@ -34,14 +38,11 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.reflect.annotation.TypeAnnotation;
 import sun.reflect.annotation.TypeAnnotationParser;
-import sun.reflect.generics.repository.ConstructorRepository;
-import sun.reflect.generics.repository.GenericDeclRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
+import sun.reflect.generics.repository.ConstructorRepository;
+import sun.reflect.generics.repository.GenericDeclRepository;
 import sun.reflect.generics.scope.ConstructorScope;
-import java.lang.annotation.Annotation;
-import java.lang.annotation.AnnotationFormatError;
-import java.util.StringJoiner;
 
 /**
  * {@code Constructor} provides information about, and access to, a single
@@ -74,6 +75,9 @@ public final class Constructor<T> extends Executable {
     private final transient String    signature;
     private final byte[]              annotations;
     private final byte[]              parameterAnnotations;
+
+    // reflect capability
+    private ReflectPrivilege reflectPrivilege;
 
     // Generics infrastructure
     // Accessor for factory
@@ -499,6 +503,110 @@ public final class Constructor<T> extends Executable {
         T inst = (T) ca.newInstance(args);
         return inst;
     }
+
+    /**
+     * Uses the constructor represented by this {@code Constructor} object
+     * and the {@code ReflectPrivilege} object associated with this method
+     * to create and initialize a new instance of the constructor's
+     * declaring class, with the specified initialization parameters.
+     *
+     * Individual parameters are automatically unwrapped to match
+     * primitive formal parameters, and both primitive and reference
+     * parameters are subject to method invocation conversions as necessary.
+     *
+     * <p>If the number of formal parameters required by the underlying constructor
+     * is 0, the supplied {@code initargs} array may be of length 0 or null.
+     *
+     * <p>If the constructor's declaring class is an inner class in a
+     * non-static context, the first argument to the constructor needs
+     * to be the enclosing instance; see section {@jls 15.9.3} of
+     * <cite>The Java Language Specification</cite>.
+     *
+     * <p>If the required access and argument checks succeed and the
+     * instantiation will proceed, the constructor's declaring class
+     * is initialized if it has not already been initialized.
+     *
+     * <p>If the constructor completes normally, returns the newly
+     * created and initialized instance.
+     *
+     * @param initargs array of objects to be passed as arguments to
+     * the constructor call; values of primitive types are wrapped in
+     * a wrapper object of the appropriate type (e.g. a {@code float}
+     * in a {@link java.lang.Float Float})
+     *
+     * @return a new object created by calling the constructor
+     * this object represents
+     *
+     * @throws    IllegalAccessException    if this {@code Constructor} object
+     *              is enforcing Java language access control and the underlying
+     *              constructor is inaccessible.
+     * @throws    IllegalArgumentException  if the number of actual
+     *              and formal parameters differ; if an unwrapping
+     *              conversion for primitive arguments fails; or if,
+     *              after possible unwrapping, a parameter value
+     *              cannot be converted to the corresponding formal
+     *              parameter type by a method invocation conversion; if
+     *              this constructor pertains to an enum class.
+     * @throws    InstantiationException    if the class that declares the
+     *              underlying constructor represents an abstract class.
+     * @throws    InvocationTargetException if the underlying constructor
+     *              throws an exception.
+     * @throws    ExceptionInInitializerError if the initialization provoked
+     *              by this method fails.
+     */
+    public T newInstanceWithPrivilege(Object ... initargs)
+        throws InstantiationException, IllegalAccessException,
+               IllegalArgumentException, InvocationTargetException
+    {
+        if (override) {
+            throw new IllegalAccessError("Cannot invoke override method with privilege");
+        }
+        if (reflectPrivilege == null) {
+            throw new IllegalAccessError("Cannot invoke this method without privilege");
+        }
+        Class<?> caller = reflectPrivilege.callerClass();
+        return newInstanceWithCaller(initargs, false, caller);
+    }
+
+    /**
+     * Returns a copy of the constructor with the specific {@code ReflectPrivilege}
+     * bound.
+     * <p>
+     * If the constructor is already bound to a {@code ReflectPrivilege}, and the
+     * bound ReflectPrivilege objct is the same as the given one, then this method
+     * returns this constructor object itself.
+     *
+     * @param privilege the reflect capability to be associated with this method
+     * @return the copy of this constructor object, if not already bound to the same privilege.
+     * @throws NullPointerException if {@code privilege} is null
+     * @throws IllegalAccessException   if this method is not accessible to the given reflect capability
+     */
+    public Constructor<T> bind(ReflectPrivilege privilege) throws IllegalAccessException {
+        if (privilege == null) {
+            throw new NullPointerException("The access privilege object is null");
+        }
+        if (this.reflectPrivilege == privilege) {
+            return this;
+        }
+        // Ensure the declaring class is not an Enum class.
+        if ((clazz.getModifiers() & Modifier.ENUM) != 0) {
+            throw new IllegalArgumentException("Cannot reflectively create enum objects");
+        }
+        var ctor = this.root.copy();
+        ctor.constructorAccessor = reflectionFactory.newConstructorAccessor(
+            ctor,
+            privilege.lookup().unreflectConstructor(ctor)
+        );
+        // set the constructor accessor only if it's not using native implementation
+        /*
+        if (VM.isJavaLangInvokeInited()) {
+            setConstructorAccessor(tmp);
+        }
+        */
+        ctor.reflectPrivilege = privilege;
+        return ctor;
+    }
+
 
     /**
      * {@inheritDoc}
