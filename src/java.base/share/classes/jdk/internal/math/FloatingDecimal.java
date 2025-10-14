@@ -36,7 +36,7 @@ import static jdk.internal.math.FDBigInteger.valueOfPow52;
  * static convenience methods, although a {@link BinaryToASCIIBuffer}
  * instance may be obtained.
  */
-public class FloatingDecimal {
+public final class FloatingDecimal {
     //
     // Constants of the implementation;
     // most are IEEE-754 related.
@@ -94,7 +94,7 @@ public class FloatingDecimal {
     private static final BinaryToASCIIBuffer B2AC_NEGATIVE_ZERO =
             new BinaryToASCIIBuffer(new byte[] {'0'});
 
-    public static class BinaryToASCIIBuffer {
+    public static final class BinaryToASCIIBuffer {
         private int decExponent;
         private int firstDigitIndex;
         private int nDigits;
@@ -710,7 +710,7 @@ public class FloatingDecimal {
      * It is assumed that d_1 > 0.
      * isNegative denotes the - sign.
      */
-    private static class ASCIIToBinaryBuffer {
+    private static final class ASCIIToBinaryBuffer {
 
         private final boolean isNegative;
         private final int e;
@@ -1058,14 +1058,11 @@ public class FloatingDecimal {
                     v = ep >= 0 ? v * SINGLE_SMALL_10_POW[ep] : v / SINGLE_SMALL_10_POW[-ep];
                     return signed(v);
                 }
-                /* As in doubleValue(), but here 10^8 < 2^P and nothing more. */
-                if (isExact) {
-                    int ef = 8 - n;
-                    if (ef >= 0 && ep - ef <= SINGLE_MAX_SMALL_TEN) {
-                        v = v * SINGLE_SMALL_10_POW[ef] * SINGLE_SMALL_10_POW[ep - ef];
-                        return signed(v);
-                    }
-                }
+                /*
+                 * The similar case in doubleValue() where fl is exact and
+                 * ep is somewhat larger than MAX_SMALL_TEN is already covered
+                 * above for float.
+                 */
             }
             long ll = fl;
             long lh;

@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package jdk.internal.math;
 
 import jdk.internal.misc.CDS;
@@ -31,7 +32,7 @@ import java.util.Arrays;
 /**
  * A simple big integer class specifically for floating point base conversion.
  */
-class FDBigInteger {
+final class FDBigInteger {
 
     static final int[] SMALL_5_POW;
 
