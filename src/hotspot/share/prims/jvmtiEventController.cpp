@@ -35,9 +35,10 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmOperations.hpp"
@@ -1221,6 +1222,10 @@ JvmtiEventController::vm_death() {
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::vm_death();
   }
+
+  // The deferred events are already posted, so it is needed to wait until
+  // they are actually posted on the ServiceThrea
+  ServiceThread::flush_deferred_events_queue();
 
   const double start = os::elapsedTime();
   const double max_wait_time = 60 * 60 * 1000;
