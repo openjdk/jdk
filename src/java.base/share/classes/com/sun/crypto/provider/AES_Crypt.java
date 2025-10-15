@@ -40,19 +40,14 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * https://www.internationaljournalcorner.com/index.php/ijird_ojs/article/view/134688
  */
-public final class AES_Crypt extends SymmetricCipher {
+final class AES_Crypt extends SymmetricCipher {
 
     // Number of words in a block
     private static final int WB = 4;
 
     private static final int AES_128_ROUNDS = 10;
-    private static final int AES_128_NKEYS = 16;
-
     private static final int AES_192_ROUNDS = 12;
-    private static final int AES_192_NKEYS = 24;
-
     private static final int AES_256_ROUNDS = 14;
-    private static final int AES_256_NKEYS = 32;
 
     private int rounds;
     private byte[] prevKey = null;
@@ -868,8 +863,12 @@ public final class AES_Crypt extends SymmetricCipher {
      * @return {@code true} if the size of the key is valid else {@code false}.
      */
     static boolean isKeySizeValid(int len) {
-        return len == AES_128_NKEYS || len == AES_192_NKEYS
-                || len == AES_256_NKEYS;
+        for (int kLength : AESConstants.AES_KEYSIZES) {
+            if (len == kLength) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -892,21 +891,18 @@ public final class AES_Crypt extends SymmetricCipher {
                 && !algorithm.equalsIgnoreCase("Rijndael")) {
             throw new InvalidKeyException ("Invalid algorithm name.");
         }
-        switch (key.length) {
-            case AES_128_NKEYS -> {
-                rounds = AES_128_ROUNDS;
-                nk = AES_128_NKEYS/WB;
-            }
-            case AES_192_NKEYS -> {
-                rounds = AES_192_ROUNDS;
-                nk = AES_192_NKEYS/WB;
-            }
-            case AES_256_NKEYS -> {
-                rounds = AES_256_ROUNDS;
-                nk = AES_256_NKEYS/WB;
-            }
-            default -> throw new InvalidKeyException(
-                    "Invalid key length (" + key.length + ").");
+        if (key.length == AESConstants.AES_KEYSIZES[0]) {
+            rounds = AES_128_ROUNDS;
+            nk = AESConstants.AES_KEYSIZES[0]/WB;
+        } else if (key.length == AESConstants.AES_KEYSIZES[1]) {
+            rounds = AES_192_ROUNDS;
+            nk = AESConstants.AES_KEYSIZES[1]/WB;
+        } else if (key.length == AESConstants.AES_KEYSIZES[2]) {
+            rounds = AES_256_ROUNDS;
+            nk = AESConstants.AES_KEYSIZES[2]/WB;
+        } else {
+            throw new InvalidKeyException("Invalid key length (" + key.length
+                    + ").");
         }
         if (!MessageDigest.isEqual(prevKey, key)) {
             if (sessionK == null) {
@@ -915,11 +911,11 @@ public final class AES_Crypt extends SymmetricCipher {
                 Arrays.fill(sessionK[0], 0);
                 Arrays.fill(sessionK[1], 0);
             }
+            sessionK[0] = genRKeys(key, nk);
+            sessionK[1] = invGenRKeys();
             if (prevKey != null) {
                 Arrays.fill(prevKey, (byte) 0);
             }
-            sessionK[0] = genRKeys(key, nk);
-            sessionK[1] = invGenRKeys();
             prevKey = key.clone();
         }
         K = sessionK[decrypt];
