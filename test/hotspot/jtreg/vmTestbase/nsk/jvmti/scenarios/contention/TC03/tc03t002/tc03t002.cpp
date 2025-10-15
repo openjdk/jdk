@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ static jlong timeout = 0;
 static threadDesc *threadList = nullptr;
 static jint threads_count = 0;
 static int numberOfDeadlocks = 0;
+
+static const char* thread_name_prefix = "Debugee Thread";
+static size_t thread_name_prefix_len = strlen(thread_name_prefix);
 
 /* ========================================================================== */
 
@@ -103,6 +106,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     int tDfn = 0, gDfn = 0;
     int pThread, cThread;
     int i;
+    int debuggee_thread_cnt = 0;
 
     NSK_DISPLAY0("Create threadList\n");
 
@@ -127,16 +131,25 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
-        threadList[i].thread = threads[i];
-        threadList[i].dfn = -1;
-        threadList[i].name = info.name;
+        if (!strncmp(info.name, thread_name_prefix, thread_name_prefix_len)) {
+            NSK_DISPLAY1("Skipping thread %s\n", info.name);
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
+                return NSK_FALSE;
+            continue;
+        }
+
+        threadList[debuggee_thread_cnt].thread = threads[i];
+        threadList[debuggee_thread_cnt].dfn = -1;
+        threadList[debuggee_thread_cnt].name = info.name;
+        debuggee_thread_cnt++;
     }
 
     /* deallocate thread list */
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
-    for (i = 0; i < threads_count; i++) {
+    for (i = 0; i < debuggee_thread_cnt; i++) {
+
         if (threadList[i].dfn < 0) {
             tDfn = gDfn;
             threadList[i].dfn = gDfn++;
