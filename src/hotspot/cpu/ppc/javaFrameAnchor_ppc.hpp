@@ -73,6 +73,6 @@ public:
 
   intptr_t* last_Java_fp() const      { return *(intptr_t**)_last_Java_sp; }
 
-  void set_last_Java_sp(intptr_t* sp) {  _last_Java_sp = sp; }
+  void set_last_Java_sp(intptr_t* sp) { _last_Java_sp = sp; }
 
 #endif // CPU_PPC_JAVAFRAMEANCHOR_PPC_HPP
