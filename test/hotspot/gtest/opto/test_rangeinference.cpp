@@ -25,12 +25,12 @@
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "runtime/os.hpp"
-#include "utilities/intn_t.hpp"
 #include "unittest.hpp"
+#include "utilities/intn_t.hpp"
+#include "utilities/rbTree.hpp"
 #include <array>
 #include <limits>
 #include <type_traits>
-#include <unordered_set>
 
 template <class U>
 static U uniform_random() {
@@ -214,6 +214,7 @@ TEST(opto, canonicalize_constraints) {
   test_canonicalize_constraints_random<jlong, julong>();
 }
 
+// Implementations of TypeIntMirror methods for testing purposes
 template <class S, class U>
 const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
   return this;
@@ -257,19 +258,26 @@ public:
   }
 };
 
-
+// The number of TypeIntMirror instances for integral types with a few bits. These values are
+// calculated once and written down for usage in constexpr contexts.
 template <class CTP>
 static constexpr size_t all_instances_size() {
   using U = decltype(CTP::_ulo);
   constexpr juint max_unsigned = juint(std::numeric_limits<U>::max());
   if constexpr (max_unsigned == 1U) {
+    // 1 bit
     return 3;
   } else if constexpr (max_unsigned == 3U) {
+    // 2 bits
     return 15;
   } else if constexpr (max_unsigned == 7U) {
+    // 3 bits
     return 134;
   } else {
+    // 4 bits
     static_assert(max_unsigned == 15U);
+    // For more than 4 bits, the number of instances is too large and it is not realistic to
+    // compute all of them.
     return 1732;
   }
 }
@@ -279,8 +287,34 @@ static std::array<CTP, all_instances_size<CTP>()> compute_all_instances() {
   using S = decltype(CTP::_lo);
   using U = decltype(CTP::_ulo);
 
-  std::unordered_set<CTP> collector;
-  collector.reserve(all_instances_size<CTP>());
+  class CTPComparator {
+  public:
+    static RBTreeOrdering cmp(const CTP& x, const RBNode<CTP, int>* node) {
+      // Quick helper for the tediousness below
+      auto f = [](auto x, auto y) {
+        return x < y ? RBTreeOrdering::LT : RBTreeOrdering::GT;
+      };
+
+      const CTP& y = node->key();
+      if (x._lo != y._lo) {
+        return f(x._lo, y._lo);
+      } else if (x._hi != y._hi) {
+        return f(x._hi, y._hi);
+      } else if (x._ulo != y._ulo) {
+        return f(x._ulo, y._ulo);
+      } else if (x._uhi != y._uhi) {
+        return f(x._uhi, y._uhi);
+      } else if (x._bits._zeros != y._bits._zeros) {
+        return f(x._bits._zeros, y._bits._zeros);
+      } else if (x._bits._ones != y._bits._ones) {
+        return f(x._bits._ones, y._bits._ones);
+      } else {
+        return RBTreeOrdering::EQ;
+      }
+    }
+  };
+
+  RBTreeCHeap<CTP, int, CTPComparator, MemTag::mtCompiler> collector;
   for (jint lo = jint(std::numeric_limits<S>::min()); lo <= jint(std::numeric_limits<S>::max()); lo++) {
     for (jint hi = lo; hi <= jint(std::numeric_limits<S>::max()); hi++) {
       for (juint ulo = 0; ulo <= juint(std::numeric_limits<U>::max()); ulo++) {
@@ -294,7 +328,7 @@ static std::array<CTP, all_instances_size<CTP>()> compute_all_instances() {
               }
 
               TypeIntPrototype<S, U> ct = canonicalized_t._data;
-              collector.insert(CTP{ct._srange._lo, ct._srange._hi, ct._urange._lo, ct._urange._hi, ct._bits});
+              collector.upsert(CTP{ct._srange._lo, ct._srange._hi, ct._urange._lo, ct._urange._hi, ct._bits}, 0);
             }
           }
         }
@@ -305,10 +339,11 @@ static std::array<CTP, all_instances_size<CTP>()> compute_all_instances() {
   assert(collector.size() == all_instances_size<CTP>(), "unexpected size of all_instance, expected %d, actual %d", jint(all_instances_size<CTP>()), jint(collector.size()));
   std::array<CTP, all_instances_size<CTP>()> res;
   size_t idx = 0;
-  for (const CTP& t : collector) {
-    res[idx] = t;
+  collector.visit_in_order([&](RBNode<CTP, int>* node) {
+    res[idx] = node->key();
     idx++;
-  }
+    return true;
+  });
   return res;
 }
 
