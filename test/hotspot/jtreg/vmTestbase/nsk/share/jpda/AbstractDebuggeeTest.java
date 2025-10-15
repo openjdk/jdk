@@ -149,19 +149,11 @@ public class AbstractDebuggeeTest {
         }
     }
 
-    public static final int MAX_UNLOAD_ATTEMPS = 5;
-
     public void unloadTestClass(String className, boolean expectedUnloadingResult) {
         ClassUnloader classUnloader = loadedClasses.get(className);
 
-        int unloadAttemps = 0;
-
         if (classUnloader != null) {
-            boolean wasUnloaded = false;
-
-            while (!wasUnloaded && (unloadAttemps++ < MAX_UNLOAD_ATTEMPS)) {
-                wasUnloaded = classUnloader.unloadClass();
-            }
+            boolean wasUnloaded = classUnloader.unloadClass();
 
             if (wasUnloaded)
                 loadedClasses.remove(className);

@@ -28,7 +28,7 @@
 
 package nsk.share;
 
-import java.lang.ref.Cleaner;
+import java.lang.ref.PhantomReference;
 import java.util.*;
 import nsk.share.gc.gp.*;
 import nsk.share.test.ExecutionController;
@@ -87,9 +87,9 @@ public class ClassUnloader {
     private static final int WAIT_DELTA = 1000;
 
     /**
-     * Has class loader been reclaimed or not.
+     * Phantom reference to the class loader.
      */
-    volatile boolean is_reclaimed = false;
+    private PhantomReference<Object> customClassLoaderPhantomRef = null;
 
     /**
      * Current class loader used for loading classes.
@@ -100,6 +100,14 @@ public class ClassUnloader {
      * List of classes loaded with current class loader.
      */
     private Vector<Class<?>> classObjects = new Vector<Class<?>>();
+
+    /**
+     * Has class loader been reclaimed or not.
+     */
+    private boolean isClassLoaderReclaimed() {
+        return customClassLoaderPhantomRef != null
+            && customClassLoaderPhantomRef.refersTo(null);
+    }
 
     /**
      * Class object of the first class been loaded with current class loader.
@@ -138,8 +146,7 @@ public class ClassUnloader {
         customClassLoader = new CustomClassLoader();
         classObjects.removeAllElements();
 
-        // Register a Cleaner to inform us when the class loader has been reclaimed.
-        Cleaner.create().register(customClassLoader, () -> { is_reclaimed = true; } );
+        customClassLoaderPhantomRef = new PhantomReference<>(customClassLoader, null);
 
         return customClassLoader;
     }
@@ -154,8 +161,7 @@ public class ClassUnloader {
         this.customClassLoader = customClassLoader;
         classObjects.removeAllElements();
 
-        // Register a Cleaner to inform us when the class loader has been reclaimed.
-        Cleaner.create().register(customClassLoader, () -> { is_reclaimed = true; } );
+        customClassLoaderPhantomRef = new PhantomReference<>(customClassLoader, null);
     }
 
     /**
@@ -244,32 +250,15 @@ public class ClassUnloader {
      */
     public boolean unloadClass(ExecutionController stresser) {
 
-        is_reclaimed = false;
-
         // free references to class and class loader to be able for collecting by GC
-        long waitTimeout = (customClassLoader == null) ? 0 : WAIT_TIMEOUT;
         classObjects.removeAllElements();
         customClassLoader = null;
 
         // force class unloading by eating memory pool
         eatMemory(stresser);
 
-        // give GC chance to run and wait for receiving reclaim notification
-        long timeToFinish = System.currentTimeMillis() + waitTimeout;
-        while (!is_reclaimed && System.currentTimeMillis() < timeToFinish) {
-            if (!stresser.continueExecution()) {
-                return false;
-            }
-            try {
-                // suspend thread for a while
-                Thread.sleep(WAIT_DELTA);
-            } catch (InterruptedException e) {
-                throw new Failure("Unexpected InterruptedException while class unloading: " + e);
-            }
-        }
-
         // force GC to unload marked class loader and its classes
-        if (is_reclaimed) {
+        if (isClassLoaderReclaimed()) {
             Runtime.getRuntime().gc();
             return true;
         }
