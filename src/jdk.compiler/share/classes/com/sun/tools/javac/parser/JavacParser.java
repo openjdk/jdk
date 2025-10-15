@@ -1542,7 +1542,7 @@ public class JavacParser implements Parser {
                 switch (expr.getTag()) {
                 case REFERENCE: {
                     JCMemberReference mref = (JCMemberReference) expr;
-                    mref.expr = toP(F.at(pos).AnnotatedType(typeAnnos, mref.expr));
+                    mref.expr = insertAnnotationsToMostInner(mref.expr, typeAnnos, false);
                     t = mref;
                     break;
                 }
