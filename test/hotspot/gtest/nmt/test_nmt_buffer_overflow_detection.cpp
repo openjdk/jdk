@@ -26,10 +26,10 @@
 #include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
+#include "testutils.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
-#include "testutils.hpp"
 
 #if !INCLUDE_ASAN
 
@@ -163,11 +163,9 @@ TEST_VM(NMT, test_realloc) {
     }
   }
 }
-#else
-#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
-#else
-#error "No ASAN"
-#endif
+
+#else // ASAN is enabled
+
 #define TEST_VM_FATAL_ASAN_MSG(category, name, msg)                \
   static void test_  ## category ## _ ## name ## _();               \
                                                                     \
@@ -199,15 +197,15 @@ TEST_VM(NMT, test_realloc) {
 static void test_write_canary() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
+  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
   *canary_ptr = 1;
 }
 
 static void test_read_canary() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
-  CanaryType read_canary = 0;
+  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
+  MallocHeader::CanaryType read_canary = 0;
   read_canary = *canary_ptr;
 }
 
@@ -215,7 +213,7 @@ static void test_write_footer() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
+  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
   *footer_ptr = 1;
 }
 
@@ -223,15 +221,15 @@ static void test_read_footer() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
-  CanaryType read_footer = *footer_ptr;
+  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
+  MallocHeader::CanaryType read_footer = *footer_ptr;
 }
 
 static void test_write_size() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh);
+  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
   *size_ptr = 1;
 }
 
@@ -239,7 +237,7 @@ static void test_read_size() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh);
+  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
   size_t read_size = *size_ptr;
 }
 
@@ -247,7 +245,7 @@ static void test_write_canary_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
+  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
   *canary_ptr = 1;
 }
 
@@ -255,8 +253,8 @@ static void test_read_canary_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  CanaryType* canary_ptr = (CanaryType*)((char*)p - sizeof(CanaryType));
-  CanaryType read_canary = 0;
+  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
+  MallocHeader::CanaryType read_canary = 0;
   read_canary = *canary_ptr;
 }
 
@@ -265,7 +263,7 @@ static void test_write_footer_after_realloc() {
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
+  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
   *footer_ptr = 1;
 }
 
@@ -274,8 +272,8 @@ static void test_read_footer_after_realloc() {
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  CanaryType* footer_ptr = (CanaryType*)(mh->footer_address());
-  CanaryType read_footer = *footer_ptr;
+  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
+  MallocHeader::CanaryType read_footer = *footer_ptr;
 }
 
 static void test_write_size_after_realloc() {
@@ -283,7 +281,7 @@ static void test_write_size_after_realloc() {
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh);
+  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
   *size_ptr = 1;
 }
 
@@ -292,7 +290,7 @@ static void test_read_size_after_realloc() {
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  size_t* size_ptr = (size_t*)(mh);
+  size_t* size_ptr = (size_t*)(mh NOT_LP64(+ sizeof(uint32_t)));
   size_t read_size = *size_ptr;
 }
 
@@ -318,24 +316,14 @@ static void test_poison_local() {
 
 DEFINE_ASAN_TEST(test_poison_local);
 
-TEST_VM(NMT_ASAN, test_poison_when_no_asan) {
-  uint16_t a;
-  {
-    AsanPoisoningHelper<void> pm((char*)&a);
-    a = 2;
-    EXPECT_EQ(a, 2);
-  }
-  a = 3;
-  EXPECT_EQ(a, 3);
-}
-
 TEST_VM(NMT_ASAN, poison_no_death) {
   uint16_t a;
   ASAN_POISON_MEMORY_REGION(&a, sizeof(a));
   {
-    AsanPoisoningHelper<uint16_t> pm(&a);
+    AsanPoisoningHelper<uint16_t> aph(&a);
     a = 2;
     EXPECT_EQ(a, 2);
   }
 }
+
 #endif // !INCLUDE_ASAN

@@ -115,27 +115,6 @@ class AsanPoisoningHelper {
   }
 };
 
-// In non-ASAN builds we use 'void' as template parameter, to let
-// the AsanPoisoningHelper instances be compiled to nothing
-template<>
-class AsanPoisoningHelper<void> {
- public:
-  AsanPoisoningHelper() = delete;
-  AsanPoisoningHelper(void* addr) { }
-  static void poison_memory(void* addr) { }
-  static void unpoison_memory(void* addr) { }
-  ~AsanPoisoningHelper() { }
-};
-
-#ifdef INCLUDE_ASAN
-  using CanaryType = uint16_t;
-  using SizeType = size_t;
-  NOT_LP64(using AltCanaryType = uint32_t;)
-#else
-  using CanaryType = void;
-  using SizeType = void;
-  NOT_LP64(using AltCanaryType = void;)
-#endif
 
 class MallocHeader {
   NONCOPYABLE(MallocHeader);
@@ -161,12 +140,12 @@ class MallocHeader {
   static uint16_t build_footer(uint8_t b1, uint8_t b2) { return (uint16_t)(((uint16_t)b1 << 8) | (uint16_t)b2); }
 
   uint16_t get_footer() const {
-    AsanPoisoningHelper<CanaryType> _temp(reinterpret_cast<CanaryType*>(footer_address()));
+    AsanPoisoningHelper<CanaryType, uint8_t> _temp(footer_address());
     return build_footer(footer_address()[0], footer_address()[1]);
   }
 
   void set_footer(uint16_t v) {
-    AsanPoisoningHelper<CanaryType> _temp(reinterpret_cast<CanaryType*>(footer_address()));
+    AsanPoisoningHelper<CanaryType, uint8_t> _temp(footer_address());
     footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v;
   }
 
@@ -174,6 +153,9 @@ class MallocHeader {
   inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);
 
 public:
+  using CanaryType = uint16_t;
+  using SizeType = size_t;
+  NOT_LP64(using AltCanaryType = uint32_t;)
   #ifndef _LP64
   inline uint32_t alt_canary() const {
     AsanPoisoningHelper<AltCanaryType, const AltCanaryType> _temp(&_alt_canary);
@@ -187,12 +169,12 @@ public:
   inline void set_poisoned(bool poison) {
     if (poison) {
       AsanPoisoningHelper<CanaryType>::poison_memory(&_canary);
-      AsanPoisoningHelper<CanaryType>::poison_memory(reinterpret_cast<CanaryType*>(footer_address()));
+      AsanPoisoningHelper<CanaryType, uint8_t>::poison_memory(footer_address());
       AsanPoisoningHelper<SizeType, const SizeType>::poison_memory(&_size);
       NOT_LP64(AsanPoisoningHelper<AltCanaryType>::poison_memory(&_alt_canary));
     } else {
       AsanPoisoningHelper<CanaryType>::unpoison_memory(&_canary);
-      AsanPoisoningHelper<CanaryType>::unpoison_memory(reinterpret_cast<CanaryType*>(footer_address()));
+      AsanPoisoningHelper<CanaryType, uint8_t>::unpoison_memory(footer_address());
       AsanPoisoningHelper<SizeType, const SizeType>::unpoison_memory(&_size);
       NOT_LP64(AsanPoisoningHelper<AltCanaryType>::unpoison_memory(&_alt_canary));
     }
