@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,11 +65,15 @@ public interface WritableByteChannel
      * Upon return the buffer's position will be equal to
      * <i>p</i>&nbsp;{@code +}&nbsp;<i>n</i>; its limit will not have changed.
      *
-     * <p> Unless otherwise specified, a write operation will return only after
+     * <p> For many types of channels, a write operation will return only after
      * writing all of the <i>r</i> requested bytes.  Some types of channels,
      * depending upon their state, may write only some of the bytes or possibly
-     * none at all.  A socket channel in non-blocking mode, for example, cannot
-     * write any more bytes than are free in the socket's output buffer.
+     * none at all.  A socket channel in {@linkplain
+     * SelectableChannel#isBlocking non-blocking mode}, for example, cannot
+     * write any more bytes than are free in the socket's output buffer.  This
+     * method returns the number of bytes written by its current invocation,
+     * hence it might be necessary to call the write method in a loop until all
+     * <i>r</i> bytes are written.
      *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this channel, however, then an
