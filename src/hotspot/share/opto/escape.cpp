@@ -295,6 +295,8 @@ bool ConnectionGraph::compute_escape() {
     return false;
   }
 
+  NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph", 4);)
+
   // 3. Adjust scalar_replaceable state of nonescaping objects and push
   //    scalar replaceable allocations on alloc_worklist for processing
   //    in split_unique_types().
@@ -316,7 +318,7 @@ bool ConnectionGraph::compute_escape() {
         found_nsr_alloc = true;
       }
     }
-    NOT_PRODUCT(igv_print_step("EA: 3. Propagate NSR Iter", 4);)
+    NOT_PRODUCT(igv_print_step("EA: 3. Propagate NSR Iter", 5);)
   }
 
   // Propagate NSR (Not Scalar Replaceable) state.
@@ -354,6 +356,7 @@ bool ConnectionGraph::compute_escape() {
 #endif
 
   _collecting = false;
+  NOT_PRODUCT(igv_print_step("EA: 3. Propagate NSR", 4);)
 
   } // TracePhase t3("connectionGraph")
 
@@ -420,6 +423,8 @@ bool ConnectionGraph::compute_escape() {
 #endif
   }
 
+  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types", 4);)
+
   // 6. Reduce allocation merges used as debug information. This is done after
   // split_unique_types because the methods used to create SafePointScalarObject
   // need to traverse the memory graph to find values for object fields. We also
@@ -460,6 +465,8 @@ bool ConnectionGraph::compute_escape() {
       }
     }
   }
+
+  NOT_PRODUCT(igv_print_step("EA: 6. After reduce_phi_on_safepoints", 4);)
 
   NOT_PRODUCT(escape_state_statistics(java_objects_worklist);)
   return has_non_escaping_obj;
@@ -1310,11 +1317,14 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
     }
   }
 
+  NOT_PRODUCT(igv_print_step("EA: 5. Before Phi Reduction", 5);)
+
   // CastPPs need to be processed before Cmps because during the process of
   // splitting CastPPs we make reference to the inputs of the Cmp that is used
   // by the If controlling the CastPP.
   for (uint i = 0; i < castpps.size(); i++) {
     reduce_phi_on_castpp_field_load(castpps.at(i), alloc_worklist, memnode_worklist);
+    NOT_PRODUCT(igv_print_step("EA: 5. Phi -> CastPP Reduction", 6);)
   }
 
   for (uint i = 0; i < others.size(); i++) {
@@ -1325,6 +1335,8 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
     } else if(use->is_Cmp()) {
       reduce_phi_on_cmp(use);
     }
+
+    NOT_PRODUCT(igv_print_step("EA: 5. Phi -> AddPP/Cmp Reduction", 6);)
   }
 
   _igvn->set_delay_transform(delay);
@@ -2447,7 +2459,7 @@ bool ConnectionGraph::complete_connection_graph(
       new_edges = 0; // Bailout
     }
 
-    NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph Iter", 4);)
+    NOT_PRODUCT(igv_print_step("EA: 2. Complete Connection Graph Iter", 5);)
   } while (new_edges > 0);
 
   build_time.stop();
@@ -4362,7 +4374,6 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   //  see the comment in find_second_addp().)
   //
   while (alloc_worklist.length() != 0) {
-    NOT_PRODUCT(igv_print_step("EA: 5. Split Unique Types Iter", 4);)
     Node *n = alloc_worklist.pop();
     uint ni = n->_idx;
     if (n->is_Call()) {
@@ -4703,6 +4714,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   // New alias types were created in split_AddP().
   uint new_index_end = (uint) _compile->num_alias_types();
 
+  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types Phase 1", 5);)
+
   //  Phase 2:  Process MemNode's from memnode_worklist. compute new address type and
   //            compute new values for Memory inputs  (the Memory inputs are not
   //            actually updated until phase 4.)
@@ -4894,6 +4907,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     record_for_optimizer(nmm);
   }
 
+  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types Phase 3", 5);)
+
   //  Phase 4:  Update the inputs of non-instance memory Phis and
   //            the Memory input of memnodes
   // First update the inputs of any non-instance Phi's from
@@ -4962,6 +4977,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
     assert(old_cnt == old_mem->outcnt(), "old mem could be lost");
   }
 #endif
+  NOT_PRODUCT(igv_print_step("EA: 5. After split_unique_types Phase 4", 5);)
 }
 
 #ifndef PRODUCT
