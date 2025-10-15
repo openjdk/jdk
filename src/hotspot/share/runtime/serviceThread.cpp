@@ -188,15 +188,11 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   Service_lock->notify_all();
  }
 
-void ServiceThread::flush_deferred_events_queue() {
+void ServiceThread::clear_deferred_events_queue() {
   // All jvmti events should be already disabled before calling this method.
-  while (true) {
-    MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-    if (!_jvmti_service_queue.has_events() && _jvmti_event == nullptr) {
-      break;
-    }
-    Service_lock->notify_all();
-    os::naked_short_sleep(100);
+  MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+  while (_jvmti_service_queue.has_events()) {
+    _jvmti_service_queue.dequeue();
   }
 }
 

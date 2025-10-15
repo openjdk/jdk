@@ -1225,7 +1225,7 @@ JvmtiEventController::vm_death() {
 
   // The deferred events are already posted, so it is needed to wait until
   // they are actually posted on the ServiceThrea
-  ServiceThread::flush_deferred_events_queue();
+  ServiceThread::clear_deferred_events_queue();
 
   const double start = os::elapsedTime();
   const double max_wait_time = 60 * 60 * 1000;

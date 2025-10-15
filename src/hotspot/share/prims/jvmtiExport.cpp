@@ -97,7 +97,12 @@ public:
   JvmtiJavaThreadEventTransition(JavaThread *thread) :
     _rm(),
     _transition(thread),
-    _hm(thread)  {};
+    _hm(thread) {
+    JvmtiExport::inc_in_callback_count();
+  };
+  ~JvmtiJavaThreadEventTransition() {
+    JvmtiExport::dec_in_callback_count();
+  }
 };
 
 // For JavaThreads which are not in _thread_in_vm state
@@ -2537,6 +2542,7 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
 
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
+  assert(env->phase() != JVMTI_PHASE_DEAD, "Shouldn't have be in JVMTI_PHASE_DEAD");
   // Pass inlining information through the void pointer
   JvmtiCompiledMethodLoadEventMark jem(thread, nm, inlinerecord);
   JvmtiJavaThreadEventTransition jet(thread);
