@@ -61,13 +61,14 @@ InstanceKlass* KlassFactory::check_shared_class_file_load_hook(
     }
     unsigned char* ptr = (unsigned char*)cfs->buffer();
     unsigned char* end_ptr = ptr + cfs->length();
-    bool modified = JvmtiExport::post_class_file_load_hook(class_name,
-                                                           class_loader,
-                                                           protection_domain,
-                                                           &ptr,
-                                                           &end_ptr,
-                                                           &cached_class_file);
-    if (modified) {
+    unsigned char* old_ptr = ptr;
+    JvmtiExport::post_class_file_load_hook(class_name,
+                                           class_loader,
+                                           protection_domain,
+                                           &ptr,
+                                           &end_ptr,
+                                           &cached_class_file);
+    if (old_ptr != ptr) {
       // JVMTI agent has modified class file data.
       // Set new class file stream using JVMTI agent modified class file data.
       ClassLoaderData* loader_data =
@@ -143,14 +144,14 @@ static ClassFileStream* check_class_file_load_hook(ClassFileStream* stream,
     unsigned char* ptr = const_cast<unsigned char*>(stream->buffer());
     unsigned char* end_ptr = ptr + stream->length();
 
-    bool modified = JvmtiExport::post_class_file_load_hook(name,
-                                                           class_loader,
-                                                           protection_domain,
-                                                           &ptr,
-                                                           &end_ptr,
-                                                           cached_class_file);
+    JvmtiExport::post_class_file_load_hook(name,
+                                           class_loader,
+                                           protection_domain,
+                                           &ptr,
+                                           &end_ptr,
+                                           cached_class_file);
 
-    if (modified) {
+    if (ptr != stream->buffer()) {
       // JVMTI agent has modified class file data.
       // Set new class file stream using JVMTI agent modified class file data.
       stream = new ClassFileStream(ptr,
