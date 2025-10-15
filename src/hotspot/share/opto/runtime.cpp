@@ -363,6 +363,9 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
 #endif
   assert(check_compiled_frame(current), "incorrect caller");
 
+  // Scavenge and allocate an instance.
+  oop result;
+
   if (array_type->is_typeArray_klass()) {
     // The oopFactory likes to work with the element type.
     // (We could bypass the oopFactory, since it doesn't add much value.)
