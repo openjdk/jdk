@@ -40,24 +40,35 @@
 // It is used very early in the vm initialization, in allocation
 // code and other areas.  For many calls, the current thread has not
 // been created so we cannot use Mutex.
+// It's recursive because NMT may recursively lock it when NMT has detected
+// a memory corruption in an Arena and the VM exits.
 class RecursivePlatformMutex : public PlatformMutex {
-  Thread* _owner;
-
+  int64_t _recursions;
+  intx _owner;
+  static constexpr intx no_owner_sentinel = -1;
 public:
   RecursivePlatformMutex()
-    : PlatformMutex(), _owner(nullptr) {}
+  : PlatformMutex(), _recursions(0), _owner(no_owner_sentinel) {}
 
   void lock() {
-    Thread* t = Thread::current_or_null_safe();
-    if (_owner == nullptr || t != _owner) {
+    intx current = os::current_thread_id();
+    if (current == _owner) {
+      _recursions++;
+    } else {
       PlatformMutex::lock();
-      _owner = t;
+      _owner = current;
+      _recursions++;
+      assert(_recursions == 1, "should be");
     }
   }
 
   void unlock() {
-    _owner = nullptr;
-    PlatformMutex::unlock();
+    assert(_owner == os::current_thread_id(), "must be");
+    _recursions--;
+    if (_recursions == 0) {
+      _owner = no_owner_sentinel;
+      PlatformMutex::unlock();
+    }
   }
 };
 
