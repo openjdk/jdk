@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,16 +23,19 @@
  * questions.
  */
 
-import javax.script.*;
-
-/*
- * If the JDK being tested is <b>not</b> a Sun product JDK and a js
- * engine is not present, return an exit code of 2 to indicate that
- * the jrunscript tests which assume a js engine can be vacuously
- * passed.
+/**
+ * Defines native structures for timespec APIs.
+ * Generated with the following jextract command:
+ * {@snippet lang = "Shell Script":
+ *
+ * HEADER_NAME=timespec.h
+ * echo "#include <time.h>" > $HEADER_NAME
+ *
+ * jextract --target-package jdk.internal.ffi.generated.timespec \
+ *    --include-struct timespec \
+ *    $HEADER_NAME
+ * }
+ *
  */
-public class CheckEngine {
-    public static void main(String... args) {
-        System.exit(2);
-    }
-}
+
+package jdk.internal.ffi.generated.timespec;
