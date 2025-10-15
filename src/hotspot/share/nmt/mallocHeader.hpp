@@ -189,12 +189,12 @@ public:
       AsanPoisoningHelper<CanaryType>::poison_memory(&_canary);
       AsanPoisoningHelper<CanaryType>::poison_memory(reinterpret_cast<CanaryType*>(footer_address()));
       AsanPoisoningHelper<SizeType, const SizeType>::poison_memory(&_size);
-      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::poison_memory((char*)&_alt_canary));
+      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::poison_memory(&_alt_canary));
     } else {
       AsanPoisoningHelper<CanaryType>::unpoison_memory(&_canary);
       AsanPoisoningHelper<CanaryType>::unpoison_memory(reinterpret_cast<CanaryType*>(footer_address()));
       AsanPoisoningHelper<SizeType, const SizeType>::unpoison_memory(&_size);
-      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::unpoison_memory((char*)&_alt_canary));
+      NOT_LP64(AsanPoisoningHelper<AltCanaryType>::unpoison_memory(&_alt_canary));
     }
   }
 
