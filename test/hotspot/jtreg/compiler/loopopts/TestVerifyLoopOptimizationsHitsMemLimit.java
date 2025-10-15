@@ -44,84 +44,50 @@ package compiler.loopopts;
  */
 
 public class TestVerifyLoopOptimizationsHitsMemLimit {
-    static final int a = 400;
-    static long b;
-    static int c;
-    static float k;
+    final int a = 400;
+    int b;
+    float c;
     static double d;
-    static long e;
     static byte f;
-    static boolean l;
-    static long g[];
-    static volatile int h[];
+    long g[];
+    volatile int h[];
 
-    static void j(int i) {
-    }
-
-    static void test(String[] m) {
-        int n, o = 2, p, q[] = new int[a];
-        short r = 10492;
-        boolean s[] = new boolean[a];
-        j(0);
-        for (n = 1; n < a; ++n) {
-            p = 1;
+    void test() {
+        int j, k = 2, l, o[] = new int[a];
+        short m = 10492;
+        for (j = 1;; ++j) {
+            l = 1;
             do {
-                g[n] -= p;
-                switch (n) {
-                    case 133:
-                    case 85:
-                    case 93:
-                        e = 1;
+                g[j] = l;
+                switch (j) {
                     case 45:
-                        q[1] = c;
-                        break;
+                        o[1] = b;
                     case 163:
                     case 62:
-                    case 304:
                     case 72:
                     case 319:
-                        h[1] -= o;
+                        h[1] -= k;
                     case 109:
                     case 47:
                     case 91:
                     case 68:
                     case 162:
-                        k += b;
                     case 76:
                     case 60:
                     case 66:
-                        s[1] = l;
                     case 83:
-                    case 339:
-                    case 365:
-                        d = r;
-                    case 219:
-                    case 42:
-                    case 314:
-                        k = 2;
-                    case 215:
-                        f = (byte) k;
-                        break;
-                    case 212:
-                    case 53:
-                    case 74:
-                        d -= o;
-                    case 89:
-                    case 210:
-                    case 208:
-                    case 128:
-                    case 52:
-                    case 56:
-                    case 144:
-                        h[1] |= e;
+                        d = m;
+                    case 2314:
+                        f = (byte) c;
                 }
-            } while (++p < 24);
+            } while (++l < 4);
         }
     }
 
-    public static void main(String[] t) {
+    public static void main(String[] n) {
         try {
-            test(t);
+            TestVerifyLoopOptimizationsHitsMemLimit test = new TestVerifyLoopOptimizationsHitsMemLimit();
+            test.test();
         } catch (NullPointerException e) {
             // expected
         }
