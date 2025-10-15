@@ -172,7 +172,7 @@ class VM_Version : public Abstract_VM_Version {
       va_end(va);
     }
 
-#ifndef PRODUCT
+#ifdef ASSERT
     void verify_deps(RVExtFeatureValue* dep0, ...) {
       assert(dep0 != nullptr, "must not");
       assert(cpu_feature_index() >= 0, "must");
@@ -192,7 +192,7 @@ class VM_Version : public Abstract_VM_Version {
       }
       va_end(va);
     }
-#endif // PRODUCT
+#endif // ASSERT
   };
 
   class RVNonExtFeatureValue : public RVFeatureValue {
