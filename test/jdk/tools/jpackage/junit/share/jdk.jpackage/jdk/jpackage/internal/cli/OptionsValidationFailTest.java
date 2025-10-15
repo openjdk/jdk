@@ -203,7 +203,7 @@ public class OptionsValidationFailTest {
         return JUnitAdapter.createJPackageTests(testClassloader, Stream.of(
                 defaultExcludes,
                 defaultIncludes,
-                Stream.of("--jpt-run=ErrorTest.test")
+                Stream.of("--jpt-run=ErrorTest")
         ).flatMap(x -> x).toArray(String[]::new));
     }
 
