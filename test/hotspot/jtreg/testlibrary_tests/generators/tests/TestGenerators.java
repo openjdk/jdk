@@ -593,7 +593,7 @@ public class TestGenerators {
         var floatBoundGen = G.uniformFloats();
         for (int j = 0; j < 500; j++) {
             float lo = 1, hi = 0;
-            // Failur of a single round is very rare, repeated failure even rarer.
+            // Failure of a single round is very rare, repeated failure even rarer.
             while (lo >= hi) {
                 float a = floatBoundGen.next(), b = floatBoundGen.next();
                 lo = Math.min(a, b);
@@ -610,7 +610,7 @@ public class TestGenerators {
         var doubleBoundGen = G.uniformDoubles();
         for (int j = 0; j < 500; j++) {
             double lo = 1, hi = 0;
-            // Failur of a single round is very rare, repeated failure even rarer.
+            // Failure of a single round is very rare, repeated failure even rarer.
             while (lo >= hi) {
                 double a = doubleBoundGen.next(), b = doubleBoundGen.next();
                 lo = Math.min(a, b);
