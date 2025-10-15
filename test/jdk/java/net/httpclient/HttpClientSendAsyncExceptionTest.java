@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
@@ -165,6 +166,13 @@ class HttpClientSendAsyncExceptionTest {
                 "Error",
                 _ -> { throw error; },
                 exception -> assertThrowableSame(error, exception)));
+
+        // `CancellationException`
+        var cancellationException = new CancellationException();
+        testCases.add(new ExceptionTestCase(
+                "CancellationException",
+                _ -> { throw cancellationException; },
+                exception -> assertThrowableSame(cancellationException, exception)));
 
         // `IOException` (needs sneaky throw)
         var ioException = new IOException();

@@ -60,8 +60,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -1107,9 +1107,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             // is aborted.
             PendingRequest pending = new PendingRequest(id, requestImpl, mexCf, mex, this);
             res = registerPending(pending, res);
-            res = translateSendAsyncExecFailure(res);
 
             if (exchangeExecutor != null) {
+                // We're called by `sendAsync()` - make sure we translate exceptions
+                res = translateSendAsyncExecFailure(res);
                 // makes sure that any dependent actions happen in the CF default
                 // executor. This is only needed for sendAsync(...), when
                 // exchangeExecutor is non-null.
@@ -1140,9 +1141,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                             return MinimalFuture.completedFuture(response);
                         }
                         var unwrappedException = Utils.getCompletionCause(exception);
-                        // Except `Error`s, wrap failures inside an `IOException`.
+                        // Except `Error` and `CancellationException`, wrap failures inside an `IOException`.
                         // This is required to comply with the specification of `HttpClient::sendAsync`.
                         var translatedException = unwrappedException instanceof Error
+                                || unwrappedException instanceof CancellationException
                                 ? unwrappedException
                                 : Utils.toIOException(exception);
                         return MinimalFuture.<HttpResponse<T>>failedFuture(translatedException);

@@ -79,7 +79,6 @@ import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
 
@@ -667,8 +666,8 @@ public abstract class AbstractThrowingPublishers implements HttpServerAdapters {
                 default:
                     break;
             }
-            // `UncheckedIOException` is peeled off by `HttpClientImpl::translateSendAsyncExecFailure`
-            return throwable instanceof CustomIOException;
+            return UncheckedIOException.class.isInstance(throwable)
+                    && CustomIOException.class.isInstance(throwable.getCause());
         }
 
         @Override

@@ -54,6 +54,7 @@
  * @run testng/othervm -Dtest.http.version=http1 InvalidInputStreamSubscriptionRequest
  */
 
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.SimpleSSLContext;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterTest;
@@ -65,6 +66,7 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -292,8 +294,15 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                     }
                 }
             } catch (Exception x) {
-                if (throwableCausalChainContainsInstanceOf(IllegalArgumentException.class, x)) {
-                    System.out.println("Got expected exception: " + x);
+                Throwable cause = x;
+                if (x instanceof CompletionException || x instanceof ExecutionException) {
+                    cause = x.getCause();
+                }
+                if (cause instanceof IOException && cause.getCause() != null) {
+                    cause = cause.getCause();
+                }
+                if (cause instanceof IllegalArgumentException) {
+                    System.out.println("Got expected exception: " + cause);
                 } else {
                     failed = x;
                 }
@@ -351,8 +360,15 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                     throw new RuntimeException("Expected IAE not thrown");
                 }
             } catch (Exception x) {
-                if (throwableCausalChainContainsInstanceOf(IllegalArgumentException.class, x)) {
-                    System.out.println("Got expected exception: " + x);
+                Throwable cause = x;
+                if (x instanceof CompletionException || x instanceof ExecutionException) {
+                    cause = x.getCause();
+                }
+                if (cause instanceof IOException && cause.getCause() != null) {
+                    cause = cause.getCause();
+                }
+                if (cause instanceof IllegalArgumentException) {
+                    System.out.println("Got expected exception: " + cause);
                 } else {
                     failed = x;
                 }
@@ -397,8 +413,15 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                     throw new RuntimeException("Expected IAE not thrown");
                 }
             } catch (Exception x) {
-                if (throwableCausalChainContainsInstanceOf(IllegalArgumentException.class, x)) {
-                    System.out.println("Got expected exception: " + x);
+                Throwable cause = x;
+                if (x instanceof CompletionException || x instanceof ExecutionException) {
+                    cause = x.getCause();
+                }
+                if (cause instanceof IOException && cause.getCause() != null) {
+                    cause = cause.getCause();
+                }
+                if (cause instanceof IllegalArgumentException) {
+                    System.out.println("Got expected exception: " + cause);
                 } else {
                     failed = x;
                 }
@@ -450,8 +473,15 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                 assertEquals(body, WITH_BODY);
                 throw new RuntimeException("Expected IAE not thrown");
             } catch (Exception x) {
-                if (throwableCausalChainContainsInstanceOf(IllegalArgumentException.class, x)) {
-                    System.out.println("Got expected exception: " + x);
+                Throwable cause = x;
+                if (x instanceof CompletionException || x instanceof ExecutionException) {
+                    cause = x.getCause();
+                }
+                if (cause instanceof IOException && cause.getCause() != null) {
+                    cause = cause.getCause();
+                }
+                if (cause instanceof IllegalArgumentException) {
+                    System.out.println("Got expected exception: " + cause);
                 } else {
                     failed = x;
                 }
@@ -471,17 +501,6 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
                 throw new AssertionError("Unexpected exception: " + failed, failed);
             }
         }
-    }
-
-    private static boolean throwableCausalChainContainsInstanceOf(
-            Class<? extends Throwable> expectedClass,
-            Throwable throwable) {
-        for (Throwable t = throwable; t != null; t = t.getCause()) {
-            if (expectedClass.isInstance(t)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     static final class BadSubscription implements Flow.Subscription {
@@ -537,6 +556,11 @@ public class InvalidInputStreamSubscriptionRequest implements HttpServerAdapters
         public void onComplete() {
             subscriber.onComplete();
         }
+    }
+
+    static String serverAuthority(HttpServer server) {
+        return InetAddress.getLoopbackAddress().getHostName() + ":"
+                + server.getAddress().getPort();
     }
 
     @BeforeTest
