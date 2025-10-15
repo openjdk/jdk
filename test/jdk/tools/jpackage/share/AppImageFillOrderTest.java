@@ -23,10 +23,9 @@
 
 import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
-import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
-import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.DigestInputStream;
@@ -39,10 +38,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import jdk.jpackage.internal.util.function.ThrowingBiFunction;
-import jdk.jpackage.internal.util.function.ThrowingFunction;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
@@ -116,21 +114,19 @@ public class AppImageFillOrderTest {
     @Test
     public void testAppImageFile() throws IOException {
 
-        var appContentRoot = TKit.createTempDirectory("app-content");
-
-        var file = AppImageFile.getPathInAppImage(appContentRoot);
-
-        Files.createDirectories(file.getParent());
-        TKit.createTextFile(file, List.of("This is not a valid XML content"));
-
         var cmd = createJPackage().setFakeRuntime();
-        addAppContentPath(cmd, appContentRoot, ApplicationLayout::appDirectory);
+
+        var outputBundle = cmd.outputBundle();
+
+        buildOverlay(cmd, TKit.createTempDirectory("app-content"), AppImageFile.getPathInAppImage(outputBundle))
+                .textContent("This is not a valid XML content")
+                .configureCmdOptions().createOverlayFile();
 
         // Run jpackage and verify it created valid .jpackage.xml file ignoring the overlay.
         cmd.executeAndAssertImageCreated();
 
-        TKit.trace(String.format("Parse [%s] file...", AppImageFile.getPathInAppImage(cmd.outputBundle())));
-        AppImageFile.load(cmd.outputBundle());
+        TKit.trace(String.format("Parse [%s] file...", AppImageFile.getPathInAppImage(outputBundle)));
+        AppImageFile.load(outputBundle);
     }
 
     private static void test(JPackageCommand cmd, AppImageOverlay... overlays) {
@@ -224,8 +220,11 @@ public class AppImageFillOrderTest {
         INPUT_MAIN_LAUNCHER_CFG(AppImageFillOrderTest::replaceMainLauncherCfgFile),
         ;
 
-        AppImageDefaultOverlay(ThrowingFunction<JPackageCommand, Collection<FileCopy>> func) {
-            this.func = toFunction(func);
+        AppImageDefaultOverlay(Function<JPackageCommand, FileCopy> func) {
+            Objects.requireNonNull(func);
+            this.func = cmd -> {
+                return List.of(func.apply(cmd));
+            };
         }
 
         Collection<FileCopy> addOverlay(JPackageCommand cmd) {
@@ -237,15 +236,33 @@ public class AppImageFillOrderTest {
 
 
     private enum AppImageAppContentOverlay implements AppImageOverlay {
-        APP_CONTENT_MAIN_LAUNCHER_CFG(AppImageFillOrderTest::replaceMainLauncherCfgFile),
-        APP_CONTENT_MAIN_JAR(AppImageFillOrderTest::replaceMainJar),
+        // Replace the standard main launcher .cfg file with the custom one from the app content.
+        APP_CONTENT_MAIN_LAUNCHER_CFG((cmd, appContentRoot) -> {
+            return buildOverlay(cmd, appContentRoot, cmd.appLauncherCfgPath(null))
+                    .textContent("!Olleh")
+                    .configureCmdOptions().createOverlayFile();
+        }),
+
+        // Replace the jar file that jpackage will pick up from the input directory with the custom one.
+        APP_CONTENT_MAIN_JAR((cmd, appContentRoot) -> {
+            return buildOverlay(cmd, appContentRoot, cmd.appLayout().appDirectory().resolve(cmd.getArgumentValue("--main-jar")))
+                    .textContent("Surprise!")
+                    .configureCmdOptions().createOverlayFile();
+        }),
+
+        // Replace "release" file in the runtime directory.
         APP_CONTENT_RUNTIME_RELEASE_FILE((cmd, appContentRoot) -> {
-            return addRuntimeFile(cmd, appContentRoot, RUNTIME_RELEASE_FILE);
+            return buildOverlay(cmd, appContentRoot, cmd.appLayout().runtimeHomeDirectory().resolve("release"))
+                    .textContent("blob")
+                    .configureCmdOptions().createOverlayFile();
         }),
         ;
 
-        AppImageAppContentOverlay(ThrowingBiFunction<JPackageCommand, Path, Collection<FileCopy>> func) {
-            this.func = toBiFunction(func);
+        AppImageAppContentOverlay(BiFunction<JPackageCommand, Path, FileCopy> func) {
+            Objects.requireNonNull(func);
+            this.func = (cmd, appContentRoot) -> {
+                return List.of(func.apply(cmd, appContentRoot));
+            };
         }
 
         Collection<FileCopy> addOverlay(JPackageCommand cmd, Path appContentRoot) {
@@ -264,67 +281,79 @@ public class AppImageFillOrderTest {
     }
 
 
-    private static Collection<FileCopy> replaceMainLauncherCfgFile(JPackageCommand cmd) {
-        var inputDir = Path.of(cmd.getArgumentValue("--input"));
-
+    private static FileCopy replaceMainLauncherCfgFile(JPackageCommand cmd) {
         // Replace the standard main launcher .cfg file with the custom one from the input dir.
-        final var inputMainLauncherCfg = inputDir.resolve(cmd.appLauncherCfgPath(null).getFileName());
+        final var outputFile = cmd.appLauncherCfgPath(null);
 
-        TKit.createTextFile(inputMainLauncherCfg, List.of("Hello!"));
+        final var inputDir = Path.of(cmd.getArgumentValue("--input"));
 
-        return List.of(new FileCopy(inputMainLauncherCfg, cmd.appLauncherCfgPath(null)));
+        final var file = inputDir.resolve(outputFile.getFileName());
+
+        TKit.createTextFile(file, List.of("Hello!"));
+
+        return new FileCopy(file, outputFile);
     }
 
-    private static Collection<FileCopy> replaceMainLauncherCfgFile(JPackageCommand cmd, Path appContentRoot) throws IOException {
-        var appDirOverlay = APP_IMAGE_LAYOUT.resolveAt(appContentRoot).appDirectory();
-
-        // Replace the standard main launcher .cfg file with the custom one from the app content.
-        final var inputMainLauncherCfg = appDirOverlay.resolve(cmd.appLauncherCfgPath(null).getFileName());
-
-        Files.createDirectories(inputMainLauncherCfg.getParent());
-        TKit.createTextFile(inputMainLauncherCfg, List.of("!Olleh"));
-
-        addAppContentPath(cmd, appContentRoot, ApplicationLayout::appDirectory);
-
-        return List.of(new FileCopy(inputMainLauncherCfg, cmd.appLauncherCfgPath(null)));
+    private static AppContentOverlayFileBuilder buildOverlay(JPackageCommand cmd, Path appContentRoot, Path outputFile) {
+        return new AppContentOverlayFileBuilder(cmd, appContentRoot, outputFile);
     }
 
-    private static Collection<FileCopy> replaceMainJar(JPackageCommand cmd, Path appContentRoot) throws IOException {
-        var appDirOverlay = APP_IMAGE_LAYOUT.resolveAt(appContentRoot).appDirectory();
 
-        // Replace the jar file that jpackage will pick up from the input directory with the custom one.
-        var mainJar = appDirOverlay.resolve(cmd.getArgumentValue("--main-jar"));
+    private static final class AppContentOverlayFileBuilder {
 
-        Files.createDirectories(mainJar.getParent());
-        TKit.createTextFile(mainJar, List.of("Surprise!"));
+        AppContentOverlayFileBuilder(JPackageCommand cmd, Path appContentRoot, Path outputFile) {
+            if (outputFile.isAbsolute()) {
+                throw new IllegalArgumentException();
+            }
 
-        addAppContentPath(cmd, appContentRoot, ApplicationLayout::appDirectory);
+            if (!outputFile.startsWith(cmd.outputBundle())) {
+                throw new IllegalArgumentException();
+            }
 
-        return List.of(new FileCopy(mainJar, cmd.appLayout().appDirectory().resolve(mainJar.getFileName())));
-    }
-
-    private static Collection<FileCopy> addRuntimeFile(JPackageCommand cmd, Path appContentRoot, Path pathInRuntime) throws IOException {
-        var runtimeOverlay = APP_IMAGE_LAYOUT.resolveAt(appContentRoot).runtimeHomeDirectory();
-
-        // Add a file to the runtime.
-        var file = runtimeOverlay.resolve(pathInRuntime);
-
-        Files.createDirectories(file.getParent());
-        TKit.createTextFile(file, List.of("blob"));
-
-        addAppContentPath(cmd, appContentRoot, ApplicationLayout::runtimeDirectory);
-
-        return List.of(new FileCopy(file, cmd.appLayout().runtimeHomeDirectory().resolve(file.getFileName())));
-    }
-
-    private static void addAppContentPath(JPackageCommand cmd, Path appContentRoot, Function<ApplicationLayout, Path> appImageComponentGetter) {
-        var pathInAppImage = appImageComponentGetter.apply(APP_IMAGE_LAYOUT);
-        if (TKit.isOSX()) {
-            pathInAppImage = ApplicationLayout.macAppImage().contentDirectory().relativize(pathInAppImage);
+            this.cmd = Objects.requireNonNull(cmd);
+            this.outputFile = Objects.requireNonNull(outputFile);
+            this.appContentRoot = Objects.requireNonNull(appContentRoot);
         }
 
-        cmd.addArguments("--app-content", appContentRoot.resolve(pathInAppImage.getName(0)));
+        FileCopy createOverlayFile() {
+            final var file = appContentRoot.resolve(pathInAppContentDirectory());
+
+            try {
+                Files.createDirectories(file.getParent());
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+            fileContentInitializer.accept(file);
+
+            return new FileCopy(file, outputFile);
+        }
+
+        AppContentOverlayFileBuilder configureCmdOptions() {
+            cmd.addArguments("--app-content", appContentRoot.resolve(pathInAppContentDirectory().getName(0)));
+            return this;
+        }
+
+        AppContentOverlayFileBuilder content(Consumer<Path> v) {
+            fileContentInitializer = v;
+            return this;
+        }
+
+        AppContentOverlayFileBuilder textContent(String... lines) {
+            return content(path -> {
+                TKit.createTextFile(path, List.of(lines));
+            });
+        }
+
+        private Path pathInAppContentDirectory() {
+            return APP_IMAGE_LAYOUT.resolveAt(cmd.outputBundle()).contentDirectory().relativize(outputFile);
+        }
+
+        private Consumer<Path> fileContentInitializer;
+        private final JPackageCommand cmd;
+        private final Path outputFile;
+        private final Path appContentRoot;
     }
+
 
     private static String digest(Path file) {
         try {
