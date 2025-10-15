@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ com/sun/jdi/EATests.java#id0                                    8264699 generic-
 
 com/sun/jdi/ExceptionEvents.java 8278470 generic-all
 com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
-
-javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8308035 windows-x64
 
 javax/management/remote/mandatory/loading/MissingClassTest.java 8145413 windows-x64
 
