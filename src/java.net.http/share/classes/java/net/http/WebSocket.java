@@ -144,6 +144,12 @@ public interface WebSocket {
          * {@link HttpTimeoutException}. If this method is not invoked then the
          * infinite timeout is assumed.
          *
+         * @implSpec
+         * When a connection timeout value is present, a {@link WebSocket}
+         * implementation should apply it over the duration measured from the
+         * instant a connection is requested to the instant that one is
+         * established. This duration includes SSL handshakes, if required.
+         *
          * @param timeout
          *         the timeout, non-{@linkplain Duration#isNegative() negative},
          *         non-{@linkplain Duration#ZERO ZERO}
