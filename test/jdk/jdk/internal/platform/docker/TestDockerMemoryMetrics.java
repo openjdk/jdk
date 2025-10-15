@@ -27,7 +27,7 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
-import jtreg.skipped.SkippedException;
+import jtreg.SkippedException;
 
 /*
  * @test
