@@ -35,8 +35,8 @@ package compiler.loopopts;
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit::test
  *      -XX:CompileCommand=memlimit,compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit::test,100M~crash
- *      -XX:-TieredCompilation -Xcomp
- *      -XX:+StressLoopPeeling -XX:PerMethodTrapLimit=0 -XX:+VerifyLoopOptimizations
+ *      -XX:-TieredCompilation -Xcomp -XX:PerMethodTrapLimit=0
+ *      -XX:+StressLoopPeeling -XX:+VerifyLoopOptimizations
  *      -XX:StressSeed=1870557292
  *      compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
  * @run main compiler.loopopts.TestVerifyLoopOptimizationsHitsMemLimit
