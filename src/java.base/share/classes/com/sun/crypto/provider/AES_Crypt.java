@@ -1404,7 +1404,7 @@ public final class AES_Crypt extends SymmetricCipher {
      * @param cipher [out] the encrypted ciphertext output.
      * @param cOff [in] the ciphertext offset in the array of bytes.
      */
-    public void encryptBlock(byte[] plain, int pOff, byte[] cipher, int cOff) {
+    void encryptBlock(byte[] plain, int pOff, byte[] cipher, int cOff) {
         implEncryptBlock(plain, pOff, cipher, cOff);
     }
 
@@ -1416,7 +1416,7 @@ public final class AES_Crypt extends SymmetricCipher {
      * @param plain [out] the decrypted plaintext output.
      * @param pOff [in] the plaintext offset in the array of bytes.
      */
-    public void decryptBlock(byte[] cipher, int cOff, byte[] plain, int pOff) {
+    void decryptBlock(byte[] cipher, int cOff, byte[] plain, int pOff) {
         implDecryptBlock(cipher, cOff, plain, pOff);
     }
 }
