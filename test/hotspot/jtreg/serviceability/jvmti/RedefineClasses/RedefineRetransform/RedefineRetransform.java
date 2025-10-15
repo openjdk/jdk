@@ -99,8 +99,8 @@ public class RedefineRetransform {
 
     // Extracts ClassVersion values from the provided class bytes.
     private static int getClassBytesVersion(byte[] classBytes) {
-        ClassModel clazz = ClassFile.of().parse(classBytes);
-        RuntimeVisibleAnnotationsAttribute rvaa = clazz.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow();
+        ClassModel classModel = ClassFile.of().parse(classBytes);
+        RuntimeVisibleAnnotationsAttribute rvaa = classModel.findAttribute(Attributes.runtimeVisibleAnnotations()).orElseThrow();
         List<AnnotationElement> classVersionElementValuePairs = rvaa.annotations().stream()
                 .filter(anno -> anno.className().isFieldType(CD_ClassVersion))
                 .findFirst().orElseThrow().elements();
