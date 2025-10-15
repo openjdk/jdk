@@ -88,6 +88,7 @@ public class TestVerifyLoopOptimizationsHitsMemLimit {
         try {
             TestVerifyLoopOptimizationsHitsMemLimit test = new TestVerifyLoopOptimizationsHitsMemLimit();
             test.test();
+            throw new RuntimeException("Expected a NPE for uninitialized array");
         } catch (NullPointerException e) {
             // expected
         }
