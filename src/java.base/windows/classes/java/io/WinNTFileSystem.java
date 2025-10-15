@@ -487,28 +487,20 @@ final class WinNTFileSystem extends FileSystem {
         String canonicalPath = canonicalize0(path);
         String finalPath = null;
         try {
-            finalPath = getFinalPath(canonicalPath);
+            String fp = getFinalPath(canonicalPath);
 
             // if getFinalPath converted a drive letter to a UNC-style path,
-            // then obtain the mapping for the drive and replace it in the
-            // final path with the original drive letter
-            if (finalPath.charAt(0) == '\\' &&
-                finalPath.charAt(1) == '\\' &&
+            // then fall back to using the result of canonicalize0 because
+            // there does not appear to be a reliable way to map the prefix
+            // of the result of getFinalPath back to a drive letter
+            if (fp.charAt(0) == '\\' &&
+                fp.charAt(1) == '\\' &&
                 isLetter(canonicalPath.charAt(0)) &&
                 canonicalPath.charAt(1) == ':' &&
                 canonicalPath.charAt(2) == '\\') {
-                char driveLetter = canonicalPath.charAt(0);
-                String uncPath = queryUNCPath(driveLetter);
-                if (uncPath != null &&
-                    finalPath.substring(0, uncPath.length()).equalsIgnoreCase(uncPath)) {
-                    int fpLen = finalPath.length();
-                    int uncLen = uncPath.length();
-                    StringBuilder sb = new StringBuilder(fpLen - uncLen + 2);
-                    sb.append(driveLetter);
-                    sb.append(':');
-                    sb.append(finalPath, uncLen, fpLen);
-                    finalPath = sb.toString();
-                }
+                finalPath = canonicalPath;
+            } else {
+                finalPath = fp;
             }
         } catch (IOException ignored) {
             finalPath = canonicalPath;
