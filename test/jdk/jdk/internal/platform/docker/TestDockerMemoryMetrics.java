@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.skipped.SkippedException;
 
 /*
  * @test
@@ -117,13 +118,13 @@ public class TestDockerMemoryMetrics {
                 new DockerRunOptions(imageName, "/jdk/bin/java", "-version");
         preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
                 .addDockerOpts("--memory=" + value)
+                .addJavaOpts("-XX:+AlwaysPreTouch")
                 .addJavaOpts("-Xms" + value)
                 .addJavaOpts("-Xmx" + value);
         OutputAnalyzer oa = DockerTestUtils.dockerRunJava(preOpts);
         String output = oa.getOutput();
         if (!output.contains("version")) {
-            System.out.println("Swapping doesn't work for this test.");
-            return;
+            throw new SkippedException("Swapping doesn't work for this test.");
         }
 
         DockerRunOptions opts =
@@ -137,8 +138,7 @@ public class TestDockerMemoryMetrics {
         oa = DockerTestUtils.dockerRunJava(opts);
         output = oa.getOutput();
         if (output.contains("Ignoring test")) {
-            System.out.println("Ignored by the tester");
-            return;
+            throw new SkippedException("Ignored by the tester");
         }
         oa.shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
     }
