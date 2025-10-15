@@ -62,6 +62,7 @@ public class TestZGCWithAOTHeap {
     final static String Z = "-XX:+UseZGC";
 
     static void test(boolean dumpWithZ, boolean execWithZ, boolean shouldStream, boolean shouldUseCOH) throws Exception {
+        String unlockDiagnostic = "-XX:+UnlockDiagnosticVMOptions";
         String dumpGC = dumpWithZ ? Z : G1;
         String execGC = execWithZ ? Z : G1;
         String generalErrMsg = "Cannot use CDS heap data.";
@@ -85,17 +86,21 @@ public class TestZGCWithAOTHeap {
 
         System.out.println("1. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream);
         out = TestCommon.exec(helloJar,
+                              unlockDiagnostic,
                               execGC,
                               coops,
                               coh,
                               "-Xlog:cds,aot,aot+heap",
                               "Hello");
         if (!shouldStream && execWithZ) {
-            // Only when dumping without streaming and executing with ZGC
-            // do we expect there to be a problem.
-            out.shouldContain(HELLO);
-            out.shouldContain(generalErrMsg);
-            out.shouldHaveExitValue(0);
+            // Only when dumping without streaming and executing with ZGC do we expect there
+            // to be a problem. With -XX:+AOTClassLinking, the problem is worse.
+            if (out.getExitValue() == 0) {
+                out.shouldContain(HELLO);
+                out.shouldContain(generalErrMsg);
+            } else {
+                out.shouldHaveExitValue(1);
+            }
         } else {
             out.shouldContain(HELLO);
             out.shouldNotContain(generalErrMsg);
@@ -107,6 +112,7 @@ public class TestZGCWithAOTHeap {
         // At exec time, try to load them into a small ZGC heap that may be too small.
         System.out.println("2. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream);
         out = TestCommon.exec(helloJar,
+                              unlockDiagnostic,
                               execGC,
                               "-Xmx4m",
                               coops,
@@ -119,12 +125,15 @@ public class TestZGCWithAOTHeap {
             } else {
                 out.shouldNotContain(generalErrMsg);
             }
+        } else {
+            out.shouldHaveExitValue(1);
         }
         out.shouldNotHaveFatalError();
 
         if (shouldStream) {
             System.out.println("3. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream + ", " + eagerLoading);
             out = TestCommon.exec(helloJar,
+                                  unlockDiagnostic,
                                   execGC,
                                   coops,
                                   coh,
@@ -132,11 +141,14 @@ public class TestZGCWithAOTHeap {
                                   "-Xlog:cds,aot,aot+heap",
                                   "Hello");
             if (!shouldStream && execWithZ) {
-                // Only when dumping without streaming and executing with ZGC
-                // do we expect there to be a problem.
-                out.shouldContain(HELLO);
-                out.shouldContain(generalErrMsg);
-                out.shouldHaveExitValue(0);
+                // Only when dumping without streaming and executing with ZGC do we expect there
+                // to be a problem. With -XX:+AOTClassLinking, the problem is worse.
+                if (out.getExitValue() == 0) {
+                    out.shouldContain(HELLO);
+                    out.shouldContain(generalErrMsg);
+                } else {
+                    out.shouldHaveExitValue(1);
+                }
             } else {
                 out.shouldContain(HELLO);
                 out.shouldNotContain(generalErrMsg);
