@@ -26,6 +26,7 @@
 
 #include "cds/aotMetaspace.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/log.hpp"
@@ -744,6 +745,7 @@ void Metaspace::global_initialize() {
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
   }
+  HeapShared::initialize_loading_mode_if_not_set();
 #endif // INCLUDE_CDS
 
 #ifdef _LP64

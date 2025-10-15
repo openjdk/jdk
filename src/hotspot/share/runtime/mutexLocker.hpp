@@ -81,6 +81,7 @@ extern Monitor* TrainingReplayQueue_lock;        // a lock held when class are a
 extern Monitor* CompileTaskWait_lock;            // a lock held when CompileTasks are waited/notified
 extern Mutex*   CompileStatistics_lock;          // a lock held when updating compilation statistics
 extern Mutex*   DirectivesStack_lock;            // a lock held when mutating the dirstack and ref counting directives
+extern Monitor* AOTHeapLoading_lock;             // a lock used to guard materialization of AOT heap objects
 extern Monitor* Terminator_lock;                 // a lock used to guard termination of the vm
 extern Monitor* InitCompleted_lock;              // a lock used to signal threads waiting on init completed
 extern Monitor* BeforeExit_lock;                 // a lock used to guard cleanups and shutdown hooks
