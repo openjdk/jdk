@@ -803,6 +803,12 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
+            //A backtracking record of the original patterns (in value) that
+            //were used to produce the pattern in the key.
+            //Note that there may be multiple equivalent patterns in the key
+            //that originate in different sets of different original patterns,
+            //hence using identity map, to get the exact source patterns
+            //on which the resulting pattern is based:
             Map<PatternDescription, Set<PatternDescription>> replaces = new IdentityHashMap<>();
             Set<Set<PatternDescription>> seenFallback = new HashSet<>();
             boolean useHashes = true;
