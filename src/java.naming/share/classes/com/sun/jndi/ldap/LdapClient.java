@@ -488,7 +488,7 @@ public final class LdapClient implements PooledConnection {
                     conn.outStream.close();
                 }
 
-                if (conn.sock != null && !conn.sock.isClosed()) {
+                if (!conn.sock.isClosed()) {
                     conn.sock.close();
                 }
             }
