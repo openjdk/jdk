@@ -67,7 +67,7 @@ public class SelectBetweenPressRelease {
         frame.setLayout (new FlowLayout ());
 
         addListener();
-        frame.setSize (200,200);
+        frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         frame.validate();
@@ -99,7 +99,7 @@ public class SelectBetweenPressRelease {
         // so the next ISC to the first item by mouse will be ignored
 
         // try to hit the first item
-        if(System.getProperty("os.name").startsWith("Mac")) {
+        if (System.getProperty("os.name").startsWith("Mac")) {
             r.mouseMove(loc.x + ch.getWidth() / 2, loc.y + ch.getHeight() / 2);
         } else {
             r.mouseMove(loc.x + ch.getWidth() / 2,
