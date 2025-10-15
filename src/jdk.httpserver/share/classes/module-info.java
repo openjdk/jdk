@@ -23,7 +23,7 @@
  * questions.
  */
 
-import module jdk.httpserver;
+import com.sun.net.httpserver.*;
 
 /**
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
