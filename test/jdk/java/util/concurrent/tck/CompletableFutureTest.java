@@ -5135,7 +5135,7 @@ public class CompletableFutureTest extends JSR166TestCase {
         r.assertInvoked();
     }}
 
-    public void testOnlyAssistsIfInTheSamePool() throws Exception{
+    public void testOnlyHelpsIfInTheSamePool() throws Exception {
         class Logic {
             interface Extractor { ForkJoinPool pool(CompletableFuture<ForkJoinPool> cf) throws Exception; }
             static final List<ForkJoinPool> executeInnerOuter(
@@ -5150,7 +5150,7 @@ public class CompletableFutureTest extends JSR166TestCase {
                         .map(cf -> {
                             try {
                                 return extractor.pool(cf);
-                            } catch(Exception ex) {
+                            } catch (Exception ex) {
                                 throw new AssertionError("Unexpected", ex);
                             }
                         })
@@ -5167,12 +5167,12 @@ public class CompletableFutureTest extends JSR166TestCase {
             );
 
         try (var pool = new ForkJoinPool(2)) {
-            for(var extractor : extractors) {
+            for (var extractor : extractors) {
                 for (var p : Logic.executeInnerOuter(pool, ForkJoinPool.commonPool(), extractor))
                     assertTrue(p != pool); // The inners should have all been executed by commonPool
 
                 for (var p : Logic.executeInnerOuter(pool, pool, extractor))
-                    assertTrue(p == pool); // The inners could have been assisted by the outer
+                    assertTrue(p == pool); // The inners could have been helped by the outer
             }
         }
     }
