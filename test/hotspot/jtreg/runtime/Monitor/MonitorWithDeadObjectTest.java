@@ -39,7 +39,7 @@
 
 /*
  * @test id=DumpThreadsBeforeDetach
- * @requires os.family != "windows" & os.family != "aix" & ( !vm.musl | !vm.debug )
+ * @requires os.family != "windows" & os.family != "aix" & (!vm.musl | !vm.debug)
  * @run main/othervm/native MonitorWithDeadObjectTest 1
  */
 
