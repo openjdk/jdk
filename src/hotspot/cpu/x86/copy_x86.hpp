@@ -28,19 +28,11 @@
 #include OS_CPU_HEADER(copy)
 
 static void pd_fill_to_words(HeapWord* tohw, size_t count, juint value) {
-#ifdef AMD64
   julong* to = (julong*) tohw;
   julong  v  = ((julong) value << 32) | value;
   while (count-- > 0) {
     *to++ = v;
   }
-#else
-  juint* to = (juint*)tohw;
-  count *= HeapWordSize / BytesPerInt;
-  while (count-- > 0) {
-    *to++ = value;
-  }
-#endif // AMD64
 }
 
 static void pd_fill_to_aligned_words(HeapWord* tohw, size_t count, juint value) {
@@ -60,7 +52,7 @@ static void pd_zero_to_bytes(void* to, size_t count) {
 }
 
 static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-#if defined AMD64 || defined _WINDOWS
+#ifdef _WINDOWS
   (void)memmove(to, from, count * HeapWordSize);
 #else
   // Includes a zero-count check.
@@ -101,11 +93,10 @@ static void pd_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
                    : "=S" (from), "=D" (to), "=c" (count), "=r" (temp)
                    : "0"  (from), "1"  (to), "2"  (count), "3"  (temp)
                    : "memory", "flags");
-#endif // AMD64
+#endif _WINDOWS
 }
 
 static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   switch (count) {
   case 8:  to[7] = from[7];
   case 7:  to[6] = from[6];
@@ -120,39 +111,10 @@ static void pd_disjoint_words(const HeapWord* from, HeapWord* to, size_t count) 
     (void)memcpy(to, from, count * HeapWordSize);
     break;
   }
-#else
-#if defined _WINDOWS
-  (void)memcpy(to, from, count * HeapWordSize);
-#else
-  // Includes a zero-count check.
-  intx temp = 0;
-  __asm__ volatile("        testl   %6,%6       ;"
-                   "        jz      3f          ;"
-                   "        cmpl    $32,%6      ;"
-                   "        ja      2f          ;"
-                   "        subl    %4,%1       ;"
-                   "1:      movl    (%4),%3     ;"
-                   "        movl    %7,(%5,%4,1);"
-                   "        addl    $4,%0       ;"
-                   "        subl    $1,%2        ;"
-                   "        jnz     1b          ;"
-                   "        jmp     3f          ;"
-                   "2:      rep;    smovl       ;"
-                   "3:      nop                  "
-                   : "=S" (from), "=D" (to), "=c" (count), "=r" (temp)
-                   : "0"  (from), "1"  (to), "2"  (count), "3"  (temp)
-                   : "memory", "cc");
-#endif // _WINDOWS
-#endif // AMD64
 }
 
 static void pd_disjoint_words_atomic(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   shared_disjoint_words_atomic(from, to, count);
-#else
-  // pd_disjoint_words is word-atomic in this implementation.
-  pd_disjoint_words(from, to, count);
-#endif // AMD64
 }
 
 static void pd_aligned_conjoint_words(const HeapWord* from, HeapWord* to, size_t count) {
@@ -164,7 +126,7 @@ static void pd_aligned_disjoint_words(const HeapWord* from, HeapWord* to, size_t
 }
 
 static void pd_conjoint_bytes(const void* from, void* to, size_t count) {
-#if defined AMD64 || defined _WINDOWS
+#if defined _WINDOWS
   (void)memmove(to, from, count);
 #else
   // Includes a zero-count check.
@@ -239,7 +201,7 @@ static void pd_conjoint_bytes(const void* from, void* to, size_t count) {
                    : "=S" (from), "=D" (to), "=c" (count), "=r" (temp)
                    : "0"  (from), "1"  (to), "2"  (count), "3"  (temp)
                    : "memory", "flags", "%edx");
-#endif // AMD64
+#endif // _WINDOWS
 }
 
 static void pd_conjoint_bytes_atomic(const void* from, void* to, size_t count) {
@@ -253,49 +215,16 @@ static void pd_conjoint_jshorts_atomic(const jshort* from, jshort* to, size_t co
 }
 
 static void pd_conjoint_jints_atomic(const jint* from, jint* to, size_t count) {
-#ifdef AMD64
   _Copy_conjoint_jints_atomic(from, to, count);
-#else
-  assert(HeapWordSize == BytesPerInt, "heapwords and jints must be the same size");
-  // pd_conjoint_words is word-atomic in this implementation.
-  pd_conjoint_words((const HeapWord*)from, (HeapWord*)to, count);
-#endif // AMD64
 }
 
 static void pd_conjoint_jlongs_atomic(const jlong* from, jlong* to, size_t count) {
-#ifdef AMD64
   _Copy_conjoint_jlongs_atomic(from, to, count);
-#else
-  // Guarantee use of fild/fistp or xmm regs via some asm code, because compilers won't.
-  if (from > to) {
-    while (count-- > 0) {
-      __asm__ volatile("fildll (%0); fistpll (%1)"
-                       :
-                       : "r" (from), "r" (to)
-                       : "memory" );
-      ++from;
-      ++to;
-    }
-  } else {
-    while (count-- > 0) {
-      __asm__ volatile("fildll (%0,%2,8); fistpll (%1,%2,8)"
-                       :
-                       : "r" (from), "r" (to), "r" (count)
-                       : "memory" );
-    }
-  }
-#endif // AMD64
 }
 
 static void pd_conjoint_oops_atomic(const oop* from, oop* to, size_t count) {
-#ifdef AMD64
   assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
   _Copy_conjoint_jlongs_atomic((const jlong*)from, (jlong*)to, count);
-#else
-  assert(HeapWordSize == BytesPerOop, "heapwords and oops must be the same size");
-  // pd_conjoint_words is word-atomic in this implementation.
-  pd_conjoint_words((const HeapWord*)from, (HeapWord*)to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_bytes(const HeapWord* from, HeapWord* to, size_t count) {
@@ -307,28 +236,16 @@ static void pd_arrayof_conjoint_jshorts(const HeapWord* from, HeapWord* to, size
 }
 
 static void pd_arrayof_conjoint_jints(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
    _Copy_arrayof_conjoint_jints(from, to, count);
-#else
-  pd_conjoint_jints_atomic((const jint*)from, (jint*)to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_jlongs(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   _Copy_arrayof_conjoint_jlongs(from, to, count);
-#else
-  pd_conjoint_jlongs_atomic((const jlong*)from, (jlong*)to, count);
-#endif // AMD64
 }
 
 static void pd_arrayof_conjoint_oops(const HeapWord* from, HeapWord* to, size_t count) {
-#ifdef AMD64
   assert(BytesPerLong == BytesPerOop, "jlongs and oops must be the same size");
   _Copy_arrayof_conjoint_jlongs(from, to, count);
-#else
-  pd_conjoint_oops_atomic((const oop*)from, (oop*)to, count);
-#endif // AMD64
 }
 
 #endif // _WINDOWS

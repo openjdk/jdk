@@ -32,12 +32,8 @@
     offset_unit        =  1,
 
     // Encodes Assembler::disp32_operand vs. Assembler::imm32_operand.
-#ifndef AMD64
-    format_width       =  1
-#else
     // vs Assembler::narrow_oop_operand and ZGC barrier encodings.
     format_width       =  3
-#endif
   };
 
  public:
