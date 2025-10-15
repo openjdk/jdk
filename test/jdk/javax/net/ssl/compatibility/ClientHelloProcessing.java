@@ -69,6 +69,7 @@ public class ClientHelloProcessing {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
+    private static final boolean debug = false;
 
     private static final ByteBuffer SERVOUTBUF =
             ByteBuffer.wrap("Server Side".getBytes());

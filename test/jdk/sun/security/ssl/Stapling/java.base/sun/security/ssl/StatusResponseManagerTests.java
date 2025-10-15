@@ -58,7 +58,6 @@ public class StatusResponseManagerTests {
      */
     private static final boolean debug = false;
 
-    private static final boolean debug = true;
     private static final boolean ocspDebug = false;
 
     private static Field responseCacheField;
