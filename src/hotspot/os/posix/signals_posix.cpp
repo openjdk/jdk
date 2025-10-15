@@ -42,6 +42,7 @@
 #include "signals_posix.hpp"
 #include "suspendResume_posix.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/deferredStatic.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/parseInteger.hpp"
@@ -167,9 +168,9 @@ static get_signal_t get_signal_action = nullptr;
 
 // suspend/resume support
 #if defined(__APPLE__)
-  static OSXSemaphore* sr_semaphore;
+  static DeferredStatic<OSXSemaphore> sr_semaphore;
 #else
-  static PosixSemaphore* sr_semaphore;
+  static DeferredStatic<PosixSemaphore> sr_semaphore;
 #endif
 
 // Signal number used to suspend/resume a thread
@@ -177,7 +178,7 @@ static get_signal_t get_signal_action = nullptr;
 int PosixSignals::SR_signum = SIGUSR2;
 
 // sun.misc.Signal support
-static Semaphore* sig_semaphore = nullptr;
+static DeferredStatic<Semaphore> sig_semaphore;
 // a counter for each possible signal value
 static volatile jint pending_signals[NSIG+1] = { 0 };
 
@@ -351,18 +352,17 @@ static void jdk_misc_signal_init() {
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
   // Initialize signal semaphore
-  sig_semaphore = new Semaphore();
+  int sem_count = 0;
+  sig_semaphore.initialize(sem_count);
 }
 
 void os::signal_notify(int sig) {
-  if (sig_semaphore != nullptr) {
+    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
+    // initialization isn't called. This code is also never called.
+    assert(!ReduceSignalUsage, "Should not reach here if ReduceSignalUsage is set");
+
     AtomicAccess::inc(&pending_signals[sig]);
     sig_semaphore->signal();
-  } else {
-    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
-    // initialization isn't called.
-    assert(ReduceSignalUsage, "signal semaphore should be created");
-  }
 }
 
 static int check_pending_signals() {
@@ -1731,11 +1731,8 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
 }
 
 static int SR_initialize() {
-#if defined(__APPLE__)
-  sr_semaphore = new OSXSemaphore(0);
-#else
-  sr_semaphore = new PosixSemaphore(0);
-#endif
+  int sem_count = 0;
+  sr_semaphore.initialize(sem_count);
 
   struct sigaction act;
   char *s;
