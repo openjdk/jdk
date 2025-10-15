@@ -1468,7 +1468,7 @@ void JvmtiExport::post_thread_start(JavaThread *thread) {
   }
   assert(thread->thread_state() == _thread_in_vm, "must be in vm state");
 
-  if (AOTThread::is_aot_thread(thread)) {
+  if (thread->is_aot_thread()) {
     // The AOT thread is hidden from view but has no thread oop when it starts due
     // to bootstrapping complexity, so we check for it before checking for bound
     // virtual threads. When exiting it is filtered out due to being hidden.

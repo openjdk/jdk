@@ -45,7 +45,7 @@ void JvmtiPendingMonitors::transition_raw_monitors() {
 
 #ifdef ASSERT
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *thread = jtiwh.next(); ) {
-    assert(thread == current_java_thread || AOTThread::is_aot_thread(thread),
+    assert(thread == current_java_thread || thread->is_aot_thread(),
            "Didn't expect concurrent application threads at this point");
   }
 #endif

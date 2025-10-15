@@ -313,6 +313,7 @@ class Thread: public ThreadShadow {
   virtual bool is_JfrRecorder_thread() const         { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }
   virtual bool is_monitor_deflation_thread() const   { return false; }
+  virtual bool is_aot_thread() const                 { return false; }
 
   // Convenience cast functions
   CompilerThread* as_Compiler_thread() const {

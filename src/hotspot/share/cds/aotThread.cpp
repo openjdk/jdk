@@ -38,6 +38,7 @@
 #include "utilities/exceptions.hpp"
 
 AOTThread* AOTThread::_aot_thread;
+bool AOTThread::_started;
 
 // Starting the AOTThread is tricky. We wish to start it as early as possible, as
 // that increases the amount of curling this thread can do for the application thread
@@ -54,17 +55,19 @@ void AOTThread::initialize() {
   // Spin up a thread without thread oop, because the java.lang classes
   // have not yet been initialized, and hence we can't allocate the Thread
   // object yet.
-  _aot_thread = new AOTThread(&aot_thread_entry);
+  AOTThread* thread = new AOTThread(&aot_thread_entry);
+  _aot_thread = thread;
 
 #if INCLUDE_JVMTI
   // The line below hides JVMTI events from this thread (cf. should_hide_jvmti_events())
   // This is important because this thread runs before JVMTI monitors are set up appropriately.
   // Therefore, callbacks would not work as intended. JVMTI has no business peeking at how we
   // materialize primordial objects from the AOT cache.
-  _aot_thread->toggle_is_disable_suspend();
+  thread->toggle_is_disable_suspend();
 #endif
 
-  JavaThread::vm_exit_on_osthread_failure(_aot_thread);
+  JavaThread::vm_exit_on_osthread_failure(thread);
+  _started = true;
 
   // Note that the Thread class is not initialized yet at this point. We
   // can run a bit concurrently until the Thread class is initialized; then
@@ -73,22 +76,22 @@ void AOTThread::initialize() {
   // The thread needs an identifier. This thread is fine with a temporary ID
   // assignment; it will terminate soon anyway.
   int64_t tid = ThreadIdentifier::next();
-  _aot_thread->set_monitor_owner_id(tid);
+  thread->set_monitor_owner_id(tid);
 
   {
     MutexLocker mu(THREAD, Threads_lock);
-    Threads::add(_aot_thread);
+    Threads::add(thread);
   }
 
-  JFR_ONLY(Jfr::on_java_thread_start(THREAD, _aot_thread);)
+  JFR_ONLY(Jfr::on_java_thread_start(THREAD, thread);)
 
-  os::start_thread(_aot_thread);
+  os::start_thread(thread);
 #endif
 }
 
 void AOTThread::materialize_thread_object() {
 #if INCLUDE_CDS_JAVA_HEAP
-  if (_aot_thread == nullptr) {
+  if (!_started) {
     // No thread object to materialize
     return;
   }
@@ -106,5 +109,6 @@ void AOTThread::materialize_thread_object() {
 void AOTThread::aot_thread_entry(JavaThread* jt, TRAPS) {
 #if INCLUDE_CDS_JAVA_HEAP
   AOTStreamedHeapLoader::materialize_objects();
+  _aot_thread = nullptr; // AOT thread will get destroyed after this point
 #endif
 }

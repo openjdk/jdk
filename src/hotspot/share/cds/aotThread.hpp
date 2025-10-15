@@ -32,6 +32,7 @@
 
 class AOTThread : public JavaThread {
 private:
+  static bool _started;
   static AOTThread* _aot_thread;
   static void aot_thread_entry(JavaThread* thread, TRAPS);
   AOTThread(ThreadFunction entry_point) : JavaThread(entry_point) {};
@@ -44,8 +45,8 @@ public:
 
   static void materialize_thread_object();
 
-  static bool aot_thread_initialized() { return NOT_CDS(false) CDS_ONLY(_aot_thread != nullptr); };
-  static bool is_aot_thread(JavaThread* thread) { return NOT_CDS(false) CDS_ONLY(aot_thread_initialized() && _aot_thread == thread); };
+  static bool aot_thread_initialized() { return _started; };
+  bool is_aot_thread() const { return true; };
 };
 
 #endif // SHARE_CDS_AOTTHREAD_HPP

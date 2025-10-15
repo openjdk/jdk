@@ -122,7 +122,7 @@ size_t      JavaThread::_stack_size_at_create = 0;
   #define HOTSPOT_THREAD_PROBE_stop HOTSPOT_THREAD_STOP
 
   #define DTRACE_THREAD_PROBE(probe, javathread)                           \
-    if (!AOTThread::is_aot_thread(javathread)) {                           \
+    if (!javathread->is_aot_thread()) {                                    \
       ResourceMark rm(this);                                               \
       int len = 0;                                                         \
       const char* name = (javathread)->name();                             \
@@ -760,7 +760,7 @@ void JavaThread::run() {
 
 void JavaThread::thread_main_inner() {
   assert(JavaThread::current() == this, "sanity check");
-  assert(_threadObj.peek() != nullptr || AOTThread::is_aot_thread(this), "just checking");
+  assert(_threadObj.peek() != nullptr || is_aot_thread(), "just checking");
 
   // Execute thread entry point unless this thread has a pending exception.
   // Note: Due to JVMTI StopThread we can have pending exceptions already!
