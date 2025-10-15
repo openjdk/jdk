@@ -40,7 +40,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  *
  * https://www.internationaljournalcorner.com/index.php/ijird_ojs/article/view/134688
  */
-public final class AESCrypt extends SymmetricCipher {
+public final class AES_Crypt extends SymmetricCipher {
 
     // Number of words in a block
     private static final int WB = 4;
