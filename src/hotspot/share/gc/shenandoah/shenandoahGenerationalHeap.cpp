@@ -342,13 +342,6 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, Shena
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
 
-    if (ShenandoahSafepoint::is_at_shenandoah_safepoint()) {
-      // degenerated evacuation (probably)
-      auto to_region = heap_region_containing(result);
-      log_trace(gc, cset)("Evacuated object: " PTR_FORMAT " from cset region: %zu to: " PTR_FORMAT " in region: %zu (age: %d, aff: %s)",
-        p2i(p), from_region->index(), p2i(result), to_region->index(), to_region->age(), shenandoah_affiliation_name(to_region->affiliation()));
-    }
-
     // This is necessary for virtual thread support. This uses the mark word without
     // considering that it may now be a forwarding pointer (and could therefore crash).
     // Secondarily, we do not want to spend cycles relativizing stack chunks for oops
