@@ -63,8 +63,8 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
 
     @Override
     public void run() {
-        signal.countDown();
         Thread.yield();
+        signal.countDown();
         try {
             hndSleep.invoke(sleepArg);
         } catch(Throwable t) {
