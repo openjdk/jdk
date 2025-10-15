@@ -234,7 +234,7 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
 #endif
 
   // Patch the bytecode using STLR so that the last STLR used in
-  // ResolvedFieldEntry::fill_in is observed before the patched bytecode. 
+  // ResolvedFieldEntry::fill_in is observed before the patched bytecode.
   __ lea(temp_reg, at_bcp(0));
   __ stlrb(bc_reg, temp_reg);
   __ bind(L_patch_done);
