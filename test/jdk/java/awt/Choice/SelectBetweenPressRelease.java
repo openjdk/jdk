@@ -58,7 +58,7 @@ public class SelectBetweenPressRelease {
     }
 
     private static void init() {
-        frame = new Frame();
+        frame = new Frame("SelectBetweenPressRelease");
         ch = new Choice();
         ch.add("0");
         ch.add("1");
