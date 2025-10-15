@@ -90,6 +90,12 @@ public class AOTMapReader {
         public boolean hasClass(String className) {
             return classes.contains(className);
         }
+
+        public void shouldHaveClass(String className) {
+            if (!hasClass(className)) {
+                throw new RuntimeException("AOT map file is missing class " + className);
+            }
+        }
     }
 
     public static class HeapAddress {

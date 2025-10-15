@@ -85,6 +85,8 @@ public class AOTMapTest {
         } else {
             AOTMapReader.validate(mapFile, null);
         }
+        mapFile.shouldHaveClass("AOTMapTestApp"); // built-in class
+        mapFile.shouldHaveClass("Hello"); // unregistered class
     }
 
     static class Tester extends CDSAppTester {
