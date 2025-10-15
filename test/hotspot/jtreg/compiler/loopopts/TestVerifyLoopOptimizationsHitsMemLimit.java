@@ -84,7 +84,7 @@ public class TestVerifyLoopOptimizationsHitsMemLimit {
         }
     }
 
-    public static void main(String[] n) {
+    public static void main(String[] args) {
         try {
             TestVerifyLoopOptimizationsHitsMemLimit test = new TestVerifyLoopOptimizationsHitsMemLimit();
             test.test();
