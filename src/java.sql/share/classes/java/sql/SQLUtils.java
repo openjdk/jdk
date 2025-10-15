@@ -32,10 +32,10 @@ import java.util.regex.Pattern;
  */
 class SQLUtils {
     // Pattern used to verify if an identifier is a Simple SQL identifier
-    static final Pattern SIMPLE_IDENTIFIER_PATTERN
+    private static final Pattern SIMPLE_IDENTIFIER_PATTERN
             = Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*");
     // Pattern to check if an identifier contains a null character or a double quote
-     static final Pattern INVALID_IDENTIFIER_CHARACTERS_PATTERN
+     private static final Pattern INVALID_IDENTIFIER_CHARACTERS_PATTERN
             = Pattern.compile("[^\u0000\"]+");
 
     /**
