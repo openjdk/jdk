@@ -67,7 +67,7 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
         signal.countDown();
         try {
             hndSleep.invoke(sleepArg);
-        } catch(Throwable t) {
+        } catch (Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -80,7 +80,7 @@ public class LingeredAppWithVirtualThread extends LingeredApp implements Runnabl
 
             signal.await();
             LingeredApp.main(args);
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
