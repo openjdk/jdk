@@ -79,7 +79,7 @@ class Forest {
             treeHeight = Memory.balancedTreeHeightFromMemory(size / ntrees, (int) new TreeNode(nodeGarbageSize).getTotalSize());
         }
 
-        log.debug("The expected forest parameters: tree height = " + treeHeight  + " number of trees = " + ntrees
+        log.debug("The expected forest parameters: tree height = " + treeHeight + " number of trees = " + ntrees
                 + " size = " +  new TreeNode(nodeGarbageSize).getTotalSize());
         Tree[] localTrees = new Tree[ntrees * 4];
         Lock[] localLocks = new Lock[ntrees * 4];
@@ -104,7 +104,7 @@ class Forest {
                     instance.where = new AtomicCycleInteger(instance.trees.length);
                     instance.nodeGarbageSize = nodeGarbageSize;
 
-                    log.debug("The forest real parameters: tree height = " + treeHeight  + " number of trees = " + instance.trees.length
+                    log.debug("The forest real parameters: tree height = " + treeHeight + " number of trees = " + instance.trees.length
                             + " number of nodes = " + allNodesCount);
                     log.debug("Approximate node size = " + nodeSize + " calc = " + instance.trees[0].getRoot().getSize());
                     return instance;
