@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,9 @@ static jlong timeout = 0;
 static threadDesc *threadList = nullptr;
 static jint threads_count = 0;
 static int numberOfDeadlocks = 0;
+
+static const char* THREAD_NAME_PREFIX = "Debugee Thread";
+static const size_t THREAD_NAME_PREFIX_LEN = strlen(THREAD_NAME_PREFIX);
 
 /* ========================================================================== */
 
@@ -103,6 +106,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     int tDfn = 0, gDfn = 0;
     int pThread, cThread;
     int i;
+    int debuggee_thread_cnt = 0;
 
     NSK_DISPLAY0("Create threadList\n");
 
@@ -126,6 +130,13 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
             return NSK_FALSE;
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
+
+        if (!strncmp(info.name, THREAD_NAME_PREFIX, THREAD_NAME_PREFIX_LEN)) {
+            NSK_DISPLAY1("Skipping thread %s\n", info.name);
+            if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
+                return NSK_FALSE;
+            continue;
+        }
 
         threadList[i].thread = threads[i];
         threadList[i].dfn = -1;
