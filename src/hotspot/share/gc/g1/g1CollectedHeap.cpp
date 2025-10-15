@@ -2284,7 +2284,7 @@ void G1CollectedHeap::print_heap_on(outputStream* st) const {
   st->cr();
 
   StreamIndentor si(st, 1);
-  st->print("region size %zuK, ", G1HeapRegion::GrainBytes / K);
+  st->print("region size %zuM, ", G1HeapRegion::GrainBytes / M);
   print_region_type(st, "eden", eden_regions_count());
   print_region_type(st, "survivor", survivor_regions_count());
   print_region_type(st, "old", old_regions_count());
