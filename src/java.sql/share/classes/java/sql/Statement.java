@@ -25,9 +25,6 @@
 
 package java.sql;
 
-import java.util.regex.Pattern;
-import static java.util.stream.Collectors.joining;
-
 /**
  * <P>The object used for executing a static SQL statement
  * and returning the results it produces.
@@ -1407,10 +1404,9 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @since 9
      */
-     default String enquoteLiteral(String val)  throws SQLException {
-         return "'" + val.replace("'", "''") +  "'";
+     default String enquoteLiteral(String val) throws SQLException {
+         return SQLUtils.enquoteLiteral(val);
     }
-
 
      /**
      * Returns a SQL identifier. If {@code identifier} is a simple SQL identifier:
@@ -1518,21 +1514,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @since 9
      */
     default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
-        int len = identifier.length();
-        if (len < 1 || len > 128) {
-            throw new SQLException("Invalid name");
-        }
-        if (Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches()) {
-            return alwaysQuote ?  "\"" + identifier + "\"" : identifier;
-        }
-        if (identifier.matches("^\".+\"$")) {
-            identifier = identifier.substring(1, len - 1);
-        }
-        if (Pattern.compile("[^\u0000\"]+").matcher(identifier).matches()) {
-            return "\"" + identifier + "\"";
-        } else {
-            throw new SQLException("Invalid name");
-        }
+        return SQLUtils.enquoteIdentifier(identifier, alwaysQuote);
     }
 
     /**
@@ -1597,9 +1579,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @since 9
      */
     default boolean isSimpleIdentifier(String identifier) throws SQLException {
-        int len = identifier.length();
-        return len >= 1 && len <= 128
-                && Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches();
+        return SQLUtils.isSimpleIdentifier(identifier);
     }
 
     /**
@@ -1643,7 +1623,7 @@ public interface Statement extends Wrapper, AutoCloseable {
     *
     * @since 9
     */
-    default String enquoteNCharLiteral(String val)  throws SQLException {
-        return "N'" + val.replace("'", "''") +  "'";
+    default String enquoteNCharLiteral(String val) throws SQLException {
+        return SQLUtils.enquoteNCharLiteral(val);
    }
 }

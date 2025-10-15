@@ -28,7 +28,6 @@ package java.sql;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.Map;
-import java.util.regex.Pattern;
 
 /**
  * <P>A connection (session) with a specific
@@ -78,7 +77,7 @@ import java.util.regex.Pattern;
  *      con.setTypeMap(map);
  * </pre>
  *
- * @see DriverManager#getConnection
+ * @see DriverManager#getConnection(String)
  * @see Statement
  * @see ResultSet
  * @see DatabaseMetaData
@@ -1506,7 +1505,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * </ul>
      * @throws SQLException if an error occurs
      * @since 9
-     * @see endRequest
+     * @see #endRequest()
      * @see javax.sql.PooledConnection
      */
     default void beginRequest() throws SQLException {
@@ -1549,7 +1548,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * </ul>
      * @throws SQLException if an error occurs
      * @since 9
-     * @see beginRequest
+     * @see #beginRequest()
      * @see javax.sql.PooledConnection
      */
     default void endRequest() throws SQLException {
@@ -1712,8 +1711,8 @@ public interface Connection extends Wrapper, AutoCloseable {
      *
      * @since 26
      */
-    default String enquoteLiteral(String val)  throws SQLException {
-        return "'" + val.replace("'", "''") +  "'";
+    default String enquoteLiteral(String val) throws SQLException {
+        return SQLUtils.enquoteLiteral(val);
     }
 
     /**
@@ -1822,21 +1821,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @since 26
      */
     default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
-        int len = identifier.length();
-        if (len < 1 || len > 128) {
-            throw new SQLException("Invalid name");
-        }
-        if (Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches()) {
-            return alwaysQuote ?  "\"" + identifier + "\"" : identifier;
-        }
-        if (identifier.matches("^\".+\"$")) {
-            identifier = identifier.substring(1, len - 1);
-        }
-        if (Pattern.compile("[^\u0000\"]+").matcher(identifier).matches()) {
-            return "\"" + identifier + "\"";
-        } else {
-            throw new SQLException("Invalid name");
-        }
+        return SQLUtils.enquoteIdentifier(identifier, alwaysQuote);
     }
 
     /**
@@ -1901,9 +1886,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      * @since 26
      */
     default boolean isSimpleIdentifier(String identifier) throws SQLException {
-        int len = identifier.length();
-        return len >= 1 && len <= 128
-                && Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches();
+        return SQLUtils.isSimpleIdentifier(identifier);
     }
 
     /**
@@ -1947,7 +1930,7 @@ public interface Connection extends Wrapper, AutoCloseable {
      *
      * @since 26
      */
-    default String enquoteNCharLiteral(String val)  throws SQLException {
-        return "N'" + val.replace("'", "''") +  "'";
+    default String enquoteNCharLiteral(String val) throws SQLException {
+        return SQLUtils.enquoteNCharLiteral(val);
     }
 }

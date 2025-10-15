@@ -170,7 +170,8 @@ public class ConnectionTests extends BaseTest {
             {"Bruce Wayne", false, "\"Bruce Wayne\""},
             {"Bruce Wayne", true, "\"Bruce Wayne\""},
             {"GoodDay$", false, "\"GoodDay$\""},
-            {"GoodDay$", true, "\"GoodDay$\""},};
+            {"GoodDay$", true, "\"GoodDay$\""},
+        };
     }
 
     /*
@@ -184,7 +185,8 @@ public class ConnectionTests extends BaseTest {
             {"\"Hel\"lo\"", true},
             {"Hello" + '\0', false},
             {"", false},
-            {maxIdentifier + 'a', false},};
+            {maxIdentifier + 'a', false},
+        };
     }
 
     /*
@@ -205,7 +207,8 @@ public class ConnectionTests extends BaseTest {
             {"Batmobile1966", true},
             {maxIdentifier, true},
             {maxIdentifier + 'a', false},
-            {"", false},};
+            {"", false},
+        };
     }
 
     /*

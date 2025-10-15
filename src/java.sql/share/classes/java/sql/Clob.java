@@ -353,21 +353,21 @@ public interface Clob extends AutoCloseable {
      */
     Reader getCharacterStream(long pos, long length) throws SQLException;
 
-  /**
-   * Closes and releases the resources held by this {@code Clob} object.
-   * <p>
-   * If the {@code Clob} object is already closed, then invoking this method
-   * has no effect.
-   *
-   * @throws SQLException                    if an error occurs releasing
-   *                                         the Clob's resources
-   * @throws SQLFeatureNotSupportedException if the JDBC driver
-   *                                         does not support this method
-   * @implSpec The default implementation calls the {@link #free()} method.
-   * @see #free()
-   * @since 26
-   */
-  default void close() throws SQLException {
-    free();
-  };
+    /**
+     * Closes and releases the resources held by this {@code Clob} object.
+     * <p>
+     * If the {@code Clob} object is already closed, then invoking this method
+     * has no effect.
+     *
+     * @throws SQLException                    if an error occurs releasing
+     *                                         the Clob's resources
+     * @throws SQLFeatureNotSupportedException if the JDBC driver
+     *                                         does not support this method
+     * @implSpec The default implementation calls the {@link #free()} method.
+     * @see #free()
+     * @since 26
+     */
+    default void close() throws SQLException {
+      free();
+    };
 }
