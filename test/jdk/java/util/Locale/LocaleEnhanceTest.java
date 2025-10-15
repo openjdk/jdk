@@ -1093,7 +1093,7 @@ public class LocaleEnhanceTest {
 
         // null attribute throws NPE
         assertThrows(NullPointerException.class,
-                () ->  new Builder().addUnicodeLocaleAttribute(null), "null attribute");
+                () -> new Builder().addUnicodeLocaleAttribute(null), "null attribute");
 
         assertThrows(NullPointerException.class,
                 () -> new Builder().removeUnicodeLocaleAttribute(null), "null attribute removal");
