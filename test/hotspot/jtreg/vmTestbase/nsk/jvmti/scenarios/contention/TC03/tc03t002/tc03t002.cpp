@@ -45,8 +45,8 @@ static threadDesc *threadList = nullptr;
 static jint threads_count = 0;
 static int numberOfDeadlocks = 0;
 
-static const char* thread_name_prefix = "Debugee Thread";
-static size_t thread_name_prefix_len = strlen(thread_name_prefix);
+static const char* THREAD_NAME_PREFIX = "Debugee Thread";
+static const size_t THREAD_NAME_PREFIX_LEN = strlen(THREAD_NAME_PREFIX);
 
 /* ========================================================================== */
 
@@ -131,7 +131,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
 
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
-        if (!strncmp(info.name, thread_name_prefix, thread_name_prefix_len)) {
+        if (!strncmp(info.name, THREAD_NAME_PREFIX, THREAD_NAME_PREFIX_LEN)) {
             NSK_DISPLAY1("Skipping thread %s\n", info.name);
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)info.name)))
                 return NSK_FALSE;
