@@ -28,7 +28,7 @@
  * @library /test/lib
  * @build ModulesInCustomFileSystem m1/* m2/*
  *        jdk.test.lib.util.JarUtils
- * @run testng/othervm ModulesInCustomFileSystem
+ * @run testng/othervm -Djava.io.tmpdir=. ModulesInCustomFileSystem
  * @summary Test ModuleFinder to find modules in a custom file system
  */
 
