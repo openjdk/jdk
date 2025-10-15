@@ -248,16 +248,6 @@ TypeIntMirror<S, U> TypeIntMirror<S, U>::cast() const {
   return *this;
 }
 
-template <class S, class U>
-class std::hash<TypeIntMirror<S, U>> {
-public:
-  size_t operator()(const TypeIntMirror<S, U>& t) const noexcept {
-    return (julong(juint(U(t._lo))) << 40) | (julong(juint(U(t._hi))) << 32) |
-           (julong(juint(t._ulo)) << 24) | (julong(juint(t._ulo)) << 16) |
-           (julong(juint(t._bits._zeros)) << 8) | julong(juint(t._bits._ones));
-  }
-};
-
 // The number of TypeIntMirror instances for integral types with a few bits. These values are
 // calculated once and written down for usage in constexpr contexts.
 template <class CTP>
