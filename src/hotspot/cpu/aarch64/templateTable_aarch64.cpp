@@ -232,9 +232,10 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   __ stop("patching the wrong bytecode");
   __ bind(L_okay);
 #endif
-
-  // Patch the bytecode using STLR so that the last STLR used in
-  // ResolvedFieldEntry::fill_in is observed before the patched bytecode.
+  // Patch bytecode with release store to coordinate with ResolvedFieldEntry loads
+  // in fast bytecode codelets. load_field_entry has a memory barrier that gains
+  // the needed ordering, together with control dependency on entering the fast codelet
+  // itself.
   __ lea(temp_reg, at_bcp(0));
   __ stlrb(bc_reg, temp_reg);
   __ bind(L_patch_done);
