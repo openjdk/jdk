@@ -1,3 +1,4 @@
+package io.avaje.jex.websocket.internal;
 /*
  * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -36,6 +37,7 @@
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -45,6 +47,7 @@ import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -71,7 +74,8 @@ public class SwitchingProtocolTest {
     public void testSendResponse() throws Exception {
         System.out.println("testSendResponse()");
         InetAddress loopback = InetAddress.getLoopbackAddress();
-        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
         server.setExecutor(executor);
         try {
@@ -151,7 +155,38 @@ public class SwitchingProtocolTest {
         System.out.println("Server finished.");
     }
 
-    static void runRawSocketHttpClient(InetAddress address, int port)
+
+    @Test
+    public void testException() throws Exception {
+        System.out.println("testException()");
+        InetAddress loopback = InetAddress.getLoopbackAddress();
+        HttpServer server = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
+        ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+        server.setExecutor(executor);
+        try {
+            server.createContext(
+                someContext,
+                msg -> {
+                    msg.sendResponseHeaders(msgCode, -1);
+                    throw new RuntimeException("Simulated exception");
+                });
+            server.start();
+            System.out.println("Server started at port " + server.getAddress().getPort());
+
+            runRawSocketHttpClient(loopback, server.getAddress().getPort(), true);
+        } finally {
+            System.out.println("shutting server down");
+            executor.shutdown();
+            server.stop(0);
+        }
+        System.out.println("Server finished.");
+    }
+
+    static void runRawSocketHttpClient(InetAddress address, int port) throws Exception {
+        runRawSocketHttpClient(address, port, false);
+    }
+
+    static void runRawSocketHttpClient(InetAddress address, int port, boolean exception)
         throws Exception {
         Socket socket = null;
         PrintWriter writer = null;
@@ -201,6 +236,11 @@ public class SwitchingProtocolTest {
             String actualResponse = responseBody.toString();
             assertEquals(RESPONSE_BODY, actualResponse, "Response body does not match");
             System.out.println("Client finished reading from server");
+        } catch (SocketException se) {
+            if (!exception) {
+                fail("Unexpected exception: " + se);
+            }
+            assertEquals("Connection reset", se.getMessage());
         } finally {
             if (writer != null) {
                 writer.close();
