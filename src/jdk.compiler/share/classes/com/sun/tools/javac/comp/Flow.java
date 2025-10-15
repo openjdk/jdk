@@ -760,6 +760,8 @@ public class Flow {
             alive = alive.or(resolveYields(tree, prevPendingExits));
         }
 
+        private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
+
         private boolean exhausts(JCExpression selector, List<JCCase> cases) {
             Set<PatternDescription> patternSet = new HashSet<>();
             Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
@@ -845,6 +847,8 @@ public class Flow {
             } catch (CompletionFailure cf) {
                 chk.completionError(selector.pos(), cf);
                 return true; //error recovery
+            } finally {
+                isSubtypeCache.clear();
             }
         }
 
@@ -902,10 +906,9 @@ public class Flow {
                             //if a binding pattern for clazz already exists, no need to analyze it again:
                             !existingBindings.contains(clazz)) {
                             //do not reduce to types unrelated to the selector type:
-                            Type clazzErasure = types.erasure(clazz.type);
+                            Type clazzType = clazz.type;
                             if (components(selectorType).stream()
-                                                        .map(types::erasure)
-                                                        .noneMatch(c -> types.isSubtype(clazzErasure, c))) {
+                                                        .noneMatch(c -> isSubtypeErasure(clazzType, c))) {
                                 continue;
                             }
 
@@ -929,14 +932,14 @@ public class Flow {
                                         Symbol perm = it.next();
 
                                         for (Symbol currentPermitted : currentPermittedSubTypes) {
-                                            if (types.isSubtype(types.erasure(currentPermitted.type),
-                                                                types.erasure(perm.type))) {
+                                            if (isSubtypeErasure(currentPermitted.type,
+                                                                 perm.type)) {
                                                 it.remove();
                                                 continue PERMITTED;
                                             }
                                         }
-                                        if (types.isSubtype(types.erasure(perm.type),
-                                                            types.erasure(bpOther.type))) {
+                                        if (isSubtypeErasure(perm.type,
+                                                             bpOther.type)) {
                                             it.remove();
                                         }
                                     }
@@ -1136,7 +1139,7 @@ public class Flow {
                             return false;
                         }
                         if (existing.nested[i] instanceof BindingPattern nestedExisting) {
-                            if (!types.isSubtype(types.erasure(nestedExisting.type), types.erasure(nestedCandidate.type))) {
+                            if (!isSubtypeErasure(nestedExisting.type, nestedCandidate.type)) {
                                 return false;
                             }
                         } else if (existing.nested[i] instanceof RecordPattern nestedExisting) {
@@ -1164,6 +1167,15 @@ public class Flow {
             }
 
             return true;
+        }
+
+        /*The same as types.isSubtype(types.erasure(t), types.erasure(s)), but cached.
+        */
+        private boolean isSubtypeErasure(Type t, Type s) {
+            Pair<Type, Type> key = Pair.of(t, s);
+
+            return isSubtypeCache.computeIfAbsent(key, _ ->
+                    types.isSubtype(types.erasure(t), types.erasure(s)));
         }
 
         /* In the set of patterns, find those for which, given:
