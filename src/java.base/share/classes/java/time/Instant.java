@@ -794,10 +794,10 @@ public final class Instant
      * <p>
      * If the result is "earlier" than {@link Instant#MIN}, this method returns
      * {@code MIN}. If the result is "later" than {@link Instant#MAX}, it
-     * returns {@code MAX}. Otherwise it returns {@code this.}{@link #plus plus(duration)}.
+     * returns {@code MAX}. Otherwise it returns {@link #plus(TemporalAmount) plus(duration)}.
      *
      * @apiNote This method can be used to calculate a deadline from
-     * this instant and a timeout. Unlike {@code plus(TemporalAmount)},
+     * this instant and a timeout. Unlike {@code plus(duration)},
      * this method never throws {@link ArithmeticException} or {@link DateTimeException}
      * due to numeric overflow or {@code Instant} range violation.
      *
