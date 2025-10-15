@@ -40,14 +40,14 @@ import javax.swing.SwingUtilities;
 
 public class bug4532590 {
 
-    static final int SELECTION_START  = 5;
-    static final int SELECTION_END    = 10;
-    static final String TEXT          = "Typein the missing word.";
+    static final int SELECTION_START = 5;
+    static final int SELECTION_END   = 10;
+    static final String TEXT         = "Typein the missing word.";
 
-    static final Color TEXT_FG        = Color.BLACK;
-    static final Color TEXT_BG        = Color.WHITE;
-    static final Color SELECTION_FG   = Color.RED;
-    static final Color SELECTION_BG   = Color.YELLOW;
+    static final Color TEXT_FG       = Color.BLACK;
+    static final Color TEXT_BG       = Color.WHITE;
+    static final Color SELECTION_FG  = Color.RED;
+    static final Color SELECTION_BG  = Color.YELLOW;
 
     JTextComponent[] comps;
     JTextPane pane;
