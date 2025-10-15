@@ -162,15 +162,18 @@ class VM_Version : public Abstract_VM_Version {
 
   class RVNonExtFeatureValue : public RVFeatureValue {
     int64_t _value;
-    static const int64_t DISABLED_VALUE = -1;
+    static const int64_t DEFAULT_VALUE = -1;
    public:
     RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
-      _value(DISABLED_VALUE) {
+      _value(DEFAULT_VALUE) {
     }
-    bool enabled() { return _value != DISABLED_VALUE; }
-    void enable_feature(int64_t value) { _value = value; }
-    void disable_feature() { _value = DISABLED_VALUE; }
+    bool enabled() { return _value != DEFAULT_VALUE; }
+    void enable_feature(int64_t value) {
+      assert(value != DEFAULT_VALUE, "Sanity");
+      _value = value;
+    }
+    void disable_feature() { _value = DEFAULT_VALUE; }
     int64_t value() { return _value; }
   };
 
