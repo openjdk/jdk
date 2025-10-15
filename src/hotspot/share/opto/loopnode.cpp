@@ -4190,7 +4190,7 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
 //
 // The insights into the problem:
 //  A) Counted loops are okay (i.e. do not need to preserve ncsfpts),
-//     because they will only execute for a short time
+//     they will be handled in `IdealLoopTree::counted_loop`
 //  B) Innermost loops are okay because there's no inner loops that can
 //     delete their ncsfpts. Only outer loops need to mark safepoints for
 //     protection, because only loops further in can accidentally delete
