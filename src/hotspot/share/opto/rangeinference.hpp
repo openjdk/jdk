@@ -149,6 +149,17 @@ public:
   static const Type* int_type_xmeet(const CT* i1, const Type* t2);
 
   template <class CTP>
+  static CTP int_type_union(CTP t1, CTP t2) {
+    using CT = std::conditional_t<std::is_pointer_v<CTP>, std::remove_pointer_t<CTP>, CTP>;
+    using S = std::remove_const_t<decltype(CT::_lo)>;
+    using U = std::remove_const_t<decltype(CT::_ulo)>;
+    return CT::make(TypeIntPrototype<S, U>{{MIN2(t1->_lo, t2->_lo), MAX2(t1->_hi, t2->_hi)},
+                                           {MIN2(t1->_ulo, t2->_ulo), MAX2(t1->_uhi, t2->_uhi)},
+                                           {t1->_bits._zeros & t2->_bits._zeros, t1->_bits._ones & t2->_bits._ones}},
+                    MAX2(t1->_widen, t2->_widen));
+  }
+
+  template <class CTP>
   static bool int_type_is_equal(const CTP t1, const CTP t2) {
     return t1->_lo == t2->_lo && t1->_hi == t2->_hi &&
            t1->_ulo == t2->_ulo && t1->_uhi == t2->_uhi &&
@@ -293,13 +304,6 @@ private:
         return *this;
       }
 
-      Iterator operator++(int) {
-        assert(_current_interval < _iterable._interval_num, "out of bounds, %d - %d", _current_interval, _iterable._interval_num);
-        Iterator res(*this);
-        _current_interval++;
-        return res;
-      }
-
       bool operator!=(const Iterator& o) const {
         assert(&_iterable == &o._iterable, "not on the same iterable");
         return _current_interval != o._current_interval;
@@ -321,7 +325,7 @@ private:
   template <class CTP, class Inference>
   static CTP infer_binary(CTP t1, CTP t2, Inference infer) {
     CTP res;
-    bool init = false;
+    bool is_init = false;
 
     SimpleIntervalIterable<CTP> t1_simple_intervals(t1);
     SimpleIntervalIterable<CTP> t2_simple_intervals(t2);
@@ -330,16 +334,16 @@ private:
       for (auto& st2 : t2_simple_intervals) {
         CTP current = infer(st1, st2);
 
-        if (init) {
+        if (is_init) {
           res = res->meet(current)->template cast<CT<CTP>>();
         } else {
-          init = true;
+          is_init = true;
           res = current;
         }
       }
     }
 
-    assert(init, "must be initialized");
+    assert(is_init, "must be initialized");
     return res;
   }
 
@@ -350,6 +354,8 @@ public:
       S<CTP> lo = std::numeric_limits<S<CTP>>::min();
       S<CTP> hi = std::numeric_limits<S<CTP>>::max();
       U<CTP> ulo = std::numeric_limits<U<CTP>>::min();
+      // The unsigned value of the result of 'and' is always not greater than both of its inputs
+      // since there is no position at which the bit is 1 in the result and 0 in either input
       U<CTP> uhi = MIN2(st1._uhi, st2._uhi);
       U<CTP> zeros = st1._bits._zeros | st2._bits._zeros;
       U<CTP> ones = st1._bits._ones & st2._bits._ones;
@@ -362,6 +368,8 @@ public:
     return infer_binary(t1, t2, [&](const TypeIntMirror<S<CTP>, U<CTP>>& st1, const TypeIntMirror<S<CTP>, U<CTP>>& st2) {
       S<CTP> lo = std::numeric_limits<S<CTP>>::min();
       S<CTP> hi = std::numeric_limits<S<CTP>>::max();
+      // The unsigned value of the result of 'or' is always not less than both of its inputs since
+      // there is no position at which the bit is 0 in the result and 1 in either input
       U<CTP> ulo = MAX2(st1._ulo, st2._ulo);
       U<CTP> uhi = std::numeric_limits<U<CTP>>::max();
       U<CTP> zeros = st1._bits._zeros & st2._bits._zeros;

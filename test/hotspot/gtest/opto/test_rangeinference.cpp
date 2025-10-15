@@ -221,9 +221,7 @@ const TypeIntMirror<S, U>* TypeIntMirror<S, U>::operator->() const {
 
 template <class S, class U>
 TypeIntMirror<S, U> TypeIntMirror<S, U>::meet(const TypeIntMirror& o) const {
-  return make(TypeIntPrototype<S, U>{{MIN2(_lo, o._lo), MAX2(_hi, o._hi)},
-                                     {MIN2(_ulo, o._ulo), MAX2(_uhi, o._uhi)},
-                                     {_bits._zeros & o._bits._zeros, _bits._ones & o._bits._ones}}, 0);
+  return TypeIntHelper::int_type_union(*this, o);
 }
 
 template <class S, class U>
@@ -317,6 +315,7 @@ static std::array<CTP, all_instances_size<CTP>()> compute_all_instances() {
 template <class CTP>
 static const std::array<CTP, all_instances_size<CTP>()>& all_instances() {
   static std::array<CTP, all_instances_size<CTP>()> res = compute_all_instances<CTP>();
+  static_assert(std::is_trivially_destructible_v<decltype(res)>);
   return res;
 }
 
@@ -487,9 +486,9 @@ static void test_binary_random(Operation op, Inference infer) {
   // [min_signed, max_signed]
   samples[8] = InputType::make(TypeIntPrototype<S, U>{{std::numeric_limits<S>::min(), std::numeric_limits<S>::max()}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
   // [0, max_signed]
-  samples[9] = InputType::make(TypeIntPrototype<S, U>{{0, std::numeric_limits<S>::max()}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
+  samples[9] = InputType::make(TypeIntPrototype<S, U>{{S(0), std::numeric_limits<S>::max()}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
   // [min_signed, 0)
-  samples[10] = InputType::make(TypeIntPrototype<S, U>{{std::numeric_limits<S>::min(), -1}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
+  samples[10] = InputType::make(TypeIntPrototype<S, U>{{std::numeric_limits<S>::min(), S(-1)}, {U(0), U(-1)}, {U(0), U(0)}}, 0);
 
   constexpr size_t max_tries = 1000;
   constexpr size_t start_random_idx = 11;
@@ -510,8 +509,8 @@ static void test_binary_random(Operation op, Inference infer) {
     U zeros = uniform_random<U>();
     U ones = uniform_random<U>();
     U common = zeros & ones;
-    zeros ^= common;
-    ones ^= common;
+    zeros = zeros ^ common;
+    ones = ones ^ common;
 
     TypeIntPrototype<S, U> t{{lo, hi}, {ulo, uhi}, {zeros, ones}};
     auto canonicalized_t = t.canonicalize_constraints();
@@ -538,6 +537,9 @@ static void test_binary() {
   test_binary_exhaustive<TypeIntMirror<intn_t<1>, uintn_t<1>>>(Operation<uintn_t<1>>(), Inference<TypeIntMirror<intn_t<1>, uintn_t<1>>>());
   test_binary_exhaustive<TypeIntMirror<intn_t<2>, uintn_t<2>>>(Operation<uintn_t<2>>(), Inference<TypeIntMirror<intn_t<2>, uintn_t<2>>>());
   test_binary_exhaustive<TypeIntMirror<intn_t<3>, uintn_t<3>>>(Operation<uintn_t<3>>(), Inference<TypeIntMirror<intn_t<3>, uintn_t<3>>>());
+  test_binary_random<TypeIntMirror<intn_t<4>, uintn_t<4>>>(Operation<uintn_t<4>>(), Inference<TypeIntMirror<intn_t<4>, uintn_t<4>>>());
+  test_binary_random<TypeIntMirror<intn_t<5>, uintn_t<5>>>(Operation<uintn_t<5>>(), Inference<TypeIntMirror<intn_t<5>, uintn_t<5>>>());
+  test_binary_random<TypeIntMirror<intn_t<6>, uintn_t<6>>>(Operation<uintn_t<6>>(), Inference<TypeIntMirror<intn_t<6>, uintn_t<6>>>());
   test_binary_random<TypeIntMirror<jint, juint>>(Operation<juint>(), Inference<TypeIntMirror<jint, juint>>());
   test_binary_random<TypeIntMirror<jlong, julong>>(Operation<julong>(), Inference<TypeIntMirror<jlong, julong>>());
 }
