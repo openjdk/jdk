@@ -380,7 +380,7 @@ class JvmtiExport : public AllStatic {
   static void post_class_file_load_hook(Symbol* h_name, Handle class_loader,
                                         Handle h_protection_domain,
                                         unsigned char **data_ptr, unsigned char **end_ptr,
-                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN_(false);
+                                        JvmtiCachedClassFileData **cache_ptr) NOT_JVMTI_RETURN;
   static void post_native_method_bind(Method* method, address* function_ptr) NOT_JVMTI_RETURN;
   static void post_compiled_method_load(JvmtiEnv* env, nmethod *nm) NOT_JVMTI_RETURN;
   static void post_compiled_method_load(nmethod *nm) NOT_JVMTI_RETURN;
