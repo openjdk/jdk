@@ -978,6 +978,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
                   &new_len, &new_data);
     }
     if (new_data != nullptr) {
+      // this agent has modified class data.
       if (caching_needed && *_cached_class_file_ptr == nullptr) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
