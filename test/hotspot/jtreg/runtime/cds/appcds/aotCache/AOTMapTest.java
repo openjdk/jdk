@@ -29,20 +29,20 @@
  * @library /test/lib /test/hotspot/jtreg/runtime/cds
  * @build AOTMapTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
- * @run driver AOTMapTest AOT --two-step-training
+ * @run driver/timeout=240 AOTMapTest AOT --two-step-training
  */
 
 /**
  * @test id=dynamic
  * @bug 8362566
- * @summary Test the contents of -Xlog:aot+map with AOT workflow
+ * @summary Test the contents of -Xlog:aot+map with dynamic CDS archive
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @build AOTMapTest
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
- * @run  main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
+ * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
  */
 
 
