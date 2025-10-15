@@ -26,9 +26,9 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/type.hpp"
-#include "utilities/population_count.hpp"
 #include "utilities/count_leading_zeros.hpp"
 #include "utilities/count_trailing_zeros.hpp"
+#include "utilities/population_count.hpp"
 
 static int count_leading_zeros_int(jint i) {
   return i == 0 ? BitsPerInt : count_leading_zeros(i);
