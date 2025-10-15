@@ -2269,6 +2269,10 @@ void G1CollectedHeap::print_heap_regions() const {
   }
 }
 
+static void print_region_type(outputStream* st, const char* type, uint count, bool last = false) {
+  st->print("%u %s (%zuM)%s", count, type, count * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
+}
+
 void G1CollectedHeap::print_heap_on(outputStream* st) const {
   size_t heap_used = Heap_lock->owned_by_self() ? used() : used_unlocked();
   st->print("%-20s", "garbage-first heap");
@@ -2280,14 +2284,13 @@ void G1CollectedHeap::print_heap_on(outputStream* st) const {
   st->cr();
 
   StreamIndentor si(st, 1);
-  st->print("region size %zuK, ", G1HeapRegion::GrainBytes / K);
-  uint young_regions = young_regions_count();
-  st->print("%u young (%zuK), ", young_regions,
-            (size_t) young_regions * G1HeapRegion::GrainBytes / K);
-  uint survivor_regions = survivor_regions_count();
-  st->print("%u survivors (%zuK)", survivor_regions,
-            (size_t) survivor_regions * G1HeapRegion::GrainBytes / K);
-  st->cr();
+  st->print("region size %zuM, ", G1HeapRegion::GrainBytes / M);
+  print_region_type(st, "eden", eden_regions_count());
+  print_region_type(st, "survivor", survivor_regions_count());
+  print_region_type(st, "old", old_regions_count());
+  print_region_type(st, "humongous", humongous_regions_count());
+  print_region_type(st, "free", num_free_regions(), true /* last */);
+
   if (_numa->is_enabled()) {
     uint num_nodes = _numa->num_active_nodes();
     st->print("remaining free region(s) on each NUMA node: ");
