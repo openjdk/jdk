@@ -116,6 +116,9 @@ else ifeq ($(call isTargetOs, aix), true)
     $(eval STATIC_LIB_EXPORT_FILES += $(lib).exp) \
   )
   STATIC_LIBS := -Wl,-bexpfull $(STATIC_LIB_FILES) $(addprefix -Wl$(COMMA)-bE:, $(STATIC_LIB_EXPORT_FILES))
+  ifeq ($(DEBUG_LEVEL), slowdebug)
+    STATIC_LIBS += -Wl,-bbigtoc
+  endif
 else
   $(error Unsupported platform)
 endif
