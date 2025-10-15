@@ -3342,14 +3342,14 @@ void ClassFileParser::parse_classfile_bootstrap_methods_attribute(const ClassFil
     guarantee_property(entry != nullptr, "Invalid BootstrapMethods num_bootstrap_methods. The total amount of space reserved for the BootstrapMethod attribute was not sufficient", CHECK);
 
     for (int argi = 0; argi < num_bootstrap_arguments; argi++) {
-      const u2 bootstrap_argument_index = cfs->get_u2_fast();
+      const u2 argument_index = cfs->get_u2_fast();
       guarantee_property(
-        valid_cp_range(bootstrap_argument_index, cp_size) &&
-        cp->tag_at(bootstrap_argument_index).is_loadable_constant(),
+        valid_cp_range(argument_index, cp_size) &&
+        cp->tag_at(argument_index).is_loadable_constant(),
         "argument_index %u has bad constant type in class file %s",
-        bootstrap_argument_index,
+        argument_index,
         CHECK);
-      entry->set_argument(argi, bootstrap_argument_index);
+      entry->set_argument(argi, argument_index);
     }
   }
   cp->bsm_entries().end_extension(iter, _loader_data, CHECK);

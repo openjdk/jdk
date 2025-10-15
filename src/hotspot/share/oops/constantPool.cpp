@@ -1622,8 +1622,8 @@ void ConstantPool::end_extension(BSMAttributeEntries::InsertionIterator iter, TR
 
 
 void ConstantPool::copy_bsm_entries(const constantPoolHandle& from_cp,
-                                 const constantPoolHandle& to_cp,
-                                 TRAPS) {
+                                    const constantPoolHandle& to_cp,
+                                    TRAPS) {
   to_cp->bsm_entries().append(from_cp->bsm_entries(),
                               to_cp->pool_holder()->class_loader_data(),
                               THREAD);

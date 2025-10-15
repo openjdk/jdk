@@ -91,16 +91,19 @@ public:
   class InsertionIterator {
     friend BSMAttributeEntries;
     BSMAttributeEntries* insert_into;
-    // Current unused offset into BSMAEs offset array
+    // Current unused offset into BSMAEs offset array.
     int _cur_offset;
-    // Current unused offset into BSMAEs bsm-data array
+    // Current unused offset into BSMAEs bsm-data array.
     int _cur_array;
   public:
     InsertionIterator() : insert_into(nullptr), _cur_offset(-1), _cur_array(-1) {}
     InsertionIterator(BSMAttributeEntries* insert_into, int cur_offset, int cur_array)
     : insert_into(insert_into),
       _cur_offset(cur_offset),
-      _cur_array(cur_array) {}
+      _cur_array(cur_array) {
+      assert(insert_into->offsets() != nullptr, "must");
+      assert(insert_into->bootstrap_methods() != nullptr, "must");
+    }
     InsertionIterator(const InsertionIterator&) = default;
     InsertionIterator& operator=(const InsertionIterator&) = default;
 
@@ -117,7 +120,7 @@ private:
   Array<u4>* _offsets;
   Array<u2>* _bootstrap_methods;
 
-  // Copy the first num_entries into iter
+  // Copy the first num_entries into iter.
   void copy_into(InsertionIterator& iter, int num_entries) const;
 
 public:

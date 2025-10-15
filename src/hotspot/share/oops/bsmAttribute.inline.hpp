@@ -32,7 +32,7 @@ inline BSMAttributeEntry* BSMAttributeEntries::InsertionIterator::reserve_new_en
       _cur_array + BSMAttributeEntry::u2s_required(argc) > insert_into->bootstrap_methods()->length()) {
     return nullptr;
   }
-  insert_into->_offsets->at_put(_cur_offset, _cur_array);
+  insert_into->offsets()->at_put(_cur_offset, _cur_array);
   BSMAttributeEntry* e = insert_into->entry(_cur_offset);
   e->_bootstrap_method_index = bsmi;
   e->_argument_count = argc;
