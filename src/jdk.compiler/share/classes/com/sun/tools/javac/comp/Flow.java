@@ -59,6 +59,7 @@ import static com.sun.tools.javac.code.TypeTag.VOID;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -894,7 +895,6 @@ public class Flow {
                         if (clazz.isSealed() && clazz.isAbstract() &&
                             //if a binding pattern for clazz already exists, no need to analyze it again:
                             !existingBindings.contains(clazz)) {
-                            ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                             //do not reduce to types unrelated to the selector type:
                             Type clazzErasure = types.erasure(clazz.type);
                             if (components(selectorType).stream()
@@ -1054,52 +1054,15 @@ public class Flow {
 
                             join.append(rpOne);
 
-                            NEXT_PATTERN: for (int nextCandidate = 0;
-                                               nextCandidate < candidatesArr.length;
-                                               nextCandidate++) {
+                            for (int nextCandidate = 0; nextCandidate < candidatesArr.length; nextCandidate++) {
                                 if (firstCandidate == nextCandidate) {
                                     continue;
                                 }
 
                                 RecordPattern rpOther = candidatesArr[nextCandidate];
-                                if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                                    ACCEPT: for (int i = 0; i < rpOne.nested.length; i++) {
-                                        if (i != mismatchingCandidate) {
-                                            if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-                                                if (useHashes) {
-                                                    continue NEXT_PATTERN;
-                                                }
-                                                //when not using hashes,
-                                                //check if rpOne.nested[i] is
-                                                //a subtype of rpOther.nested[i]:
-                                                if (!(rpOther.nested[i] instanceof BindingPattern bpOther)) {
-                                                    continue NEXT_PATTERN;
-                                                }
-                                                if (rpOne.nested[i] instanceof BindingPattern bpOne) {
-                                                    if (!types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
-                                                        continue NEXT_PATTERN;
-                                                    }
-                                                } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                    Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
 
-                                                    while (!pendingReplacedPatterns.isEmpty()) {
-                                                        PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
-
-                                                        pendingReplacedPatterns.remove(currentReplaced);
-
-                                                        if (nestedRPOne.equals(currentReplaced)) {
-                                                            continue ACCEPT;
-                                                        }
-
-                                                        pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
-                                                    }
-                                                    continue NEXT_PATTERN;
-                                                } else {
-                                                    continue NEXT_PATTERN;
-                                                }
-                                            }
-                                        }
-                                    }
+                                if (rpOne.recordType.tsym == rpOther.recordType.tsym &&
+                                    nestedComponentsEquivalent(rpOne, rpOther, mismatchingCandidate, replaces, useHashes)) {
                                     join.append(rpOther);
                                 }
                             }
@@ -1139,6 +1102,62 @@ public class Flow {
                 }
             }
             return patterns;
+        }
+
+        /* Returns true if all nested components of existing and candidate are
+         * equivalent (if useHashes == true), or "substitutable" (if useHashes == false).
+         * A candidate pattern is "substitutable" if it is a binding pattern, and:
+         * - it's type is a supertype of the existing pattern's type
+         * - it was produced by a reduction from a record pattern that is equivalent to
+         *   the existing pattern
+         */
+        private boolean nestedComponentsEquivalent(RecordPattern existing,
+                                                   RecordPattern candidate,
+                                                   int mismatchingCandidate,
+                                                   Map<PatternDescription, Set<PatternDescription>> replaces,
+                                                   boolean useHashes) {
+            NEXT_NESTED:
+            for (int i = 0; i < existing.nested.length; i++) {
+                if (i != mismatchingCandidate) {
+                    if (!existing.nested[i].equals(candidate.nested[i])) {
+                        if (useHashes) {
+                            return false;
+                        }
+                        //when not using hashes,
+                        //check if rpOne.nested[i] is
+                        //a subtype of rpOther.nested[i]:
+                        if (!(candidate.nested[i] instanceof BindingPattern nestedCandidate)) {
+                            return false;
+                        }
+                        if (existing.nested[i] instanceof BindingPattern nestedExisting) {
+                            if (!types.isSubtype(types.erasure(nestedExisting.type), types.erasure(nestedCandidate.type))) {
+                                return false;
+                            }
+                        } else if (existing.nested[i] instanceof RecordPattern nestedExisting) {
+                            java.util.List<PatternDescription> pendingReplacedPatterns =
+                                    new ArrayList<>(replaces.getOrDefault(nestedCandidate, Set.of()));
+
+                            while (!pendingReplacedPatterns.isEmpty()) {
+                                PatternDescription currentReplaced = pendingReplacedPatterns.removeLast();
+
+                                if (nestedExisting.equals(currentReplaced)) {
+                                    //candidate.nested[i] is substitutable for existing.nested[i]
+                                    //continue with the next nested pattern:
+                                    continue NEXT_NESTED;
+                                }
+
+                                pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
+                            }
+
+                            return false;
+                        } else {
+                            return false;
+                        }
+                    }
+                }
+            }
+
+            return true;
         }
 
         /* In the set of patterns, find those for which, given:
