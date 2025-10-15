@@ -976,10 +976,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         void updateAndAssert() {
             final var newSnapshots = createSnapshots();
             for (final var a : asserts.keySet().stream().sorted().toList()) {
-                final var snapshopGroup = snapshots.get(a);
-                final var newSnapshopGroup = newSnapshots.get(a);
-                for (int i = 0; i < snapshopGroup.size(); i++) {
-                    TKit.PathSnapshot.assertEquals(snapshopGroup.get(i), newSnapshopGroup.get(i),
+                final var snapshotGroup = snapshots.get(a);
+                final var newSnapshotGroup = newSnapshots.get(a);
+                for (int i = 0; i < snapshotGroup.size(); i++) {
+                    snapshotGroup.get(i).assertEquals(newSnapshotGroup.get(i),
                             String.format("Check jpackage didn't modify ${%s}=[%s]", a, asserts.get(a).get(i)));
                 }
             }
