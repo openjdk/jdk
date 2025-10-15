@@ -559,6 +559,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * <tr><th scope="row" style="vertical-align:top">{@code 'c'}
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so using this conversion might throw an {@link IllegalFormatConversionException}.
  *
  * </tbody>
  * </table>
@@ -1879,6 +1881,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *     <td style="vertical-align:top"> <code>'&#92;u0063'</code>
  *     <td> Date and time formatted as {@code "%ta %tb %td %tT %tZ %tY"},
  *     e.g. {@code "Sun Jul 20 16:17:00 EDT 1969"}.
+ *     Not all subtypes of {@link TemporalAccessor} carry a time zone, though,
+ *     so using this conversion might throw an {@link IllegalFormatConversionException}.
  *
  * </tbody>
  * </table>
