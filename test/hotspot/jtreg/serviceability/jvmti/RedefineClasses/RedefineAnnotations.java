@@ -91,7 +91,7 @@ public class RedefineAnnotations {
                 @Override
                 public void accept(ClassBuilder builder, ClassElement element) {
                     if (element instanceof FieldModel field && field.fieldName().stringValue().startsWith("dummy")) {
-                        // Defer dummy fields to defer their associated constant pool entries
+                        // Hold on to the associated constant pool entries too
                         dummyFields.addLast(field);
                     } else {
                         builder.with(element);
@@ -100,7 +100,7 @@ public class RedefineAnnotations {
 
                 @Override
                 public void atEnd(ClassBuilder builder) {
-                    // Add dummy fields to the end, triggers constant pool addition
+                    // Add the associated constant pool entries to the end of the CP
                     dummyFields.forEach(builder);
                 }
             });
