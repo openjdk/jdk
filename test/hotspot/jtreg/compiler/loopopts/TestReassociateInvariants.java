@@ -46,6 +46,13 @@ public class TestReassociateInvariants {
         TestFramework.runWithFlags("-XX:-ShortRunningLongLoop");
     }
 
+    // The IR framework is not powerful enough to directly check
+    // wether invariants are moved out of a loop so tests below rely on
+    // some side effect that can be observed by the IR framework.
+
+    // Once a + (b + i) is transformed into i + (a + b), the a + b
+    // before the loop and the one from inside the loop common and one
+    // Add is removed.
     @Test
     @IR(counts = {IRNode.ADD_I, "3"})
     @Arguments(values = { Argument.NUMBER_42, Argument.NUMBER_42 })
@@ -57,6 +64,12 @@ public class TestReassociateInvariants {
         return v;
     }
 
+    // Range Check Elimination only happens once a + (b + i) is
+    // transformed into i + (a + b). With the range check eliminated,
+    // the loop can be removed. At this point, C2 doesn't support
+    // removal of long counted loop. The long counted loop is
+    // transformed into a loop nest with an inner int counted
+    // loop. That one is empty and is removed.
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP, IRNode.LONG_COUNTED_LOOP })
     @IR(counts = { IRNode.LOOP, "1" })
@@ -67,6 +80,7 @@ public class TestReassociateInvariants {
         }
     }
 
+    // Same here for an int counted loop with long range checks
     @Test
     @IR(failOn = { IRNode.COUNTED_LOOP })
     @IR(counts = { IRNode.LOOP, "1" })
