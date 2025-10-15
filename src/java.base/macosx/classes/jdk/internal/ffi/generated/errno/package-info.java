@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,13 +24,20 @@
  */
 
 /**
- * This is a test program used in the test jrunscript-cp.sh
+ * Defines native structures for errno APIs.
+ * Generated with the following jextract command:
+ * {@snippet lang = "Shell Script":
  *
+ * HEADER_NAME=errno.h
+ * echo "#include <errno.h>" > $HEADER_NAME
+ * echo "#include <string.h>" >> $HEADER_NAME
+ *
+ * jextract --target-package jdk.internal.ffi.generated.errno \
+ *    --include-constant EINTR \
+ *    --include-function strerror_r \
+ *    $HEADER_NAME
+ * }
  *
  */
-public class Hello {
-   public Hello() {}
-   public String getString() {
-       return "hello";
-   }
-}
+
+package jdk.internal.ffi.generated.errno;
