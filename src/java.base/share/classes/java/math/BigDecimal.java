@@ -2298,7 +2298,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // with the desired precision.
 
         final boolean halfWay = isHalfWay(workingRM);
-        // Add one more digit if n < 0 to reduce the error of computing the root's inverse
+        /* If n < 0 and no halfway rounding, the root's inversion gives an error of 1 ulp,
+         * so we add one more digit to the integer root, so that it has an error of 0.1 ulps,
+         * and therefore the error of the inverted root is 1+0.1 ulps.
+         * Same reasoning for halfway rounding yields to half of the error just found.
+         */
         final long rootDigits = mc.precision + (halfWay ? 1L : 0L) + (n < 0 ? 1L : 0L);
         // To obtain an n-th root with k digits,
         // the radicand must have at least n*(k-1)+1 digits.
