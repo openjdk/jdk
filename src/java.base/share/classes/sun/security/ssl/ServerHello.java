@@ -572,15 +572,16 @@ final class ServerHello {
             //  - the encapsulation (ciphertext), which is sent back to the client.
             //
             // Traditional Key Agreement (KA):
-            //  Both peers perform similar operations: generate a public key,
+            //  Both peers perform similar operations: generate a key share,
             //  send it, and compute a shared secret upon receiving the peer's
-            //  public key.
+            //  key share.
             //
             // In JSSE, the server usually generates its key share and then
             // derives the secret after receiving the client's share (KA).
             // However, this is changed for KEM: the server (as encapsulator)
             // must perform both actions — derive the secret and generate the
-            // encapsulated message at the same time during SHKeyShareProducer.
+            // encapsulated message at the same time during encapsulation
+            // in SHKeyShareProducer.
             // The derived shared secret must be stored in a KEMSenderPossession
             // so it can be retrieved for handshake traffic secret derivation
             // later.

@@ -236,13 +236,13 @@ enum NamedGroup {
             NamedParameterSpec.X25519MLKEM768,
             "DH"),
 
-    SecP256r1MLKEM768(0x11eb, "SecP256r1MLKEM768",
+    SECP256R1MLKEM768(0x11eb, "SecP256r1MLKEM768",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             NamedParameterSpec.SecP256r1MLKEM768,
             "DH"),
 
-    SecP384r1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
+    SECP384R1MLKEM1024(0x11ed, "SecP384r1MLKEM1024",
             NamedGroupSpec.NAMED_GROUP_KEM,
             ProtocolVersion.PROTOCOLS_OF_13,
             NamedParameterSpec.SecP384r1MLKEM1024,
@@ -908,8 +908,8 @@ enum NamedGroup {
 
                         // Hybrid key agreements
                         X25519MLKEM768,
-                        SecP256r1MLKEM768,
-                        SecP384r1MLKEM1024,
+                        SECP256R1MLKEM768,
+                        SECP384R1MLKEM1024,
 
                         // Primary XDH (RFC 7748) curves
                         X25519,
