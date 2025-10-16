@@ -225,18 +225,30 @@ public abstract class Process implements Closeable {
             ioe = quietClose(inputReader != null ? inputReader : getInputStream(), ioe);
             ioe = quietClose(errorReader != null ? errorReader : getErrorStream(), ioe);
 
-            try {
-                // Wait for process to terminate normally.
-                waitFor();
-            } catch (InterruptedException e) {
-                // Waiting interrupted; forcibly destroy the process
+            // Wait for the process to terminate
+            // If waitFor is interrupted, destroy the process
+            // Continue waiting indefinitely for the process to terminate
+            if (waitForInterrupted()) {
                 destroyForcibly();
+                while (waitForInterrupted()) {
+                    continue;
+                }
                 // Re-assert the interrupt
                 Thread.currentThread().interrupt();
             }
             if (ioe != null) {
                 throw ioe;
             }
+        }
+    }
+
+    // Wait for the process to terminate, return true if the wait is interrupted.
+    private boolean waitForInterrupted() {
+        try {
+            waitFor();
+            return false;
+        } catch (InterruptedException ie) {
+            return true;
         }
     }
 

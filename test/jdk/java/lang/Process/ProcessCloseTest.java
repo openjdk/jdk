@@ -58,7 +58,7 @@ import java.util.stream.Stream;
  * @bug 8364361
  * @modules java.base/java.io:+open
  * @summary Tests for Process.close
- * @run junit/othervm jdk.java.lang.Process.ProcessCloseTest
+ * @run junit/othervm -DDEBUG=true jdk.java.lang.Process.ProcessCloseTest
  */
 
 public class ProcessCloseTest {
@@ -110,7 +110,7 @@ public class ProcessCloseTest {
 
     /**
      * {@return A Stream of Arguments}
-     * Each Argument consists of three elements.
+     * Each Argument consists of three lists.
      * - A List of command line arguments to start a process.
      *   `javaArgs can be used to launch a Java child with ChildCommands
      * - A List of ProcessCommand actions to be invoked on that process
@@ -125,17 +125,17 @@ public class ProcessCloseTest {
                         List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("echo", "xyz1"),
                         List.of(ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        List.of(ExitStatus.RACY)),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.WRITER_WRITE,
                                 ProcessCommand.WRITER_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        List.of(ExitStatus.RACY)),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
-                        List.of(ExitStatus.RACY)),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
@@ -144,11 +144,11 @@ public class ProcessCloseTest {
                 Arguments.of(List.of("cat", "NoSuchFile.txt"),
                         List.of(ProcessCommand.STDERR_PRINT_ALL_LINES,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
-                        List.of(ExitStatus.RACY)),
+                        List.of(ExitStatus.FAIL)),
                 Arguments.of(javaArgs(ChildCommand.STDOUT_MARCO),
                         List.of(ProcessCommand.STDOUT_EXPECT_POLO,
                                 ProcessCommand.STDERR_EXPECT_EMPTY),
-                        List.of(ExitStatus.RACY)),
+                        List.of(ExitStatus.NORMAL)),
                 Arguments.of(javaArgs(ChildCommand.STDERR_MARCO),
                         List.of(ProcessCommand.STDERR_EXPECT_POLO,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
@@ -157,24 +157,24 @@ public class ProcessCloseTest {
                         List.of(ExitStatus.FAIL),
                         List.of(ExitStatus.FAIL)),       // Got expected status == 1
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
-                        List.of(ProcessCommand.PROCESS_INTERRUPT, // schedule an interrupt (in 1sec)
+                        List.of(ProcessCommand.PROCESS_INTERRUPT, // schedule an interrupt (in .2 sec)
                                 ProcessCommand.PROCESS_CLOSE,
                                 ProcessCommand.PROCESS_CHECK_INTERRUPT), // Verify re-interrupted
                         List.of(ExitStatus.KILLED)), // And process was destroyed
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
-                        List.of(ProcessCommand.PROCESS_INTERRUPT), // Should interrupt the TWR close
+                        List.of(ProcessCommand.PROCESS_INTERRUPT), // interrupts the TWR/close
                         List.of(ProcessCommand.PROCESS_CHECK_INTERRUPT, ExitStatus.KILLED)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ExitStatus.NORMAL), // waitFor before T-W-R exit
                         List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("echo", "abc"),
                         List.of(ProcessCommand.PROCESS_CLOSE),
-                        List.of(ExitStatus.RACY)), // Racy, not deterministic
+                        List.of(ExitStatus.PIPE)),
                 Arguments.of(List.of("cat", "-"),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.PROCESS_CLOSE),
-                        List.of(ExitStatus.RACY)),  // Racy, not deterministic
-                Arguments.of(List.of("echo", "abc"),
+                        List.of(ExitStatus.PIPE)),
+                Arguments.of(List.of("echo", "def"),
                         List.of(ProcessCommand.PROCESS_DESTROY),
                         List.of(ExitStatus.RACY)), // Racy, not deterministic
                 Arguments.of(List.of("cat", "-"),
@@ -183,7 +183,7 @@ public class ProcessCloseTest {
                         List.of(ExitStatus.RACY)), // Racy, not deterministic
                 Arguments.of(List.of("echo"),
                         List.of(ExitStatus.NORMAL),
-                        List.of(ExitStatus.RACY))
+                        List.of(ExitStatus.NORMAL))
         );
     }
 
@@ -270,7 +270,7 @@ public class ProcessCloseTest {
     enum ExitStatus implements Consumer<Process> {
         NORMAL(0),
             FAIL(1),
-            PIPE(1, 141),   // SIGPIPE
+            PIPE(0, 1, 141),   // SIGPIPE
             KILLED(1, 137), // SIGKILL
             TERMINATED(0, 143), // SIGTERM
             RACY(0, 1, 137, 143),
@@ -287,7 +287,8 @@ public class ProcessCloseTest {
                 Instant begin = Instant.now();
                 final int exitStatus = p.waitFor();
                 Duration latency = begin.until(Instant.now());
-                logPrintf("    ExitStatus: %d, waitFor latency: %s%n", exitStatus, latency);
+                logPrintf("    ExitStatus: %d, sig#: %d, waitFor latency: %s%n",
+                        exitStatus, exitStatus & 0x7f, latency);
                 assertEquals(exitStatus);
             } catch (InterruptedException ie) {
                 Assertions.fail("Unexpected InterruptedException checking status: " + this);
@@ -305,7 +306,8 @@ public class ProcessCloseTest {
                 // Not an error but report the actual status
                 logPrintf("Racy exit status: %d\n", actual);
             } else {
-                Assertions.fail("Status: " + actual + ", expected one of: " + Arrays.toString(allowedStatus));
+                Assertions.fail("Status: " + actual + ", sig#: " + (actual & 0x7f) +
+                        ", expected one of: " + Arrays.toString(allowedStatus));
             }
         }
     }
@@ -465,16 +467,43 @@ public class ProcessCloseTest {
             closeInputStreamPrematurely(err);
         }
 
-        // Hard coded to interrupt the invoking thread after 1 second
+        // Hard coded to interrupt the invoking thread at a fixed rate of .2 second, if process is alive
         private static void processInterruptThread(Process p) {
-            final Thread targetThread = Thread.currentThread();
-            ForkJoinPool common = ForkJoinPool.commonPool();
-            common.schedule(targetThread::interrupt, 500, TimeUnit.MILLISECONDS);
+            if (p.isAlive()) {
+                int delay = 200;
+                final Thread targetThread = Thread.currentThread();
+                ForkJoinPool common = ForkJoinPool.commonPool();
+                final ThreadInterruptor interrupter = new ThreadInterruptor(p, targetThread);
+                common.scheduleAtFixedRate(interrupter, delay, delay, TimeUnit.MILLISECONDS);
+            }
         }
 
         // Verify that an interrupt is pending and reset it
         private static void processAssertInterrupted(Process p) {
             Assertions.assertTrue(Thread.interrupted(), "Expected an interrupt");
+        }
+    }
+
+    // Runnable scheduled at a fixed rate to interrupt a thread if a process is alive.
+    private static class ThreadInterruptor implements Runnable {
+        private final Process process;
+        private final Thread targetThread;
+        private int count;
+
+        ThreadInterruptor(Process process, Thread targetThread) {
+            this.process = process;
+            this.targetThread = targetThread;
+            this.count = 0;
+        }
+
+        public void run() {
+            if (process.isAlive()) {
+                count++;
+                logPrintf("Interrupting thread, count: %d%n", count);
+                targetThread.interrupt();
+            } else {
+                throw new RuntimeException("process not alive");
+            }
         }
     }
 
