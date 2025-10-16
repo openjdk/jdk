@@ -111,21 +111,6 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        // In order to guarantee a happens-before edge between
-        // any operation on a lazy constant, we need to read the constant
-        // up front even though the `obj` might not be an instance of `LazyConstant`.
-        final T t = get();
-        return obj instanceof LazyConstant<?> that
-                && t.equals(that.get());
-    }
-
-    @Override
-    public int hashCode() {
-        return get().hashCode();
-    }
-
-    @Override
     public String toString() {
         final T t = getAcquire();
         return t == this ? "(this LazyConstant)" : renderConstant(t);

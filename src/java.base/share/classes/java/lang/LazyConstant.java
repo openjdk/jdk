@@ -189,14 +189,10 @@ import java.util.function.Supplier;
  *          <p>
  *          The {@code LazyConstant} type is not {@link Serializable}.
  *          <p>
- *          It is not recommended putting lazy constants into equality-based collections
- *          (or similar constructs) prior to initialization if the underlying functions
- *          have side effects or may fail.
- *          <p>
  *          Use in static initializers may interact with class initialization order;
  *          cyclic initialization may result in initialization errors per JLS 12.4.
  *
- * @implSpec Except for {@linkplain #equals(Object) equals(obj)} and
+ * @implSpec Except for {@linkplain Object#equals(Object) equals(obj)} and
  *           {@linkplain #orElse(Object) orElse(other)} parameters; all method parameters
  *           must be <em>non-null</em> or a {@link NullPointerException} will be thrown.
  *
@@ -253,47 +249,7 @@ public sealed interface LazyConstant<T>
      */
     boolean isInitialized();
 
-
-    // Object methods
-
-    /**
-     * Indicates whether some other object is "equal to" this lazy constant.
-     * <p>
-     * The other object is considered equal if:
-     * <ul>
-     * <li>it is also an instance of {@code LazyConstant} and;
-     * <li>the constant values obtained via {@linkplain #get()} are "equal to"
-     * each other via {@code equals()}.
-     * </ul>
-     * <p>
-     * In other words, equality is based solely on the initialized constants, not on
-     * computing functions or lazy constants' identities.
-     * <p>
-     * This method may trigger initialization of this lazy constant and/or the provided
-     * {@code obj}, if it is an instance of a {@linkplain LazyConstant}. Consequently,
-     * this method might block or throw.
-     *
-     * @implSpec The order of potential initialization triggering is specified as:
-     * <ol>
-     *     <li>{@code this} lazy constant</li>
-     *     <li>{@code obj} lazy constant</li>
-     * </ol>
-     *
-     * @param obj an object to be tested for equality (can be {@code null})
-     * @return {@code true} if the other object is "equal to" this object
-     *         otherwise {@code false}
-     */
-    @Override
-    boolean equals(Object obj);
-
-    /**
-     * {@return the hash code of this constant}
-     * <p>
-     * This method may trigger initialization of this lazy constant. Consequently,
-     * this method might block or throw.
-     */
-    @Override
-    int hashCode();
+    // Object method
 
     /**
      * {@return a non-initializing string suitable for debugging}

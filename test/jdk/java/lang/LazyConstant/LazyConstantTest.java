@@ -104,30 +104,14 @@ final class LazyConstantTest {
     @ParameterizedTest
     @MethodSource("lazyConstants")
     void testHashCode(LazyConstant<Integer> constant) {
-        LazyConstant<Integer> c1 = LazyConstant.of(SUPPLIER);
-        assertEquals(c1.hashCode(), constant.hashCode());
-        constant.get();
-        assertEquals(c1.hashCode(), constant.hashCode());
-        c1.get();
-        assertEquals(c1.hashCode(), constant.hashCode());
-        LazyConstant<Integer> different = LazyConstant.of(() -> 13);
-        assertNotEquals(different.hashCode(), constant.hashCode());
+        assertEquals(System.identityHashCode(constant), constant.hashCode());
     }
 
     @ParameterizedTest
     @MethodSource("lazyConstants")
     void testEquals(LazyConstant<Integer> c0) {
         assertNotEquals(null, c0);
-        LazyConstant<Integer> s1 = LazyConstant.of(SUPPLIER);
-        assertEquals(c0, s1);
-        assertEquals(s1, c0);
-        c0.get();
-        assertEquals(c0, s1);
-        assertEquals(s1, c0);
-        s1.get();
-        assertEquals(c0, s1);
-        assertEquals(s1, c0);
-        LazyConstant<Integer> different = LazyConstant.of(() -> 13);
+        LazyConstant<Integer> different = LazyConstant.of(SUPPLIER);
         assertNotEquals(different, c0);
         assertNotEquals(c0, different);
         assertNotEquals("a", c0);
