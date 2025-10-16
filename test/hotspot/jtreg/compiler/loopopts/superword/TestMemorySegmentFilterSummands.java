@@ -33,11 +33,10 @@ import compiler.lib.ir_framework.*;
  * @summary Bug in MemPointerParser::canonicalize_raw_summands let to wrong results
  *          or assert.
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestMemorySegmentBadSummands
+ * @run driver compiler.loopopts.superword.TestMemorySegmentFilterSummands
  */
 
-
-public class TestMemorySegmentBadSummands {
+public class TestMemorySegmentFilterSummands {
 
     static long init  = 1000;
     static long limit = 9000;
