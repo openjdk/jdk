@@ -1587,9 +1587,9 @@ void ShenandoahHeap::collect(GCCause::Cause cause) {
 }
 
 void ShenandoahHeap::do_full_collection(bool clear_all_soft_refs) {
-  // This method is only called by `collect_as_vm_thread`, which we have overridden to
-  // do nothing. See the comment there for an explanation of how heap inspections work
-  // for Shenandoah.
+  // This method is only called by `CollectedHeap::collect_as_vm_thread`, which we have
+  // overridden to do nothing. See the comment there for an explanation of how heap inspections
+  // work for Shenandoah.
   ShouldNotReachHere();
 }
 
