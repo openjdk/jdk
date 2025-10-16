@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,11 +39,18 @@ import java.util.function.Function;
  * description.
  */
 public class CodeCacheCLITestCase {
-    private static final Function<CodeCacheOptions, Boolean> ONLY_SEGMENTED
-            = options -> options.segmented;
-    private static final Function<CodeCacheOptions, Boolean> SEGMENTED_SERVER
-            = ONLY_SEGMENTED.andThen(isSegmented -> isSegmented
+    private static final Function<CodeCacheOptions, Boolean> SEGMENTED_WO_HOT
+            = options -> options.segmented && options.hot == 0;
+    private static final Function<CodeCacheOptions, Boolean> SEGMENTED_SERVER_WO_HOT
+            = SEGMENTED_WO_HOT.andThen(isSegmented -> isSegmented
                     && Platform.isServer() && Platform.isTieredSupported());
+    private static final Function<CodeCacheOptions, Boolean> SEGMENTED_W_HOT
+            = options -> options.segmented && options.hot > 0
+                    && options.profiled > 0 && Platform.isTieredSupported();
+    private static final Function<CodeCacheOptions, Boolean> SEGMENTED_W_HOT_WO_PROFILED
+            = options -> options.segmented && options.hot > 0
+                    && options.profiled == 0 && Platform.isTieredSupported();
+
     private static final String USE_INT_MODE = "-Xint";
     private static final String SEGMENTED_CODE_CACHE = "SegmentedCodeCache";
     private static final String TIERED_COMPILATION = "TieredCompilation";
@@ -68,7 +75,7 @@ public class CodeCacheCLITestCase {
          * Verifies that in interpreted mode PrintCodeCache output contains
          * the whole code cache. Int mode disables SegmentedCodeCache with a warning.
          */
-        INT_MODE(ONLY_SEGMENTED, EnumSet.of(BlobType.All), USE_INT_MODE),
+        INT_MODE(options -> options.hot == 0, EnumSet.of(BlobType.All), USE_INT_MODE),
         /**
          * Verifies that with disabled SegmentedCodeCache PrintCodeCache output
          * contains only CodeCache's entry.
@@ -81,7 +88,7 @@ public class CodeCacheCLITestCase {
          * code cache PrintCodeCache output does not contain information about
          * profiled-nmethods heap and non-segmented CodeCache.
          */
-        NON_TIERED(ONLY_SEGMENTED,
+        NON_TIERED_WO_HOT(SEGMENTED_WO_HOT,
                 EnumSet.of(BlobType.NonNMethod, BlobType.MethodNonProfiled),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
                         false)),
@@ -90,7 +97,7 @@ public class CodeCacheCLITestCase {
          * warn about SegmentedCodeCache and contain information about all
          * heaps only.
          */
-        TIERED_LEVEL_0(SEGMENTED_SERVER,
+        TIERED_LEVEL_0(SEGMENTED_SERVER_WO_HOT,
                 EnumSet.of(BlobType.All),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
                         true),
@@ -100,19 +107,40 @@ public class CodeCacheCLITestCase {
          * contain information about non-nmethods and non-profiled nmethods
          * heaps only.
          */
-        TIERED_LEVEL_1(SEGMENTED_SERVER,
+        TIERED_LEVEL_1(SEGMENTED_SERVER_WO_HOT,
                 EnumSet.of(BlobType.NonNMethod, BlobType.MethodNonProfiled),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
                         true),
                 CommandLineOptionTest.prepareNumericFlag(TIERED_STOP_AT, 1)),
         /**
          * Verifies that with TieredStopAtLevel=4 PrintCodeCache output will
-         * contain information about all three code heaps.
+         * contain information about non-nmethods, non-profiled nmethods
+         * and profiled nmethods heaps only.
          */
-        TIERED_LEVEL_4(SEGMENTED_SERVER,
-                EnumSet.complementOf(EnumSet.of(BlobType.All)),
+        TIERED_LEVEL_4_WO_HOT(SEGMENTED_SERVER_WO_HOT,
+                EnumSet.complementOf(EnumSet.of(BlobType.MethodHot, BlobType.All)),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
                         true),
+                CommandLineOptionTest.prepareNumericFlag(TIERED_STOP_AT, 4)),
+
+        /**
+         * Verifies that with disabled tiered compilation and enabled hot code
+         * cache PrintCodeCache output does not contain information about
+         * profiled-nmethods heap and non-segmented CodeCache.
+         */
+        NON_TIERED_W_HOT(SEGMENTED_W_HOT_WO_PROFILED,
+                EnumSet.of(BlobType.NonNMethod, BlobType.MethodNonProfiled, BlobType.MethodHot),
+                CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
+                        false)),
+
+        /**
+         * Verifies that with TieredStopAtLevel=4 and hot code heap
+         * PrintCodeCache output will contain information about non-nmethods,
+         * non-profiled nmethods, profiled nmethods, and hot code heaps only.
+         */
+        TIERED_LEVEL_4_W_HOT(SEGMENTED_W_HOT,
+                EnumSet.complementOf(EnumSet.of(BlobType.All)),
+                CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION, true),
                 CommandLineOptionTest.prepareNumericFlag(TIERED_STOP_AT, 4));
 
         CommonDescriptions(Function<CodeCacheOptions, Boolean> predicate,

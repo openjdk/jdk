@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,14 @@
  *                   compiler.codecache.OverflowCodeCacheTest CompilationDisabled
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:-SegmentedCodeCache -Xmixed
+ *                   compiler.codecache.OverflowCodeCacheTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation -XX:HotCodeHeapSize=8M
+ *                   -Xmixed -XX:TieredStopAtLevel=4
+ *                   compiler.codecache.OverflowCodeCacheTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+WhiteBoxAPI -XX:-TieredCompilation -XX:HotCodeHeapSize=8M
+ *                   -Xmixed -XX:TieredStopAtLevel=4
  *                   compiler.codecache.OverflowCodeCacheTest
  */
 
@@ -85,6 +93,7 @@ public class OverflowCodeCacheTest {
         System.out.println("allocating till possible...");
         ArrayList<Long> blobs = new ArrayList<>();
         int compilationActivityMode = -1;
+        CodeCacheConstraints constraints = getCodeCacheConstraints(type);
         // Lock compilation to be able to better control code cache space
         WHITE_BOX.lockCompilation();
         try {
@@ -115,6 +124,7 @@ public class OverflowCodeCacheTest {
             } catch (VirtualMachineError e) {
                 // Expected
             }
+            constraints.check();
             // Free code cache space
             for (Long blob : blobs) {
                 WHITE_BOX.freeCodeBlob(blob);
@@ -143,4 +153,31 @@ public class OverflowCodeCacheTest {
         return bean.getUsage().getMax();
     }
 
+    class CodeCacheConstraints {
+        void check() {}
+    }
+
+    CodeCacheConstraints getCodeCacheConstraints(final BlobType type) {
+        if (Long.valueOf(0).equals(WHITE_BOX.getVMFlag("HotCodeHeapSize"))) {
+            return new CodeCacheConstraints();
+        } else if (BlobType.MethodHot == type) {
+            // NonProfiledHeap is used when HotCodeHeap runs out of space.
+            return new CodeCacheConstraints() {
+                final int nonProfiledCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id).length;
+                @Override
+                void check() {
+                    Asserts.assertLT(nonProfiledCount, WHITE_BOX.getCodeHeapEntries(BlobType.MethodNonProfiled.id).length);
+                }
+            };
+        } else {
+            // HotCodeHeap should not be used when other heap runs out of space.
+            return new CodeCacheConstraints() {
+                final int hotCount = WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length;
+                @Override
+                void check() {
+                    Asserts.assertEQ(hotCount, WHITE_BOX.getCodeHeapEntries(BlobType.MethodHot.id).length);
+                }
+            };
+        }
+    }
 }
