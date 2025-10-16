@@ -36,8 +36,16 @@
 #endif // WINDOWS
 
 static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
+    const char* jcmd_path = getenv("JCMD_PATH");
+    FILE* file = fopen(jcmd_path, "r");
+    if (file == NULL) {
+        printf("%s does not exist", jcmd_path);
+        return;
+    }
+    fclose(file);
+
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", getenv("JCMD_PATH"), PID());
+    snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", jcmd_path, PID());
     printf("Running jcmd command: '%s'\n", cmd);
 
     int res = system(cmd);
