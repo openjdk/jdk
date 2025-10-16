@@ -131,11 +131,11 @@ public:
   NOT_LP64(using AltCanaryType = uint32_t;)
   #ifndef _LP64
   inline uint32_t alt_canary() const {
-    AsanPoisoningHelper<AltCanaryType, const AltCanaryType> _temp(&_alt_canary);
+    AsanPoisoningHelper<AltCanaryType> _temp(&_alt_canary);
     return _alt_canary;
   }
   inline void set_alt_canary(uint32_t value) {
-    AsanPoisoningHelper<AltCanaryType, const AltCanaryType> _temp(&_alt_canary);
+    AsanPoisoningHelper<AltCanaryType> _temp(&_alt_canary);
       _alt_canary = value;
   }
   #endif
