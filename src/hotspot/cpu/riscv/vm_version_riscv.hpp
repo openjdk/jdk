@@ -63,9 +63,12 @@ class VM_Version : public Abstract_VM_Version {
     bool feature_string()        { return _feature_string; }
     virtual bool enabled() = 0;
     virtual void update_flag() = 0;
+    // Use DEFAULT_VALUE if unset.
     virtual int64_t value() = 0;
 
    protected:
+    static const int64_t DEFAULT_VALUE = -1;
+
     bool deps_all_enabled(RVFeatureValue* dep0, ...) {
       assert(dep0 != nullptr, "must not");
 
@@ -157,12 +160,11 @@ class VM_Version : public Abstract_VM_Version {
     void disable_feature() {
       RVExtFeatures::current()->clear_feature(_cpu_feature_index);
     }
-    int64_t value() { return enabled(); }
+    int64_t value() { return enabled() ? 1 : DEFAULT_VALUE; }
   };
 
   class RVNonExtFeatureValue : public RVFeatureValue {
     int64_t _value;
-    static const int64_t DEFAULT_VALUE = -1;
    public:
     RVNonExtFeatureValue(const char* pretty, int linux_bit_num, bool fstring) :
       RVFeatureValue(pretty, linux_bit_num, fstring),
