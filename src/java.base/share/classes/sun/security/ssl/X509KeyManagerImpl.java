@@ -33,8 +33,10 @@ import java.security.KeyStore.Builder;
 import java.security.KeyStore.Entry;
 import java.security.KeyStore.PrivateKeyEntry;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -240,8 +242,14 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
             entry = (PrivateKeyEntry)newEntry;
             entryCacheMap.put(alias, new SoftReference<>(entry));
             return entry;
-        } catch (Exception e) {
-            // ignore
+        } catch (UnrecoverableEntryException |
+                 KeyStoreException |
+                 NumberFormatException |
+                 NoSuchAlgorithmException e) {
+            // ignore and only log exception
+            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                SSLLogger.fine("KeyMgr: exception triggered: " + e);
+            }
             return null;
         }
     }
