@@ -366,14 +366,15 @@ class Stream<T> extends ExchangeImpl<T> {
 
     @Override
     CompletableFuture<T> readBodyAsync(HttpResponse.BodyHandler<T> handler,
+                                       Runnable preTerminationCallback,
                                        boolean returnConnectionToPool,
                                        Executor executor)
     {
         try {
             Log.logTrace("Reading body on stream {0}", streamid);
             debug.log("Getting BodySubscriber for: " + response);
-            Http2StreamResponseSubscriber<T> bodySubscriber =
-                    createResponseSubscriber(handler, new ResponseInfoImpl(response));
+            var bodySubscriber = createResponseSubscriber(
+                    handler, new ResponseInfoImpl(response), preTerminationCallback);
             CompletableFuture<T> cf = receiveData(bodySubscriber, executor);
 
             PushGroup<?> pg = exchange.getPushGroup();
@@ -390,10 +391,11 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     @Override
-    Http2StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
-        Http2StreamResponseSubscriber<T> subscriber =
-                new Http2StreamResponseSubscriber<>(handler.apply(response));
-        return subscriber;
+    Http2StreamResponseSubscriber<T> createResponseSubscriber(
+            BodyHandler<T> handler,
+            ResponseInfo response,
+            Runnable preTerminationCallback) {
+        return new Http2StreamResponseSubscriber<>(handler.apply(response), preTerminationCallback);
     }
 
     // The Http2StreamResponseSubscriber is registered with the HttpClient
@@ -1718,10 +1720,11 @@ class Stream<T> extends ExchangeImpl<T> {
         @Override
         CompletableFuture<T> readBodyAsync(
                 HttpResponse.BodyHandler<T> handler,
+                Runnable preTerminationCallback,
                 boolean returnConnectionToPool,
                 Executor executor)
         {
-            return super.readBodyAsync(handler, returnConnectionToPool, executor)
+            return super.readBodyAsync(handler, preTerminationCallback, returnConnectionToPool, executor)
                         .whenComplete((v, t) -> pushGroup.pushError(t));
         }
 
@@ -1731,7 +1734,7 @@ class Stream<T> extends ExchangeImpl<T> {
             pushCF.complete(r); // not strictly required for push API
             // start reading the body using the obtained BodySubscriber
             CompletableFuture<Void> start = new MinimalFuture<>();
-            start.thenCompose( v -> readBodyAsync(getPushHandler(), false, getExchange().executor()))
+            start.thenCompose( v -> readBodyAsync(getPushHandler(), null, false, getExchange().executor()))
                 .whenComplete((T body, Throwable t) -> {
                     if (t != null) {
                         responseCF.completeExceptionally(t);
@@ -1955,8 +1958,8 @@ class Stream<T> extends ExchangeImpl<T> {
     }
 
     final class Http2StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber) {
-            super(subscriber);
+        Http2StreamResponseSubscriber(BodySubscriber<U> subscriber, Runnable preTerminationCallback) {
+            super(subscriber, preTerminationCallback);
         }
 
         @Override

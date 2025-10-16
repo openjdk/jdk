@@ -206,8 +206,12 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
      */
     static final class Http1ResponseBodySubscriber<U> extends HttpBodySubscriberWrapper<U> {
         final Http1Exchange<U> exchange;
-        Http1ResponseBodySubscriber(BodySubscriber<U> userSubscriber, Http1Exchange<U> exchange) {
-            super(userSubscriber);
+
+        Http1ResponseBodySubscriber(
+                BodySubscriber<U> userSubscriber,
+                Runnable preTerminationCallback,
+                Http1Exchange<U> exchange) {
+            super(userSubscriber, preTerminationCallback);
             this.exchange = exchange;
         }
 
@@ -444,12 +448,13 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
 
     @Override
     CompletableFuture<T> readBodyAsync(BodyHandler<T> handler,
+                                       Runnable preTerminationCallback,
                                        boolean returnConnectionToPool,
                                        Executor executor)
     {
         var responseInfo = new ResponseInfoImpl(response.responseCode(),
                 response.responseHeaders(), HTTP_1_1);
-        BodySubscriber<T> bs = createResponseSubscriber(handler, responseInfo);
+        BodySubscriber<T> bs = createResponseSubscriber(handler, responseInfo, preTerminationCallback);
         CompletableFuture<T> bodyCF = response.readBody(bs,
                                                         returnConnectionToPool,
                                                         executor);
@@ -457,11 +462,12 @@ class Http1Exchange<T> extends ExchangeImpl<T> {
     }
 
     @Override
-    Http1ResponseBodySubscriber<T> createResponseSubscriber(BodyHandler<T> handler, ResponseInfo response) {
+    Http1ResponseBodySubscriber<T> createResponseSubscriber(
+            BodyHandler<T> handler,
+            ResponseInfo response,
+            Runnable preTerminationCallback) {
         BodySubscriber<T> subscriber = handler.apply(response);
-        Http1ResponseBodySubscriber<T> bs =
-                new Http1ResponseBodySubscriber<T>(subscriber, this);
-        return bs;
+        return new Http1ResponseBodySubscriber<>(subscriber, preTerminationCallback, this);
     }
 
     @Override

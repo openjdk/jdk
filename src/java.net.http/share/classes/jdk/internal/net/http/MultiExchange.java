@@ -31,7 +31,6 @@ import java.net.ConnectException;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.StreamLimitException;
-import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.List;
 import java.util.ListIterator;
@@ -396,7 +395,6 @@ class MultiExchange<T> implements Cancelable {
 
     private CompletableFuture<HttpResponse<T>>
     responseAsync0(CompletableFuture<Void> start) {
-        AtomicReference<HttpResponse.BodyHandler<T>> effectiveResponseHandlerRef = new AtomicReference<>();
         return start.thenCompose( _ -> {
                     // this is the first attempt to have the request processed by the server
                     attempts.set(1);
@@ -413,74 +411,9 @@ class MultiExchange<T> implements Cancelable {
                             } else
                                 return handleNoBody(r, exch);
                         }
-            HttpResponse.BodyHandler<T> effectiveResponseHandler = effectiveResponseHandlerRef.get();
-            if (effectiveResponseHandler == null) {
-                effectiveResponseHandlerRef.set(effectiveResponseHandler = responseTimerEvent != null
-                        ? new TimerCancellingBodyHandlerWrapper(responseHandler)
-                        : responseHandler);
-            }
-            return exch.readBodyAsync(effectiveResponseHandler)
+                        return exch.readBodyAsync(responseHandler, this::cancelTimer)
                             .thenApply((T body) -> setNewResponse(r.request, r, body, exch));
                     }).exceptionallyCompose(this::whenCancelled);
-    }
-
-    /**
-     * Decorates a {@link HttpResponse.BodyHandler} to {@link #cancelTimer()} at completion.
-     */
-    private final class TimerCancellingBodyHandlerWrapper implements HttpResponse.BodyHandler<T> {
-
-        private final HttpResponse.BodyHandler<T> delegate;
-
-        private TimerCancellingBodyHandlerWrapper(HttpResponse.BodyHandler<T> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public BodySubscriber<T> apply(HttpResponse.ResponseInfo responseInfo) {
-            BodySubscriber<T> subscriber = delegate.apply(responseInfo);
-            return new TimerCancellingBodySubscriberWrapper(subscriber);
-        }
-
-    }
-
-    /**
-     * Decorates a {@link HttpResponse.BodySubscriber} to {@link #cancelTimer()} at completion.
-     */
-    private final class TimerCancellingBodySubscriberWrapper implements HttpResponse.BodySubscriber<T> {
-
-        private final HttpResponse.BodySubscriber<T> delegate;
-
-        private TimerCancellingBodySubscriberWrapper(BodySubscriber<T> delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public CompletionStage<T> getBody() {
-            return delegate.getBody();
-        }
-
-        @Override
-        public void onSubscribe(Flow.Subscription subscription) {
-            delegate.onSubscribe(subscription);
-        }
-
-        @Override
-        public void onNext(List<ByteBuffer> buffers) {
-            delegate.onNext(buffers);
-        }
-
-        @Override
-        public void onError(Throwable throwable) {
-            cancelTimer();
-            delegate.onError(throwable);
-        }
-
-        @Override
-        public void onComplete() {
-            cancelTimer();
-            delegate.onComplete();
-        }
-
     }
 
     // returns a CancellationException that wraps the given cause
