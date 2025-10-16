@@ -636,7 +636,7 @@ static void usage() {
   tty->print_cr("  package/Class.method (Lpackage/Parameter;)Lpackage/Return;");
   tty->print_cr("  package/Class.method,(Lpackage/Parameter;)Lpackage/Return;");
   tty->cr();
-  tty->print_cr("The <class> and <method> accept leading and trailing *'s for wildcard");
+  tty->print_cr("The <class> and <method> accept leading and trailing '*' wildcards");
   tty->print_cr("matching:");
   tty->cr();
   tty->print_cr("  *ackage/Clas*.*etho*(Lpackage/Parameter;)Lpackage/Return;");
