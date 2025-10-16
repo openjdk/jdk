@@ -1623,7 +1623,7 @@ jint G1CollectedHeap::initialize() {
   if (policy()->use_adaptive_young_list_length()) {
     _revise_young_length_task = new G1ReviseYoungLengthTask("Revise Young Length List Task");
     _service_thread->register_task(_revise_young_length_task);
-  }  }
+  }
 
   // Here we allocate the dummy G1HeapRegion that is required by the
   // G1AllocRegion class.

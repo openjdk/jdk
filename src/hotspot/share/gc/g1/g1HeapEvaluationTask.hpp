@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1HEAPEVALUATIONTASK_HPP
 #define SHARE_GC_G1_G1HEAPEVALUATIONTASK_HPP
 
-#include "gc/g1/g1ServiceThread.hpp"
 #include "gc/g1/g1_globals.hpp"
+#include "gc/g1/g1ServiceThread.hpp"
 
 class G1CollectedHeap;
 class G1HeapSizingPolicy;

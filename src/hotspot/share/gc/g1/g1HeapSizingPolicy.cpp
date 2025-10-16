@@ -23,13 +23,13 @@
  */
 
 #include "gc/g1/g1Analytics.hpp"
-#include "gc/g1/g1_globals.hpp"  // For flag declarations
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1HeapRegionManager.inline.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1Policy.hpp"
+#include "gc/g1/g1_globals.hpp"  // For flag declarations
 #include "gc/shared/gc_globals.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -582,7 +582,7 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
 
   // Back off during allocation pressure - only evaluate when truly idle
   if (_analytics != nullptr) {
-    double gc_time_ratio = _analytics->short_term_pause_time_ratio();
+    double gc_time_ratio = _analytics->short_term_gc_time_ratio();
     if (gc_time_ratio > 0.05) { // 5% GC time still indicates pressure
       log_trace(gc, sizing)("Uncommit evaluation: skipping due to high GC overhead (%1.1f%%)",
                            gc_time_ratio * 100.0);

@@ -28,11 +28,11 @@
 #include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1ServiceThread.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 G1HeapEvaluationTask::G1HeapEvaluationTask(G1CollectedHeap* g1h, G1HeapSizingPolicy* heap_sizing_policy) :
   G1ServiceTask("G1 Heap Evaluation Task"),

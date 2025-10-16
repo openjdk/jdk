@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 #define SHARE_GC_G1_G1HEAPSIZINGPOLICY_HPP
 
-#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1_globals.hpp"
+#include "gc/g1/g1Analytics.hpp"
 #include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
