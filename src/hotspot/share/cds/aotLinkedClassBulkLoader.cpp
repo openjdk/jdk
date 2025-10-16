@@ -345,7 +345,7 @@ void AOTLinkedClassBulkLoader::init_classes_for_loader(Handle class_loader, Arra
 
 static GrowableArrayCHeap<nmethod*, mtClassShared>* _delayed_compiled_method_load_events = nullptr;
 
-// With AOT-linked classes, we could compile nmethods before the ServiceThread
+// With AOT-linked classes, we could compile wrappers for native methods before the ServiceThread
 // has been started, so we must delay the events to be posted later.
 void AOTLinkedClassBulkLoader::add_delayed_compiled_method_load_event(nmethod* nm) {
   precond(CDSConfig::is_using_aot_linked_classes());
