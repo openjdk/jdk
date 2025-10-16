@@ -610,9 +610,29 @@ public class IRNode {
         beforeMatchingNameRegex(CONV, "Conv");
     }
 
+    public static final String CONV_D2I = PREFIX + "CONV_D2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2I, "ConvD2I");
+    }
+
+    public static final String CONV_D2L = PREFIX + "CONV_D2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_D2L, "ConvD2L");
+    }
+
     public static final String CONV_F2HF = PREFIX + "CONV_F2HF" + POSTFIX;
     static {
         beforeMatchingNameRegex(CONV_F2HF, "ConvF2HF");
+    }
+
+    public static final String CONV_F2I = PREFIX + "CONV_F2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2I, "ConvF2I");
+    }
+
+    public static final String CONV_F2L = PREFIX + "CONV_F2L" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(CONV_F2L, "ConvF2L");
     }
 
     public static final String CONV_I2L = PREFIX + "CONV_I2L" + POSTFIX;
@@ -1613,6 +1633,11 @@ public class IRNode {
     public static final String PHI = PREFIX + "PHI" + POSTFIX;
     static {
         beforeMatchingNameRegex(PHI, "Phi");
+    }
+
+    public static final String POPCOUNT_I = PREFIX + "POPCOUNT_I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(POPCOUNT_I, "PopCountI");
     }
 
     public static final String POPCOUNT_L = PREFIX + "POPCOUNT_L" + POSTFIX;
@@ -2673,6 +2698,66 @@ public class IRNode {
     public static final String VSTOREMASK_TRUECOUNT = PREFIX + "VSTOREMASK_TRUECOUNT" + POSTFIX;
     static {
         machOnlyNameRegex(VSTOREMASK_TRUECOUNT, "vstoremask_truecount_neon");
+    }
+
+    public static final String X86_SCONV_D2I = PREFIX + "X86_SCONV_D2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2I, "convD2I_reg_reg");
+    }
+
+    public static final String X86_SCONV_D2L = PREFIX + "X86_SCONV_D2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2L, "convD2L_reg_reg");
+    }
+
+    public static final String X86_SCONV_F2I = PREFIX + "X86_SCONV_F2I" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2I, "convF2I_reg_reg");
+    }
+
+    public static final String X86_SCONV_F2L = PREFIX + "X86_SCONV_F2L" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2L, "convF2L_reg_reg");
+    }
+
+    public static final String X86_SCONV_D2I_AVX10 = PREFIX + "X86_SCONV2_D2I_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2I_AVX10, "convD2I_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_SCONV_D2L_AVX10 = PREFIX + "X86_SCONV_D2L_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_D2L_AVX10, "convD2L_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_SCONV_F2I_AVX10 = PREFIX + "X86_SCONV_F2I_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2I_AVX10, "convF2I_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_SCONV_F2L_AVX10 = PREFIX + "X86_SCONV_F2L_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_F2L_AVX10, "convF2L_(reg_reg|reg_mem)_avx10");
+    }
+
+    public static final String X86_VCAST_F2X = PREFIX + "X86_VCAST_F2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_F2X, "castFtoX_reg_(av|eve)x");
+    }
+
+    public static final String X86_VCAST_D2X = PREFIX + "X86_VCAST_D2X" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_D2X, "castDtoX_reg_(av|eve)x");
+    }
+
+    public static final String X86_VCAST_F2X_AVX10 = PREFIX + "X86_VCAST_F2X_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_F2X_AVX10, "castFtoX_(reg|mem)_avx10");
+    }
+
+    public static final String X86_VCAST_D2X_AVX10 = PREFIX + "X86_VCAST_D2X_AVX10" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_D2X_AVX10, "castDtoX_(reg|mem)_avx10");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;

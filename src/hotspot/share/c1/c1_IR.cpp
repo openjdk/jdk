@@ -190,7 +190,6 @@ CodeEmitInfo::CodeEmitInfo(ValueStack* stack, XHandlers* exception_handlers, boo
   , _exception_handlers(exception_handlers)
   , _oop_map(nullptr)
   , _stack(stack)
-  , _is_method_handle_invoke(false)
   , _deoptimize_on_exception(deoptimize_on_exception)
   , _force_reexecute(false) {
   assert(_stack != nullptr, "must be non null");
@@ -203,7 +202,6 @@ CodeEmitInfo::CodeEmitInfo(CodeEmitInfo* info, ValueStack* stack)
   , _exception_handlers(nullptr)
   , _oop_map(nullptr)
   , _stack(stack == nullptr ? info->_stack : stack)
-  , _is_method_handle_invoke(info->_is_method_handle_invoke)
   , _deoptimize_on_exception(info->_deoptimize_on_exception)
   , _force_reexecute(info->_force_reexecute) {
 
@@ -218,7 +216,7 @@ void CodeEmitInfo::record_debug_info(DebugInformationRecorder* recorder, int pc_
   // record the safepoint before recording the debug info for enclosing scopes
   recorder->add_safepoint(pc_offset, _oop_map->deep_copy());
   bool reexecute = _force_reexecute || _scope_debug_info->should_reexecute();
-  _scope_debug_info->record_debug_info(recorder, pc_offset, reexecute, _is_method_handle_invoke);
+  _scope_debug_info->record_debug_info(recorder, pc_offset, reexecute);
   recorder->end_safepoint(pc_offset);
 }
 

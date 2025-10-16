@@ -1690,13 +1690,30 @@ void JvmtiExport::post_vthread_unmount(jobject vthread) {
   }
 }
 
+bool JvmtiExport::has_frame_pops(JavaThread* thread) {
+  if (!can_post_frame_pop()) {
+    return false;
+  }
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state == nullptr) {
+    return false;
+  }
+  JvmtiEnvThreadStateIterator it(state);
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
+    if (ets->has_frame_pops()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void JvmtiExport::continuation_yield_cleanup(JavaThread* thread, jint continuation_frame_count) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
     return;
   }
 
   assert(thread == JavaThread::current(), "must be");
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
     return;
   }
