@@ -37,8 +37,6 @@ bool ThreadWXEnable::test(address a) {
   static auto mode = WXArmedForWrite;
   if (mode == WXArmedForWrite && a && StressWXHealing) {
     auto p = (unsigned int*)a;
-    // auto fp = (fptr)p;
-    auto fp = (void(*)())p;
     ThreadWXEnable wx(WXExec, Thread::current());
     {
       ThreadWXEnable wx(&mode, Thread::current());
@@ -49,6 +47,8 @@ bool ThreadWXEnable::test(address a) {
         result = false;
       }
     }
+    // Make sure the newly-compiled code can be executed.
+    auto fp = (void(*)())p;
     fp();
   }
   return result;
