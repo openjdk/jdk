@@ -147,7 +147,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
-    for (i = 0; i < threads_count; i++) {
+    for (i = 0; i < debuggee_thread_cnt; i++) {
         if (threadList[i].dfn < 0) {
             tDfn = gDfn;
             threadList[i].dfn = gDfn++;
