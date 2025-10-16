@@ -65,5 +65,5 @@ public class Test4234761 implements PropertyChangeListener {
 
     public void propertyChange(PropertyChangeEvent event) {
         throw new Error("RGB value is changed after transition to HSB tab");
-     }
+    }
 }
