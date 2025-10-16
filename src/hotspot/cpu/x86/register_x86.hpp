@@ -45,9 +45,9 @@ public:
   inline friend constexpr Register as_Register(int encoding);
 
   enum {
-    number_of_registers      = LP64_ONLY( 32 ) NOT_LP64( 8 ),
-    number_of_byte_registers = LP64_ONLY( 32 ) NOT_LP64( 4 ),
-    max_slots_per_register   = LP64_ONLY(  2 ) NOT_LP64( 1 )
+    number_of_registers      = 32,
+    number_of_byte_registers = 32,
+    max_slots_per_register   =  2
   };
 
   class RegisterImpl: public AbstractRegisterImpl {
@@ -214,8 +214,8 @@ public:
   inline friend constexpr XMMRegister as_XMMRegister(int encoding);
 
   enum {
-    number_of_registers    = LP64_ONLY( 32 ) NOT_LP64(  8 ),
-    max_slots_per_register = LP64_ONLY( 16 ) NOT_LP64( 16 )   // 512-bit
+    number_of_registers    = 32,
+    max_slots_per_register = 16
   };
 
   class XMMRegisterImpl: public AbstractRegisterImpl {
@@ -396,13 +396,7 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
     // There is no requirement that any ordering here matches any ordering c2 gives
     // it's optoregs.
-
-    // x86_32.ad defines additional dummy FILL0-FILL7 registers, in order to tally
-    // REG_COUNT (computed by ADLC based on the number of reg_defs seen in .ad files)
-    // with ConcreteRegisterImpl::number_of_registers additional count of 8 is being
-    // added for 32 bit jvm.
     number_of_registers = max_kpr +       // gpr/fpr/xmm/kpr
-                          NOT_LP64( 8 + ) // FILL0-FILL7 in x86_32.ad
                           1               // eflags
   };
 };

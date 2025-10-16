@@ -26,7 +26,7 @@
 #define CPU_X86_VMREG_X86_INLINE_HPP
 
 inline VMReg Register::RegisterImpl::as_VMReg() const {
-  return VMRegImpl::as_VMReg(encoding() LP64_ONLY( << 1 ));
+  return VMRegImpl::as_VMReg(encoding() << 1);
 }
 
 inline VMReg FloatRegister::FloatRegisterImpl::as_VMReg() const {
