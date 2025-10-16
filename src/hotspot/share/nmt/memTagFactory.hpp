@@ -146,6 +146,10 @@ struct MemTagFactory {
     return _instance->number_of_tags();
   }
 
+  static constexpr int max_number_of_tags() {
+    return std::numeric_limits<std::underlying_type_t<MemTag>>::max();
+  }
+
   static MemTag tag_maybe(const char* name) {
     NmtMemTagLocker ntml;
     return _instance->tag_maybe(name);

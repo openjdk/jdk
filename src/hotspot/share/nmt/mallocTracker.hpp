@@ -155,7 +155,7 @@ class MallocMemorySnapshot : public CHeapObj<mtNMT> {
 
   using IndexType = std::underlying_type_t<MemTag>;
   static constexpr int length() {
-    return std::numeric_limits<IndexType>::max();
+    return (int)MemTagFactory::max_number_of_tags();
   }
 
   MallocMemory _malloc[std::numeric_limits<IndexType>::max()];
@@ -166,13 +166,6 @@ public:
   : _malloc(), _all_mallocs() {
     for (int i = 0; i < length(); i++) {
       _malloc[i] = MallocMemory();
-    }
-  }
-
-  MallocMemorySnapshot(MallocMemorySnapshot& snap)
-  : _malloc(), _all_mallocs(snap._all_mallocs) {
-    for (size_t i = 0; i < length(); i++) {
-      _malloc[i] = snap._malloc[i];
     }
   }
 
