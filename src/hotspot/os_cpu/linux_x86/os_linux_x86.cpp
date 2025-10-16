@@ -368,11 +368,7 @@ juint os::cpu_microcode_revision() {
 // HotSpot guard pages is added later.
 size_t os::_compiler_thread_min_stack_allowed = 48 * K;
 size_t os::_java_thread_min_stack_allowed = 40 * K;
-#ifdef _LP64
 size_t os::_vm_internal_thread_min_stack_allowed = 64 * K;
-#else
-size_t os::_vm_internal_thread_min_stack_allowed = (48 DEBUG_ONLY(+ 4)) * K;
-#endif // _LP64
 
 // return default stack size for thr_type
 size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
