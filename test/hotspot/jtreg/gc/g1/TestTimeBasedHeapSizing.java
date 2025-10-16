@@ -70,7 +70,7 @@ public class TestTimeBasedHeapSizing {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         output.shouldContain("G1 Time-Based Heap Sizing enabled (uncommit-only)");
-        output.shouldContain("Starting heap evaluation");
+        output.shouldContain("Starting uncommit evaluation");
         output.shouldContain("Full region scan:");
 
         output.shouldHaveExitValue(0);
@@ -128,7 +128,7 @@ public class TestTimeBasedHeapSizing {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        output.shouldContain("Starting heap evaluation");
+        output.shouldContain("Starting uncommit evaluation");
         output.shouldHaveExitValue(0);
     }
 
@@ -139,7 +139,7 @@ public class TestTimeBasedHeapSizing {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-        output.shouldContain("Starting heap evaluation");
+        output.shouldContain("Starting uncommit evaluation");
         output.shouldHaveExitValue(0);
     }
 

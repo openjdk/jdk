@@ -136,6 +136,9 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
   void reactivate_regions(uint start, uint num_regions);
   void uncommit_regions(uint start, uint num_regions);
 
+  // Time-based shrinking helper: find and shrink oldest empty regions
+  uint shrink_by_time_based_selection(uint num_regions_to_remove);
+
   // Allocate a new G1HeapRegion for the given index.
   G1HeapRegion* new_heap_region(uint hrm_index);
 
@@ -269,6 +272,7 @@ public:
   // Uncommit up to num_regions_to_remove regions that are completely free.
   // Return the actual number of uncommitted regions.
   uint shrink_by(uint num_regions_to_remove);
+  uint shrink_by(uint num_regions_to_remove, bool use_time_based_selection);
 
   // Remove a number of regions starting at the specified index, which must be available,
   // empty, and free. The regions are marked inactive and can later be uncommitted.
@@ -280,6 +284,10 @@ public:
   // Uncommit inactive regions. Limit the number of regions to uncommit and return
   // actual number uncommitted.
   uint uncommit_inactive_regions(uint limit);
+
+  // Reset access timestamps on all free regions to prevent stale timing data
+  // Used after GC operations or shrink operations that may affect region state
+
 
   void verify();
 

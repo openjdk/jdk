@@ -24,6 +24,7 @@
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
+#include "gc/g1/g1HeapSizingPolicy.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Trace.hpp"
 #include "gc/g1/g1VMOperations.hpp"
@@ -172,5 +173,11 @@ void VM_G1PauseCleanup::work() {
 }
 
 void VM_G1ShrinkHeap::doit() {
-  _g1h->shrink(_bytes);
+  // Use the pre-evaluated shrink amount to avoid lock conflicts during safepoint
+  // Re-evaluation during VM operation can cause Heap_lock violations
+  log_debug(gc, ergo, heap)("VM_G1ShrinkHeap: executing shrink operation with %zuB", _bytes);
+  _g1h->shrink_with_time_based_selection(_bytes);
+  
+  // Note: No timestamp reset needed - remaining free regions should continue aging naturally
+  // from when they originally became free for accurate time-based selection
 }

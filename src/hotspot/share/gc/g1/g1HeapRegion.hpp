@@ -73,7 +73,7 @@ class nmethod;
 // room for filler objects to pad out to the end of the region.
 class G1HeapRegion : public CHeapObj<mtGC> {
   friend class VMStructs;
-  friend class G1Allocator;  // For access to record_activity()
+
 
 private:
   HeapWord* const _bottom;
