@@ -70,10 +70,9 @@ public interface WritableByteChannel
      * depending upon their state, may write only some of the bytes or possibly
      * none at all.  A socket channel in {@linkplain
      * SelectableChannel#isBlocking non-blocking mode}, for example, cannot
-     * write any more bytes than are free in the socket's output buffer.  This
-     * method returns the number of bytes written by its current invocation,
-     * hence it might be necessary to call the write method in a loop until all
-     * <i>r</i> bytes are written.
+     * write any more bytes than are free in the socket's output buffer.  The
+     * write method may need to be invoked more than once to ensure that all
+     * {@linkplain ByteBuffer#hasRemaining remaining} bytes are written.
      *
      * <p> This method may be invoked at any time.  If another thread has
      * already initiated a write operation upon this channel, however, then an
