@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Demo of an imperative stable value based on a lazy constant
+ * @summary Test of a demo of an imperative stable value based on a lazy constant
  * @enablePreview
  * @run junit DemoImperativeTest
  */

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @summary Demo of a lazy map
+ * @summary Test of a lazy map application
  * @enablePreview
  * @run junit DemoMapTest
  */
