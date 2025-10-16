@@ -376,6 +376,19 @@ void HeapShared::initialize_loading_mode_if_not_set() {
 void HeapShared::initialize_writing_mode() {
   assert(!FLAG_IS_ERGO(AOTStreamableObjects), "Should not have been ergonomically set yet");
 
+  // The below checks use !FLAG_IS_DEFAULT instead of FLAG_IS_CMDLINE
+  // because the one step AOT cache creation transfers the AOTStreamableObjects
+  // flag value from the training JVM to the assembly JVM using an environment
+  // variable that sets the flag as ERGO in the assembly JVM.
+  if (FLAG_IS_DEFAULT(AOTStreamableObjects)) {
+    // By default, the value of AOTStreamableObjects should match !UseCompressedOops.
+    FLAG_SET_DEFAULT(AOTStreamableObjects, !UseCompressedOops);
+  } else if (!AOTStreamableObjects && UseZGC) {
+    // Never write mapped heap with ZGC
+    log_warning(cds)("Heap archiving without streaming not supported for -XX:+UseZGC");
+    FLAG_SET_ERGO(AOTStreamableObjects, true);
+  }
+
   if (!CDSConfig::is_dumping_archive()) {
     assert(_heap_write_mode == HeapArchiveMode::_uninitialized, "already initialized?");
 
@@ -392,36 +405,8 @@ void HeapShared::initialize_writing_mode() {
     return;
   }
 
-  // The below check uses !FLAG_IS_DEFAULT instead of FLAG_IS_CMDLINE
-  // because the one step AOT cache creation transfers the AOTStreamableObjects
-  // flag value from the training JVM to the assembly JVM using an environment
-  // variable that sets the flag as ERGO in the assembly JVM.
-  if (!FLAG_IS_DEFAULT(AOTStreamableObjects)) {
-    // Mode explicitly selected
-    if (AOTStreamableObjects) {
-      _heap_write_mode = HeapArchiveMode::_streaming;
-      return;
-    }
-
-    if (!UseG1GC) {
-      log_warning(cds)("Heap archiving without streaming only supported for -XX:+UseG1GC");
-      FLAG_SET_ERGO(AOTStreamableObjects, true);
-      _heap_write_mode = HeapArchiveMode::_streaming;
-      return;
-    }
-
-    _heap_write_mode = HeapArchiveMode::_mapping;
-    return;
-  }
-
   // Select default mode
-  if (UseG1GC && UseCompressedOops) {
-    FLAG_SET_DEFAULT(AOTStreamableObjects, false);
-    _heap_write_mode = HeapArchiveMode::_mapping;
-  } else {
-    assert(AOTStreamableObjects, "Unexpected default value");
-    _heap_write_mode = HeapArchiveMode::_streaming;
-  }
+  _heap_write_mode = AOTStreamableObjects ? HeapArchiveMode::_streaming : HeapArchiveMode::_mapping;
 }
 
 void HeapShared::initialize_streaming() {
@@ -884,7 +869,7 @@ void HeapShared::start_scanning_for_oops() {
     // Cache for recording where the archived objects are copied to
     create_archived_object_cache();
 
-    if (HeapShared::is_writing_mapping_mode()) {
+    if (HeapShared::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
       aot_log_info(aot)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                     UseCompressedOops ? p2i(CompressedOops::begin()) :
                                         p2i((address)G1CollectedHeap::heap()->reserved().start()),

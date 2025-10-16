@@ -76,7 +76,7 @@
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
                                                                             \
-  product(bool, AOTStreamableObjects, true,                                 \
+  product(bool, AOTStreamableObjects, false,                                \
           "Archive the Java heap in a generic streamable object format")    \
                                                                             \
   product(bool, AOTEagerlyLoadObjects, false, DIAGNOSTIC,                   \
