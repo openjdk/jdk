@@ -44,8 +44,8 @@ public class TestEarlyDynamicLoadAttach {
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
                 "-version");
         String javaPath = JDKToolFinder.getJDKTool("java");
-        pb.environment().put("JAVA_PATH", javaPath);
-        pb.environment().put("CLASSPATH", System.getProperty("java.class.path"));
+        pb.environment().put("JAVA_PATH", javaPath.replace("\\", "/"));
+        pb.environment().put("CLASSPATH", System.getProperty("java.class.path").replace("\\", "/"));
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
