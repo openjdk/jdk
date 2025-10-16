@@ -77,16 +77,6 @@ public class ClassUnloader {
     public static final String INTERNAL_CLASS_LOADER_NAME = "nsk.share.CustomClassLoader";
 
     /**
-     * Whole amount of time in milliseconds to wait for class loader to be reclaimed.
-     */
-    private static final int WAIT_TIMEOUT = 15000;
-
-    /**
-     * Sleep time in milliseconds for the loop waiting for the class loader to be reclaimed.
-     */
-    private static final int WAIT_DELTA = 1000;
-
-    /**
      * Phantom reference to the class loader.
      */
     private PhantomReference<Object> customClassLoaderPhantomRef = null;
