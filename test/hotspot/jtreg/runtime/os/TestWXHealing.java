@@ -43,10 +43,14 @@ public class TestWXHealing {
         var process = ProcessTools.createTestJavaProcessBuilder(opts).start();
         String output = new String(process.getInputStream().readAllBytes());
         System.out.println(output);
-        var pattern = Pattern.compile("Healing WXMode WXArmedForWrite at 0x[0-9a-f]* to WXWrite  ");
-        var matches = pattern.matcher(output).results().count();
-        if (matches < 10) {
-            throw new RuntimeException("Only " + matches + " healings in\n" + output);
+        if (Pattern.matches("MAP_JIT write protection does not work on this system", output)) {
+            System.out.println("Test was not run because MAP_JIT write protection does not work on this system");
+        } else {
+            var pattern = Pattern.compile("Healing WXMode WXArmedForWrite at 0x[0-9a-f]* to WXWrite  ");
+            var matches = pattern.matcher(output).results().count();
+            if (matches < 10) {
+                throw new RuntimeException("Only " + matches + " healings in\n" + output);
+            }
         }
     }
 }
