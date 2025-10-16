@@ -420,10 +420,12 @@ public final class Float extends Number
             // replace subnormal double exponent with subnormal float
             // exponent
             String s = Double.toHexString(Math.scalb((double)f,
-                                                     /* -1022+126 */
-                                                     Double.MIN_EXPONENT-
+                                                     // -1022 + 126
+                                                     Double.MIN_EXPONENT -
                                                      Float.MIN_EXPONENT));
-            return s.replaceFirst("p-1022$", "p-126");
+            // The char sequence "-1022" can only appear in the
+            // representation of the exponent, not in the (hex) significand.
+            return s.replace("-1022", "-126");
         }
         else // double string will be the same as float string
             return Double.toHexString(f);
