@@ -158,19 +158,19 @@ void VM_Version::common_initialize() {
     }
   }
 
+  // See JDK-8026049
+  // This machine has fast unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
+  }
+
   if (UseUnalignedAccesses) {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
   } else if (UsePoly1305Intrinsics) {
     warning("Intrinsics for Poly1305 crypto hash functions not available on this CPU.");
-  }
-
-  // See JDK-8026049
-  // This machine has fast unaligned memory accesses
-  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
-    FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
   if (FLAG_IS_DEFAULT(AlignVector)) {
