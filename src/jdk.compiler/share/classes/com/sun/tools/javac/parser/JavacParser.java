@@ -1543,6 +1543,7 @@ public class JavacParser implements Parser {
                 case REFERENCE: {
                     JCMemberReference mref = (JCMemberReference) expr;
                     mref.expr = insertAnnotationsToMostInner(mref.expr, typeAnnos, false);
+                    mref.pos = getStartPos(mref.expr);
                     t = mref;
                     break;
                 }
