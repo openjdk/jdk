@@ -43,7 +43,7 @@ inline MallocHeader::MallocHeader(size_t size, MemTag mem_tag, uint32_t mst_mark
   // guarding the start of the header.
   NOT_LP64(set_alt_canary(_header_alt_canary_live_mark);)
   set_footer(_footer_canary_live_mark); // set after initializing _size
-  set_poisoned(true);
+  asan_poison_self();
 }
 
 inline void MallocHeader::revive() {
@@ -53,12 +53,12 @@ inline void MallocHeader::revive() {
   set_header_canary(_header_canary_live_mark);
   NOT_LP64(set_alt_canary(_header_alt_canary_live_mark);)
   set_footer(_footer_canary_live_mark);
-  set_poisoned(true);
+  asan_poison_self();
 }
 
 // The effects of this method must be reversible with MallocHeader::revive()
 inline void MallocHeader::mark_block_as_dead() {
-  set_poisoned(false);
+  asan_unpoison_self();
   set_header_canary(_header_canary_dead_mark);
   NOT_LP64(set_alt_canary(_header_alt_canary_dead_mark);)
   set_footer(_footer_canary_dead_mark);

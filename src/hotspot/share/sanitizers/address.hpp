@@ -80,7 +80,7 @@ class AsanPoisoningHelper {
   const T* _memory_region;
  public:
   AsanPoisoningHelper() = delete;
-  AsanPoisoningHelper(T* addr) : _memory_region(addr) {
+  AsanPoisoningHelper(const T* addr) : _memory_region(addr) {
     #if INCLUDE_ASAN
       ASAN_UNPOISON_MEMORY_REGION(_memory_region, sizeof(T));
     #endif
@@ -90,12 +90,12 @@ class AsanPoisoningHelper {
       ASAN_POISON_MEMORY_REGION(_memory_region, sizeof(T));
     #endif
   }
-  static void poison_memory(T* addr) {
+  static void poison_memory(const T* addr) {
     #if INCLUDE_ASAN
       ASAN_POISON_MEMORY_REGION(addr, sizeof(T));
     #endif
   }
-  static void unpoison_memory(T* addr) {
+  static void unpoison_memory(const T* addr) {
     #if INCLUDE_ASAN
       ASAN_UNPOISON_MEMORY_REGION(addr, sizeof(T));
     #endif
