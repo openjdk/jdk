@@ -23,29 +23,29 @@
 
 /*
  * @test
- * @bug 8356137
- * @summary This test verifies a non-zero transparent pixel in gifs works when
- * the disposal method changes from 2 to 1
+ * @bug 8357034
+ * @summary This test verifies that when the transparent pixel index changes
+ * and we're rendering on top of another frame we respect the new transparency.
  */
 
 import java.io.File;
 
-public class GifEmptyBackgroundTest {
+public class GifSavedImageTransparentTest {
     public static void main(String[] args) throws Throwable {
         GifBuilder.FrameDescription[] frames =
-            new GifBuilder.FrameDescription[] {
-                new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.restoreToBackgroundColor, false),
-                new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.doNotDispose, false),
-                new GifBuilder.FrameDescription(
-                        GifBuilder.Disposal.doNotDispose, false)
-        };
+                new GifBuilder.FrameDescription[] {
+                        new GifBuilder.FrameDescription(
+                                GifBuilder.Disposal.doNotDispose, false),
+                        new GifBuilder.FrameDescription(
+                                GifBuilder.Disposal.doNotDispose, true),
+                        new GifBuilder.FrameDescription(
+                                GifBuilder.Disposal.doNotDispose, true)
+                };
 
         File dir = null;
 
         // un-comment to visually inspect the frames:
-//        dir = new File("8356137-frames");
+//        dir = new File("8357034-frames");
 //        dir.mkdir();
 
         GifBuilder.test(frames, dir);
