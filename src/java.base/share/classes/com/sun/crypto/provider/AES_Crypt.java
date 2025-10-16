@@ -884,7 +884,6 @@ final class AES_Crypt extends SymmetricCipher {
      */
     void init(boolean decrypting, String algorithm, byte[] key)
             throws InvalidKeyException {
-        int nk;
         int decrypt = decrypting ? 1 : 0;
 
         if (!algorithm.equalsIgnoreCase("AES")
@@ -893,13 +892,10 @@ final class AES_Crypt extends SymmetricCipher {
         }
         if (key.length == AESConstants.AES_KEYSIZES[0]) {
             rounds = AES_128_ROUNDS;
-            nk = AESConstants.AES_KEYSIZES[0]/WB;
         } else if (key.length == AESConstants.AES_KEYSIZES[1]) {
             rounds = AES_192_ROUNDS;
-            nk = AESConstants.AES_KEYSIZES[1]/WB;
         } else if (key.length == AESConstants.AES_KEYSIZES[2]) {
             rounds = AES_256_ROUNDS;
-            nk = AESConstants.AES_KEYSIZES[2]/WB;
         } else {
             throw new InvalidKeyException("Invalid key length (" + key.length
                     + ").");
@@ -911,8 +907,8 @@ final class AES_Crypt extends SymmetricCipher {
                 Arrays.fill(sessionK[0], 0);
                 Arrays.fill(sessionK[1], 0);
             }
-            sessionK[0] = genRKeys(key, nk);
-            sessionK[1] = invGenRKeys();
+            sessionK[0] = genRoundKeys(key, rounds);
+            sessionK[1] = invGenRoundKeys();
             if (prevKey != null) {
                 Arrays.fill(prevKey, (byte) 0);
             }
@@ -922,33 +918,28 @@ final class AES_Crypt extends SymmetricCipher {
     }
 
     /**
-     * Generate the cipher round keys.
+     * Generate the cipher's round keys as outlined in section 5.2 of the spec.
      *
      * @param key [in] the symmetric key byte array.
-     * @param nk [in] the number of words in the key.
      *
      * @return w the cipher round keys.
      */
-    private int[] genRKeys(byte[] key, int nk) {
-        int len = WB, tmp, rW, subWord, g;
-        int[] w = new int[len * (rounds + 1)];
+    private static int[] genRoundKeys(byte[] key, int rounds) {
+        int wLen = WB * (rounds + 1);
+        int[] w = new int[wLen];
+        int nk = key.length / WB;
 
-        for (int i = 0; i < nk; i++) {
-            w[i] = ((key[i * len] & 0xFF) << 24)
-                    | ((key[(i * len) + 1] & 0xFF) << 16)
-                    | ((key[(i * len) + 2] & 0xFF) << 8)
-                    | (key[(i * len) + 3] & 0xFF);
+        for (int i = 0, j = 0; i < nk; i++, j += WB) {
+            w[i] = ((key[j] & 0xFF) << 24) | ((key[j + 1] & 0xFF) << 16)
+                    | ((key[j + 2] & 0xFF) << 8) | (key[j + 3] & 0xFF);
         }
-        for (int i = nk; i < len * (rounds + 1); i++) {
-            tmp = w[i - 1];
+        for (int i = nk; i < wLen; i++) {
+            int tmp = w[i - 1];
             if (i % nk == 0) {
-                rW = (tmp << 8) & 0xFFFFFF00 | (tmp >>> 24);
-                subWord = subByte(rW, SBOX);
-                g = subWord ^ RCON[(i / nk) - 1];
-                tmp = g;
-            } else if ((nk > 6) && ((i % nk) == len)) {
-                subWord = subByte(tmp, SBOX);
-                tmp = subWord;
+                int rW = (tmp << 8) & 0xFFFFFF00 | (tmp >>> 24);
+                tmp = subByte(rW, SBOX) ^ RCON[(i / nk) - 1];
+            } else if ((nk > 6) && ((i % nk) == WB)) {
+                tmp = subByte(tmp, SBOX);
             }
             w[i] = w[i - nk] ^ tmp;
         }
@@ -1000,7 +991,7 @@ final class AES_Crypt extends SymmetricCipher {
      *
      * @return w1 the inverse cipher round keys.
      */
-    private int[] invGenRKeys() {
+    private int[] invGenRoundKeys() {
         int len = WB;
         int kLen = sessionK[0].length;;
         int[] w = new int[len];
@@ -1029,7 +1020,7 @@ final class AES_Crypt extends SymmetricCipher {
      *
      * @return the substituted word.
      */
-    private int subByte(int state, byte[][] sub) {
+    private static int subByte(int state, byte[][] sub) {
         byte b0 = (byte) (state >>> 24);
         byte b1 = (byte) ((state >> 16) & 0xFF);
         byte b2 = (byte) ((state >> 8) & 0xFF);
