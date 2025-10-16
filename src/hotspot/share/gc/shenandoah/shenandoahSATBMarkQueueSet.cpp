@@ -55,7 +55,7 @@ public:
   explicit ShenandoahSATBOldMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap), _filtered_young(0) {}
   ~ShenandoahSATBOldMarkQueueFilterFn() {
     if (_filtered_young > 0) {
-      log_debug(gc, stats)("Filtered %zu young pointers during old mark", _filtered_young);
+      log_info(gc, stats)("Filtered %zu young pointers during old mark", _filtered_young);
     }
   }
 
