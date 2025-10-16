@@ -756,7 +756,7 @@ private:
   // (Rounds down to a G1HeapRegion boundary.)
   void shrink(size_t shrink_bytes);
   void shrink_helper(size_t expand_bytes);
-  
+
   // Time-based shrinking that selects oldest regions instead of from end
   void shrink_with_time_based_selection(size_t shrink_bytes);
   void shrink_helper_with_time_based_selection(size_t shrink_bytes);

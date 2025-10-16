@@ -46,19 +46,19 @@ void G1HeapEvaluationTask::execute() {
   ResourceMark rm; // Ensure temporary resources are released
 
   size_t resize_amount;
-  
+
   // Use SuspendibleThreadSetJoiner for proper synchronization during heap evaluation
   // This ensures we don't race with concurrent GC operations while scanning region states
   {
     SuspendibleThreadSetJoiner sts;
     resize_amount = _heap_sizing_policy->evaluate_heap_resize_for_uncommit();
   }
-  
+
   static int evaluation_count = 0;
-  
+
   if (resize_amount > 0) {
     log_info(gc, sizing)("Uncommit evaluation: shrinking heap by %zuMB using time-based selection", resize_amount / M);
-    log_debug(gc, sizing)("Uncommit evaluation: policy recommends shrinking by %zuB", resize_amount); 
+    log_debug(gc, sizing)("Uncommit evaluation: policy recommends shrinking by %zuB", resize_amount);
     // Request VM operation outside of suspendible thread set
     _g1h->request_heap_shrink(resize_amount);
   } else {

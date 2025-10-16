@@ -1138,7 +1138,7 @@ void G1CollectedHeap::shrink_helper_with_time_based_selection(size_t shrink_byte
 
   uint num_regions_to_remove = (uint)(shrink_bytes / G1HeapRegion::GrainBytes);
   uint num_regions_removed = 0;
-  
+
   // Use time-based selection to shrink oldest eligible regions
   log_debug(gc, ergo, heap)("Time-based shrink: removing %u oldest regions (%zuB)",
                             num_regions_to_remove, shrink_bytes);
@@ -1147,7 +1147,7 @@ void G1CollectedHeap::shrink_helper_with_time_based_selection(size_t shrink_byte
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
   log_debug(gc, ergo, heap)("Time-based shrink: Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
                            shrink_bytes, shrunk_bytes, num_regions_removed);
-                           
+
   if (num_regions_removed > 0) {
     log_info(gc, heap)("Time-based shrink: uncommitted %u oldest regions (%zuMB), heap size now %zuMB",
                        num_regions_removed, shrunk_bytes / M, capacity() / M);
@@ -1168,7 +1168,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
 
   uint num_regions_to_remove = (uint)(shrink_bytes / G1HeapRegion::GrainBytes);
   uint num_regions_removed = 0;
-  
+
   // Always perform normal heap shrinking when requested
   // This preserves the original GC-triggered shrinking behavior
   log_debug(gc, ergo, heap)("Heap shrink requested: removing %u regions (%zuB)",
@@ -1178,7 +1178,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
   log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
                            shrink_bytes, shrunk_bytes, num_regions_removed);
-                           
+
   if (num_regions_removed > 0) {
     log_info(gc, heap)("Heap shrink details: uncommitted %u regions (%zuMB), heap size now %zuMB",
                        num_regions_removed, shrunk_bytes / M, capacity() / M);
