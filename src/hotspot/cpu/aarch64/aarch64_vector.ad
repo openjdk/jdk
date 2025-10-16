@@ -207,6 +207,16 @@ source %{
           return false;
         }
         break;
+      case Op_MinReductionVHF:
+      case Op_MaxReductionVHF:
+        // Reductions with less than 8 bytes vector length are not supported.
+        // FEAT_FP16 is enabled if both "fphp" and "asimdhp" features are supported.
+        // Only the Neon instructions need this check. SVE supports half-precision floats
+        // by default.
+        if (length_in_bytes < 8 || (UseSVE == 0 && !is_feat_fp16_supported())) {
+          return false;
+        }
+        break;
       case Op_MulReductionVD:
       case Op_MulReductionVF:
       case Op_MulReductionVI:
@@ -367,6 +377,8 @@ source %{
       case Op_AndReductionV:
       case Op_OrReductionV:
       case Op_XorReductionV:
+      case Op_MinReductionVHF:
+      case Op_MaxReductionVHF:
       // Mask is needed for partial Op_VectorMaskFirstTrue, because when the
       // input predicate is all-false, the result should be the vector length
       // instead of the vector register size.
@@ -3933,6 +3945,26 @@ instruct reduce_maxL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
+// reduction maxHF
+
+instruct reduce_maxHF(vRegF dst, vRegF fsrc, vReg vsrc) %{
+  match(Set dst (MaxReductionVHF fsrc vsrc));
+  effect(TEMP_DEF dst);
+  format %{ "reduce_maxHF $dst, $fsrc, $vsrc" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ fmaxv($dst$$FloatRegister, get_arrangement(in(2)), $vsrc$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+      __ sve_fmaxv($dst$$FloatRegister, __ H, ptrue, $vsrc$$FloatRegister);
+    }
+    __ fmaxh($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // reduction maxF
 
 instruct reduce_maxF(vRegF dst, vRegF fsrc, vReg vsrc) %{
@@ -4010,6 +4042,18 @@ instruct reduce_maxL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
     __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
                            $isrc$$Register, $vsrc$$FloatRegister,
                            $pg$$PRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_maxHF_masked(vRegF dst, vRegF fsrc, vReg vsrc, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (MaxReductionVHF (Binary fsrc vsrc) pg));
+  effect(TEMP_DEF dst);
+  format %{ "reduce_maxHF_masked $dst, $fsrc, $pg, $vsrc" %}
+  ins_encode %{
+    __ sve_fmaxv($dst$$FloatRegister, __ H, $pg$$PRegister, $vsrc$$FloatRegister);
+    __ fmaxh($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -4113,6 +4157,26 @@ instruct reduce_minL_sve(iRegLNoSp dst, iRegL isrc, vReg vsrc,
   ins_pipe(pipe_slow);
 %}
 
+// reduction minHF
+
+instruct reduce_minHF(vRegF dst, vRegF fsrc, vReg vsrc) %{
+  match(Set dst (MinReductionVHF fsrc vsrc));
+  effect(TEMP_DEF dst);
+  format %{ "reduce_minHF $dst, $fsrc, $vsrc" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ fminv($dst$$FloatRegister, get_arrangement(in(2)), $vsrc$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      assert(length_in_bytes == MaxVectorSize, "invalid vector length");
+      __ sve_fminv($dst$$FloatRegister, __ H, ptrue, $vsrc$$FloatRegister);
+    }
+    __ fminh($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // reduction minF
 
 instruct reduce_minF(vRegF dst, vRegF fsrc, vReg vsrc) %{
@@ -4190,6 +4254,18 @@ instruct reduce_minL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc, pRegGov pg,
     __ sve_reduce_integral(this->ideal_Opcode(), $dst$$Register, bt,
                            $isrc$$Register, $vsrc$$FloatRegister,
                            $pg$$PRegister, $tmp$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_minHF_masked(vRegF dst, vRegF fsrc, vReg vsrc, pRegGov pg) %{
+  predicate(UseSVE > 0);
+  match(Set dst (MinReductionVHF (Binary fsrc vsrc) pg));
+  effect(TEMP_DEF dst);
+  format %{ "reduce_minHF_masked $dst, $fsrc, $pg, $vsrc" %}
+  ins_encode %{
+    __ sve_fminv($dst$$FloatRegister, __ H, $pg$$PRegister, $vsrc$$FloatRegister);
+    __ fminh($dst$$FloatRegister, $dst$$FloatRegister, $fsrc$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}

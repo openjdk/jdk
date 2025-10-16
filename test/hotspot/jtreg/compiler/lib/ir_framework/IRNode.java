@@ -1584,6 +1584,16 @@ public class IRNode {
         superWordNodes(MAX_REDUCTION_V, "MaxReductionV");
     }
 
+    public static final String MIN_REDUCTION_VHF = PREFIX + "MIN_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MIN_REDUCTION_VHF, "MinReductionVHF");
+    }
+
+    public static final String MAX_REDUCTION_VHF = PREFIX + "MAX_REDUCTION_VHF" + POSTFIX;
+    static {
+        superWordNodes(MAX_REDUCTION_VHF, "MaxReductionVHF");
+    }
+
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
         vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
