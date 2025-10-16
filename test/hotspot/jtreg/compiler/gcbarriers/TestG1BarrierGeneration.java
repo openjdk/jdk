@@ -879,6 +879,12 @@ public class TestG1BarrierGeneration {
             Object oldVal2 = testCompareAndExchange(o, oldVal, newVal);
             Asserts.assertEquals(oldVal, oldVal2);
             Asserts.assertEquals(o.f, newVal);
+            // test failing compareAndExchange
+            Object newExpected = new Object();
+            Object newSetValue = new Object();
+            Object old = testCompareAndExchange(o, newExpected, newSetValue);
+            Asserts.assertEquals(newVal, old);
+            Asserts.assertEquals(o.f, newVal);
         }
         {
             Outer o = new Outer();
@@ -888,6 +894,13 @@ public class TestG1BarrierGeneration {
             boolean b = testCompareAndSwap(o, oldVal, newVal);
             Asserts.assertTrue(b);
             Asserts.assertEquals(o.f, newVal);
+            // test failing compareAndSwap
+            Object newExpected = new Object();
+            Object newSetValue = new Object();
+            boolean failed = testCompareAndSwap(o, newExpected, newSetValue);
+            Asserts.assertFalse(failed);
+            Asserts.assertEquals(o.f, newVal);
+
         }
         {
             Outer o = new Outer();
