@@ -27,6 +27,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import compiler.lib.ir_framework.*;
@@ -335,7 +337,18 @@ public class TestScenariosCrossProduct {
             Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:-UseNewCode, -XX:-UseNewCode2]"));
             Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:+UseNewCode, -XX:-UseNewCode2]"));
             Asserts.assertTrue(stdErr.contains("Scenario flags: [-XX:-UseNewCode, -XX:+UseNewCode2]"));
+            Asserts.assertEQ(4, scenarioCount(stdErr));
         }
+    }
+
+    public static int scenarioCount(String stdErr) {
+        Pattern pattern = Pattern.compile("Scenario flags");
+        Matcher matcher = pattern.matcher(stdErr);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+        }
+        return count;
     }
 
     @Test
