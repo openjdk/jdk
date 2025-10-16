@@ -26,6 +26,7 @@
 #define SHARE_OOPS_INSTANCEOOP_HPP
 
 #include "oops/oop.hpp"
+
 #include <type_traits>
 
 // An instanceOop is an instance of a Java Class

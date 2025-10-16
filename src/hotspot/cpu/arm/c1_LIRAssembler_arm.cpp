@@ -245,7 +245,7 @@ int LIR_Assembler::emit_unwind_handler() {
   MonitorExitStub* stub = nullptr;
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::R0_opr);
-    stub = new MonitorExitStub(FrameMap::R0_opr, true, 0);
+    stub = new MonitorExitStub(FrameMap::R0_opr, 0);
     __ unlock_object(R2, R1, R0, *stub->entry());
     __ bind(*stub->continuation());
   }
@@ -2229,16 +2229,9 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
     // We don't know the array types are compatible
     if (basic_type != T_OBJECT) {
       // Simple test for basic type arrays
-      if (UseCompressedClassPointers) {
-        // We don't need decode because we just need to compare
-        __ ldr_u32(tmp, Address(src, oopDesc::klass_offset_in_bytes()));
-        __ ldr_u32(tmp2, Address(dst, oopDesc::klass_offset_in_bytes()));
-        __ cmp_32(tmp, tmp2);
-      } else {
-        __ load_klass(tmp, src);
-        __ load_klass(tmp2, dst);
-        __ cmp(tmp, tmp2);
-      }
+      __ load_klass(tmp, src);
+      __ load_klass(tmp2, dst);
+      __ cmp(tmp, tmp2);
       __ b(*stub->entry(), ne);
     } else {
       // For object arrays, if src is a sub class of dst then we can
@@ -2433,14 +2426,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register hdr = op->hdr_opr()->as_pointer_register();
   Register lock = op->lock_opr()->as_pointer_register();
 
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj);
-    }
-    __ b(*op->stub()->entry());
-  } else if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+  if (op->code() == lir_lock) {
     int null_check_offset = __ lock_object(hdr, obj, lock, *op->stub()->entry());
     if (op->info() != nullptr) {
       add_debug_info_for_null_check(null_check_offset, op->info());
@@ -2461,12 +2447,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
-
-  if (UseCompressedClassPointers) { // On 32 bit arm??
-    __ ldr_u32(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-  } else {
-    __ ldr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
-  }
+  __ ldr(result, Address(obj, oopDesc::klass_offset_in_bytes()));
 }
 
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
@@ -2569,11 +2550,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
-
-void LIR_Assembler::emit_delay(LIR_OpDelay*) {
-  Unimplemented();
-}
-
 
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   Address mon_addr = frame_map()->address_for_monitor_lock(monitor_no);

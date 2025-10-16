@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@
   template(G1PauseCleanup)                        \
   template(G1ShrinkHeap)                          \
   template(G1TryInitiateConcMark)                 \
+  template(G1RendezvousGCThreads)                 \
   template(ZMarkEndOld)                           \
   template(ZMarkEndYoung)                         \
   template(ZMarkFlushOperation)                   \

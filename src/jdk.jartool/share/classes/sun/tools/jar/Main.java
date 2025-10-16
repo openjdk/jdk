@@ -420,7 +420,8 @@ public class Main {
                 if (fname != null) {
                     file = new File(fname);
                 } else {
-                    file = createTemporaryFile("tmpJar", ".jar");
+                    tmpFile = createTemporaryFile("tmpJar", ".jar");
+                    file = tmpFile;
                     try (InputStream in = new FileInputStream(FileDescriptor.in);
                          OutputStream os = Files.newOutputStream(file.toPath())) {
                         in.transferTo(os);

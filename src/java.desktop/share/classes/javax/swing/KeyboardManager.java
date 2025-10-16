@@ -28,7 +28,6 @@ package javax.swing;
 import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.*;
 import sun.awt.EmbeddedFrame;
 
 /**
@@ -130,13 +129,12 @@ class KeyboardManager {
      }
 
      /**
-       * Find the top focusable Window, Applet, or InternalFrame
+       * Find the top focusable Window, or InternalFrame
        */
-     @SuppressWarnings("removal")
      private static Container getTopAncestor(JComponent c) {
         for(Container p = c.getParent(); p != null; p = p.getParent()) {
             if (p instanceof Window && ((Window)p).isFocusableWindow() ||
-                p instanceof Applet || p instanceof JInternalFrame) {
+                p instanceof JInternalFrame) {
 
                 return p;
             }

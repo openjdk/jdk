@@ -49,8 +49,10 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/vmError.hpp"
 
@@ -524,40 +526,32 @@ static inline void atomic_copy64(const volatile void *src, volatile void *dst) {
 }
 
 extern "C" {
-  // needs local assembler label '1:' to avoid trouble when using linktime optimization
   int SpinPause() {
     // We don't use StubRoutines::aarch64::spin_wait stub in order to
     // avoid a costly call to os::current_thread_enable_wx() on MacOS.
     // We should return 1 if SpinPause is implemented, and since there
-    // will be a sequence of 11 instructions for NONE and YIELD and 12
-    // instructions for NOP and ISB, SpinPause will always return 1.
-    uint64_t br_dst;
-    const int instructions_per_case = 2;
-    int64_t off = VM_Version::spin_wait_desc().inst() * instructions_per_case * Assembler::instruction_size;
-
-    assert(VM_Version::spin_wait_desc().inst() >= SpinWait::NONE &&
-           VM_Version::spin_wait_desc().inst() <= SpinWait::YIELD, "must be");
-    assert(-1 == SpinWait::NONE,  "must be");
-    assert( 0 == SpinWait::NOP,   "must be");
-    assert( 1 == SpinWait::ISB,   "must be");
-    assert( 2 == SpinWait::YIELD, "must be");
-
-    asm volatile(
-        "  adr  %[d], 20          \n" // 20 == PC here + 5 instructions => address
-                                      // to entry for case SpinWait::NOP
-        "  add  %[d], %[d], %[o]  \n"
-        "  br   %[d]              \n"
-        "  b    1f                \n" // case SpinWait::NONE  (-1)
-        "  nop                    \n" // padding
-        "  nop                    \n" // case SpinWait::NOP   ( 0)
-        "  b    1f                \n"
-        "  isb                    \n" // case SpinWait::ISB   ( 1)
-        "  b    1f                \n"
-        "  yield                  \n" // case SpinWait::YIELD ( 2)
-        "1:        \n"
-        : [d]"=&r"(br_dst)
-        : [o]"r"(off)
-        : "memory");
+    // will be always a sequence of instructions, SpinPause will always return 1.
+    switch (VM_Version::spin_wait_desc().inst()) {
+    case SpinWait::NONE:
+      break;
+    case SpinWait::NOP:
+      asm volatile("nop" : : : "memory");
+      break;
+    case SpinWait::ISB:
+      asm volatile("isb" : : : "memory");
+      break;
+    case SpinWait::YIELD:
+      asm volatile("yield" : : : "memory");
+      break;
+    case SpinWait::SB:
+      assert(VM_Version::supports_sb(), "current CPU does not support SB instruction");
+      asm volatile(".inst 0xd50330ff" : : : "memory");
+      break;
+#ifdef ASSERT
+    default:
+      ShouldNotReachHere();
+#endif
+    }
     return 1;
   }
 

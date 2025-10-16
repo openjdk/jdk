@@ -25,10 +25,10 @@
 #ifndef OS_LINUX_OSCONTAINER_LINUX_HPP
 #define OS_LINUX_OSCONTAINER_LINUX_HPP
 
+#include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "memory/allStatic.hpp"
 
 #define OSCONTAINER_ERROR (-2)
 
@@ -50,6 +50,7 @@ class OSContainer: AllStatic {
   static inline bool is_containerized();
   static const char * container_type();
 
+  static bool available_memory_in_container(julong& value);
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();
   static jlong memory_and_swap_usage_in_bytes();

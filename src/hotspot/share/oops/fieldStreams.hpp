@@ -25,8 +25,8 @@
 #ifndef SHARE_OOPS_FIELDSTREAMS_HPP
 #define SHARE_OOPS_FIELDSTREAMS_HPP
 
-#include "oops/instanceKlass.hpp"
 #include "oops/fieldInfo.hpp"
+#include "oops/instanceKlass.hpp"
 #include "runtime/fieldDescriptor.hpp"
 
 // The is the base class for iteration over the fields array
@@ -212,7 +212,7 @@ class HierarchicalFieldStream : public StackObj  {
     InstanceKlass* result = _next_klass;
     do  {
       if (!result->is_interface() && result->super() != nullptr) {
-        result = result->java_super();
+        result = result->super();
       } else if (_interface_index > 0) {
         result = _interfaces->at(--_interface_index);
       } else {

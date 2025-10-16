@@ -3271,11 +3271,18 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_arraycopy_stubs() {
-    // Note: the disjoint stubs must be generated first, some of
-    // the conjoint stubs use them.
+    // generate the common exit first so later stubs can rely on it if
+    // they want an UnsafeMemoryAccess exit non-local to the stub
+    StubRoutines::_unsafecopy_common_exit = generate_unsafecopy_common_error_exit();
+    // register the stub as the default exit with class UnsafeMemoryAccess
+    UnsafeMemoryAccess::set_common_exit_stub_pc(StubRoutines::_unsafecopy_common_exit);
 
-    address ucm_common_error_exit       =  generate_unsafecopy_common_error_exit();
-    UnsafeMemoryAccess::set_common_exit_stub_pc(ucm_common_error_exit);
+    // Note: the disjoint stubs must be generated first, some of the
+    //       conjoint stubs use them.
+
+    // Note: chaining of stubs does not rely on branching to an
+    //       auxiliary post-push entry because none of the stubs
+    //       push/pop a frame.
 
     // non-aligned disjoint versions
     StubRoutines::_jbyte_disjoint_arraycopy       = generate_disjoint_byte_copy(StubId::stubgen_jbyte_disjoint_arraycopy_id);
@@ -4982,13 +4989,11 @@ void generate_lookup_secondary_supers_table_stub() {
 
     // CRC32 Intrinsics.
     if (UseCRC32Intrinsics) {
-      StubRoutines::_crc_table_adr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32_POLY);
       StubRoutines::_updateBytesCRC32 = generate_CRC32_updateBytes(StubId::stubgen_updateBytesCRC32_id);
     }
 
     // CRC32C Intrinsics.
     if (UseCRC32CIntrinsics) {
-      StubRoutines::_crc32c_table_addr = StubRoutines::ppc::generate_crc_constants(REVERSE_CRC32C_POLY);
       StubRoutines::_updateBytesCRC32C = generate_CRC32_updateBytes(StubId::stubgen_updateBytesCRC32C_id);
     }
 

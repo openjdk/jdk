@@ -50,6 +50,26 @@ GetEntitlementsFile = \
       $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
     )
 
+ifeq ($(call isCompiler, gcc), true)
+  SetSharedLibraryName = \
+      -Wl,-soname=$1
+else ifeq ($(call isCompiler, clang), true)
+  ifeq ($(call isTargetOs, macosx), true)
+    SetSharedLibraryName = \
+        -Wl,-install_name,@rpath/$1
+  else ifeq ($(call isTargetOs, aix), true)
+    SetSharedLibraryName =
+  else
+    # Default works for linux, might work on other platforms as well.
+    SetSharedLibraryName = \
+        -Wl,-soname=$1
+  endif
+else ifeq ($(call isCompiler, microsoft), true)
+  SetSharedLibraryName =
+else
+  $(error Unknown toolchain)
+endif
+
 ################################################################################
 define SetupLinking
   # Unless specifically set, stripping should only happen if symbols are also
@@ -131,7 +151,7 @@ define CreateDynamicLibraryOrExecutable
   # A shared dynamic library or an executable binary has been specified
   ifeq ($$($1_TYPE), LIBRARY)
     # Generating a dynamic library.
-    $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
+    $1_EXTRA_LDFLAGS += $$(call SetSharedLibraryName,$$($1_BASENAME))
   endif
 
   ifeq ($(MACOSX_CODESIGN_MODE), hardened)

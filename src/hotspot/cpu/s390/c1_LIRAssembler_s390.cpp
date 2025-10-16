@@ -228,12 +228,8 @@ int LIR_Assembler::emit_unwind_handler() {
     // StubId::c1_monitorexit_id expects lock address in Z_R1_scratch.
     LIR_Opr lock = FrameMap::as_opr(Z_R1_scratch);
     monitor_address(0, lock);
-    stub = new MonitorExitStub(lock, true, 0);
-    if (LockingMode == LM_MONITOR) {
-      __ branch_optimized(Assembler::bcondAlways, *stub->entry());
-    } else {
-      __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
-    }
+    stub = new MonitorExitStub(lock, 0);
+    __ unlock_object(Rtmp1, Rtmp2, lock->as_register(), *stub->entry());
     __ bind(*stub->continuation());
   }
 
@@ -2714,14 +2710,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // May not be an oop.
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (LockingMode == LM_MONITOR) {
-    if (op->info() != nullptr) {
-      add_debug_info_for_null_check_here(op->info());
-      __ null_check(obj);
-    }
-    __ branch_optimized(Assembler::bcondAlways, *op->stub()->entry());
-  } else if (op->code() == lir_lock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
+  if (op->code() == lir_lock) {
     // Add debug info for NullPointerException only if one is possible.
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
@@ -2729,7 +2718,6 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
     __ lock_object(hdr, obj, lock, *op->stub()->entry());
     // done
   } else if (op->code() == lir_unlock) {
-    assert(BasicLock::displaced_header_offset_in_bytes() == 0, "lock_reg must point to the displaced header");
     __ unlock_object(hdr, obj, lock, *op->stub()->entry());
   } else {
     ShouldNotReachHere();
@@ -2824,10 +2812,6 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
 void LIR_Assembler::align_backward_branch_target() {
   __ align(OptoLoopAlignment);
-}
-
-void LIR_Assembler::emit_delay(LIR_OpDelay* op) {
-  ShouldNotCallThis(); // There are no delay slots on ZARCH_64.
 }
 
 void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp) {

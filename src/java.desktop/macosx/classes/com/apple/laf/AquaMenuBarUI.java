@@ -40,13 +40,14 @@ import sun.lwawt.macosx.LWCToolkit;
 
 // MenuBar implementation for Mac L&F
 @SuppressWarnings("restricted")
-public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
+public final class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvider {
 
     static {
         System.loadLibrary("osxui");
     }
 
     // Utilities
+    @Override
     public void uninstallUI(final JComponent c) {
         if (fScreenMenuBar != null) {
             final JFrame frame = (JFrame)(c.getTopLevelAncestor());
@@ -65,12 +66,14 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
 
     // [3320390] -- If the screen menu bar is in use, don't register keyboard actions that
     // show the menus when F10 is pressed.
+    @Override
     protected void installKeyboardActions() {
         if (!useScreenMenuBar) {
             super.installKeyboardActions();
         }
     }
 
+    @Override
     protected void uninstallKeyboardActions() {
         if (!useScreenMenuBar) {
             super.uninstallKeyboardActions();
@@ -78,10 +81,12 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     }
 
     // Paint Methods
+    @Override
     public void paint(final Graphics g, final JComponent c) {
         AquaMenuPainter.instance().paintMenuBarBackground(g, c.getWidth(), c.getHeight(), c);
     }
 
+    @Override
     public Dimension getPreferredSize(final JComponent c) {
         if (isScreenMenuBar((JMenuBar)c)) {
             if (setScreenMenuBar((JFrame)(c.getTopLevelAncestor()))) {
@@ -111,6 +116,7 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
         return true;
     }
 
+    @Override
     public ScreenMenuBar getScreenMenuBar() {
         // Lazy init of member variables means we should use a synchronized block.
         synchronized(this) {

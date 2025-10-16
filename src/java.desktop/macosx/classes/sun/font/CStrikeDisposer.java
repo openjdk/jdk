@@ -48,7 +48,7 @@ package sun.font;
  */
 class CStrikeDisposer extends FontStrikeDisposer {
 
-    long pNativeScalerContext;
+    private final long pNativeScalerContext;
 
     public CStrikeDisposer(Font2D font2D, FontStrikeDesc desc,
                                long pContext, int[] images)
@@ -73,18 +73,18 @@ class CStrikeDisposer extends FontStrikeDisposer {
 
     public CStrikeDisposer(Font2D font2D, FontStrikeDesc desc) {
         super(font2D, desc);
+        pNativeScalerContext = 0L;
     }
 
+    @Override
     public synchronized void dispose() {
         if (!disposed) {
             if (pNativeScalerContext != 0L) {
-                freeNativeScalerContext(pNativeScalerContext);
+                CStrike.disposeNativeStrikePtr(pNativeScalerContext);
             }
             super.dispose();
         }
     }
-
-    private native void freeNativeScalerContext(long pContext);
 
     protected static native void removeGlyphInfoFromCache(long glyphInfo);
 }

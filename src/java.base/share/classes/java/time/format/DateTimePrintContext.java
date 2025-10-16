@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,19 @@ final class DateTimePrintContext {
         this.formatter = formatter;
     }
 
+    /**
+     * Adjusts the given {@link TemporalAccessor} using chronology and time-zone from a formatter if present.
+     * <p>
+     * This method serves as an optimization front-end that checks for non-null overrides in the formatter.
+     * If neither chronology nor time-zone is specified in the formatter, returns the original temporal unchanged.
+     * Otherwise, delegates to the core adjustment method {@link #adjustWithOverride(TemporalAccessor, Chronology, ZoneId)}.
+     *
+     * @implNote Optimizes for the common case where formatters don't specify chronology/time-zone
+     *           by avoiding unnecessary processing. Most formatters have null for these properties.
+     * @param temporal  the temporal object to adjust, not null
+     * @param formatter the formatter providing potential chronology and time-zone overrides
+     * @return the adjusted temporal, or the original if no overrides are present in the formatter
+     */
     private static TemporalAccessor adjust(final TemporalAccessor temporal, DateTimeFormatter formatter) {
         // normal case first (early return is an optimization)
         Chronology overrideChrono = formatter.getChronology();
@@ -128,6 +141,32 @@ final class DateTimePrintContext {
             return temporal;
         }
 
+        // Placing the non-null cases in a separate method allows more flexible code optimizations
+        return adjustWithOverride(temporal, overrideChrono, overrideZone);
+    }
+
+    /**
+     * Adjusts the given {@link TemporalAccessor} with optional overriding chronology and time-zone.
+     * <p>
+     * This method minimizes changes by returning the original temporal if the override parameters
+     * are either {@code null} or equivalent to those already present in the temporal. When overrides
+     * are applied:
+     * <ul>
+     *   <li>If a time-zone override is provided and the temporal supports {@link ChronoField#INSTANT_SECONDS},
+     *       the result is a zoned date-time using the override time-zone and chronology (defaulting to ISO if not overridden).</li>
+     *   <li>Other cases (including partial date-times or mixed chronology/time-zone changes) are delegated
+     *       to a secondary adjustment method.</li>
+     * </ul>
+     *
+     * @param temporal       the temporal object to adjust, not null
+     * @param overrideChrono the chronology to override (null retains the original chronology)
+     * @param overrideZone   the time-zone to override (null retains the original time-zone)
+     * @return the adjusted temporal, which may be the original object if no effective changes were made,
+     *         or a new object with the applied overrides
+     * @implNote Optimizes for common cases where overrides are identical to existing values
+     *           or where instant-based temporals can be directly converted with a time-zone.
+     */
+    private static TemporalAccessor adjustWithOverride(TemporalAccessor temporal, Chronology overrideChrono, ZoneId overrideZone) {
         // ensure minimal change (early return is an optimization)
         Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
         ZoneId temporalZone = temporal.query(TemporalQueries.zoneId());
@@ -149,6 +188,53 @@ final class DateTimePrintContext {
                 Chronology chrono = Objects.requireNonNullElse(effectiveChrono, IsoChronology.INSTANCE);
                 return chrono.zonedDateTime(Instant.from(temporal), overrideZone);
             }
+        }
+
+        // Split uncommon code branches into a separate method
+        return adjustSlow(temporal, overrideZone, temporalZone, overrideChrono, effectiveChrono, temporalChrono);
+    }
+
+    /**
+     * Internal helper method to adjust temporal fields using override chronology and time-zone in complex cases.
+     * <p>
+     * Handles non-instant temporal objects by creating a delegate {@link TemporalAccessor} that combines:
+     * <ul>
+     *   <li>The original temporal's time-related fields</li>
+     *   <li>Date fields converted to the effective chronology (if available)</li>
+     *   <li>Override zone/chronology information for temporal queries</li>
+     * </ul>
+     *
+     * Performs critical validation before processing:
+     * <ul>
+     *   <li>Rejects offset changes for non-instant temporal objects with existing offsets</li>
+     *   <li>Verifies date field integrity when applying chronology overrides to partial dates</li>
+     * </ul>
+     *
+     * @param temporal        the original temporal object to adjust, not null
+     * @param overrideZone    override time-zone (nullable)
+     * @param temporalZone    original time-zone from temporal (nullable)
+     * @param overrideChrono  override chronology (nullable)
+     * @param effectiveChrono precomputed effective chronology (override if present, otherwise temporal's chronology)
+     * @param temporalChrono  original chronology from temporal (nullable)
+     * @return adjusted temporal accessor combining original fields with overrides
+     * @throws DateTimeException if:
+     *         <ul>
+     *           <li>Applying a {@link ZoneOffset} override to a temporal with conflicting existing offset that doesn't represent an instant</li>
+     *           <li>Applying chronology override to temporal with partial date fields</li>
+     *         </ul>
+     * @implNote Creates an anonymous temporal accessor that:
+     *         <ul>
+     *           <li>Delegates time-based fields to original temporal</li>
+     *           <li>Uses converted date fields when chronology override is applied</li>
+     *           <li>Responds to chronology/zone queries with effective values</li>
+     *           <li>Preserves precision queries from original temporal</li>
+     *         </ul>
+     */
+    private static TemporalAccessor adjustSlow(
+            TemporalAccessor temporal,
+            ZoneId overrideZone, ZoneId temporalZone,
+            Chronology overrideChrono, Chronology effectiveChrono, Chronology temporalChrono) {
+        if (overrideZone != null) {
             // block changing zone on OffsetTime, and similar problem cases
             if (overrideZone.normalized() instanceof ZoneOffset && temporal.isSupported(OFFSET_SECONDS) &&
                     temporal.get(OFFSET_SECONDS) != overrideZone.getRules().getOffset(Instant.EPOCH).getTotalSeconds()) {

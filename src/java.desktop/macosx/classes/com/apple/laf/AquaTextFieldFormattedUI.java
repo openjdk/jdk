@@ -35,7 +35,7 @@ import javax.swing.text.JTextComponent;
  * This class exists only as a hack to work around a Sun bug which parks the
  * insertion caret at the beginning of a text field when it gets clicked on.
  */
-public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseListener {
+public final class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseListener {
     public static ComponentUI createUI(final JComponent c) {
         return new AquaTextFieldFormattedUI();
     }
@@ -45,16 +45,19 @@ public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseLi
         return "FormattedTextField";
     }
 
+    @Override
     protected void installListeners() {
         super.installListeners();
         getComponent().addMouseListener(this);
     }
 
+    @Override
     protected void uninstallListeners() {
         getComponent().removeMouseListener(this);
         super.uninstallListeners();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void mouseClicked(final MouseEvent e) {
         if (e.getClickCount() != 1) return;
@@ -66,8 +69,12 @@ public class AquaTextFieldFormattedUI extends AquaTextFieldUI implements MouseLi
         c.setCaretPosition(viewToModel(c, e.getPoint()));
     }
 
+    @Override
     public void mouseEntered(final MouseEvent e) { }
+    @Override
     public void mouseExited(final MouseEvent e) { }
+    @Override
     public void mousePressed(final MouseEvent e) { }
+    @Override
     public void mouseReleased(final MouseEvent e) { }
 }
