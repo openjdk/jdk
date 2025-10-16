@@ -1,5 +1,6 @@
 #include "asm/macroAssembler.hpp"
 #include "compiler/disassembler.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/globals_extension.hpp"
 #include "unittest.hpp"
 
@@ -7,6 +8,7 @@
 #include <chrono>
 
 static void dump_code(address start, address end) {
+  ResourceMark resMark;
   stringStream sstream;
   Disassembler::decode(start, end, &sstream);
   printf("%s\n", sstream.as_string());
@@ -27,11 +29,11 @@ public:
     CodeBuffer code(blob);
     MacroAssembler _masm(&code);
 
-    const size_t call_count = 1000;
-    const size_t word_count = clear_words_count;
+    const uint call_count = 1000;
+    const uint word_count = clear_words_count;
     uint64_t* buffer = new uint64_t[word_count];
     Register base = r10;
-    uint64_t cnt = word_count;
+    uint cnt = word_count;
     // Set up base register to point to buffer
     _masm.mov(base, (uintptr_t)buffer);
 
@@ -39,13 +41,15 @@ public:
     dump_code(code.insts()->start(), code.insts()->end());
 
     auto start = std::chrono::steady_clock::now();
-    for (size_t i = 0; i < call_count; ++i) {
+    for (uint i = 0; i < call_count; ++i) {
         _masm.zero_words(base, cnt);
     }
     auto end = std::chrono::steady_clock::now();
-
     auto wall_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    printf("MacroAssemblerZeroWordsTest zero_words wall time (ns): %zu\n", wall_time_ns / call_count);
+    printf("Clear %u words with lower limit %lu, zero_words wall time (ns): %lu\n",
+           word_count,
+           static_cast<unsigned long>(BlockZeroingLowLimit),
+           static_cast<unsigned long>(wall_time_ns / call_count));
 
     delete[] buffer;
     BufferBlob::free(blob);
