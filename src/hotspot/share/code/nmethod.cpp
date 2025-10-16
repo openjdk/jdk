@@ -66,6 +66,7 @@
 #include "runtime/flags/flagSetting.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/hotCodeGrouper.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -1253,6 +1254,7 @@ void nmethod::post_init() {
   finalize_relocations();
 
   Universe::heap()->register_nmethod(this);
+  HotCodeGrouper::register_nmethod(this);
   DEBUG_ONLY(Universe::heap()->verify_nmethod(this));
 
   CodeCache::commit(this);
@@ -2454,6 +2456,7 @@ void nmethod::purge(bool unregister_nmethod) {
   if (unregister_nmethod) {
     Universe::heap()->unregister_nmethod(this);
   }
+  HotCodeGrouper::unregister_nmethod(this);
   CodeCache::unregister_old_nmethod(this);
 
   JVMCI_ONLY( _metadata_size = 0; )

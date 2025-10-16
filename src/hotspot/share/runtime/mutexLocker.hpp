@@ -156,6 +156,8 @@ extern Mutex*   AOTCodeCStrings_lock;            // used to guard access to the 
 
 extern Monitor* ContinuationRelativize_lock;
 
+extern Monitor* HotCodeGrouper_lock;             // used to awake the hot code grouper if reprofiling is needed
+
 #if INCLUDE_JVMCI
 extern Monitor* JVMCI_lock;                      // protects global JVMCI critical sections
 extern Monitor* JVMCIRuntime_lock;               // protects critical sections for a specific JVMCIRuntime object
