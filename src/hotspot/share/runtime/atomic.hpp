@@ -512,17 +512,18 @@ class AtomicImpl::Atomic<T, AtomicImpl::Category::Translated>
   static Decayed decay(T x) { return Translator::decay(x); }
   static T recover(Decayed x) { return Translator::recover(x); }
 
+  // Support for default construction via the default construction of _value.
+  struct UseDecayedCtor {};
+  explicit Atomic(UseDecayedCtor) : _value() {}
+  using DefaultCtorSelect =
+    std::conditional_t<std::is_default_constructible_v<T>, T, UseDecayedCtor>;
+
 public:
   using ValueType = T;
 
   // If T is default constructible, construct from a default constructed T.
-  template<typename Dep = T, ENABLE_IF(std::is_default_constructible_v<Dep>)>
-  Atomic() : Atomic(T()) {}
-
-  // If T is not default constructible, default construct the underlying
-  // Atomic<Decayed>.
-  template<typename Dep = T, ENABLE_IF(!std::is_default_constructible_v<Dep>)>
-  Atomic() : _value() {}
+  // Otherwise, default construct the underlying Atomic<Decayed>.
+  Atomic() : Atomic(DefaultCtorSelect()) {}
 
   explicit Atomic(T value) : _value(decay(value)) {}
 
