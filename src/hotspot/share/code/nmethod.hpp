@@ -965,6 +965,12 @@ public:
   inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
   inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
 
+#if INCLUDE_CDS
+  static void add_delayed_compiled_method_load_event(nmethod* nm);
+public:
+  static void post_delayed_compiled_method_load_events();
+#endif
+
  public:
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }

@@ -748,7 +748,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   ServiceThread::initialize();
 
   if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::post_delayed_events();
+    nmethod::post_delayed_compiled_method_load_events();
   }
 
   // Start the monitor deflation thread:
