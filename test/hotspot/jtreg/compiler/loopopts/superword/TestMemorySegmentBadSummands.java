@@ -1,0 +1,105 @@
+/*
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package compiler.loopopts.superword;
+
+import java.lang.foreign.*;
+
+import compiler.lib.ir_framework.*;
+
+/*
+ * @test
+ * @bug 8369902
+ * @summary Bug in MemPointerParser::canonicalize_raw_summands let to wrong results
+ *          or assert.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestMemorySegmentBadSummands
+ */
+
+
+public class TestMemorySegmentBadSummands {
+
+    static long init  = 1000;
+    static long limit = 9000;
+
+    static long invar0 = 0;
+    static long invar1 = 0;
+    static long invar2 = 0;
+    static long invar3 = 0;
+    static long invar4 = 0;
+    static long invarX = 0;
+
+    static MemorySegment a1 = Arena.ofAuto().allocate(10_000);
+    static MemorySegment b1 = Arena.ofAuto().allocate(10_000);
+
+//    static void test(MemorySegment a, MemorySegment b) {
+//        long invar = 0;
+//        invar += invarX;
+//        invar += invar0;
+//        invar += invar1;
+//        invar += invar2;
+//        invar += invar3;
+//        invar += invar4;
+//        invar -= invarX;
+//
+//        for (long i = init; i < limit; i++) {
+//            byte v = a.get(ValueLayout.JAVA_BYTE, i + invar);
+//            b.set(ValueLayout.JAVA_BYTE, i + invar, v);
+//        }
+//    }
+//}
+
+    public static void main(String[] args) {
+        TestFramework f = new TestFramework();
+        f.addFlags("-XX:+IgnoreUnrecognizedVMOptions");
+        f.addScenarios(new Scenario(0, "-XX:-AlignVector", "-XX:-ShortRunningLongLoop"),
+                       new Scenario(1, "-XX:+AlignVector", "-XX:-ShortRunningLongLoop"),
+                       new Scenario(2, "-XX:-AlignVector", "-XX:+ShortRunningLongLoop"),
+                       new Scenario(3, "-XX:+AlignVector", "-XX:+ShortRunningLongLoop"));
+        f.start();
+    }
+
+    @Test
+    //@IR(counts = {IRNode.STORE_VECTOR, "= 0",
+    //              IRNode.REPLICATE_L,  "= 0",
+    //              ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
+    //    phase = CompilePhase.PRINT_IDEAL,
+    //    applyIfPlatform = {"64-bit", "true"},
+    //    applyIf = {"AlignVector", "false"},
+    //    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    public static void test1() {
+        long invar = 0;
+        invar += invarX;
+        invar += invar0;
+        invar += invar1;
+        invar += invar2;
+        invar += invar3;
+        invar += invar4;
+        invar -= invarX;
+        // invar contains a raw summand for invarX, which has a scaleL=0. It needs to be filtered out.
+        for (long i = init; i < limit; i++) {
+            byte v = a1.get(ValueLayout.JAVA_BYTE, i + invar);
+            b1.set(ValueLayout.JAVA_BYTE, i + invar, v);
+        }
+    }
+}
