@@ -118,6 +118,21 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
         return result;
     }
 
+    private Content wrapOutput(NoteTree note, List<? extends Content> bodies) {
+        var attr = getAttributes(note);
+        var header = attr.getOrDefault("header", defaultHeader);
+        var kind = attr.getOrDefault("kind", defaultKind);
+
+        var result = HtmlTree.DIV(HtmlStyles.noteTag)
+                .add(HtmlTree.DT(RawHtml.of(header)));
+        result.addAll(bodies, HtmlTree::DD);
+
+        if (kind != null) {
+            result.addStyle(HtmlStyles.noteTag.cssName() + "-" + kind.trim());
+        }
+        return result;
+    }
+
     private Map<String, String> getAttributes(NoteTree note) {
         return note.getAttributes().stream()
                 .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
