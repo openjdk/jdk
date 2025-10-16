@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8288109
- * @summary Tests for HttpExchange set/getAttribute
+ * @bug 7105350
+ * @summary Test HttpExchange set/getAttribute do not affect HttpContext attributes
  * @library /test/lib
- * @run junit/othervm ExchangeAttributeTest
+ * @run junit/othervm ExchangeAttributePerExchangeTest
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -51,7 +51,7 @@ import java.util.logging.Logger;
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ExchangeAttributeTest {
+public class ExchangeAttributePerExchangeTest {
 
     static final InetAddress LOOPBACK_ADDR = InetAddress.getLoopbackAddress();
     static final boolean ENABLE_LOGGING = true;
@@ -69,7 +69,6 @@ public class ExchangeAttributeTest {
 
     @Test
     public void testExchangeAttributes() throws Exception {
-        System.getProperty("jdk.httpserver.attributes", "context")
         var handler = new AttribHandler();
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
         server.createContext("/", handler).getAttributes().put("attr", "context-val");
@@ -102,9 +101,10 @@ public class ExchangeAttributeTest {
         @java.lang.Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
+                assertNull(exchange.getAttribute("attr"));
                 exchange.setAttribute("attr", "val");
                 assertEquals("val", exchange.getAttribute("attr"))
-                assertEquals("val", exchange.getHttpContext().getAttributes().get("attr"));
+                assertNotEquals("val", exchange.getHttpContext().getAttributes().get("attr"));
                 exchange.setAttribute("attr", null);
                 assertNull(exchange.getAttribute("attr"));
                 exchange.sendResponseHeaders(200, -1);
