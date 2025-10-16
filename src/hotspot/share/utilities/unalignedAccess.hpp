@@ -49,7 +49,6 @@ class UnalignedAccess : AllStatic {
   template<typename T>
   static void store(void* ptr, T value) {
     static_assert(std::is_trivially_copyable<T>::value);
-    static_assert(std::is_trivially_default_constructible<T>::value);
     assert(ptr != nullptr, "nullptr");
     StoreImpl<sizeof(T)>{}(static_cast<T*>(ptr), value);
   }
@@ -57,7 +56,6 @@ class UnalignedAccess : AllStatic {
   template<typename T>
   static T load(const void* ptr) {
     static_assert(std::is_trivially_copyable<T>::value);
-    static_assert(std::is_trivially_default_constructible<T>::value);
     assert(ptr != nullptr, "nullptr");
     return LoadImpl<sizeof(T)>{}(static_cast<const T*>(ptr));
   }
