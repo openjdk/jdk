@@ -649,7 +649,41 @@ dl.notes > dd {
     font-family:var(--block-font-family);
     line-height:var(--block-line-height);
 }
-dl.notes > dd > ul, dl.notes > dd > ol {
+div.note-tag {
+    position: relative;
+}
+div.note-tag > dt {
+    display: inline-block;
+    background-color: var(--member-heading-background-color);
+    font-family: var(--body-font-family);
+    font-size: 0.856em;
+    font-weight: bold;
+    margin: 10px 0 0 0;
+    color: var(--body-text-color);
+    position: absolute;
+    padding: 2px 4px;
+    top: -28px;
+}
+div.note-tag > dd {
+    font-size: var(--block-font-size);
+    font-family: var(--block-font-family);
+    line-height: var(--block-line-height);
+    padding: 10px;
+    margin: 30px 0 20px 20px;
+    background-color: var(--odd-row-color);
+}
+div.note-tag-important > dt {
+    background-color: var(--navbar-background-color);
+    color: var(--navbar-text-color);
+}
+div.note-tag-critical > dt {
+    background-color: #f2150b;
+    color: #ffffff;
+}
+dl.notes > dd > ul,
+dl.notes > dd > ol,
+div.note-tag > dd ul,
+div.note-tag > dd > ol {
     margin-bottom: 1em;
     margin-top: 1em;
 }

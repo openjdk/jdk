@@ -56,7 +56,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * The header to output.
      */
-    private final String header;
+    protected final String header;
 
     private final boolean enabled;
 
@@ -231,7 +231,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         return simpleBlockTagOutput(holder, tags, header);
     }
 
-    private List<? extends BlockTagTree> getBlockTags(Element e) {
+    protected List<? extends BlockTagTree> getBlockTags(Element e) {
         var tags = utils.getBlockTags(e, this::accepts);
         if (tags.isEmpty()) {
             tags = getDefaultBlockTags(e, this::accepts);
@@ -260,14 +260,9 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         var htmlWriter = tagletWriter.htmlWriter;
 
         ContentBuilder body = new ContentBuilder();
-        boolean many = false;
         for (DocTree simpleTag : simpleTags) {
-            if (many) {
-                body.add(", ");
-            }
             List<? extends DocTree> bodyTags = ch.getBody(simpleTag);
             body.add(htmlWriter.commentTagsToContent(element, bodyTags, context.within(simpleTag)));
-            many = true;
         }
         return new ContentBuilder(
                 HtmlTree.DT(RawHtml.of(header)),

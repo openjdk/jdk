@@ -31,13 +31,16 @@ import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.html.Content;
-import jdk.javadoc.internal.html.HtmlTag;
+import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.Text;
+import jdk.javadoc.internal.html.RawHtml;
 
 import javax.lang.model.element.Element;
 import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -45,8 +48,15 @@ import java.util.stream.Collectors;
  */
 public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
 
+    final private String defaultHeader;
+    final private String defaultKind;
+
+    final static String NOTE_HEADER = "Note:";
+
     NoteTaglet(HtmlConfiguration config) {
-        super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE, "Note:", true, EnumSet.allOf(Taglet.Location.class), true);
+        super(config, DocTree.Kind.NOTE.tagName, DocTree.Kind.NOTE, NOTE_HEADER, true, EnumSet.allOf(Taglet.Location.class), true);
+        this.defaultHeader = NOTE_HEADER;
+        this.defaultKind = null;
     }
 
     /**
@@ -60,6 +70,8 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
      */
     NoteTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
         super(config, tagName, DocTree.Kind.NOTE, header, true, getLocations(locations), isEnabled(locations));
+        this.defaultHeader = header;
+        this.defaultKind = tagName;
     }
 
     @Override
@@ -68,21 +80,49 @@ public class NoteTaglet extends SimpleTaglet implements InheritableTaglet {
     }
 
     @Override
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
+        List<? extends DocTree> tags = getBlockTags(holder);
+        if (tags.isEmpty()) {
+            return null;
+        }
+
+        ContentBuilder body = new ContentBuilder();
+        for (DocTree tag : tags) {
+            body.add(getTagOutput(holder, (NoteTree) tag));
+        }
+        return body;
+    }
+
+    @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         this.tagletWriter = tagletWriter;
-        var note = (NoteTree) tag;
+        return HtmlTree.DL(HtmlStyles.notes)
+                .add(getTagOutput(element, (NoteTree) tag));
+    }
+
+    private Content getTagOutput(Element holder, NoteTree note) {
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
 
-        var attr = note.getAttributes().stream()
+        var attr = getAttributes(note);
+        var header = attr.getOrDefault("header", defaultHeader);
+        var kind = attr.getOrDefault("kind", defaultKind);
+
+        var result = HtmlTree.DIV(HtmlStyles.noteTag)
+                .add(HtmlTree.DT(RawHtml.of(header)))
+                .add(HtmlTree.DD(htmlWriter.commentTagsToContent(holder, note.getBody(), context.within(note))));
+        if (kind != null) {
+            result.addStyle(HtmlStyles.noteTag.cssName() + "-" + kind.trim());
+        }
+        return result;
+    }
+
+    private Map<String, String> getAttributes(NoteTree note) {
+        return note.getAttributes().stream()
                 .filter(dt -> dt.getKind() == DocTree.Kind.ATTRIBUTE)
                 .map(t -> (AttributeTree) t)
                 .collect(Collectors.toMap(at -> at.getName().toString(), NoteTaglet::stringValueOf));
-        var header = attr.getOrDefault("header", "Note:");
-
-        return HtmlTree.of(HtmlTag.BLOCKQUOTE)
-                .add(HtmlTree.of(HtmlTag.STRONG).add(Text.of(header)).add(" "))
-                .add(htmlWriter.commentTagsToContent(element, note.getBody(), context.within(note)));
     }
 
     private static String stringValueOf(AttributeTree at) {
