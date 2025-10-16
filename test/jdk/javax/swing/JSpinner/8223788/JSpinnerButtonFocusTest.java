@@ -63,7 +63,7 @@ public class JSpinnerButtonFocusTest {
                 robot.setAutoDelay(50);
 
                 SwingUtilities.invokeAndWait(() -> {
-                    frame = new JFrame(")JSpinnerButtonFocusTest");
+                    frame = new JFrame("JSpinnerButtonFocusTest");
                     spinner1 = new JSpinner();
                     spinner2 = new JSpinner();
 
@@ -93,7 +93,7 @@ public class JSpinnerButtonFocusTest {
                     frame.setFocusTraversalPolicyProvider(true);
 
                     frame.setAlwaysOnTop(true);
-                    frame.pack();
+                    frame.setSize(100, 100);
                     frame.setLocationRelativeTo(null);
                     frame.setVisible(true);
                 });
@@ -104,7 +104,7 @@ public class JSpinnerButtonFocusTest {
                     editor1.getTextField().requestFocusInWindow();
                 });
 
-                if (!latch1.await(15, TimeUnit.MINUTES)) {
+                if (!latch1.await(1, TimeUnit.MINUTES)) {
                     throw new RuntimeException(LF.getClassName() +
                             ": Timeout waiting for editor1 to gain focus.");
                 }
