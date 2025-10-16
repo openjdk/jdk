@@ -196,7 +196,7 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
 static void log_frames(JavaThread* thread, bool dolog = true);
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp);
 static void print_frame_layout(const frame& f, bool callee_complete, outputStream* st = tty);
-static void verify_frame_kind(const frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr = nullptr, const char** code_name_ptr = nullptr, int* bci_ptr = nullptr);
+static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr = nullptr, const char** code_name_ptr = nullptr, int* bci_ptr = nullptr, stackChunkOop chunk = nullptr);
 
 #define assert_pfl(p, ...) \
 do {                                           \
@@ -1723,7 +1723,7 @@ bool FreezeBase::check_valid_fast_path() {
   return true;
 }
 
-static void verify_frame_kind(const frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr, const char** code_name_ptr, int* bci_ptr) {
+static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr, const char** code_name_ptr, int* bci_ptr, stackChunkOop chunk) {
   Method* m;
   const char* code_name;
   int bci;
@@ -1747,7 +1747,13 @@ static void verify_frame_kind(const frame& top, Continuation::preempt_kind preem
       RegisterMap reg_map(current,
                   RegisterMap::UpdateMap::skip,
                   RegisterMap::ProcessFrames::skip,
-                  RegisterMap::WalkContinuation::skip);
+                  RegisterMap::WalkContinuation::include);
+      if (top.is_heap_frame()) {
+        assert(chunk != nullptr, "");
+        reg_map.set_stack_chunk(chunk);
+        top = chunk->relativize(top);
+        top.set_frame_index(0);
+      }
       frame fr = top.sender(&reg_map);
       vframe*  vf  = vframe::new_vframe(&fr, &reg_map, current);
       compiledVFrame* cvf = compiledVFrame::cast(vf);
@@ -1803,7 +1809,7 @@ static void log_preempt_after_freeze(ContinuationWrapper& cont) {
   Method* m = nullptr;
   const char* code_name = nullptr;
   int bci = InvalidFrameStateBci;
-  verify_frame_kind(top_frame, pk, &m, &code_name, &bci);
+  verify_frame_kind(top_frame, pk, &m, &code_name, &bci, cont.tail());
   assert(m != nullptr && code_name != nullptr && bci != InvalidFrameStateBci, "should be set");
 
   ResourceMark rm(current);
