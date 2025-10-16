@@ -48,25 +48,14 @@ public class TestMemorySegmentFilterSummands {
     static long invar4 = 0;
     static long invarX = 0;
 
+    public static final long BIG = 0x200000000L;
+    public static long big = -BIG;
+
     static MemorySegment a1 = Arena.ofAuto().allocate(10_000);
     static MemorySegment b1 = Arena.ofAuto().allocate(10_000);
 
-//    static void test(MemorySegment a, MemorySegment b) {
-//        long invar = 0;
-//        invar += invarX;
-//        invar += invar0;
-//        invar += invar1;
-//        invar += invar2;
-//        invar += invar3;
-//        invar += invar4;
-//        invar -= invarX;
-//
-//        for (long i = init; i < limit; i++) {
-//            byte v = a.get(ValueLayout.JAVA_BYTE, i + invar);
-//            b.set(ValueLayout.JAVA_BYTE, i + invar, v);
-//        }
-//    }
-//}
+    static MemorySegment a2 = MemorySegment.ofArray(new byte[40_000]);
+    static MemorySegment b2 = a2;
 
     public static void main(String[] args) {
         TestFramework f = new TestFramework();
@@ -79,6 +68,7 @@ public class TestMemorySegmentFilterSummands {
     }
 
     @Test
+    // TODO: rules
     //@IR(counts = {IRNode.STORE_VECTOR, "= 0",
     //              IRNode.REPLICATE_L,  "= 0",
     //              ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
@@ -99,6 +89,44 @@ public class TestMemorySegmentFilterSummands {
         for (long i = init; i < limit; i++) {
             byte v = a1.get(ValueLayout.JAVA_BYTE, i + invar);
             b1.set(ValueLayout.JAVA_BYTE, i + invar, v);
+        }
+    }
+
+    @Test
+    // TODO: rules
+    //@IR(counts = {IRNode.STORE_VECTOR, "= 0",
+    //              IRNode.REPLICATE_L,  "= 0",
+    //              ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
+    //    phase = CompilePhase.PRINT_IDEAL,
+    //    applyIfPlatform = {"64-bit", "true"},
+    //    applyIf = {"AlignVector", "false"},
+    //    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    static void test2() {
+        // At runtime, "BIG + big" is zero. But BIG is a long constant that cannot be represented as
+        // an int, and so the scaleL NoOverflowInt is a NaN. We should not filter it out from the summands,
+        // but instead make the MemPointer / VPointer invalid, which prevents vectorization.
+        long adr = 4L * 5000 + BIG + big;
+
+        for (long i = init; i < limit; i++) {
+            // The reference to a2 iterates linearly, while the reference to "b2" stays at the same adr.
+            // But the two alias: in the middle of the "a2" range it crosses over "b2" adr, so the
+            // aliasing runtime check (if we generate one) should fail. But if "BIG" is just filtered
+            // out from the summands, we instead just create a runtime check without it, which leads
+            // to a wrong answer, and the check does not fail, and we get wrong results.
+            a2.set(ValueLayout.JAVA_INT_UNALIGNED, 4L * i, 0);
+            int v = b2.get(ValueLayout.JAVA_INT_UNALIGNED, adr);
+            b2.set(ValueLayout.JAVA_INT_UNALIGNED, adr, v + 1);
+        }
+    }
+
+    @Check(test = "test2")
+    static void check2() {
+        int s = 0;
+        for (long i = init; i < limit; i++) {
+            s += a2.get(ValueLayout.JAVA_INT_UNALIGNED, 4L * i);
+        }
+        if (s != 4000) {
+            throw new RuntimeException("wrong value");
         }
     }
 }
