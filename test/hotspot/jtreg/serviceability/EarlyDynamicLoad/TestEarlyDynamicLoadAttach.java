@@ -49,6 +49,7 @@ public class TestEarlyDynamicLoadAttach {
 
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
+        output.shouldContain("Dynamic agent loading is only permitted in the live phase");
     }
 }
 
