@@ -92,15 +92,7 @@ public final class FipsModeTLS extends SecmodTest {
         // reduce the limit to trigger a key update later
         Security.setProperty("jdk.tls.keyLimits",
                 "AES/GCM/NoPadding KeyUpdate 10000");
-        try {
-            initialize();
-        } catch (Exception e) {
-            if (enableDebug) {
-                System.out.println(e);
-            }
-            throw new SkippedException("Test skipped: failure during " +
-                    "initialization.");
-        }
+        initialize();
 
         if (shouldRun()) {
             // Test against JCE
@@ -118,9 +110,6 @@ public final class FipsModeTLS extends SecmodTest {
     }
 
     private static boolean shouldRun() {
-        if (sunPKCS11NSSProvider == null) {
-            return false;
-        }
         try {
             String proto = System.getProperty("jdk.tls.client.protocols");
             if ("TLSv1.3".equals(proto)) {
@@ -455,12 +444,14 @@ public final class FipsModeTLS extends SecmodTest {
         //  1. SunPKCS11 (with an NSS FIPS mode backend)
         //  2. SUN (to handle X.509 certificates)
         //  3. SunJSSE (for a TLS engine)
-
-        if (initSecmod() == false) {
-            return;
+        try {
+            if (initSecmod() == false) {
+                throw new Exception("initSecmod failure");
+            }
+            sunPKCS11NSSProvider = getSunPKCS11(BASE + SEP + "nss.cfg");
+        } catch (Exception e) {
+            throw new SkippedException("SunPKCS11 initialization failed", e);
         }
-        String configName = BASE + SEP + "nss.cfg";
-        sunPKCS11NSSProvider = getSunPKCS11(configName);
         System.out.println("SunPKCS11 provider: " + sunPKCS11NSSProvider);
 
         List<Provider> installedProviders = new LinkedList<>();
