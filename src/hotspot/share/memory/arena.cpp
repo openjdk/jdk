@@ -46,7 +46,8 @@ class RecursivePlatformMutex : public PlatformMutex {
   int64_t _recursions;
   intx _owner;
   static constexpr intx no_owner_sentinel = -1;
-public:
+
+ public:
   RecursivePlatformMutex()
   : PlatformMutex(), _recursions(0), _owner(no_owner_sentinel) {}
 
@@ -258,7 +259,7 @@ ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_s
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
 
-public:
+ public:
    ChunkPoolCleaner() : PeriodicTask(cleaning_interval) {}
    void task() {
      ChunkPool::clean();
