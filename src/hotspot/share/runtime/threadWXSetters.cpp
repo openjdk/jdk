@@ -35,7 +35,7 @@
 bool ThreadWXEnable::test(address a) {
   bool result = true;
   static auto mode = WXArmedForWrite;
-  if (mode == WXArmedForWrite && a && StressWXHealing) {
+  if (mode == WXArmedForWrite && a != nullptr && StressWXHealing) {
     auto p = (unsigned int*)a;
     ThreadWXEnable wx(WXExec, Thread::current());
     {
@@ -45,6 +45,7 @@ bool ThreadWXEnable::test(address a) {
         tty->print_cr("WX Healing is not enabled because MAP_JIT write protection does not work on this system.");
         guarantee(pthread_jit_write_protect_supported_np() == false, "must be");
         result = false;
+        mode = WXWrite;
       }
     }
     // Make sure the newly-compiled code can be executed.
