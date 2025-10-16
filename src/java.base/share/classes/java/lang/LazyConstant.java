@@ -153,10 +153,9 @@ import java.util.function.Supplier;
  * the initialized constant is read. Hence, the initialized constant, including any
  * {@code final} fields of any newly created objects, are safely published.
  * <p>
- * If the computing thread or any thread that is blocked by the computing thread
- * is interrupted, this is not acted upon by the lazy constant (e.g., the interrupted
- * thread’s interrupted status is not cleared, and it does not throw InterruptedException;
- * interruption does not cancel initialization).
+ * Thread interruption does not cancel initialization of a lazy constant. In other words,
+ * if the computing thread is interrupted, {@code LazyConstant::get} doesn't clear
+ * the interrupted thread’s status, nor does it throw an InterruptedException.
  * <p>
  * If the computing function blocks indefinitely, other threads operating on this
  * lazy constant may block indefinitely; no timeouts or cancellations are provided.
