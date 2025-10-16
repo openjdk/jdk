@@ -29,18 +29,11 @@
 
 // See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
 inline jlong os::rdtsc() {
-#ifndef AMD64
-  // 64 bit result in edx:eax
-  uint64_t res;
-  __asm__ __volatile__ ("rdtsc" : "=A" (res));
-  return (jlong)res;
-#else
   uint64_t res;
   uint32_t ts1, ts2;
   __asm__ __volatile__ ("rdtsc" : "=a" (ts1), "=d" (ts2));
   res = ((uint64_t)ts1 | (uint64_t)ts2 << 32);
   return (jlong)res;
-#endif // AMD64
 }
 
 #endif // OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP

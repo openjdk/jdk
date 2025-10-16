@@ -29,19 +29,9 @@
 // Sets the default values for platform dependent flags used by the runtime system.
 // (see globals.hpp)
 //
-#ifdef AMD64
 define_pd_global(intx, CompilerThreadStackSize,  1024);
 define_pd_global(intx, ThreadStackSize,          1024); // 0 => use system default
 define_pd_global(intx, VMThreadStackSize,        1024);
-#else
-define_pd_global(intx, CompilerThreadStackSize,  512);
-// ThreadStackSize 320 allows a couple of test cases to run while
-// keeping the number of threads that can be created high.  System
-// default ThreadStackSize appears to be 512 which is too big.
-define_pd_global(intx, ThreadStackSize,          320);
-define_pd_global(intx, VMThreadStackSize,        512);
-#endif // AMD64
-
 
 define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 
