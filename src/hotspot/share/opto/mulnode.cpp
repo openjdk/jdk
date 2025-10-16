@@ -1093,9 +1093,9 @@ Node* LShiftNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
   if (add1_op == Op_Sub(bt) && (bt != T_INT || con < 16)) {    // Left input is a sub?
     // Left input is a sub from a constant?
     const TypeInteger* t11 = phase->type(add1->in(1))->isa_integer(bt);
-    if (t11 && t11->is_con()) {
+    if (t11 != nullptr && t11->is_con()) {
       // Compute X << con0
-      Node *lsh = phase->transform(LShiftNode::make(add1->in(2), in(2), bt));
+      Node* lsh = phase->transform(LShiftNode::make(add1->in(2), in(2), bt));
       // Compute X<<con0 - (con1<<con0)
       return SubNode::make(phase->integercon(java_shift_left(t11->get_con_as_long(bt), con, bt), bt), lsh, bt);
     }
