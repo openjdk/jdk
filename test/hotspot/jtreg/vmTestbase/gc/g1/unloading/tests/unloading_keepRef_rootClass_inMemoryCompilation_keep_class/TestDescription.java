@@ -30,7 +30,6 @@
  * VM Testbase keywords: [gc, stress, stressopt, nonconcurrent, javac]
  *
  * @modules java.base/jdk.internal.misc
- * @library /testlibrary/asm
  * @library /vmTestbase
  *          /test/lib
  *
