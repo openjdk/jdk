@@ -84,6 +84,8 @@ void VM_Version::get_os_cpu_info() {
       _cpu = CPU_AMCC;
     } else if (buf && strstr(buf, "Cavium Inc.") != nullptr) {
       _cpu = CPU_CAVIUM;
+    } else if (buf && strstr(buf, "Qualcomm Technologies Inc") != nullptr) {
+      _cpu = CPU_QUALCOM;
     } else {
       log_info(os)("VM_Version: unknown CPU model");
     }
@@ -92,8 +94,8 @@ void VM_Version::get_os_cpu_info() {
       SYSTEM_INFO si;
       GetSystemInfo(&si);
       _model = si.wProcessorLevel;
-      _variant = si.wProcessorRevision / 0xFF;
-      _revision = si.wProcessorRevision & 0xFF;
+      _variant = (si.wProcessorRevision >> 8) & 0xFF; // Variant is the upper byte of wProcessorRevision
+      _revision = si.wProcessorRevision & 0xFF; // Revision is the lower byte of wProcessorRevision
     }
   }
 }
