@@ -29,13 +29,17 @@
  * @summary Verify that the AES-Key-Wrap and AES-Key-Wrap-Pad ciphers
  * work as expected using NIST test vectors.
  */
+import jtreg.SkippedException;
+
 import java.security.Key;
 import java.security.AlgorithmParameters;
 import java.security.Provider;
 import javax.crypto.*;
 import javax.crypto.spec.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.math.BigInteger;
+import java.util.List;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/NISTWrapKAT.java
 public class NISTWrapKAT extends PKCS11Test {
@@ -256,8 +260,7 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte key with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            System.out.println("=> skip, exceeds max allowed size " + allowed);
-            return;
+            throw new SkippedException("Skip, exceeds max allowed size " + allowed);
         }
         Cipher c1 = Cipher.getInstance(algo,
                 System.getProperty("test.provider.name", "SunJCE"));
@@ -319,8 +322,7 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte data with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            System.out.println("=> skip, exceeds max allowed size " + allowed);
-            return;
+            throw new SkippedException("Skip, exceeds max allowed size " + allowed);
         }
         Cipher c1 = Cipher.getInstance(algo,
                 System.getProperty("test.provider.name", "SunJCE"));
@@ -384,11 +386,12 @@ public class NISTWrapKAT extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         Object[][] testDatum = testData();
+        List<String> skippedAlgoList = new ArrayList<>();
         for (int i = 0; i < testDatum.length; i++) {
             Object[] td = testDatum[i];
             String algo = (String) td[0];
             if (p.getService("Cipher", algo) == null) {
-                System.out.println("Skip, due to no support:  " + algo);
+                skippedAlgoList.add(algo);
                 continue;
             }
             testKeyWrap(algo, (String)td[1], (int)td[2], (String)td[3],
@@ -396,6 +399,12 @@ public class NISTWrapKAT extends PKCS11Test {
             testEnc(algo, (String)td[1], (int)td[2], (String)td[3],
                     (int)td[4], (String)td[5], p);
         }
-        System.out.println("Test Passed");
+
+        //Check if algorithm was skipped.
+        if(skippedAlgoList.isEmpty()){
+            System.out.println("All Tests Passed");
+        }else{
+            System.err.println("Some tests were skipped due to no support : " + skippedAlgoList);
+        }
     }
 }

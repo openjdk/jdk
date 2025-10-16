@@ -30,9 +30,11 @@
  * @run main/othervm TestGeneral
  */
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.security.*;
+import java.util.List;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 
@@ -251,9 +253,10 @@ public class TestGeneral extends PKCS11Test {
         String[] algos = {
             "AES/KW/PKCS5Padding", "AES/KW/NoPadding", "AES/KWP/NoPadding"
         };
+        List<String> skippedAlgoList = new ArrayList<>();
         for (String a : algos) {
             if (p.getService("Cipher", a) == null) {
-                System.out.println("Skip, due to no support:  " + a);
+                skippedAlgoList.add(a);
                 continue;
             }
 
@@ -329,6 +332,12 @@ public class TestGeneral extends PKCS11Test {
             testWrap(c, keys, ivs, padLen);
             testIv(c, ivLen, allowCustomIv);
         }
-        System.out.println("All Tests Passed");
+
+        //Check if algorithm was skipped.
+        if(skippedAlgoList.isEmpty()){
+            System.out.println("All Tests Passed");
+        }else{
+            System.err.println("Some tests were skipped due to no support : " + skippedAlgoList);
+        }
     }
 }

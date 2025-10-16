@@ -28,6 +28,8 @@
  * @library /test/lib ../..
  * @run main/othervm XMLEncKAT
  */
+import jtreg.SkippedException;
+
 import java.util.Base64;
 import java.security.Key;
 import java.security.AlgorithmParameters;
@@ -129,12 +131,9 @@ public class XMLEncKAT extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         String wrapAlg = "AESWrap";
-
         if (p.getService("Cipher", wrapAlg) == null) {
-            System.out.println("Skip, due to no support:  " + wrapAlg);
-            return;
+            throw new SkippedException("Skip, due to no support:  " + wrapAlg);
         }
-
         String keyAlg = "AES";
         testKeyWrap(p, wrapAlg, aes128Key_1, keyAlg, aes128WrappedKey_1);
         testKeyWrap(p, wrapAlg, aes128Key_2, keyAlg, aes128WrappedKey_2);
