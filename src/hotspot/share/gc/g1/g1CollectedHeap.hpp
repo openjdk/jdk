@@ -769,10 +769,6 @@ private:
   // precondition: !is_stw_gc_active()
   void do_collection_pause_at_safepoint(size_t allocation_word_size = 0);
 
-  // Helper for do_collection_pause_at_safepoint, containing the guts
-  // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper(size_t allocation_word_size);
-
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 

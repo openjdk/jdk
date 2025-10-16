@@ -105,15 +105,15 @@ uint32_t VM_Version::cpu_vector_length() {
 
 void VM_Version::setup_cpu_available_features() {
 
-  assert(ext_I.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
-  assert(ext_M.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
-  assert(ext_A.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
-  assert(ext_F.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
-  assert(ext_D.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
-  assert(ext_C.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
-  assert(ext_Q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
-  assert(ext_H.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
-  assert(ext_V.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
+  assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
+  assert(ext_m.feature_bit() == HWCAP_ISA_M, "Bit for M must follow Linux HWCAP");
+  assert(ext_a.feature_bit() == HWCAP_ISA_A, "Bit for A must follow Linux HWCAP");
+  assert(ext_f.feature_bit() == HWCAP_ISA_F, "Bit for F must follow Linux HWCAP");
+  assert(ext_d.feature_bit() == HWCAP_ISA_D, "Bit for D must follow Linux HWCAP");
+  assert(ext_c.feature_bit() == HWCAP_ISA_C, "Bit for C must follow Linux HWCAP");
+  assert(ext_q.feature_bit() == HWCAP_ISA_Q, "Bit for Q must follow Linux HWCAP");
+  assert(ext_h.feature_bit() == HWCAP_ISA_H, "Bit for H must follow Linux HWCAP");
+  assert(ext_v.feature_bit() == HWCAP_ISA_V, "Bit for V must follow Linux HWCAP");
 
   if (!RiscvHwprobe::probe_features()) {
     os_aux_features();

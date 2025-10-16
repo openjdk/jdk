@@ -152,17 +152,6 @@ void ParallelScavengeHeap::initialize_serviceability() {
 
 }
 
-void ParallelScavengeHeap::safepoint_synchronize_begin() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::synchronize();
-  }
-}
-
-void ParallelScavengeHeap::safepoint_synchronize_end() {
-  if (UseStringDeduplication) {
-    SuspendibleThreadSet::desynchronize();
-  }
-}
 class PSIsScavengable : public BoolObjectClosure {
   bool do_object_b(oop obj) {
     return ParallelScavengeHeap::heap()->is_in_young(obj);
@@ -713,17 +702,14 @@ void ParallelScavengeHeap::print_heap_change(const PreGenGCValues& pre_gc_values
 }
 
 void ParallelScavengeHeap::verify(VerifyOption option /* ignored */) {
-  // Why do we need the total_collections()-filter below?
-  if (total_collections() > 0) {
-    log_debug(gc, verify)("Tenured");
-    old_gen()->verify();
+  log_debug(gc, verify)("Tenured");
+  old_gen()->verify();
 
-    log_debug(gc, verify)("Eden");
-    young_gen()->verify();
+  log_debug(gc, verify)("Eden");
+  young_gen()->verify();
 
-    log_debug(gc, verify)("CardTable");
-    card_table()->verify_all_young_refs_imprecise();
-  }
+  log_debug(gc, verify)("CardTable");
+  card_table()->verify_all_young_refs_imprecise();
 }
 
 void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved_heap_size, const ReservedSpace rs) {
