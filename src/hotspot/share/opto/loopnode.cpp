@@ -4680,7 +4680,7 @@ void IdealLoopTree::dump_head() {
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
   if (_rce_candidate) tty->print(" rce");
-  if (_rfs != nullptr && _rfs->size() > 0) {
+  if (_reachability_fences != nullptr && _reachability_fences->size() > 0) {
     tty->print(" has_rf");
   }
   if (_safepts != nullptr && _safepts->size() > 0) {
@@ -4690,8 +4690,8 @@ void IdealLoopTree::dump_head() {
     tty->print(" req={"); _required_safept->dump_simple(); tty->print(" }");
   }
   if (Verbose) {
-    if (_rfs != nullptr && _rfs->size() > 0) {
-      tty->print(" rfs={"); _rfs->dump_simple(); tty->print(" }");
+    if (_reachability_fences != nullptr && _reachability_fences->size() > 0) {
+      tty->print(" rfs={"); _reachability_fences->dump_simple(); tty->print(" }");
     }
     tty->print(" body={"); _body.dump_simple(); tty->print(" }");
   }
@@ -4933,12 +4933,10 @@ bool PhaseIdealLoop::process_expensive_nodes() {
 // Create a PhaseLoop.  Build the ideal Loop tree.  Map each Ideal Node to
 // its corresponding LoopNode.  If 'optimize' is true, do some loop cleanups.
 void PhaseIdealLoop::build_and_optimize() {
-  assert(!C->post_loop_opts_phase(), "no loop opts allowed");
-
-  bool do_split_ifs = (_mode == LoopOptsDefault || _mode == LoopOptsDefaultFinal);
+  bool do_split_ifs = (_mode == LoopOptsDefault);
   bool skip_loop_opts = (_mode == LoopOptsNone);
   bool do_max_unroll = (_mode == LoopOptsMaxUnroll);
-  bool eliminate_rfs = (_mode == LoopOptsEliminateRFs);
+  bool do_eliminate_reachability_fences = (_mode == PostLoopOptsEliminateReachabilityFences);
 
   int old_progress = C->major_progress();
   uint orig_worklist_size = _igvn._worklist.size();
@@ -5005,12 +5003,13 @@ void PhaseIdealLoop::build_and_optimize() {
 
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
-  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll && !_verify_me &&
-          !_verify_only && !bs->is_gc_specific_loop_opts_pass(_mode);
+  bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll &&
+                    !do_eliminate_reachability_fences && !_verify_me && !_verify_only &&
+                    !bs->is_gc_specific_loop_opts_pass(_mode) ;
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
-  bool do_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
+  bool do_optimize_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
   bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
-  if (stop_early && !do_expensive_nodes && !do_reachability_fences) {
+  if (stop_early && !do_expensive_nodes && !do_optimize_reachability_fences) {
     return;
   }
 
@@ -5086,7 +5085,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded) {
+  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded && !do_eliminate_reachability_fences) {
     _ltree_root->counted_loop( this );
   }
 
@@ -5116,14 +5115,10 @@ void PhaseIdealLoop::build_and_optimize() {
   eliminate_useless_multiversion_if();
 
   if (stop_early) {
-    assert(do_expensive_nodes || do_reachability_fences, "why are we here?");
-    if (do_reachability_fences) {
-      bool progress = optimize_reachability_fences();
-      progress |= eliminate_reachability_fences();
-      if (progress) {
-        recompute_dom_depth();
-        DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
-      }
+    assert(do_expensive_nodes || do_optimize_reachability_fences, "why are we here?");
+    if (do_optimize_reachability_fences && optimize_reachability_fences()) {
+      recompute_dom_depth();
+      DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
     }
     if (do_expensive_nodes && process_expensive_nodes()) {
       // If we made some progress when processing expensive nodes then
@@ -5153,10 +5148,21 @@ void PhaseIdealLoop::build_and_optimize() {
   }
 #endif
 
-  if (do_reachability_fences && optimize_reachability_fences()) {
+  if (do_optimize_reachability_fences && optimize_reachability_fences()) {
     recompute_dom_depth();
     DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
   }
+
+  if (do_eliminate_reachability_fences) {
+    assert(C->post_loop_opts_phase(), "required");
+    if (eliminate_reachability_fences()) {
+      recompute_dom_depth();
+      DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+    }
+    return;
+  }
+
+  assert(!C->post_loop_opts_phase(), "required");
 
   if (skip_loop_opts) {
     C->restore_major_progress(old_progress);
@@ -5180,13 +5186,6 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
 
-    C->restore_major_progress(old_progress);
-    return;
-  }
-
-  if (eliminate_rfs) {
-    assert(OptimizeReachabilityFences, "sanity");
-    eliminate_reachability_fences();
     C->restore_major_progress(old_progress);
     return;
   }
@@ -5324,17 +5323,6 @@ void PhaseIdealLoop::build_and_optimize() {
       tty->print_cr("PredicatesOff");
     }
     C->set_major_progress();
-  }
-
-  // Loop opts are over. It is safe to get rid of all reachability fence nodes
-  // and migrate reachability edges to safepoints.
-  if (OptimizeReachabilityFences && !C->major_progress() && C->reachability_fences_count() > 0 && _mode == LoopOptsDefaultFinal) {
-    Compile::TracePhase tp2(_t_reachability);
-    eliminate_reachability_fences();
-    if (C->failing())  return;
-    C->print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
-    assert(C->reachability_fences_count() == 0 ||
-           PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
   }
 }
 
@@ -6068,10 +6056,10 @@ int PhaseIdealLoop::build_loop_tree_impl(Node* n, int pre_order) {
         if (innermost->_safepts == nullptr) innermost->_safepts = new Node_List();
         innermost->_safepts->push(n);
       } else if (n->is_ReachabilityFence()) {
-        if (innermost->_rfs == nullptr) {
-          innermost->_rfs = new Node_List();
+        if (innermost->_reachability_fences == nullptr) {
+          innermost->_reachability_fences = new Node_List();
         }
-        innermost->_rfs->push(n);
+        innermost->_reachability_fences->push(n);
       }
     }
   }

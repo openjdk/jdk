@@ -884,9 +884,8 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, GrowableArray<Saf
 
     SafePointScalarObjectNode* sobj = create_scalarized_object_description(alloc, sfpt);
 
-    sfpt->restore_non_debug_edges(non_debug_edges_worklist);
-
     if (sobj == nullptr) {
+      sfpt->restore_non_debug_edges(non_debug_edges_worklist);
       undo_previous_scalarizations(safepoints_done, alloc);
       return false;
     }
@@ -895,6 +894,8 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, GrowableArray<Saf
     // to the allocated object with "sobj"
     JVMState *jvms = sfpt->jvms();
     sfpt->replace_edges_in_range(res, sobj, jvms->debug_start(), jvms->debug_end(), &_igvn);
+    non_debug_edges_worklist.remove_if_existing(res); // drop scalarized input from non-debug info
+    sfpt->restore_non_debug_edges(non_debug_edges_worklist);
     _igvn._worklist.push(sfpt);
 
     // keep it for rollback

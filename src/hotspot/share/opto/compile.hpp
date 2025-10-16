@@ -104,13 +104,12 @@ class VerifyMeetResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
-  LoopOptsDefaultFinal,
   LoopOptsNone,
   LoopOptsMaxUnroll,
-  LoopOptsEliminateRFs,
   LoopOptsShenandoahExpand,
   LoopOptsSkipSplitIf,
-  LoopOptsVerify
+  LoopOptsVerify,
+  PostLoopOptsEliminateReachabilityFences
 };
 
 // The type of all node counts and indexes.

@@ -32,7 +32,7 @@
 #include "opto/runtime.hpp"
 
 /*
- * Reference::reachabilityFence support.
+ * java.lang.ref.Reference::reachabilityFence support.
  *
  * Reachability Fence (RF) ensures that the given object (referent) remains strongly reachable
  * regardless of any optimizing transformations the virtual machine may perform that might otherwise
@@ -188,10 +188,10 @@ void PhaseIdealLoop::insert_rf(Node* ctrl, Node* referent) {
 
   register_control(new_rf, lpt, ctrl);
   set_idom(new_rf, ctrl, dom_depth(ctrl) + 1);
-  if (lpt->_rfs == nullptr) {
-    lpt->_rfs = new Node_List();
+  if (lpt->_reachability_fences == nullptr) {
+    lpt->_reachability_fences = new Node_List();
   }
-  lpt->_rfs->push(new_rf);
+  lpt->_reachability_fences->push(new_rf);
 
   igvn().rehash_node_delayed(ctrl_end);
   ctrl_end->replace_edge(ctrl, new_rf);
@@ -212,9 +212,9 @@ void PhaseIdealLoop::replace_rf(Node* old_node, Node* new_node) {
   if (!lpt->is_root()) {
     lpt->_body.yank(old_node);
   }
-  assert(lpt->_rfs != nullptr, "missing");
-  assert(lpt->_rfs->contains(old_node), "missing");
-  lpt->_rfs->yank(old_node);
+  assert(lpt->_reachability_fences != nullptr, "missing");
+  assert(lpt->_reachability_fences->contains(old_node), "missing");
+  lpt->_reachability_fences->yank(old_node);
   lazy_replace(old_node, new_node);
 }
 
@@ -435,6 +435,7 @@ bool PhaseIdealLoop::eliminate_reachability_fences() {
   Compile::TracePhase tp(_t_reachability_eliminate);
 
   assert(OptimizeReachabilityFences, "required");
+  assert(C->post_loop_opts_phase(), "required");
   DEBUG_ONLY( int no_of_constant_rfs = 0; )
 
   ResourceMark rm;

@@ -30,6 +30,15 @@
 #include "opto/type.hpp"
 
 //------------------------ReachabilityFenceNode--------------------------
+// Represents a Reachability Fence (RF) in the code.
+//
+// RF ensures that the given object (referent) remains strongly reachable regardless of
+// any optimizing transformations the virtual machine may perform that might otherwise
+// allow the object to become unreachable.
+
+// java.lang.ref.Reference::reachabilityFence calls are intrinsified into ReachabilityFence nodes.
+//
+// More details in reachability.cpp.
 class ReachabilityFenceNode : public Node {
 public:
   ReachabilityFenceNode(Compile* C, Node* ctrl, Node* referent)

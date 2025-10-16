@@ -1226,11 +1226,12 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   GrowableArray<Node*> non_debug_edges_worklist;
   for (uint spi = 0; spi < safepoints.size(); spi++) {
     SafePointNode* sfpt = safepoints.at(spi)->as_SafePoint();
-    JVMState *jvms      = sfpt->jvms();
-    uint merge_idx      = (sfpt->req() - jvms->scloff());
-    int debug_start     = jvms->debug_start();
 
     sfpt->remove_non_debug_edges(non_debug_edges_worklist);
+
+    JVMState* jvms  = sfpt->jvms();
+    uint merge_idx  = (sfpt->req() - jvms->scloff());
+    int debug_start = jvms->debug_start();
 
     SafePointScalarMergeNode* smerge = new SafePointScalarMergeNode(merge_t, merge_idx);
     smerge->init_req(0, _compile->root());
@@ -1242,7 +1243,9 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
     //  (1) A copy of the original pointer to NSR objects.
     //  (2) A selector, used to decide if we need to rematerialize an object
     //      or use the pointer to a NSR object.
-    // See more details of these fields in the declaration of SafePointScalarMergeNode
+    // See more details of these fields in the declaration of SafePointScalarMergeNode.
+    // It is safe to include them into debug info straight away since create_scalarized_object_description()
+    // will include all newly added inputs into debug info anyway.
     sfpt->add_req(nsr_merge_pointer);
     sfpt->add_req(selector);
     sfpt->jvms()->set_endoff(sfpt->req());
@@ -1267,6 +1270,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       // to the allocated object with "sobj"
       Node* ccpp = alloc->result_cast();
       sfpt->replace_edges_in_range(ccpp, sobj, debug_start, jvms->debug_end(), _igvn);
+      non_debug_edges_worklist.remove_if_existing(ccpp); // drop scalarized input from non-debug info
 
       // Register the scalarized object as a candidate for reallocation
       smerge->add_req(sobj);
@@ -1274,6 +1278,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
 
     // Replaces debug information references to "original_sfpt_parent" in "sfpt" with references to "smerge"
     sfpt->replace_edges_in_range(original_sfpt_parent, smerge, debug_start, jvms->debug_end(), _igvn);
+    non_debug_edges_worklist.remove_if_existing(original_sfpt_parent); // drop scalarized input from non-debug info
 
     // The call to 'replace_edges_in_range' above might have removed the
     // reference to ophi that we need at _merge_pointer_idx. The line below make

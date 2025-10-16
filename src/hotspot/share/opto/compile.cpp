@@ -2515,24 +2515,24 @@ void Compile::Optimize() {
 
   // Loop transforms on the ideal graph.  Range Check Elimination,
   // peeling, unrolling, etc.
-  if (!optimize_loops(igvn, LoopOptsDefaultFinal)) {
+  if (!optimize_loops(igvn, LoopOptsDefault)) {
     return;
-  }
-
-  // No more loop opts. It is safe to get rid of all reachability fence nodes
-  // and migrate reachability edges to safepoints.
-  if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
-    TracePhase tp1(_t_idealLoop);
-    TracePhase tp2(_t_reachability);
-    PhaseIdealLoop::optimize(igvn, LoopOptsEliminateRFs);
-    print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
-    if (failing())  return;
-    assert(_reachability_fences.length() == 0 || PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
   }
 
   C->clear_major_progress(); // ensure that major progress is now clear
 
   process_for_post_loop_opts_igvn(igvn);
+
+  // Once loop optimizations are over, it is safe to get rid of all reachability fence nodes and
+  // migrate reachability edges to safepoints.
+  if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
+    TracePhase tp1(_t_idealLoop);
+    TracePhase tp2(_t_reachability);
+    PhaseIdealLoop::optimize(igvn, PostLoopOptsEliminateReachabilityFences);
+    print_method(PHASE_ELIMINATE_REACHABILITY_FENCES, 2);
+    if (failing())  return;
+    assert(_reachability_fences.length() == 0 || PreserveReachabilityFencesOnConstants, "no RF nodes allowed");
+  }
 
   process_for_merge_stores_igvn(igvn);
 

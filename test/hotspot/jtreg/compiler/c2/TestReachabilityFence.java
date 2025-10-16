@@ -29,7 +29,6 @@ import java.util.concurrent.CountDownLatch;
 
 import jdk.internal.misc.Unsafe;
 
-
 /*
  * @test
  * @bug 8290892
@@ -122,10 +121,10 @@ public class TestReachabilityFence {
 
         private static void free(int id) {
             System.out.println("Freeing buffer with id = " + id);
-            //UNSAFE.freeMemory(payload[id]);
             for (int i = 0; i < SIZE; ++i) {
                 UNSAFE.putByte(payload[id] + i, (byte)0);
             }
+            // UNSAFE.freeMemory(payload[id]); // don't deallocate backing memory to avoid crashes
             payload[id] = 0;
 
             synchronized (STATUS) {
@@ -153,14 +152,19 @@ public class TestReachabilityFence {
     static long counter1 = 0;
     static long counter2 = 0;
 
-    static long test1(int limit) {
+    // Off-heap version.
+    static long testOffHeap(int limit) {
         for (long j = 0; j < limit; j++) {
-            MyBuffer myBuffer = bufferOff;
+            MyBuffer myBuffer = bufferOff; // local
             if (myBuffer == null) {
                 return j;
             }
-            for (int i = 0; i < 100; i++) {
-                byte b = myBuffer.get(i);
+            for (int i = 0; i < SIZE; i++) {
+                // The access is split into base address load (payload[id]), offset computation, and data load.
+                // While offset is loop-variant, payload[id] is not and can be hoisted.
+                // If bufferOff and payload[id] loads are hoisted outside outermost loop, it eliminates all usages of
+                // myBuffer oop inside the loop and bufferOff can be GCed at the safepoint on outermost loop back branch.
+                byte b = myBuffer.get(i); // inlined
                 if (b != 42) {
                     String msg = "Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!";
                     throw new AssertionError(msg);
@@ -169,17 +173,18 @@ public class TestReachabilityFence {
             counter1 = j;
             // Keep the buffer live while we read from it
             Reference.reachabilityFence(myBuffer);
-        }
+        } // safepoint on loop backedge does NOT contain myBuffer local as part of its JVM state
         return limit;
     }
 
-    static long test2(int limit) {
+    // On-heap version.
+    static long testOnHeap(int limit) {
         for (long j = 0; j < limit; j++) {
             MyBuffer myBuffer = bufferOn;
             if (myBuffer == null) {
                 return j;
             }
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < SIZE; i++) {
                 byte b = myBuffer.get(i);
                 if (b != 42) {
                     String msg = "Unexpected value = " + b + ". Buffer was garbage collected before reachabilityFence was reached!";
@@ -196,8 +201,8 @@ public class TestReachabilityFence {
     public static void main(String[] args) throws Throwable {
         // Warmup to trigger compilation
         for (int i = 0; i < 10_000; i++) {
-            test1(10);
-            test2(10);
+            testOffHeap(10);
+            testOnHeap(10);
         }
 
         CountDownLatch latch = new CountDownLatch(3);
@@ -207,7 +212,7 @@ public class TestReachabilityFence {
             latch.countDown(); // synchronize with main thread
             try {
                 System.out.printf("Computation thread #1 has started\n");
-                long cnt = test1(100_000_000);
+                long cnt = testOffHeap(100_000_000);
                 System.out.printf("#1 Finished after %d iterations\n", cnt);
             } catch (Throwable e) {
                 System.out.printf("#1 Finished with an exception %s\n", e);
@@ -219,7 +224,7 @@ public class TestReachabilityFence {
             latch.countDown(); // synchronize with main thread
             try {
                 System.out.printf("Computation thread #2 has started\n");
-                long cnt = test2(100_000_000);
+                long cnt = testOnHeap(100_000_000);
                 System.out.printf("#2 Finished after %d iterations\n", cnt);
             } catch (Throwable e) {
                 System.out.printf("#2 Finished with an exception %s\n", e);
