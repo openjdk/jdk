@@ -45,7 +45,7 @@ public:
     auto end = std::chrono::steady_clock::now();
 
     auto wall_time_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    printf("MacroAssemblerZeroWordsTest zero_words wall time (ns): %ld\n", wall_time_ns / call_count);
+    printf("MacroAssemblerZeroWordsTest zero_words wall time (ns): %zu\n", wall_time_ns / call_count);
 
     delete[] buffer;
     BufferBlob::free(blob);
