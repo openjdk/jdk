@@ -1362,6 +1362,7 @@ void PSParallelCompact::adjust_pointers_in_spaces(uint worker_id, volatile uint*
 }
 
 class PSAdjustTask final : public WorkerTask {
+  ThreadsClaimTokenScope                     _threads_claim_token_scope;
   SubTasksDone                               _sub_tasks;
   WeakProcessor::Task                        _weak_proc_task;
   OopStorageSetStrongParState<false, false>  _oop_storage_iter;
@@ -1377,16 +1378,12 @@ class PSAdjustTask final : public WorkerTask {
 public:
   PSAdjustTask(uint nworkers) :
     WorkerTask("PSAdjust task"),
+    _threads_claim_token_scope(),
     _sub_tasks(PSAdjustSubTask_num_elements),
     _weak_proc_task(nworkers),
     _nworkers(nworkers) {
 
     ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
-    Threads::change_thread_claim_token();
-  }
-
-  ~PSAdjustTask() {
-    Threads::assert_all_threads_claimed();
   }
 
   void work(uint worker_id) {
