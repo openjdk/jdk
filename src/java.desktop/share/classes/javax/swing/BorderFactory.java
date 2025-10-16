@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,10 @@ public class BorderFactory
      * @return the <code>Border</code> object
      */
     public static Border createBevelBorder(int type, Color highlight, Color shadow) {
-        return new BevelBorder(type, highlight, shadow);
+        if (highlight != null && shadow != null) {
+            return new BevelBorder(type, highlight, shadow);
+        }
+        return new BevelBorder(type);
     }
 
     /**
