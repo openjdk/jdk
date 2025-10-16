@@ -523,8 +523,8 @@ TEST_VM_ASSERT_MSG(RegMask, offset_mismatch, ".*offset mismatch") {
   RegMask rm2;
   rm1.set_infinite_stack(true);
   rm1.rollover();
-  // Cannot copy with different offsets
-  rm2 = rm1;
+  // Cannot assign with different offsets
+  rm2.assignFrom(rm1);
 }
 
 #endif
@@ -1241,8 +1241,8 @@ TEST_VM(RegMask, random_copy) {
     // Randomly initialize source
     randomize(src);
 
-    // Copy source to destination
-    dst = src;
+    // Set destination to source
+    dst.assignFrom(src);
 
     // Check equality
     bool passed = src.gtest_equals(dst);

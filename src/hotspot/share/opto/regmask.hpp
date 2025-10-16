@@ -299,39 +299,6 @@ class RegMask {
     }
   }
 
-  // Make us a copy of src
-  void copy(const RegMask& src) {
-    assert(_offset == src._offset, "offset mismatch");
-    _hwm = src._hwm;
-    _lwm = src._lwm;
-
-    // Copy base mask
-    memcpy(_rm_word, src._rm_word, sizeof(uintptr_t) * RM_SIZE_IN_WORDS);
-    _infinite_stack = src._infinite_stack;
-
-    // Copy extension
-    if (src._rm_word_ext != nullptr) {
-      assert(src._rm_size_in_words > RM_SIZE_IN_WORDS, "sanity");
-      assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-      grow(src._rm_size_in_words, false);
-      memcpy(_rm_word_ext, src._rm_word_ext,
-             sizeof(uintptr_t) * (src._rm_size_in_words - RM_SIZE_IN_WORDS));
-    }
-
-    // If the source is smaller than us, we need to set the gap according to
-    // the sources infinite_stack flag.
-    if (src._rm_size_in_words < _rm_size_in_words) {
-      int value = 0;
-      if (src.is_infinite_stack()) {
-        value = 0xFF;
-        _hwm = rm_word_max_index();
-      }
-      set_range(src._rm_size_in_words, value, _rm_size_in_words - src._rm_size_in_words);
-    }
-
-    assert(valid_watermarks(), "post-condition");
-  }
-
   // Make the watermarks as tight as possible.
   void trim_watermarks() {
     if (_hwm < _lwm) {
@@ -453,21 +420,52 @@ public:
   }
   explicit RegMask(OptoReg::Name reg) : RegMask(reg, nullptr) {}
 
-  // ----------------------------------------
-  // Deep copying constructors and assignment
-  // ----------------------------------------
+  // Make us represent the same set of registers as src.
+  void assignFrom(const RegMask& src) {
+    assert(_offset == src._offset, "offset mismatch");
+    _hwm = src._hwm;
+    _lwm = src._lwm;
 
+    // Copy base mask
+    memcpy(_rm_word, src._rm_word, sizeof(uintptr_t) * RM_SIZE_IN_WORDS);
+    _infinite_stack = src._infinite_stack;
+
+    // Copy extension
+    if (src._rm_word_ext != nullptr) {
+      assert(src._rm_size_in_words > RM_SIZE_IN_WORDS, "sanity");
+      assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
+      grow(src._rm_size_in_words, false);
+      memcpy(_rm_word_ext, src._rm_word_ext,
+             sizeof(uintptr_t) * (src._rm_size_in_words - RM_SIZE_IN_WORDS));
+    }
+
+    // If the source is smaller than us, we need to set the gap according to
+    // the sources infinite_stack flag.
+    if (src._rm_size_in_words < _rm_size_in_words) {
+      int value = 0;
+      if (src.is_infinite_stack()) {
+        value = 0xFF;
+        _hwm = rm_word_max_index();
+      }
+      set_range(src._rm_size_in_words, value, _rm_size_in_words - src._rm_size_in_words);
+    }
+
+    assert(valid_watermarks(), "post-condition");
+  }
+
+  // Construct from other register mask (deep copy) and register an arena
+  // for potential register mask extension. Passing nullptr as arena disables
+  // extension.
   RegMask(const RegMask& rm, Arena* arena)
       : _arena(arena), _rm_size_in_words(RM_SIZE_IN_WORDS), _offset(rm._offset) {
-    copy(rm);
+    assignFrom(rm);
   }
 
-  RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
+  // Copy constructor (deep copy). By default does not allow extension.
+  explicit RegMask(const RegMask& rm) : RegMask(rm, nullptr) {}
 
-  RegMask& operator=(const RegMask& rm) {
-    copy(rm);
-    return *this;
-  }
+  // Disallow copy assignment (use assignFrom instead)
+  RegMask& operator=(const RegMask&) = delete;
 
   // ----------------
   // End deep copying
