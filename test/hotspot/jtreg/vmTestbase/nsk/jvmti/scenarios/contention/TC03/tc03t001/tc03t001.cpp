@@ -137,10 +137,10 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
                 return NSK_FALSE;
             continue;
         }
-
-        threadList[i].thread = threads[i];
-        threadList[i].dfn = -1;
-        threadList[i].name = info.name;
+        threadList[debuggee_thread_cnt].thread = threads[i];
+        threadList[debuggee_thread_cnt].dfn = -1;
+        threadList[debuggee_thread_cnt].name = info.name;
+        debuggee_thread_cnt++;
     }
 
     /* deallocate thread list */
