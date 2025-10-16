@@ -34,7 +34,6 @@ package sun.util.locale;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -209,7 +208,7 @@ public final class InternalLocaleBuilder {
             }
 
             if (UnicodeLocaleExtension.isSingletonChar(key.value())) {
-                setUnicodeLocaleExtension(val, false);
+                setUnicodeLocaleExtension(val);
             } else {
                 if (extensions == null) {
                     extensions = new HashMap<>(4);
@@ -303,15 +302,14 @@ public final class InternalLocaleBuilder {
                                             itr.currentStart());
         }
 
-        return setExtensions(extensions, privateuse, true);
+        return setExtensions(extensions, privateuse);
     }
 
     /*
      * Set a list of BCP47 extensions and private use subtags
      * BCP47 extensions are already validated and well-formed, but may contain duplicates
-     * Lenient determines duplicate U extension behavior
      */
-    private InternalLocaleBuilder setExtensions(List<String> bcpExtensions, String privateuse, boolean lenient) {
+    private InternalLocaleBuilder setExtensions(List<String> bcpExtensions, String privateuse) {
         clearExtensions();
 
         if (!LocaleUtils.isEmpty(bcpExtensions)) {
@@ -322,7 +320,7 @@ public final class InternalLocaleBuilder {
                 if (!done.contains(key)) {
                     // each extension string contains singleton, e.g. "a-abc-def"
                     if (UnicodeLocaleExtension.isSingletonChar(key.value())) {
-                        setUnicodeLocaleExtension(bcpExt.substring(2), lenient);
+                        setUnicodeLocaleExtension(bcpExt.substring(2));
                     } else {
                         if (extensions == null) {
                             extensions = new HashMap<>(4);
@@ -346,9 +344,8 @@ public final class InternalLocaleBuilder {
 
     /*
      * Reset Builder's internal state with the given language tag
-     * Lenient determines duplicate U Extension behavior
      */
-    public InternalLocaleBuilder setLanguageTag(LanguageTag langtag, boolean lenient) {
+    public InternalLocaleBuilder setLanguageTag(LanguageTag langtag) {
         clear();
         if (!langtag.extlangs().isEmpty()) {
             language = langtag.extlangs().get(0);
@@ -371,7 +368,7 @@ public final class InternalLocaleBuilder {
             variant = var.toString();
         }
 
-        setExtensions(langtag.extensions(), langtag.privateuse(), lenient);
+        setExtensions(langtag.extensions(), langtag.privateuse());
 
         return this;
     }
@@ -587,10 +584,10 @@ public final class InternalLocaleBuilder {
 
     /*
      * Private methods parsing Unicode Locale Extension subtags.
-     * Duplicated attributes/keywords will be ignored if lenient, otherwise failure.
+     * Duplicated attributes/keywords will be ignored.
      * The input must be a valid extension subtags (excluding singleton).
      */
-    private void setUnicodeLocaleExtension(String subtags, boolean lenient) {
+    private void setUnicodeLocaleExtension(String subtags) {
         // wipe out existing attributes/keywords
         if (uattributes != null) {
             uattributes.clear();
@@ -609,10 +606,7 @@ public final class InternalLocaleBuilder {
             if (uattributes == null) {
                 uattributes = new HashSet<>(4);
             }
-            if (!uattributes.add(new CaseInsensitiveString(itr.current())) && !lenient) {
-                throw new IllformedLocaleException(
-                        "Duplicate U-extension attribute: \"%s\"".formatted(itr.current()));
-            }
+            uattributes.add(new CaseInsensitiveString(itr.current()));
             itr.next();
         }
 
@@ -634,16 +628,7 @@ public final class InternalLocaleBuilder {
 
                     // reset keyword info
                     CaseInsensitiveString tmpKey = new CaseInsensitiveString(itr.current());
-                    if (ukeywords.containsKey(tmpKey)) {
-                        if (lenient) {
-                            key = null;
-                        } else {
-                            throw new IllformedLocaleException(
-                                    "Duplicate U-extension key: \"%s\"".formatted(itr.current()));
-                        }
-                    } else {
-                        key = tmpKey;
-                    }
+                    key = ukeywords.containsKey(tmpKey) ? null : tmpKey;
                     typeStart = typeEnd = -1;
                 } else {
                     if (typeStart == -1) {

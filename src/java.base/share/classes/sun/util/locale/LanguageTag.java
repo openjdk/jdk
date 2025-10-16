@@ -124,7 +124,7 @@ public record LanguageTag(String language,
             script = parseScript(itr, pp);
             region = parseRegion(itr, pp);
             variants = parseVariants(itr, pp);
-            extensions = parseExtensions(itr, pp, errorMsg, lenient);
+            extensions = parseExtensions(itr, pp, errorMsg);
         } else {
             extlangs = EMPTY_SUBTAGS;
             script = EMPTY_SUBTAG;
@@ -248,25 +248,16 @@ public record LanguageTag(String language,
     }
 
     private static List<String> parseExtensions(StringTokenIterator itr, ParsePosition pp,
-                                    StringBuilder err, boolean lenient) {
+                                    StringBuilder err) {
         if (itr.isDone() || pp.getErrorIndex() != -1) {
             return EMPTY_SUBTAGS;
         }
         List<String> extensions = null;
-        boolean[] seen = new boolean[26];
+
         while (!itr.isDone()) {
             String s = itr.current();
             if (isExtensionSingleton(s)) {
                 int start = itr.currentStart();
-                int ext = LocaleUtils.toLowerString(s).charAt(0) - 'a';
-                if (seen[ext] && !lenient) {
-                    pp.setErrorIndex(start);
-                    err.append("Duplicate extension '").append(s).append("'");
-                    break;
-                } else {
-                    seen[ext] = true;
-                }
-
                 String singleton = s;
                 StringBuilder sb = new StringBuilder(singleton);
 

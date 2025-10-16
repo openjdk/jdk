@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *      7044019 8008577 8176853 8255086 8263202 8287868 8174269 8369452
- *      8369590 8369739
+ *      8369590
  * @summary test API changes to Locale
  * @modules jdk.localedata
  * @run junit/othervm -esa LocaleEnhanceTest
@@ -744,21 +744,15 @@ public class LocaleEnhanceTest {
                 .toLanguageTag();
         assertEquals(target, result, "language");
 
-        // redundant extensions cause a failure
-        assertEquals("Duplicate extension 'A' [at index 17]",
-                assertThrows(IllformedLocaleException.class,
-                () -> new Builder().setLanguageTag("und-a-xx-yy-b-ww-A-00-11-c-vv"))
-                .getMessage());
-        // redundant Unicode locale extension keys cause a failure
-        assertEquals("Duplicate U-extension key: \"NU\"",
-                assertThrows(IllformedLocaleException.class,
-                () -> new Builder().setLanguageTag("und-u-nu-thai-cu-usd-NU-chinese-xx-1234"))
-                .getMessage());
-        // redundant Unicode locale extension attributes cause a failure
-        assertEquals("Duplicate U-extension attribute: \"FOO\"",
-                assertThrows(IllformedLocaleException.class,
-                () -> new Builder().setLanguageTag("und-u-foo-bar-FOO"))
-                .getMessage());
+        // redundant extensions are ignored
+        assertEquals("und-a-xx-yy-b-ww-c-vv",
+                new Builder().setLanguageTag("und-a-xx-yy-b-ww-A-00-11-c-vv").build().toLanguageTag());
+        // redundant Unicode locale extension keys are ignored
+        assertEquals("und-u-cu-usd-nu-thai-xx-1234",
+                new Builder().setLanguageTag("und-u-nu-thai-cu-usd-NU-chinese-xx-1234").build().toLanguageTag());
+        // redundant Unicode locale extension attributes are ignored
+        assertEquals("und-u-bar-foo",
+                new Builder().setLanguageTag("und-u-foo-bar-FOO").build().toLanguageTag());
     }
 
     // Test the values that should clear the builder
@@ -1048,21 +1042,21 @@ public class LocaleEnhanceTest {
                 .getUnicodeLocaleType("nu");
         assertEquals("thai-foobar", result, "multiple types");
 
-        // redundant locale extensions should fail
-        assertEquals("Duplicate U-extension key: \"NU\"",
-                assertThrows(IllformedLocaleException.class, () ->
-                builder
+        // redundant locale extensions are ignored
+        result = builder
                 .clear()
                 .setExtension('u', "nu-thai-NU-chinese-xx-1234")
-                .build()).getMessage());
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-nu-thai-xx-1234", result, "duplicate keys");
 
-        // redundant locale attributes should fail
-        assertEquals("Duplicate U-extension attribute: \"bar\"",
-                assertThrows(IllformedLocaleException.class, () ->
-                builder
+        // redundant locale attributes are ignored
+        result = builder
                 .clear()
-                .setExtension('u', "bar-foo-bar")
-                .build()).getMessage());
+                .setExtension('u', "posix-posix")
+                .build()
+                .toLanguageTag();
+        assertEquals("und-u-posix", result, "duplicate attributes");
     }
 
     @Test
@@ -1093,7 +1087,7 @@ public class LocaleEnhanceTest {
 
         // null attribute throws NPE
         assertThrows(NullPointerException.class,
-                () -> new Builder().addUnicodeLocaleAttribute(null), "null attribute");
+                () ->  new Builder().addUnicodeLocaleAttribute(null), "null attribute");
 
         assertThrows(NullPointerException.class,
                 () -> new Builder().removeUnicodeLocaleAttribute(null), "null attribute removal");

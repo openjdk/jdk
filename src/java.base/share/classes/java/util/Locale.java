@@ -183,8 +183,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *   <dt><a id="def_extensions"><b>extensions</b></a></dt>
  *
  *   <dd> A map from single character keys to string values, indicating
- *   extensions apart from language identification. Keys must not be repeated, unless
- *   used as values for the key 'x'.</dd>
+ *   extensions apart from language identification.</dd>
  *   <dd> <em> BCP 47 deviation:</em> The {@code
  *   extensions} in {@code Locale} implement the semantics and syntax of BCP 47
  *   extension subtags <em>and</em> private use subtags. The {@code extensions}
@@ -247,8 +246,7 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * can be empty, or a series of subtags 3-8 alphanums in length).  A
  * well-formed locale attribute has the form
  * {@code [0-9a-zA-Z]{3,8}} (it is a single subtag with the same
- * form as a locale type subtag). When duplicate keys or attributes occur, they
- * are considered ill-formed.
+ * form as a locale type subtag).
  *
  * <p>The Unicode locale extension specifies optional behavior in
  * locale-sensitive services.  Although the LDML specification defines
@@ -563,8 +561,6 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
  *      RFC 5646: Tags for Identifying Languages
- * @spec https://www.rfc-editor.org/info/rfc6067
- *      RFC 6067: BCP 47 Extension U
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)
  * @see Builder
@@ -1878,7 +1874,7 @@ public final class Locale implements Cloneable, Serializable {
         LanguageTag tag = LanguageTag.parse(
                 languageTag, new ParsePosition(0), true);
         InternalLocaleBuilder bldr = new InternalLocaleBuilder();
-        bldr.setLanguageTag(tag, true);
+        bldr.setLanguageTag(tag);
         BaseLocale base = bldr.getBaseLocale();
         LocaleExtensions exts = bldr.getLocaleExtensions();
         if (exts == null && !base.getVariant().isEmpty()) {
@@ -2716,7 +2712,7 @@ public final class Locale implements Cloneable, Serializable {
          * #clear}.  Legacy tags (see {@link
          * Locale#forLanguageTag(String)}) are converted to their canonical
          * form before being processed.  Otherwise, the language tag
-         * must be {@linkplain Locale##def_language well-formed} or an exception is
+         * must be well-formed (see {@link Locale}) or an exception is
          * thrown (unlike {@code Locale.forLanguageTag}, which
          * just discards ill-formed and following portions of the
          * tag).
@@ -2735,7 +2731,7 @@ public final class Locale implements Cloneable, Serializable {
             } else {
                 LanguageTag tag = LanguageTag.parse(
                         languageTag, new ParsePosition(0), false);
-                localeBuilder.setLanguageTag(tag, false);
+                localeBuilder.setLanguageTag(tag);
             }
             return this;
         }
