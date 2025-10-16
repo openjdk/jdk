@@ -50,10 +50,6 @@ inline PSPromotionManager* PSPromotionManager::manager_array(uint index) {
   return &_manager_array[index];
 }
 
-inline void PSPromotionManager::push_depth(ScannerTask task) {
-  claimed_stack_depth()->push(task);
-}
-
 template <class T>
 inline void PSPromotionManager::claim_or_forward_depth(T* p) {
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
@@ -62,7 +58,7 @@ inline void PSPromotionManager::claim_or_forward_depth(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(!PSScavenge::is_obj_in_to_space(obj), "revisiting object?");
     Prefetch::write(obj->base_addr(), oopDesc::mark_offset_in_bytes());
-    push_depth(ScannerTask(p));
+    claimed_stack_depth()->push(ScannerTask(p));
   }
 }
 
@@ -236,7 +232,7 @@ inline HeapWord* PSPromotionManager::allocate_in_old_gen(Klass* klass,
 template<bool promote_immediately>
 inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
                                                                markWord test_mark) {
-  oop new_obj = nullptr;
+  HeapWord* new_obj_addr = nullptr;
   bool new_obj_is_tenured = false;
 
   // NOTE: With compact headers, it is not safe to load the Klass* from old, because
@@ -259,32 +255,33 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
   if (!promote_immediately) {
     // Try allocating obj in to-space (unless too old)
     if (age < PSScavenge::tenuring_threshold()) {
-      new_obj = cast_to_oop(allocate_in_young_gen(klass, new_obj_size, age));
+      new_obj_addr = allocate_in_young_gen(klass, new_obj_size, age);
     }
   }
 
   // Otherwise try allocating obj tenured
-  if (new_obj == nullptr) {
-    new_obj = cast_to_oop(allocate_in_old_gen(klass, new_obj_size, age));
-    if (new_obj == nullptr) {
+  if (new_obj_addr == nullptr) {
+    new_obj_addr = allocate_in_old_gen(klass, new_obj_size, age);
+    if (new_obj_addr == nullptr) {
       return oop_promotion_failed(o, test_mark);
     }
     new_obj_is_tenured = true;
   }
 
-  assert(new_obj != nullptr, "allocation should have succeeded");
+  assert(new_obj_addr != nullptr, "allocation should have succeeded");
 
   // Copy obj
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(o), new_obj_addr, new_obj_size);
 
   // Now we have to CAS in the header.
   // Because the forwarding is done with memory_order_relaxed there is no
   // ordering with the above copy.  Clients that get the forwardee must not
   // examine its contents without other synchronization, since the contents
   // may not be up to date for them.
-  oop forwardee = o->forward_to_atomic(new_obj, test_mark, memory_order_relaxed);
+  oop forwardee = o->forward_to_atomic(cast_to_oop(new_obj_addr), test_mark, memory_order_relaxed);
   if (forwardee == nullptr) {  // forwardee is null when forwarding is successful
     // We won any races, we "own" this object.
+    oop new_obj = cast_to_oop(new_obj_addr);
     assert(new_obj == o->forwardee(), "Sanity");
 
     // Increment age if obj still in new generation. Now that
@@ -321,9 +318,9 @@ inline oop PSPromotionManager::copy_unmarked_to_survivor_space(oop o,
     assert(o->forwardee() == forwardee, "invariant");
 
     if (new_obj_is_tenured) {
-      _old_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+      _old_lab.unallocate_object(new_obj_addr, new_obj_size);
     } else {
-      _young_lab.unallocate_object(cast_from_oop<HeapWord*>(new_obj), new_obj_size);
+      _young_lab.unallocate_object(new_obj_addr, new_obj_size);
     }
     return forwardee;
   }
