@@ -197,7 +197,7 @@ void JvmtiAgentList::load_xrun_agents() {
 void JvmtiAgentList::load_agent(const char* agent_name, bool is_absolute_path,
                                 const char* options, outputStream* st) {
   if (JvmtiEnvBase::get_phase() != JVMTI_PHASE_LIVE) {
-    st->print_cr("Not in live phase");
+    st->print_cr("Dynamic agent loading is only permitted in the live phase");
     return;
   }
 
