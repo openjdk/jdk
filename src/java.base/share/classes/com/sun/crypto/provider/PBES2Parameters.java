@@ -225,6 +225,10 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         // next DerValue as the real PBES2-params.
         if (kdf.getTag() == DerValue.tag_ObjectId) {
             pBES2_params = pBES2_params.data.getDerValue();
+            if (pBES2_params.tag != DerValue.tag_Sequence) {
+                throw new IOException("PBE parameter parsing error: "
+                    + "not an ASN.1 SEQUENCE tag");
+            }
             kdf = pBES2_params.data.getDerValue();
         }
 
@@ -248,10 +252,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         iCount = kdfParams.getIterationCount();
         keysize = kdfParams.getKeyLength();
 
-        if (pBES2_params.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBE parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
         String cipherAlgo = parseES(pBES2_params.data.getDerValue());
 
         this.pbes2AlgorithmName = "PBEWith" + kdfAlgo + "And" + cipherAlgo;
@@ -305,7 +305,8 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
 
         DerOutputStream pBES2_params = new DerOutputStream();
         pBES2_params.write(DerValue.tag_Sequence,
-                PBKDF2Parameters.encode(salt, iCount, keysize, kdfAlgo_OID));
+                // keysize encoded as octets
+                PBKDF2Parameters.encode(salt, iCount, keysize/8, kdfAlgo_OID));
 
         DerOutputStream encryptionScheme = new DerOutputStream();
         // algorithm is id-aes128-CBC or id-aes256-CBC

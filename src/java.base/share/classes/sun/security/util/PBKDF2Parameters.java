@@ -77,14 +77,14 @@ public final class PBKDF2Parameters {
     // keyLength in bits, or -1 if not present
     private final int keyLength;
 
-    private String prfAlgo;
+    private final String prfAlgo;
 
     /**
      * Initialize PBKDF2Parameters from a DER encoded
      * parameter block.
-     * 
-     * @param keyDerivationFunc the DER encoding of the parameter block
-     *      
+     *
+     * @param pBKDF2_params the DER encoding of the parameter block
+     *
      * @throws IOException for parsing errors in the input stream
      */
     public PBKDF2Parameters(DerValue pBKDF2_params) throws IOException {
@@ -144,6 +144,7 @@ public final class PBKDF2Parameters {
 
     public static byte[] encode(byte[] salt, int iterationCount,
             int keyLength, ObjectIdentifier kdfAlgo_OID) {
+        assert keyLength != -1;
         return new DerOutputStream()
                 .putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1))
                 .write(DerValue.tag_Sequence, new DerOutputStream()

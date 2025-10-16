@@ -43,8 +43,6 @@ import sun.security.x509.AlgorithmId;
 /**
  * The MacData type, as defined in PKCS#12.
  *
- * @author Sharon Liu
- *
  * The ASN.1 definition is as follows:
  *
  * <pre>
@@ -63,6 +61,8 @@ import sun.security.x509.AlgorithmId;
  * }
  *
  * </pre>
+ *
+ * @author Sharon Liu
  */
 
 class MacData {
@@ -132,7 +132,7 @@ class MacData {
         }
     }
 
-    private static Mac getMac(String macAlgorithm, char[] password,
+    private static byte[] getMac(String macAlgorithm, char[] password,
             PBEParameterSpec params, byte[] data,
             String kdfHmac, String hmac, int keyLength)
             throws NoSuchAlgorithmException, InvalidKeySpecException,
@@ -142,22 +142,22 @@ class MacData {
         Mac m;
 
         PBEKeySpec keySpec;
+
+        // The Hmac has to be extracted from the algorithm name for
+        // PBMAC1 algorithms. For non-PBMAC1 macAlgorithms, the name
+        // and Hmac are the same.
         if (macAlgorithm.startsWith("pbewith")) {
             m = Mac.getInstance(hmac);
-            int len = keyLength == 0 ? m.getMacLength()*8 : keyLength;
+            int len = keyLength == -1 ? m.getMacLength()*8 : keyLength;
             skf = SecretKeyFactory.getInstance("PBKDF2With" +kdfHmac);
             keySpec = new PBEKeySpec(password, params.getSalt(),
                     params.getIterationCount(), len);
-            pbeKey = skf.generateSecret(new PBEKeySpec(password,
-                    params.getSalt(), params.getIterationCount(), len));
         } else {
-            hmac = macAlgorithm;
-            m = Mac.getInstance(hmac);
-            keySpec = new PBEKeySpec(password);
+            m = Mac.getInstance(macAlgorithm);
             skf = SecretKeyFactory.getInstance("PBE");
-            pbeKey = skf.generateSecret(keySpec);
+            keySpec = new PBEKeySpec(password);
         }
-        keySpec.clearPassword();
+        pbeKey = skf.generateSecret(keySpec);
 
         try {
             if (macAlgorithm.startsWith("pbewith")) {
@@ -166,27 +166,25 @@ class MacData {
                 m.init(pbeKey, params);
             }
         } finally {
+            keySpec.clearPassword();
             sun.security.util.KeyUtil.destroySecretKeys(pbeKey);
         }
         m.update(data);
-        return m;
+        return m.doFinal();
     }
 
     void processMacData(char[] password, byte[] data)
             throws InvalidKeySpecException,
             NoSuchAlgorithmException, UnrecoverableKeyException,
             InvalidKeyException, InvalidAlgorithmParameterException {
-        Mac m;
-        byte[] macResult;
 
-        m = getMac(this.macAlgorithm, password,
+        byte[] macResult = getMac(this.macAlgorithm, password,
                 new PBEParameterSpec(this.macSalt, this.iterations),
                 data, this.kdfHmac, this.hmac, this.keyLength);
-        macResult = m.doFinal();
 
         if (debug != null) {
             debug.println("Checking keystore integrity " +
-                    "(" + m.getAlgorithm() + " iterations: "
+                    "(" + this.macAlgorithm + " iterations: "
                     + this.iterations + ")");
         }
 
@@ -205,16 +203,15 @@ class MacData {
     static byte[] calculateMac(char[] passwd, byte[] data,
             String macAlgorithm, int macIterationCount, byte[] salt)
             throws IOException, NoSuchAlgorithmException {
-        final byte[] mData;
         final PBEParameterSpec params;
-        String algName = "PBMAC1";
+        String algName;
         String kdfHmac;
         String hmac;
         Mac m;
-        int keyLength;
 
         macAlgorithm = macAlgorithm.toLowerCase(ENGLISH);
         if (macAlgorithm.startsWith("pbewith")) {
+            algName = "PBMAC1";
             kdfHmac = MacData.parseKdfHmac(macAlgorithm);
             hmac = MacData.parseHmac(macAlgorithm);
             if (hmac == null) {
@@ -222,28 +219,27 @@ class MacData {
             }
         } else if (macAlgorithm.startsWith("hmacpbe")) {
             algName = macAlgorithm.substring(7);
-            kdfHmac = macAlgorithm;
+            kdfHmac = null;
             hmac = macAlgorithm;
         } else {
             throw new ParsingException("unexpected algorithm '"
-                    +macAlgorithm+ "'");
+                    + macAlgorithm + "'");
         }
 
         params = new PBEParameterSpec(salt, macIterationCount);
 
         try {
-            m = getMac(macAlgorithm, passwd, params, data, kdfHmac, hmac, 0);
-            byte[] macResult = m.doFinal();
+            byte[] macResult = getMac(macAlgorithm, passwd, params, data,
+                    kdfHmac, hmac, -1);
 
             DerOutputStream bytes = new DerOutputStream();
             bytes.write(encode(algName, macResult, params, kdfHmac, hmac,
-                    m.getMacLength()));
-            mData = bytes.toByteArray();
+                    macResult.length));
+            return bytes.toByteArray();
         } catch (InvalidKeySpecException | InvalidKeyException |
                     InvalidAlgorithmParameterException e) {
             throw new IOException("calculateMac failed: " + e, e);
         }
-        return mData;
     }
 
     String getMacAlgorithm() {
@@ -267,8 +263,19 @@ class MacData {
     static byte[] encode(String algName, byte[] digest, PBEParameterSpec p,
             String kdfHmac, String hmac, int keyLength)
             throws NoSuchAlgorithmException {
-        return PBMAC1Parameters.encode(algName, p.getSalt(),
-                p.getIterationCount(), keyLength, kdfHmac, hmac, digest);
+        if (algName.equals("PBMAC1")) {
+            return PBMAC1Parameters.encode(p.getSalt(), p.getIterationCount(),
+                    keyLength, kdfHmac, hmac, digest);
+        } else {
+            byte[] bytes = new DerOutputStream()
+                    .write(DerValue.tag_Sequence, new DerOutputStream()
+                            .write(DerValue.tag_Sequence, new DerOutputStream()
+                                    .write(AlgorithmId.get(algName))
+                                    .putOctetString(digest))
+                            .putOctetString(p.getSalt())
+                            .putInteger(p.getIterationCount())).toByteArray();
+            return bytes;
+        }
     }
 
     private static String parseKdfHmac(String text) {

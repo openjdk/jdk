@@ -350,7 +350,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 try {
                     cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
                 } finally {
-                    destroyPBEKey(skey);
+                    sun.security.util.KeyUtil.destroySecretKeys(skey);
                 }
                 byte[] keyInfo = cipher.doFinal(encryptedKey);
                 /*
@@ -840,17 +840,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
-     * Destroy the key obtained from getPBEKey().
-     */
-    private void destroyPBEKey(SecretKey key) {
-        try {
-            key.destroy();
-        } catch (DestroyFailedException e) {
-            // Accept this
-        }
-    }
-
-    /*
      * Encrypt private key or secret key using Password-based encryption (PBE)
      * as defined in PKCS#5.
      *
@@ -899,7 +888,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, skey, algParams);
             } finally {
-                destroyPBEKey(skey);
+                sun.security.util.KeyUtil.destroySecretKeys(skey);
             }
             byte[] encryptedKey = cipher.doFinal(data);
             algid = new AlgorithmId(pbeOID, cipher.getParameters());
@@ -1833,7 +1822,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, skey, algParams);
             } finally {
-                destroyPBEKey(skey);
+                sun.security.util.KeyUtil.destroySecretKeys(skey);
             }
             encryptedData = cipher.doFinal(data);
 
@@ -2043,7 +2032,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         try {
                             cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
                         } finally {
-                            destroyPBEKey(skey);
+                            sun.security.util.KeyUtil.destroySecretKeys(skey);
                         }
                         loadSafeContents(new DerInputStream(cipher.doFinal(rawData)));
                         return null;
@@ -2071,7 +2060,6 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             if (password != null) {
                 MacData macData = new MacData(s);
                 int ic = macData.getIterations();
-                byte[] salt = macData.getSalt();
 
                 try {
                     if (ic > MAX_ITERATION_COUNT) {

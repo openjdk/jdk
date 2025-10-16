@@ -96,7 +96,8 @@ final class PBMAC1Parameters {
         // Hmac function used to compute the MAC
         this.hmacAlgo = o.stdName();
 
-        DerValue kdf = pBMAC1_params.data.getDerValue();
+        //DerValue kdf = pBMAC1_params.data.getDerValue();
+        DerValue kdf = info[0];
 
         if (!pkcs5PBKDF2_OID.equals(kdf.data.getOID())) {
             throw new IOException("PBKDF2 parameter parsing error: "
@@ -115,29 +116,20 @@ final class PBMAC1Parameters {
         this.kdfParams = new PBKDF2Parameters(pBKDF2_params);
     }
 
-    static byte[] encode(String algName, byte[] salt, int iterationCount, int keyLength,
+    static byte[] encode(byte[] salt, int iterationCount, int keyLength,
             String kdfHmac, String hmac, byte[] digest) throws NoSuchAlgorithmException {
-        if (algName.equals("PBMAC1")) {
-            return new DerOutputStream().write(DerValue.tag_Sequence, new DerOutputStream()
-                    .write(DerValue.tag_Sequence, new DerOutputStream()
-                            .write(DerValue.tag_Sequence, new DerOutputStream()
-                                    .putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1))
-                                    .write(DerValue.tag_Sequence, new DerOutputStream()
-                                            .write(DerValue.tag_Sequence, PBKDF2Parameters.encode(salt, iterationCount, keyLength, kdfHmac))
-                                            .write(DerValue.tag_Sequence, new DerOutputStream()
-                                                    .putOID(ObjectIdentifier.of(KnownOIDs.findMatch(hmac)))
-                                                    .putNull())))
-                            .putOctetString(digest))
-                    .putOctetString(new byte[]{ 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' })
-                    .putInteger(1)).toByteArray();
-        } else {
-            return new DerOutputStream()
-                    .write(DerValue.tag_Sequence, new DerOutputStream()
+        return new DerOutputStream().write(DerValue.tag_Sequence, new DerOutputStream()
+                .write(DerValue.tag_Sequence, new DerOutputStream()
                         .write(DerValue.tag_Sequence, new DerOutputStream()
-                                .write(AlgorithmId.get(algName)).putOctetString(digest))
-                        .putOctetString(salt)
-                        .putInteger(iterationCount)).toByteArray();
-        }
+                                .putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1))
+                                .write(DerValue.tag_Sequence, new DerOutputStream()
+                                        .write(DerValue.tag_Sequence, PBKDF2Parameters.encode(salt, iterationCount, keyLength, kdfHmac))
+                                        .write(DerValue.tag_Sequence, new DerOutputStream()
+                                                .putOID(ObjectIdentifier.of(KnownOIDs.findMatch(hmac)))
+                                                .putNull())))
+                        .putOctetString(digest))
+                .putOctetString(new byte[]{ 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' })
+                .putInteger(1)).toByteArray();
     }
 
     PBKDF2Parameters getKdfParams() {
