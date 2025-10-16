@@ -39,8 +39,7 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 /**
- * A lazy constant is a deferred, shallowly immutable constant to be computed at
- * a later time via an underlying computing function.
+ * A lazy constant is a holder of contents that can be set at most once.
  * <p>
  * A lazy constant is created using the factory method
  * {@linkplain LazyConstant#of(Supplier)}. When created, the lazy constant is
