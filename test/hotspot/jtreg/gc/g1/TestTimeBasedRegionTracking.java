@@ -67,13 +67,13 @@ public class TestTimeBasedRegionTracking {
         System.arraycopy(TEST_VM_OPTS.split(" "), 0, command, 0, TEST_VM_OPTS.split(" ").length);
         command[command.length - 1] = "gc.g1.TestTimeBasedRegionTracking$RegionTransitionTest";
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
-        
+
         Process process = pb.start();
         OutputAnalyzer output = new OutputAnalyzer(process);
 
         // Verify region state changes and basic functionality
         // Check for key log messages that indicate the feature is working
-        if (output.getStdout().contains("Region state transition:") || 
+        if (output.getStdout().contains("Region state transition:") ||
             output.getStdout().contains("Uncommit candidates found:") ||
             output.getStdout().contains("Starting uncommit evaluation")) {
             System.out.println("Time-based evaluation system is working");
@@ -91,7 +91,7 @@ public class TestTimeBasedRegionTracking {
 
         public static void main(String[] args) throws Exception {
             System.out.println("RegionTransitionTest: Starting");
-            
+
             // Phase 1: Active allocation
             allocateMemory(20); // Reduced from 32MB for faster execution
             System.gc();
@@ -109,7 +109,7 @@ public class TestTimeBasedRegionTracking {
             arrays = null;
             System.gc();
             Thread.sleep(1000); // Shorter final wait
-            
+
             System.out.println("RegionTransitionTest: Test completed");
             Runtime.getRuntime().halt(0);
         }
@@ -127,7 +127,7 @@ public class TestTimeBasedRegionTracking {
         System.arraycopy(TEST_VM_OPTS.split(" "), 0, command, 0, TEST_VM_OPTS.split(" ").length);
         command[command.length - 1] = "gc.g1.TestTimeBasedRegionTracking$ConcurrentAccessTest";
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
-        
+
         Process process = pb.start();
         OutputAnalyzer output = new OutputAnalyzer(process);
 
@@ -140,7 +140,7 @@ public class TestTimeBasedRegionTracking {
         System.arraycopy(TEST_VM_OPTS.split(" "), 0, command, 0, TEST_VM_OPTS.split(" ").length);
         command[command.length - 1] = "gc.g1.TestTimeBasedRegionTracking$RegionLifecycleEdgeCaseTest";
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(command);
-        
+
         Process process = pb.start();
         OutputAnalyzer output = new OutputAnalyzer(process);
 
@@ -350,7 +350,7 @@ public class TestTimeBasedRegionTracking {
             // Clean up
             sharedMemory.clear();
             System.gc();
-            
+
             // Wait for one more evaluation cycle to see some activity
             Thread.sleep(2000);
 

@@ -1177,7 +1177,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
 
   size_t shrunk_bytes = num_regions_removed * G1HeapRegion::GrainBytes;
   log_debug(gc, ergo, heap)("Heap resize. Requested shrinking amount: %zuB actual shrinking amount: %zuB (%u regions)",
-                           shrink_bytes, shrunk_bytes, num_regions_removed);
+                            shrink_bytes, shrunk_bytes, num_regions_removed);
 
   if (num_regions_removed > 0) {
     log_info(gc, heap)("Heap shrink details: uncommitted %u regions (%zuMB), heap size now %zuMB",

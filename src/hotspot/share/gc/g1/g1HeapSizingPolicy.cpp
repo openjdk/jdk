@@ -507,7 +507,7 @@ void G1HeapSizingPolicy::find_uncommit_candidates_by_time(GrowableArray<G1HeapRe
   _g1h->heap_region_iterate(&cl);
 
   if (inactive_regions > 0) {
-    log_debug(gc, sizing)("Time-based uncommit evaluation: found %u inactive regions (requested %u)",
+    log_debug(gc, sizing)("Time-based uncommit evaluation: found %u idle regions (requested %u)",
                          inactive_regions, max_candidates);
   }
 }
@@ -567,8 +567,8 @@ bool G1HeapSizingPolicy::should_uncommit_region(G1HeapRegion* hr) const {
 
   bool should_uncommit = elapsed.milliseconds() > G1UncommitDelayMillis;
   if (should_uncommit) {
-    log_debug(gc, sizing)("Region state transition: transitioning from active to inactive");
-    log_debug(gc, sizing)("Region state transition: Region %u transitioning from active to inactive after " JLONG_FORMAT "ms idle",
+    log_debug(gc, sizing)("Region state transition: transitioning from active to idle");
+    log_debug(gc, sizing)("Region state transition: Region %u transitioning from active to idle after " JLONG_FORMAT "ms idle",
                   hr->hrm_index(), (jlong)elapsed.milliseconds());
   }
 
@@ -596,14 +596,14 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
   ResourceMark rm; // Ensure GrowableArray resources are properly released
 
   // Count regions eligible for uncommit (don't store them - VM operation will re-evaluate)
-  uint inactive_count = count_uncommit_candidates();
+  uint idle_count = count_uncommit_candidates();
   uint total_regions = _g1h->max_num_regions();
 
-  log_debug(gc, sizing)("Uncommit evaluation: found %u inactive candidates (min required: %zu)",
-                       inactive_count, (size_t)G1MinRegionsToUncommit);
+  log_debug(gc, sizing)("Uncommit evaluation: found %u idle candidates (min required: %zu)",
+                       idle_count, (size_t)G1MinRegionsToUncommit);
 
-  // Need minimum number of inactive regions to proceed
-  if (inactive_count >= G1MinRegionsToUncommit) {
+  // Need minimum number of idle regions to proceed
+  if (idle_count >= G1MinRegionsToUncommit) {
     size_t region_size = G1HeapRegion::GrainBytes;
     size_t current_heap = _g1h->capacity();
     size_t min_heap = MAX2((size_t)InitialHeapSize, MinHeapSize);  // Never go below initial size
@@ -630,9 +630,9 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
       // Total regions we must keep available = young gen + G1's standard reserve
       size_t reserved_regions = young_gen_regions + g1_reserve_regions;
 
-      log_debug(gc, sizing)("Uncommit evaluation: regions analysis - committed=%zu, inactive=%u, "
+      log_debug(gc, sizing)("Uncommit evaluation: regions analysis - committed=%zu, idle=%u, "
                            "young_gen=%zu, g1_reserve=%zu, reserved_total=%zu",
-                           committed_regions, inactive_count, young_gen_regions, g1_reserve_regions,
+                           committed_regions, idle_count, young_gen_regions, g1_reserve_regions,
                            reserved_regions);
 
       // Conservative safety: ensure we always keep more than the reserved amount
@@ -650,7 +650,7 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
 
       // Only uncommit regions beyond our conservative reserves
       // Limited by G1MinRegionsToUncommit to avoid thrashing
-      size_t available_for_uncommit = inactive_count;
+      size_t available_for_uncommit = idle_count;
       if (available_for_uncommit < G1MinRegionsToUncommit) {
         log_debug(gc, sizing)("Time-based uncommit: below minimum threshold (%zu < %zu)",
                              available_for_uncommit, (size_t)G1MinRegionsToUncommit);
@@ -679,12 +679,12 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
       }
 
       if (shrink_bytes > 0) {
-        log_debug(gc, sizing)("Uncommit candidates found: %u inactive regions", inactive_count);
-        log_info(gc, sizing)("Uncommit evaluation: found %u inactive regions, uncommitting %zu regions (%zuMB)",
-                            inactive_count, regions_to_uncommit, shrink_bytes / M);
-        log_debug(gc, sizing)("Uncommit evaluation: Found %u inactive regions out of %zu total regions, "
+        log_debug(gc, sizing)("Uncommit candidates found: %u idle regions", idle_count);
+        log_info(gc, sizing)("Uncommit evaluation: found %u idle regions, uncommitting %zu regions (%zuMB)",
+                            idle_count, regions_to_uncommit, shrink_bytes / M);
+        log_debug(gc, sizing)("Uncommit evaluation: Found %u idle regions out of %zu total regions, "
                              "target shrink: %zuB (max allowed: %zuB)",
-                             inactive_count, total_regions, shrink_bytes, max_shrink_bytes);
+                             idle_count, total_regions, shrink_bytes, max_shrink_bytes);
         log_debug(gc, sizing)("Region state transition: %zu regions selected for uncommit",
                      regions_to_uncommit);
 
@@ -699,8 +699,8 @@ size_t G1HeapSizingPolicy::evaluate_heap_resize_for_uncommit() {
   }
 
   log_info(gc, sizing)("Uncommit evaluation: no heap uncommit needed "
-                      "(inactive=%u min_required=%zu heap=%zuB min=%zuB)",
-                      inactive_count, (size_t)G1MinRegionsToUncommit,
+                      "(idle=%u min_required=%zu heap=%zuB min=%zuB)",
+                      idle_count, (size_t)G1MinRegionsToUncommit,
                       _g1h->capacity(), MAX2((size_t)InitialHeapSize, MinHeapSize));
 
   return 0;

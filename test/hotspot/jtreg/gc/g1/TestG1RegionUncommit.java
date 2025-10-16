@@ -78,11 +78,11 @@ public class TestG1RegionUncommit {
         // Verify the uncommit evaluation logic is working
         output.shouldContain("G1 Time-Based Heap Sizing enabled (uncommit-only)");
         output.shouldContain("Starting uncommit evaluation");
-        
+
         // The test should show either successful uncommit or reasons why uncommit didn't happen
         // Both are valid outcomes showing the evaluation system is working
         if (output.getStdout().contains("Region state transition:") ||
-            output.getStdout().contains("Uncommit evaluation: Found") || 
+            output.getStdout().contains("Uncommit evaluation: Found") ||
             output.getStdout().contains("Uncommit candidates found") ||
             output.getStdout().contains("no heap uncommit needed")) {
             // Test passed - evaluation system is working

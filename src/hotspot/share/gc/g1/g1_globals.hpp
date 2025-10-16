@@ -372,7 +372,7 @@
           "the same or more than this number of code roots to be used.")    \
                                                                             \
   product(bool, G1UseTimeBasedHeapSizing, true, DIAGNOSTIC,                 \
-          "Enable time-based heap sizing to uncommit memory from inactive " \
+          "Enable time-based heap sizing to uncommit memory from idle "    \
           "regions independent of GC cycles")                               \
                                                                             \
   product(uintx, G1TimeBasedEvaluationIntervalMillis, 60000, MANAGEABLE,    \
@@ -381,12 +381,12 @@
           range(1000, LP64_ONLY(max_jlong) NOT_LP64(max_uintx / 2))         \
                                                                             \
   product(uintx, G1UncommitDelayMillis, 300000, MANAGEABLE,                 \
-          "A region is considered inactive if it has not been accessed "    \
+          "A region is considered idle if it has not been accessed "       \
           "within this many milliseconds")                                  \
           range(1000, LP64_ONLY(max_jlong) NOT_LP64(max_uintx / 2))         \
                                                                             \
   product(size_t, G1MinRegionsToUncommit, 10, DIAGNOSTIC,                   \
-          "Minimum number of inactive regions required before G1 will "     \
+          "Minimum number of idle regions required before G1 will "        \
           "attempt to uncommit memory")                                     \
           range(1, max_uintx)                                               \
                                                                             \
