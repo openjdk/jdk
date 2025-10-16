@@ -1411,9 +1411,9 @@ public interface Statement extends Wrapper, AutoCloseable {
      /**
      * Returns a SQL identifier. If {@code identifier} is a simple SQL identifier:
      * <ul>
-     * <li>Return the original value if {@code alwaysQuote} is
+     * <li>Return the original value if {@code alwaysDelimit} is
      * {@code false}</li>
-     * <li>Return a delimited identifier if {@code alwaysQuote} is
+     * <li>Return a delimited identifier if {@code alwaysDelimit} is
      * {@code true}</li>
      * </ul>
      *
@@ -1451,7 +1451,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <thead>
      * <tr>
      * <th scope="col">identifier</th>
-     * <th scope="col">alwaysQuote</th>
+     * <th scope="col">alwaysDelimit</th>
      * <th scope="col">Result</th></tr>
      * </thead>
      * <tbody>
@@ -1503,8 +1503,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      * of this method in order to meet the requirements of the underlying
      * datasource.
      * @param identifier a SQL identifier
-     * @param alwaysQuote indicates if a simple SQL identifier should be
-     * returned as a quoted identifier
+     * @param alwaysDelimit indicates if a simple SQL identifier should be
+     * returned as a delimited identifier
      * @return A simple SQL identifier or a delimited identifier
      * @throws SQLException if identifier is not a valid identifier
      * @throws SQLFeatureNotSupportedException if the datasource does not support
@@ -1513,8 +1513,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @since 9
      */
-    default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
-        return SQLUtils.enquoteIdentifier(identifier, alwaysQuote);
+    default String enquoteIdentifier(String identifier, boolean alwaysDelimit) throws SQLException {
+        return SQLUtils.enquoteIdentifier(identifier, alwaysDelimit);
     }
 
     /**

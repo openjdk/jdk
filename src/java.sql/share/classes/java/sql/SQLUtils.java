@@ -76,9 +76,9 @@ class SQLUtils {
     /**
      * Returns a SQL identifier. If {@code identifier} is a simple SQL identifier:
      * <ul>
-     * <li>Return the original value if {@code alwaysQuote} is
+     * <li>Return the original value if {@code alwaysDelimit} is
      * {@code false}</li>
-     * <li>Return a delimited identifier if {@code alwaysQuote} is
+     * <li>Return a delimited identifier if {@code alwaysDelimit} is
      * {@code true}</li>
      * </ul>
      * <p>
@@ -95,7 +95,7 @@ class SQLUtils {
      * invalid for the datasource.
      *
      * @param identifier  a SQL identifier
-     * @param alwaysQuote indicates if a simple SQL identifier should be
+     * @param alwaysDelimit indicates if a simple SQL identifier should be
      *                    returned as a quoted identifier
      * @return A simple SQL identifier or a delimited identifier
      * @throws SQLException                    if identifier is not a valid identifier
@@ -123,7 +123,7 @@ class SQLUtils {
      * <thead>
      * <tr>
      * <th scope="col">identifier</th>
-     * <th scope="col">alwaysQuote</th>
+     * <th scope="col">alwaysDelimit</th>
      * <th scope="col">Result</th></tr>
      * </thead>
      * <tbody>
@@ -174,13 +174,13 @@ class SQLUtils {
      * of this method in order to meet the requirements of the underlying
      * datasource.
      */
-    static String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
+    static String enquoteIdentifier(String identifier, boolean alwaysDelimit) throws SQLException {
         int len = identifier.length();
         if (len < 1 || len > 128) {
             throw new SQLException("Invalid name");
         }
         if (SIMPLE_IDENTIFIER_PATTERN.matcher(identifier).matches()) {
-            return alwaysQuote ? "\"" + identifier + "\"" : identifier;
+            return alwaysDelimit ? "\"" + identifier + "\"" : identifier;
         }
         if (identifier.matches("^\".+\"$")) {
             identifier = identifier.substring(1, len - 1);
