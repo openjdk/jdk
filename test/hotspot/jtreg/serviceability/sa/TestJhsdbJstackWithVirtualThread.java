@@ -45,7 +45,7 @@ public class TestJhsdbJstackWithVirtualThread {
 
     private static void runJstack(LingeredApp app) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-        launcher.addVMArgs(Utils.getTestJavaOpts());
+        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion"));
         launcher.addToolArg("jstack");
         launcher.addToolArg("--pid");
         launcher.addToolArg(Long.toString(app.getPid()));
