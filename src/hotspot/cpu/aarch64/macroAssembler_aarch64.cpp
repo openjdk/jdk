@@ -464,7 +464,7 @@ public:
   }
 };
 
-address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
+address MacroAssembler::target_addr_for_insn(address insn_addr) {
   address target;
   RelocActions<AArch64Decoder>::run(insn_addr, target);
   return target;
@@ -515,11 +515,11 @@ int MacroAssembler::patch_narrow_klass(address insn_addr, narrowKlass n) {
   return 2 * NativeInstruction::instruction_size;
 }
 
-address MacroAssembler::target_addr_for_insn_or_null(address insn_addr, unsigned insn) {
-  if (NativeInstruction::is_ldrw_to_zr(address(&insn))) {
+address MacroAssembler::target_addr_for_insn_or_null(address insn_addr) {
+  if (NativeInstruction::is_ldrw_to_zr(insn_addr)) {
     return nullptr;
   }
-  return MacroAssembler::target_addr_for_insn(insn_addr, insn);
+  return MacroAssembler::target_addr_for_insn(insn_addr);
 }
 
 void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool in_nmethod, Register tmp) {
