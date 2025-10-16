@@ -38,6 +38,8 @@
 static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
     char cmd[256];
     snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", getenv("JCMD_PATH"), PID());
+    printf("Running jcmd command: '%s'\n", cmd);
+
     int res = system(cmd);
     if (res == -1) {
         printf("jcmd call failed: %s\n", strerror(errno));
@@ -50,6 +52,8 @@ static void JNICALL VMStartAttach(jvmtiEnv* jvmti, JNIEnv* env) {
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "%s -cp %s AttachAgent %d", getenv("JAVA_PATH"), getenv("CLASSPATH"),
                                                            PID());
+    printf("Running attach command: '%s'\n", cmd);
+
     int res = system(cmd);
     if (res == -1) {
         printf("attach call failed: %s\n", strerror(errno));
