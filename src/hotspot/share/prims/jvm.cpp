@@ -897,8 +897,15 @@ static jclass jvm_define_class_common(const char *name,
 
   if (cfd_evt.should_commit()) {
     cfd_evt.set_definedClass(k);
-    cfd_evt.set_source(source != nullptr ? source : "jvm://");
+    cfd_evt.set_source(source != nullptr ? source : "jrt://");
     cfd_evt.set_definingClassLoader(k->class_loader_data());
+
+    const PackageEntry *const package = k->package();
+
+    cfd_evt.set_package(package->name()->as_C_string());
+    const ModuleEntry  *const module  = k->module();
+
+    cfd_evt.set_module(module->is_named() ? module->name()->as_C_string() : UNNAMED_MODULE);
 
     cfd_evt.commit();
   }

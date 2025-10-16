@@ -220,6 +220,8 @@
   <Event name="ClassFileDefine" category="Java Virtual Machine, Class Loading" label="ClassFile Definition" thread="true" stackTrace="true" startTime="false">
     <Field type="Class" name="definedClass" label="Defined Class" />
     <Field type="string" name="source" label="ClassFile Location" />
+    <Field type="string" name="package" label="Package Name" />
+    <Field type="string" name="module" label="Module Name" />
     <Field type="ClassLoader" name="definingClassLoader" label="Defining Class Loader" />
   </Event>
 
