@@ -103,7 +103,8 @@ public class ExchangeAttributeTest {
             try {
                 assertNull(exchange.getAttribute("attr"));
                 exchange.setAttribute("attr", "val");
-                assertEquals("val", exchange.getAttribute("attr"));
+                assertEquals("val", exchange.getAttribute("attr"))
+                assertNotEquals("val", exchange.getHttpContext().getAttributes().get("attr"));
                 exchange.setAttribute("attr", null);
                 assertNull(exchange.getAttribute("attr"));
                 exchange.sendResponseHeaders(200, -1);

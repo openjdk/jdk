@@ -23,7 +23,7 @@
  * questions.
  */
 
-import com.sun.net.httpserver.*;
+import module jdk.httpserver;
 
 /**
  * Defines the JDK-specific HTTP server API, and provides the jwebserver tool
@@ -109,7 +109,7 @@ import com.sun.net.httpserver.*;
  * Since JDK 26, by default, exchange attributes are per-exchange and the context attributes must
  * be accessed by calling {@link HttpExchange#getHttpContext() getHttpContext()}{@link
  * HttpContext#getAttributes() .getAttributes()}. <br>
- * A new system property, {@systemProperty jdk.httpserver.attributes}</b> (default value: {@code ""})
+ * A new system property, <b>{@systemProperty jdk.httpserver.attributes}</b> (default value: {@code ""})
  * allows to revert this new behavior. Set this property to "context" to restore the pre JDK 26 behavior.
  *
  * @apiNote The API and SPI in this module are designed and implemented to support a minimal
