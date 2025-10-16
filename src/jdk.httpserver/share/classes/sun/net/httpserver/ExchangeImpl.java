@@ -263,13 +263,18 @@ class ExchangeImpl {
             noContentToSend = true;
             contentLen = 0;
             o.setWrappedStream (new FixedLengthOutputStream (this, ros, contentLen));
-        } else if (contentLen == 0) {
-            if (upgrade && rCode == 101) {
-                o.setWrappedStream (new UpgradeOutputStream (this, ros));
-                close = true;
-            } else if (http10) {
-                o.setWrappedStream (new UndefLengthOutputStream (this, ros));
-                close = true;
+        } else { /* not a HEAD request or 304 response */
+            if (contentLen == 0) {
+                if (http10) {
+                    o.setWrappedStream (new UndefLengthOutputStream (this, ros));
+                    close = true;
+                } else if (upgrade && rCode == 101) {
+                    o.setWrappedStream (new UpgradeOutputStream (this, ros));
+                    close = true;
+                } else {
+                    rspHdrs.set ("Transfer-encoding", "chunked");
+                    o.setWrappedStream (new ChunkedOutputStream (this, ros));
+                }
             } else {
                 if (contentLen == -1) {
                     noContentToSend = true;
