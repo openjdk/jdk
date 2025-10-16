@@ -30,6 +30,7 @@
  * @requires vm.flagless
  * @requires vm.debug & vm.compiler2.enabled
  * @requires os.simpleArch == "x64" | os.arch == "aarch64" | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
+ * @requires vm.opt.EnableVectorSupport == true
  * @modules jdk.incubator.vector
  * @run main/othervm compiler.rangechecks.TestRangeCheckHoistingScaledIV
  */

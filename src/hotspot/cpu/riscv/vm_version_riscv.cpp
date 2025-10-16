@@ -181,6 +181,11 @@ void VM_Version::common_initialize() {
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector,
       unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
+  } else if (AlignVector == false) {
+    if (unaligned_vector.value() != MISALIGNED_VECTOR_FAST) {
+       warning("Misaligned vector accesses are not supported on this CPU");
+       FLAG_SET_DEFAULT(AlignVector, true);
+    }
   }
 
 #ifdef __riscv_ztso

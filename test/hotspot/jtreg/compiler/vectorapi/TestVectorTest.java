@@ -36,6 +36,7 @@ import jdk.incubator.vector.VectorMask;
  * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*sse4.*" & (vm.opt.UseSSE == "null" | vm.opt.UseSSE > 3))
  *           | os.arch == "aarch64"
  *           | (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
+ * @requires vm.opt.EnableVectorSupport == true
  * @run driver compiler.vectorapi.TestVectorTest
  */
 public class TestVectorTest {
