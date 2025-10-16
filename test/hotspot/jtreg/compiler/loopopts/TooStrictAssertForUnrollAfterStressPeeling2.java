@@ -59,7 +59,7 @@
  * @bug 8361608
  * @summary assert in do_unroll does not hold in some cases when peeling comes
  *          just before unrolling. It seems to happen only with stress peeling
- * @run driver compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling2
+ * @run main compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling2
  */
 package compiler.loopopts;
 

@@ -34,7 +34,7 @@
  *                   -Xbatch
  *                   -XX:PerMethodTrapLimit=0
  *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
- * @run driver compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ * @run main compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
  */
 package compiler.loopopts;
 
