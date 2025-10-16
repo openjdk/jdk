@@ -41,7 +41,9 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
-
+#ifdef COMPILER2
+#include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
+#endif // COMPILER2
 #define __ masm->
 
 void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm, DecoratorSet decorators, bool is_oop,
@@ -273,7 +275,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     __ mov(rscratch2, ShenandoahHeap::in_cset_fast_test_addr());
     __ lsr(rscratch1, r0, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     __ ldrb(rscratch2, Address(rscratch2, rscratch1));
-    __ tbz(rscratch2, 0, not_cset);
+    __ cbz(rscratch2, not_cset);
   }
 
   __ push_call_clobbered_registers();
@@ -446,165 +448,106 @@ void ShenandoahBarrierSetAssembler::try_resolve_jobject_in_native(MacroAssembler
   __ bind(done);
 }
 
-// Special Shenandoah CAS implementation that handles false negatives due
-// to concurrent evacuation.  The service is more complex than a
-// traditional CAS operation because the CAS operation is intended to
-// succeed if the reference at addr exactly matches expected or if the
-// reference at addr holds a pointer to a from-space object that has
-// been relocated to the location named by expected.  There are two
-// races that must be addressed:
-//  a) A parallel thread may mutate the contents of addr so that it points
-//     to a different object.  In this case, the CAS operation should fail.
-//  b) A parallel thread may heal the contents of addr, replacing a
-//     from-space pointer held in addr with the to-space pointer
-//     representing the new location of the object.
-// Upon entry to cmpxchg_oop, it is assured that new_val equals null
-// or it refers to an object that is not being evacuated out of
-// from-space, or it refers to the to-space version of an object that
-// is being evacuated out of from-space.
+// Implements CAS on references for the C2 CAS intrinsics.
 //
-// By default the value held in the result register following execution
-// of the generated code sequence is 0 to indicate failure of CAS,
-// non-zero to indicate success. If is_cae, the result is the value most
-// recently fetched from addr rather than a boolean success indicator.
+// We need to avoid false negatives: failing CAS could be caused by attempting
+// a CAS on a from-space reference in memory, and an expected value of the
+// same object, but with a to-space reference.
 //
-// Clobbers rscratch1, rscratch2
-void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler* masm,
-                                                Register addr,
-                                                Register expected,
-                                                Register new_val,
-                                                bool acquire, bool release,
-                                                bool is_cae,
-                                                Register result) {
-  Register tmp1 = rscratch1;
-  Register tmp2 = rscratch2;
-  bool is_narrow = UseCompressedOops;
-  Assembler::operand_size size = is_narrow ? Assembler::word : Assembler::xword;
+// The implementation attempts a normal CAS on the fast path. When the CAS
+// fails, it checks if evacuation is in progress, and if so, calls into the
+// runtime to deal with false negatives.
+// Note: we can not (easily) handle false negatives in assembly (as we did in
+// an earlier implementation) because forwardings might be stored in a
+// forwarding table.
+void ShenandoahBarrierSetAssembler::cmpxchg_oop_c2(const MachNode* node,
+                                                   MacroAssembler* masm,
+                                                   Register addr,
+                                                   Register expected,
+                                                   Register new_val,
+                                                   Register result,
+                                                   bool acquire, bool release, bool weak,
+                                                   bool is_cae) {
+  Register tmp = rscratch2;
+  Assembler::operand_size size = UseCompressedOops ? Assembler::word : Assembler::xword;
 
-  assert_different_registers(addr, expected, tmp1, tmp2);
-  assert_different_registers(addr, new_val,  tmp1, tmp2);
+  assert_different_registers(addr, expected, result, tmp);
+  assert_different_registers(addr, new_val,  result, tmp);
 
-  Label step4, done;
+  ShenandoahCASBarrierSlowStubC2* const slow_stub = ShenandoahCASBarrierSlowStubC2::create(node, addr, expected, new_val, result, tmp, is_cae);
 
-  // There are two ways to reach this label.  Initial entry into the
-  // cmpxchg_oop code expansion starts at step1 (which is equivalent
-  // to label step4).  Additionally, in the rare case that four steps
-  // are required to perform the requested operation, the fourth step
-  // is the same as the first.  On a second pass through step 1,
-  // control may flow through step 2 on its way to failure.  It will
-  // not flow from step 2 to step 3 since we are assured that the
-  // memory at addr no longer holds a from-space pointer.
-  //
-  // The comments that immediately follow the step4 label apply only
-  // to the case in which control reaches this label by branch from
-  // step 3.
-
-  __ bind (step4);
-
-  // Step 4. CAS has failed because the value most recently fetched
-  // from addr is no longer the from-space pointer held in tmp2.  If a
-  // different thread replaced the in-memory value with its equivalent
-  // to-space pointer, then CAS may still be able to succeed.  The
-  // value held in the expected register has not changed.
-  //
-  // It is extremely rare we reach this point.  For this reason, the
-  // implementation opts for smaller rather than potentially faster
-  // code.  Ultimately, smaller code for this rare case most likely
-  // delivers higher overall throughput by enabling improved icache
-  // performance.
-
-  // Step 1. Fast-path.
-  //
   // Try to CAS with given arguments.  If successful, then we are done.
-  //
-  // No label required for step 1.
+  __ cmpxchg(addr, expected, new_val, size, acquire, release, weak, result);
+  // EQ flag set iff success. result holds value fetched.
 
-  __ cmpxchg(addr, expected, new_val, size, acquire, release, false, tmp2);
-  // EQ flag set iff success.  tmp2 holds value fetched.
-
-  // If expected equals null but tmp2 does not equal null, the
-  // following branches to done to report failure of CAS.  If both
-  // expected and tmp2 equal null, the following branches to done to
-  // report success of CAS.  There's no need for a special test of
-  // expected equal to null.
-
-  __ br(Assembler::EQ, done);
-  // if CAS failed, fall through to step 2
-
-  // Step 2. CAS has failed because the value held at addr does not
-  // match expected.  This may be a false negative because the value fetched
-  // from addr (now held in tmp2) may be a from-space pointer to the
-  // original copy of same object referenced by to-space pointer expected.
-  //
-  // To resolve this, it suffices to find the forward pointer associated
-  // with fetched value.  If this matches expected, retry CAS with new
-  // parameters.  If this mismatches, then we have a legitimate
-  // failure, and we're done.
-  //
-  // No need for step2 label.
-
-  // overwrite tmp1 with from-space pointer fetched from memory
-  __ mov(tmp1, tmp2);
-
-  if (is_narrow) {
-    // Decode tmp1 in order to resolve its forward pointer
-    __ decode_heap_oop(tmp1, tmp1);
-  }
-  resolve_forward_pointer(masm, tmp1);
-  // Encode tmp1 to compare against expected.
-  __ encode_heap_oop(tmp1, tmp1);
-
-  // Does forwarded value of fetched from-space pointer match original
-  // value of expected?  If tmp1 holds null, this comparison will fail
-  // because we know from step1 that expected is not null.  There is
-  // no need for a separate test for tmp1 (the value originally held
-  // in memory) equal to null.
-  __ cmp(tmp1, expected);
-
-  // If not, then the failure was legitimate and we're done.
-  // Branching to done with NE condition denotes failure.
-  __ br(Assembler::NE, done);
-
-  // Fall through to step 3.  No need for step3 label.
-
-  // Step 3.  We've confirmed that the value originally held in memory
-  // (now held in tmp2) pointed to from-space version of original
-  // expected value.  Try the CAS again with the from-space expected
-  // value.  If it now succeeds, we're good.
-  //
-  // Note: tmp2 holds encoded from-space pointer that matches to-space
-  // object residing at expected.  tmp2 is the new "expected".
-
-  // Note that macro implementation of __cmpxchg cannot use same register
-  // tmp2 for result and expected since it overwrites result before it
-  // compares result with expected.
-  __ cmpxchg(addr, tmp2, new_val, size, acquire, release, false, noreg);
-  // EQ flag set iff success.  tmp2 holds value fetched, tmp1 (rscratch1) clobbered.
-
-  // If fetched value did not equal the new expected, this could
-  // still be a false negative because some other thread may have
-  // newly overwritten the memory value with its to-space equivalent.
-  __ br(Assembler::NE, step4);
-
-  if (is_cae) {
-    // We're falling through to done to indicate success.  Success
-    // with is_cae is denoted by returning the value of expected as
-    // result.
-    __ mov(tmp2, expected);
-  }
-
-  __ bind(done);
-  // At entry to done, the Z (EQ) flag is on iff if the CAS
-  // operation was successful.  Additionally, if is_cae, tmp2 holds
-  // the value most recently fetched from addr. In this case, success
-  // is denoted by tmp2 matching expected.
-
-  if (is_cae) {
-    __ mov(result, tmp2);
-  } else {
+  if (!is_cae) {
     __ cset(result, Assembler::EQ);
   }
+
+  __ br(Assembler::NE, *slow_stub->entry());
+
+  __ bind(*slow_stub->continuation());
 }
+
+#undef __
+#define __ masm.
+
+void ShenandoahCASBarrierSlowStubC2::emit_code(MacroAssembler& masm) {
+  __ bind(*entry());
+
+  Label runtime;
+  Address gc_state(rthread, in_bytes(ShenandoahThreadLocalData::gc_state_offset()));
+  __ ldrb(_tmp, gc_state);
+  __ tbnz(_tmp, ShenandoahHeap::HAS_FORWARDED_BITPOS, runtime);
+  __ b(*continuation());
+
+  __ bind(runtime);
+  {
+    SaveLiveRegisters save_live_registers(&masm, this);
+    // Setup c_rarg0 to hold addr.
+    Register expected = _expected;
+    Register new_val = _new_val;
+    if (c_rarg0 != _addr) {
+      if (c_rarg0 == expected) {
+        __ mov(rscratch1, expected);
+        expected = rscratch1;
+      } else if (c_rarg0 == new_val) {
+        __ mov(rscratch1, new_val);
+        new_val = rscratch1;
+      }
+      __ mov(c_rarg0, _addr);
+    }
+    // Setup c_rarg1 to hold expected.
+    if (c_rarg1 != expected) {
+      if (c_rarg1 == new_val) {
+        __ mov(rscratch2, new_val);
+        new_val = rscratch2;
+      }
+      __ mov(c_rarg1, expected);
+    }
+    // Setup c_rarg2 to hold new_val.
+    __ mov(c_rarg2, new_val);
+
+    if (UseCompressedOops) {
+      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::cmpxchg_oop_narrow));
+    } else {
+      __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::cmpxchg_oop));
+    }
+    __ blr(lr);
+    __ mov(rscratch1, r0);
+  }
+
+  if (_cae) {
+    __ mov(_result, rscratch1);
+  } else {
+    __ cmp(rscratch1, _expected);
+    __ cset(_result, Assembler::EQ);
+  }
+  __ b(*continuation());
+}
+
+#undef __
+#define __ masm->
 
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register start, Register count, Register scratch, RegSet saved_regs) {
@@ -795,6 +738,28 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
     __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
   }
   __ blr(lr);
+  __ mov(rscratch1, r0);
+  __ pop_call_clobbered_registers();
+  __ mov(r0, rscratch1);
+
+  __ epilogue();
+}
+
+void ShenandoahBarrierSetAssembler::generate_c1_cmpxchg_oop_runtime_stub(StubAssembler* sasm) {
+  __ prologue("shenandoah_cmpxchg_oop", false);
+
+  __ push_call_clobbered_registers();
+  __ load_parameter(0, r0);
+  __ load_parameter(1, r1);
+  __ load_parameter(2, r2);
+
+  if (UseCompressedOops) {
+    __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::cmpxchg_oop_narrow));
+  } else {
+  __ mov(lr, CAST_FROM_FN_PTR(address, ShenandoahRuntime::cmpxchg_oop));
+  }
+  __ blr(lr);
+
   __ mov(rscratch1, r0);
   __ pop_call_clobbered_registers();
   __ mov(r0, rscratch1);
