@@ -514,23 +514,12 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
 
   while (true) {
     cb = (CodeBlob*)heap->allocate(size);
-    {
-      static auto mode = WXArmedForWrite;
-      if (mode == WXArmedForWrite && cb && StressWXHealing) {
-        auto p = (uint32_t*)heap->low();
-        // auto fp = (fptr)p;
-        auto fp = (void(*)())p;
-        {
-          ThreadWXEnable wx(WXExec, Thread::current());
-          {
-            ThreadWXEnable wx(&mode, Thread::current());
-            p[0] = 0xd65f03c0; // ret lr
-            assert (mode == WXWrite, "checking for a working WX implementation");
-          }
-          fp();
-        }
-      }
+
+#ifdef MACOS_AARCH64
+    if (TraceWXHealing) {
+      ThreadWXEnable::test((address)heap->low());
     }
+#endif // MACOS_AARCH64
 
     if (cb != nullptr) break;
     if (!heap->expand_by(CodeCacheExpansionSize)) {

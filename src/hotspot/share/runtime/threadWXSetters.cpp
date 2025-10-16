@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright IBM Corp. 2025 All Rights Reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "runtime/javaThread.inline.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/macros.hpp"
+
+#ifdef MACOS_AARCH64
+
+// Test WX healing. We're going to provoke a signal handler to "heal"
+// (i.e. rewrite) the mode WXArmedForWrite to WXWrite. Return true iff
+// MAP_JIT write protection works as we expect.
+bool ThreadWXEnable::test(address a) {
+  bool result = true;
+  static auto mode = WXArmedForWrite;
+  if (mode == WXArmedForWrite && a && StressWXHealing) {
+    auto p = (unsigned int*)a;
+    // auto fp = (fptr)p;
+    auto fp = (void(*)())p;
+    ThreadWXEnable wx(WXExec, Thread::current());
+    {
+      ThreadWXEnable wx(&mode, Thread::current());
+      p[0] = 0xd65f03c0; // ret lr
+      if (mode != WXWrite) {
+        tty->print_cr("WX Healing is not enabled because MAP_JIT write protection does not work on this system.");
+        guarantee(pthread_jit_write_protect_supported_np() == false, "must be");
+        result = false;
+      }
+    }
+    fp();
+  }
+  return result;
+}
+
+#endif // MACOS_AARCH64

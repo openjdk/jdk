@@ -80,6 +80,8 @@ public:
       }
     }
   }
+
+  static bool test(address p);
 };
 #endif // MACOS_AARCH64
 
