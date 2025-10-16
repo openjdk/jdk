@@ -937,9 +937,9 @@ final class AES_Crypt extends SymmetricCipher {
             int tmp = w[i - 1];
             if (i % nk == 0) {
                 int rW = (tmp << 8) & 0xFFFFFF00 | (tmp >>> 24);
-                tmp = subByte(rW, SBOX) ^ RCON[(i / nk) - 1];
+                tmp = subWord(rW) ^ RCON[(i / nk) - 1];
             } else if ((nk > 6) && ((i % nk) == WB)) {
-                tmp = subByte(tmp, SBOX);
+                tmp = subWord(tmp);
             }
             w[i] = w[i - nk] ^ tmp;
         }
@@ -1013,23 +1013,23 @@ final class AES_Crypt extends SymmetricCipher {
     }
 
     /**
-     * Subtitute the byte as a step of key expansion.
+     * Subtitute the word as a step of key expansion.
      *
      * @param state [in] the targeted word for substituion.
      * @param sub [in] the substitute table for cipher and inverse cipher.
      *
      * @return the substituted word.
      */
-    private static int subByte(int state, byte[][] sub) {
-        byte b0 = (byte) (state >>> 24);
-        byte b1 = (byte) ((state >> 16) & 0xFF);
-        byte b2 = (byte) ((state >> 8) & 0xFF);
-        byte b3 = (byte) (state & 0xFF);
+    private static int subWord(int word) {
+        byte b0 = (byte) (word >>> 24);
+        byte b1 = (byte) ((word >> 16) & 0xFF);
+        byte b2 = (byte) ((word >> 8) & 0xFF);
+        byte b3 = (byte) (word & 0xFF);
 
-        return ((sub[(b0 & 0xF0) >> 4][b0 & 0x0F] & 0xFF) << 24)
-                | ((sub[(b1 & 0xF0) >> 4][b1 & 0x0F] & 0xFF) << 16)
-                | ((sub[(b2 & 0xF0) >> 4][b2 & 0x0F] & 0xFF) << 8)
-                | (sub[(b3 & 0xF0) >> 4][b3 & 0x0F] & 0xFF);
+        return ((SBOX[(b0 & 0xF0) >> 4][b0 & 0x0F] & 0xFF) << 24)
+                | ((SBOX[(b1 & 0xF0) >> 4][b1 & 0x0F] & 0xFF) << 16)
+                | ((SBOX[(b2 & 0xF0) >> 4][b2 & 0x0F] & 0xFF) << 8)
+                | (SBOX[(b3 & 0xF0) >> 4][b3 & 0x0F] & 0xFF);
     }
 
     /**
