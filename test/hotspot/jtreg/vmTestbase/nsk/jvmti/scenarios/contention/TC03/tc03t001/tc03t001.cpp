@@ -137,6 +137,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
                 return NSK_FALSE;
             continue;
         }
+
         threadList[debuggee_thread_cnt].thread = threads[i];
         threadList[debuggee_thread_cnt].dfn = -1;
         threadList[debuggee_thread_cnt].name = info.name;
