@@ -25,6 +25,7 @@
  * @test
  * @summary Nested continuations test
  * @requires vm.continuations
+ * @requires test.thread.factory == null
  * @modules java.base/jdk.internal.vm
  * @build java.base/java.lang.StackWalkerHelper
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames -Xint Scoped

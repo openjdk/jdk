@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 8140450
- * @library /test/lib
  * @summary Test if the getCallerClass method returns empty optional
+ * @requires test.thread.factory == null
+ * @library /test/lib
  * @run main CallerFromMain exec
  */
 

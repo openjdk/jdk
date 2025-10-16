@@ -25,6 +25,7 @@
  * @test
  * @bug     4533087
  * @summary Test to see if the main thread is in its thread group
+ * @requires test.thread.factory == null
  */
 
 public class MainThreadTest {

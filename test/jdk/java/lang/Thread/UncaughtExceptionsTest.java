@@ -36,6 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @bug 4833089 4992454
  * @summary Check for proper handling of uncaught exceptions
  * @author Martin Buchholz
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @build jdk.test.lib.process.*
  * @run junit UncaughtExceptionsTest
