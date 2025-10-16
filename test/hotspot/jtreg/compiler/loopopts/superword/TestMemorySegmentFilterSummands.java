@@ -26,12 +26,12 @@ package compiler.loopopts.superword;
 import java.lang.foreign.*;
 
 import compiler.lib.ir_framework.*;
+import compiler.lib.verify.*;
 
 /*
  * @test
  * @bug 8369902
- * @summary Bug in MemPointerParser::canonicalize_raw_summands let to wrong results
- *          or assert.
+ * @summary Bug in MemPointerParser::canonicalize_raw_summands let to wrong results or assert.
  * @library /test/lib /
  * @run driver compiler.loopopts.superword.TestMemorySegmentFilterSummands
  */
@@ -53,6 +53,11 @@ public class TestMemorySegmentFilterSummands {
 
     static MemorySegment a1 = Arena.ofAuto().allocate(10_000);
     static MemorySegment b1 = Arena.ofAuto().allocate(10_000);
+    static {
+        for (long i = init; i < limit; i++) {
+            a1.set(ValueLayout.JAVA_BYTE, i, (byte)((i & 0xf) + 1));
+        }
+    }
 
     static MemorySegment a2 = MemorySegment.ofArray(new byte[40_000]);
     static MemorySegment b2 = a2;
@@ -68,39 +73,43 @@ public class TestMemorySegmentFilterSummands {
     }
 
     @Test
-    // TODO: rules
-    //@IR(counts = {IRNode.STORE_VECTOR, "= 0",
-    //              IRNode.REPLICATE_L,  "= 0",
-    //              ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
-    //    phase = CompilePhase.PRINT_IDEAL,
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(counts = {IRNode.STORE_VECTOR,   "> 0",
+                  IRNode.LOAD_VECTOR_B,  "> 0",
+                  ".*multiversion.*",    "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
+        phase = CompilePhase.PRINT_IDEAL,
+        applyIfPlatform = {"64-bit", "true"},
+        applyIf = {"AlignVector", "false"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
     public static void test1() {
         long invar = 0;
-        invar += invarX;
+        invar += invarX; // cancles out with above
         invar += invar0;
         invar += invar1;
         invar += invar2;
         invar += invar3;
         invar += invar4;
-        invar -= invarX;
+        invar -= invarX; // cancles out with above
         // invar contains a raw summand for invarX, which has a scaleL=0. It needs to be filtered out.
+        // The two occurances of invarX are conveniently put in a long chain, so that IGVN cannot see
+        // that they cancle out, so that they are not optimized out before loop-opts.
         for (long i = init; i < limit; i++) {
             byte v = a1.get(ValueLayout.JAVA_BYTE, i + invar);
             b1.set(ValueLayout.JAVA_BYTE, i + invar, v);
         }
     }
 
+    @Check(test = "test1")
+    static void check1() {
+        Verify.checkEQ(a1, b1);
+    }
+
     @Test
-    // TODO: rules
-    //@IR(counts = {IRNode.STORE_VECTOR, "= 0",
-    //              IRNode.REPLICATE_L,  "= 0",
-    //              ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
-    //    phase = CompilePhase.PRINT_IDEAL,
-    //    applyIfPlatform = {"64-bit", "true"},
-    //    applyIf = {"AlignVector", "false"},
-    //    applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    // This test could in principle show vectorization, but it would probably need to do some special
+    // tricks to only vectorize around the overlap. Still, it could happen that at some point we end
+    // up multiversioning, and having a vectorized loop that is never entered.
+    //
+    // For now, the long constant BIG leads to an invalid VPointer, which means we do not vectorize.
     static void test2() {
         // At runtime, "BIG + big" is zero. But BIG is a long constant that cannot be represented as
         // an int, and so the scaleL NoOverflowInt is a NaN. We should not filter it out from the summands,
