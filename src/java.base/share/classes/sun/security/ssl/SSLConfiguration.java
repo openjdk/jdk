@@ -203,8 +203,8 @@ final class SSLConfiguration implements Cloneable {
         if (nstServerCount == null || nstServerCount < 0 ||
             nstServerCount > 10) {
             serverNewSessionTicketCount = SERVER_NST_DEFAULT;
-            if (nstServerCount != null && SSLLogger.isOn &&
-                SSLLogger.isOn("ssl,handshake")) {
+            if (nstServerCount != null && SSLLogger.logging &&
+                SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount defaults to " +
                         SERVER_NST_DEFAULT + " as the property was not " +
@@ -212,7 +212,7 @@ final class SSLConfiguration implements Cloneable {
             }
         } else {
             serverNewSessionTicketCount = nstServerCount;
-            if (SSLLogger.isOn && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "jdk.tls.server.newSessionTicketCount set to " +
                         serverNewSessionTicketCount);
@@ -578,7 +578,7 @@ final class SSLConfiguration implements Cloneable {
         String property = System.getProperty(propertyName);
         // this method is called from class initializer; logging here
         // will occasionally pin threads and deadlock if called from a virtual thread
-        if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.SSLCTX)
                 && !Thread.currentThread().isVirtual()) {
             SSLLogger.fine(
                     "System property " + propertyName + " is set to '" +
@@ -607,8 +607,9 @@ final class SSLConfiguration implements Cloneable {
                 if (scheme != null && scheme.isAvailable) {
                     signatureSchemes.add(schemeName);
                 } else {
-                    if (SSLLogger.isOn && SSLLogger.isOn("ssl,sslctx")
-                            && !Thread.currentThread().isVirtual()) {
+                    if (SSLLogger.logging &&
+                            SSLLogger.isOn(SSLLogger.Opt.SSLCTX)
+                                && !Thread.currentThread().isVirtual()) {
                         SSLLogger.fine(
                         "The current installed providers do not " +
                               "support signature scheme: " + schemeName);
