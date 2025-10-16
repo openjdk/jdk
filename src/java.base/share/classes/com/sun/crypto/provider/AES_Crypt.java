@@ -1037,14 +1037,14 @@ final class AES_Crypt extends SymmetricCipher {
      *
      * @param p [in] the plaintext to be encrypted.
      * @param po [in] the plaintext offset in the array of bytes.
-     * @param c [out] the encrypted ciphertext output.
+     * @param c [out] the ciphertext output.
      * @param co [in] the ciphertext offset in the array of bytes.
      */
     @IntrinsicCandidate
     private void implEncryptBlock(byte[] p, int po, byte[] c, int co) {
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
-        int w = 40;
+        int w = K.length - 4;
 
         a0 = ((p[po] & 0xFF) << 24) ^ ((p[po + 1] & 0xFF) << 16)
                 ^ ((p[po + 2] & 0xFF) << 8) ^ (p[po + 3] & 0xFF) ^ K[0];
@@ -1138,43 +1138,41 @@ final class AES_Crypt extends SymmetricCipher {
 
         if (rounds > AES_128_ROUNDS) {
             a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
-                    ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[w];
+                    ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[40];
             a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
-                    ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[w + 1];
+                    ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[41];
             a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
-                    ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[w + 2];
+                    ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[42];
             a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
-                    ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[w + 3];
+                    ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[43];
 
             ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
-                    ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[w + 4];
+                    ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[44];
             ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
-                    ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[w + 5];
+                    ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[45];
             ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
-                    ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[w + 6];
+                    ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[46];
             ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
-                    ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[w + 7];
-            w += 8;
+                    ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[47];
         }
         if (rounds > AES_192_ROUNDS) {
             a0 = T0[ti0 >>> 24] ^ T1[(ti1 >> 16) & 0xFF]
-                    ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[w];
+                    ^ T2[(ti2 >> 8) & 0xFF] ^ T3[ti3 & 0xFF] ^ K[48];
             a1 = T0[ti1 >>> 24] ^ T1[(ti2 >> 16) & 0xFF]
-                    ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[w + 1];
+                    ^ T2[(ti3 >> 8) & 0xFF] ^ T3[ti0 & 0xFF] ^ K[49];
             a2 = T0[ti2 >>> 24] ^ T1[(ti3 >> 16) & 0xFF]
-                    ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[w + 2];
+                    ^ T2[(ti0 >> 8) & 0xFF] ^ T3[ti1 & 0xFF] ^ K[50];
             a3 = T0[ti3 >>> 24] ^ T1[(ti0 >> 16) & 0xFF]
-                    ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[w + 3];
+                    ^ T2[(ti1 >> 8) & 0xFF] ^ T3[ti2 & 0xFF] ^ K[51];
 
             ti0 = T0[a0 >>> 24] ^ T1[(a1 >> 16) & 0xFF]
-                    ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[w + 4];
+                    ^ T2[(a2 >> 8) & 0xFF] ^ T3[a3 & 0xFF] ^ K[52];
             ti1 = T0[a1 >>> 24] ^ T1[(a2 >> 16) & 0xFF]
-                    ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[w + 5];
+                    ^ T2[(a3 >> 8) & 0xFF] ^ T3[a0 & 0xFF] ^ K[53];
             ti2 = T0[a2 >>> 24] ^ T1[(a3 >> 16) & 0xFF]
-                    ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[w + 6];
+                    ^ T2[(a0 >> 8) & 0xFF] ^ T3[a1 & 0xFF] ^ K[54];
             ti3 = T0[a3 >>> 24] ^ T1[(a0 >> 16) & 0xFF]
-                    ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[w + 7];
-            w += 8;
+                    ^ T2[(a1 >> 8) & 0xFF] ^ T3[a2 & 0xFF] ^ K[55];
         }
 
         a0 = T2[ti0 >>> 24] & 0xFF000000
@@ -1184,15 +1182,15 @@ final class AES_Crypt extends SymmetricCipher {
         a1 = T2[ti1 >>> 24] & 0xFF000000
                 ^ T3[(ti2 >> 16) & 0xFF] & 0xFF0000
                 ^ T0[(ti3 >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti0 & 0xFF] & 0xFF ^ K[w+1];
+                ^ T1[ti0 & 0xFF] & 0xFF ^ K[w + 1];
         a2 = T2[ti2 >>> 24] & 0xFF000000
                 ^ T3[(ti3 >> 16) & 0xFF] & 0xFF0000
                 ^ T0[(ti0 >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti1 & 0xFF] & 0xFF ^ K[w+2];
+                ^ T1[ti1 & 0xFF] & 0xFF ^ K[w + 2];
         a3 = T2[ti3 >>> 24] & 0xFF000000
                 ^ T3[(ti0 >> 16) & 0xFF] & 0xFF0000
                 ^ T0[(ti1 >> 8) & 0xFF] & 0xFF00
-                ^ T1[ti2 & 0xFF] & 0xFF ^ K[w+3];
+                ^ T1[ti2 & 0xFF] & 0xFF ^ K[w + 3];
 
         c[co] = (byte) (a0 >>> 24);
         c[co + 1] = (byte) ((a0 >> 16) & 0xFF);
@@ -1217,14 +1215,13 @@ final class AES_Crypt extends SymmetricCipher {
      *
      * @param c [in] the ciphertext to be decrypted.
      * @param co [in] the ciphertext offset in the array of bytes.
-     * @param p [out] the decrypted plaintext output.
+     * @param p [out] the plaintext output.
      * @param po [in] the plaintext offset in the array of bytes.
      */
     @IntrinsicCandidate
     private void implDecryptBlock(byte[] c, int co, byte[] p, int po) {
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
-        int w = 44;
 
         ti0 = ((c[co] & 0xFF) << 24) ^ ((c[co + 1] & 0xFF) << 16)
                 ^ ((c[co + 2] & 0xFF) << 8) ^ (c[co + 3] & 0xFF) ^ K[4];
@@ -1318,42 +1315,41 @@ final class AES_Crypt extends SymmetricCipher {
 
         if (rounds > AES_128_ROUNDS) {
             ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
-                    ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[w];
+                    ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[44];
             ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
-                    ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[w + 1];
+                    ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[45];
             ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
-                    ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[w + 2];
+                    ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[46];
             ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
-                    ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[w + 3];
+                    ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[47];
 
             a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
-                    ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[w + 4];
+                    ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[48];
             a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
-                    ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[w + 5];
+                    ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[49];
             a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
-                    ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[w + 6];
+                    ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[50];
             a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
-                    ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[w + 7];
-            w += 8;
+                    ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[51];
         }
         if (rounds > AES_192_ROUNDS) {
             ti0 = TI0[a0 >>> 24] ^ TI1[(a3 >> 16) & 0xFF]
-                    ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[w];
+                    ^ TI2[(a2 >> 8) & 0xFF] ^ TI3[a1 & 0xFF] ^ K[52];
             ti1 = TI0[a1 >>> 24] ^ TI1[(a0 >> 16) & 0xFF]
-                    ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[w + 1];
+                    ^ TI2[(a3 >> 8) & 0xFF] ^ TI3[a2 & 0xFF] ^ K[53];
             ti2 = TI0[a2 >>> 24] ^ TI1[(a1 >> 16) & 0xFF]
-                    ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[w + 2];
+                    ^ TI2[(a0 >> 8) & 0xFF] ^ TI3[a3 & 0xFF] ^ K[54];
             ti3 = TI0[a3 >>> 24] ^ TI1[(a2 >> 16) & 0xFF]
-                    ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[w + 3];
+                    ^ TI2[(a1 >> 8) & 0xFF] ^ TI3[a0 & 0xFF] ^ K[55];
 
             a0 = TI0[ti0 >>> 24] ^ TI1[(ti3 >> 16) & 0xFF]
-                    ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[w + 4];
+                    ^ TI2[(ti2 >> 8) & 0xFF] ^ TI3[ti1 & 0xFF] ^ K[56];
             a1 = TI0[ti1 >>> 24] ^ TI1[(ti0 >> 16) & 0xFF]
-                    ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[w + 5];
+                    ^ TI2[(ti3 >> 8) & 0xFF] ^ TI3[ti2 & 0xFF] ^ K[57];
             a2 = TI0[ti2 >>> 24] ^ TI1[(ti1 >> 16) & 0xFF]
-                    ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[w + 6];
+                    ^ TI2[(ti0 >> 8) & 0xFF] ^ TI3[ti3 & 0xFF] ^ K[58];
             a3 = TI0[ti3 >>> 24] ^ TI1[(ti2 >> 16) & 0xFF]
-                    ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[w + 7];
+                    ^ TI2[(ti1 >> 8) & 0xFF] ^ TI3[ti0 & 0xFF] ^ K[59];
         }
 
         ti0 = TI4[a0 >>> 24] & 0xFF000000 ^ TI4[(a3 >> 16) & 0xFF] & 0xFF0000
