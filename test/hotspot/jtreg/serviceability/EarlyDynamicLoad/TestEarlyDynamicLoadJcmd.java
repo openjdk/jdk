@@ -42,7 +42,6 @@ public class TestEarlyDynamicLoadJcmd {
                 "-XX:+StartAttachListener",
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
                 "-version");
-        pb.environment().put("MODE", "jcmd");
         String jcmdPath = JDKToolFinder.getJDKTool("jcmd");
         pb.environment().put("JCMD_PATH", jcmdPath);
 
