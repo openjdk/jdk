@@ -965,11 +965,7 @@ public:
   inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
   inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
 
-#if INCLUDE_CDS
-  static void add_delayed_compiled_method_load_event(nmethod* nm);
-public:
-  static void post_delayed_compiled_method_load_events();
-#endif
+  static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
 
  public:
   // ScopeDesc retrieval operation
@@ -1004,6 +1000,9 @@ public:
 
   // Avoid hiding of parent's 'decode(outputStream*)' method.
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
+
+  // AOT cache support
+  static void post_delayed_compiled_method_load_events() NOT_CDS_RETURN;
 
   // printing support
   void print_on_impl(outputStream* st) const;
