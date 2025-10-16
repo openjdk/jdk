@@ -342,6 +342,10 @@ public final class LauncherVerifier {
         Map<String, Object> expected;
         if (cmd.hasArgument("--mac-entitlements")) {
             expected = new PListReader(Files.readAllBytes(Path.of(cmd.getArgumentValue("--mac-entitlements")))).toMap(true);
+        } else if (cmd.hasArgument("--resource-dir") &&
+                   Files.exists(Path.of(cmd.getArgumentValue("--resource-dir")).resolve(cmd.name() + ".entitlements"))) {
+            expected = new PListReader(Files.readAllBytes(
+                    Path.of(cmd.getArgumentValue("--resource-dir")).resolve(cmd.name() + ".entitlements"))).toMap(true);
         } else if (cmd.hasArgument("--mac-app-store")) {
             expected = DefaultEntitlements.APP_STORE;
         } else {
