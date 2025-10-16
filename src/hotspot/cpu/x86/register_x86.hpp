@@ -79,11 +79,9 @@ public:
 
   // Actually available GP registers for use, depending on actual CPU capabilities and flags.
   static int available_gp_registers() {
-#ifdef _LP64
     if (!UseAPX) {
       return number_of_registers / 2;
     }
-#endif // _LP64
     return number_of_registers;
   }
 };
@@ -116,7 +114,6 @@ constexpr Register rsp = as_Register(4);
 constexpr Register rbp = as_Register(5);
 constexpr Register rsi = as_Register(6);
 constexpr Register rdi = as_Register(7);
-#ifdef _LP64
 constexpr Register r8  = as_Register( 8);
 constexpr Register r9  = as_Register( 9);
 constexpr Register r10 = as_Register(10);
@@ -141,7 +138,6 @@ constexpr Register r28 = as_Register(28);
 constexpr Register r29 = as_Register(29);
 constexpr Register r30 = as_Register(30);
 constexpr Register r31 = as_Register(31);
-#endif // _LP64
 
 
 // The implementation of x87 floating point registers for the ia32 architecture.
@@ -250,11 +246,9 @@ public:
 
   // Actually available XMM registers for use, depending on actual CPU capabilities and flags.
   static int available_xmm_registers() {
-#ifdef _LP64
     if (UseAVX < 3) {
       return number_of_registers / 2;
     }
-#endif // _LP64
     return number_of_registers;
   }
 };
@@ -287,7 +281,6 @@ constexpr XMMRegister xmm4  = as_XMMRegister( 4);
 constexpr XMMRegister xmm5  = as_XMMRegister( 5);
 constexpr XMMRegister xmm6  = as_XMMRegister( 6);
 constexpr XMMRegister xmm7  = as_XMMRegister( 7);
-#ifdef _LP64
 constexpr XMMRegister xmm8  = as_XMMRegister( 8);
 constexpr XMMRegister xmm9  = as_XMMRegister( 9);
 constexpr XMMRegister xmm10 = as_XMMRegister(10);
@@ -312,7 +305,6 @@ constexpr XMMRegister xmm28 = as_XMMRegister(28);
 constexpr XMMRegister xmm29 = as_XMMRegister(29);
 constexpr XMMRegister xmm30 = as_XMMRegister(30);
 constexpr XMMRegister xmm31 = as_XMMRegister(31);
-#endif // _LP64
 
 
 // The implementation of AVX-512 opmask registers.
