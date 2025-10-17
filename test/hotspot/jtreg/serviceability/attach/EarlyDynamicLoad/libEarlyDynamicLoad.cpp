@@ -22,7 +22,10 @@
  */
 
 #include <jvmti.h>
-#include <stdio.h>
+#include <cstdio>
+#include <cstring>
+
+extern "C" {
 
 static void JNICALL VMStartCallback(jvmtiEnv* jvmti, JNIEnv* env) {
     putchar('1');
@@ -32,15 +35,18 @@ static void JNICALL VMStartCallback(jvmtiEnv* jvmti, JNIEnv* env) {
 
 JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     jvmtiEnv* jvmti;
-    if ((*vm)->GetEnv(vm, (void**)&jvmti, JVMTI_VERSION_1_0) != 0) {
+    if (vm->GetEnv((void**) &jvmti, JVMTI_VERSION_1_0) != 0) {
         return 1;
     }
 
-    jvmtiEventCallbacks callbacks = {0};
+    jvmtiEventCallbacks callbacks;
+    memset(&callbacks, 0, sizeof(callbacks));
     callbacks.VMStart = VMStartCallback;
 
-    (*jvmti)->SetEventCallbacks(jvmti, &callbacks, sizeof(callbacks));
-    (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
+    jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
 
     return 0;
+}
+
 }
