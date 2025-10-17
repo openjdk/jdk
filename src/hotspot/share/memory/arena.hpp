@@ -38,8 +38,12 @@
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 class ChunkPoolLocker : public StackObj {
- public:
-  ChunkPoolLocker();
+public:
+  enum class LockStrategy { Lock, Try };
+private:
+  bool _locked;
+public:
+  ChunkPoolLocker(LockStrategy ls = Lock);
   ~ChunkPoolLocker();
 };
 
