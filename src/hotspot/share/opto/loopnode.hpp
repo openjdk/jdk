@@ -277,27 +277,25 @@ public:
   class TruncatedIncrement {
     bool _is_valid = false;
 
-    Node* _expr;
     BasicType _bt;
 
     Node* _incr = nullptr;
-    Node* _trunc1 = nullptr;
-    Node* _trunc2 = nullptr;
+    Node* _outer_trunc = nullptr;
+    Node* _inner_trunc = nullptr;
     const TypeInteger* _trunc_type = nullptr;
 
   public:
-    explicit TruncatedIncrement() = default;
-
-    TruncatedIncrement(Node* expr, BasicType bt) :
-      _expr(expr),
+    TruncatedIncrement(BasicType bt) :
       _bt(bt) {}
 
-    bool build();
+    void build(Node* expr);
 
     bool is_valid() const { return _is_valid; }
     Node* incr() const { return _incr; }
-    Node* trunc1() const { return _trunc1; }
-    Node* trunc2() const { return _trunc2; }
+
+    // Optional truncation for: CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
+    Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
+    Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
     const TypeInteger* trunc_type() const { return _trunc_type; }
   };
 
@@ -1334,14 +1332,12 @@ public:
     float _cl_prob = 0.0f;
 
   public:
-    explicit LoopExitTest() = default;
-
     LoopExitTest(const Node* back_control, const IdealLoopTree* loop, PhaseIdealLoop* phase) :
       _back_control(back_control),
       _loop(loop),
       _phase(phase) {}
 
-    bool build();
+    void build();
     bool canonicalize_mask(jlong stride_con);
 
     bool is_valid_with_bt(BasicType bt) {
@@ -1360,7 +1356,6 @@ public:
   class LoopIVIncr {
     bool _is_valid = false;
 
-    Node* _old_incr;
     const Node* _head;
     const IdealLoopTree* _loop;
 
@@ -1368,14 +1363,11 @@ public:
     Node* _phi_incr = nullptr;
 
   public:
-    explicit LoopIVIncr() = default;
-
-    LoopIVIncr(Node* incr, const Node* head, const IdealLoopTree* loop) :
-      _old_incr(incr),
+    LoopIVIncr(const Node* head, const IdealLoopTree* loop) :
       _head(head),
       _loop(loop) {}
 
-    bool build();
+    void build(Node* old_incr);
 
     bool is_valid_with_bt(const BasicType bt) const {
       return _is_valid && _incr != nullptr && _incr->Opcode() == Op_Add(bt);
@@ -1388,17 +1380,13 @@ public:
   class LoopIVStride {
     bool _is_valid = false;
 
-    const Node* _incr;
-
     Node* _node = nullptr;
     Node* _xphi = nullptr;
 
   public:
-    explicit LoopIVStride() = default;
+    LoopIVStride() {}
 
-    LoopIVStride(const Node* incr) : _incr(incr) {}
-
-    bool build();
+    void build(const Node* incr);
 
     bool is_valid() const { return _is_valid && _node != nullptr; }
     Node* node() const { return _node; }
@@ -2015,18 +2003,6 @@ public:
 class CountedLoopConverter {
   friend class PhaseIdealLoop;
 
-  PhaseIdealLoop* const _phase;
-  Node* const _head;
-  IdealLoopTree* const _loop;
-  const BasicType _iv_bt;
-
-#ifdef ASSERT
-  bool _checked_for_counted_loop = false;
-#endif
-
-  // stats for PhaseIdealLoop::print_statistics()
-  static volatile int _long_loop_counted_loops;
-
   class LoopStructure {
     bool _is_valid = false;
 
@@ -2044,18 +2020,21 @@ class CountedLoopConverter {
     SafePointNode* _sfpt = nullptr;
 
   public:
-    explicit LoopStructure() = default;
-
     LoopStructure(const Node* head, const IdealLoopTree* loop, PhaseIdealLoop* phase, const BasicType iv_bt) :
       _head(head),
       _loop(loop),
       _phase(phase),
-      _iv_bt(iv_bt) {}
+      _iv_bt(iv_bt),
+      _exit_test(PhaseIdealLoop::LoopExitTest(_phase->loop_exit_control(_head, _loop), _loop, _phase)),
+      _iv_incr(PhaseIdealLoop::LoopIVIncr(_head, _loop)),
+      _truncated_increment(CountedLoopNode::TruncatedIncrement(_iv_bt)),
+      _stride(PhaseIdealLoop::LoopIVStride()) {}
 
-    bool build();
+    void build();
 
-    // compute adjusted loop limit correction
-    jlong final_limit_correction() const;
+    jlong final_limit_correction() const; // compute adjusted loop limit correction
+    bool is_infinite_loop(const TypeInteger* limit_t) const;
+
 
     bool is_valid() const { return _is_valid; }
 
@@ -2067,10 +2046,22 @@ class CountedLoopConverter {
     PhiNode* phi() const { return _phi; }
     SafePointNode* sfpt() const { return _sfpt; }
   };
-  LoopStructure _structure;
 
+  PhaseIdealLoop* const _phase;
+  Node* const _head;
+  IdealLoopTree* const _loop;
+  const BasicType _iv_bt;
+
+  LoopStructure _structure;
   bool _insert_stride_overflow_limit_check = false;
   bool _insert_init_trip_limit_check = false;
+
+#ifdef ASSERT
+  bool _checked_for_counted_loop = false;
+#endif
+
+  // stats for PhaseIdealLoop::print_statistics()
+  static volatile int _long_loop_counted_loops;
 
   // Return a type based on condition control flow
   const TypeInt* filtered_type(Node* n, Node* n_ctrl);
@@ -2079,12 +2070,11 @@ class CountedLoopConverter {
   const TypeInt* filtered_type_from_dominators(Node* val, Node* val_ctrl);
 
   void insert_loop_limit_check_predicate(const ParsePredicateSuccessProj* loop_limit_check_parse_proj, Node* cmp_limit,
-                                         Node* bol);
+                                         Node* bol) const;
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry);
 
   bool is_iv_overflowing(const TypeInteger* init_t, jlong stride_con, Node* phi_increment, BoolTest::mask mask) const;
-  bool is_infinite_loop(const Node* increment_trunc1, const TypeInteger* limit_t, const Node* incr) const;
   bool has_truncation_wrap(CountedLoopNode::TruncatedIncrement truncation, Node* phi, jlong stride_con);
   SafePointNode* find_safepoint(Node* iftrue);
   bool is_safepoint_invalid(SafePointNode* sfpt);
@@ -2094,7 +2084,8 @@ class CountedLoopConverter {
       : _phase(phase),
         _head(head),
         _loop(loop),
-        _iv_bt(iv_bt) {
+        _iv_bt(iv_bt),
+        _structure(LoopStructure(_head, _loop, _phase, _iv_bt)) {
     assert(phase != nullptr, ""); // Fail early if mandatory parameters are null.
     assert(head != nullptr, "");
     assert(loop != nullptr, "");
