@@ -40,10 +40,11 @@ bool ThreadWXEnable::test(address a) {
     ThreadWXEnable wx(WXExec, Thread::current());
     {
       ThreadWXEnable wx(&mode, Thread::current());
+      // Write to the provided JIT region
       p[0] = 0xd65f03c0; // ret lr
       if (mode != WXWrite) {
-        tty->print_cr("WX Healing is not enabled because MAP_JIT write protection does not work on this system.");
         guarantee(pthread_jit_write_protect_supported_np() == false, "must be");
+        tty->print_cr("WX Healing is not enabled because MAP_JIT write protection does not work on this system.");
         result = false;
         mode = WXWrite;
       }

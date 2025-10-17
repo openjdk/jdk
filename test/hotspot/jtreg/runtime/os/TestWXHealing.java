@@ -35,15 +35,17 @@
 import java.util.regex.*;
 import jdk.test.lib.process.*;
 
+import static java.nio.charset.StandardCharsets.*;
+
 public class TestWXHealing {
 
     public static void main(String[] args) throws Throwable {
         String[] opts = {"-XX:+UnlockDiagnosticVMOptions",
                          "-XX:+TraceWXHealing", "-XX:+StressWXHealing", "WXHealing"};
         var process = ProcessTools.createTestJavaProcessBuilder(opts).start();
-        String output = new String(process.getInputStream().readAllBytes());
+        String output = new String(process.getInputStream().readAllBytes(), UTF_8);
         System.out.println(output);
-        if (Pattern.matches("MAP_JIT write protection does not work on this system", output)) {
+        if (output.contains("MAP_JIT write protection does not work on this system")) {
             System.out.println("Test was not run because MAP_JIT write protection does not work on this system");
         } else {
             var pattern = Pattern.compile("Healing WXMode WXArmedForWrite at 0x[0-9a-f]* to WXWrite  ");
