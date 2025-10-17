@@ -45,7 +45,7 @@ static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
     fclose(file);
 
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", jcmd_path, PID());
+    snprintf(cmd, sizeof(cmd), "%s %d help", jcmd_path, PID());
     printf("Running jcmd command: '%s'\n", cmd);
 
     int res = system(cmd);
