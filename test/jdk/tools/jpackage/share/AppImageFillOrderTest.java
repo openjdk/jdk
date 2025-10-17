@@ -22,17 +22,12 @@
  */
 
 import static java.util.stream.Collectors.toMap;
-import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
-import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -175,14 +170,8 @@ public class AppImageFillOrderTest {
         for (var i = 0; i != fileCopies.size(); i++) {
             var noOverlayPath = noOverlayOutputPaths.get(i);
             var fc = fileCopies.get(i);
-
-            var overlayDigest = digest(fc.out());
-            var noOverlayDigest = digest(noOverlayPath);
-            var inputDigest = digest(fc.in());
-
-            TKit.trace(String.format("Check [%s] file:", fc.out()));
-            TKit.assertEquals(inputDigest, overlayDigest, String.format("Check contents equals to [%s] file", fc.in()));
-            TKit.assertNotEquals(noOverlayDigest, overlayDigest, String.format("Check contents differ from [%s] file", noOverlayPath));
+            TKit.assertSameFileContent(fc.in(), fc.out());
+            TKit.assertMismatchFileContent(noOverlayPath, fc.out());
         }
     }
 
@@ -355,21 +344,14 @@ public class AppImageFillOrderTest {
     }
 
 
-    private static String digest(Path file) {
-        try {
-            var md = MessageDigest.getInstance("md5");
-            try (var is = Files.newInputStream(file); var dis = new DigestInputStream(is, md)) {
-                dis.readAllBytes();
-            }
-            return HexFormat.of().formatHex(md.digest());
-        } catch (NoSuchAlgorithmException|IOException ex) {
-            throw rethrowUnchecked(ex);
-        }
-    }
-
     private static JPackageCommand createJPackage() {
         // With short name.
-        return JPackageCommand.helloAppImage().setArgumentValue("--name", "Foo");
+        var cmd = JPackageCommand.helloAppImage().setArgumentValue("--name", "Foo");
+
+        // Clean leftovers in the input dir from the previous test run if any.
+        TKit.deleteDirectoryContentsRecursive(cmd.inputDir());
+
+        return cmd;
     }
 
     private static final ApplicationLayout APP_IMAGE_LAYOUT = ApplicationLayout.platformAppImage();
