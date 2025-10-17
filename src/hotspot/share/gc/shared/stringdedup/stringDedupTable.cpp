@@ -22,7 +22,8 @@
  *
  */
 
-#include "cds/heapShared.hpp"
+#include "cds/aotMappedHeapLoader.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/stringTable.hpp"
@@ -612,7 +613,7 @@ bool StringDedup::Table::deduplicate_if_permitted(oop java_string,
 void StringDedup::Table::deduplicate(oop java_string) {
   assert(java_lang_String::is_instance(java_string), "precondition");
   _cur_stat.inc_inspected();
-  if (HeapShared::is_loading_mapping_mode() &&
+  if (AOTMappedHeapLoader::is_in_use() &&
       (StringTable::shared_entry_count() > 0) &&
       try_deduplicate_shared(java_string)) {
     return;                     // Done if deduplicated against shared StringTable.

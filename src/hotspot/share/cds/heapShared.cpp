@@ -292,11 +292,15 @@ void HeapShared::reset_archived_object_states(TRAPS) {
 HeapShared::ArchivedObjectCache* HeapShared::_archived_object_cache = nullptr;
 
 bool HeapShared::is_archived_heap_in_use() {
-  if (HeapShared::is_loading_streaming_mode()) {
-    return AOTStreamedHeapLoader::is_in_use();
-  } else {
-    return AOTMappedHeapLoader::is_in_use();
+  if (HeapShared::is_loading()) {
+    if (HeapShared::is_loading_streaming_mode()) {
+      return AOTStreamedHeapLoader::is_in_use();
+    } else {
+      return AOTMappedHeapLoader::is_in_use();
+    }
   }
+
+  return false;
 }
 
 bool HeapShared::can_use_archived_heap() {
@@ -338,43 +342,26 @@ bool HeapShared::is_string_too_large_to_archive(oop string) {
   return is_too_large_to_archive(value);
 }
 
-bool HeapShared::is_loading_streaming_mode() {
-  assert(_heap_load_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
-  return _heap_load_mode == HeapArchiveMode::_streaming;
-}
-
-bool HeapShared::is_writing_streaming_mode() {
-  assert(_heap_write_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
-  return _heap_write_mode == HeapArchiveMode::_streaming;
-}
-
-bool HeapShared::is_loading_mode_uninitialized() {
-  return _heap_load_mode == HeapArchiveMode::_uninitialized;
-}
-
-bool HeapShared::is_loading_mapping_mode() {
-  assert(_heap_load_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
-  return _heap_load_mode == HeapArchiveMode::_mapping;
-}
-
-bool HeapShared::is_writing_mapping_mode() {
-  assert(_heap_write_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
-  return _heap_write_mode == HeapArchiveMode::_mapping;
-}
-
 void HeapShared::initialize_loading_mode(HeapArchiveMode mode) {
   assert(_heap_load_mode == HeapArchiveMode::_uninitialized, "already set?");
+  assert(mode != HeapArchiveMode::_uninitialized, "sanity");
   _heap_load_mode = mode;
 };
 
-void HeapShared::initialize_loading_mode_if_not_set() {
-  if (_heap_load_mode == HeapArchiveMode::_uninitialized) {
-    _heap_load_mode = HeapArchiveMode::_none;
-  }
-}
-
 void HeapShared::initialize_writing_mode() {
   assert(!FLAG_IS_ERGO(AOTStreamableObjects), "Should not have been ergonomically set yet");
+
+  if (!CDSConfig::is_dumping_archive()) {
+    // We use FLAG_IS_CMDLINE below because we are specifically looking to warn
+    // a user that explicitly sets the flag on the command line for a JVM that is
+    // not dumping an archive.
+    if (FLAG_IS_CMDLINE(AOTStreamableObjects)) {
+      log_warning(cds)("-XX:%cAOTStreamableObjects was specified, "
+                       "AOTStreamableObjects is only used for writing "
+                       "the AOT cache.",
+                       AOTStreamableObjects ? '+' : '-');
+    }
+  }
 
   // The below checks use !FLAG_IS_DEFAULT instead of FLAG_IS_CMDLINE
   // because the one step AOT cache creation transfers the AOTStreamableObjects
@@ -385,28 +372,17 @@ void HeapShared::initialize_writing_mode() {
     FLAG_SET_DEFAULT(AOTStreamableObjects, !UseCompressedOops);
   } else if (!AOTStreamableObjects && UseZGC) {
     // Never write mapped heap with ZGC
-    log_warning(cds)("Heap archiving without streaming not supported for -XX:+UseZGC");
+    if (CDSConfig::is_dumping_archive()) {
+      log_warning(cds)("Heap archiving without streaming not supported for -XX:+UseZGC");
+    }
     FLAG_SET_ERGO(AOTStreamableObjects, true);
   }
 
-  if (!CDSConfig::is_dumping_archive()) {
+  if (CDSConfig::is_dumping_archive()) {
+    // Select default mode
     assert(_heap_write_mode == HeapArchiveMode::_uninitialized, "already initialized?");
-
-    // We use FLAG_IS_CMDLINE below because we are specifically looking to warn
-    // a user that explicitly sets the flag on the command line for a JVM that is
-    // not dumping an archive.
-    if (FLAG_IS_CMDLINE(AOTStreamableObjects)) {
-      log_info(cds)("-XX:%cAOTStreamableObjects was specified, "
-                    "AOTStreamableObjects is only used for writing "
-                    "the AOT cache.",
-                    AOTStreamableObjects ? '+' : '-');
-    }
-    _heap_write_mode = HeapArchiveMode::_none;
-    return;
+    _heap_write_mode = AOTStreamableObjects ? HeapArchiveMode::_streaming : HeapArchiveMode::_mapping;
   }
-
-  // Select default mode
-  _heap_write_mode = AOTStreamableObjects ? HeapArchiveMode::_streaming : HeapArchiveMode::_mapping;
 }
 
 void HeapShared::initialize_streaming() {
@@ -417,8 +393,32 @@ void HeapShared::initialize_streaming() {
 }
 
 void HeapShared::enable_gc() {
-  if (HeapShared::is_loading_streaming_mode()) {
+  if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::enable_gc();
+  }
+}
+
+void HeapShared::materialize_thread_object() {
+  if (AOTStreamedHeapLoader::is_in_use()) {
+    AOTStreamedHeapLoader::materialize_thread_object();
+  }
+}
+
+void HeapShared::add_to_dumped_interned_strings(oop string) {
+  assert(HeapShared::is_writing_mapping_mode(), "Only used by this mode");
+  AOTMappedHeapWriter::add_to_dumped_interned_strings(string);
+}
+
+void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
+  if (HeapShared::is_loading()) {
+    if (HeapShared::is_loading_streaming_mode()) {
+      // Heap initialization can be done only after vtables are initialized by ReadClosure.
+      AOTStreamedHeapLoader::finish_initialization(static_mapinfo);
+    } else {
+      // Finish up archived heap initialization. These must be
+      // done after ReadClosure.
+      AOTMappedHeapLoader::finish_initialization(static_mapinfo);
+    }
   }
 }
 
@@ -466,8 +466,7 @@ oop HeapShared::get_root(int index, bool clear) {
 }
 
 void HeapShared::finish_materialize_objects() {
-  if (HeapShared::is_loading_streaming_mode()) {
-    // Finish materializing objects
+  if (AOTStreamedHeapLoader::is_in_use()) {
     AOTStreamedHeapLoader::finish_materialize_objects();
   }
 }

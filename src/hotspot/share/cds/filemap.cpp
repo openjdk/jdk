@@ -33,7 +33,7 @@
 #include "cds/cdsConfig.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
@@ -1503,6 +1503,8 @@ static void on_heap_region_loading_error() {
 }
 
 void FileMapInfo::stream_heap_region() {
+  assert(object_streaming_mode(), "This should only be done for the streaming approach");
+
   if (map_auxiliary_region(AOTMetaspace::hp, /*readonly=*/true) != nullptr) {
     HeapShared::initialize_streaming();
   } else {

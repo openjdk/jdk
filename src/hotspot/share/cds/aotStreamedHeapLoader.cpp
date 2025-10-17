@@ -914,6 +914,10 @@ void AOTStreamedHeapLoader::enable_gc() {
   }
 }
 
+void AOTStreamedHeapLoader::materialize_thread_object() {
+  AOTThread::materialize_thread_object();
+}
+
 void AOTStreamedHeapLoader::finish_materialize_objects() {
   Ticks start = Ticks::now();
 
@@ -925,7 +929,6 @@ void AOTStreamedHeapLoader::finish_materialize_objects() {
     }
   } else {
     assert(!AOTEagerlyLoadObjects, "sanity");
-    assert(!AOTThread::aot_thread_initialized(), "sanity");
     assert(_current_root_index == 0, "sanity");
     // Without the full module graph we have done only lazy tracing materialization.
     // Ensure all roots are processed here by triggering root loading on every root.
@@ -1068,6 +1071,10 @@ void AOTStreamedHeapLoader::await_gc_enabled() {
   while (!_allow_gc) {
     AOTHeapLoading_lock->wait();
   }
+}
+
+void AOTStreamedHeapLoader::finish_initialization(FileMapInfo* static_mapinfo) {
+  static_mapinfo->stream_heap_region();
 }
 
 AOTMapLogger::OopDataIterator* AOTStreamedHeapLoader::oop_iterator(FileMapInfo* info, address buffer_start, address buffer_end) {

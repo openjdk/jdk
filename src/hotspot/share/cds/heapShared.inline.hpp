@@ -34,6 +34,34 @@
 
 #if INCLUDE_CDS_JAVA_HEAP
 
+inline bool HeapShared::is_loading() {
+  return _heap_load_mode != HeapArchiveMode::_uninitialized;
+}
+
+inline bool HeapShared::is_loading_streaming_mode() {
+  assert(_heap_load_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
+  return _heap_load_mode == HeapArchiveMode::_streaming;
+}
+
+inline bool HeapShared::is_loading_mapping_mode() {
+  assert(_heap_load_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
+  return _heap_load_mode == HeapArchiveMode::_mapping;
+}
+
+inline bool HeapShared::is_writing() {
+  return _heap_write_mode != HeapArchiveMode::_uninitialized;
+}
+
+inline bool HeapShared::is_writing_streaming_mode() {
+  assert(_heap_write_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
+  return _heap_write_mode == HeapArchiveMode::_streaming;
+}
+
+inline bool HeapShared::is_writing_mapping_mode() {
+  assert(_heap_write_mode != HeapArchiveMode::_uninitialized, "not initialized yet");
+  return _heap_write_mode == HeapArchiveMode::_mapping;
+}
+
 // Keep the knowledge about which objects have what metadata in one single place
 template <typename T>
 void HeapShared::do_metadata_offsets(oop src_obj, T callback) {

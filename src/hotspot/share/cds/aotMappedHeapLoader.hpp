@@ -60,7 +60,6 @@ public:
 
   // Can this VM load the objects from archived heap region into the heap at start-up?
   static bool can_load()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static void finish_initialization(FileMapInfo* info) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_loaded() {
     CDS_JAVA_HEAP_ONLY(return _is_loaded;)
     NOT_CDS_JAVA_HEAP(return false;)
@@ -85,6 +84,8 @@ public:
     CDS_JAVA_HEAP_ONLY(return _is_mapped;)
     NOT_CDS_JAVA_HEAP_RETURN_(false);
   }
+
+  static void finish_initialization(FileMapInfo* info) NOT_CDS_JAVA_HEAP_RETURN;
 
   // NarrowOops stored in the CDS archive may use a different encoding scheme
   // than CompressedOops::{base,shift} -- see FileMapInfo::map_heap_region_impl.

@@ -389,7 +389,7 @@ void AOTMappedHeapLoader::get_segment_indexes(int idx, int& seg_idx, int& int_id
 
 void AOTMappedHeapLoader::add_root_segment(objArrayOop segment_oop) {
   assert(segment_oop != nullptr, "must be");
-  assert(HeapShared::is_archived_heap_in_use(), "must be");
+  assert(is_in_use(), "must be");
   if (_root_segments == nullptr) {
     _root_segments = new GrowableArrayCHeap<OopHandle, mtClassShared>(10);
   }

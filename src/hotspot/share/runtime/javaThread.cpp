@@ -23,7 +23,6 @@
  *
  */
 
-#include "cds/aotThread.hpp"
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"

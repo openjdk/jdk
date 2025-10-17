@@ -745,7 +745,6 @@ void Metaspace::global_initialize() {
     // If any of the archived space fails to map, UseSharedSpaces
     // is reset to false.
   }
-  HeapShared::initialize_loading_mode_if_not_set();
 #endif // INCLUDE_CDS
 
 #ifdef _LP64

@@ -25,10 +25,9 @@
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
-#include "cds/aotThread.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
@@ -384,9 +383,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
   initialize_class(vmSymbols::java_lang_ref_Finalizer(), CHECK);
 
-  if (HeapShared::is_loading_streaming_mode()) {
-    AOTThread::materialize_thread_object();
-  }
+  HeapShared::materialize_thread_object();
 
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
@@ -702,11 +699,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // No more stub generation allowed after that point.
   StubCodeDesc::freeze();
 
-#if INCLUDE_CDS_JAVA_HEAP
-  if (HeapShared::is_archived_heap_in_use()) {
-    HeapShared::enable_gc();
-  }
-#endif
+  // Prepare AOT heap loader for GC.
+  HeapShared::enable_gc();
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
@@ -899,11 +893,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   //   take a while to process their first tick).
   WatcherThread::run_all_tasks();
 
-#if INCLUDE_CDS_JAVA_HEAP
-  if (HeapShared::is_archived_heap_in_use()) {
-    HeapShared::finish_materialize_objects();
-  }
-#endif
+  // Finish materializing AOT objects
+  HeapShared::finish_materialize_objects();
 
   create_vm_timer.end();
 #ifdef ASSERT

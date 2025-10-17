@@ -25,7 +25,7 @@
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMappedHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -134,7 +134,8 @@ void vmClasses::resolve_all(TRAPS) {
   CollectedHeap::set_filler_object_klass(vmClasses::Object_klass());
 #if INCLUDE_CDS
   if (CDSConfig::is_using_archive()) {
-    if (HeapShared::is_loading_mapping_mode()) {
+#if INCLUDE_CDS_JAVA_HEAP
+    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
       // It's unsafe to access the archived heap regions before they
       // are fixed up, so we must do the fixup as early as possible
       // before the archived java objects are accessed by functions
@@ -142,7 +143,7 @@ void vmClasses::resolve_all(TRAPS) {
       // ConstantPool::restore_unshareable_info (restores the archived
       // resolved_references array object).
       //
-      // ArchiveHeapLoader::fixup_regions fills the empty
+      // AOTMappedHeapLoader::fixup_regions fills the empty
       // spaces in the archived heap regions and may use
       // vmClasses::Object_klass(), so we can do this only after
       // Object_klass is resolved. See the above resolve_through()
@@ -150,7 +151,6 @@ void vmClasses::resolve_all(TRAPS) {
       // Mirrors are restored after java.lang.Class is loaded.
       AOTMappedHeapLoader::fixup_region();
     }
-#if INCLUDE_CDS_JAVA_HEAP
     if (HeapShared::is_archived_heap_in_use() && !CDSConfig::is_using_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();

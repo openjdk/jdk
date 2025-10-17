@@ -44,7 +44,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/finalImageRecipes.hpp"
-#include "cds/heapShared.hpp"
+#include "cds/heapShared.inline.hpp"
 #include "cds/lambdaFormInvokers.hpp"
 #include "cds/lambdaProxyClassDictionary.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -337,7 +337,7 @@ void AOTMetaspace::post_initialize(TRAPS) {
     // Close any open file descriptors. However, mmap'ed pages will remain in memory.
     static_mapinfo->close();
 
-    if (HeapShared::is_loading_mapping_mode()) {
+    if (HeapShared::is_loading() && HeapShared::is_loading_mapping_mode()) {
       static_mapinfo->unmap_region(AOTMetaspace::bm);
     }
 
@@ -1693,7 +1693,6 @@ MapArchiveResult AOTMetaspace::map_archives(FileMapInfo* static_mapinfo, FileMap
             }
           }
         }
-        HeapShared::initialize_loading_mode(HeapArchiveMode::_none);
       }
     }
 #endif // _LP64
@@ -1995,9 +1994,7 @@ void AOTMetaspace::unmap_archive(FileMapInfo* mapinfo) {
   assert(CDSConfig::is_using_archive(), "must be runtime");
   if (mapinfo != nullptr) {
     mapinfo->unmap_regions(archive_regions, archive_regions_count);
-    if (HeapShared::is_loading_mode_uninitialized() || HeapShared::is_loading_mapping_mode()) {
-      mapinfo->unmap_region(AOTMetaspace::bm);
-    }
+    mapinfo->unmap_region(AOTMetaspace::bm);
     mapinfo->set_is_mapped(false);
   }
 }
@@ -2029,16 +2026,11 @@ void AOTMetaspace::initialize_shared_spaces() {
   ReadClosure rc(&array, (intptr_t)SharedBaseAddress);
   serialize(&rc);
 
-  // Initialize the heap dump mode used in the archive
-  if (HeapShared::is_loading_streaming_mode()) {
-    // Heap initialization can be done only after vtables are initialized by ReadClosure.
-    static_mapinfo->stream_heap_region();
-  } else {
-    // Finish up archived heap initialization. These must be
-    // done after ReadClosure.
-    AOTMappedHeapLoader::finish_initialization(static_mapinfo);
-  }
+  // Finish initializing the heap dump mode used in the archive
+  // Heap initialization can be done only after vtables are initialized by ReadClosure.
+  HeapShared::finalize_initialization(static_mapinfo);
   Universe::load_archived_object_instances();
+
   AOTCodeCache::initialize();
 
   if (dynamic_mapinfo != nullptr) {
