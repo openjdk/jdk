@@ -965,6 +965,8 @@ public:
   inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
   inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
 
+  static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
+
  public:
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
@@ -998,6 +1000,9 @@ public:
 
   // Avoid hiding of parent's 'decode(outputStream*)' method.
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
+
+  // AOT cache support
+  static void post_delayed_compiled_method_load_events() NOT_CDS_RETURN;
 
   // printing support
   void print_on_impl(outputStream* st) const;

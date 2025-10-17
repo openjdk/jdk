@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "cds/cdsConfig.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
@@ -2504,11 +2505,48 @@ void nmethod::post_compiled_method(CompileTask* task) {
   maybe_print_nmethod(directive);
 }
 
+#if INCLUDE_CDS
+static GrowableArrayCHeap<nmethod*, mtClassShared>* _delayed_compiled_method_load_events = nullptr;
+
+void nmethod::add_delayed_compiled_method_load_event(nmethod* nm) {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  precond(!ServiceThread::has_started());
+
+  // We are still in single threaded stage of VM bootstrap. No need to lock.
+  if (_delayed_compiled_method_load_events == nullptr) {
+    _delayed_compiled_method_load_events = new GrowableArrayCHeap<nmethod*, mtClassShared>();
+  }
+  _delayed_compiled_method_load_events->append(nm);
+}
+
+void nmethod::post_delayed_compiled_method_load_events() {
+  precond(ServiceThread::has_started());
+  if (_delayed_compiled_method_load_events != nullptr) {
+    for (int i = 0; i < _delayed_compiled_method_load_events->length(); i++) {
+      nmethod* nm = _delayed_compiled_method_load_events->at(i);
+      nm->post_compiled_method_load_event();
+    }
+    delete _delayed_compiled_method_load_events;
+    _delayed_compiled_method_load_events = nullptr;
+  }
+}
+#endif
+
 // ------------------------------------------------------------------
 // post_compiled_method_load_event
 // new method for install_code() path
 // Transfer information from compilation to jvmti
 void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
+#if INCLUDE_CDS
+  if (!ServiceThread::has_started()) {
+    // With AOT-linked classes, we could compile wrappers for native methods before the
+    // ServiceThread has been started, so we must delay the events to be posted later.
+    assert(state == nullptr, "must be");
+    add_delayed_compiled_method_load_event(this);
+    return;
+  }
+#endif
+
   // This is a bad time for a safepoint.  We don't want
   // this nmethod to get unloaded while we're queueing the event.
   NoSafepointVerifier nsv;
