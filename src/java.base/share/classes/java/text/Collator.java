@@ -111,8 +111,13 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
  * <br>
  * @apiNote {@code CollationKey}s from different
  * {@code Collator}s can not be compared. See the class description
- * for {@link CollationKey}
- * for an example using {@code CollationKey}s.
+ * for {@link CollationKey} for an example using {@code CollationKey}s.
+ *
+ * @implNote Significant thread contention may occur during concurrent usage
+ * of the JDK Reference Implementation's {@link RuleBasedCollator}, which is the
+ * subtype returned by the default provider of the {@link #getInstance()} factory
+ * methods. As such, users should consider retrieving a separate instance for
+ * each thread when used in multithreaded environments.
  *
  * @see         RuleBasedCollator
  * @see         CollationKey

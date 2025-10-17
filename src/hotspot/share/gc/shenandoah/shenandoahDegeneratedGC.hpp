@@ -36,7 +36,6 @@ private:
   const ShenandoahDegenPoint  _degen_point;
   ShenandoahGeneration* _generation;
   bool _abbreviated;
-  size_t _consecutive_degen_with_bad_progress;
 
 public:
   ShenandoahDegenGC(ShenandoahDegenPoint degen_point, ShenandoahGeneration* generation);

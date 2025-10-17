@@ -40,7 +40,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Type.TypeVar;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -121,16 +120,14 @@ public class ExhaustivenessComputer {
             }
         }
         Set<PatternDescription> patterns = patternSet;
-        Map<PatternDescription, Set<PatternDescription>> replaces = new IdentityHashMap<>();
-        Set<Set<PatternDescription>> seenFallback = new HashSet<>();
         boolean useHashes = true;
         try {
             boolean repeat = true;
             while (repeat) {
                 Set<PatternDescription> updatedPatterns;
                 updatedPatterns = reduceBindingPatterns(selector.type, patterns);
-                updatedPatterns = reduceNestedPatterns(updatedPatterns, replaces, useHashes);
-                updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
+                updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes);
+                updatedPatterns = reduceRecordPatterns(updatedPatterns);
                 updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                 repeat = !updatedPatterns.equals(patterns);
                 if (checkCovered(selector.type, patterns)) {
@@ -144,7 +141,7 @@ public class ExhaustivenessComputer {
                     //but hashing in reduceNestedPatterns will not allow that
                     //disable the use of hashing, and use subtyping in
                     //reduceNestedPatterns to handle situations like this:
-                    repeat = useHashes && seenFallback.add(updatedPatterns);
+                    repeat = useHashes;
                     useHashes = false;
                 } else {
                     //if a reduction happened, make sure hashing in reduceNestedPatterns
@@ -213,6 +210,7 @@ public class ExhaustivenessComputer {
                     if (clazz.isSealed() && clazz.isAbstract() &&
                         //if a binding pattern for clazz already exists, no need to analyze it again:
                         !existingBindings.contains(clazz)) {
+                        ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         //do not reduce to types unrelated to the selector type:
                         Type clazzErasure = types.erasure(clazz.type);
                         if (components(selectorType).stream()
@@ -339,7 +337,6 @@ public class ExhaustivenessComputer {
      *            as pattern hashes cannot be used to speed up the matching process
      */
     private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
-                                                         Map<PatternDescription, Set<PatternDescription>> replaces,
                                                          boolean useHashes) {
         /* implementation note:
          * finding a sub-set of patterns that only differ in a single
@@ -391,42 +388,16 @@ public class ExhaustivenessComputer {
 
                             RecordPattern rpOther = candidatesArr[nextCandidate];
                             if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                                ACCEPT: for (int i = 0; i < rpOne.nested.length; i++) {
+                                for (int i = 0; i < rpOne.nested.length; i++) {
                                     if (i != mismatchingCandidate) {
                                         if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-                                            if (useHashes) {
-                                                continue NEXT_PATTERN;
-                                            }
-                                            //when not using hashes,
-                                            //check if rpOne.nested[i] is
-                                            //a subtype of rpOther.nested[i]:
-                                            if (!(rpOther.nested[i] instanceof BindingPattern bpOther)) {
-                                                continue NEXT_PATTERN;
-                                            }
-                                            if (rpOne.nested[i] instanceof BindingPattern bpOne) {
-                                                if (!types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
-                                                    continue NEXT_PATTERN;
-                                                }
-                                            } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                boolean foundMatchingReplaced = false;
-                                                Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
-
-                                                while (!pendingReplacedPatterns.isEmpty()) {
-                                                    PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
-
-                                                    pendingReplacedPatterns.remove(currentReplaced);
-
-                                                    if (nestedRPOne.equals(currentReplaced)) {
-                                                        foundMatchingReplaced = true;
-                                                        break;
-                                                    }
-
-                                                    pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
-                                                }
-                                                if (!foundMatchingReplaced) {
-                                                    continue NEXT_PATTERN;
-                                                }
-                                            } else {
+                                            if (useHashes ||
+                                                //when not using hashes,
+                                                //check if rpOne.nested[i] is
+                                                //a subtype of rpOther.nested[i]:
+                                                !(rpOne.nested[i] instanceof BindingPattern bpOne) ||
+                                                !(rpOther.nested[i] instanceof BindingPattern bpOther) ||
+                                                !types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
                                                 continue NEXT_PATTERN;
                                             }
                                         }
@@ -437,9 +408,9 @@ public class ExhaustivenessComputer {
                         }
 
                         var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                        var updatedPatterns = reduceNestedPatterns(nestedPatterns, replaces, useHashes);
+                        var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes);
 
-                        updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
+                        updatedPatterns = reduceRecordPatterns(updatedPatterns);
                         updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                         updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
@@ -452,11 +423,9 @@ public class ExhaustivenessComputer {
                                 PatternDescription[] newNested =
                                         Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                 newNested[mismatchingCandidateFin] = nested;
-                                RecordPattern nue = new RecordPattern(rpOne.recordType(),
+                                current.add(new RecordPattern(rpOne.recordType(),
                                                                 rpOne.fullComponentTypes(),
-                                                                newNested);
-                                current.add(nue);
-                                replaces.put(nue, new HashSet<>(join));
+                                                                newNested));
                             }
                         }
                     }
@@ -478,12 +447,12 @@ public class ExhaustivenessComputer {
      * all the $nestedX pattern cover the given record component,
      * and replace those with a simple binding pattern over $record.
      */
-    private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns, Map<PatternDescription, Set<PatternDescription>> replaces) {
+    private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns) {
         var newPatterns = new HashSet<PatternDescription>();
         boolean modified = false;
         for (PatternDescription pd : patterns) {
             if (pd instanceof RecordPattern rpOne) {
-                PatternDescription reducedPattern = reduceRecordPattern(rpOne, replaces);
+                PatternDescription reducedPattern = reduceRecordPattern(rpOne);
                 if (reducedPattern != rpOne) {
                     newPatterns.add(reducedPattern);
                     modified = true;
@@ -495,7 +464,7 @@ public class ExhaustivenessComputer {
         return modified ? newPatterns : patterns;
     }
 
-    private PatternDescription reduceRecordPattern(PatternDescription pattern, Map<PatternDescription, Set<PatternDescription>> replaces) {
+    private PatternDescription reduceRecordPattern(PatternDescription pattern) {
         if (pattern instanceof RecordPattern rpOne) {
             Type[] componentType = rpOne.fullComponentTypes();
             //error recovery, ignore patterns with incorrect number of nested patterns:
@@ -505,7 +474,7 @@ public class ExhaustivenessComputer {
             PatternDescription[] reducedNestedPatterns = null;
             boolean covered = true;
             for (int i = 0; i < componentType.length; i++) {
-                PatternDescription newNested = reduceRecordPattern(rpOne.nested[i], replaces);
+                PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
                 if (newNested != rpOne.nested[i]) {
                     if (reducedNestedPatterns == null) {
                         reducedNestedPatterns = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
@@ -516,13 +485,9 @@ public class ExhaustivenessComputer {
                 covered &= checkCovered(componentType[i], List.of(newNested));
             }
             if (covered) {
-                PatternDescription pd = new BindingPattern(rpOne.recordType);
-                replaces.put(pd, Set.of(pattern));
-                return pd;
+                return new BindingPattern(rpOne.recordType);
             } else if (reducedNestedPatterns != null) {
-                PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
-                replaces.put(pd, Set.of(pattern));
-                return pd;
+                return new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
             }
         }
         return pattern;
