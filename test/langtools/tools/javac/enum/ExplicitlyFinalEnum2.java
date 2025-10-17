@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 5009601
  * @summary enum's cannot be explicitly declared final
- * @author Joseph D. Darcy
  * @compile/fail/ref=ExplicitlyFinalEnum2.out -XDrawDiagnostics ExplicitlyFinalEnum2.java
  */
 

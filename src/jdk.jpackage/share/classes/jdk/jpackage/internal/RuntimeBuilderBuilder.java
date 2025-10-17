@@ -74,7 +74,7 @@ final class RuntimeBuilderBuilder {
             this.startupInfos = startupInfos;
         }
 
-        RuntimeBuilderBuilder appy() {
+        RuntimeBuilderBuilder apply() {
             impl = new BuildingRuntime(RuntimeBuilderBuilder.this, addModules,
                     limitModules, validatedOptions(), startupInfos);
             return RuntimeBuilderBuilder.this;

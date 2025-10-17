@@ -53,6 +53,11 @@ class StringConcat : public ResourceObj {
   Node_List           _uncommon_traps; // Uncommon traps that needs to be rewritten
                                        // to restart at the initial JVMState.
 
+  static constexpr uint STACKED_CONCAT_UPPER_BOUND = 256; // argument limit for a merged concat.
+                                                          // The value 256 was derived by measuring
+                                                          // compilation time on variable length sequences
+                                                          // of stackable concatenations and chosen to keep
+                                                          // a safe margin to any critical point.
  public:
   // Mode for converting arguments to Strings
   enum {
@@ -295,6 +300,8 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
   }
   assert(result->_control.contains(other->_end), "what?");
   assert(result->_control.contains(_begin), "what?");
+
+  uint arguments_appended = 0;
   for (int x = 0; x < num_arguments(); x++) {
     Node* argx = argument_uncast(x);
     if (argx == arg) {
@@ -303,8 +310,21 @@ StringConcat* StringConcat::merge(StringConcat* other, Node* arg) {
       for (int y = 0; y < other->num_arguments(); y++) {
         result->append(other->argument(y), other->mode(y));
       }
+      arguments_appended += other->num_arguments();
     } else {
       result->append(argx, mode(x));
+      arguments_appended++;
+    }
+    // Check if this concatenation would result in an excessive number of arguments
+    // -- leading to high memory use, compilation time, and later, a large number of IR nodes
+    // -- and bail out in that case.
+    if (arguments_appended > STACKED_CONCAT_UPPER_BOUND) {
+#ifndef PRODUCT
+      if (PrintOptimizeStringConcat) {
+        tty->print_cr("Merge candidate of length %d exceeds argument limit", arguments_appended);
+      }
+#endif
+      return nullptr;
     }
   }
   result->set_allocation(other->_begin);
@@ -680,7 +700,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 #endif
 
             StringConcat* merged = sc->merge(other, arg);
-            if (merged->validate_control_flow() && merged->validate_mem_flow()) {
+            if (merged != nullptr && merged->validate_control_flow() && merged->validate_mem_flow()) {
 #ifndef PRODUCT
               AtomicAccess::inc(&_stropts_merged);
               if (PrintOptimizeStringConcat) {

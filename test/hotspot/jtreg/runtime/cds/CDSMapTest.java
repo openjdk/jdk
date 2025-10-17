@@ -27,7 +27,7 @@
  * @summary Test the contents of -Xlog:aot+map
  * @requires vm.cds
  * @library /test/lib
- * @run driver CDSMapTest
+ * @run driver/timeout=240 CDSMapTest
  */
 
 import jdk.test.lib.cds.CDSOptions;
