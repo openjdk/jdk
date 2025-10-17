@@ -460,7 +460,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         if (layout != null) {
         } else if (isRuntime()) {
-            layout = ApplicationLayout.javaRuntime();
+            layout = ApplicationLayout.platformJavaRuntime();
         } else {
             layout = ApplicationLayout.platformAppImage();
         }
