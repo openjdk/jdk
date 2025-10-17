@@ -493,11 +493,10 @@ final class WinNTFileSystem extends FileSystem {
             // then fall back to using the result of canonicalize0 because
             // there does not appear to be a reliable way to map the prefix
             // of the result of getFinalPath back to a drive letter
-            if (fp.charAt(0) == '\\' &&
-                fp.charAt(1) == '\\' &&
+            if (fp.charAt(0) == '\\' && fp.charAt(1) == '\\' &&
                 isLetter(canonicalPath.charAt(0)) &&
-                canonicalPath.charAt(1) == ':' &&
-                canonicalPath.charAt(2) == '\\') {
+                canonicalPath.charAt(1) == ':')
+            {
                 finalPath = canonicalPath;
             } else {
                 finalPath = fp;
