@@ -333,15 +333,15 @@ void CompilerConfig::set_compilation_policy_flags() {
 
   if (HotCodeHeapSize != 0) {
     if (!SegmentedCodeCache) {
-      vm_exit_during_initialization("HotCodeHeap requires SegmentedCodeCache enabled", NULL);
+      vm_exit_during_initialization("HotCodeHeap requires SegmentedCodeCache enabled");
     }
     if (!is_c2_enabled()) {
-      vm_exit_during_initialization("HotCodeHeap requires C2 enabled", NULL);
+      vm_exit_during_initialization("HotCodeHeap requires C2 enabled");
     }
   }
 
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling");
   }
 
   if (CompilationModeFlag::disable_intermediate()) {

@@ -294,7 +294,7 @@ class HotCodeHeapCandidates : public StackObj {
       }
 
       if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
-        log_trace(hotcodegrouper)("\tFound candidate nm: <%p> method: <%s> count: <%lu> frequency: <%f>", nm, nm->method()->external_name(), count, frequency);
+        log_trace(hotcodegrouper)("\tFound candidate nm: <%p> method: <%s> count: <" UINT64_FORMAT "> frequency: <%f>", nm, nm->method()->external_name(), count, frequency);
         _hot_candidates.append(NMethodPair(nm, count));
       }
     };
