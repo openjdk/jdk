@@ -189,8 +189,8 @@ private:
 
   static int archived_string_value_object_index(oopDesc* archive_object);
 
-  static bool materialize_early();
-  static void materialize_late();
+  static bool materialize_early(TRAPS);
+  static void materialize_late(TRAPS);
   static void cleanup();
   static void log_statistics();
 

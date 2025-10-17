@@ -708,10 +708,8 @@ void AOTStreamedHeapLoader::IterativeObjectLoader::materialize_next_batch(TRAPS)
   }
 }
 
-bool AOTStreamedHeapLoader::materialize_early() {
+bool AOTStreamedHeapLoader::materialize_early(TRAPS) {
   Ticks start = Ticks::now();
-  // We cannot handle any exception when materializing roots. Exits the VM.
-  EXCEPTION_MARK
 
   // Only help with early materialization from the AOT thread if the heap archive can be allocated
   // without the need for a GC. Otherwise, do lazy loading until GC is enabled later in the bootstrapping.
@@ -740,13 +738,10 @@ bool AOTStreamedHeapLoader::materialize_early() {
   return finished_before_gc_allowed;
 }
 
-void AOTStreamedHeapLoader::materialize_late() {
+void AOTStreamedHeapLoader::materialize_late(TRAPS) {
   Ticks start = Ticks::now();
 
   // Continue materializing with GC allowed
-
-  // We cannot handle any exception when materializing roots. Exits the VM.
-  EXCEPTION_MARK
 
   while (IterativeObjectLoader::has_more()) {
     IterativeObjectLoader::materialize_next_batch(CHECK);
@@ -831,14 +826,18 @@ void AOTStreamedHeapLoader::log_statistics() {
 }
 
 void AOTStreamedHeapLoader::materialize_objects() {
-  JavaThread* thread = JavaThread::current();
+  // We cannot handle any exception when materializing roots. Exits the VM.
+  EXCEPTION_MARK
+
   // Objects are laid out in DFS order; DFS traverse the roots by linearly walking all objects
-  HandleMark hm(thread);
+  HandleMark hm(THREAD);
+
   // Early materialization with a budget before GC is allowed
   MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
-  materialize_early();
+
+  materialize_early(CHECK);
   await_gc_enabled();
-  materialize_late();
+  materialize_late(CHECK);
   // Notify materialization is done
   AOTHeapLoading_lock->notify_all();
   cleanup();
@@ -860,6 +859,9 @@ void AOTStreamedHeapLoader::enable_gc() {
     // Everything was loaded eagerly at early startup
     return;
   }
+
+  // We cannot handle any exception when materializing roots. Exits the VM.
+  EXCEPTION_MARK
 
   MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
 
@@ -907,7 +909,7 @@ void AOTStreamedHeapLoader::enable_gc() {
   AOTHeapLoading_lock->notify_all();
 
   if (AOTEagerlyLoadObjects && IterativeObjectLoader::has_more()) {
-    materialize_late();
+    materialize_late(CHECK);
     cleanup();
   }
 }
@@ -998,9 +1000,11 @@ void AOTStreamedHeapLoader::initialize() {
   if (AOTEagerlyLoadObjects) {
     // Objects are laid out in DFS order; DFS traverse the roots by linearly walking all objects
     HandleMark hm(THREAD);
+
     // Early materialization with a budget before GC is allowed
     MutexLocker ml(AOTHeapLoading_lock, Mutex::_safepoint_check_flag);
-    bool finished_before_gc_allowed = materialize_early();
+
+    bool finished_before_gc_allowed = materialize_early(CHECK);
     if (finished_before_gc_allowed) {
       cleanup();
     }
