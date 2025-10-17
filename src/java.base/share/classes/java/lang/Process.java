@@ -197,8 +197,9 @@ public abstract class Process implements Closeable {
      * <p>
      * After the streams are closed this method {@linkplain #waitFor() waits for} the
      * process to terminate. If interrupted while {@linkplain #waitFor waiting for termination}
-     * the process is {@linkplain #destroyForcibly() forcibly destroyed}.
-     * The interrupt status will be re-asserted before this method returns and
+     * the process is {@linkplain #destroyForcibly() forcibly destroyed} and continues to wait
+     * for the process to terminate.
+     * The interrupt status is re-asserted before this method returns and
      * any {@code IOExceptions} are thrown.
      * <p>
      * Try-with-resources example to write text to a process, read back the
