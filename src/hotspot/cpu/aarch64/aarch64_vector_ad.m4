@@ -2189,7 +2189,8 @@ instruct reduce_mulF_le128b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp) %{
 %}
 
 instruct reduce_non_strict_order_mulF_256b(vRegF dst, vRegF fsrc, vReg vsrc, vReg tmp1, vReg tmp2) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(2)) == 32 && !n->as_Reduction()->requires_strict_order());
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) == 32 &&
+            !n->as_Reduction()->requires_strict_order());
   match(Set dst (MulReductionVF fsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   format %{ "reduce_non_strict_order_mulF_256b $dst, $fsrc, $vsrc\t# 8F. KILL $tmp1, $tmp2" %}
@@ -2216,7 +2217,8 @@ instruct reduce_mulD_128b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp) %{
 %}
 
 instruct reduce_non_strict_order_mulD_256b(vRegD dst, vRegD dsrc, vReg vsrc, vReg tmp1, vReg tmp2) %{
-  predicate(Matcher::vector_length_in_bytes(n->in(2)) == 32 && !n->as_Reduction()->requires_strict_order());
+  predicate(Matcher::vector_length_in_bytes(n->in(2)) == 32 &&
+            !n->as_Reduction()->requires_strict_order());
   match(Set dst (MulReductionVD dsrc vsrc));
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
   format %{ "reduce_non_strict_order_mulD_256b $dst, $dsrc, $vsrc\t# 4D. KILL $tmp1, $tmp2" %}
