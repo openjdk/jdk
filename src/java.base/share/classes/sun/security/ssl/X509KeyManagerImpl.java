@@ -249,7 +249,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                  IndexOutOfBoundsException e) {
             // ignore and only log exception
             if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                SSLLogger.fine("KeyMgr: exception triggered: " + e);
+                SSLLogger.warning("KeyMgr: exception triggered: " + e);
             }
             return null;
         }
