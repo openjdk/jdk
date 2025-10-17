@@ -163,7 +163,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
                     return NSK_FALSE;
                 if (usageInfo.owner == nullptr)
                     break;
-                for (cThread = 0; cThread < threads_count; cThread++) {
+                for (cThread = 0; cThread < debuggee_threads_cnt; cThread++) {
                     if (jni->IsSameObject(debuggee_threads[cThread].thread, usageInfo.owner))
                         break;
                 }
@@ -173,7 +173,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
                 if (usageInfo.notify_waiters != nullptr) {
                     jvmti->Deallocate((unsigned char*)usageInfo.notify_waiters);
                 }
-                if (!NSK_VERIFY(cThread != threads_count))
+                if (!NSK_VERIFY(cThread != debuggee_threads_cnt))
                     return NSK_FALSE;
                 if (debuggee_threads[cThread].dfn < 0) {
                     debuggee_threads[cThread].dfn = gDfn++;
@@ -192,7 +192,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     }
 
     /* deallocate thread names */
-    for (i = 0; i < threads_count; i++) {
+    for (i = 0; i < debuggee_threads_cnt; i++) {
         if (debuggee_threads[i].name != nullptr) {
             if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)debuggee_threads[i].name)))
                 return NSK_FALSE;
