@@ -44,7 +44,7 @@ JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     callbacks.VMStart = VMStartCallback;
 
     jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
 
     return 0;
 }
