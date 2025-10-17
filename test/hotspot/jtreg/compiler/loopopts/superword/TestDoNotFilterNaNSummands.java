@@ -22,7 +22,7 @@
  */
 
 /*
- * @test id
+ * @test
  * @bug 8369902
  * @summary Bug in MemPointerParser::canonicalize_raw_summands let to wrong result, because a
  *          NaN summand was filtered out, instead of making the MemPointer / VPointer invalid.
