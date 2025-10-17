@@ -34,7 +34,7 @@ import java.util.Objects;
  * The class guarantees that {@link Object#equals(Object)} and
  * {@link Object#hashCode()} methods of the wrapped object will never be called
  * inside of the class methods.
- * 
+ *
  * @param <T> the type of the wrapped value
  */
 public final class IdentityWrapper<T> {
