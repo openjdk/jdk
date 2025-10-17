@@ -1542,7 +1542,16 @@ public class JavacParser implements Parser {
                 switch (expr.getTag()) {
                 case REFERENCE: {
                     JCMemberReference mref = (JCMemberReference) expr;
-                    mref.expr = insertAnnotationsToMostInner(mref.expr, typeAnnos, false);
+                    if (TreeInfo.isType(mref.expr, names)) {
+                        mref.expr = insertAnnotationsToMostInner(mref.expr, typeAnnos, false);
+                    } else {
+                        //the selector is not a type, error recovery:
+                        JCAnnotatedType annotatedType =
+                                toP(F.at(pos).AnnotatedType(typeAnnos, mref.expr));
+                        int termStart = getStartPos(mref.expr);
+                        mref.expr = syntaxError(termStart, List.of(annotatedType),
+                                                Errors.IllegalStartOfType);
+                    }
                     mref.pos = getStartPos(mref.expr);
                     t = mref;
                     break;
