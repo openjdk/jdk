@@ -109,6 +109,8 @@ public class PStack extends Tool {
                   jthread.printThreadInfoOn(out);
                }
                while (f != null) {
+                  Address senderFP = null;
+                  Address senderPC = null;
                   ClosestSymbol sym = f.closestSymbolToPC();
                   Address pc = f.pc();
                   out.print(pc + "\t");
@@ -125,13 +127,13 @@ public class PStack extends Tool {
                      out.println();
                   } else {
                       // look for one or more java frames
-                      String[] names = null;
+                      JavaNameInfo nameInfo = null;
                       // check interpreter frame
                       Interpreter interp = VM.getVM().getInterpreter();
                       if (interp.contains(pc)) {
-                         names = getJavaNames(th, f.localVariableBase());
+                         nameInfo = getJavaNames(th, f.localVariableBase());
                          // print codelet name if we can't determine method
-                         if (names == null || names.length == 0) {
+                         if (nameInfo == null || nameInfo.names() == null || nameInfo.names().length == 0) {
                             out.print("<interpreter> ");
                             InterpreterCodelet ic = interp.getCodeletContaining(pc);
                             if (ic != null) {
@@ -154,9 +156,9 @@ public class PStack extends Tool {
                                   }
                                   out.println(" (Native method)");
                                } else {
-                                  names = getJavaNames(th, f.localVariableBase());
+                                  nameInfo = getJavaNames(th, f.localVariableBase());
                                   // just print compiled code, if can't determine method
-                                  if (names == null || names.length == 0) {
+                                  if (nameInfo == null || nameInfo.names() == null || nameInfo.names().length == 0) {
                                     out.println("<Unknown compiled code>");
                                   }
                                }
@@ -168,17 +170,21 @@ public class PStack extends Tool {
                          }
                       }
                       // print java frames, if any
-                      if (names != null && names.length != 0) {
-                         // print java frame(s)
-                         for (int i = 0; i < names.length; i++) {
-                             if (i > 0) {
-                                 out.print(fillerForAddress);
+                      if (nameInfo != null) {
+                         if (nameInfo.names() != null && nameInfo.names().length != 0) {
+                             // print java frame(s)
+                             for (int i = 0; i < nameInfo.names().length; i++) {
+                                 if (i > 0) {
+                                     out.print(fillerForAddress);
+                                 }
+                                 out.println(nameInfo.names()[i]);
                              }
-                             out.println(names[i]);
                          }
+                         senderFP = nameInfo.senderFP();
+                         senderPC = nameInfo.senderPC();
                       }
                   }
-                  f = f.sender(th);
+                  f = f.sender(th, senderFP, senderPC);
                }
             } catch (Exception exp) {
                exp.printStackTrace();
@@ -239,17 +245,22 @@ public class PStack extends Tool {
       out.println("\t????????");
    }
 
-   private String[] getJavaNames(ThreadProxy th, Address fp) {
+   private static record JavaNameInfo(String[] names, Address senderFP, Address senderPC) {};
+
+   private JavaNameInfo getJavaNames(ThreadProxy th, Address fp) {
       if (fp == null) {
          return null;
       }
       JavaVFrame[] jvframes = jframeCache.get(th);
       if (jvframes == null) return null; // not a java thread
+
       List<String> names = new ArrayList<>(10);
+      JavaVFrame bottomJVFrame = null;
       for (int fCount = 0; fCount < jvframes.length; fCount++) {
          JavaVFrame vf = jvframes[fCount];
          Frame f = vf.getFrame();
          if (fp.equals(f.getFP())) {
+            bottomJVFrame = vf;
             StringBuilder sb = new StringBuilder();
             Method method = vf.getMethod();
             // a special char to identify java frames in output
@@ -280,8 +291,16 @@ public class PStack extends Tool {
             names.add(sb.toString());
          }
       }
-      String[] res = names.toArray(new String[0]);
-      return res;
+
+      Address senderFP = null;
+      Address senderPC = null;
+      if (bottomJVFrame != null) {
+         Frame senderFrame = bottomJVFrame.getFrame().sender((RegisterMap)bottomJVFrame.getRegisterMap().clone());
+         senderFP = senderFrame.getFP();
+         senderPC = senderFrame.getPC();
+      }
+
+      return new JavaNameInfo(names.toArray(new String[0]), senderFP, senderPC);
    }
 
    public void setVerbose(boolean verbose) {
