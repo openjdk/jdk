@@ -409,14 +409,6 @@ public class IconTest {
             iconType = mainLauncherIconType;
         }
 
-        if (TKit.isLinux()) {
-            var noDefaultIcon = cmd.isImagePackageType() || !cmd.hasArgument("--linux-shortcut");
-
-            if (noDefaultIcon && iconType == IconType.DefaultIcon) {
-                iconType = IconType.NoIcon;
-            }
-        }
-
         return iconType;
     }
 
