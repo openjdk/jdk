@@ -583,7 +583,7 @@ TEST_VM(RegMask, iteration_extended) {
   ASSERT_FALSE(rmi.has_next());
 }
 
-TEST_VM(RegMask, Set_ALL_extended) {
+TEST_VM(RegMask, set_all_extended) {
   // Check that set_all doesn't add bits outside of rm.rm_size_bits() on
   // extended RegMasks.
   RegMask rm(arena());
@@ -596,22 +596,22 @@ TEST_VM(RegMask, Set_ALL_extended) {
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits());
 }
 
-TEST_VM(RegMask, Set_ALL_From_extended) {
+TEST_VM(RegMask, set_all_from_extended) {
   RegMask rm(arena());
   extend(rm);
   rm.set_all_from(OptoReg::Name(42));
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - 42);
 }
 
-TEST_VM(RegMask, Set_ALL_From_extended_grow) {
+TEST_VM(RegMask, set_all_from_extended_grow) {
   RegMask rm(arena());
   rm.set_all_from(first_extended() + OptoReg::Name(42));
   is_extended(rm);
   contains_expected_num_of_registers(rm, rm.rm_size_in_bits() - first_extended() - 42);
 }
 
-TEST_VM(RegMask, Clear_extended) {
-  // Check that Clear doesn't leave any stray bits on extended RegMasks.
+TEST_VM(RegMask, clear_extended) {
+  // Check that clear doesn't leave any stray bits on extended RegMasks.
   RegMask rm(arena());
   rm.insert(first_extended());
   is_extended(rm);
