@@ -1420,6 +1420,10 @@ void SystemDictionaryShared::get_all_archived_classes(bool is_static_archive, Gr
   get_archive(is_static_archive)->_builtin_dictionary.iterate([&] (const RunTimeClassInfo* record) {
       classes->append(record->klass());
     });
+
+  get_archive(is_static_archive)->_unregistered_dictionary.iterate([&] (const RunTimeClassInfo* record) {
+      classes->append(record->klass());
+    });
 }
 
 class SharedDictionaryPrinter : StackObj {
