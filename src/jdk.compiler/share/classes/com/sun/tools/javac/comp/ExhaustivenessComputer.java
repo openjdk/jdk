@@ -40,7 +40,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Type.TypeVar;
 import java.util.Arrays;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
