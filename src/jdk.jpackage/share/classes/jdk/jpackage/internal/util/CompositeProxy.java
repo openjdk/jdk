@@ -25,14 +25,17 @@
 package jdk.jpackage.internal.util;
 
 import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -291,26 +294,119 @@ public final class CompositeProxy {
         return proxy;
     }
 
-    private static Map<Class<?>, Object> createInterfaceDispatch(Class<?>[] interfaces, Object[] slices) {
+    private record InterfaceDispatchBuilder(Set<? extends Class<?>> interfaces, Collection<Object> slices) {
 
-        final Map<Class<?>, Object> interfaceDispatch = Stream.of(interfaces).collect(toMap(x -> x, iface -> {
-            return Stream.of(slices).filter(obj -> {
-                return Set.of(obj.getClass().getInterfaces()).contains(iface);
-            }).reduce((a, b) -> {
-                throw new IllegalArgumentException(
-                        String.format("both [%s] and [%s] slices implement %s", a, b, iface));
-            }).orElseThrow(() -> createInterfaceNotImplementedException(List.of(iface)));
-        }));
+        InterfaceDispatchBuilder {
+            Objects.requireNonNull(interfaces);
+            Objects.requireNonNull(slices);
 
-        if (interfaceDispatch.size() != interfaces.length) {
-            final List<Class<?>> missingInterfaces = new ArrayList<>(Set.of(interfaces));
-            missingInterfaces.removeAll(interfaceDispatch.keySet());
-            throw createInterfaceNotImplementedException(missingInterfaces);
+            if (interfaces.isEmpty()) {
+                throw new IllegalArgumentException("No interfaces to dispatch");
+            }
+
+            if (slices.isEmpty()) {
+                throw createInterfaceNotImplementedException(interfaces);
+            }
         }
 
-        return Stream.of(interfaces).flatMap(iface -> {
+        InterfaceDispatchBuilder(Result result) {
+            this(result.unservedInterfaces(), result.unusedSlices());
+        }
+
+        Map<? extends Class<?>, List<Object>> createDispatchGroups() {
+            return interfaces.stream().collect(toMap(x -> x, iface -> {
+                return slices.stream().filter(obj -> {
+                    return Stream.of(obj.getClass().getInterfaces()).flatMap(sliceIface -> {
+                        return unfoldInterface(sliceIface);
+                    }).anyMatch(Predicate.isEqual(iface));
+                }).toList();
+            }));
+        }
+
+        Result createDispatch() {
+            var groups = createDispatchGroups();
+
+            var dispatch = groups.entrySet().stream().filter(e -> {
+                return e.getValue().size() == 1;
+            }).collect(toMap(Map.Entry::getKey, e -> {
+                return e.getValue().getFirst();
+            }));
+
+            var unservedInterfaces = groups.entrySet().stream().filter(e -> {
+                return e.getValue().size() != 1;
+            }).map(Map.Entry::getKey).collect(toSet());
+
+            var usedSliceIdentities = dispatch.values().stream()
+                    .map(IdentityWrapper::new)
+                    .collect(toSet());
+
+            var unusedSliceIdentities = new HashSet<>(toIdentitySet(slices));
+            unusedSliceIdentities.removeAll(usedSliceIdentities);
+
+            return new Result(dispatch, unservedInterfaces, unusedSliceIdentities.stream().map(IdentityWrapper::value).toList());
+        }
+
+        private record Result(Map<? extends Class<?>, Object> dispatch, Set<? extends Class<?>> unservedInterfaces, Collection<Object> unusedSlices) {
+
+            Result {
+                Objects.requireNonNull(dispatch);
+                Objects.requireNonNull(unservedInterfaces);
+                Objects.requireNonNull(unusedSlices);
+
+                if (!Collections.disjoint(dispatch.keySet(), unservedInterfaces)) {
+                    throw new IllegalArgumentException();
+                }
+
+                if (!Collections.disjoint(toIdentitySet(dispatch.values()), toIdentitySet(unusedSlices))) {
+                    throw new IllegalArgumentException();
+                }
+            }
+        }
+
+        private static Collection<IdentityWrapper<Object>> toIdentitySet(Collection<Object> v) {
+            return v.stream().map(IdentityWrapper::new).collect(toSet());
+        }
+    }
+
+    private static Map<Class<?>, Object> createInterfaceDispatch(Class<?>[] interfaces, Object[] slices) {
+
+        if (interfaces.length == 0) {
+            return Collections.emptyMap();
+        }
+
+        Map<Class<?>, Object> dispatch = new HashMap<>();
+
+        var builder = new InterfaceDispatchBuilder(Set.of(interfaces), List.of(slices));
+        for (;;) {
+            var result = builder.createDispatch();
+            if (result.dispatch().isEmpty()) {
+                var unserved = builder.createDispatchGroups();
+                for (var e : unserved.entrySet()) {
+                    var iface = e.getKey();
+                    var ifaceSlices = e.getValue();
+                    if (ifaceSlices.size() > 1) {
+                        throw new IllegalArgumentException(
+                                String.format("multiple slices %s implement %s", ifaceSlices, iface));
+                    }
+                }
+
+                var unservedInterfaces = unserved.entrySet().stream().filter(e -> {
+                    return e.getValue().isEmpty();
+                }).map(Map.Entry::getKey).toList();
+                throw createInterfaceNotImplementedException(unservedInterfaces);
+            } else {
+                dispatch.putAll(result.dispatch());
+                if (result.unservedInterfaces().isEmpty()) {
+                    break;
+                }
+            }
+
+            builder = new InterfaceDispatchBuilder(result);
+        }
+
+        return dispatch.keySet().stream().flatMap(iface -> {
             return unfoldInterface(iface).map(unfoldedIface -> {
-                return Map.entry(unfoldedIface, interfaceDispatch.get(iface));
+                return Map.entry(unfoldedIface, dispatch.get(iface));
             });
         }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -321,7 +417,7 @@ public final class CompositeProxy {
     }
 
     private static IllegalArgumentException createInterfaceNotImplementedException(
-            Collection<Class<?>> missingInterfaces) {
+            Collection<? extends Class<?>> missingInterfaces) {
         return new IllegalArgumentException(String.format("none of the slices implement %s", missingInterfaces));
     }
 
