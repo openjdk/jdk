@@ -65,6 +65,7 @@ public class OldClassSupport {
         @Override
         public String[] vmArgs(RunMode runMode) {
             return new String[] {
+                "-Xlog:aot",
                 "-Xlog:aot+class=debug",
                 "-Xlog:aot+resolve=trace",
             };

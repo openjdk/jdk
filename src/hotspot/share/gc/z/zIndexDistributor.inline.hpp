@@ -28,7 +28,7 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/z/zGlobals.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
@@ -45,7 +45,7 @@ class ZIndexDistributorStriped : public CHeapObj<mtGC> {
   char _mem[MemSize + ZCacheLineSize];
 
   int claim_stripe() {
-    return Atomic::fetch_then_add(&_claim_stripe, 1, memory_order_relaxed);
+    return AtomicAccess::fetch_then_add(&_claim_stripe, 1, memory_order_relaxed);
   }
 
   volatile int* claim_addr(int index) {
@@ -66,7 +66,7 @@ public:
 
     // Use claiming
     for (int i; (i = claim_stripe()) < StripeCount;) {
-      for (int index; (index = Atomic::fetch_then_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
+      for (int index; (index = AtomicAccess::fetch_then_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
         if (!function(i * stripe_max + index)) {
           return;
         }
@@ -75,7 +75,7 @@ public:
 
     // Use stealing
     for (int i = 0; i < StripeCount; i++) {
-      for (int index; (index = Atomic::fetch_then_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
+      for (int index; (index = AtomicAccess::fetch_then_add(claim_addr(i), 1, memory_order_relaxed)) < stripe_max;) {
         if (!function(i * stripe_max + index)) {
           return;
         }
@@ -172,7 +172,7 @@ private:
   // Claim functions
 
   int claim(int index) {
-    return Atomic::fetch_then_add(&_claim_array[index], 1, memory_order_relaxed);
+    return AtomicAccess::fetch_then_add(&_claim_array[index], 1, memory_order_relaxed);
   }
 
   int claim_at(int* indices, int level) {
