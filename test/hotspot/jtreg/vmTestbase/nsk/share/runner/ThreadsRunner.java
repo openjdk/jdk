@@ -310,6 +310,10 @@ public class ThreadsRunner implements MultiRunner, LogAware, RunParamsAware {
             log.info("Unexpected exception during the run.");
             log.info(t);
             successful = false;
+        } finally {
+            // Finished testing; release memory to avoid OOM.
+            runnables.clear();
+            threads.clear();
         }
     }
 

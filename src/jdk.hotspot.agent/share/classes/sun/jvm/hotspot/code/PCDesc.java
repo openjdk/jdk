@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ public class PCDesc extends VMObject {
   private static CIntegerField objDecodeOffsetField;
   private static CIntegerField pcFlagsField;
   private static int reexecuteMask;
-  private static int isMethodHandleInvokeMask;
   private static int returnOopMask;
 
   static {
@@ -61,7 +60,6 @@ public class PCDesc extends VMObject {
     pcFlagsField           = type.getCIntegerField("_flags");
 
     reexecuteMask            = db.lookupIntConstant("PcDesc::PCDESC_reexecute");
-    isMethodHandleInvokeMask = db.lookupIntConstant("PcDesc::PCDESC_is_method_handle_invoke");
     returnOopMask            = db.lookupIntConstant("PcDesc::PCDESC_return_oop");
   }
 
@@ -91,11 +89,6 @@ public class PCDesc extends VMObject {
   public boolean getReexecute() {
     int flags = (int)pcFlagsField.getValue(addr);
     return (flags & reexecuteMask) != 0;
-  }
-
-  public boolean isMethodHandleInvoke() {
-    int flags = (int)pcFlagsField.getValue(addr);
-    return (flags & isMethodHandleInvokeMask) != 0;
   }
 
   public void print(NMethod code) {

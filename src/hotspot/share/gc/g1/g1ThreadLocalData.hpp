@@ -36,6 +36,15 @@
 class G1ThreadLocalData {
 private:
   SATBMarkQueue _satb_mark_queue;
+  // The current base address of the card table. Accessed by the barrier to do
+  // the card mark. Changed as required by the refinement control thread to
+  // implement card table switching.
+  //
+  // Tests showed that embedding this value in the TLS block is the cheapest
+  // way for fast access to this value in the barrier.
+  // E.g. embedding an address to that value directly into the code stream and
+  // then loading from that was found to be slower on non-x64 architectures.
+  // Additionally it increases code size a lot.
   G1CardTable::CardValue* _byte_map_base;
 
   // Per-thread cache of pinned object count to reduce atomic operation traffic

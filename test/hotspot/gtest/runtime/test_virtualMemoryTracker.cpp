@@ -94,6 +94,7 @@ public:
     RegionsTree* rtree = vmt.tree();
     size_t size  = 0x01000000;
     const address addr = (address)0x0000A000;
+    VMATree::SummaryDiff diff;
 
     vmt.add_reserved_region(addr, size, CALLER_PC, mtTest);
 
@@ -115,45 +116,45 @@ public:
     // Commit adjacent regions with same stack
 
     { // Commit one region
-      rtree->commit_region(addr + cs, cs, stack);
+      rtree->commit_region(addr + cs, cs, stack, diff);
       R r[] = { {addr + cs, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit adjacent - lower address
-      rtree->commit_region(addr, cs, stack);
+      rtree->commit_region(addr, cs, stack, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit adjacent - higher address
-      rtree->commit_region(addr + 2 * cs, cs, stack);
+      rtree->commit_region(addr + 2 * cs, cs, stack, diff);
       R r[] = { {addr, 3 * cs} };
       check(vmt,rmr, r);
     }
 
     // Cleanup
-    rtree->uncommit_region(addr, 3 * cs);
+    rtree->uncommit_region(addr, 3 * cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 0u);
 
 
     // Commit adjacent regions with different stacks
 
     { // Commit one region
-      rtree->commit_region(addr + cs, cs, stack);
+      rtree->commit_region(addr + cs, cs, stack, diff);
       R r[] = { {addr + cs, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit adjacent - lower address
-      rtree->commit_region(addr, cs, stack2);
+      rtree->commit_region(addr, cs, stack2, diff);
       R r[] = { {addr,      cs},
                 {addr + cs, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit adjacent - higher address
-      rtree->commit_region(addr + 2 * cs, cs, stack2);
+      rtree->commit_region(addr + 2 * cs, cs, stack2, diff);
       R r[] = { {addr,          cs},
                 {addr +     cs, cs},
                 {addr + 2 * cs, cs} };
@@ -161,12 +162,13 @@ public:
     }
 
     // Cleanup
-    rtree->uncommit_region(addr, 3 * cs);
+    rtree->uncommit_region(addr, 3 * cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 0u);
   }
 
   static void test_add_committed_region_adjacent_overlapping() {
     VirtualMemoryTracker vmt(true);
+    VMATree::SummaryDiff diff;
     RegionsTree* rtree = vmt.tree();
     size_t size  = 0x01000000;
     const address addr = (address)0x0000A000;
@@ -190,46 +192,46 @@ public:
     // Commit adjacent and overlapping regions with same stack
 
     { // Commit two non-adjacent regions
-      rtree->commit_region(addr, 2 * cs, stack);
-      rtree->commit_region(addr + 3 * cs, 2 * cs, stack);
+      rtree->commit_region(addr, 2 * cs, stack, diff);
+      rtree->commit_region(addr + 3 * cs, 2 * cs, stack, diff);
       R r[] = { {addr,          2 * cs},
                 {addr + 3 * cs, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit adjacent and overlapping
-      rtree->commit_region(addr + 2 * cs, 2 * cs, stack);
+      rtree->commit_region(addr + 2 * cs, 2 * cs, stack, diff);
       R r[] = { {addr, 5 * cs} };
       check(vmt, rmr, r);
     }
 
     // revert to two non-adjacent regions
-    rtree->uncommit_region(addr + 2 * cs, cs);
+    rtree->uncommit_region(addr + 2 * cs, cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 4 * cs);
 
     { // Commit overlapping and adjacent
-      rtree->commit_region(addr + cs, 2 * cs, stack);
+      rtree->commit_region(addr + cs, 2 * cs, stack, diff);
       R r[] = { {addr, 5 * cs} };
       check(vmt, rmr, r);
     }
 
     // Cleanup
-    rtree->uncommit_region(addr, 5 * cs);
+    rtree->uncommit_region(addr, 5 * cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 0u);
 
 
     // Commit adjacent and overlapping regions with different stacks
 
     { // Commit two non-adjacent regions
-      rtree->commit_region(addr, 2 * cs, stack);
-      rtree->commit_region(addr + 3 * cs, 2 * cs, stack);
+      rtree->commit_region(addr, 2 * cs, stack, diff);
+      rtree->commit_region(addr + 3 * cs, 2 * cs, stack, diff);
       R r[] = { {addr,          2 * cs},
                 {addr + 3 * cs, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit adjacent and overlapping
-      rtree->commit_region(addr + 2 * cs, 2 * cs, stack2);
+      rtree->commit_region(addr + 2 * cs, 2 * cs, stack2, diff);
       R r[] = { {addr,          2 * cs},
                 {addr + 2 * cs, 2 * cs},
                 {addr + 4 * cs,     cs} };
@@ -237,12 +239,12 @@ public:
     }
 
     // revert to two non-adjacent regions
-    rtree->commit_region(addr, 5 * cs, stack);
-    rtree->uncommit_region(addr + 2 * cs, cs);
+    rtree->commit_region(addr, 5 * cs, stack, diff);
+    rtree->uncommit_region(addr + 2 * cs, cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 4 * cs);
 
     { // Commit overlapping and adjacent
-      rtree->commit_region(addr + cs, 2 * cs, stack2);
+      rtree->commit_region(addr + cs, 2 * cs, stack2, diff);
       R r[] = { {addr,              cs},
                 {addr +     cs, 2 * cs},
                 {addr + 3 * cs, 2 * cs} };
@@ -254,6 +256,7 @@ public:
 
   static void test_add_committed_region_overlapping() {
     VirtualMemoryTracker vmt(true);
+    VMATree::SummaryDiff diff;
     RegionsTree* rtree = vmt.tree();
     size_t size  = 0x01000000;
     const address addr = (address)0x0000A000;
@@ -279,77 +282,77 @@ public:
     // With same stack
 
     { // Commit one region
-      rtree->commit_region(addr, cs, stack);
+      rtree->commit_region(addr, cs, stack, diff);
       R r[] = { {addr, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit the same region
-      rtree->commit_region(addr, cs, stack);
+      rtree->commit_region(addr, cs, stack, diff);
       R r[] = { {addr, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit a succeeding region
-      rtree->commit_region(addr + cs, cs, stack);
+      rtree->commit_region(addr + cs, cs, stack, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit  over two regions
-      rtree->commit_region(addr, 2 * cs, stack);
+      rtree->commit_region(addr, 2 * cs, stack, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     {// Commit first part of a region
-      rtree->commit_region(addr, cs, stack);
+      rtree->commit_region(addr, cs, stack, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit second part of a region
-      rtree->commit_region(addr + cs, cs, stack);
+      rtree->commit_region(addr + cs, cs, stack, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit a third part
-      rtree->commit_region(addr + 2 * cs, cs, stack);
+      rtree->commit_region(addr + 2 * cs, cs, stack, diff);
       R r[] = { {addr, 3 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit in the middle of a region
-      rtree->commit_region(addr + 1 * cs, cs, stack);
+      rtree->commit_region(addr + 1 * cs, cs, stack, diff);
       R r[] = { {addr, 3 * cs} };
       check(vmt, rmr, r);
     }
 
     // Cleanup
-    rtree->uncommit_region(addr, 3 * cs);
+    rtree->uncommit_region(addr, 3 * cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 0u);
 
     // With preceding region
 
-    rtree->commit_region(addr,              cs, stack);
-    rtree->commit_region(addr + 2 * cs, 3 * cs, stack);
+    rtree->commit_region(addr,              cs, stack, diff);
+    rtree->commit_region(addr + 2 * cs, 3 * cs, stack, diff);
 
-    rtree->commit_region(addr + 2 * cs,     cs, stack);
+    rtree->commit_region(addr + 2 * cs,     cs, stack, diff);
     {
       R r[] = { {addr,              cs},
                 {addr + 2 * cs, 3 * cs} };
       check(vmt, rmr, r);
     }
 
-    rtree->commit_region(addr + 3 * cs,     cs, stack);
+    rtree->commit_region(addr + 3 * cs,     cs, stack, diff);
     {
       R r[] = { {addr,              cs},
                 {addr + 2 * cs, 3 * cs} };
       check(vmt, rmr, r);
     }
 
-    rtree->commit_region(addr + 4 * cs,     cs, stack);
+    rtree->commit_region(addr + 4 * cs,     cs, stack, diff);
     {
       R r[] = { {addr,              cs},
                 {addr + 2 * cs, 3 * cs} };
@@ -357,57 +360,57 @@ public:
     }
 
     // Cleanup
-    rtree->uncommit_region(addr, 5 * cs);
+    rtree->uncommit_region(addr, 5 * cs, diff);
     ASSERT_EQ(vmt.committed_size(&rmr), 0u);
 
     // With different stacks
 
     { // Commit one region
-      rtree->commit_region(addr, cs, stack);
+      rtree->commit_region(addr, cs, stack, diff);
       R r[] = { {addr, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit the same region
-      rtree->commit_region(addr, cs, stack2);
+      rtree->commit_region(addr, cs, stack2, diff);
       R r[] = { {addr, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit a succeeding region
-      rtree->commit_region(addr + cs, cs, stack);
+      rtree->commit_region(addr + cs, cs, stack, diff);
       R r[] = { {addr,      cs},
                 {addr + cs, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit  over two regions
-      rtree->commit_region(addr, 2 * cs, stack);
+      rtree->commit_region(addr, 2 * cs, stack, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     {// Commit first part of a region
-      rtree->commit_region(addr, cs, stack2);
+      rtree->commit_region(addr, cs, stack2, diff);
       R r[] = { {addr,      cs},
                 {addr + cs, cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit second part of a region
-      rtree->commit_region(addr + cs, cs, stack2);
+      rtree->commit_region(addr + cs, cs, stack2, diff);
       R r[] = { {addr, 2 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit a third part
-      rtree->commit_region(addr + 2 * cs, cs, stack2);
+      rtree->commit_region(addr + 2 * cs, cs, stack2, diff);
       R r[] = { {addr, 3 * cs} };
       check(vmt, rmr, r);
     }
 
     { // Commit in the middle of a region
-      rtree->commit_region(addr + 1 * cs, cs, stack);
+      rtree->commit_region(addr + 1 * cs, cs, stack, diff);
       R r[] = { {addr,          cs},
                 {addr +     cs, cs},
                 {addr + 2 * cs, cs} };
@@ -430,6 +433,7 @@ public:
 
   static void test_remove_uncommitted_region() {
     VirtualMemoryTracker vmt(true);
+    VMATree::SummaryDiff diff;
     RegionsTree* rtree = vmt.tree();
     size_t size  = 0x01000000;
     const address addr = (address)0x0000A000;
@@ -451,105 +455,105 @@ public:
     const size_t cs = 0x1000;
 
     { // Commit regions
-      rtree->commit_region(addr, 3 * cs, stack);
+      rtree->commit_region(addr, 3 * cs, stack, diff);
       R r[] = { {addr, 3 * cs} };
       check(vmt, rmr, r);
 
       // Remove only existing
-      rtree->uncommit_region(addr, 3 * cs);
+      rtree->uncommit_region(addr, 3 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     {
-      rtree->commit_region(addr + 0 * cs, cs, stack);
-      rtree->commit_region(addr + 2 * cs, cs, stack);
-      rtree->commit_region(addr + 4 * cs, cs, stack);
+      rtree->commit_region(addr + 0 * cs, cs, stack, diff);
+      rtree->commit_region(addr + 2 * cs, cs, stack, diff);
+      rtree->commit_region(addr + 4 * cs, cs, stack, diff);
 
       { // Remove first
-        rtree->uncommit_region(addr, cs);
+        rtree->uncommit_region(addr, cs, diff);
         R r[] = { {addr + 2 * cs, cs},
                   {addr + 4 * cs, cs} };
         check(vmt, rmr, r);
       }
 
       // add back
-      rtree->commit_region(addr,          cs, stack);
+      rtree->commit_region(addr,          cs, stack, diff);
 
       { // Remove middle
-        rtree->uncommit_region(addr + 2 * cs, cs);
+        rtree->uncommit_region(addr + 2 * cs, cs, diff);
         R r[] = { {addr + 0 * cs, cs},
                   {addr + 4 * cs, cs} };
         check(vmt, rmr, r);
       }
 
       // add back
-      rtree->commit_region(addr + 2 * cs, cs, stack);
+      rtree->commit_region(addr + 2 * cs, cs, stack, diff);
 
       { // Remove end
-        rtree->uncommit_region(addr + 4 * cs, cs);
+        rtree->uncommit_region(addr + 4 * cs, cs, diff);
         R r[] = { {addr + 0 * cs, cs},
                   {addr + 2 * cs, cs} };
         check(vmt, rmr, r);
       }
 
-      rtree->uncommit_region(addr, 5 * cs);
+      rtree->uncommit_region(addr, 5 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     { // Remove larger region
-      rtree->commit_region(addr + 1 * cs, cs, stack);
-      rtree->uncommit_region(addr, 3 * cs);
+      rtree->commit_region(addr + 1 * cs, cs, stack, diff);
+      rtree->uncommit_region(addr, 3 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     { // Remove smaller region - in the middle
-      rtree->commit_region(addr, 3 * cs, stack);
-      rtree->uncommit_region(addr + 1 * cs, cs);
+      rtree->commit_region(addr, 3 * cs, stack, diff);
+      rtree->uncommit_region(addr + 1 * cs, cs, diff);
       R r[] = { { addr + 0 * cs, cs},
                 { addr + 2 * cs, cs} };
       check(vmt, rmr, r);
 
-      rtree->uncommit_region(addr, 3 * cs);
+      rtree->uncommit_region(addr, 3 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     { // Remove smaller region - at the beginning
-      rtree->commit_region(addr, 3 * cs, stack);
-      rtree->uncommit_region(addr + 0 * cs, cs);
+      rtree->commit_region(addr, 3 * cs, stack, diff);
+      rtree->uncommit_region(addr + 0 * cs, cs, diff);
       R r[] = { { addr + 1 * cs, 2 * cs} };
       check(vmt, rmr, r);
 
-      rtree->uncommit_region(addr, 3 * cs);
+      rtree->uncommit_region(addr, 3 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     { // Remove smaller region - at the end
-      rtree->commit_region(addr, 3 * cs, stack);
-      rtree->uncommit_region(addr + 2 * cs, cs);
+      rtree->commit_region(addr, 3 * cs, stack, diff);
+      rtree->uncommit_region(addr + 2 * cs, cs, diff);
       R r[] = { { addr, 2 * cs} };
       check(vmt, rmr, r);
 
-      rtree->uncommit_region(addr, 3 * cs);
+      rtree->uncommit_region(addr, 3 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     { // Remove smaller, overlapping region - at the beginning
-      rtree->commit_region(addr + 1 * cs, 4 * cs, stack);
-      rtree->uncommit_region(addr, 2 * cs);
+      rtree->commit_region(addr + 1 * cs, 4 * cs, stack, diff);
+      rtree->uncommit_region(addr, 2 * cs, diff);
       R r[] = { { addr + 2 * cs, 3 * cs} };
       check(vmt, rmr, r);
 
-      rtree->uncommit_region(addr + 1 * cs, 4 * cs);
+      rtree->uncommit_region(addr + 1 * cs, 4 * cs, diff);
       check_empty(vmt, rmr);
     }
 
     { // Remove smaller, overlapping region - at the end
-      rtree->commit_region(addr, 3 * cs, stack);
-      rtree->uncommit_region(addr + 2 * cs, 2 * cs);
+      rtree->commit_region(addr, 3 * cs, stack, diff);
+      rtree->uncommit_region(addr + 2 * cs, 2 * cs, diff);
       R r[] = { { addr, 2 * cs} };
       check(vmt, rmr, r);
 
-      rtree->uncommit_region(addr, 3 * cs);
+      rtree->uncommit_region(addr, 3 * cs, diff);
       check_empty(vmt, rmr);
     }
 

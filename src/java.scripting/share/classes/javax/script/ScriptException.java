@@ -25,6 +25,8 @@
 
 package javax.script;
 
+import java.io.Serial;
+
 /**
  * The generic <code>Exception</code> class for the Scripting APIs.  Checked
  * exception types thrown by underlying scripting implementations must be wrapped in instances of
@@ -36,6 +38,7 @@ package javax.script;
  */
 public class ScriptException extends Exception {
 
+    @Serial
     private static final long serialVersionUID = 8265071037049225001L;
 
     /** @serial */

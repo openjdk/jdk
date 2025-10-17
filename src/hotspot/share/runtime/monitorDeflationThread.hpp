@@ -30,7 +30,6 @@
 // A hidden from external view JavaThread for deflating idle monitors.
 
 class MonitorDeflationThread : public JavaThread {
-  friend class VMStructs;
  private:
 
   static void monitor_deflation_thread_entry(JavaThread* thread, TRAPS);

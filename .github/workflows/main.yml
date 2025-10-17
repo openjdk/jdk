@@ -327,8 +327,8 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
-      runs-on: 'macos-13'
-      xcode-toolset-version: '14.3.1'
+      runs-on: 'macos-15-intel'
+      xcode-toolset-version: '16.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
@@ -340,8 +340,8 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
-      runs-on: 'macos-14'
-      xcode-toolset-version: '15.4'
+      runs-on: 'macos-15'
+      xcode-toolset-version: '16.4'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
@@ -432,9 +432,9 @@ jobs:
     with:
       platform: macos-aarch64
       bootjdk-platform: macos-aarch64
-      runs-on: macos-14
+      runs-on: macos-15
       dry-run: ${{ needs.prepare.outputs.dry-run == 'true' }}
-      xcode-toolset-version: '15.4'
+      xcode-toolset-version: '16.4'
       debug-suffix: -debug
 
   test-windows-x64:

@@ -472,9 +472,6 @@ class MacroAssembler: public Assembler {
   void push_cont_fastpath();
   void pop_cont_fastpath();
 
-  void inc_held_monitor_count();
-  void dec_held_monitor_count();
-
   DEBUG_ONLY(void stop_if_in_cont(Register cont_reg, const char* name);)
 
   // Round up to a power of two

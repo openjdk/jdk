@@ -504,7 +504,7 @@ void Universe::genesis(TRAPS) {
   // Since some of the old system object arrays have been converted to
   // ordinary object arrays, _objectArrayKlass will be loaded when
   // SystemDictionary::initialize(CHECK); is run. See the extra check
-  // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
+  // for Object_klass_is_loaded in ObjArrayKlass::allocate_objArray_klass.
   {
     Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
     _objectArrayKlass = ObjArrayKlass::cast(oak);
@@ -593,7 +593,7 @@ void Universe::fixup_mirrors(TRAPS) {
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
-  assert(vmClasses::Class_klass_loaded(), "java.lang.Class should be loaded");
+  assert(vmClasses::Class_klass_is_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
 
   if (!CDSConfig::is_using_archive()) {

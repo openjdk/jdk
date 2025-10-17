@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,18 @@
 #define SHARE_RUNTIME_NONJAVATHREAD_HPP
 
 #include "runtime/thread.hpp"
+#include "utilities/deferredStatic.hpp"
 
 class NonJavaThread: public Thread {
-  friend class VMStructs;
-
-  NonJavaThread* volatile _next;
+  friend class Threads;
 
   class List;
-  static List _the_list;
+  static DeferredStatic<List> _the_list;
+
+  // Deferred static initialization
+  static void init();
+
+  NonJavaThread* volatile _next;
 
   void add_to_the_list();
   void remove_from_the_list();
@@ -103,7 +107,6 @@ class NamedThread: public NonJavaThread {
 
 // A single WatcherThread is used for simulating timer interrupts.
 class WatcherThread: public NonJavaThread {
-  friend class VMStructs;
  protected:
   virtual void run();
 

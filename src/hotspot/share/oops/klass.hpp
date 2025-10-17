@@ -300,7 +300,7 @@ protected:
   // Use InstanceKlass::contains_field_offset to classify field offsets.
 
   // sub/superklass links
-  Klass* subklass(bool log = false) const;
+  Klass* subklass() const;
   Klass* next_sibling(bool log = false) const;
 
   void append_to_sibling_list();           // add newly created receiver to superklass' subklass list
@@ -413,9 +413,9 @@ protected:
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;
 
+  void     set_next_sibling(Klass* s);
  protected:                                // internal accessors
   void     set_subklass(Klass* s);
-  void     set_next_sibling(Klass* s);
 
  private:
   static uint8_t compute_hash_slot(Symbol* s);
@@ -743,7 +743,7 @@ public:
   inline bool is_loader_alive() const;
   inline bool is_loader_present_and_alive() const;
 
-  void clean_subklass();
+  Klass* clean_subklass(bool log = false);
 
   // Clean out unnecessary weak klass links from the whole klass hierarchy.
   static void clean_weak_klass_links(bool unloading_occurred, bool clean_alive_klasses = true);

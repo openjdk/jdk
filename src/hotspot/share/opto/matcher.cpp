@@ -50,8 +50,6 @@ const RegMask *Matcher::idealreg2regmask[_last_machine_leaf];
 RegMask Matcher::mreg2regmask[_last_Mach_Reg];
 RegMask Matcher::caller_save_regmask;
 RegMask Matcher::caller_save_regmask_exclude_soe;
-RegMask Matcher::mh_caller_save_regmask;
-RegMask Matcher::mh_caller_save_regmask_exclude_soe;
 RegMask Matcher::STACK_ONLY_mask;
 RegMask Matcher::c_frame_ptr_mask;
 const uint Matcher::_begin_rematerialize = _BEGIN_REMATERIALIZE;
@@ -113,21 +111,6 @@ Matcher::Matcher()
   idealreg2debugmask  [Op_VecZ] = nullptr;
   idealreg2debugmask  [Op_RegFlags] = nullptr;
   idealreg2debugmask  [Op_RegVectMask] = nullptr;
-
-  idealreg2mhdebugmask[Op_RegI] = nullptr;
-  idealreg2mhdebugmask[Op_RegN] = nullptr;
-  idealreg2mhdebugmask[Op_RegL] = nullptr;
-  idealreg2mhdebugmask[Op_RegF] = nullptr;
-  idealreg2mhdebugmask[Op_RegD] = nullptr;
-  idealreg2mhdebugmask[Op_RegP] = nullptr;
-  idealreg2mhdebugmask[Op_VecA] = nullptr;
-  idealreg2mhdebugmask[Op_VecS] = nullptr;
-  idealreg2mhdebugmask[Op_VecD] = nullptr;
-  idealreg2mhdebugmask[Op_VecX] = nullptr;
-  idealreg2mhdebugmask[Op_VecY] = nullptr;
-  idealreg2mhdebugmask[Op_VecZ] = nullptr;
-  idealreg2mhdebugmask[Op_RegFlags] = nullptr;
-  idealreg2mhdebugmask[Op_RegVectMask] = nullptr;
 
   DEBUG_ONLY(_mem_node = nullptr;)   // Ideal memory node consumed by mach node
 }
@@ -465,7 +448,7 @@ int Matcher::scalable_predicate_reg_slots() {
   return round_up_power_of_2(slots);
 }
 
-#define NOF_STACK_MASKS (3*13)
+#define NOF_STACK_MASKS (2*13)
 
 // Create the initial stack mask used by values spilling to the stack.
 // Disallow any debug info in outgoing argument areas by setting the
@@ -480,51 +463,12 @@ void Matcher::init_first_stack_mask() {
     new (rms + i) RegMask(C->comp_arena());
   }
 
-  idealreg2spillmask  [Op_RegN] = &rms[0];
-  idealreg2spillmask  [Op_RegI] = &rms[1];
-  idealreg2spillmask  [Op_RegL] = &rms[2];
-  idealreg2spillmask  [Op_RegF] = &rms[3];
-  idealreg2spillmask  [Op_RegD] = &rms[4];
-  idealreg2spillmask  [Op_RegP] = &rms[5];
-
-  idealreg2debugmask  [Op_RegN] = &rms[6];
-  idealreg2debugmask  [Op_RegI] = &rms[7];
-  idealreg2debugmask  [Op_RegL] = &rms[8];
-  idealreg2debugmask  [Op_RegF] = &rms[9];
-  idealreg2debugmask  [Op_RegD] = &rms[10];
-  idealreg2debugmask  [Op_RegP] = &rms[11];
-
-  idealreg2mhdebugmask[Op_RegN] = &rms[12];
-  idealreg2mhdebugmask[Op_RegI] = &rms[13];
-  idealreg2mhdebugmask[Op_RegL] = &rms[14];
-  idealreg2mhdebugmask[Op_RegF] = &rms[15];
-  idealreg2mhdebugmask[Op_RegD] = &rms[16];
-  idealreg2mhdebugmask[Op_RegP] = &rms[17];
-
-  idealreg2spillmask  [Op_VecA] = &rms[18];
-  idealreg2spillmask  [Op_VecS] = &rms[19];
-  idealreg2spillmask  [Op_VecD] = &rms[20];
-  idealreg2spillmask  [Op_VecX] = &rms[21];
-  idealreg2spillmask  [Op_VecY] = &rms[22];
-  idealreg2spillmask  [Op_VecZ] = &rms[23];
-
-  idealreg2debugmask  [Op_VecA] = &rms[24];
-  idealreg2debugmask  [Op_VecS] = &rms[25];
-  idealreg2debugmask  [Op_VecD] = &rms[26];
-  idealreg2debugmask  [Op_VecX] = &rms[27];
-  idealreg2debugmask  [Op_VecY] = &rms[28];
-  idealreg2debugmask  [Op_VecZ] = &rms[29];
-
-  idealreg2mhdebugmask[Op_VecA] = &rms[30];
-  idealreg2mhdebugmask[Op_VecS] = &rms[31];
-  idealreg2mhdebugmask[Op_VecD] = &rms[32];
-  idealreg2mhdebugmask[Op_VecX] = &rms[33];
-  idealreg2mhdebugmask[Op_VecY] = &rms[34];
-  idealreg2mhdebugmask[Op_VecZ] = &rms[35];
-
-  idealreg2spillmask  [Op_RegVectMask] = &rms[36];
-  idealreg2debugmask  [Op_RegVectMask] = &rms[37];
-  idealreg2mhdebugmask[Op_RegVectMask] = &rms[38];
+  int index = 0;
+  for (int i = Op_RegN; i <= Op_RegVectMask; ++i) {
+    idealreg2spillmask[i] = &rms[index++];
+    idealreg2debugmask[i] = &rms[index++];
+  }
+  assert(index == NOF_STACK_MASKS, "wrong size");
 
   // At first, start with the empty mask
   C->FIRST_STACK_mask().Clear();
@@ -710,26 +654,10 @@ void Matcher::init_first_stack_mask() {
   *idealreg2debugmask  [Op_VecY] = *idealreg2spillmask[Op_VecY];
   *idealreg2debugmask  [Op_VecZ] = *idealreg2spillmask[Op_VecZ];
 
-  *idealreg2mhdebugmask[Op_RegN] = *idealreg2spillmask[Op_RegN];
-  *idealreg2mhdebugmask[Op_RegI] = *idealreg2spillmask[Op_RegI];
-  *idealreg2mhdebugmask[Op_RegL] = *idealreg2spillmask[Op_RegL];
-  *idealreg2mhdebugmask[Op_RegF] = *idealreg2spillmask[Op_RegF];
-  *idealreg2mhdebugmask[Op_RegD] = *idealreg2spillmask[Op_RegD];
-  *idealreg2mhdebugmask[Op_RegP] = *idealreg2spillmask[Op_RegP];
-  *idealreg2mhdebugmask[Op_RegVectMask] = *idealreg2spillmask[Op_RegVectMask];
-
-  *idealreg2mhdebugmask[Op_VecA] = *idealreg2spillmask[Op_VecA];
-  *idealreg2mhdebugmask[Op_VecS] = *idealreg2spillmask[Op_VecS];
-  *idealreg2mhdebugmask[Op_VecD] = *idealreg2spillmask[Op_VecD];
-  *idealreg2mhdebugmask[Op_VecX] = *idealreg2spillmask[Op_VecX];
-  *idealreg2mhdebugmask[Op_VecY] = *idealreg2spillmask[Op_VecY];
-  *idealreg2mhdebugmask[Op_VecZ] = *idealreg2spillmask[Op_VecZ];
-
   // Prevent stub compilations from attempting to reference
   // callee-saved (SOE) registers from debug info
   bool exclude_soe = !Compile::current()->is_method_compilation();
   RegMask* caller_save_mask = exclude_soe ? &caller_save_regmask_exclude_soe : &caller_save_regmask;
-  RegMask* mh_caller_save_mask = exclude_soe ? &mh_caller_save_regmask_exclude_soe : &mh_caller_save_regmask;
 
   idealreg2debugmask[Op_RegN]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_RegI]->SUBTRACT(*caller_save_mask);
@@ -745,21 +673,6 @@ void Matcher::init_first_stack_mask() {
   idealreg2debugmask[Op_VecX]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_VecY]->SUBTRACT(*caller_save_mask);
   idealreg2debugmask[Op_VecZ]->SUBTRACT(*caller_save_mask);
-
-  idealreg2mhdebugmask[Op_RegN]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_RegI]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_RegL]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_RegF]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_RegD]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_RegP]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_RegVectMask]->SUBTRACT(*mh_caller_save_mask);
-
-  idealreg2mhdebugmask[Op_VecA]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_VecS]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_VecD]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_VecX]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_VecY]->SUBTRACT(*mh_caller_save_mask);
-  idealreg2mhdebugmask[Op_VecZ]->SUBTRACT(*mh_caller_save_mask);
 }
 
 //---------------------------is_save_on_entry----------------------------------
@@ -984,22 +897,14 @@ void Matcher::init_spill_mask( Node *ret ) {
     if (_register_save_policy[i] == 'C' ||
         _register_save_policy[i] == 'A') {
       caller_save_regmask.Insert(i);
-      mh_caller_save_regmask.Insert(i);
     }
     // Exclude save-on-entry registers from debug masks for stub compilations.
     if (_register_save_policy[i] == 'C' ||
         _register_save_policy[i] == 'A' ||
         _register_save_policy[i] == 'E') {
       caller_save_regmask_exclude_soe.Insert(i);
-      mh_caller_save_regmask_exclude_soe.Insert(i);
     }
   }
-
-  // Also exclude the register we use to save the SP for MethodHandle
-  // invokes to from the corresponding MH debug masks
-  const RegMask sp_save_mask = method_handle_invoke_SP_save_mask();
-  mh_caller_save_regmask.OR(sp_save_mask);
-  mh_caller_save_regmask_exclude_soe.OR(sp_save_mask);
 
   // Grab the Frame Pointer
   Node *fp  = ret->in(TypeFunc::FramePtr);
@@ -1272,7 +1177,6 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
   CallNode *call;
   const TypeTuple *domain;
   ciMethod*        method = nullptr;
-  bool             is_method_handle_invoke = false;  // for special kill effects
   if( sfpt->is_Call() ) {
     call = sfpt->as_Call();
     domain = call->tf()->domain();
@@ -1298,13 +1202,8 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       method = call_java->method();
       mcall_java->_method = method;
       mcall_java->_optimized_virtual = call_java->is_optimized_virtual();
-      is_method_handle_invoke = call_java->is_method_handle_invoke();
-      mcall_java->_method_handle_invoke = is_method_handle_invoke;
       mcall_java->_override_symbolic_info = call_java->override_symbolic_info();
       mcall_java->_arg_escape = call_java->arg_escape();
-      if (is_method_handle_invoke) {
-        C->set_has_method_handle_invokes(true);
-      }
       if( mcall_java->is_MachCallStaticJava() )
         mcall_java->as_MachCallStaticJava()->_name =
          call_java->as_CallStaticJava()->_name;

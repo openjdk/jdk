@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -371,7 +371,7 @@ public class Figure extends Properties.Entity implements Vertex {
         // search is done on the node label (without line breaks). See also
         // class NodeQuickSearch in the View module.
         String label = inputNode.getProperties().resolveString(diagram.getNodeText());
-        inputNode.getProperties().setProperty("label", label.replaceAll("\\R", " "));
+        inputNode.getProperties().setProperty(InputNode.LABEL_PROPERTY, label.replaceAll("\\R", " "));
 
         // Update figure dimensions, as these are affected by the node text.
         updateWidth();

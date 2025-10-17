@@ -1269,6 +1269,26 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
   return align_up(current_offset, alignment_required()) - current_offset;
 }
 
+int CallRuntimeDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafDirectVectorNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
+int CallLeafNoFPDirectNode::compute_padding(int current_offset) const
+{
+  return align_up(current_offset, alignment_required()) - current_offset;
+}
+
 //=============================================================================
 
 #ifndef PRODUCT
@@ -2130,10 +2150,6 @@ RegMask Matcher::divL_proj_mask() {
 RegMask Matcher::modL_proj_mask() {
   ShouldNotReachHere();
   return RegMask();
-}
-
-const RegMask Matcher::method_handle_invoke_SP_save_mask() {
-  return FP_REG_mask();
 }
 
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
@@ -8175,7 +8191,7 @@ instruct unnecessary_membar_volatile_rvtso() %{
   ins_cost(0);
 
   size(0);
- 
+
   format %{ "#@unnecessary_membar_volatile_rvtso (unnecessary so empty encoding)" %}
   ins_encode %{
     __ block_comment("unnecessary_membar_volatile_rvtso");
@@ -10509,6 +10525,7 @@ instruct CallRuntimeDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction
@@ -10526,6 +10543,7 @@ instruct CallLeafDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction without safepoint and with vector arguments
@@ -10543,6 +10561,7 @@ instruct CallLeafDirectVector(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // Call Runtime Instruction
@@ -10560,6 +10579,7 @@ instruct CallLeafNoFPDirect(method meth)
   ins_encode(riscv_enc_java_to_runtime(meth));
 
   ins_pipe(pipe_class_call);
+  ins_alignment(4);
 %}
 
 // ============================================================================
@@ -10971,6 +10991,7 @@ instruct arrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI ba
                          iRegLNoSp tmp3, iRegLNoSp tmp4,
                          iRegLNoSp tmp5, iRegLNoSp tmp6, rFlagsReg cr)
 %{
+  predicate(!UseRVV);
   match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
          USE_KILL ary, USE_KILL cnt, USE basic_type, KILL cr);

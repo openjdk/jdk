@@ -149,11 +149,6 @@ class JavaThread: public Thread {
   oop           _vm_result_oop;       // oop result is GC-preserved
   Metadata*     _vm_result_metadata;  // non-oop result
 
-  // See ReduceInitialCardMarks: this holds the precise space interval of
-  // the most recent slow path allocation for which compiled code has
-  // elided card-marks for performance along the fast-path.
-  MemRegion     _deferred_card_mark;
-
   ObjectMonitor* volatile _current_pending_monitor;     // ObjectMonitor this thread is waiting to lock
   bool           _current_pending_monitor_is_from_java; // locking is from Java code
   ObjectMonitor* volatile _current_waiting_monitor;     // ObjectMonitor on which this thread called Object.wait()
@@ -450,7 +445,6 @@ class JavaThread: public Thread {
   volatile oop     _exception_oop;               // Exception thrown in compiled code
   volatile address _exception_pc;                // PC where exception happened
   volatile address _exception_handler_pc;        // PC for handler of exception
-  volatile int     _is_method_handle_return;     // true (== 1) if the current exception PC is a MethodHandle call site.
 
  private:
   // support for JNI critical regions
@@ -477,9 +471,6 @@ class JavaThread: public Thread {
                             // frame inside the continuation that we know about
   int _cont_fastpath_thread_state; // whether global thread state allows continuation fastpath (JVMTI)
 
-  // It's signed for error detection.
-  intx _held_monitor_count;  // used by continuations for fast lock detection
-  intx _jni_monitor_count;
   ObjectMonitor* _unlocked_inflated_monitor;
 
   // This is the field we poke in the interpreter and native
@@ -663,13 +654,6 @@ private:
   bool cont_fastpath() const                   { return _cont_fastpath == nullptr && _cont_fastpath_thread_state != 0; }
   bool cont_fastpath_thread_state() const      { return _cont_fastpath_thread_state != 0; }
 
-  void inc_held_monitor_count(intx i = 1, bool jni = false);
-  void dec_held_monitor_count(intx i = 1, bool jni = false);
-
-  intx held_monitor_count() { return _held_monitor_count; }
-  intx jni_monitor_count()  { return _jni_monitor_count;  }
-  void clear_jni_monitor_count() { _jni_monitor_count = 0; }
-
   // Support for SharedRuntime::monitor_exit_helper()
   ObjectMonitor* unlocked_inflated_monitor() const { return _unlocked_inflated_monitor; }
   void clear_unlocked_inflated_monitor() {
@@ -787,9 +771,6 @@ public:
 
   void set_vm_result_metadata(Metadata* x)       { _vm_result_metadata = x; }
 
-  MemRegion deferred_card_mark() const           { return _deferred_card_mark; }
-  void set_deferred_card_mark(MemRegion mr)      { _deferred_card_mark = mr;   }
-
   // Is thread in scope of an InternalOOMEMark?
   bool is_in_internal_oome_mark() const          { return _is_in_internal_oome_mark; }
   void set_is_in_internal_oome_mark(bool b)      { _is_in_internal_oome_mark = b;    }
@@ -817,7 +798,6 @@ public:
   void set_exception_oop(oop o);
   void set_exception_pc(address a)               { _exception_pc = a; }
   void set_exception_handler_pc(address a)       { _exception_handler_pc = a; }
-  void set_is_method_handle_return(bool value)   { _is_method_handle_return = value ? 1 : 0; }
 
   void clear_exception_oop_and_pc() {
     set_exception_oop(nullptr);
@@ -866,7 +846,6 @@ public:
   static ByteSize exception_oop_offset()         { return byte_offset_of(JavaThread, _exception_oop); }
   static ByteSize exception_pc_offset()          { return byte_offset_of(JavaThread, _exception_pc); }
   static ByteSize exception_handler_pc_offset()  { return byte_offset_of(JavaThread, _exception_handler_pc); }
-  static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
 
   static ByteSize active_handles_offset()        { return byte_offset_of(JavaThread, _active_handles); }
 
@@ -900,8 +879,6 @@ public:
 
   static ByteSize cont_entry_offset()         { return byte_offset_of(JavaThread, _cont_entry); }
   static ByteSize cont_fastpath_offset()      { return byte_offset_of(JavaThread, _cont_fastpath); }
-  static ByteSize held_monitor_count_offset() { return byte_offset_of(JavaThread, _held_monitor_count); }
-  static ByteSize jni_monitor_count_offset()  { return byte_offset_of(JavaThread, _jni_monitor_count); }
   static ByteSize preemption_cancelled_offset()  { return byte_offset_of(JavaThread, _preemption_cancelled); }
   static ByteSize preempt_alternate_return_offset() { return byte_offset_of(JavaThread, _preempt_alternate_return); }
   static ByteSize unlocked_inflated_monitor_offset() { return byte_offset_of(JavaThread, _unlocked_inflated_monitor); }

@@ -634,12 +634,13 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     last_java_sp = esp;
   }
 
-  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
-
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
     str(last_java_fp, Address(rthread, JavaThread::last_Java_fp_offset()));
   }
+
+  // We must set sp last.
+  str(last_java_sp, Address(rthread, JavaThread::last_Java_sp_offset()));
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -5628,38 +5629,6 @@ void MacroAssembler::tlab_allocate(Register obj,
                                    Label& slow_case) {
   BarrierSetAssembler *bs = BarrierSet::barrier_set()->barrier_set_assembler();
   bs->tlab_allocate(this, obj, var_size_in_bytes, con_size_in_bytes, t1, t2, slow_case);
-}
-
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(rthread, JavaThread::held_monitor_count_offset());
-#ifdef ASSERT
-  ldr(tmp, dst);
-  increment(tmp);
-  str(tmp, dst);
-  Label ok;
-  tbz(tmp, 63, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#else
-  increment(dst);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(rthread, JavaThread::held_monitor_count_offset());
-#ifdef ASSERT
-  ldr(tmp, dst);
-  decrement(tmp);
-  str(tmp, dst);
-  Label ok;
-  tbz(tmp, 63, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#else
-  decrement(dst);
-#endif
 }
 
 void MacroAssembler::verify_tlab() {

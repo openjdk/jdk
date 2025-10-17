@@ -52,10 +52,11 @@ class AOTLinkedClassBulkLoader :  AllStatic {
   static void preload_classes_impl(TRAPS);
   static void preload_classes_in_table(Array<InstanceKlass*>* classes,
                                        const char* category_name, Handle loader, TRAPS);
-  static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader,
-                               Array<InstanceKlass*>* classes);
-  static void link_or_init_non_javabase_classes_impl(TRAPS);
-  static void link_or_init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
+  static void initiate_loading(JavaThread* current, const char* category, Handle initiating_loader, Array<InstanceKlass*>* classes);
+  static void link_classes_impl(TRAPS);
+  static void link_classes_in_table(Array<InstanceKlass*>* classes, TRAPS);
+  static void init_non_javabase_classes_impl(TRAPS);
+  static void init_classes_for_loader(Handle class_loader, Array<InstanceKlass*>* classes, TRAPS);
   static void replay_training_at_init(Array<InstanceKlass*>* classes, TRAPS) NOT_CDS_RETURN;
 
 #ifdef ASSERT
@@ -67,9 +68,10 @@ class AOTLinkedClassBulkLoader :  AllStatic {
 
 public:
   static void serialize(SerializeClosure* soc) NOT_CDS_RETURN;
-  static void preload_classes(JavaThread* current);
-  static void link_or_init_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
-  static void link_or_init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void preload_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void link_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void init_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
+  static void init_non_javabase_classes(JavaThread* current) NOT_CDS_RETURN;
   static void exit_on_exception(JavaThread* current);
 
   static void replay_training_at_init_for_preloaded_classes(TRAPS) NOT_CDS_RETURN;

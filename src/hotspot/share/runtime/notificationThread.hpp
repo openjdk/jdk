@@ -33,7 +33,6 @@
 // breakpoints inside registered MXBean notification listeners.
 
 class NotificationThread : public JavaThread {
-  friend class VMStructs;
  private:
 
   static void notification_thread_entry(JavaThread* thread, TRAPS);

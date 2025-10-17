@@ -346,6 +346,19 @@ public final class NumericShaper implements java.io.Serializable {
             return index < NUM_KEYS ? Range.values()[index] : null;
         }
 
+        private static int toRangeHash(Set<Range> ranges) {
+            int m = 0;
+            for (Range range : ranges) {
+                int index = range.ordinal();
+                if (index < NUM_KEYS) {
+                    m |= 1 << index;
+                } else {
+                    m |=  (1 << NUM_KEYS) + index;
+                }
+            }
+            return m;
+        }
+
         private static int toRangeMask(Set<Range> ranges) {
             int m = 0;
             for (Range range : ranges) {
@@ -576,7 +589,7 @@ public final class NumericShaper implements java.io.Serializable {
     // and a linear probe is ok.
 
     private static int ctCache = 0;
-    private static int ctCacheLimit = contexts.length - 2;
+    private static final int ctCacheLimit = contexts.length - 2;
 
     // warning, synchronize access to this as it modifies state
     private static int getContextKey(char c) {
@@ -1510,6 +1523,9 @@ public final class NumericShaper implements java.io.Serializable {
     private NumericShaper(int key, int mask) {
         this.key = key;
         this.mask = mask;
+        if (((this.mask & ARABIC) != 0) && ((this.mask & EASTERN_ARABIC) != 0)) {
+            this.mask &= ~ARABIC;
+        }
     }
 
     private NumericShaper(Range defaultContext, Set<Range> ranges) {
@@ -1795,15 +1811,7 @@ public final class NumericShaper implements java.io.Serializable {
      * @see java.lang.Object#hashCode
      */
     public int hashCode() {
-        int hash = mask;
-        if (rangeSet != null) {
-            // Use the CONTEXTUAL_MASK bit only for the enum-based
-            // NumericShaper. A deserialized NumericShaper might have
-            // bit masks.
-            hash &= CONTEXTUAL_MASK;
-            hash ^= rangeSet.hashCode();
-        }
-        return hash;
+        return (rangeSet != null) ? Range.toRangeHash(rangeSet) : (mask & ~CONTEXTUAL_MASK);
     }
 
     /**

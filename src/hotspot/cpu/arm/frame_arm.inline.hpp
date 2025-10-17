@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,8 +112,6 @@ inline void frame::init(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, add
 }
 
 inline void frame::setup(address pc) {
-  adjust_unextended_sp();
-
   address original_pc = get_deopt_original_pc();
   if (original_pc != nullptr) {
     _pc = original_pc;

@@ -1093,7 +1093,6 @@ public:
 
   static bool supports_tscinv_ext(void);
 
-  static void initialize_tsc();
   static void initialize_cpu_information(void);
 };
 

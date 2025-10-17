@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -886,8 +886,8 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
 
         // if p1 == p2 && p3 == p4: draw line from p1->p4, unless p1 == p4,
         // in which case ignore if p1 == p2
-        final boolean p1eqp2 = Helpers.withinD(dx1, dy1, 6.0d * Math.ulp(y2));
-        final boolean p3eqp4 = Helpers.withinD(dx4, dy4, 6.0d * Math.ulp(y4));
+        final boolean p1eqp2 = Helpers.withinD(dx1, dy1, 6.0d * Helpers.ulp(y2));
+        final boolean p3eqp4 = Helpers.withinD(dx4, dy4, 6.0d * Helpers.ulp(y4));
 
         if (p1eqp2 && p3eqp4) {
             return getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
@@ -905,7 +905,7 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
         final double l1sq = dx1 * dx1 + dy1 * dy1;
         final double l4sq = dx4 * dx4 + dy4 * dy4;
 
-        if (Helpers.within(dotsq, l1sq * l4sq, 4.0d * Math.ulp(dotsq))) {
+        if (Helpers.within(dotsq, l1sq * l4sq, 4.0d * Helpers.ulp(dotsq))) {
             return getLineOffsets(x1, y1, x4, y4, leftOff, rightOff);
         }
 
@@ -1078,8 +1078,8 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
         // equal if they're very close to each other.
 
         // if p1 == p2 or p2 == p3: draw line from p1->p3
-        final boolean p1eqp2 = Helpers.withinD(dx12, dy12, 6.0d * Math.ulp(y2));
-        final boolean p2eqp3 = Helpers.withinD(dx23, dy23, 6.0d * Math.ulp(y3));
+        final boolean p1eqp2 = Helpers.withinD(dx12, dy12, 6.0d * Helpers.ulp(y2));
+        final boolean p2eqp3 = Helpers.withinD(dx23, dy23, 6.0d * Helpers.ulp(y3));
 
         if (p1eqp2 || p2eqp3) {
             return getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
@@ -1091,7 +1091,7 @@ final class Stroker implements StartFlagPathConsumer2D, MarlinConst {
         final double l1sq = dx12 * dx12 + dy12 * dy12;
         final double l3sq = dx23 * dx23 + dy23 * dy23;
 
-        if (Helpers.within(dotsq, l1sq * l3sq, 4.0d * Math.ulp(dotsq))) {
+        if (Helpers.within(dotsq, l1sq * l3sq, 4.0d * Helpers.ulp(dotsq))) {
             return getLineOffsets(x1, y1, x3, y3, leftOff, rightOff);
         }
 

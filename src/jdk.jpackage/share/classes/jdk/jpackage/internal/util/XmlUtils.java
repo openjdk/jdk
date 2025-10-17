@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal.util;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.rethrowUnchecked;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.lang.reflect.Proxy;
@@ -43,6 +45,7 @@ import javax.xml.transform.Result;
 import javax.xml.transform.Source;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.stax.StAXResult;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -63,8 +66,7 @@ public final class XmlUtils {
         return xml -> xmlConsumer.accept();
     }
 
-    public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws
-            IOException {
+    public static void createXml(Path dstFile, XmlConsumer xmlConsumer) throws IOException {
         XMLOutputFactory xmlFactory = XMLOutputFactory.newInstance();
         Files.createDirectories(dstFile.getParent());
         try (Writer w = Files.newBufferedWriter(dstFile)) {
@@ -78,9 +80,28 @@ public final class XmlUtils {
             xml.flush();
             xml.close();
         } catch (XMLStreamException ex) {
-            throw new IOException(ex);
-        } catch (IOException ex) {
-            throw ex;
+            throw rethrowUnchecked(ex);
+        }
+    }
+
+    public static void createXml(Node root, XmlConsumer xmlConsumer) throws IOException {
+        createXml(new DOMResult(root), xmlConsumer);
+    }
+
+    public static DOMResult createXml(XmlConsumer xmlConsumer) throws IOException {
+        var dom = new DOMResult(initDocumentBuilder().newDocument());
+        createXml(dom, xmlConsumer);
+        return dom;
+    }
+
+    public static void createXml(DOMResult dom, XmlConsumer xmlConsumer) throws IOException {
+        try {
+            var xml = XMLOutputFactory.newInstance().createXMLStreamWriter(dom);
+            xmlConsumer.accept(xml);
+            xml.flush();
+            xml.close();
+        } catch (XMLStreamException ex) {
+            throw rethrowUnchecked(ex);
         }
     }
 

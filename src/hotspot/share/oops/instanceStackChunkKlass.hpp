@@ -100,7 +100,6 @@ Chunk layout:
 
 
 class InstanceStackChunkKlass: public InstanceKlass {
-  friend class VMStructs;
   friend class InstanceKlass;
   friend class Continuations;
 

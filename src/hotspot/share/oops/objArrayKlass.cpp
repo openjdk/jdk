@@ -78,7 +78,7 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = nullptr;
-  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_loaded()) {
+  if (!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()) {
     assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
     Klass* element_super = element_klass->super();
     if (element_super != nullptr) {

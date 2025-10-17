@@ -259,7 +259,7 @@ class CodeCache : AllStatic {
   static bool heap_available(CodeBlobType code_blob_type);
 
   // Returns the CodeBlobType for the given nmethod
-  static CodeBlobType get_code_blob_type(nmethod* nm) {
+  static CodeBlobType get_code_blob_type(const nmethod* nm) {
     return get_code_heap(nm)->code_blob_type();
   }
 

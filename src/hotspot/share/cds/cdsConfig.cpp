@@ -943,8 +943,9 @@ bool CDSConfig::is_preserving_verification_constraints() {
     return AOTClassLinking;
   } else if (is_dumping_final_static_archive()) { // writing AOT cache
     return is_dumping_aot_linked_classes();
+  } else if (is_dumping_classic_static_archive()) {
+    return is_dumping_aot_linked_classes();
   } else {
-    // For simplicity, we don't support this optimization with the old CDS workflow.
     return false;
   }
 }

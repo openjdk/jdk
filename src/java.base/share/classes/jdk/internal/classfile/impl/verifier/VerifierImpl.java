@@ -1513,13 +1513,6 @@ public final class VerifierImpl {
         }
     }
 
-    // Return TRUE if all code paths starting with start_bc_offset end in
-    // bytecode athrow or loop.
-    boolean ends_in_athrow(int start_bc_offset) {
-        log_info("unimplemented VerifierImpl.ends_in_athrow");
-        return true;
-    }
-
     boolean verify_invoke_init(RawBytecodeHelper bcs, int ref_class_index, VerificationType ref_class_type,
             VerificationFrame current_frame, int code_length, boolean in_try_block,
             boolean this_uninit, ConstantPoolWrapper cp, VerificationTable stackmap_table) {
@@ -1532,16 +1525,6 @@ public final class VerifierImpl {
                 verifyError("Bad <init> method call");
             }
             if (in_try_block) {
-                for(var exhandler : _method.exceptionTable()) {
-                    int start_pc = exhandler[0];
-                    int end_pc = exhandler[1];
-
-                    if (bci >= start_pc && bci < end_pc) {
-                        if (!ends_in_athrow(exhandler[2])) {
-                            verifyError("Bad <init> method call from after the start of a try block");
-                        }
-                    }
-                }
                 verify_exception_handler_targets(bci, true, current_frame, stackmap_table);
             }
             current_frame.initialize_object(type, current_type());

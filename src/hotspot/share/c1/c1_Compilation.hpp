@@ -79,7 +79,6 @@ class Compilation: public StackObj {
   bool               _has_unsafe_access;
   bool               _has_irreducible_loops;
   bool               _would_profile;
-  bool               _has_method_handle_invokes;  // True if this method has MethodHandle invokes.
   bool               _has_reserved_stack_access;
   bool               _has_monitors; // Fastpath monitors detection for Continuations
   bool               _has_scoped_access; // For shared scope closure
@@ -179,10 +178,6 @@ class Compilation: public StackObj {
   void add_exception_handlers_for_pco(int pco, XHandlers* exception_handlers);
   // Statistics gathering
   void notice_inlined_method(ciMethod* method);
-
-  // JSR 292
-  bool     has_method_handle_invokes() const { return _has_method_handle_invokes;     }
-  void set_has_method_handle_invokes(bool z) {        _has_method_handle_invokes = z; }
 
   bool     has_reserved_stack_access() const { return _has_reserved_stack_access; }
   void set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }

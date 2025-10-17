@@ -159,7 +159,7 @@ static inline bool is_class_loader(const Symbol* class_name,
     return true;
   }
 
-  if (vmClasses::ClassLoader_klass_loaded()) {
+  if (vmClasses::ClassLoader_klass_is_loaded()) {
     const Klass* const super_klass = parser.super_klass();
     if (super_klass != nullptr) {
       if (super_klass->is_subtype_of(vmClasses::ClassLoader_klass())) {

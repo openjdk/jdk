@@ -4080,6 +4080,28 @@ instruct varray_equalsC(iRegP_R11 ary1, iRegP_R12 ary2, iRegI_R10 result,
   ins_pipe(pipe_class_memory);
 %}
 
+// fast ArraysSupport.vectorizedHashCode
+instruct varrays_hashcode(iRegP_R11 ary, iRegI_R12 cnt, iRegI_R10 result, immI basic_type,
+                          vReg_V2 v2, vReg_V3 v3, vReg_V4 v4, vReg_V5 v5,
+                          vReg_V6 v6, vReg_V7 v7, vReg_V8 v8, vReg_V9 v9,
+                          iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3,
+                          rFlagsReg cr)
+%{
+  predicate(UseRVV);
+  match(Set result (VectorizedHashCode (Binary ary cnt) (Binary result basic_type)));
+  effect(USE_KILL ary, USE_KILL cnt, USE basic_type,
+         TEMP v2, TEMP v3, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9,
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+
+  format %{ "Array HashCode array[] $ary,$cnt,$result,$basic_type -> $result   // KILL all" %}
+  ins_encode %{
+    __ arrays_hashcode_v($ary$$Register, $cnt$$Register, $result$$Register,
+                         $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
+                         (BasicType)$basic_type$$constant);
+  %}
+  ins_pipe(pipe_class_memory);
+%}
+
 instruct vstring_compareU_128b(iRegP_R11 str1, iRegI_R12 cnt1, iRegP_R13 str2, iRegI_R14 cnt2,
                           iRegI_R10 result, vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
                           vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,

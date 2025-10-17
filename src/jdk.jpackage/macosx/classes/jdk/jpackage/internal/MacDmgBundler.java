@@ -25,12 +25,14 @@
 
 package jdk.jpackage.internal;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacDmgPackage;
 import jdk.jpackage.internal.model.PackagerException;
+import jdk.jpackage.internal.util.Result;
 
 public class MacDmgBundler extends MacBaseInstallerBundler {
 
@@ -70,39 +72,27 @@ public class MacDmgBundler extends MacBaseInstallerBundler {
     public Path execute(Map<String, ? super Object> params,
             Path outputParentDir) throws PackagerException {
 
-        final var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
-        var env = MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params);
+        var pkg = MacFromParams.DMG_PACKAGE.fetchFrom(params);
 
-        final var packager = MacDmgPackager.build().outputDir(outputParentDir).pkg(pkg).env(env);
+        Log.verbose(I18N.format("message.building-dmg", pkg.app().name()));
 
-        MacDmgPackager.findSetFileUtility().ifPresent(packager::setFileUtility);
-
-        return packager.execute();
+        return Packager.<MacDmgPackage>build().outputDir(outputParentDir)
+                .pkg(pkg)
+                .env(MacBuildEnvFromParams.BUILD_ENV.fetchFrom(params))
+                .pipelineBuilderMutatorFactory((env, _, outputDir) -> {
+                    return new MacDmgPackager(env, pkg, outputDir, sysEnv.orElseThrow());
+                }).execute(MacPackagingPipeline.build(Optional.of(pkg)));
     }
 
     @Override
     public boolean supported(boolean runtimeInstaller) {
-        return isSupported();
-    }
-
-    public static final String[] required =
-            {"/usr/bin/hdiutil", "/usr/bin/osascript"};
-    public static boolean isSupported() {
-        try {
-            for (String s : required) {
-                Path f = Path.of(s);
-                if (!Files.exists(f) || !Files.isExecutable(f)) {
-                    return false;
-                }
-            }
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return sysEnv.hasValue();
     }
 
     @Override
     public boolean isDefault() {
         return true;
     }
+
+    private final Result<MacDmgSystemEnvironment> sysEnv = MacDmgSystemEnvironment.create();
 }

@@ -313,7 +313,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
             // an error by PackageTest.
             createBulkFile.accept(fakeRuntimeDir.resolve(Path.of("bin", "bulk")));
 
-            cmd.addArguments("--runtime-image", fakeRuntimeDir);
+            cmd.setArgumentValue("--runtime-image", fakeRuntimeDir);
         });
 
         return this;
@@ -361,6 +361,29 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         cmd.setPackageType(PackageType.IMAGE);
         new HelloApp(javaAppDesc).addTo(cmd);
         return cmd;
+    }
+
+    public static Path createInputRuntimeImage() throws IOException {
+
+        final Path runtimeImageDir;
+
+        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
+            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
+        } else {
+            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
+
+            new Executor().setToolProvider(JavaTool.JLINK)
+                    .dumpOutput()
+                    .addArguments(
+                            "--output", runtimeImageDir.toString(),
+                            "--add-modules", "java.desktop",
+                            "--strip-debug",
+                            "--no-header-files",
+                            "--no-man-pages")
+                    .execute();
+        }
+
+        return runtimeImageDir;
     }
 
     public JPackageCommand setPackageType(PackageType type) {
@@ -1085,7 +1108,9 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         MAIN_LAUNCHER_FILES(cmd -> {
             if (!cmd.isRuntime()) {
-                new LauncherVerifier(cmd).verify(cmd, LauncherVerifier.Action.VERIFY_INSTALLED);
+                new LauncherVerifier(cmd).verify(cmd,
+                        LauncherVerifier.Action.VERIFY_INSTALLED,
+                        LauncherVerifier.Action.VERIFY_MAC_ENTITLEMENTS);
             }
         }),
         MAIN_JAR_FILE(cmd -> {

@@ -29,7 +29,7 @@ import compiler.lib.generators.*;
 
 /*
  * @test
- * @bug 8350177 8362171
+ * @bug 8350177 8362171 8369881
  * @summary Ensure that truncation of subword vectors produces correct results
  * @library /test/lib /
  * @run driver compiler.vectorization.TestSubwordTruncation
@@ -350,6 +350,57 @@ public class TestSubwordTruncation {
             }
         }
     }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testByteReverseBytesS(byte[] in) {
+        byte[] res = new byte[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte)Short.reverseBytes(in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testByteReverseBytesS")
+    public void checkTestByteReverseBytesS(Object[] vals) {
+        byte[] in = (byte[]) vals[0];
+        byte[] res = (byte[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)Short.reverseBytes(in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
+    @Test
+    @IR(counts = { IRNode.STORE_VECTOR, "=0" })
+    @Arguments(setup = "setupByteArray")
+    public Object[] testByteReverseBytesUS(byte[] in) {
+        byte[] res = new byte[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte)Character.reverseBytes((char)in[i]);
+        }
+
+        return new Object[] { in, res };
+    }
+
+    @Check(test = "testByteReverseBytesUS")
+    public void checkTestByteReverseBytesUS(Object[] vals) {
+        byte[] in = (byte[]) vals[0];
+        byte[] res = (byte[]) vals[1];
+
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)Character.reverseBytes((char)in[i]);
+            if (res[i] != val) {
+                throw new IllegalStateException("Expected " + val + " but got " + res[i] + " for " + in[i]);
+            }
+        }
+    }
+
 
     @Test
     @IR(counts = { IRNode.STORE_VECTOR, "=0" })

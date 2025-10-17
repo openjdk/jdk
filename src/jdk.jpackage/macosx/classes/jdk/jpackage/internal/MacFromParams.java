@@ -32,6 +32,8 @@ import static jdk.jpackage.internal.FromParams.createApplicationBundlerParam;
 import static jdk.jpackage.internal.FromParams.createPackageBuilder;
 import static jdk.jpackage.internal.FromParams.createPackageBundlerParam;
 import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasJliLib;
+import static jdk.jpackage.internal.MacRuntimeValidator.validateRuntimeHasNoBinDir;
 import static jdk.jpackage.internal.StandardBundlerParam.DMG_CONTENT;
 import static jdk.jpackage.internal.StandardBundlerParam.ICON;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
@@ -76,15 +78,21 @@ final class MacFromParams {
             Map<String, ? super Object> params) throws ConfigException, IOException {
 
         final var predefinedRuntimeLayout = PREDEFINED_RUNTIME_IMAGE.findIn(params)
-                .map(MacPackage::guessRuntimeLayout)
-                .map(RuntimeLayout::unresolve);
+                .map(MacPackage::guessRuntimeLayout);
+
+        if (predefinedRuntimeLayout.isPresent()) {
+            validateRuntimeHasJliLib(predefinedRuntimeLayout.orElseThrow());
+            if (APP_STORE.findIn(params).orElse(false)) {
+                validateRuntimeHasNoBinDir(predefinedRuntimeLayout.orElseThrow());
+            }
+        }
 
         final var launcherFromParams = new LauncherFromParams(Optional.of(MacFromParams::createMacFa));
 
         final var superAppBuilder = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout);
+        }), APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout.map(RuntimeLayout::unresolve));
 
         if (hasPredefinedAppImage(params)) {
             // Set the main launcher start up info.
@@ -102,7 +110,7 @@ final class MacFromParams {
         final var appBuilder = new MacApplicationBuilder(app);
 
         if (hasPredefinedAppImage(params)) {
-            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.findIn(params).orElseThrow().resolve("Contents/Info.plist"));
+            appBuilder.externalInfoPlistFile(PREDEFINED_APP_IMAGE.findIn(params).map(MacBundle::new).orElseThrow().infoPlistFile());
         }
 
         ICON.copyInto(params, appBuilder::icon);

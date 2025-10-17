@@ -79,6 +79,17 @@ compiler/c2/TestVerifyConstraintCasts.java 8355574 generic-all
 
 compiler/c2/aarch64/TestStaticCallStub.java 8359963 linux-aarch64,macosx-aarch64
 
+compiler/whitebox/DeoptimizeRelocatedNMethod.java#G1 8369147 generic-all
+compiler/whitebox/DeoptimizeRelocatedNMethod.java#Parallel 8369147 generic-all
+compiler/whitebox/DeoptimizeRelocatedNMethod.java#Serial 8369147 generic-all
+compiler/whitebox/DeoptimizeRelocatedNMethod.java#ZGC 8369147 generic-all
+compiler/whitebox/RelocateNMethod.java#G1 8369147 generic-all
+compiler/whitebox/RelocateNMethod.java#Parallel 8369147 generic-all
+compiler/whitebox/RelocateNMethod.java#Serial 8369147 generic-all
+compiler/whitebox/RelocateNMethod.java#ZGC 8369147 generic-all
+compiler/whitebox/StressNMethodRelocation.java 8369147,8369148,8369149 generic-all
+serviceability/jvmti/NMethodRelocation/NMethodRelocationTest.java 8369150,8369151 generic-all
+
 #############################################################################
 
 # :hotspot_gc

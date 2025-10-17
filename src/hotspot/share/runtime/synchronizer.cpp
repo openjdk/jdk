@@ -452,7 +452,6 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
   while (true) {
     BasicLock lock;
     if (LightweightSynchronizer::inflate_and_enter(obj(), &lock, inflate_cause_jni_enter, current, current) != nullptr) {
-      current->inc_held_monitor_count(1, true);
       break;
     }
   }
@@ -470,7 +469,6 @@ void ObjectSynchronizer::jni_exit(oop obj, TRAPS) {
   // monitor even if an exception was already pending.
   if (monitor->check_owner(THREAD)) {
     monitor->exit(current);
-    current->dec_held_monitor_count(1, true);
   }
 }
 
@@ -1263,8 +1261,7 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
  public:
   ReleaseJavaMonitorsClosure(JavaThread* thread) : _thread(thread) {}
   void do_monitor(ObjectMonitor* mid) {
-    intx rec = mid->complete_exit(_thread);
-    _thread->dec_held_monitor_count(rec + 1);
+    mid->complete_exit(_thread);
   }
 };
 
@@ -1290,9 +1287,6 @@ void ObjectSynchronizer::release_monitors_owned_by_thread(JavaThread* current) {
   ObjectSynchronizer::owned_monitors_iterate(&rjmc, current);
   assert(!current->has_pending_exception(), "Should not be possible");
   current->clear_pending_exception();
-  assert(current->held_monitor_count() == 0, "Should not be possible");
-  // All monitors (including entered via JNI) have been unlocked above, so we need to clear jni count.
-  current->clear_jni_monitor_count();
 }
 
 const char* ObjectSynchronizer::inflate_cause_name(const InflateCause cause) {

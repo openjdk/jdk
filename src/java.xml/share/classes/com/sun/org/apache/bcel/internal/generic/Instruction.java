@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -29,7 +29,7 @@ import com.sun.org.apache.bcel.internal.util.ByteSequence;
 /**
  * Abstract super class for all Java byte codes.
  *
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public abstract class Instruction implements Cloneable {
 
@@ -461,7 +461,7 @@ public abstract class Instruction implements Cloneable {
     public Instruction copy() {
         Instruction i = null;
         // "Constant" instruction, no need to duplicate
-        if (InstructionConst.getInstruction(this.getOpcode()) != null) {
+        if (InstructionConst.getInstruction(getOpcode()) != null) {
             i = this;
         } else {
             try {

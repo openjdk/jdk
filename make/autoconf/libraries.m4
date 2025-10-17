@@ -136,12 +136,8 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS $LIBPTHREAD"
   fi
 
-  # librt for legacy clock_gettime
+  # librt - for timers (timer_* functions)
   if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    # Hotspot needs to link librt to get the clock_* functions.
-    # But once our supported minimum build and runtime platform
-    # has glibc 2.17, this can be removed as the functions are
-    # in libc.
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS -lrt"
   fi
 

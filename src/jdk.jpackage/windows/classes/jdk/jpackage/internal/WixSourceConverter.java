@@ -90,7 +90,7 @@ final class WixSourceConverter {
         this.outputFactory = XMLOutputFactory.newInstance();
     }
 
-    Status appyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
+    Status applyTo(OverridableResource resource, Path resourceSaveAsFile) throws IOException {
         // Save the resource into DOM tree and read xml namespaces from it.
         // If some namespaces are not recognized by this converter, save the resource as is.
         // If all detected namespaces are recognized, run transformation of the DOM tree and save
@@ -184,7 +184,7 @@ final class WixSourceConverter {
                     }).findAny().map(OverridableResource::getResourceDir).orElse(null);
                     var conv = new WixSourceConverter(resourceDir);
                     for (var e : resources.entrySet()) {
-                        conv.appyTo(e.getValue(), e.getKey());
+                        conv.applyTo(e.getValue(), e.getKey());
                     }
                 }
                 default -> {

@@ -50,6 +50,7 @@ class OSContainer: AllStatic {
   static inline bool is_containerized();
   static const char * container_type();
 
+  static bool available_memory_in_container(julong& value);
   static jlong memory_limit_in_bytes();
   static jlong memory_and_swap_limit_in_bytes();
   static jlong memory_and_swap_usage_in_bytes();

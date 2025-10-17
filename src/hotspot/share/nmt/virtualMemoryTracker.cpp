@@ -69,7 +69,8 @@ void VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size
 
 void VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MemTag mem_tag) {
-  VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag));
+  VMATree::SummaryDiff diff;
+  tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag), diff);
   apply_summary_diff(diff);
 }
 
@@ -148,7 +149,8 @@ void VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t s
 
 void VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
-    VMATree::SummaryDiff diff = tree()->commit_region(addr, size, stack);
+    VMATree::SummaryDiff diff;
+    tree()->commit_region(addr, size, stack, diff);
     apply_summary_diff(diff);
 }
 
@@ -159,7 +161,8 @@ void VirtualMemoryTracker::Instance::remove_uncommitted_region(address addr, siz
 
 void VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
   MemTracker::assert_locked();
-  VMATree::SummaryDiff diff = tree()->uncommit_region(addr, size);
+  VMATree::SummaryDiff diff;
+  tree()->uncommit_region(addr, size, diff);
   apply_summary_diff(diff);
 }
 
@@ -169,7 +172,8 @@ void VirtualMemoryTracker::Instance::remove_released_region(address addr, size_t
 }
 
 void VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
-  VMATree::SummaryDiff diff = tree()->release_mapping((VMATree::position)addr, size);
+  VMATree::SummaryDiff diff;
+  tree()->release_mapping((VMATree::position)addr, size, diff);
   apply_summary_diff(diff);
 }
 

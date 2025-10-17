@@ -38,8 +38,6 @@
 // not an inner class of StringDedup.  This is because we need a simple public
 // identifier for use by VMStructs.
 class StringDedupThread : public JavaThread {
-  friend class VMStructs;
-
   StringDedupThread();
   ~StringDedupThread() = default;
 

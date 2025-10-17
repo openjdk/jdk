@@ -395,7 +395,7 @@ void ConstantPool::restore_unshareable_info(TRAPS) {
   // Only create the new resolved references array if it hasn't been attempted before
   if (resolved_references() != nullptr) return;
 
-  if (vmClasses::Object_klass_loaded()) {
+  if (vmClasses::Object_klass_is_loaded()) {
     ClassLoaderData* loader_data = pool_holder()->class_loader_data();
 #if INCLUDE_CDS_JAVA_HEAP
     if (ArchiveHeapLoader::is_in_use() &&

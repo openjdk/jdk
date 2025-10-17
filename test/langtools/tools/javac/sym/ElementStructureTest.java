@@ -132,10 +132,10 @@ public class ElementStructureTest {
         (byte) 0x3D, (byte) 0xC1, (byte) 0xFE, (byte) 0xCB
     };
     static final byte[] hash8 = new byte[] {
-        (byte) 0x10, (byte) 0xE6, (byte) 0xE8, (byte) 0x11,
-        (byte) 0xC8, (byte) 0x02, (byte) 0x63, (byte) 0x9B,
-        (byte) 0xAB, (byte) 0x11, (byte) 0x9E, (byte) 0x4F,
-        (byte) 0xFA, (byte) 0x00, (byte) 0x6D, (byte) 0x81
+        (byte) 0x07, (byte) 0xAB, (byte) 0x0A, (byte) 0x8D,
+        (byte) 0x1C, (byte) 0x44, (byte) 0x6D, (byte) 0x71,
+        (byte) 0x07, (byte) 0x53, (byte) 0x59, (byte) 0x74,
+        (byte) 0x5B, (byte) 0x49, (byte) 0x60, (byte) 0xAD
     };
 
     final static Map<String, byte[]> version2Hash = new HashMap<>();
@@ -283,7 +283,7 @@ public class ElementStructureTest {
                 }
                 JavaFileObject file = new ByteArrayJavaFileObject(data.toByteArray());
                 try (InputStream in = new ByteArrayInputStream(data.toByteArray())) {
-                    String name = ClassFile.of().parse(in.readAllBytes()).thisClass().name().stringValue();
+                    String name = ClassFile.of().parse(in.readAllBytes()).thisClass().name().stringValue().replace("/", ".");
                     className2File.put(name, file);
                     file2ClassName.put(file, name);
                 } catch (IOException ex) {
@@ -514,6 +514,8 @@ public class ElementStructureTest {
                 out.write(Double.toHexString((Double) value));
             } else if (value instanceof Float) {
                 out.write(Float.toHexString((Float) value));
+            } else if (value instanceof Character ch && Character.isSurrogate(ch)) {
+                out.write(Integer.toHexString(ch));
             } else {
                 out.write(String.valueOf(value));
             }

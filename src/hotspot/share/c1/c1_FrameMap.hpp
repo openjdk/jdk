@@ -155,9 +155,6 @@ class FrameMap : public CompilationResourceObj {
   // Opr representing the stack_pointer on this platform
   static LIR_Opr stack_pointer();
 
-  // JSR 292
-  static LIR_Opr method_handle_invoke_SP_save_opr();
-
   static BasicTypeArray*     signature_type_array_for(const ciMethod* method);
 
   // for outgoing calls, these also update the reserved area to

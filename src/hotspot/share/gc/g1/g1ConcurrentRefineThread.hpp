@@ -36,7 +36,6 @@ class G1ConcurrentRefine;
 // Concurrent refinement control thread watching card mark accrual on the card table
 // and starting refinement work.
 class G1ConcurrentRefineThread: public ConcurrentGCThread {
-  friend class VMStructs;
   friend class G1CollectedHeap;
 
   Monitor _notifier;

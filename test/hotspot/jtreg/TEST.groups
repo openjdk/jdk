@@ -92,6 +92,7 @@ hotspot_vector_1 = \
   compiler/c2/cr6340864 \
   compiler/c2/irTests \
   compiler/codegen \
+  compiler/gallery \
   compiler/loopopts/superword \
   compiler/vectorapi \
   compiler/vectorization \
@@ -569,6 +570,7 @@ hotspot_aot_classlinking = \
  -runtime/cds/appcds/TestSerialGCWithCDS.java \
  -runtime/cds/appcds/TestZGCWithCDS.java \
  -runtime/cds/appcds/TestWithProfiler.java \
+ -runtime/cds/appcds/VerifyObjArrayCloneTest.java \
  -runtime/cds/serviceability/ReplaceCriticalClassesForSubgraphs.java \
  -runtime/cds/serviceability/ReplaceCriticalClasses.java \
  -runtime/cds/serviceability/transformRelatedClasses/TransformInterfaceAndImplementor.java \

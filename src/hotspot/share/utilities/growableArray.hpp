@@ -317,8 +317,6 @@ public:
 //  - void Derived::deallocate(E*) - member function responsible for deallocation
 template <typename E, typename Derived>
 class GrowableArrayWithAllocator : public GrowableArrayView<E> {
-  friend class VMStructs;
-
   void expand_to(int j);
   void grow(int j);
 
@@ -714,6 +712,7 @@ public:
 
 template <typename E>
 class GrowableArray : public GrowableArrayWithAllocator<E, GrowableArray<E>> {
+  friend class VMStructs;
   friend class GrowableArrayWithAllocator<E, GrowableArray>;
   friend class GrowableArrayTest;
 

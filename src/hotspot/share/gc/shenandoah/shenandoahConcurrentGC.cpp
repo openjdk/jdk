@@ -1158,7 +1158,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   // Clear cancelled GC, if set. On cancellation path, the block before would handle
   // everything.
   if (heap->cancelled_gc()) {
-    heap->clear_cancelled_gc(true /* clear oom handler */);
+    heap->clear_cancelled_gc();
   }
 
   // Has to be done before cset is clear

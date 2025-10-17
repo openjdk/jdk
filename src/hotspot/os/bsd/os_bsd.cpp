@@ -114,7 +114,7 @@
 
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
-size_t os::Bsd::_physical_memory = 0;
+physical_memory_size_type os::Bsd::_physical_memory = 0;
 
 #ifdef __APPLE__
 mach_timebase_info_data_t os::Bsd::_timebase_info = {0, 0};
@@ -133,19 +133,19 @@ static volatile int processor_id_next = 0;
 ////////////////////////////////////////////////////////////////////////////////
 // utility functions
 
-bool os::available_memory(size_t& value) {
+bool os::available_memory(physical_memory_size_type& value) {
   return Bsd::available_memory(value);
 }
 
-bool os::free_memory(size_t& value) {
+bool os::free_memory(physical_memory_size_type& value) {
   return Bsd::available_memory(value);
 }
 
 // Available here means free. Note that this number is of no much use. As an estimate
 // for future memory pressure it is far too conservative, since MacOS will use a lot
 // of unused memory for caches, and return it willingly in case of needs.
-bool os::Bsd::available_memory(size_t& value) {
-  uint64_t available = static_cast<uint64_t>(physical_memory() >> 2);
+bool os::Bsd::available_memory(physical_memory_size_type& value) {
+  physical_memory_size_type available = physical_memory() >> 2;
 #ifdef __APPLE__
   mach_msg_type_number_t count = HOST_VM_INFO64_COUNT;
   vm_statistics64_data_t vmstat;
@@ -160,7 +160,7 @@ bool os::Bsd::available_memory(size_t& value) {
     return false;
   }
 #endif
-  value = static_cast<size_t>(available);
+  value = available;
   return true;
 }
 
@@ -180,35 +180,35 @@ void os::Bsd::print_uptime_info(outputStream* st) {
   }
 }
 
-bool os::total_swap_space(size_t& value) {
+bool os::total_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return false;
   }
-  value = static_cast<size_t>(vmusage.xsu_total);
+  value = static_cast<physical_memory_size_type>(vmusage.xsu_total);
   return true;
 #else
   return false;
 #endif
 }
 
-bool os::free_swap_space(size_t& value) {
+bool os::free_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
   if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return false;
   }
-  value = static_cast<size_t>(vmusage.xsu_avail);
+  value = static_cast<physical_memory_size_type>(vmusage.xsu_avail);
   return true;
 #else
   return false;
 #endif
 }
 
-size_t os::physical_memory() {
+physical_memory_size_type os::physical_memory() {
   return Bsd::physical_memory();
 }
 
@@ -286,7 +286,7 @@ void os::Bsd::initialize_system_info() {
   len = sizeof(mem_val);
   if (sysctl(mib, 2, &mem_val, &len, nullptr, 0) != -1) {
     assert(len == sizeof(mem_val), "unexpected data size");
-    _physical_memory = static_cast<size_t>(mem_val);
+    _physical_memory = static_cast<physical_memory_size_type>(mem_val);
   } else {
     _physical_memory = 256 * 1024 * 1024;       // fallback (XXXBSD?)
   }
@@ -297,7 +297,7 @@ void os::Bsd::initialize_system_info() {
     // datasize rlimit restricts us anyway.
     struct rlimit limits;
     getrlimit(RLIMIT_DATA, &limits);
-    _physical_memory = MIN2(_physical_memory, static_cast<size_t>(limits.rlim_cur));
+    _physical_memory = MIN2(_physical_memory, static_cast<physical_memory_size_type>(limits.rlim_cur));
   }
 #endif
 }
@@ -1469,12 +1469,12 @@ void os::print_memory_info(outputStream* st) {
 
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
-  size_t phys_mem = os::physical_memory();
-  st->print(", physical %zuk",
+  physical_memory_size_type phys_mem = os::physical_memory();
+  st->print(", physical " PHYS_MEM_TYPE_FORMAT "k",
             phys_mem >> 10);
-  size_t avail_mem = 0;
+  physical_memory_size_type avail_mem = 0;
   (void)os::available_memory(avail_mem);
-  st->print("(%zuk free)",
+  st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
 
   if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {

@@ -282,13 +282,6 @@ LIR_Opr FrameMap::stack_pointer() {
   return Z_SP_opr;
 }
 
-// JSR 292
-// On ZARCH_64, there is no need to save the SP, because neither
-// method handle intrinsics nor compiled lambda forms modify it.
-LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
-  return LIR_OprFact::illegalOpr;
-}
-
 bool FrameMap::validate_frame() {
   return true;
 }

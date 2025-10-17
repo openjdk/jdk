@@ -1350,6 +1350,7 @@ void LIR_Assembler::align_call(LIR_Code code) {
 }
 
 void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
+  Assembler::IncompressibleScope scope(_masm);
   address call = __ reloc_call(Address(op->addr(), rtype));
   if (call == nullptr) {
     bailout("reloc call address stub overflow");
@@ -1360,6 +1361,7 @@ void LIR_Assembler::call(LIR_OpJavaCall* op, relocInfo::relocType rtype) {
 }
 
 void LIR_Assembler::ic_call(LIR_OpJavaCall* op) {
+  Assembler::IncompressibleScope scope(_masm);
   address call = __ ic_call(op->addr());
   if (call == nullptr) {
     bailout("reloc call address stub overflow");
@@ -1841,6 +1843,10 @@ void LIR_Assembler::leal(LIR_Opr addr, LIR_Opr dest, LIR_PatchCode patch_code, C
 
 void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info) {
   assert(!tmp->is_valid(), "don't need temporary");
+
+  Assembler::IncompressibleScope scope(_masm);
+  // Post call nops must be natural aligned due to cmodx rules.
+  align_call(lir_rtcall);
 
   __ rt_call(dest);
 

@@ -41,8 +41,6 @@ class SwitchRange;
 
 //------------------------------InlineTree-------------------------------------
 class InlineTree : public AnyObj {
-  friend class VMStructs;
-
   Compile*    C;                  // cache
   JVMState*   _caller_jvms;       // state of caller
   ciMethod*   _method;            // method being called by the caller_jvms

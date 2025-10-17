@@ -159,9 +159,6 @@ public:
   // Returns JNI_OK on success
   jint initialize() override;
 
-  void safepoint_synchronize_begin() override;
-  void safepoint_synchronize_end() override;
-
   void post_initialize() override;
   void update_counters();
 

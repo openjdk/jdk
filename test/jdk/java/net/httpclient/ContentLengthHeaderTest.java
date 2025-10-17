@@ -29,8 +29,9 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @bug 8283544
+ * @bug 8283544 8358942
  * @run testng/othervm
+ *          -Djdk.httpclient.allowRestrictedHeaders=content-length
  *          -Djdk.internal.httpclient.debug=true
  *          ContentLengthHeaderTest
  */
@@ -95,8 +96,8 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         testContentLengthServerH2.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
         testContentLengthServerH3.addHandler(new NoContentLengthHandler(), NO_BODY_PATH);
         testContentLengthServerH1.addHandler(new ContentLengthHandler(), BODY_PATH);
-        testContentLengthServerH2.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
-        testContentLengthServerH3.addHandler(new OptionalContentLengthHandler(), BODY_PATH);
+        testContentLengthServerH2.addHandler(new ContentLengthHandler(), BODY_PATH);
+        testContentLengthServerH3.addHandler(new ContentLengthHandler(), BODY_PATH);
         testContentLengthURIH1 = URIBuilder.newBuilder()
                 .scheme("http")
                 .loopback()
@@ -163,6 +164,13 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         };
     }
 
+    @DataProvider(name = "h1body")
+    Object[][] h1body() {
+        return new Object[][]{
+                {HTTP_1_1, URI.create(testContentLengthURIH1 + BODY_PATH)}
+        };
+    }
+
     @DataProvider(name = "nobodies")
     Object[][] nobodies() {
         return new Object[][]{
@@ -179,6 +187,35 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         HttpRequest req = HttpRequest.newBuilder()
                 .version(version)
                 .GET()
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "nobodies")
+    // A GET request with empty request body should have no Content-length header
+    public void getWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking GET with no request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("GET", HttpRequest.BodyPublishers.noBody())
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "bodies")
+    // A GET request with empty request body and explicitly added Content-length header
+    public void getWithZeroContentLength(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking GET with no request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("GET", HttpRequest.BodyPublishers.noBody())
+                .header("Content-length", "0")
                 .uri(uri)
                 .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
@@ -215,6 +252,20 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         assertEquals(resp.version(), version);
     }
 
+    @Test(dataProvider = "nobodies")
+    // A DELETE request with empty request body should have no Content-length header
+    public void deleteWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking DELETE with no request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("DELETE", HttpRequest.BodyPublishers.noBody())
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
     @Test(dataProvider = "bodies")
     // A DELETE request with a request body should have a Content-length header
     //   in HTTP/1.1
@@ -244,6 +295,20 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
         assertEquals(resp.version(), version);
     }
 
+    @Test(dataProvider = "nobodies")
+    // A HEAD request with empty request body should have no Content-length header
+    public void headWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking HEAD with no request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("HEAD", HttpRequest.BodyPublishers.noBody())
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
     @Test(dataProvider = "bodies")
     // A HEAD request with a request body should have a Content-length header
     // in HTTP/1.1
@@ -256,6 +321,66 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
                 .build();
         // Sending this request invokes sendResponseHeaders which emits a warning about including
         // a Content-length header with a HEAD request
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "h1body")
+    // A POST request with empty request body should have a Content-length header
+    // in HTTP/1.1
+    public void postWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking POST with request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("POST", HttpRequest.BodyPublishers.noBody())
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "bodies")
+    // A POST request with a request body should have a Content-length header
+    // in HTTP/1.1
+    public void postWithBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking POST with request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .POST(HttpRequest.BodyPublishers.ofString("POST Body"))
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "h1body")
+    // A PUT request with empty request body should have a Content-length header
+    // in HTTP/1.1
+    public void putWithEmptyBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking PUT with request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .method("PUT", HttpRequest.BodyPublishers.noBody())
+                .uri(uri)
+                .build();
+        HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(resp.statusCode(), 200, resp.body());
+        assertEquals(resp.version(), version);
+    }
+
+    @Test(dataProvider = "bodies")
+    // A PUT request with a request body should have a Content-length header
+    // in HTTP/1.1
+    public void putWithBody(Version version, URI uri) throws IOException, InterruptedException {
+        testLog.println(version + " Checking PUT with request body");
+        HttpRequest req = HttpRequest.newBuilder()
+                .version(version)
+                .PUT(HttpRequest.BodyPublishers.ofString("PUT Body"))
+                .uri(uri)
+                .build();
         HttpResponse<String> resp = hc.send(req, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(resp.statusCode(), 200, resp.body());
         assertEquals(resp.version(), version);
@@ -321,29 +446,6 @@ public class ContentLengthHeaderTest implements HttpServerAdapters {
                 String responseBody = "Expected a Content-length header in " +
                         exchange.getRequestMethod() + " request but was not present.";
                 handleResponse(-1, exchange, responseBody, 400);
-            }
-        }
-    }
-
-    /**
-     * A handler used for cases where the presence of a Content-Length
-     * header is optional. If present, its value must match the number of
-     * bytes sent in the request body.
-     */
-    static class OptionalContentLengthHandler implements HttpTestHandler {
-
-        @Override
-        public void handle(HttpTestExchange exchange) throws IOException {
-            testLog.println("OptionalContentLengthHandler: Received Headers "
-                    + exchange.getRequestHeaders().entrySet() +
-                    " from " + exchange.getRequestMethod() + " request.");
-            Optional<String> contentLength = exchange.getRequestHeaders().firstValue("Content-Length");
-
-            // Check Content-length header was set
-            if (contentLength.isPresent()) {
-                handleResponse(Long.parseLong(contentLength.get()), exchange, "Request completed", 200);
-            } else {
-                handleResponse(-1, exchange, "Request completed, no content length", 200);
             }
         }
     }

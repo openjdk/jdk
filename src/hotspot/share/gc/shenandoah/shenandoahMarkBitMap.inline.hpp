@@ -135,14 +135,12 @@ inline ShenandoahMarkBitMap::idx_t ShenandoahMarkBitMap::get_next_bit_impl(idx_t
     // Get the word containing l_index, and shift out low bits.
     idx_t index = to_words_align_down(l_index);
     bm_word_t cword = (map(index) ^ flip) >> bit_in_word(l_index);
-    if ((cword & 1) != 0) {
-      // The first bit is similarly often interesting. When it matters
-      // (density or features of the calling algorithm make it likely
-      // the first bit is set), going straight to the next clause compares
-      // poorly with doing this check first; count_trailing_zeros can be
-      // relatively expensive, plus there is the additional range check.
-      // But when the first bit isn't set, the cost of having tested for
-      // it is relatively small compared to the rest of the search.
+    if ((cword & 0x03) != 0) {
+      // The first bits (representing weak mark or strong mark) are similarly often interesting. When it matters
+      // (density or features of the calling algorithm make it likely the first bits are set), going straight to
+      // the next clause compares poorly with doing this check first; count_trailing_zeros can be relatively expensive,
+      // plus there is the additional range check.  But when the first bits are not set, the cost of having tested for
+      // them is relatively small compared to the rest of the search.
       return l_index;
     } else if (cword != 0) {
       // Flipped and shifted first word is non-zero.

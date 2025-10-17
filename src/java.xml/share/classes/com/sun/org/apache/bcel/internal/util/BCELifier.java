@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -30,11 +30,15 @@ import java.util.Locale;
 import com.sun.org.apache.bcel.internal.Const;
 import com.sun.org.apache.bcel.internal.Repository;
 import com.sun.org.apache.bcel.internal.classfile.ClassParser;
+import com.sun.org.apache.bcel.internal.classfile.Code;
 import com.sun.org.apache.bcel.internal.classfile.ConstantValue;
 import com.sun.org.apache.bcel.internal.classfile.ExceptionTable;
 import com.sun.org.apache.bcel.internal.classfile.Field;
 import com.sun.org.apache.bcel.internal.classfile.JavaClass;
 import com.sun.org.apache.bcel.internal.classfile.Method;
+import com.sun.org.apache.bcel.internal.classfile.StackMap;
+import com.sun.org.apache.bcel.internal.classfile.StackMapEntry;
+import com.sun.org.apache.bcel.internal.classfile.StackMapType;
 import com.sun.org.apache.bcel.internal.classfile.Utility;
 import com.sun.org.apache.bcel.internal.generic.ArrayType;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
@@ -46,7 +50,7 @@ import com.sun.org.apache.bcel.internal.generic.Type;
  * This gives new users of BCEL a useful example showing how things are done with BCEL. It does not cover all features
  * of BCEL, but tries to mimic hand-written code as close as possible.
  *
- * @LastModified: Feb 2023
+ * @LastModified: Sept 2025
  */
 public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyVisitor {
 
@@ -74,7 +78,7 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
     /**
      * Default main method
      */
-    public static void _main(final String[] argv) throws Exception {
+    public static void main(final String[] argv) throws Exception {
         if (argv.length != 1) {
             System.out.println("Usage: BCELifier className");
             System.out.println("\tThe class must exist on the classpath");
@@ -311,6 +315,13 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
                 printWriter.println("\");");
             }
         }
+        final Code code = method.getCode();
+        if (code != null) {
+            final StackMap stackMap = code.getStackMap();
+            if (stackMap != null) {
+                stackMap.accept(this);
+            }
+        }
         printWriter.println();
         final BCELFactory factory = new BCELFactory(mg, printWriter);
         factory.start();
@@ -318,5 +329,79 @@ public class BCELifier extends com.sun.org.apache.bcel.internal.classfile.EmptyV
         printWriter.println("    method.setMaxLocals();");
         printWriter.println("    _cg.addMethod(method.getMethod());");
         printWriter.println("    il.dispose();");
+    }
+
+    @Override
+    public void visitStackMap(final StackMap stackMap) {
+        super.visitStackMap(stackMap);
+        printWriter.print("    method.addCodeAttribute(");
+        printWriter.print("new StackMap(_cp.addUtf8(\"");
+        printWriter.print(stackMap.getName());
+        printWriter.print("\"), ");
+        printWriter.print(stackMap.getLength());
+        printWriter.print(", ");
+        printWriter.print("new StackMapEntry[] {");
+        final StackMapEntry[] table = stackMap.getStackMap();
+        for (int i = 0; i < table.length; i++) {
+            table[i].accept(this);
+            if (i < table.length - 1) {
+                printWriter.print(", ");
+            } else {
+                printWriter.print(" }");
+            }
+        }
+        printWriter.print(", _cp.getConstantPool())");
+        printWriter.println(");");
+    }
+
+    @Override
+    public void visitStackMapEntry(final StackMapEntry stackMapEntry) {
+        super.visitStackMapEntry(stackMapEntry);
+        printWriter.print("new StackMapEntry(");
+        printWriter.print(stackMapEntry.getFrameType());
+        printWriter.print(", ");
+        printWriter.print(stackMapEntry.getByteCodeOffset());
+        printWriter.print(", ");
+        visitStackMapTypeArray(stackMapEntry.getTypesOfLocals());
+        printWriter.print(", ");
+        visitStackMapTypeArray(stackMapEntry.getTypesOfStackItems());
+        printWriter.print(", _cp.getConstantPool())");
+    }
+
+    /**
+     * Visits a {@link StackMapType} object.
+     * @param stackMapType object to visit
+     * @since 6.7.1
+     */
+    @Override
+    public void visitStackMapType(final StackMapType stackMapType) {
+        super.visitStackMapType(stackMapType);
+        printWriter.print("new StackMapType((byte)");
+        printWriter.print(stackMapType.getType());
+        printWriter.print(", ");
+        if (stackMapType.hasIndex()) {
+            printWriter.print("_cp.addClass(\"");
+            printWriter.print(stackMapType.getClassName());
+            printWriter.print("\")");
+        } else {
+            printWriter.print("-1");
+        }
+        printWriter.print(", _cp.getConstantPool())");
+    }
+
+    private void visitStackMapTypeArray(final StackMapType[] types) {
+        if (types == null || types.length == 0) {
+            printWriter.print("null"); // null translates to StackMapType.EMPTY_ARRAY
+        } else {
+            printWriter.print("new StackMapType[] {");
+            for (int i = 0; i < types.length; i++) {
+                types[i].accept(this);
+                if (i < types.length - 1) {
+                    printWriter.print(", ");
+                } else {
+                    printWriter.print(" }");
+                }
+            }
+        }
     }
 }

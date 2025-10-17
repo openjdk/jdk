@@ -101,7 +101,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @spec https://standards.ieee.org/ieee/754/6210/
  *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Joseph D. Darcy
  * @since   1.3
  */
 public final class StrictMath {
@@ -493,7 +492,6 @@ public final class StrictMath {
      * @param   a   a value.
      * @return  the closest floating-point value to {@code a} that is
      *          equal to a mathematical integer.
-     * @author Joseph D. Darcy
      */
     public static double rint(double a) {
         /*
@@ -2014,7 +2012,6 @@ public final class StrictMath {
      *
      * @param d the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static double ulp(double d) {
@@ -2041,7 +2038,6 @@ public final class StrictMath {
      *
      * @param f the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static float ulp(float f) {
@@ -2062,7 +2058,6 @@ public final class StrictMath {
      *
      * @param d the floating-point value whose signum is to be returned
      * @return the signum function of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static double signum(double d) {
@@ -2083,7 +2078,6 @@ public final class StrictMath {
      *
      * @param f the floating-point value whose signum is to be returned
      * @return the signum function of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static float signum(float f) {

@@ -184,13 +184,11 @@ class HandleArea: public Arena {
   int _handle_mark_nesting;
   int _no_handle_mark_nesting;
 #endif
-  HandleArea* _prev;          // link to outer (older) area
  public:
   // Constructor
-  HandleArea(MemTag mem_tag, HandleArea* prev) : Arena(mem_tag, Tag::tag_ha, Chunk::tiny_size) {
+  HandleArea(MemTag mem_tag) : Arena(mem_tag, Tag::tag_ha, Chunk::tiny_size) {
     DEBUG_ONLY(_handle_mark_nesting    = 0);
     DEBUG_ONLY(_no_handle_mark_nesting = 0);
-    _prev = prev;
   }
 
   // Handle allocation
