@@ -31,7 +31,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import com.sun.tools.javac.code.*;
-import static com.sun.tools.javac.code.Flags.RECORD;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 
@@ -40,9 +39,9 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import com.sun.tools.javac.code.Kinds.Kind;
 import com.sun.tools.javac.code.Type.TypeVar;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.SequencedSet;
@@ -52,6 +51,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
+import static com.sun.tools.javac.code.Flags.RECORD;
 
 /** A class to compute exhaustiveness of set of switch cases.
  *
@@ -62,12 +62,14 @@ import static java.util.stream.Collectors.groupingBy;
  */
 public class ExhaustivenessComputer {
     private static final long DEFAULT_TIMEOUT = 5000; //5s
+
     protected static final Context.Key<ExhaustivenessComputer> exhaustivenessKey = new Context.Key<>();
 
     private final Symtab syms;
     private final Types types;
     private final Check chk;
     private final Infer infer;
+    private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
     private final long missingExhaustivenessTimeout;
     private long startTime = -1;
 
@@ -170,14 +172,13 @@ public class ExhaustivenessComputer {
 
     private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns, boolean search) {
         Set<PatternDescription> updatedPatterns;
-        Map<PatternDescription, Set<PatternDescription>> replaces = new IdentityHashMap<>();
         Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
         boolean useHashes = true;
         boolean repeat = true;
         do {
             updatedPatterns = reduceBindingPatterns(selectorType, patterns);
-            updatedPatterns = reduceNestedPatterns(updatedPatterns, replaces, useHashes, search);
-            updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
+            updatedPatterns = reduceNestedPatterns(updatedPatterns, useHashes, search);
+            updatedPatterns = reduceRecordPatterns(updatedPatterns);
             updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
             repeat = !updatedPatterns.equals(patterns);
             if (checkCovered(selectorType, patterns)) {
@@ -263,10 +264,9 @@ public class ExhaustivenessComputer {
                         !existingBindings.contains(clazz)) {
                         ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         //do not reduce to types unrelated to the selector type:
-                        Type clazzErasure = types.erasure(clazz.type);
+                        Type clazzType = clazz.type;
                         if (components(selectorType).stream()
-                                                    .map(types::erasure)
-                                                    .noneMatch(c -> types.isSubtype(clazzErasure, c))) {
+                                                    .noneMatch(c -> isSubtypeErasure(clazzType, c))) {
                             continue;
                         }
 
@@ -282,14 +282,14 @@ public class ExhaustivenessComputer {
                                     Symbol perm = it.next();
 
                                     for (Symbol currentPermitted : currentPermittedSubTypes) {
-                                        if (types.isSubtype(types.erasure(currentPermitted.type),
-                                                            types.erasure(perm.type))) {
+                                        if (isSubtypeErasure(currentPermitted.type,
+                                                             perm.type)) {
                                             it.remove();
                                             continue PERMITTED;
                                         }
                                     }
-                                    if (types.isSubtype(types.erasure(perm.type),
-                                                        types.erasure(bpOther.type))) {
+                                    if (isSubtypeErasure(perm.type,
+                                                         bpOther.type)) {
                                         it.remove();
                                     }
                                 }
@@ -297,7 +297,7 @@ public class ExhaustivenessComputer {
                         }
 
                         if (permitted.isEmpty()) {
-                            toAdd.add(new BindingPattern(clazz.type, permittedSubtypes));
+                            toAdd.add(new BindingPattern(clazz.type, permittedSubtypes, Set.of()));
                         }
                     }
                 }
@@ -413,7 +413,6 @@ public class ExhaustivenessComputer {
      *            as pattern hashes cannot be used to speed up the matching process
      */
     private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns,
-                                                         Map<PatternDescription, Set<PatternDescription>> replaces,
                                                          boolean useHashes,
                                                          boolean search) {
         /* implementation note:
@@ -459,66 +458,23 @@ public class ExhaustivenessComputer {
 
                         join.append(rpOne);
 
-                        NEXT_PATTERN: for (int nextCandidate = 0;
-                                           nextCandidate < candidatesArr.length;
-                                           nextCandidate++) {
+                        for (int nextCandidate = 0; nextCandidate < candidatesArr.length; nextCandidate++) {
                             if (firstCandidate == nextCandidate) {
                                 continue;
                             }
 
                             RecordPattern rpOther = candidatesArr[nextCandidate];
-                            if (rpOne.recordType.tsym == rpOther.recordType.tsym) {
-                                ACCEPT: for (int i = 0; i < rpOne.nested.length; i++) {
-                                    if (i != mismatchingCandidate) {
-                                        if (!rpOne.nested[i].equals(rpOther.nested[i])) {
-                                            if (useHashes) {
-                                                continue NEXT_PATTERN;
-                                            }
-                                            //when not using hashes,
-                                            //check if rpOne.nested[i] is
-                                            //a subtype of rpOther.nested[i]:
-                                            if (!(rpOther.nested[i] instanceof BindingPattern bpOther)) {
-                                                continue NEXT_PATTERN;
-                                            }
-                                            if (rpOne.nested[i] instanceof BindingPattern bpOne) {
-                                                if (!types.isSubtype(types.erasure(bpOne.type), types.erasure(bpOther.type))) {
-                                                    continue NEXT_PATTERN;
-                                                }
-                                            } else if (rpOne.nested[i] instanceof RecordPattern nestedRPOne) {
-                                                if (search) {
-                                                    if (!types.isSubtype(types.erasure(nestedRPOne.recordType()), types.erasure(bpOther.type))) {
-                                                        continue NEXT_PATTERN;
-                                                    }
-                                                } else {
-                                                    Set<PatternDescription> pendingReplacedPatterns = new HashSet<>(replaces.getOrDefault(rpOther.nested[i], Set.of()));
 
-                                                    while (!pendingReplacedPatterns.isEmpty()) {
-                                                        PatternDescription currentReplaced = pendingReplacedPatterns.iterator().next();
-
-                                                        pendingReplacedPatterns.remove(currentReplaced);
-
-                                                        if (nestedRPOne.equals(currentReplaced)) {
-                                                            continue ACCEPT;
-                                                        }
-
-                                                        pendingReplacedPatterns.addAll(replaces.getOrDefault(currentReplaced, Set.of()));
-                                                    }
-                                                    continue NEXT_PATTERN;
-                                                }
-                                            } else {
-                                                continue NEXT_PATTERN;
-                                            }
-                                        }
-                                    }
-                                }
+                            if (rpOne.recordType.tsym == rpOther.recordType.tsym &&
+                                nestedComponentsEquivalent(rpOne, rpOther, mismatchingCandidate, useHashes, search)) {
                                 join.append(rpOther);
                             }
                         }
 
                         var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
-                        var updatedPatterns = reduceNestedPatterns(nestedPatterns, replaces, useHashes, search);
+                        var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes, search);
 
-                        updatedPatterns = reduceRecordPatterns(updatedPatterns, replaces);
+                        updatedPatterns = reduceRecordPatterns(updatedPatterns);
                         updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                         updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
@@ -530,10 +486,8 @@ public class ExhaustivenessComputer {
                             generatePatternsWithReplacedNestedPattern(rpOne,
                                                                       mismatchingCandidateFin,
                                                                       updatedPatterns,
-                                                                      nue -> {
-                                current.add(nue);
-                                replaces.put(nue, new HashSet<>(join));
-                            });
+                                                                      Set.copyOf(join),
+                                                                      current::add);
                         }
                     }
                 }
@@ -549,17 +503,88 @@ public class ExhaustivenessComputer {
         return patterns;
     }
 
+    /* Returns true if all nested components of existing and candidate are
+     * equivalent (if useHashes == true), or "substitutable" (if useHashes == false).
+     * A candidate pattern is "substitutable" if it is a binding pattern, and:
+     * - it's type is a supertype of the existing pattern's type
+     * - it was produced by a reduction from a record pattern that is equivalent to
+     *   the existing pattern
+     */
+    private boolean nestedComponentsEquivalent(RecordPattern existing,
+                                               RecordPattern candidate,
+                                               int mismatchingCandidate,
+                                               boolean useHashes,
+                                               boolean search) {
+        NEXT_NESTED:
+        for (int i = 0; i < existing.nested.length; i++) {
+            if (i != mismatchingCandidate) {
+                if (!existing.nested[i].equals(candidate.nested[i])) {
+                    if (useHashes) {
+                        return false;
+                    }
+                    //when not using hashes,
+                    //check if rpOne.nested[i] is
+                    //a subtype of rpOther.nested[i]:
+                    if (!(candidate.nested[i] instanceof BindingPattern nestedCandidate)) {
+                        return false;
+                    }
+                    if (existing.nested[i] instanceof BindingPattern nestedExisting) {
+                        if (!isSubtypeErasure(nestedExisting.type, nestedCandidate.type)) {
+                            return false;
+                        }
+                    } else if (existing.nested[i] instanceof RecordPattern nestedExisting) {
+                        if (search) {
+                            if (!types.isSubtype(types.erasure(nestedExisting.recordType()), types.erasure(nestedCandidate.type))) {
+                                return false;
+                            }
+                        } else {
+                            java.util.List<PatternDescription> pendingReplacedPatterns =
+                                    new ArrayList<>(nestedCandidate.sourcePatterns());
+
+                            while (!pendingReplacedPatterns.isEmpty()) {
+                                PatternDescription currentReplaced = pendingReplacedPatterns.removeLast();
+
+                                if (nestedExisting.equals(currentReplaced)) {
+                                    //candidate.nested[i] is substitutable for existing.nested[i]
+                                    //continue with the next nested pattern:
+                                    continue NEXT_NESTED;
+                                }
+
+                                pendingReplacedPatterns.addAll(currentReplaced.sourcePatterns());
+                            }
+
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /*The same as types.isSubtype(types.erasure(t), types.erasure(s)), but cached.
+    */
+    private boolean isSubtypeErasure(Type t, Type s) {
+        Pair<Type, Type> key = Pair.of(t, s);
+
+        return isSubtypeCache.computeIfAbsent(key, _ ->
+                types.isSubtype(types.erasure(t), types.erasure(s)));
+    }
+
     /* In the set of patterns, find those for which, given:
      * $record($nested1, $nested2, ...)
      * all the $nestedX pattern cover the given record component,
      * and replace those with a simple binding pattern over $record.
      */
-    private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns, Map<PatternDescription, Set<PatternDescription>> replaces) {
+    private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns) {
         var newPatterns = new HashSet<PatternDescription>();
         boolean modified = false;
         for (PatternDescription pd : patterns) {
             if (pd instanceof RecordPattern rpOne) {
-                PatternDescription reducedPattern = reduceRecordPattern(rpOne, replaces);
+                PatternDescription reducedPattern = reduceRecordPattern(rpOne);
                 if (reducedPattern != rpOne) {
                     newPatterns.add(reducedPattern);
                     modified = true;
@@ -571,7 +596,7 @@ public class ExhaustivenessComputer {
         return modified ? newPatterns : patterns;
     }
 
-    private PatternDescription reduceRecordPattern(PatternDescription pattern, Map<PatternDescription, Set<PatternDescription>> replaces) {
+    private PatternDescription reduceRecordPattern(PatternDescription pattern) {
         if (pattern instanceof RecordPattern rpOne) {
             Type[] componentType = rpOne.fullComponentTypes();
             //error recovery, ignore patterns with incorrect number of nested patterns:
@@ -581,7 +606,7 @@ public class ExhaustivenessComputer {
             PatternDescription[] reducedNestedPatterns = null;
             boolean covered = true;
             for (int i = 0; i < componentType.length; i++) {
-                PatternDescription newNested = reduceRecordPattern(rpOne.nested[i], replaces);
+                PatternDescription newNested = reduceRecordPattern(rpOne.nested[i]);
                 if (newNested != rpOne.nested[i]) {
                     if (reducedNestedPatterns == null) {
                         reducedNestedPatterns = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
@@ -592,12 +617,10 @@ public class ExhaustivenessComputer {
                 covered &= checkCovered(componentType[i], List.of(newNested));
             }
             if (covered) {
-                PatternDescription pd = new BindingPattern(rpOne.recordType);
-                replaces.put(pd, Set.of(pattern));
+                PatternDescription pd = new BindingPattern(rpOne.recordType, -1, Set.of(pattern));
                 return pd;
             } else if (reducedNestedPatterns != null) {
-                PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns);
-                replaces.put(pd, Set.of(pattern));
+                PatternDescription pd = new RecordPattern(rpOne.recordType, rpOne.fullComponentTypes(), reducedNestedPatterns, Set.of(pattern));
                 return pd;
             }
         }
@@ -644,6 +667,7 @@ public class ExhaustivenessComputer {
 
     protected sealed interface PatternDescription {
         public Type type();
+        public Set<PatternDescription> sourcePatterns();
     }
 
     public PatternDescription makePatternDescription(Type selectorType, JCPattern pattern) {
@@ -680,10 +704,10 @@ public class ExhaustivenessComputer {
             throw Assert.error();
         }
     }
-    record BindingPattern(Type type, int permittedSubtypes) implements PatternDescription {
+    record BindingPattern(Type type, int permittedSubtypes, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public BindingPattern(Type type) {
-            this(type, -1);
+            this(type, -1, Set.of());
         }
 
         @Override
@@ -700,10 +724,14 @@ public class ExhaustivenessComputer {
             return type.tsym + " _";
         }
     }
-    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription... nested) implements PatternDescription {
+    record RecordPattern(Type recordType, int _hashCode, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) implements PatternDescription {
 
         public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
-            this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
+            this(recordType, fullComponentTypes, nested, Set.of());
+        }
+
+        public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested, Set<PatternDescription> sourcePatterns) {
+            this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested, sourcePatterns);
         }
 
         @Override
@@ -985,7 +1013,7 @@ public class ExhaustivenessComputer {
                     if (replaced != null) {
                         Set<PatternDescription> withReplaced = new HashSet<>();
 
-                        generatePatternsWithReplacedNestedPattern(rp, c, replaced, withReplaced::add);
+                        generatePatternsWithReplacedNestedPattern(rp, c, replaced, Set.of(), withReplaced::add);
 
                         return replace(withReplaced, what, to);
                     }
@@ -1146,6 +1174,7 @@ public class ExhaustivenessComputer {
     private void generatePatternsWithReplacedNestedPattern(RecordPattern basePattern,
                                                            int replaceComponent,
                                                            Iterable<? extends PatternDescription> updatedNestedPatterns,
+                                                           Set<PatternDescription> sourcePatterns,
                                                            Consumer<RecordPattern> target) {
         for (PatternDescription nested : updatedNestedPatterns) {
             PatternDescription[] newNested =
@@ -1153,7 +1182,8 @@ public class ExhaustivenessComputer {
             newNested[replaceComponent] = nested;
             target.accept(new RecordPattern(basePattern.recordType(),
                                             basePattern.fullComponentTypes(),
-                                            newNested));
+                                            newNested,
+                                            sourcePatterns));
         }
     }
 

@@ -28,10 +28,7 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
@@ -328,9 +325,9 @@ public class Flow {
         syms = Symtab.instance(context);
         types = Types.instance(context);
         chk = Check.instance(context);
-        exhaustiveness = ExhaustivenessComputer.instance(context);
         rs = Resolve.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
+        exhaustiveness = ExhaustivenessComputer.instance(context);
     }
 
     /**
