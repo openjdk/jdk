@@ -2387,7 +2387,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // Try fastpath for locking.
     // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
     Register r_temp_3_or_noreg = UseObjectMonitorTable ? r_temp_3 : noreg;
-    __ compiler_fast_lock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
+    __ compiler_fast_lock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3_or_noreg);
     __ beq(CR0, locked);
 
     // None of the above fast optimizations worked so we have to get into the
@@ -2606,7 +2606,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_lightweight_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    __ compiler_fast_unlock_object(CR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
     __ beq(CR0, done);
 
     // Save and restore any potential method result value around the unlocking operation.

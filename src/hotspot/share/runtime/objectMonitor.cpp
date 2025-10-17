@@ -43,7 +43,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/orderAccess.hpp"
@@ -400,7 +399,7 @@ bool ObjectMonitor::try_lock_with_contention_mark(JavaThread* locking_thread, Ob
 }
 
 void ObjectMonitor::enter_for_with_contention_mark(JavaThread* locking_thread, ObjectMonitorContentionMark& contention_mark) {
-  // Used by LightweightSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
+  // Used by ObjectSynchronizer::inflate_and_enter in deoptimization path to enter for another thread.
   // The monitor is private to or already owned by locking_thread which must be suspended.
   // So this code may only contend with deflation.
   assert(locking_thread == Thread::current() || locking_thread->is_obj_deopt_suspend(), "must be");
@@ -841,7 +840,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   }
 
   if (UseObjectMonitorTable) {
-    LightweightSynchronizer::deflate_monitor(current, obj, this);
+    ObjectSynchronizer::deflate_monitor(current, obj, this);
   } else if (obj != nullptr) {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);

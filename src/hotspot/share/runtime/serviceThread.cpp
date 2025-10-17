@@ -36,7 +36,6 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
@@ -113,7 +112,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (cldg_cleanup_work = ClassLoaderDataGraph::should_clean_metaspaces_and_reset()) |
               (jvmti_tagmap_work = JvmtiTagMap::has_object_free_events_and_reset()) |
               (oopmap_cache_work = OopMapCache::has_cleanup_work()) |
-              (object_monitor_table_work = LightweightSynchronizer::needs_resize())
+              (object_monitor_table_work = ObjectSynchronizer::needs_resize())
              ) == 0) {
         // Wait until notified that there is some work to do or timer expires.
         // Some cleanup requests don't notify the ServiceThread so work needs to be done at periodic intervals.
@@ -173,7 +172,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (object_monitor_table_work) {
-      LightweightSynchronizer::resize_table(jt);
+      ObjectSynchronizer::resize_table(jt);
     }
   }
 }

@@ -9653,13 +9653,13 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
   bind(L_stack_ok);
 }
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //
 // obj: the object to be locked
 // reg_rax: rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow) {
+void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_rax, Register tmp, Label& slow) {
   Register thread = r15_thread;
 
   assert(reg_rax == rax, "");
@@ -9715,13 +9715,13 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   movl(Address(thread, JavaThread::lock_stack_top_offset()), top);
 }
 
-// Implements lightweight-unlocking.
+// Implements fast-unlocking.
 //
 // obj: the object to be unlocked
 // reg_rax: rax
 // thread: the thread
 // tmp: a temporary register
-void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register tmp, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register tmp, Label& slow) {
   Register thread = r15_thread;
 
   assert(reg_rax == rax, "");
@@ -9753,7 +9753,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register
   Label not_unlocked;
   testptr(reg_rax, markWord::unlocked_value);
   jcc(Assembler::zero, not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 

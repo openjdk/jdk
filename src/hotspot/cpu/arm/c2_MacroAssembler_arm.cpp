@@ -90,7 +90,7 @@ void C2_MacroAssembler::fast_lock(Register Roop, Register Rbox, Register Rscratc
     b(done, ne);
   }
 
-  lightweight_lock(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
+  fast_lock(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
                    1 /* savemask (save t1) */, done);
 
   cmp(Roop, Roop); // Success: set Z
@@ -107,7 +107,7 @@ void C2_MacroAssembler::fast_unlock(Register Roop, Register Rbox, Register Rscra
 
   Label done;
 
-  lightweight_unlock(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
+  fast_unlock(Roop /* obj */, Rbox /* t1 */, Rscratch /* t2 */, Rscratch2 /* t3 */,
                      1 /* savemask (save t1) */, done);
 
   cmp(Roop, Roop); // Success: Set Z

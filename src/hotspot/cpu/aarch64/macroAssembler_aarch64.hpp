@@ -1738,8 +1738,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void lightweight_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
-  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void fast_lock(Register basic_lock, Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void fast_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

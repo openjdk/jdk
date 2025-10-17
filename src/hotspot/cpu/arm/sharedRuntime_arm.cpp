@@ -1139,7 +1139,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(sync_handle, R1);
 
     log_trace(fastlock)("SharedRuntime lock fast");
-    __ lightweight_lock(sync_obj /* object */, basic_lock /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+    __ fast_lock(sync_obj /* object */, basic_lock /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
                         0x7 /* savemask */, slow_lock);
       // Fall through to lock_done
     __ bind(lock_done);
@@ -1195,7 +1195,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
     log_trace(fastlock)("SharedRuntime unlock fast");
-    __ lightweight_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
+    __ fast_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
                           7 /* savemask */, slow_unlock);
     // Fall through
 

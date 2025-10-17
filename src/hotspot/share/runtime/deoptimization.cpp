@@ -74,7 +74,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
-#include "runtime/lightweightSynchronizer.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/osThread.hpp"
@@ -1671,7 +1670,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         }
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
-            LightweightSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
+            ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
                                                               deoptee_thread, thread);
         }
         assert(mon_info->owner()->is_locked(), "object must be locked now");

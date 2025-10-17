@@ -2011,7 +2011,7 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
   ExceptionMark em(current);
 
   // Check if C2_MacroAssembler::fast_unlock() or
-  // C2_MacroAssembler::fast_unlock_lightweight() unlocked an inflated
+  // C2_MacroAssembler::fast_unlock() unlocked an inflated
   // monitor before going slow path.  Since there is no safepoint
   // polling when calling into the VM, we can be sure that the monitor
   // hasn't been deallocated.
