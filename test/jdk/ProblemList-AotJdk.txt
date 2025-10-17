@@ -34,11 +34,6 @@ jdk/internal/misc/CDS/ArchivedEnumTest.java                     0000000 generic-
 
 java/lang/module/ModuleDescriptorHashCodeTest.java              0000000 generic-all
 
-# The test uses small heap
-jdk/java/lang/ProcessBuilder/CloseRace.java#Default             0000000 generic-all
-java/lang/ScopedValue/UnboundValueAfterOOME.java                0000000 generic-all
-java/lang/ref/EnqueuePollRace.java                              0000000 generic-all
-
 
 # The test case is incorrect. There's no guarantee that running a JVM with the following
 # parameters will always cause the class java/lang/invoke/MethodHandleStatics to be initialized

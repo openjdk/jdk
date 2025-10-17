@@ -2198,7 +2198,7 @@ WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject str))
-  if (HeapShared::is_loading_streaming_mode()) {
+  if (!HeapShared::is_loading_mapping_mode()) {
     return false;
   }
   ResourceMark rm(THREAD);

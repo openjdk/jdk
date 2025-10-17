@@ -7,14 +7,7 @@ runtime/symbols/TestSharedArchiveConfigFile.java      0000000 generic-all
 gc/arguments/TestG1HeapSizeFlags.java                 0000000 generic-all
 gc/arguments/TestParallelHeapSizeFlags.java           0000000 generic-all
 gc/arguments/TestSerialHeapSizeFlags.java             0000000 generic-all
-runtime/7167069/PrintAsFlag.java                      0000000 generic-all
-serviceability/sa/ClhsdbPrintAll.java                 0000000 generic-all
-serviceability/sa/ClhsdbJstackWithConcurrentLock.java 0000000 generic-all
 gc/arguments/TestVerifyBeforeAndAfterGCFlags.java     0000000 generic-all
-gc/TestPLABAdaptToMinTLABSize.java#G1                 0000000 generic-all
-gc/TestPLABAdaptToMinTLABSize.java#Parallel           0000000 generic-all
-runtime/Thread/ThreadObjAccessAtExit.java             0000000 generic-all
-runtime/cds/appcds/LotsOfSyntheticClasses.java        0000000 generic-all
 
 gc/arguments/TestCompressedClassFlags.java            0000000 generic-all
 gc/TestAllocateHeapAtMultiple.java                    0000000 generic-all
