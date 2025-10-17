@@ -182,7 +182,6 @@ jint SerialHeap::initialize() {
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
-  bs->initialize();
   BarrierSet::set_barrier_set(bs);
 
   _young_gen = new DefNewGeneration(young_rs, NewSize, MinNewSize, MaxNewSize);

@@ -33,6 +33,7 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
+#include "runtime/threads.hpp"
 
 template <bool CONCURRENT>
 class ShenandoahVMWeakRoots {
@@ -87,10 +88,10 @@ public:
 class ShenandoahThreadRoots {
 private:
   ShenandoahPhaseTimings::Phase _phase;
-  const bool _is_par;
+  const bool                    _is_par;
+  ThreadsClaimTokenScope        _threads_claim_token_scope;
 public:
   ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par);
-  ~ShenandoahThreadRoots();
 
   void oops_do(OopClosure* oops_cl, NMethodClosure* code_cl, uint worker_id);
   void threads_do(ThreadClosure* tc, uint worker_id);
