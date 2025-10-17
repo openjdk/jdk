@@ -34,44 +34,98 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 5, time = 3)
 @State(Scope.Thread)
 public class LoopSafepoint {
-    static int loopCount = 100000;
-    static int anotherInt = 1;
+    static int someInts0 = 1;
+    static int someInts1 = 2;
 
     @CompilerControl(CompilerControl.Mode.DONT_INLINE)
     private void empty() {}
 
-    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
-    private int constInt() {
-        return 100000;
-    }
+    // All benchmarks below are in sync with the IR test
+    // `compiler.loopopts.TestRedundantSafepointElimination.java`.
+    // Check the comments in the IR test for more details.
 
     @Benchmark
-    public int loopConst() {
+    public int topLevelCountedLoop() {
         int sum = 0;
         for (int i = 0; i < 100000; i++) {
-            sum += anotherInt;
-            empty();
+            sum += someInts0;
         }
         return sum;
     }
 
     @Benchmark
-    public int loopVar() {
+    public int topLevelCountedLoopWithDomCall() {
         int sum = 0;
-        for (int i = 0; i < loopCount; i++) {
-            sum += anotherInt;
+        for (int i = 0; i < 100000; i++) {
             empty();
+            sum += someInts0;
         }
         return sum;
     }
 
     @Benchmark
-    public int loopFunc() {
+    public int topLevelUncountedLoop() {
         int sum = 0;
-        for (int i = 0; i < constInt(); i++) {
-            sum += anotherInt;
-            empty();
+        for (int i = 0; i < 100000; i += someInts0) {
+            sum += someInts1;
         }
         return sum;
+    }
+
+    @Benchmark
+    public int topLevelUncountedLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100000; i += someInts0) {
+            empty();
+            sum += someInts1;
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int outerLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += someInts0) {
+            empty();
+            for (int j = 0; j < 1000; j++) {
+                sum += someInts1;
+            }
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int outerAndInnerLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += someInts0) {
+            empty();
+            for (int j = 0; j < 1000; j++) {
+                empty();
+                sum += someInts1;
+            }
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int outerLoopWithLocalNonCallSafepoint() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += someInts0) {
+            for (int j = 0; j < 1000; j++) {
+                sum += someInts1;
+            }
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public void loopNeedsToPreserveSafepoint() {
+        int i = 0, stop;
+        while (i < 1000) {
+            stop = i + 10;
+            while (i < stop) {
+                i += 1;
+            }
+        }
     }
 }
