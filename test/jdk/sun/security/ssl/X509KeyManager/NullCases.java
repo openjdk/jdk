@@ -37,9 +37,15 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @modules java.base/sun.security.x509
  *
- * @run main NullCases
- * @run main/othervm -Djavax.net.debug=ssl:keymanager NullCases debug
+ * @run junit NullCases
+ * @run junit/othervm -Djavax.net.debug=ssl:keymanager -Darg=debug NullCases
  */
+
+import jdk.test.lib.Asserts;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
@@ -58,80 +64,47 @@ import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateRSAKeyP
 
 
 public class NullCases {
+    private static boolean isDebug;
+    private static KeyManagerFactory kmf;
+    private static X509KeyManager km;
+    private final PrintStream initialErrStream = System.err;
 
-    public static void main(String[] args) throws Exception {
-        KeyManagerFactory kmf;
-        char[] password = {' '};
+    @BeforeAll
+    public static void beforeAll() throws Exception {
+        final String arg = System.getProperty("arg");
+        isDebug = arg != null && arg.equals("debug");
 
-        // check for bug 6302126
         kmf = KeyManagerFactory.getInstance("NewSunX509");
+
+        // creating a new keystore
+        final SecureRandom secureRandom = new SecureRandom();
+        final KeyPair keyPair = generateRSAKeyPair(secureRandom);
+        final X509Certificate originServerCert = generateCert(keyPair, secureRandom,
+                "subject");
+        final KeyStore ks = generateKeyStore(keyPair.getPrivate(),
+                new Certificate[]{originServerCert});
+
+        kmf.init(ks, null);
+        km = (X509KeyManager) kmf.getKeyManagers()[0];
+    }
+
+    private X509KeyManager generateNullKm() throws Exception {
+        char[] password = {' '};
         kmf.init((KeyStore) null, password);
-        X509KeyManager km = (X509KeyManager) kmf.getKeyManagers()[0];
+        return (X509KeyManager) kmf.getKeyManagers()[0];
+    }
 
-        KeyManagerFactory kmf2 = KeyManagerFactory.getInstance("NewSunX509");
-        final KeyStore ks = createNewKeystore();
-        kmf2.init(ks, null);
-        X509KeyManager km2 = (X509KeyManager) kmf2.getKeyManagers()[0];
+    @Test
+    public void JDK6302126Test() throws Exception {
+        // check for bug 6302126
+        generateNullKm();
+    }
 
+    @Test
+    public void JDK6302304Test() throws Exception {
+        // check for bug 6302304
+        final X509KeyManager km = generateNullKm();
 
-        // check for 6302321
-        X509Certificate[] certs = km.getCertificateChain("doesnotexist");
-        PrivateKey priv = km.getPrivateKey("doesnotexist");
-        if (certs != null || priv != null) {
-            throw new Exception("Should return null if the alias can't be found");
-        }
-
-        // check for 6302271
-        String[] clis = km.getClientAliases("doesnotexist", null);
-        if (clis != null && clis.length == 0) {
-            throw new Exception("Should return null instead of empty array");
-        }
-        String[] srvs = km.getServerAliases("doesnotexist", null);
-        if (srvs != null && srvs.length == 0) {
-            throw new Exception("Should return null instead of empty array");
-        }
-
-
-        // Exceptions check for 8369995
-
-        // recording logs to the output stream
-        final PrintStream intialErrStream = System.err;
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        final PrintStream newErrStream = new PrintStream(outputStream);
-        System.setErr(newErrStream);
-
-        certs = km.getCertificateChain("RSA.not.exist");
-        priv = km.getPrivateKey("RSA.not.exist");
-        if (certs != null || priv != null) {
-            System.setErr(intialErrStream);
-            System.err.println(outputStream);
-            throw new Exception("Should return null if the alias can't be found");
-        }
-
-        certs = km2.getCertificateChain("RSA.0.1");
-        priv = km2.getPrivateKey("RSA.0.1");
-        if (certs != null || priv != null) {
-            System.setErr(intialErrStream);
-            System.err.println(outputStream);
-            throw new Exception("Should return null if the alias can't be found");
-        }
-
-        certs = km2.getCertificateChain("..1");
-        priv = km2.getPrivateKey("..1");
-        if (certs != null || priv != null) {
-            System.setErr(intialErrStream);
-            System.err.println(outputStream);
-            throw new Exception("Should return null if the alias can't be found");
-        }
-
-        System.setErr(intialErrStream);
-
-        if (args.length > 0 && args[0].equals("debug")
-            && !outputStream.toString().contains("KeyMgr: exception triggered:")) {
-            throw new Exception("No log triggered");
-        }
-
-        // check for 6302304
         km.getServerAliases(null, null);
         km.getClientAliases(null, null);
         km.getCertificateChain(null);
@@ -140,14 +113,89 @@ public class NullCases {
         km.chooseClientAlias(null, null, null);
     }
 
-    private static KeyStore createNewKeystore() throws Exception {
-        final SecureRandom secureRandom = new SecureRandom();
-        final KeyPair keyPair = generateRSAKeyPair(secureRandom);
+    @Test
+    public void JDK6302321Test() {
+        // check for bug 6302321
+        final X509Certificate[] certs = km.getCertificateChain("doesnotexist");
+        final PrivateKey priv = km.getPrivateKey("doesnotexist");
+        Asserts.assertNull(certs, "Should return null if the alias can't be found");
+        Asserts.assertNull(priv, "Should return null if the alias can't be found");
+    }
 
-        final X509Certificate originServerCert = generateCert(keyPair, secureRandom,
-                "subject");
+    @Test
+    public void JDK6302271Test() {
+        // check for 6302271
+        final String[] clis = km.getClientAliases("doesnotexist", null);
+        Asserts.assertFalse((clis != null && clis.length == 0), "Should return null instead of empty array");
 
-        return generateKeyStore(keyPair.getPrivate(),
-                new Certificate[]{originServerCert});
+        final String[] srvs = km.getServerAliases("doesnotexist", null);
+        Asserts.assertFalse((srvs != null && srvs.length == 0), "Should return null instead of empty array");
+    }
+
+    /**
+     * The following tests are testing JDK-8369995
+     */
+
+    private ByteArrayOutputStream replaceSystemError() {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        final PrintStream newErrStream = new PrintStream(outputStream);
+        System.setErr(newErrStream);
+
+        return outputStream;
+    }
+
+    @Test
+    public void incompleteChainAndKeyTest() {
+        final X509Certificate[] certs = km.getCertificateChain("1.1");
+        final PrivateKey priv = km.getPrivateKey("1.1");
+
+        Asserts.assertNull(certs, "Should return null if the alias can't be found");
+        Asserts.assertNull(priv, "Should return null if the alias can't be found");
+    }
+
+    @Test
+    public void nonexistentBuilderTest() {
+        // recording logs to the output stream
+        final ByteArrayOutputStream outputStream = replaceSystemError();
+
+        final X509Certificate[] certs = km.getCertificateChain("RSA.1.1");
+        final PrivateKey priv = km.getPrivateKey("RSA.1.1");
+
+        Asserts.assertNull(certs, "Should return null if the alias can't be found");
+        Asserts.assertNull(priv, "Should return null if the alias can't be found");
+
+        System.setErr(initialErrStream);
+        System.err.println(" => nonexistentBuilderTest: \n" + outputStream);
+
+        Asserts.assertFalse(isDebug && !outputStream.toString().contains("KeyMgr: exception triggered:"),
+                "No log triggered");
+    }
+
+    @Test
+    public void nonexistentKSTest() {
+        final X509Certificate[] certs = km.getCertificateChain("RSA.0.1");
+        final PrivateKey priv = km.getPrivateKey("RSA.0.1");
+
+        Asserts.assertNull(certs, "Should return null if the alias can't be found");
+        Asserts.assertNull(priv, "Should return null if the alias can't be found");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"RSA.not.exist", "..1"})
+    public void wrongNumberFormatTest(final String alias) {
+        // recording logs to the output stream
+        final ByteArrayOutputStream outputStream = replaceSystemError();
+        X509Certificate[] certs = km.getCertificateChain(alias);
+        PrivateKey priv = km.getPrivateKey(alias);
+
+        Asserts.assertNull(certs, "Should return null if the alias can't be found");
+        Asserts.assertNull(priv, "Should return null if the alias can't be found");
+
+        System.setErr(initialErrStream);
+        System.err.println(" => wrongNumberFormatTest alias<" + alias + ">: \n" + outputStream);
+
+        Asserts.assertFalse(isDebug && !outputStream.toString().contains("KeyMgr: exception triggered:"),
+                "No log triggered");
+
     }
 }

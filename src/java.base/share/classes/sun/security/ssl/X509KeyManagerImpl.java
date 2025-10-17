@@ -223,7 +223,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         // parse the alias
         int firstDot = alias.indexOf('.');
         int secondDot = alias.indexOf('.', firstDot + 1);
-        if ((firstDot == -1) || (secondDot == firstDot)) {
+        if ((firstDot == -1) || (secondDot == -1)) {
             // invalid alias
             return null;
         }
@@ -245,7 +245,8 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         } catch (UnrecoverableEntryException |
                  KeyStoreException |
                  NumberFormatException |
-                 NoSuchAlgorithmException e) {
+                 NoSuchAlgorithmException |
+                 IndexOutOfBoundsException e) {
             // ignore and only log exception
             if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
                 SSLLogger.fine("KeyMgr: exception triggered: " + e);

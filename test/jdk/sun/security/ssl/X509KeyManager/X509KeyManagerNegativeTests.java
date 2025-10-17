@@ -23,59 +23,151 @@
  * questions.
  */
 
+import jdk.test.lib.Asserts;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.Key;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-
-import org.junit.Assert;
+import java.security.KeyStoreSpi;
+import java.security.Security;
+import java.security.cert.Certificate;
+import java.util.ConcurrentModificationException;
+import java.util.Date;
+import java.util.Enumeration;
 
 /*
  * @test
  * @bug 8369995
  * @summary X509KeyManagerImpl negative tests causing exceptions
  * @library /test/lib
- * @run junit X509KeyManagerNegativeTests
+ * @run junit/othervm X509KeyManagerNegativeTests
  */
 public class X509KeyManagerNegativeTests {
-    private static X509KeyManager km;
+    private static X509KeyManager exceptionThrowingKM;
 
     @BeforeAll
-    public static void beforeAll() throws NoSuchAlgorithmException, UnrecoverableKeyException, KeyStoreException {
-        final char[] password = {' '};
-        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
-        kmf.init((KeyStore) null, password);
-        km = (X509KeyManager) kmf.getKeyManagers()[0];
+    public static void beforeAll() throws Exception {
+
+        // initialising exception throwing ks
+        // cleaned up after the tests are complete
+        final KeyManagerFactory exceptionThrowingKMF = KeyManagerFactory.getInstance("NewSunX509");
+
+        // adding dummy provider
+        Security.addProvider(new MyCustomKSProvider());
+        final KeyStore exceptionThrowingKS = KeyStore.getInstance("MyExceptionKS");
+        exceptionThrowingKS.load(null, null);
+
+        exceptionThrowingKMF.init((KeyStore) exceptionThrowingKS, null);
+        exceptionThrowingKM = (X509KeyManager) exceptionThrowingKMF.getKeyManagers()[0];
+    }
+
+    @AfterAll
+    public static void cleanup() {
+        // remove custom provider
+        Security.removeProvider("MyCustomKSProvider");
     }
 
     @Test
-    public void getCertificateChainIncompleteString() {
-        Assert.assertThrows(StringIndexOutOfBoundsException.class,
-                () -> km.getCertificateChain("1."));
+    public void ksExceptionTest() {
+        // recording logs to the output stream
+        Asserts.assertThrows(ConcurrentModificationException.class,
+                () -> exceptionThrowingKM.getCertificateChain("RSA.0.0"));
+        Asserts.assertThrows(ConcurrentModificationException.class,
+                () -> exceptionThrowingKM.getPrivateKey("RSA.0.0"));
     }
 
-    @Test
-    public void getPrivateKeyIncompleteString() {
-        Assert.assertThrows(StringIndexOutOfBoundsException.class,
-                () -> km.getPrivateKey("1."));
+    public static class MyCustomKSProvider extends java.security.Provider {
+        public MyCustomKSProvider() {
+            super("MyCustomKSProvider", 1.0, "My Custom KS Provider");
+            put("KeyStore.MyExceptionKS", MyExceptionKS.class.getName());
+        }
     }
 
-    @Test
-    public void getPrivateKeyIndexOutOfBounds() {
-        // .1. would look for an index 1 key in keystore, which doesn't exist
-        Assert.assertThrows(IndexOutOfBoundsException.class,
-                () -> km.getPrivateKey("RSA.1.1"));
-    }
-    @Test
-    public void getCertificateChainIndexOutOfBounds() {
-        // .1. would look for an index 1 cert in keystore, which doesn't exist
-        Assert.assertThrows(IndexOutOfBoundsException.class,
-                () -> km.getPrivateKey("RSA.1.1"));
-    }
+    public static class MyExceptionKS extends KeyStoreSpi {
 
+        @Override
+        public KeyStore.Entry engineGetEntry(String alias, KeyStore.ProtectionParameter param) {
+            throw new ConcurrentModificationException("getEntry exception");
+        }
+
+        @Override
+        public Key engineGetKey(String alias, char[] password) {
+            return null;
+        }
+
+        @Override
+        public Certificate[] engineGetCertificateChain(String alias) {
+            return null;
+        }
+
+        @Override
+        public Certificate engineGetCertificate(String alias) {
+            return null;
+        }
+
+        @Override
+        public Date engineGetCreationDate(String alias) {
+            return null;
+        }
+
+        @Override
+        public Enumeration<String> engineAliases() {
+            return null;
+        }
+
+        @Override
+        public boolean engineContainsAlias(String alias) {
+            return false;
+        }
+
+        @Override
+        public int engineSize() {
+            return 0;
+        }
+
+        @Override
+        public boolean engineIsKeyEntry(String alias) {
+            return false;
+        }
+
+        @Override
+        public boolean engineIsCertificateEntry(String alias) {
+            return false;
+        }
+
+        @Override
+        public String engineGetCertificateAlias(Certificate cert) {
+            return null;
+        }
+
+        @Override
+        public void engineStore(OutputStream stream, char[] password) {
+        }
+
+        @Override
+        public void engineLoad(InputStream stream, char[] password) {
+        }
+
+        @Override
+        public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain) {
+        }
+
+        @Override
+        public void engineSetKeyEntry(String alias, byte[] key, Certificate[] chain) {
+        }
+
+        @Override
+        public void engineSetCertificateEntry(String alias, Certificate cert) {
+        }
+
+        @Override
+        public void engineDeleteEntry(String alias) {
+        }
+    }
 }
