@@ -22,8 +22,9 @@
  */
 package jdk.jpackage.test;
 
-import static java.util.Collections.unmodifiableSortedSet;
-
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -45,7 +46,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -164,8 +164,7 @@ public final class LinuxHelper {
         switch (packageType) {
             case LINUX_DEB:
                 return Stream.of(getDebBundleProperty(cmd.outputBundle(),
-                        "Depends").split(",")).map(String::strip).collect(
-                        Collectors.toList());
+                        "Depends").split(",")).map(String::strip).toList();
 
             case LINUX_RPM:
                 return Executor.of("rpm", "-qp", "-R")
@@ -326,10 +325,9 @@ public final class LinuxHelper {
         if (cmd.isRuntime()) {
             Path runtimeDir = cmd.appRuntimeDirectory();
             Set<Path> expectedCriticalRuntimePaths = CRITICAL_RUNTIME_FILES.stream().map(
-                    runtimeDir::resolve).collect(Collectors.toSet());
+                    runtimeDir::resolve).collect(toSet());
             Set<Path> actualCriticalRuntimePaths = getPackageFiles(cmd).filter(
-                    expectedCriticalRuntimePaths::contains).collect(
-                            Collectors.toSet());
+                    expectedCriticalRuntimePaths::contains).collect(toSet());
             checkPrerequisites = expectedCriticalRuntimePaths.equals(
                     actualCriticalRuntimePaths);
         } else {
@@ -375,8 +373,7 @@ public final class LinuxHelper {
         Function<List<String>, String> verifier = (lines) -> {
             // Lookup for xdg commands
             return lines.stream().filter(line -> {
-                Set<String> words = Stream.of(line.split("\\s+")).collect(
-                        Collectors.toSet());
+                Set<String> words = Stream.of(line.split("\\s+")).collect(toSet());
                 return words.contains("xdg-desktop-menu") || words.contains(
                         "xdg-mime") || words.contains("xdg-icon-resource");
             }).findFirst().orElse(null);
@@ -451,14 +448,57 @@ public final class LinuxHelper {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
+
+        verifyIcons(cmd);
     }
 
     private static Collection<Path> getDesktopFiles(JPackageCommand cmd) {
+
         var unpackedDir = cmd.appLayout().desktopIntegrationDirectory();
+
+        return relativePackageFilesInSubdirectory(cmd, ApplicationLayout::desktopIntegrationDirectory)
+                .filter(path -> {
+                    return path.getNameCount() == 1;
+                })
+                .filter(path -> {
+                    return ".desktop".equals(PathUtils.getSuffix(path));
+                })
+                .map(unpackedDir::resolve)
+                .toList();
+    }
+
+    private static Stream<Path> relativePackageFilesInSubdirectory(
+            JPackageCommand cmd, Function<ApplicationLayout, Path> subdirFunc) {
+
+        var unpackedDir = subdirFunc.apply(cmd.appLayout());
         var packageDir = cmd.pathToPackageFile(unpackedDir);
+
         return getPackageFiles(cmd).filter(path -> {
-            return packageDir.equals(path.getParent()) && path.getFileName().toString().endsWith(".desktop");
-        }).map(Path::getFileName).map(unpackedDir::resolve).toList();
+            return path.startsWith(packageDir);
+        }).map(packageDir::relativize);
+    }
+
+    private static void verifyIcons(JPackageCommand cmd) {
+
+        var installCmd = Optional.ofNullable(cmd.unpackedPackageDirectory()).map(_ -> {
+            return cmd.createMutableCopy().setUnpackedPackageLocation(null);
+        }).orElse(cmd);
+
+        var installedIconFiles = relativePackageFilesInSubdirectory(
+                installCmd,
+                ApplicationLayout::desktopIntegrationDirectory
+        ).filter(path -> {
+            return ".png".equals(PathUtils.getSuffix(path));
+        }).map(installCmd.appLayout().desktopIntegrationDirectory()::resolve).collect(toSet());
+
+        var referencedIcons = getDesktopFiles(cmd).stream().map(path -> {
+            return new DesktopFile(path, false).findQuotedValue("Icon");
+        }).filter(Optional::isPresent).map(Optional::get).map(Path::of).collect(toSet());
+
+        var unreferencedIconFiles = Comm.compare(installedIconFiles, referencedIcons).unique1().stream().sorted().toList();
+
+        // Verify that all package icon (.png) files are referenced from package .desktop files.
+        TKit.assertEquals(List.of(), unreferencedIconFiles, "Check there are no unreferenced icon files in the package");
     }
 
     private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
@@ -768,10 +808,10 @@ public final class LinuxHelper {
 
         static final Pattern RPM_HEADER_PATTERN = Pattern.compile(String.format(
                 "(%s) scriptlet \\(using /bin/sh\\):", Stream.of(values()).map(
-                        v -> v.rpm).collect(Collectors.joining("|"))));
+                        v -> v.rpm).collect(joining("|"))));
 
         static final Map<String, Scriptlet> RPM_MAP = Stream.of(values()).collect(
-                Collectors.toMap(v -> v.rpm, v -> v));
+                toMap(v -> v.rpm, v -> v));
     }
 
     public static String getDefaultPackageArch(PackageType type) {
@@ -848,7 +888,7 @@ public final class LinuxHelper {
                     } else {
                         return Map.entry(components[0], components[1]);
                     }
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
