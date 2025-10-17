@@ -132,7 +132,7 @@ public class XMLEncKAT extends PKCS11Test {
     public void main(Provider p) throws Exception {
         String wrapAlg = "AESWrap";
         if (p.getService("Cipher", wrapAlg) == null) {
-            throw new SkippedException("Skip, due to no support:  " + wrapAlg);
+            throw new SkippedException("No support :  " + wrapAlg);
         }
         String keyAlg = "AES";
         testKeyWrap(p, wrapAlg, aes128Key_1, keyAlg, aes128WrappedKey_1);
