@@ -65,7 +65,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 
 public class NullCases {
-    private static final String KEY_MGR_EXCEPTION_MESSAGE = "Exception triggered:";
+    private static final String KEY_MGR_EXCEPTION_MESSAGE = "Exception thrown while getting an alias";
 
     private static boolean isDebugLogging;
     private static KeyManagerFactory kmf;
@@ -195,13 +195,31 @@ public class NullCases {
         Asserts.assertNull(priv, "Should return null if the alias can't be found");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"RSA.not.exist", "..1"})
-    public void wrongNumberFormatTest(final String alias) {
+    @Test
+    public void wrongNumberFormatTest() {
         // recording logs to the output stream
         final ByteArrayOutputStream outputStream = replaceSystemError();
-        X509Certificate[] certs = km.getCertificateChain(alias);
-        PrivateKey priv = km.getPrivateKey(alias);
+        final X509Certificate[] certs = km.getCertificateChain("RSA.not.exist");
+        final PrivateKey priv = km.getPrivateKey("RSA.not.exist");
+
+        Asserts.assertNull(certs, "Should return null if the alias can't be found");
+        Asserts.assertNull(priv, "Should return null if the alias can't be found");
+
+        System.setErr(initialErrStream);
+        System.err.println(" => wrongNumberFormatTest: \n" + outputStream);
+
+        Asserts.assertFalse(isDebugLogging && !outputStream.toString().contains(KEY_MGR_EXCEPTION_MESSAGE),
+                "No log triggered");
+
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"..1", ".9.123456789"})
+    public void invalidAliasTest(final String alias) {
+        // recording logs to the output stream
+        final ByteArrayOutputStream outputStream = replaceSystemError();
+        final X509Certificate[] certs = km.getCertificateChain(alias);
+        final PrivateKey priv = km.getPrivateKey(alias);
 
         Asserts.assertNull(certs, "Should return null if the alias can't be found");
         Asserts.assertNull(priv, "Should return null if the alias can't be found");
@@ -209,7 +227,7 @@ public class NullCases {
         System.setErr(initialErrStream);
         System.err.println(" => wrongNumberFormatTest alias<" + alias + ">: \n" + outputStream);
 
-        Asserts.assertFalse(isDebugLogging && !outputStream.toString().contains(KEY_MGR_EXCEPTION_MESSAGE),
+        Asserts.assertFalse(isDebugLogging && !outputStream.toString().contains("Invalid alias format:"),
                 "No log triggered");
 
     }
