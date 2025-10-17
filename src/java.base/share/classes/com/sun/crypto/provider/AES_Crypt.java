@@ -948,45 +948,6 @@ final class AES_Crypt extends SymmetricCipher {
     }
 
     /**
-     * Performs the inverse cipher mix column matrix multiplication per row.
-     *
-     * @param state [in, out] the round key for inverse mix column processing.
-     * @param idx [in] the column index of the round key to process.
-     *
-     * @return the processed round key row.
-     */
-    private static int invMix(int[] state, int idx) {
-        // If we want to repurpose the inverse lookup tables for mix column
-        // transform of the inverse expansion key - saves 4KB of memory with the
-        // cost of 19.7% of decreased performance of key reinitialization.
-        int a0 = TMI0[(state[idx] >> 24) & 0xFF];
-        int a1 = TMI1[(state[idx] >> 16) & 0xFF];
-        int a2 = TMI2[(state[idx] >> 8) & 0xFF];
-        int a3 = TMI3[state[idx] & 0xFF];
-
-        // Add columns
-        return a0 ^ a1 ^ a2 ^ a3;
-    }
-
-    /**
-     * Performs the inverse cipher mix column on the round key.
-     *
-     * @param state [in, out] the round key for inverse mix column processing.
-     */
-    private static void invMixRKey(int[] state) {
-        int len = WB;
-        int[] mSum = new int[len];
-
-        mSum[0] = invMix(state, 0);
-        mSum[1] = invMix(state, 1);
-        mSum[2] = invMix(state, 2);
-        mSum[3] = invMix(state, 3);
-
-        System.arraycopy(mSum, 0, state, 0, len);
-        Arrays.fill(mSum, 0);
-    }
-
-    /**
      * Generate the inverse cipher round keys.
      *
      * @return w1 the inverse cipher round keys.
@@ -1002,7 +963,14 @@ final class AES_Crypt extends SymmetricCipher {
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
             System.arraycopy(sessionK[0], i * len, w, 0, len);
-            invMixRKey(w);
+            w[0] = TMI0[w[0] >>> 24] ^ TMI1[(w[0] >> 16) & 0xFF]
+                    ^ TMI2[(w[0] >> 8) & 0xFF] ^ TMI3[w[0] & 0xFF];
+            w[1] = TMI0[w[1] >>> 24] ^ TMI1[(w[1] >> 16) & 0xFF]
+                    ^ TMI2[(w[1] >> 8) & 0xFF] ^ TMI3[w[1] & 0xFF];
+            w[2] = TMI0[w[2] >>> 24] ^ TMI1[(w[2] >> 16) & 0xFF]
+                    ^ TMI2[(w[2] >> 8) & 0xFF] ^ TMI3[w[2] & 0xFF];
+            w[3] = TMI0[w[3] >>> 24] ^ TMI1[(w[3] >> 16) & 0xFF]
+                    ^ TMI2[(w[3] >> 8) & 0xFF] ^ TMI3[w[3] & 0xFF];
             System.arraycopy(w, 0, tW, kLen - (i * len), len);
         }
         System.arraycopy(sessionK[0], kLen - len, tW, len, len);
