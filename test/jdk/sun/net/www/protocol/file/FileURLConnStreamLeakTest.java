@@ -73,6 +73,7 @@ class FileURLConnStreamLeakTest {
     @AfterEach
     void afterEach() throws Exception {
         this.conn = null;
+        // the file should already have been deleted by the test method
         Files.deleteIfExists(this.testFile);
     }
 
