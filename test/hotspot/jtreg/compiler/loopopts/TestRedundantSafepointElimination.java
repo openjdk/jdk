@@ -37,48 +37,141 @@ public class TestRedundantSafepointElimination {
         TestFramework.run();
     }
 
-    static int loopCount = 100000;
-    static int anotherInt = 1;
+    static int someInts0 = 1;
+    static int someInts1 = 2;
 
     @DontInline
     private void empty() {}
 
-    @DontInline
-    private int constInt() {
-        return 100000;
-    }
-
+    // Test for a top-level counted loop.
+    // There should be a non-call safepoint in the loop.
     @Test
-    @IR(failOn = IRNode.SAFEPOINT)
-    public void loopConst() {
-        for (int i = 0; i < 100000; i++) {
-            empty();
-        }
-    }
-
-    @Test
-    @IR(failOn = IRNode.SAFEPOINT)
-    public void loopVar() {
-        for (int i = 0; i < loopCount; i++) {
-            empty();
-        }
-    }
-
-    @Test
-    @IR(counts = {IRNode.SAFEPOINT, "1"})
-    public int loopVarWithoutCall() {
+    @IR(counts = {IRNode.SAFEPOINT, "1"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testTopLevelCountedLoop() {
         int sum = 0;
-        for (int i = 0; i < loopCount; i++) {
-            sum += anotherInt;
+        for (int i = 0; i < 100000; i++) {
+            sum += someInts0;
         }
         return sum;
     }
 
+    // Test for a top-level counted loop with a call that dominates
+    // the tail of the loop.
+    // There should be no safepoint in the loop, because the call is
+    // guaranteed to have a safepoint.
     @Test
-    @IR(failOn = IRNode.SAFEPOINT)
-    public void loopFunc() {
-        for (int i = 0; i < constInt(); i++) {
+    @IR(counts = {IRNode.SAFEPOINT, "0"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testTopLevelCountedLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100000; i++) {
             empty();
+            sum += someInts0;
+        }
+        return sum;
+    }
+
+    // Test for a top-level uncounted loop.
+    // There should be a non-call safepoint in the loop.
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "1"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testTopLevelUncountedLoop() {
+        int sum = 0;
+        for (int i = 0; i < 100000; i += someInts0) {
+            sum += someInts1;
+        }
+        return sum;
+    }
+
+    // Test for a top-level uncounted loop with a call that dominates
+    // the tail of the loop.
+    // There should be no safepoint in the loop, because the call is
+    // guaranteed to have a safepoint.
+    // Before JDK-8347499, this test would fail due to C2 exiting
+    // prematurely when encountering the local non-call safepoint.
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "0"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testTopLevelUncountedLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100000; i += someInts0) {
+            empty();
+            sum += someInts1;
+        }
+        return sum;
+    }
+
+    // Test for nested loops, where the outer loop has a call that
+    // dominates its own tail.
+    // There should be only one safepoint in the inner loop.
+    // Before JDK-8347499, this test would fail due to C2 exiting
+    // prematurely when encountering the local non-call safepoint.
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "1"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testOuterLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += someInts0) {
+            empty();
+            for (int j = 0; j < 1000; j++) {
+                sum += someInts1;
+            }
+        }
+        return sum;
+    }
+
+    // Test for nested loops, where both the outer and inner loops
+    // have a call that dominates their tails.
+    // There should be no safepoint in both loops, because calls
+    // within them are guaranteed to have a safepoint.
+    // Before JDK-8347499, this test would fail due to C2 exiting
+    // prematurely when encountering the local non-call safepoint.
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "0"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testOuterAndInnerLoopWithDomCall() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += someInts0) {
+            empty();
+            for (int j = 0; j < 1000; j++) {
+                empty();
+                sum += someInts1;
+            }
+        }
+        return sum;
+    }
+
+    // Test for nested loops, where the outer loop has a local
+    // non-call safepoint.
+    // There should be a safepoint in both loops.
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "2"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public int testOuterLoopWithLocalNonCallSafepoint() {
+        int sum = 0;
+        for (int i = 0; i < 100; i += someInts0) {
+            for (int j = 0; j < 1000; j++) {
+                sum += someInts1;
+            }
+        }
+        return sum;
+    }
+
+    // Test for nested loops, where the outer loop has no local
+    // safepoints, and it must preserve a non-local safepoint.
+    // There should be two safepoints in the loop tree.
+    @Test
+    @IR(counts = {IRNode.SAFEPOINT, "2"},
+        phase = CompilePhase.AFTER_LOOP_OPTS)
+    public void testLoopNeedsToPreserveSafepoint() {
+        int i = 0, stop;
+        while (i < 1000) {
+            stop = i + 10;
+            while (i < stop) {
+                i += 1;
+            }
         }
     }
 }
