@@ -2,9 +2,9 @@
 #define SHARE_RUNTIME_HOTCODEGROUPER_HPP
 
 #include "memory/allStatic.hpp"
+#include "runtime/nonJavaThread.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/pair.hpp"
-#include "runtime/nonJavaThread.hpp"
 
 using NMethodList = LinkedListImpl<nmethod*>;
 using NMethodListIterator = LinkedListIterator<nmethod*>;
