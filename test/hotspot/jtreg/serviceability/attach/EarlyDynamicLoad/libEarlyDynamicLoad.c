@@ -35,30 +35,17 @@
 #define PID() getpid()
 #endif // WINDOWS
 
-static void JNICALL VMStartJcmd(jvmtiEnv* jvmti, JNIEnv* env) {
-    char cmd[256];
-    snprintf(cmd, sizeof(cmd), "%s %d JVMTI.agent_load some.jar", getenv("JCMD_PATH"), PID());
-    printf("Running jcmd command: '%s'\n", cmd);
+static void JNICALL VMStartCallback(jvmtiEnv* jvmti, JNIEnv* env) {
+    const char* attach_cmd_pattern = getenv("ATTACH_CMD");
+    char attach_cmd[1024];
+    snprintf(attach_cmd, sizeof(attach_cmd), attach_cmd_pattern, PID());
+    printf("Running attach command: '%s'\n", attach_cmd);
 
-    int res = system(cmd);
+    int res = system(attach_cmd);
     if (res == -1) {
-        printf("jcmd call failed: %s\n", strerror(errno));
+        printf("Attach call failed: %s\n", strerror(errno));
     } else {
-        printf("jcmd result = %d\n", res);
-    }
-}
-
-static void JNICALL VMStartAttach(jvmtiEnv* jvmti, JNIEnv* env) {
-    char cmd[1024];
-    snprintf(cmd, sizeof(cmd), "%s -cp %s AttachAgent %d", getenv("JAVA_PATH"), getenv("CLASSPATH"),
-                                                           PID());
-    printf("Running attach command: '%s'\n", cmd);
-
-    int res = system(cmd);
-    if (res == -1) {
-        printf("attach call failed: %s\n", strerror(errno));
-    } else {
-        printf("attach result = %d\n", res);
+        printf("Attach call result = %d\n", res);
     }
 }
 
@@ -69,11 +56,7 @@ JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
     }
 
     jvmtiEventCallbacks callbacks = {0};
-    if (getenv("JCMD_PATH") != NULL) {
-        callbacks.VMStart = VMStartJcmd;
-    } else {
-        callbacks.VMStart = VMStartAttach;
-    }
+    callbacks.VMStart = VMStartCallback;
 
     (*jvmti)->SetEventCallbacks(jvmti, &callbacks, sizeof(callbacks));
     (*jvmti)->SetEventNotificationMode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_VM_START, NULL);
