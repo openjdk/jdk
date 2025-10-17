@@ -37,6 +37,7 @@ import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.ByteArrayOutputStream;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
@@ -48,7 +49,7 @@ import java.util.List;
 public class AEADBufferTest implements Cloneable {
 
     // Data type for the operation
-    enum dtype { BYTE, HEAP, DIRECT };
+    enum dtype { BYTE, HEAP, DIRECT, MEMORY_SEGMENT };
     // Data map
     static HashMap<String, List<Data>> datamap = new HashMap<>();
     // List of enum values for order of operation
@@ -60,6 +61,7 @@ public class AEADBufferTest implements Cloneable {
     static final int REMAINDER = -1;
 
     String algo;
+    Arena arena;
     boolean same = true;
     int[] sizes;
     boolean incremental = false;
@@ -153,6 +155,14 @@ public class AEADBufferTest implements Cloneable {
      *            specified, the last is a doFinal, the others are updates.
      */
     AEADBufferTest(String algo, List<dtype> ops) {
+        this(algo, ops, null);
+    }
+
+    AEADBufferTest(String algo, List<dtype> ops, Arena arena) {
+        if (arena == null && ops.contains(dtype.MEMORY_SEGMENT)) {
+            throw new RuntimeException("Arena must not be null if ops contains MEMORY_SEGMENT");
+        }
+        this.arena = arena;
         this.algo = algo;
         this.ops = ops;
         theoreticalCheck = true;
@@ -433,6 +443,21 @@ public class AEADBufferTest implements Cloneable {
                         rlen = cipher.update(b, out);
                         ba.write(out.array(), outOfs, rlen);
                     }
+                    case MEMORY_SEGMENT -> {
+                        ByteBuffer b = arena.allocate(plen + outOfs).asByteBuffer();
+                        b.position(outOfs);
+                        b.put(pt, dataoffset + inOfs, plen);
+                        b.flip();
+                        b.position(outOfs);
+                        ByteBuffer out = arena.allocate(olen).asByteBuffer();
+                        out.position(outOfs);
+                        rlen = cipher.update(b, out);
+                        byte[] o = new byte[rlen];
+                        out.flip();
+                        out.position(outOfs);
+                        out.get(o, 0, rlen);
+                        ba.write(o);
+                    }
                     case DIRECT -> {
                         ByteBuffer b = ByteBuffer.allocateDirect(plen + outOfs);
                         b.position(outOfs);
@@ -487,6 +512,23 @@ public class AEADBufferTest implements Cloneable {
                         out.position(outOfs);
                         rlen = cipher.doFinal(b, out);
                         ba.write(out.array(), outOfs, rlen);
+                    }
+                    case MEMORY_SEGMENT -> {
+                        ByteBuffer b = arena.allocate(plen+inOfs).asByteBuffer();
+                        b.limit(b.capacity());
+                        b.position(inOfs);
+                        b.put(pt, dataoffset + inOfs, plen);
+                        b.flip();
+                        b.position(inOfs);
+                        ByteBuffer out = arena.allocate(olen).asByteBuffer();
+                        out.limit(out.capacity());
+                        out.position(outOfs);
+                        rlen = cipher.doFinal(b, out);
+                        byte[] o = new byte[rlen];
+                        out.flip();
+                        out.position(outOfs);
+                        out.get(o, 0, rlen);
+                        ba.write(o);
                     }
                     case DIRECT -> {
                         ByteBuffer b = ByteBuffer.allocateDirect(plen + inOfs);
@@ -577,6 +619,12 @@ public class AEADBufferTest implements Cloneable {
                 bbin.put(data, 0, input.length + inOfs);
                 bbin.flip();
             }
+            case MEMORY_SEGMENT -> {
+                bbin = arena.allocate(data.length).asByteBuffer();
+                bbout = bbin.duplicate();
+                bbin.put(data, 0, input.length + inOfs);
+                bbin.flip();
+            }
         }
 
         // Set data limits for bytebuffers
@@ -594,7 +642,7 @@ public class AEADBufferTest implements Cloneable {
                         rlen = cipher.update(data, dataoffset + inOfs, plen,
                             data, len + outOfs);
                     }
-                    case HEAP, DIRECT -> {
+                    case HEAP, DIRECT, MEMORY_SEGMENT -> {
                         theorticallen = bbin.remaining() - (d.blockSize > 0 ?
                             bbin.remaining() % d.blockSize : 0);
                         rlen = cipher.update(bbin, bbout);
@@ -623,7 +671,7 @@ public class AEADBufferTest implements Cloneable {
                             plen, data, len + outOfs);
                         out = Arrays.copyOfRange(data, 0,len + rlen + outOfs);
                     }
-                    case HEAP, DIRECT -> {
+                    case HEAP, DIRECT, MEMORY_SEGMENT -> {
                         rlen = cipher.doFinal(bbin, bbout);
                         bbout.flip();
                         out = new byte[bbout.remaining()];
@@ -660,193 +708,252 @@ public class AEADBufferTest implements Cloneable {
 
         initTest();
 
-        // **** GCM Tests
+        try(Arena arena = Arena.ofConfined()) {
+            // **** GCM Tests
 
-        // Test single byte array
-        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
-        // Test update-doFinal with byte arrays
-        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)));
-        // Test update-update-doFinal with byte arrays
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
+            // Test single byte array
+            new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE)));
+            // Test update-doFinal with byte arrays
+            new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE)));
+            // Test update-update-doFinal with byte arrays
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
 
-        // Test single heap bytebuffer
-        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)));
-        // Test update-doFinal with heap bytebuffer
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.HEAP, dtype.HEAP)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP)));
-        // Test update-update-doFinal with heap bytebuffer
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
+            // Test single heap bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP)));
+            // Test update-doFinal with heap bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.HEAP, dtype.HEAP)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP)));
+            // Test update-update-doFinal with heap bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
 
-        // Test single direct bytebuffer
-        new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)));
-        // Test update-doFinal with direct bytebuffer
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.DIRECT)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.DIRECT)));
-        // Test update-update-doFinal with direct bytebuffer
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
-        offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
+            // Test single direct bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.DIRECT)));
+            // Test update-doFinal with direct bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.DIRECT)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.DIRECT)));
+            // Test update-update-doFinal with direct bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
 
-        // Test update-update-doFinal with byte arrays and preset data sizes
-        t = new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
-            new int[] { 1, 1, AEADBufferTest.REMAINDER});
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test single memory segment bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.MEMORY_SEGMENT), arena).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding", List.of(dtype.MEMORY_SEGMENT), arena));
+            // Test update-doFinal with direct bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena));
+            // Test update-update-doFinal with direct bytebuffer
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena).test();
+            offsetTests(new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena));
 
-        // Test update-doFinal with a byte array and a direct bytebuffer
-        t = new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
-        t.clone().test();
-        offsetTests(t.clone());
-        // Test update-doFinal with a byte array and heap and direct bytebuffer
-        t = new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test update-update-doFinal with byte arrays and preset data sizes
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
+                    new int[]{1, 1, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
 
-        // Test update-doFinal with a direct bytebuffer and a byte array.
-        t = new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test update-doFinal with a byte array and a direct bytebuffer
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
+            // Test update-doFinal with a byte array and heap and direct bytebuffer
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
+            // Test update-doFinal with a byte array and heap and direct and memory segment bytebuffer
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT, dtype.MEMORY_SEGMENT), arena).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
 
-        // Test update-doFinal with a direct bytebuffer and a byte array with
-        // preset data sizes.
-        t = new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
-            dataSegments(new int[] { 20, AEADBufferTest.REMAINDER });
-        t.clone().test();
-        offsetTests(t.clone());
-        // Test update-update-doFinal with a direct and heap bytebuffer and a
-        // byte array with preset data sizes.
-        t = new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
-            differentBufferOnly().dataSet(5).
-            dataSegments(new int[] { 5000, 1000, AEADBufferTest.REMAINDER });
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test update-doFinal with a direct bytebuffer and a byte array.
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
 
-        // Test update-update-doFinal with byte arrays, incrementing through
-        // every data size combination for the Data set 0
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
-            dataSet(0).test();
-        // Test update-update-doFinal with direct bytebuffers, incrementing through
-        // every data size combination for the Data set 0
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
-            incrementalSegments().dataSet(0).test();
+            // Test update-doFinal with a direct bytebuffer and a byte array with
+            // preset data sizes.
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
+                    dataSegments(new int[]{20, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
+            // Test update-update-doFinal with a direct and heap bytebuffer and a
+            // byte array with preset data sizes.
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
+                    differentBufferOnly().dataSet(5).
+                    dataSegments(new int[]{5000, 1000, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
+            // Test update-update-doFinal with a direct and heap and memory segment
+            // bytebuffer and a byte array with preset data sizes.
+            t = new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP, dtype.MEMORY_SEGMENT), arena).
+                    differentBufferOnly().dataSet(5).
+                    dataSegments(new int[]{5000, 1000, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
 
-        new AEADBufferTest("AES/GCM/NoPadding",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
-            dataSegments(new int[] { 49, 0, 2 }).dataSet(0).test();
+            // Test update-update-doFinal with byte arrays, incrementing through
+            // every data size combination for the Data set 0
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
+                    dataSet(0).test();
+            // Test update-update-doFinal with direct bytebuffers, incrementing through
+            // every data size combination for the Data set 0
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+                    incrementalSegments().dataSet(0).test();
 
-        // **** CC20P1305 Tests
+            new AEADBufferTest("AES/GCM/NoPadding",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+                    dataSegments(new int[]{49, 0, 2}).dataSet(0).test();
 
-        // Test single byte array
-        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE)));
-        // Test update-doFinal with byte arrays
-        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE)));
-        // Test update-update-doFinal with byte arrays
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
+            // **** CC20P1305 Tests
 
-        // Test single heap bytebuffer
-        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP)));
-        // Test update-doFinal with heap bytebuffer
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.HEAP, dtype.HEAP)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP, dtype.HEAP)));
-        // Test update-update-doFinal with heap bytebuffer
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
+            // Test single byte array
+            new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE)));
+            // Test update-doFinal with byte arrays
+            new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE)));
+            // Test update-update-doFinal with byte arrays
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)));
 
-        // Test single direct bytebuffer
-        new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.DIRECT)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.DIRECT)));
-        // Test update-doFinal with direct bytebuffer
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.DIRECT)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.DIRECT)));
-        // Test update-update-doFinal with direct bytebuffer
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
-        offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
+            // Test single heap bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP)));
+            // Test update-doFinal with heap bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.HEAP, dtype.HEAP)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP, dtype.HEAP)));
+            // Test update-update-doFinal with heap bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.HEAP, dtype.HEAP, dtype.HEAP)));
 
-        // Test update-update-doFinal with byte arrays and preset data sizes
-        t = new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
-            new int[] { 1, 1, AEADBufferTest.REMAINDER});
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test single direct bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.DIRECT)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.DIRECT)));
+            // Test update-doFinal with direct bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.DIRECT)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.DIRECT)));
+            // Test update-update-doFinal with direct bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)));
 
-        // Test update-doFinal with a byte array and a direct bytebuffer
-        t = new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
-        t.clone().test();
-        offsetTests(t.clone());
-        // Test update-doFinal with a byte array and heap and direct bytebuffer
-        t = new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test single direct bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.MEMORY_SEGMENT), arena).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305", List.of(dtype.MEMORY_SEGMENT), arena));
+            // Test update-doFinal with direct bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena));
+            // Test update-update-doFinal with direct bytebuffer
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena).test();
+            offsetTests(new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT, dtype.MEMORY_SEGMENT), arena));
 
-        // Test update-doFinal with a direct bytebuffer and a byte array.
-        t = new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test update-update-doFinal with byte arrays and preset data sizes
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).dataSegments(
+                    new int[]{1, 1, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
 
-        // Test update-doFinal with a direct bytebuffer and a byte array with
-        // preset data sizes.
-        t = new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
-            dataSegments(new int[] { 20, AEADBufferTest.REMAINDER });
-        t.clone().test();
-        offsetTests(t.clone());
-        // Test update-update-doFinal with a direct and heap bytebuffer and a
-        // byte array with preset data sizes.
-        t = new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
-            differentBufferOnly().dataSet(1).
-            dataSegments(new int[] { 5000, 1000, AEADBufferTest.REMAINDER });
-        t.clone().test();
-        offsetTests(t.clone());
+            // Test update-doFinal with a byte array and a direct bytebuffer
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.BYTE, dtype.DIRECT)).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
+            // Test update-doFinal with a byte array and heap and direct bytebuffer
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT)).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
 
-        // Test update-update-doFinal with byte arrays, incrementing through
-        // every data size combination for the Data set 0
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
-            dataSet(0).test();
-        // Test update-update-doFinal with direct bytebuffers, incrementing through
-        // every data size combination for the Data set 0
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
-            incrementalSegments().dataSet(0).test();
+            // Test update-doFinal with a byte array and heap and direct and memory segment bytebuffer
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.BYTE, dtype.HEAP, dtype.DIRECT, dtype.MEMORY_SEGMENT), arena).
+                    differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
 
-        new AEADBufferTest("ChaCha20-Poly1305",
-            List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
-            dataSegments(new int[] { 49, 0, 2 }).dataSet(0).test();
+            // Test update-doFinal with a direct bytebuffer and a byte array.
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly();
+            t.clone().test();
+            offsetTests(t.clone());
+
+            // Test update-doFinal with a direct bytebuffer and a byte array with
+            // preset data sizes.
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.BYTE)).differentBufferOnly().
+                    dataSegments(new int[]{20, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
+            // Test update-update-doFinal with a direct and heap bytebuffer and a
+            // byte array with preset data sizes.
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP)).
+                    differentBufferOnly().dataSet(1).
+                    dataSegments(new int[]{5000, 1000, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
+
+            // Test update-update-doFinal with a direct and heap and memory segment
+            // bytebuffer and a byte array with preset data sizes.
+            t = new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.BYTE, dtype.HEAP, dtype.MEMORY_SEGMENT), arena).
+                    differentBufferOnly().dataSet(1).
+                    dataSegments(new int[]{5000, 1000, AEADBufferTest.REMAINDER});
+            t.clone().test();
+            offsetTests(t.clone());
+
+            // Test update-update-doFinal with byte arrays, incrementing through
+            // every data size combination for the Data set 0
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.BYTE, dtype.BYTE, dtype.BYTE)).incrementalSegments().
+                    dataSet(0).test();
+            // Test update-update-doFinal with direct bytebuffers, incrementing through
+            // every data size combination for the Data set 0
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+                    incrementalSegments().dataSet(0).test();
+
+            new AEADBufferTest("ChaCha20-Poly1305",
+                    List.of(dtype.DIRECT, dtype.DIRECT, dtype.DIRECT)).
+                    dataSegments(new int[]{49, 0, 2}).dataSet(0).test();
+        }
     }
 
     // Test data
