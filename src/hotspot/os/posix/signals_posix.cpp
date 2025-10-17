@@ -168,9 +168,9 @@ static get_signal_t get_signal_action = nullptr;
 
 // suspend/resume support
 #if defined(__APPLE__)
-  static DeferredStatic<OSXSemaphore> sr_semaphore;
+static DeferredStatic<OSXSemaphore> sr_semaphore;
 #else
-  static DeferredStatic<PosixSemaphore> sr_semaphore;
+static DeferredStatic<PosixSemaphore> sr_semaphore;
 #endif
 
 // Signal number used to suspend/resume a thread
