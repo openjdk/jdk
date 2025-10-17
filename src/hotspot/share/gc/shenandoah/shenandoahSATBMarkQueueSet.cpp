@@ -49,25 +49,15 @@ public:
 
 class ShenandoahSATBOldMarkQueueFilterFn {
   ShenandoahHeap* const _heap;
-  size_t _filtered_young;
 
 public:
-  explicit ShenandoahSATBOldMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap), _filtered_young(0) {}
-  ~ShenandoahSATBOldMarkQueueFilterFn() {
-    if (_filtered_young > 0) {
-      log_info(gc, stats)("Filtered %zu young pointers during old mark", _filtered_young);
-    }
-  }
+  explicit ShenandoahSATBOldMarkQueueFilterFn(ShenandoahHeap* heap) : _heap(heap) {}
 
   // Return true if entry should be filtered out (removed), false if it should be retained.
   bool operator()(const void* entry) const {
     assert(_heap->is_concurrent_old_mark_in_progress(), "Should only use this when old marking is in progress");
     assert(!_heap->is_concurrent_young_mark_in_progress(), "Should only use this when young marking is not in progress");
-    if (!_heap->is_in_old(entry)) {
-      const_cast<ShenandoahSATBOldMarkQueueFilterFn*>(this)->_filtered_young++;
-      return true;
-    }
-    return !_heap->requires_marking(entry);
+    return !_heap->requires_marking(entry) || !_heap->is_in_old(entry);
   }
 };
 
