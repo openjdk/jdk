@@ -39,9 +39,11 @@ import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxLauncherMixin;
+import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class LinuxPackagingPipeline {
@@ -51,7 +53,7 @@ final class LinuxPackagingPipeline {
         LAUNCHER_ICONS
     }
 
-    static PackagingPipeline.Builder build() {
+    static PackagingPipeline.Builder build(Optional<LinuxPackage> pkg) {
         var builder = PackagingPipeline.buildStandard()
                 .task(LinuxAppImageTaskID.LAUNCHER_LIB)
                         .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
@@ -59,6 +61,10 @@ final class LinuxPackagingPipeline {
                 .task(LinuxAppImageTaskID.LAUNCHER_ICONS)
                         .addDependent(BuildApplicationTaskID.CONTENT)
                         .applicationAction(LinuxPackagingPipeline::writeLauncherIcons).add();
+
+        pkg.ifPresent(_ -> {
+            builder.task(LinuxAppImageTaskID.LAUNCHER_ICONS).noaction().add();
+        });
 
         return builder;
     }
@@ -87,7 +93,7 @@ final class LinuxPackagingPipeline {
     private static void writeLauncherIcons(
             AppImageBuildEnv<Application, ApplicationLayout> env) throws IOException {
 
-        for (var launcher : env.app().launchers()) {
+        env.app().launchers().stream().filter(Launcher::hasCustomIcon).forEach(launcher -> {
             createLauncherIconResource(launcher, env.env()::createResource).ifPresent(iconResource -> {
                 String iconFileName = launcher.executableName() + ".png";
                 Path iconTarget = env.resolvedLayout().desktopIntegrationDirectory().resolve(iconFileName);
@@ -97,7 +103,7 @@ final class LinuxPackagingPipeline {
                     throw new UncheckedIOException(ex);
                 }
             });
-        }
+        });
     }
 
     static final LinuxApplicationLayout APPLICATION_LAYOUT = LinuxApplicationLayout.create(
