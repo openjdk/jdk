@@ -198,7 +198,7 @@ public final class AdditionalLauncher {
         }
     }
 
-    static PropertyFile getAdditionalLauncherProperties(
+    public static PropertyFile getAdditionalLauncherProperties(
             JPackageCommand cmd, String launcherName) {
         PropertyFile shell[] = new PropertyFile[1];
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
