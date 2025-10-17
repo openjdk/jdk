@@ -704,7 +704,7 @@ The following commands are available:
     Impact: Low
 
 `Thread.dump_to_file` \[*options*\] *filepath*
-:   Dump threads (including virtual), with stack traces, to a file in plain text or JSON format.
+:   Dump all threads, with stack traces, to a file in plain text or JSON format.
 
     Impact: Medium: Depends on the number of threads.
 
@@ -723,8 +723,8 @@ The following commands are available:
     -   *filepath*:  The file path to the output file.  If %p is specified in the filename, it is expanded to the JVM's PID.  (FILE, no default value)
 
 `Thread.print` \[*options*\]
-:   Print all platform threads with stacktraces. Use Thread.dump_to_file command
-    for extended threads detail including virtual thread information.
+:   Print all platform threads, and mounted virtual threads, with stack traces.
+    The Thread.dump_to_file command will print all threads to a file.
 
     Impact: Medium --- depends on the number of threads.
 
