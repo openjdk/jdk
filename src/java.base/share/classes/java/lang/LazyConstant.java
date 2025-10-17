@@ -151,14 +151,15 @@ import java.util.function.Supplier;
  * lazy constant may block indefinitely; no timeouts or cancellations are provided.
  *
  * <h2 id="performance">Performance</h2>
- * The contents of lazy constant can never change after it has been initialized. Therefore,
- * a JVM implementation may, for an initialized lazy constant, elide all future reads of
- * that lazy constant's contents and instead use the contents that has been previously
- * observed. We call this optimization <em>constant folding</em>. This is only possible
- * if the reference to the lazy constant in a {@code static final} field or forms
- * a trusted chain to such a field via one or more trusted fields (i.e., any
- * combination of {@code static final} fields, {@linkplain Record record} fields,
- * lazy constants, lazy lists, lazy maps, or final instance fields in hidden classes).
+ * The contents of a lazy constant can never change after the lazy constant has been
+ * initialized. Therefore, a JVM implementation may, for an initialized lazy constant,
+ * elide all future reads of that lazy constant's contents and instead use the contents
+ * that has been previously observed. We call this optimization <em>constant folding</em>.
+ * This is only possible if there is a direct reference from a {@code static final} field
+ * to a lazy constant or if there is a chain from a {@code static final} field -- via one
+ * or more <em>trusted fields</em> (i.e., {@code static final} fields,
+ * {@linkplain Record record} fields, lazy constants, lazy lists, lazy maps,
+ * or final instance fields in hidden classes) -- to a lazy constant.
  *
  * <h2 id="miscellaneous">Miscellaneous</h2>
  * Except for {@linkplain Object#equals(Object) equals(obj)} and
@@ -171,8 +172,8 @@ import java.util.function.Supplier;
  *          it contents. Hence, a lazy constant will hold its contents until
  *          the lazy constant itself is collected (if ever).
  *          <p>
- *          A lazy constant whose contents is an array will not optimize access to
- *          the elements of such array. Instead, a
+ *          While it's possible to store an array inside a lazy constant, doing so will
+ *          not result in improved access performance of the array elements. Instead, a
  *          {@linkplain List#ofLazy(int, IntFunction) lazy list} of arbitrary depth can
  *          be used, which provides constant components.
  *          <p>
@@ -286,7 +287,7 @@ public sealed interface LazyConstant<T>
      * directly.
      *
      * @param computingFunction in the form of a {@linkplain Supplier} to be used
-     *                          to compute the constant
+     *                          to initialize the constant
      * @param <T>               type of the constant
      *
      */

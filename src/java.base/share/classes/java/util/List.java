@@ -1232,7 +1232,7 @@ public interface List<E> extends SequencedCollection<E> {
      * {@linkplain Object#hashCode() hashCode()} methods may trigger initialization of one
      * or more lazy elements. The returned list's {@linkplain Object#toString() toString()}
      * method never triggers initialization of elements. Instead, an
-     * implementation-dependant string is returned for uninitialized elements.
+     * implementation-dependent string is returned for uninitialized elements.
      * <p>
      * The returned lazy list strongly references its computing
      * function used to compute elements only so long as there are uncomputed elements
