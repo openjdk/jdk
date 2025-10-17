@@ -56,6 +56,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.stream.XMLStreamWriter;
+import jdk.jpackage.internal.util.IdentityWrapper;
 
 public final class ObjectMapper {
 
@@ -189,7 +190,7 @@ public final class ObjectMapper {
         if (v instanceof IdentityWrapper wrapper) {
             return wrapper;
         } else {
-            return new IdentityWrapper(v);
+            return new IdentityWrapper<Object>(v);
         }
     }
 
@@ -600,38 +601,6 @@ public final class ObjectMapper {
         private final Map<Method, Function<?, Object>> substitutes = new HashMap<>();
         private final Map<Class<?>, BiConsumer<Object, Map<String, Object>>> mutators = new HashMap<>();
         private final Set<String> accessPackageMethods = new HashSet<>();
-    }
-
-
-    private static final class IdentityWrapper {
-
-        private IdentityWrapper(Object value) {
-            this.value = Objects.requireNonNull(value);
-        }
-
-        @Override
-        public int hashCode() {
-            return System.identityHashCode(value);
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj) {
-                return true;
-            }
-            if ((obj == null) || (getClass() != obj.getClass())) {
-                return false;
-            }
-            IdentityWrapper other = (IdentityWrapper) obj;
-            return value == other.value;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("Identity[%s]", value);
-        }
-
-        private final Object value;
     }
 
 
