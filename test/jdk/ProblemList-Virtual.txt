@@ -30,8 +30,6 @@ com/sun/jdi/EATests.java#id0                                    8264699 generic-
 com/sun/jdi/ExceptionEvents.java 8278470 generic-all
 com/sun/jdi/RedefineCrossStart.java 8278470 generic-all
 
-javax/management/remote/mandatory/loading/MissingClassTest.java 8145413 windows-x64
-
 java/lang/ScopedValue/StressStackOverflow.java#default 8309646 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#no-TieredCompilation 8309646 generic-all
 java/lang/ScopedValue/StressStackOverflow.java#TieredStopAtLevel1 8309646 generic-all
