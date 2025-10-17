@@ -43,7 +43,7 @@ public:
 private:
   bool _locked;
 public:
-  ChunkPoolLocker(LockStrategy ls = Lock);
+  ChunkPoolLocker(LockStrategy ls = LockStrategy::Lock);
   ~ChunkPoolLocker();
 };
 

@@ -46,7 +46,6 @@ void Arena::initialize_chunk_pool() {
 }
 
 ChunkPoolLocker::ChunkPoolLocker(LockStrategy ls) {
-  assert(GlobalChunkPoolMutex != nullptr, "must be initialized");
   if (ls == LockStrategy::Lock) {
     GlobalChunkPoolMutex->lock();
     _locked = true;
