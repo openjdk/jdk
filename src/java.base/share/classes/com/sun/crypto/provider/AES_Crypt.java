@@ -44,6 +44,8 @@ final class AES_Crypt extends SymmetricCipher {
 
     // Number of words in a block
     private static final int WB = 4;
+    // Number of bytes in a word
+    private static final int BW = 4;
 
     private static final int AES_128_ROUNDS = 10;
     private static final int AES_192_ROUNDS = 12;
@@ -131,6 +133,7 @@ final class AES_Crypt extends SymmetricCipher {
               (byte)0x16 }
     };
 
+    // Lookup table for row 0 transforms, see section 5.2.1 of original spec.
     private static final int[] T0 = {
             0xC66363A5, 0xF87C7C84, 0xEE777799, 0xF67B7B8D, 0xFFF2F20D,
             0xD66B6BBD, 0xDE6F6FB1, 0x91C5C554, 0x60303050, 0x02010103,
@@ -186,6 +189,7 @@ final class AES_Crypt extends SymmetricCipher {
             0x2C16163A,
     };
 
+    // Lookup table for row 1 transforms, see section 5.2.1 of original spec.
     private static final int[] T1 = {
             0xA5C66363, 0x84F87C7C, 0x99EE7777, 0x8DF67B7B, 0x0DFFF2F2,
             0xBDD66B6B, 0xB1DE6F6F, 0x5491C5C5, 0x50603030, 0x03020101,
@@ -241,6 +245,7 @@ final class AES_Crypt extends SymmetricCipher {
             0x3A2C1616,
     };
 
+    // Lookup table for row 2 transforms, see section 5.2.1 of original spec.
     private static final int[] T2 = {
             0x63A5C663, 0x7C84F87C, 0x7799EE77, 0x7B8DF67B, 0xF20DFFF2,
             0x6BBDD66B, 0x6FB1DE6F, 0xC55491C5, 0x30506030, 0x01030201,
@@ -296,6 +301,7 @@ final class AES_Crypt extends SymmetricCipher {
             0x163A2C16,
     };
 
+    // Lookup table for row 3 transforms, see section 5.2.1 of original spec.
     private static final int[] T3 = {
             0x6363A5C6, 0x7C7C84F8, 0x777799EE, 0x7B7B8DF6, 0xF2F20DFF,
             0x6B6BBDD6, 0x6F6FB1DE, 0xC5C55491, 0x30305060, 0x01010302,
@@ -351,6 +357,8 @@ final class AES_Crypt extends SymmetricCipher {
             0x16163A2C,
     };
 
+    // Lookup table for row 0 inverse transforms, see section 5.2.1 of original
+    // spec.
     private static final int[] TI0 = {
             0x51F4A750, 0x7E416553, 0x1A17A4C3, 0x3A275E96, 0x3BAB6BCB,
             0x1F9D45F1, 0xACFA58AB, 0x4BE30393, 0x2030FA55, 0xAD766DF6,
@@ -406,6 +414,8 @@ final class AES_Crypt extends SymmetricCipher {
             0xD0B85742,
     };
 
+    // Lookup table for row 1 inverse transforms, see section 5.2.1 of original
+    // spec.
     private static final int[] TI1 = {
             0x5051F4A7, 0x537E4165, 0xC31A17A4, 0x963A275E, 0xCB3BAB6B,
             0xF11F9D45, 0xABACFA58, 0x934BE303, 0x552030FA, 0xF6AD766D,
@@ -461,6 +471,8 @@ final class AES_Crypt extends SymmetricCipher {
             0x42D0B857,
     };
 
+    // Lookup table for row 2 inverse transforms, see section 5.2.1 of original
+    // spec.
     private static final int[] TI2 = {
             0xA75051F4, 0x65537E41, 0xA4C31A17, 0x5E963A27, 0x6BCB3BAB,
             0x45F11F9D, 0x58ABACFA, 0x03934BE3, 0xFA552030, 0x6DF6AD76,
@@ -516,6 +528,8 @@ final class AES_Crypt extends SymmetricCipher {
             0x5742D0B8,
     };
 
+    // Lookup table for row 3 inverse transforms, see section 5.2.1 of original
+    // spec.
     private static final int[] TI3 = {
             0xF4A75051, 0x4165537E, 0x17A4C31A, 0x275E963A, 0xAB6BCB3B,
             0x9D45F11F, 0xFA58ABAC, 0xE303934B, 0x30FA5520, 0x766DF6AD,
@@ -571,6 +585,8 @@ final class AES_Crypt extends SymmetricCipher {
             0xB85742D0,
     };
 
+    // Lookup table for inverse substitution transform of last round as
+    // described in the international journal article referenced.
     private static final int[] TI4 = {
             0x52525252, 0x09090909, 0x6A6A6A6A, 0xD5D5D5D5, 0x30303030,
             0x36363636, 0xA5A5A5A5, 0x38383838, 0xBFBFBFBF, 0x40404040,
@@ -626,6 +642,7 @@ final class AES_Crypt extends SymmetricCipher {
             0x7D7D7D7D,
     };
 
+    // Lookup table for row 0 of the inverse mix column transform.
     private static final int[] TMI0 = {
             0x00000000, 0x0E090D0B, 0x1C121A16, 0x121B171D, 0x3824342C,
             0x362D3927, 0x24362E3A, 0x2A3F2331, 0x70486858, 0x7E416553,
@@ -681,6 +698,7 @@ final class AES_Crypt extends SymmetricCipher {
             0x8D4697A3,
     };
 
+    // Lookup table for row 1 of the inverse mix column transform.
     private static final int[] TMI1 = {
             0x00000000, 0x0B0E090D, 0x161C121A, 0x1D121B17, 0x2C382434,
             0x27362D39, 0x3A24362E, 0x312A3F23, 0x58704868, 0x537E4165,
@@ -736,6 +754,7 @@ final class AES_Crypt extends SymmetricCipher {
             0xA38D4697,
     };
 
+    // Lookup table for row 2 of the inverse mix column transform.
     private static final int[] TMI2 = {
             0x00000000, 0x0D0B0E09, 0x1A161C12, 0x171D121B, 0x342C3824,
             0x3927362D, 0x2E3A2436, 0x23312A3F, 0x68587048, 0x65537E41,
@@ -791,6 +810,7 @@ final class AES_Crypt extends SymmetricCipher {
             0x97A38D46,
     };
 
+    // Lookup table for row 3 of the inverse mix column transform.
     private static final int[] TMI3 = {
             0x00000000, 0x090D0B0E, 0x121A161C, 0x1B171D12, 0x24342C38,
             0x2D392736, 0x362E3A24, 0x3F23312A, 0x48685870, 0x4165537E,
@@ -927,9 +947,9 @@ final class AES_Crypt extends SymmetricCipher {
     private static int[] genRoundKeys(byte[] key, int rounds) {
         int wLen = WB * (rounds + 1);
         int[] w = new int[wLen];
-        int nk = key.length / WB;
+        int nk = key.length / BW;
 
-        for (int i = 0, j = 0; i < nk; i++, j += WB) {
+        for (int i = 0, j = 0; i < nk; i++, j += BW) {
             w[i] = ((key[j] & 0xFF) << 24) | ((key[j + 1] & 0xFF) << 16)
                     | ((key[j + 2] & 0xFF) << 8) | (key[j + 3] & 0xFF);
         }
