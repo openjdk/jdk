@@ -58,7 +58,7 @@ public class RenderableImageOp implements RenderableImage {
 
 
     /**
-     * Constructs a RenderedImageOp given a
+     * Constructs a {@code RenderableImageOp} given a
      * ContextualRenderedImageFactory object, and
      * a ParameterBlock containing RenderableImage sources and other
      * parameters.  Any RenderedImage sources referenced by the
