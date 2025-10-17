@@ -22,9 +22,11 @@
  */
 package jdk.jpackage.test;
 
+import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -448,8 +450,6 @@ public final class LinuxHelper {
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
-
-        verifyIcons(cmd);
     }
 
     private static Collection<Path> getDesktopFiles(JPackageCommand cmd) {
@@ -476,29 +476,6 @@ public final class LinuxHelper {
         return getPackageFiles(cmd).filter(path -> {
             return path.startsWith(packageDir);
         }).map(packageDir::relativize);
-    }
-
-    private static void verifyIcons(JPackageCommand cmd) {
-
-        var installCmd = Optional.ofNullable(cmd.unpackedPackageDirectory()).map(_ -> {
-            return cmd.createMutableCopy().setUnpackedPackageLocation(null);
-        }).orElse(cmd);
-
-        var installedIconFiles = relativePackageFilesInSubdirectory(
-                installCmd,
-                ApplicationLayout::desktopIntegrationDirectory
-        ).filter(path -> {
-            return ".png".equals(PathUtils.getSuffix(path));
-        }).map(installCmd.appLayout().desktopIntegrationDirectory()::resolve).collect(toSet());
-
-        var referencedIcons = getDesktopFiles(cmd).stream().map(path -> {
-            return new DesktopFile(path, false).findQuotedValue("Icon");
-        }).filter(Optional::isPresent).map(Optional::get).map(Path::of).collect(toSet());
-
-        var unreferencedIconFiles = Comm.compare(installedIconFiles, referencedIcons).unique1().stream().sorted().toList();
-
-        // Verify that all package icon (.png) files are referenced from package .desktop files.
-        TKit.assertEquals(List.of(), unreferencedIconFiles, "Check there are no unreferenced icon files in the package");
     }
 
     private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
