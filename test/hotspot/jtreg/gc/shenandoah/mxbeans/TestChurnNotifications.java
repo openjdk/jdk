@@ -112,8 +112,10 @@ import com.sun.management.GarbageCollectionNotificationInfo;
 
 public class TestChurnNotifications {
 
-    static final long HEAP_MB = 128;                           // adjust for test configuration above
-    static final long TARGET_MB = Long.getLong("target", 2_000); // 2 Gb allocation
+    static final long HEAP_MB = 128;                                      // adjust for test configuration above
+    static final long TARGET_MB = Long.getLong("target", 2_000);          // 2 Gb allocation
+    static final long ANTICIPATED_HUMONGOUS_WASTE_PER_ARRAY = 124_272;
+
 
     // Should we track the churn precisely?
     // Precise tracking is only reliable when GC is fully stop-the-world. Otherwise,
@@ -159,7 +161,7 @@ public class TestChurnNotifications {
         final int size = 100_000;
         long count = TARGET_MB * 1024 * 1024 / (16 + 4 * size);
 
-        long mem = count * (16 + 4 * size);
+        long mem = count * (16 + 4 * size + ANTICIPATED_HUMONGOUS_WASTE_PER_ARRAY);
 
         for (int c = 0; c < count; c++) {
             sink = new int[size];
