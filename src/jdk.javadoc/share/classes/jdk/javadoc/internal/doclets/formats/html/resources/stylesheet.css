@@ -1901,6 +1901,11 @@ table.striped > tbody > tr > th {
     .ui-autocomplete .search-result-desc {
         display: block;
     }
+    .top-nav nav.toc .toc-sort-toggle {
+        background: transparent;
+        border: 0;
+        margin-left: 4px;
+    }
 }
 @media screen and (max-width: 800px) {
     .about-language {

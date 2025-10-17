@@ -663,7 +663,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
         sectionLinks.forEach(function(link) {
             const href = link.getAttribute("href");
             if (href === "#constructor-detail" || href === "#method-detail"
-                || href === "#field-detail") {
+                || href === "#field-detail" || href === "#annotation-interface-element-detail"
+                || href === "#enum-constant-detail" || href === "#property-detail") {
                 const memberList = link.nextElementSibling;
                 if (memberList && memberList.tagName === 'OL') {
                     listsToSort.push(memberList);
@@ -707,11 +708,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
     function snapshotAllOnce() {
         if (snapshotted) return;
         allTocNavs().forEach(snapshotTocOnce);
-        document.querySelectorAll("main ul.member-list, main div.member-details, main section.member-details")
-            .forEach(function(container) {
-                if (!origContainerOrder.has(container))
-                    origContainerOrder.set(container, Array.from(container.children));
-            });
         snapshotted = true;
     }
 
@@ -727,20 +723,15 @@ document.addEventListener("DOMContentLoaded", function(e) {
         if (!sidebarNav || !mainRoot) return;
 
         var containers = Array.from(
-            mainRoot.querySelectorAll("section[id$='-detail'], section[id$='-details'], section.member-details, div.member-details, ul.member-list")
+            mainRoot.querySelectorAll("ul.member-list")
         );
 
         containers.forEach(function(container) {
-            var scope = container.matches("ul.member-list, .member-details") ?
-                            container :
-                            (container.querySelector("ul.member-list, .member-details") || container);
-            if (!scope) return;
-
             var links = Array.from(sidebarNav.querySelectorAll("a[href^='#']")).filter(function(a) {
                 var id = a.getAttribute("href").slice(1);
                 if (!id) return false;
                 var target = document.getElementById(decodeURI(id));
-                return target && scope.contains(target);
+                return target && container.contains(target);
             });
             if (links.length < 2) return;
 
@@ -749,23 +740,19 @@ document.addEventListener("DOMContentLoaded", function(e) {
                 var target = document.getElementById(decodeURI(id));
                 if (!target) return null;
                 var block = target.closest("section.detail, div.detail") || target;
-                var li = block.closest("li") || block;
-                var host = li.parentElement;
-                if (!host) return null;
+                var li = block.closest("li");
+                if (li.parentElement !== container) return null;
                 return {
-                    host: host,
                     node: li,
                     text: (a.textContent || "").trim()
                 };
             }).filter(Boolean);
 
             if (items.length < 2) return;
-            var host = items[0].host;
-            if (!items.every(function(it) {
-                    return it.host === host;
-                })) return;
 
-            if (!origContainerOrder.has(host)) origContainerOrder.set(host, Array.from(host.children));
+            if (!origContainerOrder.has(container)) {
+                origContainerOrder.set(container, Array.from(container.children));
+            }
 
             items.slice()
                 .sort(function(x, y) {
@@ -775,7 +762,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
                     });
                 })
                 .forEach(function(it) {
-                    host.appendChild(it.node);
+                    container.appendChild(it.node);
                 });
         });
     }
@@ -805,7 +792,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
         snapshotAllOnce();
         reorderMemberDetailsAlpha();
         allTocNavs().forEach(sortTocAlpha);
-        initSectionData(); prevHash = null; handleScroll();
+        initSectionData(); handleScroll();
         updateToggleButtons(TOC_ALPHA);
         tocOrder = TOC_ALPHA;
     }
@@ -814,16 +801,16 @@ document.addEventListener("DOMContentLoaded", function(e) {
         snapshotAllOnce();
         restoreAllMemberContainers();
         allTocNavs().forEach(restoreToc);
-        initSectionData(); prevHash = null; handleScroll();
+        initSectionData(); handleScroll();
         updateToggleButtons(TOC_SOURCE);
         tocOrder = TOC_SOURCE;
     }
 
-    document.addEventListener("click", function(ev){
-        var btn = ev.target && ev.target.closest && ev.target.closest(".toc-sort-toggle");
-        if (!btn) return;
-        if (tocOrder === TOC_SOURCE) applyAlpha(); else applySource();
-        try { btn.blur(); } catch(_) {}
+    document.querySelectorAll(".toc-sort-toggle").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+          if (tocOrder === TOC_SOURCE) applyAlpha(); else applySource();
+          if (typeof btn.blur === "function") btn.blur();
+      });
     });
 
     // Resize handler
