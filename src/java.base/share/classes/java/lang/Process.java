@@ -177,7 +177,7 @@ public abstract class Process implements Closeable {
     public Process() {}
 
     /**
-     * Close all writer and reader streams immediately and wait for the process to terminate.
+     * Close all reader and writer streams and wait for the process to terminate.
      * This method is idempotent, if this {@code Process} has already been closed
      * invoking this method has no effect.
      * <p>
@@ -191,14 +191,14 @@ public abstract class Process implements Closeable {
      * Streams should be closed when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
      * If an {@code IOException} occurs when closing a stream it is thrown
-     * when this method returns. Additional {@code IOExceptions}
+     * after the process has terminated. Additional {@code IOExceptions}
      * thrown by closing the remaining streams, if any, are added to the first
      * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
      * After the streams are closed this method {@linkplain #waitFor() waits for} the
      * process to terminate. If interrupted while {@linkplain #waitFor waiting for termination}
-     * the process is {@linkplain #destroyForcibly() forcibly destroyed} and continues to wait
-     * for the process to terminate.
+     * the process is {@linkplain #destroyForcibly() forcibly destroyed} and
+     * this method continues to wait for the process to terminate.
      * The interrupt status is re-asserted before this method returns and
      * any {@code IOExceptions} are thrown.
      * <p>
@@ -229,9 +229,9 @@ public abstract class Process implements Closeable {
             // Wait for the process to terminate
             // If waitFor is interrupted, destroy the process
             // Continue waiting indefinitely for the process to terminate
-            if (waitForInterrupted()) {
+            if (!tryWait()) {
                 destroyForcibly();
-                while (waitForInterrupted()) {
+                while (!tryWait()) {
                     continue;
                 }
                 // Re-assert the interrupt
@@ -243,13 +243,14 @@ public abstract class Process implements Closeable {
         }
     }
 
-    // Wait for the process to terminate, return true if the wait is interrupted.
-    private boolean waitForInterrupted() {
+    // Try to wait for the process to terminate.
+    // Return true if the process has terminated, false if wait is interrupted.
+    private boolean tryWait() {
         try {
             waitFor();
-            return false;
-        } catch (InterruptedException ie) {
             return true;
+        } catch (InterruptedException ie) {
+            return false;
         }
     }
 

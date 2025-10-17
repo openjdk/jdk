@@ -56,27 +56,14 @@ import java.util.stream.Stream;
 /*
  * @test
  * @bug 8364361
- * @modules java.base/java.io:+open
  * @summary Tests for Process.close
- * @run junit/othervm -DDEBUG=true jdk.java.lang.Process.ProcessCloseTest
+ * @modules java.base/java.io:+open
+ * @run junit jdk.java.lang.Process.ProcessCloseTest
  */
-
 public class ProcessCloseTest {
 
     private final static boolean OS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
     private static List<String> JAVA_ARGS;
-    private static final boolean DEBUG = Boolean.getBoolean("DEBUG");
-    private final static ScopedValue<Appendable> OUT = ScopedValue.newInstance();
-    private final static ScopedValue.Carrier LOG = setupLog();
-
-    private static ScopedValue.Carrier setupLog() {
-        if (DEBUG) {
-            return ScopedValue.where(OUT, System.err);
-        } else {
-            return ScopedValue.where(OUT, new StringBuffer());
-        }
-    }
-
 
     private static List<String> setupJavaEXE() {
         String JAVA_HOME = System.getProperty("test.jdk");
@@ -97,15 +84,6 @@ public class ProcessCloseTest {
             args.add(arg.toString());
         }
         return args;
-    }
-
-    private static void logPrintf(String format, Object... args) {
-        try {
-            var log = LOG.get(OUT);
-            log.append(format.formatted(args));
-        } catch (IOException ioe) {
-            throw new UncheckedIOException(ioe);
-        }
     }
 
     /**
@@ -190,7 +168,7 @@ public class ProcessCloseTest {
     // Utility to process each command on the process
     private static void doCommands(Process proc, List<Consumer<Process>> commands) {
         commands.forEach(c -> {
-            logPrintf("    %s\n", c);
+            Log.printf("    %s\n", c);
             c.accept(proc);
         });
     }
@@ -199,15 +177,15 @@ public class ProcessCloseTest {
     @MethodSource("singleThreadTestCases")
     void simple(List<String> args, List<Consumer<Process>> commands,
                 List<Consumer<Process>> postCommands) throws IOException {
-        var log = LOG.get(OUT);
+        var log = Log.get();
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
             Process p = pb.start(); // Buffer any debug output
-            logPrintf("Program: %s; pid: %d\n", args, p.pid());
+            Log.printf("Program: %s; pid: %d\n", args, p.pid());
             doCommands(p, commands);
             p.close();
             doCommands(p, postCommands);
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             System.err.print(log);
             throw ex;
         }
@@ -217,19 +195,19 @@ public class ProcessCloseTest {
     @MethodSource("singleThreadTestCases")
     void autoCloseable(List<String> args, List<Consumer<Process>> commands,
                        List<Consumer<Process>> postCommands) {
-        var log = LOG.get(OUT);
+        var log = Log.get();
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
             Process proc = null;
             try (Process p = pb.start()) {
                 proc = p;
-                logPrintf("Program: %s; pid: %d\n", args, p.pid());
+                Log.printf("Program: %s; pid: %d\n", args, p.pid());
                 doCommands(p, commands);
             } catch (IOException ioe) {
                 Assertions.fail(ioe);
             }
             doCommands(proc, postCommands);
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             System.err.println(log);
             throw ex;
         }
@@ -245,7 +223,7 @@ public class ProcessCloseTest {
     @MethodSource("singleThreadTestCases")
     void autoCloseableAll(List<String> args, List<Consumer<Process>> commands,
                           List<Consumer<Process>> postCommands) {
-        var log = LOG.get(OUT);
+        var log = Log.get();
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
             Process proc = null;
@@ -253,20 +231,21 @@ public class ProcessCloseTest {
                  var in = p.getInputStream();
                  var err = p.getErrorStream()) {
                 proc = p;
-                logPrintf("Program: %s; pid: %d\n", args, p.pid());
+                Log.printf("Program: %s; pid: %d\n", args, p.pid());
                 doCommands(p, commands);
             } catch (IOException ioe) {
                 Assertions.fail(ioe);
             }
             doCommands(proc, postCommands);
-        }  catch (Exception ex) {
+        }  catch (Throwable ex) {
             System.err.println(log);
             throw ex;
         }
     }
 
-
-    // ExitStatus named values and assertions
+    /**
+     * ExitStatus named values and assertions
+     */
     enum ExitStatus implements Consumer<Process> {
         NORMAL(0),
             FAIL(1),
@@ -287,7 +266,7 @@ public class ProcessCloseTest {
                 Instant begin = Instant.now();
                 final int exitStatus = p.waitFor();
                 Duration latency = begin.until(Instant.now());
-                logPrintf("    ExitStatus: %d, sig#: %d, waitFor latency: %s%n",
+                Log.printf("    ExitStatus: %d, sig#: %d, waitFor latency: %s%n",
                         exitStatus, exitStatus & 0x7f, latency);
                 assertEquals(exitStatus);
             } catch (InterruptedException ie) {
@@ -304,13 +283,14 @@ public class ProcessCloseTest {
             }
             if (this == RACY) {
                 // Not an error but report the actual status
-                logPrintf("Racy exit status: %d\n", actual);
+                Log.printf("Racy exit status: %d\n", actual);
             } else {
                 Assertions.fail("Status: " + actual + ", sig#: " + (actual & 0x7f) +
                         ", expected one of: " + Arrays.toString(allowedStatus));
             }
         }
     }
+
     /**
      * Commands on a Process that can be sequenced in the parent.
      * See ChildCommands for commands that can be sent to the child process.
@@ -348,8 +328,8 @@ public class ProcessCloseTest {
             try {
                 var lines = p.inputReader().readAllLines();
                 Assertions.assertNotEquals(0, lines.size(), "stdout should not be empty");
-                logPrintf("        %d lines\n", lines.size());
-                logPrintf("%s%n", lines.toString().indent(8));
+                Log.printf("        %d lines\n", lines.size());
+                Log.printf("%s%n", lines.toString().indent(8));
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -359,8 +339,8 @@ public class ProcessCloseTest {
             try {
                 var lines = p.errorReader().readAllLines();
                 Assertions.assertNotEquals(0, lines.size(), "stderr should not be empty");
-                logPrintf("        %d lines\n", lines.size());
-                logPrintf("%s%n", lines.toString().indent(8));
+                Log.printf("        %d lines\n", lines.size());
+                Log.printf("%s%n", lines.toString().indent(8));
             } catch (IOException ioe) {
                 throw new UncheckedIOException(ioe);
             }
@@ -499,7 +479,7 @@ public class ProcessCloseTest {
         public void run() {
             if (process.isAlive()) {
                 count++;
-                logPrintf("Interrupting thread, count: %d%n", count);
+                Log.printf("Interrupting thread, count: %d%n", count);
                 targetThread.interrupt();
             } else {
                 throw new RuntimeException("process not alive");
@@ -610,14 +590,14 @@ public class ProcessCloseTest {
     @MethodSource("closeExceptions")
     void testStreamsCloseThrowing(List<String> args, List<Consumer<Process>> commands,
                                   List<Consumer<Process>> postCommands, List<String> expectedMessages) {
-        var log = LOG.get(OUT);
+        var log = Log.get();
         try {
             ProcessBuilder pb = new ProcessBuilder(args);
             Process proc = null;
             IOException expectedIOE = null;
             try (Process p = pb.start()) {
                 proc = p;
-                logPrintf("Program: %s; pid: %d\n",args, p.pid());
+                Log.printf("Program: %s; pid: %d\n",args, p.pid());
                 doCommands(p, commands);
             } catch (IOException ioe) {
                 expectedIOE = ioe;
@@ -707,23 +687,23 @@ public class ProcessCloseTest {
             Field fdHandleField = FileDescriptor.class.getDeclaredField("handle");
             fdHandleField.setAccessible(true);
             final long handle = (long) fdHandleField.get(fileDescriptor);
-            logPrintf("FileDescriptor.handle: %08x%n", handle);
+            Log.printf("FileDescriptor.handle: %08x%n", handle);
             // Close the known handle
             // And restore the handle so normal close() will throw an exception
             fdCloseMethod.invoke(fileDescriptor);
             fdHandleField.set(fileDescriptor, handle);
-            logPrintf("FileDescriptor.handle to close again and fail: %08x%n", handle);
+            Log.printf("FileDescriptor.handle to close again and fail: %08x%n", handle);
         } else {
             // Linux
             Field fdFdField = FileDescriptor.class.getDeclaredField("fd");
             fdFdField.setAccessible(true);
             final int fd = (int) fdFdField.get(fileDescriptor);
-            logPrintf("FileDescriptor.fd: %08x%n", fd);
+            Log.printf("FileDescriptor.fd: %08x%n", fd);
             // Close the known fd
             // And restore the fd so normal close() will throw an exception
             fdCloseMethod.invoke(fileDescriptor);
             fdFdField.set(fileDescriptor, fd);
-            logPrintf("FileDescriptor.fd to close again and fail: %08x%n", fd);
+            Log.printf("FileDescriptor.fd to close again and fail: %08x%n", fd);
         }
     }
 
@@ -762,4 +742,41 @@ public class ProcessCloseTest {
         commands.forEach(c -> c.command.run());
     }
 
+    /**
+     * Log of output produced on a thread during a test.
+     * Normally, the output is buffered and only output to stderr if the test fails.
+     * Set -DDEBUG=true to send all output to stderr as it occurs.
+     */
+    private static class Log {
+
+        private static final boolean DEBUG = Boolean.getBoolean("DEBUG");
+        private final static ScopedValue<Appendable> OUT = ScopedValue.newInstance();
+        private final static ScopedValue.Carrier LOG = setupLog();
+
+        private static ScopedValue.Carrier setupLog() {
+            if (DEBUG) {
+                return ScopedValue.where(OUT, System.err);
+            } else {
+                return ScopedValue.where(OUT, new StringBuffer());
+            }
+        }
+
+        // Return the log for this thread and clear the buffer.
+        private static Appendable get() {
+            var log = LOG.get(OUT);
+            if (log instanceof StringBuffer sb)
+                sb.setLength(0);
+            return log;
+        }
+
+        // Printf to the log for this thread.
+        private static void printf(String format, Object... args) {
+            try {
+                var log = LOG.get(OUT);
+                log.append(format.formatted(args));
+            } catch (IOException ioe) {
+                throw new UncheckedIOException(ioe);
+            }
+        }
+    }
 }
