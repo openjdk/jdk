@@ -61,10 +61,13 @@ import java.security.cert.X509Certificate;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateCert;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateKeyStore;
 import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateRSAKeyPair;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 
 public class NullCases {
-    private static boolean isDebug;
+    private static final String KEY_MGR_EXCEPTION_MESSAGE = "Exception triggered:";
+
+    private static boolean isDebugLogging;
     private static KeyManagerFactory kmf;
     private static X509KeyManager km;
     private final PrintStream initialErrStream = System.err;
@@ -72,7 +75,7 @@ public class NullCases {
     @BeforeAll
     public static void beforeAll() throws Exception {
         final String arg = System.getProperty("arg");
-        isDebug = arg != null && arg.equals("debug");
+        isDebugLogging = arg != null && arg.equals("debug");
 
         kmf = KeyManagerFactory.getInstance("NewSunX509");
 
@@ -97,12 +100,16 @@ public class NullCases {
     @Test
     public void JDK6302126Test() throws Exception {
         // check for bug 6302126
+        assumeFalse(isDebugLogging);
+
         generateNullKm();
     }
 
     @Test
     public void JDK6302304Test() throws Exception {
         // check for bug 6302304
+        assumeFalse(isDebugLogging);
+
         final X509KeyManager km = generateNullKm();
 
         km.getServerAliases(null, null);
@@ -116,6 +123,8 @@ public class NullCases {
     @Test
     public void JDK6302321Test() {
         // check for bug 6302321
+        assumeFalse(isDebugLogging);
+
         final X509Certificate[] certs = km.getCertificateChain("doesnotexist");
         final PrivateKey priv = km.getPrivateKey("doesnotexist");
         Asserts.assertNull(certs, "Should return null if the alias can't be found");
@@ -125,6 +134,8 @@ public class NullCases {
     @Test
     public void JDK6302271Test() {
         // check for 6302271
+        assumeFalse(isDebugLogging);
+
         final String[] clis = km.getClientAliases("doesnotexist", null);
         Asserts.assertFalse((clis != null && clis.length == 0), "Should return null instead of empty array");
 
@@ -146,6 +157,8 @@ public class NullCases {
 
     @Test
     public void incompleteChainAndKeyTest() {
+        assumeFalse(isDebugLogging);
+
         final X509Certificate[] certs = km.getCertificateChain("1.1");
         final PrivateKey priv = km.getPrivateKey("1.1");
 
@@ -167,12 +180,14 @@ public class NullCases {
         System.setErr(initialErrStream);
         System.err.println(" => nonexistentBuilderTest: \n" + outputStream);
 
-        Asserts.assertFalse(isDebug && !outputStream.toString().contains("KeyMgr: exception triggered:"),
+        Asserts.assertFalse(isDebugLogging && !outputStream.toString().contains(KEY_MGR_EXCEPTION_MESSAGE),
                 "No log triggered");
     }
 
     @Test
     public void nonexistentKSTest() {
+        assumeFalse(isDebugLogging);
+
         final X509Certificate[] certs = km.getCertificateChain("RSA.0.1");
         final PrivateKey priv = km.getPrivateKey("RSA.0.1");
 
@@ -194,7 +209,7 @@ public class NullCases {
         System.setErr(initialErrStream);
         System.err.println(" => wrongNumberFormatTest alias<" + alias + ">: \n" + outputStream);
 
-        Asserts.assertFalse(isDebug && !outputStream.toString().contains("KeyMgr: exception triggered:"),
+        Asserts.assertFalse(isDebugLogging && !outputStream.toString().contains(KEY_MGR_EXCEPTION_MESSAGE),
                 "No log triggered");
 
     }
