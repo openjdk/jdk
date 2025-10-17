@@ -2464,7 +2464,11 @@ SafePointNode* CountedLoopConverter::find_safepoint(Node* iftrue) {
     return _phase->find_safepoint(iftrue, _head, _loop);
   }
 
-  return iff->in(0)->isa_SafePoint();
+  Node* sfpt = iff->in(0);
+  if (sfpt->Opcode() == Op_SafePoint) {
+    return sfpt->as_SafePoint();
+  }
+  return nullptr;
 }
 
 bool CountedLoopConverter::is_safepoint_invalid(SafePointNode* sfpt) {
