@@ -47,6 +47,7 @@ public class UUIDTest {
         randomUUIDTest();
         randomUUIDTest_Multi();
         nameUUIDFromBytesTest();
+        epochMillis_userInputTest();
         stringTest();
         versionTest();
         variantTest();
@@ -146,6 +147,44 @@ public class UUIDTest {
         }
     }
 
+    private static void epochMillis_userInputTest() {
+        // Should not throw for valid currentTimeMillis() timestamp
+        long timestamp = System.currentTimeMillis();
+        try {
+            UUID u = UUID.epochMillis(timestamp);
+            if (u == null) {
+                throw new AssertionError("Generated UUID should not be null for timestamp: " + timestamp);
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Unexpected exception with timestamp " + timestamp + ": " + e);
+        }
+
+        // Should not throw for the 48-bit long
+        long value = 0xFEDCBA987654L;
+        try {
+            UUID u = UUID.epochMillis(value);
+            if (u == null) {
+                throw new AssertionError("Generated UUID should not be null for 48-bit long: " + value);
+            }
+        } catch (Exception e) {
+            throw new AssertionError("Unexpected exception with 48-bit long " + value + ": " + e);
+        }
+
+        // Should throw for negative timestamp
+        value = -0xFEDCBA987654L;
+        try {
+            UUID.epochMillis(value);
+            throw new AssertionError("Expected IllegalArgumentException with negative timestamp: " + value);
+        } catch (IllegalArgumentException expected) {}
+
+        // Should throw for timestamp > 48 bits
+        value = 1L << 48;
+        try {
+            UUID.epochMillis(value);
+            throw new AssertionError("Expected IllegalArgumentException with timestamp > 48 bits: " + value);
+        } catch (IllegalArgumentException expected) {}
+    }
+
     private static void stringTest() throws Exception {
         for (int i = 0; i < COUNT; i++) {
             UUID u1 = UUID.randomUUID();
@@ -185,6 +224,15 @@ public class UUIDTest {
         test = UUID.nameUUIDFromBytes(someBytes);
         if (test.version() != 3) {
             throw new Exception("nameUUIDFromBytes not type 3: " + test);
+        }
+
+        long timestamp = System.currentTimeMillis();
+        test = UUID.epochMillis(timestamp);
+        if (test.version() != 7) {
+            throw new Exception("epochMillis not type 7: " + test);
+        }
+        if (test.variant() != 2) {
+            throw new Exception("epochMillis not variant 2: " + test);
         }
 
         test = UUID.fromString("9835451d-e2e0-1e41-8a5a-be785f17dcda");
