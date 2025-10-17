@@ -250,7 +250,23 @@ public sealed interface LazyConstant<T>
      */
     boolean isInitialized();
 
-    // Object method
+    // Object methods
+
+    /**
+     * {@return if this lazy constant is the same as the provided {@code obj}}
+     *
+     * This method never triggers initialization of this lazy constant.
+     */
+    @Override
+    boolean equals(Object obj);
+
+    /**
+     * {@return the {@linkplain System#identityHashCode(Object)} for this lazy constant}
+     *
+     * This method never triggers initialization of this lazy constant.
+     */
+    @Override
+    int hashCode();
 
     /**
      * {@return a non-initializing string suitable for debugging}
@@ -281,8 +297,8 @@ public sealed interface LazyConstant<T>
      * {@code LazyConstant}, the method is free to return the provided computing function
      * directly.
      *
-     * @param computingFunction in the form of a Supplier to be used to compute
-     *                          the constant
+     * @param computingFunction in the form of a {@linkplain Supplier} to be used
+     *                          to compute the constant
      * @param <T>               type of the constant
      *
      */
