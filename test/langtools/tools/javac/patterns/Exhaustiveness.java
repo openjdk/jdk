@@ -1636,11 +1636,10 @@ public class Exhaustiveness extends TestRunner {
     @Test
     public void testDeeplyNestedNotExhaustive(Path base) throws Exception {
         List<String> variants = createDeeplyNestedVariants().stream().collect(Collectors.toCollection(ArrayList::new));
-        int removed = (int) (Math.random() * variants.size());
-        variants.remove(removed);
+        variants.remove((int) (Math.random() * variants.size()));
         String code = testCodeForVariants(variants);
 
-        System.err.println("analyzing (removed: " + removed + "):");
+        System.err.println("analyzing:");
         System.err.println(code);
         doTest(base,
                new String[0],

@@ -210,7 +210,6 @@ public class ExhaustivenessComputer {
                     if (clazz.isSealed() && clazz.isAbstract() &&
                         //if a binding pattern for clazz already exists, no need to analyze it again:
                         !existingBindings.contains(clazz)) {
-                        ListBuffer<PatternDescription> bindings = new ListBuffer<>();
                         //do not reduce to types unrelated to the selector type:
                         Type clazzErasure = types.erasure(clazz.type);
                         if (components(selectorType).stream()
