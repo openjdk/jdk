@@ -43,8 +43,6 @@ class MachOper;
 
 //---------------------------Matcher-------------------------------------------
 class Matcher : public PhaseTransform {
-  friend class VMStructs;
-
 public:
 
   // Machine-dependent definitions

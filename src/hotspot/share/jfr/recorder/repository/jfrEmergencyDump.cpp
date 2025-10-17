@@ -32,7 +32,7 @@
 #include "jvm_io.h"
 #include "logging/log.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -523,7 +523,7 @@ static bool prepare_for_emergency_dump(Thread* thread) {
 static volatile int jfr_shutdown_lock = 0;
 
 static bool guard_reentrancy() {
-  return Atomic::cmpxchg(&jfr_shutdown_lock, 0, 1) == 0;
+  return AtomicAccess::cmpxchg(&jfr_shutdown_lock, 0, 1) == 0;
 }
 
 class JavaThreadInVMAndNative : public StackObj {

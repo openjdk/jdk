@@ -37,9 +37,14 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
+import javax.xml.parsers.ParserConfigurationException;
+import jdk.jpackage.internal.resources.ResourceLocator;
+import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.AdditionalLauncher.PropertyFile;
 import jdk.jpackage.test.LauncherShortcut.StartupDirectory;
+import org.xml.sax.SAXException;
 
 public final class LauncherVerifier {
 
@@ -77,6 +82,16 @@ public final class LauncherVerifier {
         VERIFY_UNINSTALLED((verifier, cmd) -> {
             verifier.verifyInstalled(cmd, false);
         }),
+        VERIFY_APP_IMAGE_FILE((verifier, cmd) -> {
+            if (cmd.isImagePackageType()) {
+                verifier.verifyInAppImageFile(cmd);
+            }
+        }),
+        VERIFY_MAC_ENTITLEMENTS((verifier, cmd) -> {
+            if (TKit.isOSX() && MacHelper.appImageSigned(cmd)) {
+                verifier.verifyMacEntitlements(cmd);
+            }
+        }),
         EXECUTE_LAUNCHER(LauncherVerifier::executeLauncher),
         ;
 
@@ -91,7 +106,7 @@ public final class LauncherVerifier {
         private final BiConsumer<LauncherVerifier, JPackageCommand> action;
 
         static final List<Action> VERIFY_APP_IMAGE = List.of(
-                VERIFY_ICON, VERIFY_DESCRIPTION, VERIFY_INSTALLED
+                VERIFY_ICON, VERIFY_DESCRIPTION, VERIFY_INSTALLED, VERIFY_APP_IMAGE_FILE, VERIFY_MAC_ENTITLEMENTS
         );
 
         static final List<Action> VERIFY_DEFAULTS = Stream.concat(
@@ -279,6 +294,63 @@ public final class LauncherVerifier {
         }
     }
 
+    private void verifyInAppImageFile(JPackageCommand cmd) {
+        cmd.verifyIsOfType(PackageType.IMAGE);
+        if (!isMainLauncher()) {
+            Stream<LauncherShortcut> shortcuts;
+            if (TKit.isWindows()) {
+                shortcuts = Stream.of(LauncherShortcut.WIN_DESKTOP_SHORTCUT, LauncherShortcut.WIN_START_MENU_SHORTCUT);
+            } else if (TKit.isLinux()) {
+                shortcuts = Stream.of(LauncherShortcut.LINUX_SHORTCUT);
+            } else {
+                shortcuts = Stream.of();
+            }
+
+            var aif = AppImageFile.load(cmd.outputBundle());
+            var aifFileName = AppImageFile.getPathInAppImage(Path.of("")).getFileName();
+
+            var aifProps = Objects.requireNonNull(aif.addLaunchers().get(name));
+
+            shortcuts.forEach(shortcut -> {
+                var recordedShortcut = aifProps.get(shortcut.appImageFilePropertyName());
+                properties.flatMap(props -> {
+                    return props.findProperty(shortcut.propertyName());
+                }).ifPresentOrElse(expectedShortcut -> {
+                    TKit.assertNotNull(recordedShortcut, String.format(
+                            "Check shortcut [%s] of launcher [%s] is recorded in %s file",
+                            shortcut, name, aifFileName));
+                    TKit.assertEquals(
+                            StartupDirectory.parse(expectedShortcut),
+                            StartupDirectory.parse(recordedShortcut),
+                            String.format("Check the value of shortcut [%s] of launcher [%s] recorded in %s file",
+                                    shortcut, name, aifFileName));
+                }, () -> {
+                    TKit.assertNull(recordedShortcut, String.format(
+                            "Check shortcut [%s] of launcher [%s] is NOT recorded in %s file",
+                            shortcut, name, aifFileName));
+                });
+            });
+        }
+    }
+
+    private void verifyMacEntitlements(JPackageCommand cmd) throws ParserConfigurationException, SAXException, IOException {
+        Path launcherPath = cmd.appLauncherPath(name);
+        var entitlements = MacSignVerify.findEntitlements(launcherPath);
+
+        TKit.assertTrue(entitlements.isPresent(), String.format("Check [%s] launcher is signed with entitlements", name));
+
+        Map<String, Object> expected;
+        if (cmd.hasArgument("--mac-entitlements")) {
+            expected = new PListReader(Files.readAllBytes(Path.of(cmd.getArgumentValue("--mac-entitlements")))).toMap(true);
+        } else if (cmd.hasArgument("--mac-app-store")) {
+            expected = DefaultEntitlements.APP_STORE;
+        } else {
+            expected = DefaultEntitlements.STANDARD;
+        }
+
+        TKit.assertEquals(expected, entitlements.orElseThrow().toMap(true), String.format("Check [%s] launcher is signed with expected entitlements", name));
+    }
+
     private void executeLauncher(JPackageCommand cmd) throws IOException {
         Path launcherPath = cmd.appLauncherPath(name);
 
@@ -317,6 +389,20 @@ public final class LauncherVerifier {
             }
         });
     }
+
+
+    private static final class DefaultEntitlements {
+        private static Map<String, Object> loadFromResources(String resourceName) {
+            return ThrowingSupplier.toSupplier(() -> {
+                var bytes = ResourceLocator.class.getResourceAsStream("entitlements.plist").readAllBytes();
+                return new PListReader(bytes).toMap(true);
+            }).get();
+        }
+
+        static final Map<String, Object> STANDARD = loadFromResources("entitlements.plist");
+        static final Map<String, Object> APP_STORE = loadFromResources("sandbox.plist");
+    }
+
 
     private final String name;
     private final Optional<List<String>> javaOptions;
