@@ -23,9 +23,17 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * Represents the counting of {@link Name}s, and the function that is called
+ * to create an inner scope given the count.
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+record NameCountToken(
+        NameSet.Predicate predicate,
+        Function<Integer, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken(int count) {
+        return function().apply(count);
+    }
+}
