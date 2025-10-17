@@ -55,16 +55,13 @@ if Reg QUERY "${reg_eudc_1252}"; then
 fi
 Reg import eudc.reg
 
-echo ...Copy custom EUDC.tte file
 windows_eudc_tte=$(cygpath -m ${WINDIR}/Fonts/EUDC.tte)
-old_eudc_tte=""
-if [ -f ${windows_eudc_tte} ]; then
-   old_eudc_tte=${TESTCLASSES}/EUDC.tte
-   # Delete first to prevent permission error
-   rm ${old_eudc_tte}
-   cp ${windows_eudc_tte} ${old_eudc_tte}
+delete_eudc_tte=false
+if [ ! -f ${windows_eudc_tte} ]; then
+  echo ...Copy custom EUDC.tte file
+  delete_eudc_tte=true
+  cp ${WINDIR}/Fonts/webdings.ttf ${windows_eudc_tte}
 fi
-cp EUDC.tte ${windows_eudc_tte}
 
 echo Setup fallback font
 fallbackfontdir=${TESTJAVA}/lib/fonts/fallback
@@ -84,11 +81,7 @@ if [ -f "${old_reg_record}" ]; then
   Reg import ${old_reg_record}
 fi
 
-echo Restore EUDC.tte
-if [ -n "${old_eudc_tte}" ]; then
-    echo ...Restore original EUDC.tte
-    cp "${old_eudc_tte}" "${windows_eudc_tte}"
-else
+if [ ${delete_eudc_tte} = true ]; then
     echo ...Delete test EUDC.tte
     rm "${windows_eudc_tte}"
 fi
