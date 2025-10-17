@@ -250,6 +250,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
+  int      _immutable_data_reference_counter_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -646,12 +647,11 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_reference_counter_offset ; }
 #else
-  address scopes_data_end       () const { return           immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_reference_counter_offset ; }
 #endif
-
-  address immutable_data_references_counter_begin () const { return immutable_data_end() - ImmutableDataReferencesCounterSize ; }
+  address immutable_data_references_counter_begin () const { return _immutable_data + _immutable_data_reference_counter_offset ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
