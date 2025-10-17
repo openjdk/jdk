@@ -1781,6 +1781,12 @@ public interface Map<K, V> {
      * the returned lazy map for the same key, an {@linkplain IllegalStateException}
      * will be thrown.
      * <p>
+     * The returned map's {@linkplain Object#equals(Object) equals()} and
+     * {@linkplain Object#hashCode() hashCode()} methods may trigger initialization of one
+     * or more lazy values. The returned maps's {@linkplain Object#toString() toString()}
+     * method never triggers initialization of values. Instead, an
+     * implementation-dependant string is returned for uninitialized values.
+     * <p>
      * The returned lazy map strongly references its underlying
      * computing function used to compute values only so long as there are
      * uncomputed values after which the underlying function is not strongly referenced
