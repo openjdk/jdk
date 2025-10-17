@@ -1981,6 +1981,7 @@ nav.toc div.toc-header .toc-sort-toggle > img {
     width: 22px;
     height: 22px;
     vertical-align: middle;
+    filter: var(--icon-filter);
 }
 
 nav.toc div.toc-header .toc-sort-toggle.toc-sort-is-active {
