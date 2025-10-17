@@ -73,8 +73,7 @@ static char* create_standard_memory(size_t size) {
   // commit memory
   if (!os::commit_memory(mapAddress, size, !ExecMem)) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("Could not commit PerfData memory\n");
+      log_debug(perf)("Could not commit PerfData memory");
     }
     os::release_memory(mapAddress, size);
     return nullptr;
@@ -302,9 +301,9 @@ static DIR *open_directory_secure(const char* dirname) {
     if (log_is_enabled(Debug, perf)) {
       LogStreamHandle(Debug, perf) log;
       if (errno == ELOOP) {
-        log.print_cr("directory %s is a symlink and is not secure\n", dirname);
+        log.print_cr("directory %s is a symlink and is not secure", dirname);
       } else {
-        log.print_cr("could not open directory %s: %s\n", dirname, os::strerror(errno));
+        log.print_cr("could not open directory %s: %s", dirname, os::strerror(errno));
       }
     }
     return dirp;
@@ -375,8 +374,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
   result = fchdir(fd);
   if (result == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("could not change to directory %s", dirname);
+      log_debug(perf)("could not change to directory %s", dirname);
     }
     if (*saved_cwd_fd != -1) {
       ::close(*saved_cwd_fd);
@@ -416,16 +414,14 @@ static bool is_file_secure(int fd, const char *filename) {
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("fstat failed on %s: %s\n", filename, os::strerror(errno));
+      log_debug(perf)("fstat failed on %s: %s", filename, os::strerror(errno));
     }
     return false;
   }
   if (statbuf.st_nlink > 1) {
     // A file with multiple links is not expected.
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("file %s has multiple links\n", filename);
+      log_debug(perf)("file %s has multiple links", filename);
     }
     return false;
   }
@@ -456,7 +452,7 @@ static char* get_user_name(uid_t uid) {
     if (log_is_enabled(Debug, perf)) {
       LogStreamHandle(Debug, perf) log;
       if (result != 0) {
-        log.print_cr("Could not retrieve passwd entry: %s\n", os::strerror(result));
+        log.print_cr("Could not retrieve passwd entry: %s", os::strerror(result));
       }
       else if (p == nullptr) {
         // this check is added to protect against an observed problem
@@ -469,10 +465,10 @@ static char* get_user_name(uid_t uid) {
         // message may result in an erroneous message.
         // Bug Id 89052 was opened with RedHat.
         //
-        log.print_cr("Could not retrieve passwd entry: %s\n", os::strerror(errno));
+        log.print_cr("Could not retrieve passwd entry: %s", os::strerror(errno));
       }
       else {
-        log.print_cr("Could not determine user name: %s\n",
+        log.print_cr("Could not determine user name: %s",
                 p->pw_name == nullptr ? "pw_name = null" : "pw_name zero length");
       }
     }
@@ -685,10 +681,9 @@ static void remove_file(const char* path) {
   //
   RESTARTABLE(::unlink(path), result);
   if (log_is_enabled(Debug, perf) && result == OS_ERR) {
-    LogStreamHandle(Debug, perf) log;
     if (errno != ENOENT) {
-      log.print_cr("Could not unlink shared memory backing"
-                   " store file %s : %s\n", path, os::strerror(errno));
+      log_debug(perf)("Could not unlink shared memory backing"
+                      " store file %s : %s", path, os::strerror(errno));
     }
   }
 }
@@ -827,8 +822,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       if (!is_directory_secure(dirname)) {
         // directory is not secure
         if (log_is_enabled(Debug, perf)) {
-          LogStreamHandle(Debug, perf) log;
-          log.print_cr("%s directory is insecure\n", dirname);
+          log_debug(perf)("%s directory is insecure", dirname);
         }
         return false;
       }
@@ -837,8 +831,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       // we encountered some other failure while attempting
       // to create the directory
       if (log_is_enabled(Debug, perf)) {
-        LogStreamHandle(Debug, perf) log;
-        log.print_cr("could not create directory %s: %s\n", dirname, os::strerror(errno));
+        log_debug(perf)("could not create directory %s: %s", dirname, os::strerror(errno));
       }
       return false;
     }
@@ -879,9 +872,9 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     if (log_is_enabled(Debug, perf)) {
       LogStreamHandle(Debug, perf) log;
       if (errno == ELOOP) {
-        log.print_cr("file %s is a symlink and is not secure\n", filename);
+        log.print_cr("file %s is a symlink and is not secure", filename);
       } else {
-        log.print_cr("could not create file %s: %s\n", filename, os::strerror(errno));
+        log.print_cr("could not create file %s: %s", filename, os::strerror(errno));
       }
     }
     // close the directory and reset the current working directory
@@ -930,8 +923,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
   if (result == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("could not truncate shared memory file: %s\n", os::strerror(errno));
+      log_debug(perf)("could not truncate shared memory file: %s", os::strerror(errno));
     }
     ::close(fd);
     return -1;
@@ -940,8 +932,7 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   RESTARTABLE(::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("could not set shared memory file size: %s\n", os::strerror(errno));
+      log_debug(perf)("could not set shared memory file size: %s", os::strerror(errno));
     }
     ::close(fd);
     return -1;
@@ -1065,8 +1056,7 @@ static char* mmap_create_shared(size_t size) {
 
   if (mapAddress == MAP_FAILED) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("mmap failed -  %s\n", os::strerror(errno));
+      log_debug(perf)("mmap failed -  %s", os::strerror(errno));
     }
     remove_file(filename);
     FREE_C_HEAP_ARRAY(char, filename);
@@ -1144,8 +1134,7 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("fstat failed: %s\n", os::strerror(errno));
+      log_debug(perf)("fstat failed: %s", os::strerror(errno));
     }
     THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Could not determine PerfMemory size");
@@ -1222,8 +1211,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
 
   if (mapAddress == MAP_FAILED) {
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("mmap failed: %s\n", os::strerror(errno));
+      log_debug(perf)("mmap failed: %s", os::strerror(errno));
     }
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               "Could not map PerfMemory");
@@ -1257,8 +1245,7 @@ void PerfMemory::create_memory_region(size_t size) {
       // creation of the shared memory region failed, attempt
       // to create a contiguous, non-shared memory region instead.
       if (log_is_enabled(Debug, perf)) {
-        LogStreamHandle(Debug, perf) log;
-        log.print_cr("Reverting to non-shared PerfMemory region.\n");
+        log_debug(perf)("Reverting to non-shared PerfMemory region.");
       }
       FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);

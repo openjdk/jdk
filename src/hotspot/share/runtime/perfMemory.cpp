@@ -116,8 +116,7 @@ void PerfMemory::initialize() {
     // additional output to the stdout or stderr output streams.
     //
     if (log_is_enabled(Debug, perf)) {
-      LogStreamHandle(Debug, perf) log;
-      log.print_cr("Could not create PerfData Memory region, reverting to malloc");
+      log_debug(perf)("Could not create PerfData Memory region, reverting to malloc");
     }
 
     _prologue = NEW_C_HEAP_OBJ(PerfDataPrologue, mtInternal);
@@ -253,9 +252,8 @@ char* PerfMemory::get_perfdata_file_path() {
                                    dest_file, JVM_MAXPATHLEN)) {
       FREE_C_HEAP_ARRAY(char, dest_file);
       if (log_is_enabled(Debug, perf)) {
-        LogStreamHandle(Debug, perf) log;
-        log.print_cr("Invalid performance data file path name specified, "\
-                     "fall back to a default name");
+        log_debug(perf)("Invalid performance data file path name specified, "\
+                        "fall back to a default name");
       }
     } else {
       return dest_file;
