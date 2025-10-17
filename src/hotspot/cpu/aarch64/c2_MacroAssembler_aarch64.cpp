@@ -1880,8 +1880,7 @@ void C2_MacroAssembler::reduce_mul_integral_256b(Register dst, BasicType bt, Reg
                                                  unsigned vector_length_in_bytes,
                                                  FloatRegister vtmp1, FloatRegister vtmp2,
                                                  FloatRegister vtmp3) {
-  assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
-  assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
+  assert(vector_length_in_bytes == 32, "unsupported vector length");
   if (bt == T_LONG) {
     assert_different_registers(vsrc, vtmp1);
   } else {
@@ -1954,8 +1953,7 @@ void C2_MacroAssembler::reduce_non_strict_order_mul_fp_256b(FloatRegister dst, B
                                                             unsigned vector_length_in_bytes,
                                                             FloatRegister vtmp1,
                                                             FloatRegister vtmp2) {
-  assert(vector_length_in_bytes > FloatRegister::neon_vl, "ASIMD impl should be used instead");
-  assert(is_power_of_2(vector_length_in_bytes), "unsupported vector length");
+  assert(vector_length_in_bytes == 32, "unsupported vector length");
 
   // Handle the first iteration separately to preserve the original values in vsrc
   unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
