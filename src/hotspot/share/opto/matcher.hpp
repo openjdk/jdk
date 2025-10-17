@@ -333,6 +333,10 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Identify if a vector mask operation requires the mask to be saved with a
+  // predicate type.
+  static bool vector_mask_requires_predicate(int opcode, const TypeVect* vt);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
