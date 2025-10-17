@@ -22,31 +22,12 @@
  */
 
 #include <jvmti.h>
-
-#include <errno.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
-#ifdef WINDOWS
-#include "process.h"
-#define PID() _getpid()
-#else
-#include "unistd.h"
-#define PID() getpid()
-#endif // WINDOWS
 
 static void JNICALL VMStartCallback(jvmtiEnv* jvmti, JNIEnv* env) {
-    const char* attach_cmd_pattern = getenv("ATTACH_CMD");
-    char attach_cmd[1024];
-    snprintf(attach_cmd, sizeof(attach_cmd), attach_cmd_pattern, PID());
-    printf("Running attach command: '%s'\n", attach_cmd);
-
-    int res = system(attach_cmd);
-    if (res == -1) {
-        printf("Attach call failed: %s\n", strerror(errno));
-    } else {
-        printf("Attach call result = %d\n", res);
-    }
+    putchar('1');
+    fflush(stdout);
+    getchar();
 }
 
 JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
