@@ -1699,6 +1699,9 @@ public interface Connection extends Wrapper, AutoCloseable {
      * </tbody>
      * </table>
      * </blockquote>
+     * @implSpec
+     * The default implementation creates the literal as:
+     * {@code "'" + val.replace("'", "''") + "'"}.
      * @implNote
      * JDBC driver implementations may need to provide their own implementation
      * of this method in order to meet the requirements of the underlying
@@ -1831,8 +1834,9 @@ public interface Connection extends Wrapper, AutoCloseable {
      * determine a valid simple SQL identifier:
      * <ul>
      * <li>The string is not enclosed in double quotes</li>
-     * <li>The first character is an alphabetic character from a through z, or
-     * from A through Z</li>
+     * <li>The first character is an alphabetic character from a ({@code '\u005Cu0061'})
+     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
+     * through Z ({@code '\u005Cu005A'})</li>
      * <li>The string only contains alphanumeric characters or the character
      * "_"</li>
      * <li>The string is between 1 and 128 characters in length inclusive</li>
@@ -1915,6 +1919,9 @@ public interface Connection extends Wrapper, AutoCloseable {
      * </tbody>
      * </table>
      * </blockquote>
+     * @implSpec
+     * The default implementation creates the literal as:
+     * {@code "N'" + val.replace("'", "''") + "'"}.
      * @implNote
      * JDBC driver implementations may need to provide their own implementation
      * of this method in order to meet the requirements of the underlying
