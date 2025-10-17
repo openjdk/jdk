@@ -582,7 +582,7 @@ static bool guard_reentrancy() {
         release_locks(thread);
       }
       log_info(jfr, system)("A jfr emergency dump is already in progress, waiting for thread id " UINT64_FORMAT_X, AtomicAccess::load(&_jfr_shutdown_tid));
-      // Transition to a safepoint safe state for the infinite sleep. A nop for non-java threads.
+      // Transition to a safe safepoint state for the infinite sleep. A nop for non-java threads.
       jtivm.transition_to_native();
       os::infinite_sleep(); // stay here until we exit normally or crash.
       ShouldNotReachHere();
