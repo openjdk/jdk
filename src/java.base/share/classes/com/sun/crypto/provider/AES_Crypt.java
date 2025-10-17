@@ -953,31 +953,30 @@ final class AES_Crypt extends SymmetricCipher {
      * @return w1 the inverse cipher round keys.
      */
     private int[] invGenRoundKeys() {
-        int len = WB;
         int kLen = sessionK[0].length;;
-        int[] w = new int[len];
-        int[] tW = new int[kLen];
+        int[] tmp = new int[WB];
+        int[] w = new int[kLen];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
-            System.arraycopy(sessionK[0], i * len, w, 0, len);
-            w[0] = TMI0[w[0] >>> 24] ^ TMI1[(w[0] >> 16) & 0xFF]
-                    ^ TMI2[(w[0] >> 8) & 0xFF] ^ TMI3[w[0] & 0xFF];
-            w[1] = TMI0[w[1] >>> 24] ^ TMI1[(w[1] >> 16) & 0xFF]
-                    ^ TMI2[(w[1] >> 8) & 0xFF] ^ TMI3[w[1] & 0xFF];
-            w[2] = TMI0[w[2] >>> 24] ^ TMI1[(w[2] >> 16) & 0xFF]
-                    ^ TMI2[(w[2] >> 8) & 0xFF] ^ TMI3[w[2] & 0xFF];
-            w[3] = TMI0[w[3] >>> 24] ^ TMI1[(w[3] >> 16) & 0xFF]
-                    ^ TMI2[(w[3] >> 8) & 0xFF] ^ TMI3[w[3] & 0xFF];
-            System.arraycopy(w, 0, tW, kLen - (i * len), len);
+            System.arraycopy(sessionK[0], i * WB, tmp, 0, WB);
+            tmp[0] = TMI0[tmp[0] >>> 24] ^ TMI1[(tmp[0] >> 16) & 0xFF]
+                    ^ TMI2[(tmp[0] >> 8) & 0xFF] ^ TMI3[tmp[0] & 0xFF];
+            tmp[1] = TMI0[tmp[1] >>> 24] ^ TMI1[(tmp[1] >> 16) & 0xFF]
+                    ^ TMI2[(tmp[1] >> 8) & 0xFF] ^ TMI3[tmp[1] & 0xFF];
+            tmp[2] = TMI0[tmp[2] >>> 24] ^ TMI1[(tmp[2] >> 16) & 0xFF]
+                    ^ TMI2[(tmp[2] >> 8) & 0xFF] ^ TMI3[tmp[2] & 0xFF];
+            tmp[3] = TMI0[tmp[3] >>> 24] ^ TMI1[(tmp[3] >> 16) & 0xFF]
+                    ^ TMI2[(tmp[3] >> 8) & 0xFF] ^ TMI3[tmp[3] & 0xFF];
+            System.arraycopy(tmp, 0, w, kLen - (i * WB), WB);
         }
-        System.arraycopy(sessionK[0], kLen - len, tW, len, len);
-        System.arraycopy(sessionK[0], 0, tW, 0, len);
-        Arrays.fill(w, 0);
+        System.arraycopy(sessionK[0], kLen - WB, w, WB, WB);
+        System.arraycopy(sessionK[0], 0, w, 0, WB);
+        Arrays.fill(tmp, 0);
 
-        return tW;
+        return w;
     }
 
     /**
