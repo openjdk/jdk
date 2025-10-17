@@ -1305,8 +1305,6 @@ public:
       igvn.optimize();
       if (C->failing()) { return; }
       v.log_loop_tree();
-
-      // assert(C->_for_post_loop_igvn.length() == 0 || C->post_loop_opts_phase(), "");
     }
   }
 

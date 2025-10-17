@@ -46,12 +46,14 @@
  * interferes with referent's live range.
  *
  * It is tempting to directly attach referents to interfering safepoints right from the beginning, but it
- * doesn't play well with some optimizations C2 does.
+ * doesn't play well with some optimizations C2 does (e.g., during loop-invariant code motion a safepoint
+ * can become interfering once a load is hoisted).
  *
  * Instead, reachability representation transitions through multiple phases:
- *   (0) initial set of RFs is materialized during parsing;
+ *   (0) initial set of RFs is materialized during parsing (as a result of
+ *       Reference.reachabilityFence intrinsification);
  *   (1) optimization pass during loop opts eliminates redundant RF nodes and
- *       moves the ones with loop-invariant referents outside loops;
+ *       moves the ones with loop-invariant referents outside (after) loops;
  *   (2) after loop opts are over, RF nodes are eliminated and their referents are transferred to
  *       safepoint nodes (appended as edges after debug info);
  *   (3) during final graph reshaping, referent edges are removed from safepoints and materialized as RF nodes
@@ -67,7 +69,7 @@
  * keep the referent alive, then it becomes possible for the referent to be prematurely GCed.)
  *
  * After loop opts are over, it becomes possible to reliably enumerate all interfering safe points and
- * ensure the referent present in their oop maps.
+ * to ensure that the referent is present in their oop maps.
  *
  * (b) RF nodes may interfere with Register Allocator (RA). If a safepoint is pruned during macro expansion,
  * it can make some RF nodes redundant, but we don't have information about their relations anymore to detect that.
