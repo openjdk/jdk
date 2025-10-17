@@ -27,6 +27,7 @@ import com.sun.tools.attach.AgentLoadException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assumptions;
 
 import java.io.File;
 import java.io.InputStream;
@@ -82,7 +83,14 @@ public class TestEarlyDynamicLoad {
 
     @Test
     public void jcmd() throws Exception {
-        JDKToolLauncher jcmd = JDKToolLauncher.createUsingTestJDK("jcmd");
+        JDKToolLauncher jcmd;
+        try {
+            jcmd = JDKToolLauncher.create("jcmd");
+        } catch (Exception exception) {
+            Assumptions.abort("jcmd wasn't found: " + exception.getMessage());
+            return;
+        }
+
         jcmd.addToolArg(child.pid() + "");
         jcmd.addToolArg("JVMTI.agent_load");
         jcmd.addToolArg("some.jar");
