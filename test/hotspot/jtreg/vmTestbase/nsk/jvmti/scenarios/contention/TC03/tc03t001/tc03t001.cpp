@@ -42,7 +42,7 @@ static jlong timeout = 0;
 
 /* test objects */
 static threadDesc *threadList = nullptr;
-static jint threads_count = 0;
+static jint debuggee_threads_cnt = 0;
 static int numberOfDeadlocks = 0;
 
 static const char* THREAD_NAME_PREFIX = "Debugee Thread";
@@ -77,7 +77,7 @@ static int printDeadlock(jvmtiEnv* jvmti, JNIEnv* jni, int dThread) {
             return NSK_FALSE;
         if (usageInfo.owner == nullptr)
             break;
-        for (cThread = 0; cThread < threads_count; cThread++) {
+        for (cThread = 0; cThread < debuggee_threads_cnt; cThread++) {
             if (jni->IsSameObject(threadList[cThread].thread, usageInfo.owner))
                 break;
         }
@@ -87,7 +87,7 @@ static int printDeadlock(jvmtiEnv* jvmti, JNIEnv* jni, int dThread) {
         if (usageInfo.notify_waiters != nullptr) {
             jvmti->Deallocate((unsigned char*)usageInfo.notify_waiters);
         }
-        if (!NSK_VERIFY(cThread != threads_count))
+        if (!NSK_VERIFY(cThread != debuggee_threads_cnt))
             return NSK_FALSE;
         NSK_DISPLAY1("    which is held by \"%s\"\n",
             threadList[cThread].name);
@@ -106,7 +106,7 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
     int tDfn = 0, gDfn = 0;
     int pThread, cThread;
     int i;
-    int debuggee_thread_cnt = 0;
+    int threads_count = 0;
 
     NSK_DISPLAY0("Create threadList\n");
 
@@ -138,17 +138,17 @@ static int findDeadlockThreads(jvmtiEnv* jvmti, JNIEnv* jni) {
             continue;
         }
 
-        threadList[debuggee_thread_cnt].thread = threads[i];
-        threadList[debuggee_thread_cnt].dfn = -1;
-        threadList[debuggee_thread_cnt].name = info.name;
-        debuggee_thread_cnt++;
+        threadList[debuggee_threads_cnt].thread = threads[i];
+        threadList[debuggee_threads_cnt].dfn = -1;
+        threadList[debuggee_threads_cnt].name = info.name;
+        debuggee_threads_cnt++;
     }
 
     /* deallocate thread list */
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
-    for (i = 0; i < debuggee_thread_cnt; i++) {
+    for (i = 0; i < debuggee_threads_cnt; i++) {
         if (threadList[i].dfn < 0) {
             tDfn = gDfn;
             threadList[i].dfn = gDfn++;
