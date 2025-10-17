@@ -116,8 +116,8 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
             return modulePath;
         } else {
             // There is no "java.base.jmod" file in the `modulePath` path list.
-            // Pick items from the default module path list that are not yet 
-            // in the `modulePath` path list and append them to it. 
+            // Pick items from the default module path list that are not yet
+            // in the `modulePath` path list and append them to it.
 
             var missingDefaultModulePath = getDefaultModulePath();
 
