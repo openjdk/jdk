@@ -76,6 +76,7 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/cpuTimeUsage.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/preserveException.hpp"
@@ -3783,6 +3784,29 @@ JvmtiEnv::GetTime(jlong* nanos_ptr) {
   *nanos_ptr = os::javaTimeNanos();
   return JVMTI_ERROR_NONE;
 } /* end GetTime */
+
+
+// info_ptr - pre-checked for null
+jvmtiError
+JvmtiEnv::GetGCCpuTimerInfo(jvmtiTimerInfo* info_ptr) {
+  os::thread_cpu_time_info(info_ptr);
+  return JVMTI_ERROR_NONE;
+} /* end GetGCCpuTimerInfo */
+
+
+// nanos_ptr - pre-checked for null
+jvmtiError
+JvmtiEnv::GetTotalGCCpuTime(long* nanos_ptr) {
+  {
+    MutexLocker hl(Heap_lock);
+    if (Universe::heap()->is_shutting_down()) {
+      *nanos_ptr = -1;
+    }
+    *nanos_ptr = CPUTimeUsage::GC::total();
+  }
+  return JVMTI_ERROR_NONE;
+} /* end GetTotalGCCpuTime */
+
 
 
 // processor_count_ptr - pre-checked for null
