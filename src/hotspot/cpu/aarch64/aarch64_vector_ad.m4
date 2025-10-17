@@ -2141,7 +2141,6 @@ instruct reduce_mulI_256b(iRegINoSp dst, iRegIorL2I isrc, vReg vsrc,
     assert(UseSVE > 0, "must be sve");
     BasicType bt = Matcher::vector_element_basic_type(this, $vsrc);
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_mul_integral_256b($dst$$Register, bt, $isrc$$Register,
                                 $vsrc$$FloatRegister, length_in_bytes,
                                 $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister);
@@ -2169,7 +2168,6 @@ instruct reduce_mulL_256b(iRegLNoSp dst, iRegL isrc, vReg vsrc, vReg tmp1) %{
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_mul_integral_256b($dst$$Register, T_LONG, $isrc$$Register,
                                 $vsrc$$FloatRegister, length_in_bytes,
                                 $tmp1$$FloatRegister, fnoreg, fnoreg);
@@ -2198,7 +2196,6 @@ instruct reduce_non_strict_order_mulF_256b(vRegF dst, vRegF fsrc, vReg vsrc, vRe
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_non_strict_order_mul_fp_256b($dst$$FloatRegister, T_FLOAT, $fsrc$$FloatRegister,
                                            $vsrc$$FloatRegister, length_in_bytes, $tmp1$$FloatRegister,
                                            $tmp2$$FloatRegister);
@@ -2226,7 +2223,6 @@ instruct reduce_non_strict_order_mulD_256b(vRegD dst, vRegD dsrc, vReg vsrc, vRe
   ins_encode %{
     assert(UseSVE > 0, "must be sve");
     uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
-    assert(length_in_bytes == MaxVectorSize, "invalid vector length");
     __ reduce_non_strict_order_mul_fp_256b($dst$$FloatRegister, T_DOUBLE, $dsrc$$FloatRegister,
                                            $vsrc$$FloatRegister, length_in_bytes, $tmp1$$FloatRegister,
                                            $tmp2$$FloatRegister);
