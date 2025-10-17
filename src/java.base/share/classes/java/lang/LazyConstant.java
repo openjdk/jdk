@@ -218,11 +218,12 @@ public sealed interface LazyConstant<T>
         permits LazyConstantImpl {
 
     /**
-     * {@return the contents if initialized, otherwise, returns {@code other}}
+     * {@return the contents of this lazy constant if initialized, otherwise,\
+     *          returns {@code other}}
      * <p>
      * This method never triggers initialization of this lazy constant and will observe
-     * initialization by other threads atomically (i.e., it returns the initialized
-     * contents if and only if the initialization has already completed).
+     * initialization by other threads atomically (i.e., it returns the contents
+     * if and only if the initialization has already completed).
      *
      * @param other value to return if the content is not initialized
      *              (can be {@code null})
@@ -230,8 +231,8 @@ public sealed interface LazyConstant<T>
     T orElse(T other);
 
     /**
-     * {@return the initialized contents. If not initialized, first computes and
-     *          initializes the contents using the computing function}
+     * {@return the contents of this initialized constant. If not initialized, first
+     *          computes and initializes this constant using the computing function}
      * <p>
      * After this method returns successfully, the constant is guaranteed to be
      * initialized.
@@ -243,7 +244,7 @@ public sealed interface LazyConstant<T>
     T get();
 
     /**
-     * {@return {@code true} if the contents is initialized, {@code false} otherwise}
+     * {@return {@code true} if the constant is initialized, {@code false} otherwise}
      * <p>
      * This method never triggers initialization of this lazy constant and will observe
      * changes in the initialization state made by other threads atomically.
@@ -272,12 +273,12 @@ public sealed interface LazyConstant<T>
      * {@return a non-initializing string suitable for debugging}
      * <p>
      * This method never triggers initialization of this lazy constant and will observe
-     * initialization by other threads atomically (i.e., it observes the initialized
+     * initialization by other threads atomically (i.e., it observes the
      * contents if and only if the initialization has already completed).
      * <p>
      * If this lazy constant is initialized, the {@linkplain Object#toString()} of the
-     * initialized contents will be returned; otherwise, an implementation-dependent
-     * string is returned that indicates this lazy constant is not yet initialized.
+     * contents will be returned; otherwise, an implementation-dependent string is
+     * returned that indicates this lazy constant is not yet initialized.
      */
     @Override
     String toString();
