@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.WinApplication;
 import jdk.jpackage.internal.model.WinExePackage;
 import jdk.jpackage.internal.model.WinLauncher;
@@ -66,7 +67,9 @@ final class WinFromParams {
 
             return WinLauncher.create(launcher, new WinLauncherMixin.Stub(isConsole, startMenuShortcut, desktopShortcut));
 
-        }), APPLICATION_LAYOUT).create();
+        }), (WinLauncher winLauncher, Launcher launcher) -> {
+            return WinLauncher.create(launcher, winLauncher);
+        }, APPLICATION_LAYOUT).create();
 
         return WinApplication.create(app);
     }

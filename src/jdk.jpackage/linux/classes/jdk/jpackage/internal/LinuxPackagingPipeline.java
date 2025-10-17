@@ -24,18 +24,24 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.ApplicationBuilder.normalizeLauncherProperty;
 import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
-import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
+import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.Application;
+import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.LauncherShortcut;
+import jdk.jpackage.internal.model.LinuxLauncher;
+import jdk.jpackage.internal.model.LinuxLauncherMixin;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class LinuxPackagingPipeline {
@@ -46,13 +52,26 @@ final class LinuxPackagingPipeline {
     }
 
     static PackagingPipeline.Builder build() {
-        return PackagingPipeline.buildStandard()
+        var builder = PackagingPipeline.buildStandard()
                 .task(LinuxAppImageTaskID.LAUNCHER_LIB)
                         .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
                         .applicationAction(LinuxPackagingPipeline::writeLauncherLib).add()
                 .task(LinuxAppImageTaskID.LAUNCHER_ICONS)
                         .addDependent(BuildApplicationTaskID.CONTENT)
                         .applicationAction(LinuxPackagingPipeline::writeLauncherIcons).add();
+
+        return builder;
+    }
+
+    static ApplicationLaunchers normalizeShortcuts(ApplicationLaunchers appLaunchers) {
+        return normalizeLauncherProperty(appLaunchers, launcher -> {
+            // Return "true" if shortcut is not configured for the launcher.
+            return launcher.shortcut().isEmpty();
+        }, (LinuxLauncher launcher) -> {
+            return launcher.shortcut().flatMap(LauncherShortcut::startupDirectory);
+        }, (launcher, shortcut) -> {
+            return LinuxLauncher.create(launcher, new LinuxLauncherMixin.Stub(Optional.of(new LauncherShortcut(shortcut))));
+        });
     }
 
     private static void writeLauncherLib(
@@ -69,7 +88,7 @@ final class LinuxPackagingPipeline {
             AppImageBuildEnv<Application, ApplicationLayout> env) throws IOException {
 
         for (var launcher : env.app().launchers()) {
-            createLauncherIconResource(env.app(), launcher, env.env()::createResource).ifPresent(iconResource -> {
+            createLauncherIconResource(launcher, env.env()::createResource).ifPresent(iconResource -> {
                 String iconFileName = launcher.executableName() + ".png";
                 Path iconTarget = env.resolvedLayout().desktopIntegrationDirectory().resolve(iconFileName);
                 try {

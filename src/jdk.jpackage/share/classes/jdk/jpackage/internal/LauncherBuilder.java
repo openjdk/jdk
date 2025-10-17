@@ -32,14 +32,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.Launcher.Stub;
+import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.model.LauncherIcon;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
+import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 
 final class LauncherBuilder {
 
@@ -108,6 +112,15 @@ final class LauncherBuilder {
 
     private String deriveNonNullName() {
         return Optional.ofNullable(name).orElseGet(() -> startupInfo.simpleClassName());
+    }
+
+    static OverridableResource createLauncherIconResource(Launcher launcher,
+            Function<String, OverridableResource> resourceSupplier) {
+
+        var defaultIconResourceName = launcher.defaultIconResourceName();
+        return resourceSupplier.apply(defaultIconResourceName)
+                    .setPublicName(launcher.executableName() + PathUtils.getSuffix(Path.of(defaultIconResourceName)))
+                    .setCategory("icon");
     }
 
     static void validateIcon(Path icon) throws ConfigException {
