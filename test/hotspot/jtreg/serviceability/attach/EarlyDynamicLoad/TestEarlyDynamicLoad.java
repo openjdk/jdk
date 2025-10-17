@@ -45,6 +45,8 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @run junit TestEarlyDynamicLoad
  */
 public class TestEarlyDynamicLoad {
+    private static final String EXPECTED_MESSAGE = "Dynamic agent loading is only permitted in the live phase";
+
     private static Process child;
 
     @BeforeAll
@@ -72,7 +74,7 @@ public class TestEarlyDynamicLoad {
             vm.detach();
             throw new AssertionError("Should have failed with AgentLoadException");
         } catch(AgentLoadException exception) {
-            if (!exception.getMessage().contains("Dynamic agent loading is only permitted in the live phase")) {
+            if (!exception.getMessage().contains(EXPECTED_MESSAGE)) {
                 throw new AssertionError("Unexpected error message", exception);
             }
         }
@@ -89,6 +91,6 @@ public class TestEarlyDynamicLoad {
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
 
         out.shouldHaveExitValue(0);
-        out.stdoutShouldContain("Dynamic agent loading is only permitted in the live phase");
+        out.stdoutShouldContain(EXPECTED_MESSAGE);
     }
 }
