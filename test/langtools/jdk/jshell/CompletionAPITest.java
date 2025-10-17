@@ -177,6 +177,16 @@ public class CompletionAPITest extends KullaTesting {
         assertEquals("JShellTest 0 ", documentation.get().get());
     }
 
+    @Test
+    public void testSignature() {
+        waitIndexingFinished();
+
+        assertEval("void test(int i) {}");
+        assertEval("void test(int i, int j) {}");
+        assertSignature("test(|", true, "void test(int i):0", "void test(int i, int j):0");
+        assertSignature("test(0, |", true, "void test(int i, int j):1");
+    }
+
     private List<String> completionSuggestions(String input,
                                                BiConsumer<CompletionState, List<? extends ElementSuggestion>> validator) {
         int expectedAnchor = input.indexOf('^');
@@ -279,7 +289,7 @@ public class CompletionAPITest extends KullaTesting {
     //where:
         private final Compiler compiler = new Compiler();
 
-        static {
+    static {
         try {
             //disable reading of paramater names, to improve stability:
             Class<?> analysisClass = Class.forName("jdk.jshell.SourceCodeAnalysisImpl");
