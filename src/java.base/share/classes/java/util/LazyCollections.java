@@ -356,6 +356,10 @@ final class LazyCollections {
     static sealed abstract class AbstractLazyMap<K, V>
             extends ImmutableCollections.AbstractImmutableMap<K, V> {
 
+        // This field shadows AbstractMap.keySet which is not @Stable.
+        @Stable
+        Set<K> keySet;
+        // This field shadows AbstractMap.values which is of another type
         @Stable
         final V[] values;
         @Stable

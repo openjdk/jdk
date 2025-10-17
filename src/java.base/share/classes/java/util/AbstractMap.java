@@ -331,7 +331,6 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * }
      *}</pre>
      */
-    @Stable
     transient Set<K>        keySet;
     transient Collection<V> values;
 
