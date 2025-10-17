@@ -38,6 +38,12 @@ import jdk.test.lib.JDKToolFinder;
 
 public class TestEarlyDynamicLoadJcmd {
     public static void main(String[] args) throws Exception {
+        ProcessBuilder x = new ProcessBuilder();
+        String pid = Long.toString(ProcessTools.getProcessId());
+        x.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "help"});
+        OutputAnalyzer output = new OutputAnalyzer(x.start());
+        output.shouldHaveExitValue(0);
+
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 "-XX:+StartAttachListener",
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
@@ -45,7 +51,7 @@ public class TestEarlyDynamicLoadJcmd {
         String jcmdPath = JDKToolFinder.getJDKTool("jcmd");
         pb.environment().put("JCMD_PATH", jcmdPath.replace("\\", "\\\\"));
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("Dynamic agent loading is only permitted in the live phase");
     }
