@@ -137,7 +137,9 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(JNIEnv *jni, jobject self) {
+Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(
+    JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
+
   jvmtiError err = JVMTI_ERROR_NONE;
 
   jclass cls = jni->GetObjectClass(self);
@@ -150,7 +152,8 @@ Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(JNIEnv *jni, jobject sel
   }
 
   // Set watch and access field without returning to calling java code
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, nullptr);
+  access_cnt = 0;
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, eventThread);
   check_jvmti_error(err, "SetEventNotificationMode");
   err = jvmti_env->SetFieldAccessWatch(cls, fieldToRead);
   check_jvmti_error(err, "SetFieldAccessWatch");
@@ -159,7 +162,7 @@ Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(JNIEnv *jni, jobject sel
 
   err = jvmti_env->ClearFieldAccessWatch(cls, fieldToRead);
   check_jvmti_error(err, "ClearFieldAccessWatch");
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_ACCESS, nullptr);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FIELD_ACCESS, eventThread);
   check_jvmti_error(err, "SetEventNotificationMode");
 
   const char* name_str = jni->GetStringUTFChars(jname, nullptr);
@@ -168,15 +171,16 @@ Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(JNIEnv *jni, jobject sel
     fatal(jni, "The field value is incorrect.");
   }
 
-  if (access_cnt != 1) {
-    fatal(jni, "The field access count should be 1.");
+  if (access_cnt != isEventExpected) {
+    fatal(jni, "The field access count is incorrect.");
   }
   jni->ReleaseStringUTFChars(jname, name_str);
 }
 
 
 JNIEXPORT void JNICALL
-Java_TestFieldsEventsFromJNI_enableEventsAndModifyField(JNIEnv *jni, jobject self) {
+Java_TestFieldsEventsFromJNI_enableEventsAndModifyField(
+    JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   jclass cls = jni->GetObjectClass(self);
   if (cls == nullptr) {
@@ -187,7 +191,8 @@ Java_TestFieldsEventsFromJNI_enableEventsAndModifyField(JNIEnv *jni, jobject sel
     fatal(jni, "No field found");
   }
 
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, nullptr);
+  modify_cnt = 0;
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, eventThread);
   check_jvmti_error(err, "SetEventNotificationMode");
   err = jvmti_env->SetFieldModificationWatch(cls, fieldToModify);
   check_jvmti_error(err, "SetFieldAccessWatch");
@@ -197,10 +202,10 @@ Java_TestFieldsEventsFromJNI_enableEventsAndModifyField(JNIEnv *jni, jobject sel
 
   err = jvmti_env->ClearFieldModificationWatch(cls, fieldToModify);
   check_jvmti_error(err, "ClearFieldAccessWatch");
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FIELD_MODIFICATION, nullptr);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FIELD_MODIFICATION, eventThread);
   check_jvmti_error(err, "SetEventNotificationMode");
 
-  if (modify_cnt != 1) {
+  if (modify_cnt != isEventExpected) {
     fatal(jni, "The field access count should be 1.");
   }
 }

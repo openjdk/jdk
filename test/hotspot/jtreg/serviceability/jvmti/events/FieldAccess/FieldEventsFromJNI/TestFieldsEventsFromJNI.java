@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @summary Test verifies that field access/modification events are correctly posted from JNI
- * call even if last java frame is not deoptimized yet.
+ * @summary Test verifies that field access/modification events are correctly posted from JNI.
  * @bug 8224852
  * @run main/othervm/native -agentlib:JvmtiFieldEventsFromJNI TestFieldsEventsFromJNI
  * @run main/othervm/native -agentlib:JvmtiFieldEventsFromJNI -Xcomp TestFieldsEventsFromJNI
@@ -34,17 +33,43 @@ public class TestFieldsEventsFromJNI {
     private String accessField = "accessFieldValue";
     private String modifyField = "modifyFieldValue";
 
-    private native void enableEventsAndAccessField();
-    private native void enableEventsAndModifyField();
+    private native void enableEventsAndAccessField(boolean isEventExpected, Thread eventThread);
+    private native void enableEventsAndModifyField(boolean isEventExpected, Thread eventThread);
 
-    void javaMethod() {
-        enableEventsAndAccessField();
-        enableEventsAndModifyField();
+    void javaMethod(boolean isEventExpected, Thread eventThread) {
+        enableEventsAndAccessField(isEventExpected, eventThread);
+        enableEventsAndModifyField(isEventExpected, eventThread);
     }
+
+    final static Object lock = new Object();
+    volatile static boolean isAnotherThreadStarted = false;
 
     public static void main(String[] args) throws InterruptedException {
         System.loadLibrary("JvmtiFieldEventsFromJNI");
         TestFieldsEventsFromJNI c = new TestFieldsEventsFromJNI();
-        c.javaMethod();
+        // anotherThread doesn't access fields, it is needed only to
+        // enable notification somewhere.
+        Thread anotherThread = new Thread(() -> {
+            isAnotherThreadStarted = true;
+            synchronized(lock) {
+                lock.notify();
+            }
+            while(!Thread.currentThread().isInterrupted()) {
+                Thread.yield();
+            }
+        });
+        synchronized(lock) {
+            anotherThread.start();
+            while(!isAnotherThreadStarted) {
+                lock.wait();
+            }
+        }
+        // Enable events while the thread is in the same JNI call.
+        c.javaMethod(true, Thread.currentThread());
+        // Verify that field access from JNI doesn't fail if events are
+        // not enaled on this thread.
+        c.javaMethod(false, anotherThread);
+        anotherThread.interrupt();
+        anotherThread.join();
     }
 }

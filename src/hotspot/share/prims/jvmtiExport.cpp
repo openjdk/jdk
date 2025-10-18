@@ -2181,6 +2181,10 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   // We must be called with a Java context in order to provide reasonable
   // values for the klazz, method, and location fields. The callers of this
   // function don't make the call unless there is a Java context.
+  // The last java frame might be compiled if the event was enabled while the thread was in JNI.
+  // In this case the frame is only marked for deoptimization but still remains compiled.
+  // Also, the last frame might be compiled if events were not enabled for
+  // this thread. The thread filtering is done later.
   assert(thread->has_last_Java_frame(), "must be called with a Java context");
 
   if (thread->should_hide_jvmti_events()) {
@@ -2209,7 +2213,6 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   Method *method;
   address address;
 
-  assert(thread->is_interp_only_mode(), "should be interponly");
   // The frame might be still compiled if not executed yet after deoptimization.
   if (last_frame.is_interpreted_frame()) {
     method = last_frame.interpreter_frame_method();
@@ -2284,6 +2287,11 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
   // We must be called with a Java context in order to provide reasonable
   // values for the klazz, method, and location fields. The callers of this
   // function don't make the call unless there is a Java context.
+  // The last java frame might be compiled if the event was enabled while the thread was in JNI.
+  // In this case the frame is only marked for deoptimization but still remains compiled.
+  // Also, the last frame might be compiled if events were not enabled for
+  // this thread. The thread filtering is done later.
+
   assert(thread->has_last_Java_frame(), "must be called with Java context");
 
   if (thread->should_hide_jvmti_events()) {
@@ -2312,8 +2320,6 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
   Method *method;
   address address;
 
-  assert(thread->is_interp_only_mode(), "should be interponly");
-  // The frame might be still compiled if not executed yet after deoptimization.
   if (last_frame.is_interpreted_frame()) {
     method = last_frame.interpreter_frame_method();
     address = last_frame.interpreter_frame_bcp();
