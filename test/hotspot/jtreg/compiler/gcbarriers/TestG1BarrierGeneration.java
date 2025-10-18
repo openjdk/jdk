@@ -884,10 +884,30 @@ public class TestG1BarrierGeneration {
             Outer o = new Outer();
             Object oldVal = new Object();
             o.f = oldVal;
+            Object cmpVal = new Object();
+            Object newVal = new Object();
+            Object oldVal2 = testCompareAndExchange(o, cmpVal, newVal);
+            Asserts.assertEquals(oldVal2, oldVal);
+            Asserts.assertEquals(o.f, oldVal);
+        }
+        {
+            Outer o = new Outer();
+            Object oldVal = new Object();
+            o.f = oldVal;
             Object newVal = new Object();
             boolean b = testCompareAndSwap(o, oldVal, newVal);
             Asserts.assertTrue(b);
             Asserts.assertEquals(o.f, newVal);
+        }
+        {
+            Outer o = new Outer();
+            Object oldVal = new Object();
+            o.f = oldVal;
+            Object cmpVal = new Object();
+            Object newVal = new Object();
+            boolean b = testCompareAndSwap(o, cmpVal, newVal);
+            Asserts.assertFalse(b);
+            Asserts.assertEquals(o.f, oldVal);
         }
         {
             Outer o = new Outer();
