@@ -39,7 +39,7 @@ import java.io.Serializable;
 
 /**
  * The layout manager used by <code>JScrollPane</code>.
- * <code>JScrollPaneLayout</code> is
+ * <code>ScrollPaneLayout</code> is
  * responsible for nine components: a viewport, two scrollbars,
  * a row header, a column header, and four "corner" components.
  * <p>

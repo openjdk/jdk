@@ -575,7 +575,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     private static final long serialVersionUID = -1000070633030801713L;
 
     /**
-     * Creates a {@code GridBagConstraint} object with
+     * Creates a {@code GridBagConstraints} object with
      * all of its fields set to their default value.
      */
     public GridBagConstraints () {
