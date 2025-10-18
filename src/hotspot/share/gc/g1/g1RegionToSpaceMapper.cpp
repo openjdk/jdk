@@ -267,6 +267,7 @@ class G1RegionsSmallerThanCommitSizeMapper : public G1RegionToSpaceMapper {
       _storage.uncommit(uncommitted_l, num_uncommitted_pages_found);
     }
   }
+
 };
 
 void G1RegionToSpaceMapper::fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
