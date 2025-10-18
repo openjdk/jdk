@@ -37,6 +37,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
