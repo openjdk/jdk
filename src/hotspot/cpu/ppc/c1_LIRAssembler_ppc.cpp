@@ -264,12 +264,17 @@ int LIR_Assembler::emit_deopt_handler() {
   }
 
   int offset = code_offset();
+  Label start;
+
+  __ bind(start);
   __ bl64_patchable(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type);
+  int entry_offset = __ offset();
+  __ b(start);
 
   guarantee(code_offset() - offset <= deopt_handler_size(), "overflow");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 

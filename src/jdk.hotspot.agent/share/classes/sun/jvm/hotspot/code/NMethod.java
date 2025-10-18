@@ -85,7 +85,7 @@ public class NMethod extends CodeBlob {
     immutableDataField                 = type.getAddressField("_immutable_data");
     immutableDataSizeField             = type.getCIntegerField("_immutable_data_size");
     exceptionOffsetField               = type.getCIntegerField("_exception_offset");
-    deoptHandlerOffsetField            = type.getCIntegerField("_deopt_handler_offset");
+    deoptHandlerOffsetField            = type.getCIntegerField("_deopt_handler_entry_offset");
     origPCOffsetField                  = type.getCIntegerField("_orig_pc_offset");
     stubOffsetField                    = type.getCIntegerField("_stub_offset");
     scopesPCsOffsetField               = type.getCIntegerField("_scopes_pcs_offset");
@@ -124,7 +124,7 @@ public class NMethod extends CodeBlob {
   public Address instsBegin()           { return codeBegin();                                        }
   public Address instsEnd()             { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address exceptionBegin()       { return headerBegin().addOffsetTo(getExceptionOffset());    }
-  public Address deoptHandlerBegin()    { return headerBegin().addOffsetTo(getDeoptHandlerOffset());   }
+  public Address deoptHandlerEntry()    { return headerBegin().addOffsetTo(getDeoptHandlerEntryOffset());   }
   public Address stubBegin()            { return headerBegin().addOffsetTo(getStubOffset());         }
   public Address stubEnd()              { return dataBegin();                                        }
   public Address oopsBegin()            { return dataBegin();                                        }
@@ -253,7 +253,7 @@ public class NMethod extends CodeBlob {
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   public boolean isDeoptPc      (Address pc) { return isDeoptEntry(pc); }
-  public boolean isDeoptEntry   (Address pc) { return pc == deoptHandlerBegin(); }
+  public boolean isDeoptEntry   (Address pc) { return pc == deoptHandlerEntry(); }
 
   /** Tells whether frames described by this nmethod can be
       deoptimized. Note: native wrappers cannot be deoptimized. */
@@ -481,7 +481,7 @@ public class NMethod extends CodeBlob {
 
   private int getEntryBCI()           { return (int) entryBCIField          .getValue(addr); }
   private int getExceptionOffset()    { return (int) exceptionOffsetField   .getValue(addr); }
-  private int getDeoptHandlerOffset()   { return (int) deoptHandlerOffsetField  .getValue(addr); }
+  private int getDeoptHandlerEntryOffset()   { return (int) deoptHandlerOffsetField  .getValue(addr); }
   private int getStubOffset()         { return (int) stubOffsetField        .getValue(addr); }
   private int getScopesDataOffset()   { return (int) scopesDataOffsetField  .getValue(addr); }
   private int getScopesPCsOffset()    { return (int) scopesPCsOffsetField   .getValue(addr); }
