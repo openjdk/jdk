@@ -2145,6 +2145,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (can_reshape && outcnt() == 0) {
     // set_req() above may kill outputs if Phi is referenced
     // only by itself on the dead (top) control path.
+    phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
     return top;
   }
 
@@ -2159,6 +2160,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
   if (uin == top) {             // Simplest case: no alive inputs.
     if (can_reshape) {          // IGVN transformation
+      phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
       return top;
     } else {
       return nullptr;              // Identity will return TOP
@@ -2171,11 +2173,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if (is_data_loop(r->as_Region(), uin, phase)) {
         // Break this data loop to avoid creation of a dead loop.
         if (can_reshape) {
+          phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
           return top;
         } else {
           // We can't return top if we are in Parse phase - cut inputs only
           // let Identity to handle the case.
           replace_edge(uin, top, phase);
+          phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
           return nullptr;
         }
       }
@@ -2248,6 +2252,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #endif
     // Identity may not return the expected uin, if it has to wait for the region, in irreducible case
     assert(ident == uin || ident->is_top() || must_wait_for_region_in_irreducible_loop(phase), "Identity must clean this up");
+    phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
     return nullptr;
   }
 
@@ -2282,6 +2287,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       if( opt == unsafe_id || is_unsafe_data_reference(opt) ) {
         // Found dead loop.
         if( can_reshape ) {
+          phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
           return top;
         }
         // We can't return top if we are in Parse phase - cut inputs only
@@ -2289,6 +2295,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         assert(req() == 3, "only diamond merge phi here");
         set_req(1, top);
         set_req(2, top);
+        phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
         return nullptr;
       } else {
         return opt;
@@ -2493,6 +2500,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             // Equivalent code is in MemNode::Ideal_common
             Node *m  = phase->transform(n);
             if (outcnt() == 0) {  // Above transform() may kill us!
+              phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
               return top;
             }
             // If transformed to a MergeMem, get the desired slice
@@ -2526,6 +2534,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         }
         if (!saw_safe_input) {
           // There is a dead loop: All inputs are either dead or reference back to this phi
+          phase->C->record_optimization_event(OptEvent_SimplifyPhiFunction);
           return top;
         }
 
