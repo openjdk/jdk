@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
  * @test
  * @bug 4519462
  * @summary Verify Sun CertPathBuilder implementation handles certificates with no extensions
+ * @enablePreview
  */
 
+import java.security.PEMDecoder;
 import java.security.cert.X509Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.CollectionCertStoreParameters;
@@ -35,15 +37,14 @@ import java.security.cert.X509CertSelector;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.CertPathBuilderResult;
-import java.security.cert.CertificateFactory;
-import java.security.cert.CRL;
 import java.security.cert.CertPath;
 import java.util.HashSet;
 import java.util.ArrayList;
-import java.io.ByteArrayInputStream;
 
 // Test based on user code submitted with bug by daniel.boggs@compass.net
 public class NoExtensions {
+
+    private static final PEMDecoder pemDecoder = PEMDecoder.of();
 
     public static void main(String[] args) {
         try {
@@ -92,7 +93,7 @@ public class NoExtensions {
 //        System.out.println(certPath.toString());
     }
 
-    private static X509Certificate getTrustedCertificate() throws Exception {
+    private static X509Certificate getTrustedCertificate() {
         String sCert =
             "-----BEGIN CERTIFICATE-----\n"
           + "MIIBezCCASWgAwIBAgIQyWD8dLUoqpJFyDxrfRlrsTANBgkqhkiG9w0BAQQFADAW\n"
@@ -104,12 +105,10 @@ public class NoExtensions {
           + "AKoAZIoRz7jUqlw19DANBgkqhkiG9w0BAQQFAANBACJxAfP57yqaT9N+nRgAOugM\n"
           + "JG0aN3/peCIvL3p29epRL2xoWFvxpUUlsH2I39OZ6b8+twWCebhkv1I62segXAk=\n"
           + "-----END CERTIFICATE-----";
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream bytes = new ByteArrayInputStream(sCert.getBytes());
-        return (X509Certificate)certFactory.generateCertificate(bytes);
+        return pemDecoder.decode(sCert, X509Certificate.class);
     }
 
-    private static X509Certificate getUserCertificate1() throws Exception {
+    private static X509Certificate getUserCertificate1() {
         // this certificate includes an extension
         String sCert =
             "-----BEGIN CERTIFICATE-----\n"
@@ -123,12 +122,10 @@ public class NoExtensions {
           + "CxeUaYlXmvbxVNkxM65Pplsj3h4ntfZaynmlhahH3YsnnA8wk6xPt04LjSId12RB\n"
           + "PeuO\n"
           + "-----END CERTIFICATE-----";
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream bytes = new ByteArrayInputStream(sCert.getBytes());
-        return (X509Certificate)certFactory.generateCertificate(bytes);
+        return pemDecoder.decode(sCert, X509Certificate.class);
     }
 
-    private static X509Certificate getUserCertificate2() throws Exception {
+    private static X509Certificate getUserCertificate2() {
         // this certificate does not include any extensions
         String sCert =
             "-----BEGIN CERTIFICATE-----\n"
@@ -140,8 +137,6 @@ public class NoExtensions {
           + "BAUAA0EAQmj9SFHEx66JyAps3ew4pcSS3QvfVZ/6qsNUYCG75rFGcTUPHcXKql9y\n"
           + "qBT83iNLJ//krjw5Ju0WRPg/buHSww==\n"
           + "-----END CERTIFICATE-----";
-        CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-        ByteArrayInputStream bytes = new ByteArrayInputStream(sCert.getBytes());
-        return (X509Certificate)certFactory.generateCertificate(bytes);
+        return pemDecoder.decode(sCert, X509Certificate.class);
     }
 }
