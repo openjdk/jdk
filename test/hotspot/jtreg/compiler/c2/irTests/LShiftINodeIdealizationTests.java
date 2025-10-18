@@ -65,6 +65,7 @@ public class LShiftINodeIdealizationTests {
             "testLShiftOfAndOfRShift",
             "testLShiftOfAndOfURShift",
             "testLShiftOfAndOfCon",
+            "testShiftOfSubConstant",
     })
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
@@ -122,6 +123,7 @@ public class LShiftINodeIdealizationTests {
         Asserts.assertEQ((a + a) << 31, testLargeShiftOfAddSameInput(a));
         Asserts.assertEQ(((a + 1) << 1) + 1, testShiftOfAddConstant(a));
         Asserts.assertEQ((a & ((1 << (32 - 10)) -1)) << 10, testLShiftOfAndOfCon(a));
+        Asserts.assertEQ(((1 - a) << 1) + 1, testShiftOfSubConstant(a));
 
         assertDoubleShiftResult(a);
     }
@@ -359,15 +361,43 @@ public class LShiftINodeIdealizationTests {
     @Test
     @IR(counts = { IRNode.ADD_I, "1"} , failOn = { IRNode.LSHIFT_I, IRNode.RSHIFT_I } )
     @Arguments( values = { Argument.NUMBER_42 })
-    public void testStoreShort(int x) {
+    public void testStoreShort1(int x) {
         shortField = (short)(x + x);
     }
 
     @Test
     @IR(counts = { IRNode.ADD_I, "1"} , failOn = { IRNode.LSHIFT_I, IRNode.RSHIFT_I } )
     @Arguments( values = { Argument.NUMBER_42 })
-    public void testStoreByte(int x) {
+    public void testStoreByte1(int x) {
         byteField = (byte)(x + x);
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_I, "1"} , failOn = { IRNode.LSHIFT_I, IRNode.RSHIFT_I } )
+    @Arguments( values = { Argument.NUMBER_42 })
+    public void testStoreShort2(int x) {
+        shortField = (short)(x + 1);
+    }
+
+    @Test
+    @IR(counts = { IRNode.ADD_I, "1"} , failOn = { IRNode.LSHIFT_I, IRNode.RSHIFT_I } )
+    @Arguments( values = { Argument.NUMBER_42 })
+    public void testStoreByte2(int x) {
+        byteField = (byte)(x + 1);
+    }
+
+    @Test
+    @IR(counts = { IRNode.SUB_I, "1"} , failOn = { IRNode.LSHIFT_I, IRNode.RSHIFT_I } )
+    @Arguments( values = { Argument.NUMBER_42 })
+    public void testStoreShort3(int x) {
+        shortField = (short)(1 - x);
+    }
+
+    @Test
+    @IR(counts = { IRNode.SUB_I, "1"} , failOn = { IRNode.LSHIFT_I, IRNode.RSHIFT_I } )
+    @Arguments( values = { Argument.NUMBER_42 })
+    public void testStoreByte3(int x) {
+        byteField = (byte)(1 - x);
     }
 
     static int otherInput;
@@ -408,5 +438,11 @@ public class LShiftINodeIdealizationTests {
     @IR(counts = { IRNode.LSHIFT_I, "1" } , failOn = { IRNode.AND_I } )
     public int testLShiftOfAndOfCon(int x) {
         return (x & ((1 << (32 - 10)) -1)) << 10;
+    }
+
+    @Test
+    @IR(counts = { IRNode.LSHIFT_I, "1",  IRNode.SUB_I, "1" }, failOn =  { IRNode.ADD_I })
+    public int testShiftOfSubConstant(int x) {
+        return ((1 - x) << 1) + 1;
     }
 }
