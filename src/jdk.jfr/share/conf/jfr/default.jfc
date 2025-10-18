@@ -166,6 +166,11 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.ClassFileDefine">
+      <setting name="enabled" control="class-loading">false</setting>
+      <setting name="stackTrace">true</setting>
+    </event>
+
     <event name="jdk.RedefineClasses">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
