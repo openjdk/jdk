@@ -30,7 +30,6 @@ import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.runtime.amd64.*;
-import sun.jvm.hotspot.runtime.x86.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 import sun.jvm.hotspot.utilities.Observable;
@@ -88,14 +87,14 @@ public class Win32AMD64JavaThreadPDAccess implements JavaThreadPDAccess {
     }
     Address pc =  thread.getLastJavaPC();
     if ( pc != null ) {
-      return new X86Frame(thread.getLastJavaSP(), fp, pc);
+      return new AMD64Frame(thread.getLastJavaSP(), fp, pc);
     } else {
-      return new X86Frame(thread.getLastJavaSP(), fp);
+      return new AMD64Frame(thread.getLastJavaSP(), fp);
     }
   }
 
   public RegisterMap newRegisterMap(JavaThread thread, boolean updateMap) {
-    return new X86RegisterMap(thread, updateMap);
+    return new AMD64RegisterMap(thread, updateMap);
   }
 
   public Frame getCurrentFrameGuess(JavaThread thread, Address addr) {
@@ -106,13 +105,13 @@ public class Win32AMD64JavaThreadPDAccess implements JavaThreadPDAccess {
       return null;
     }
     if (guesser.getPC() == null) {
-      return new X86Frame(guesser.getSP(), guesser.getFP());
+      return new AMD64Frame(guesser.getSP(), guesser.getFP());
     } else if (VM.getVM().getInterpreter().contains(guesser.getPC())) {
       // pass the value of R13 which contains the bcp for the top level frame
       Address bcp = context.getRegisterAsAddress(AMD64ThreadContext.R13);
-      return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC(), null, bcp);
+      return new AMD64Frame(guesser.getSP(), guesser.getFP(), guesser.getPC(), null, bcp);
     } else {
-      return new X86Frame(guesser.getSP(), guesser.getFP(), guesser.getPC());
+      return new AMD64Frame(guesser.getSP(), guesser.getFP(), guesser.getPC());
     }
   }
 
