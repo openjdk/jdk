@@ -25,7 +25,14 @@
 
 package jdk.internal.reflect;
 
-import java.lang.reflect.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
+import java.lang.reflect.Member;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -34,7 +41,6 @@ import java.util.Set;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
-import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -445,4 +451,14 @@ public class Reflection {
      */
     public static native boolean areNestMates(Class<?> currentClass,
                                               Class<?> memberClass);
+
+    /**
+     * Returns a MethodHandles.Lookup with full capabilities to the given class.
+     * This method is used by core reflection implementation to
+     * create method handles for method/constructor/field accessors.
+     */
+    public static MethodHandles.Lookup getLookup(Class<?> lookupClass) {
+        return MethodHandleAccessorFactory.getLookup(lookupClass);
+    }
+
 }
