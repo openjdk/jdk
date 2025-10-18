@@ -23,6 +23,9 @@
 package jdk.jpackage.test;
 
 import static java.util.Collections.unmodifiableSortedSet;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
