@@ -499,6 +499,8 @@
     <Field type="float" contentType="percentage" name="thresholdPercentage" label="Current IHOP Threshold" description="Current IHOP threshold in percent of old generation" />
     <Field type="ulong" contentType="bytes" name="targetOccupancy" label="Target Occupancy" description="Target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
+    <Field type="ulong" contentType="bytes" name="currentMaxOccupancy" label="Current Maximum Occupancy" description="Current old generation maximum occupancy" />
+    <Field type="ulong" contentType="bytes" name="currentSoftMaxHeapSize" label="Current Soft Maximum Heap Size" description="Current value of SoftMaxHeapSize" />
     <Field type="ulong" contentType="bytes" name="recentMutatorAllocationSize" label="Recent Mutator Allocation Size"
       description="Mutator allocation during mutator operation in the most recent interval" />
     <Field type="long" contentType="millis" name="recentMutatorDuration" label="Recent Mutator Duration" description="Time the mutator ran in the most recent interval" />
@@ -513,6 +515,8 @@
     <Field type="float" contentType="percentage" name="thresholdPercentage" label="Threshold" description="Current IHOP threshold in percent of the internal target occupancy" />
     <Field type="ulong" contentType="bytes" name="ihopTargetOccupancy" label="IHOP Target Occupancy" description="Internal target old generation occupancy to reach at the start of mixed GC" />
     <Field type="ulong" contentType="bytes" name="currentOccupancy" label="Current Occupancy" description="Current old generation occupancy" />
+    <Field type="ulong" contentType="bytes" name="currentMaxOccupancy" label="Current Maximum Occupancy" description="Current old generation maximum occupancy" />
+    <Field type="ulong" contentType="bytes" name="currentSoftMaxHeapSize" label="Current Soft Maximum Heap Size" description="Current value of SoftMaxHeapSize" />
     <Field type="ulong" contentType="bytes" name="additionalBufferSize" label="Additional Buffer" description="Additional buffer size" experimental="true" />
     <Field type="double" contentType="bytes-per-second" name="predictedAllocationRate" label="Predicted Allocation Rate" description="Current predicted allocation rate for the mutator in bytes/second" />
     <Field type="long" contentType="millis" name="predictedMarkingDuration" label="Predicted Marking Duration"
