@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,6 +237,16 @@ void Method::print_external_name(outputStream *os, Klass* klass, Symbol* method_
   os->print(" %s.%s(", klass->external_name(), method_name->as_C_string());
   signature->print_as_signature_external_parameters(os);
   os->print(")");
+}
+
+void Method::print_opto_method_size(int size) {
+  tty->print("Collecting method size {class_name} ");
+  method_holder()->name()->print_value_on(tty);
+  tty->print("{method_name} ");
+  name()->print_value_on(tty);
+  tty->print("{signature} ");
+  signature()->print_value_on(tty);
+  tty->print_cr("{Inline instruction size: %d}", size);
 }
 
 int Method::fast_exception_handler_bci_for(const methodHandle& mh, Klass* ex_klass, int throw_bci, TRAPS) {
