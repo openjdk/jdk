@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import jdk.internal.vm.annotation.Stable;
+
 /*
  * FallbackProviderAdapter implementation. Fallback provider serves the
  * following purposes:
@@ -46,6 +48,7 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     private static final Locale[] AVAILABLE_LOCS = {Locale.US, Locale.ENGLISH, Locale.ROOT};
     private static final Set<String> AVAILABLE_LANGTAGS = Set.of("en-US", "en", "und");
 
+    @Stable
     private volatile BreakIteratorProvider breakIteratorProvider;
 
     /**
