@@ -96,11 +96,11 @@ bool ciArrayKlass::is_leaf_type() {
 // ciArrayKlass::make
 //
 // Make an array klass of the specified element type.
-ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
+ciArrayKlass* ciArrayKlass::make(ciType* element_type, bool vm_type) {
   if (element_type->is_primitive_type()) {
     return ciTypeArrayKlass::make(element_type->basic_type());
   } else {
-    return ciObjArrayKlass::make(element_type->as_klass());
+    return ciObjArrayKlass::make(element_type->as_klass(), vm_type);
   }
 }
 
