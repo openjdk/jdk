@@ -105,38 +105,46 @@ public class AlgorithmIdEqualsHashCode {
 
             // Construct an AlgorithmId with explicit DER NULL parameters
             DerValue explicitNullParams = new DerValue(DerValue.tag_Null, new byte[0]);
-            AlgorithmId aiNullParams = new AlgorithmId(AlgorithmId.SHA256_oid, explicitNullParams);
+            AlgorithmId aiNullParams = new AlgorithmId(AlgorithmId.SHA256_oid,
+                    explicitNullParams);
 
             // The constructor should canonicalize this to "no parameters"
             if (aiNullParams.getEncodedParams() != null) {
-                System.out.println("FAILED: explicit NULL not canonicalized to absent parameters");
+                System.out.println("FAILED: explicit NULL not canonicalized to absent" +
+                        " parameters");
                 failed = true;
             } else {
                 System.out.println("PASSED explicit ASN.1 NULL canonicalization test");
             }
 
-            // Ensure equality and hashCode are consistent for canonicalized vs. normal AlgorithmId
+            // Ensure equality and hashCode are consistent for canonicalized
+            // vs normal AlgorithmId
             AlgorithmId aiNormal = AlgorithmId.get("SHA-256");
             if (!aiNullParams.equals(aiNormal) ||
                     aiNullParams.hashCode() != aiNormal.hashCode()) {
                 System.out.println("FAILED: equals()/hashCode() NULL vs absent parameters");
                 failed = true;
             } else {
-                System.out.println("PASSED equals()/hashCode() NULL vs absent parameters test");
+                System.out.println("PASSED equals()/hashCode() NULL vs absent parameters" +
+                        " test");
             }
         } catch (Exception e) {
-            System.out.println("FAILED: Exception during explicit NULL parameter test - " + e);
+            System.out.println("FAILED: Exception during explicit NULL parameter test - "
+                    + e);
             failed = true;
         }
 
         try {
             DerValue invalidNull = new DerValue(DerValue.tag_Null, new byte[]{0x00});
             new AlgorithmId(AlgorithmId.SHA256_oid, invalidNull);
-            throw new Exception("FAILED invalid ASN.1 NULL test: expected IOException not thrown");
+            throw new Exception("FAILED invalid ASN.1 NULL test: expected IOException " +
+                    "not thrown");
         } catch (IOException expected) {
-            System.out.println("PASSED invalid ASN.1 NULL test (caught expected IOException)");
+            System.out.println("PASSED invalid ASN.1 NULL test (caught expected " +
+                    "IOException)");
         } catch (Exception e) {
-            throw new Exception("FAILED invalid ASN.1 NULL test: unexpected exception type", e);
+            throw new Exception("FAILED invalid ASN.1 NULL test: unexpected exception " +
+                    "type", e);
         }
     }
 }
