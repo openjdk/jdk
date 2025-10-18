@@ -197,15 +197,15 @@ TEST_VM(NMT, test_realloc) {
 static void test_write_canary() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
   *canary_ptr = 1;
 }
 
 static void test_read_canary() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
-  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
-  MallocHeader::CanaryType read_canary = 0;
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
+  uint16_t read_canary = 0;
   read_canary = *canary_ptr;
 }
 
@@ -213,7 +213,7 @@ static void test_write_footer() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
   *footer_ptr = 1;
 }
 
@@ -221,8 +221,8 @@ static void test_read_footer() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
-  MallocHeader::CanaryType read_footer = *footer_ptr;
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
+  uint16_t read_footer = *footer_ptr;
 }
 
 static void test_write_size() {
@@ -245,7 +245,7 @@ static void test_write_canary_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
   *canary_ptr = 1;
 }
 
@@ -253,8 +253,8 @@ static void test_read_canary_after_realloc() {
   const size_t SIZE = 10;
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
-  MallocHeader::CanaryType* canary_ptr = (MallocHeader::CanaryType*)((char*)p - sizeof(MallocHeader::CanaryType));
-  MallocHeader::CanaryType read_canary = 0;
+  uint16_t* canary_ptr = (uint16_t*)((char*)p - sizeof(uint16_t));
+  uint16_t read_canary = 0;
   read_canary = *canary_ptr;
 }
 
@@ -263,7 +263,7 @@ static void test_write_footer_after_realloc() {
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
   *footer_ptr = 1;
 }
 
@@ -272,8 +272,8 @@ static void test_read_footer_after_realloc() {
   char* p = (char*)os::malloc(SIZE, mtTest);
   p = (char*)os::realloc(p, 2 * SIZE, mtTest);
   MallocHeader* mh = (MallocHeader*)(p - sizeof(MallocHeader));
-  MallocHeader::CanaryType* footer_ptr = (MallocHeader::CanaryType*)(mh->footer_address());
-  MallocHeader::CanaryType read_footer = *footer_ptr;
+  uint16_t* footer_ptr = (uint16_t*)(mh->footer_address());
+  uint16_t read_footer = *footer_ptr;
 }
 
 static void test_write_size_after_realloc() {
