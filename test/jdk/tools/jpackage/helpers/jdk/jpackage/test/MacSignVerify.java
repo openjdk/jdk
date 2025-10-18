@@ -44,7 +44,9 @@ import jdk.jpackage.test.MacSign.CertificateRequest;
  */
 public final class MacSignVerify {
 
-    public static void verifyAppImageSigned(JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+    public static void verifyAppImageSigned(
+            JPackageCommand cmd, CertificateRequest certRequest, MacSign.ResolvedKeychain keychain) {
+
         cmd.verifyIsOfType(PackageType.MAC);
         Objects.requireNonNull(certRequest);
         Objects.requireNonNull(keychain);
@@ -65,6 +67,8 @@ public final class MacSignVerify {
             });
         }
 
+        // Set to "null" if the sign origin is not found, instead of bailing out with an exception.
+        // Let is fail in the following TKit.assertEquals() call with a proper log message.
         var signOrigin = findSpctlSignOrigin(SpctlType.EXEC, bundleRoot).orElse(null);
 
         TKit.assertEquals(certRequest.name(), signOrigin,
