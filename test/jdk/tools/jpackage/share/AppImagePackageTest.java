@@ -24,13 +24,14 @@
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.function.Predicate;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageCommand.AppLayoutAssert;
+import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.RunnablePackageTest.Action;
@@ -104,6 +105,16 @@ public class AppImagePackageTest {
             TKit.deleteDirectoryRecursive(layout.appDirectory());
 
             new AppImageFile(appImageCmd.name(), "PhonyMainClass").save(appImageCmd.outputBundle());
+            var appImageDir = appImageCmd.outputBundle();
+
+            TKit.trace(String.format("Files in [%s] app image:", appImageDir));
+            try (var files = Files.walk(appImageDir)) {
+                files.sequential()
+                        .filter(Predicate.isEqual(appImageDir).negate())
+                        .map(path -> String.format("[%s]", appImageDir.relativize(path)))
+                        .forEachOrdered(TKit::trace);
+                TKit.trace("Done");
+            }
         })
         .addInitializer(cmd -> {
             cmd.addArguments("--app-image", appImageCmd.outputBundle());
@@ -112,11 +123,11 @@ public class AppImagePackageTest {
             }
             cmd.removeArgumentWithValue("--input");
 
-            cmd.excludeAppLayoutAsserts(
-                    AppLayoutAssert.MAIN_JAR_FILE,
-                    AppLayoutAssert.MAIN_LAUNCHER_FILES,
-                    AppLayoutAssert.MAC_BUNDLE_STRUCTURE,
-                    AppLayoutAssert.RUNTIME_DIRECTORY);
+            cmd.excludeStandardAsserts(
+                    StandardAssert.MAIN_JAR_FILE,
+                    StandardAssert.MAIN_LAUNCHER_FILES,
+                    StandardAssert.MAC_BUNDLE_STRUCTURE,
+                    StandardAssert.RUNTIME_DIRECTORY);
         })
         .run(Action.CREATE_AND_UNPACK);
     }
