@@ -51,6 +51,10 @@
 //   - Compute linearization of the VTransformGraph, into an order that respects
 //     all edges in the graph (bailout if cycle detected).
 //
+// - Cost-Model:
+//   - We use a cost-model as a heuristic to determine if vectorization is profitable.
+//     Compute the cost of the loop with and without vectorization.
+//
 // - Apply:
 //   - Changes to the C2 IR are only made once the "apply" method is called.
 //   - Align the main loop, by adjusting pre loop limit.
