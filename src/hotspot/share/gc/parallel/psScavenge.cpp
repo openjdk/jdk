@@ -521,8 +521,8 @@ void PSScavenge::clean_up_failed_promotion() {
 }
 
 bool PSScavenge::should_attempt_scavenge() {
-  const static bool SHOULD_RUN_YOUNG_GC = true;
-  const static bool SHOULD_RUN_FULL_GC = false;
+  const bool SHOULD_RUN_YOUNG_GC = true;
+  const bool SHOULD_RUN_FULL_GC = false;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
