@@ -1581,8 +1581,8 @@
   declare_constant(Deoptimization::Reason_unstable_if)                    \
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \
+  declare_constant(Deoptimization::Reason_not_compiled_exception_handler) \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_not_compiled_exception_handler))) \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \
   NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_jsr_mismatch)))                   \
   declare_constant(Deoptimization::Reason_tenured)                        \
