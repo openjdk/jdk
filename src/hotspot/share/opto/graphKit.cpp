@@ -2089,6 +2089,8 @@ Node* GraphKit::uncommon_trap(int trap_request,
   }
   if (stopped())  return nullptr; // trap reachable?
 
+  C->record_optimization_event(OptEvent_Deoptimization);
+
   // Note:  If ProfileTraps is true, and if a deopt. actually
   // occurs here, the runtime will make sure an MDO exists.  There is
   // no need to call method()->ensure_method_data() at this point.
