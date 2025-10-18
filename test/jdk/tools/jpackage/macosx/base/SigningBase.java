@@ -90,17 +90,29 @@ public class SigningBase {
         private final CertificateRequest spec;
     }
 
+    /**
+     * Standard keychains used in signing tests.
+     */
     public enum StandardKeychain {
+        /**
+         * The primary keychain with good certificates.
+         */
         MAIN("jpackagerTest.keychain",
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_UNICODE,
                 StandardCertificateRequest.PKG_UNICODE),
+        /**
+         * A keychain with some good and some expired certificates.
+         */
         EXPIRED("jpackagerTest-expired.keychain",
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,
                 StandardCertificateRequest.CODESIGN_EXPIRED,
                 StandardCertificateRequest.PKG_EXPIRED),
+        /**
+         * A keychain with duplicated certificates.
+         */
         DUPLICATE("jpackagerTest-duplicate.keychain",
                 StandardCertificateRequest.CODESIGN,
                 StandardCertificateRequest.PKG,

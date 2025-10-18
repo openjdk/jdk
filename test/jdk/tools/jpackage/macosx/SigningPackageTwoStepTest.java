@@ -48,20 +48,12 @@ import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
 /**
- * Note: Testing unsgined app image is done to verify support for per-user
- * configuration by checking for PackageFile.
- * Tests generation of dmg and pkg from signed or unsigned predefined app image.
- * Test will generate pkg and verifies its signature. It verifies that dmg
- * is not signed, but app image inside dmg is signed or unsigned. This test
- * requires that the machine is configured with test certificate for
- * "Developer ID Installer: jpackage.openjdk.java.net" in
- * jpackagerTest keychain with
- * always allowed access to this keychain for user which runs test.
- * note:
- * "jpackage.openjdk.java.net" can be over-ridden by system property
- * "jpackage.mac.signing.key.user.name", and
- * "jpackagerTest" can be over-ridden by system property
- * "jpackage.mac.signing.keychain"
+ * Tests packaging of a signed/unsigned predefined app image into a
+ * signed/unsigned .pkg or .dmg package.
+ *
+ * <p>
+ * Prerequisites: A keychain with self-signed certificates as specified in
+ * {@link SigningBase.StandardKeychain#MAIN}.
  */
 
 /*
