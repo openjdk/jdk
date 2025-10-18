@@ -10522,6 +10522,12 @@ myInit() {
           thread CPU time
         </description>
       </capabilityfield>
+      <capabilityfield id="can_get_gc_cpu_time" since="26">
+        <description>
+          Can <functionlink id="GetTotalGCCpuTime">get</functionlink>
+          GC CPU time
+        </description>
+      </capabilityfield>
       <capabilityfield id="can_generate_method_entry_events"
                        disp1="can_generate" disp2="_method_entry_events"
                        >
@@ -11210,6 +11216,68 @@ myInit() {
       </description>
       <origin>new</origin>
       <capabilities>
+      </capabilities>
+      <parameters>
+        <param id="nanos_ptr">
+          <outptr><jlong/></outptr>
+          <description>
+            On return, points to the time in nanoseconds.
+            This is an unsigned value.  If tested or printed as a jlong (signed value)
+            it may appear to be a negative number.
+          </description>
+        </param>
+      </parameters>
+      <errors>
+      </errors>
+    </function>
+
+    <function id="GetGCCpuTimerInfo" phase="any" callbacksafe="safe" num="157" since="26">
+      <synopsis>Get Total GC Cpu Timer Information</synopsis>
+      <description>
+        Get information about the
+        <functionlink id="GetTotalGCCpuTime"/> timer.
+        The fields of the <datalink id="jvmtiTimerInfo"/> structure
+        are filled in with details about the timer.
+        This information will not change during a particular invocation of the VM.
+      </description>
+      <origin>new</origin>
+      <capabilities>
+        <required id="can_get_gc_cpu_time">
+            Can get GC cpu time.
+        </required>
+      </capabilities>
+      <parameters>
+        <param id="info_ptr">
+          <outptr><struct>jvmtiTimerInfo</struct></outptr>
+          <description>
+            On return, filled with information describing the time
+            returned by <functionlink id="GetTotalGCCpuTime"/>.
+          </description>
+        </param>
+      </parameters>
+      <errors>
+      </errors>
+    </function>
+
+    <function id="GetTotalGCCpuTime" phase="any" callbacksafe="safe" num="158" since="26">
+      <synopsis>Get Total GC CPU Time</synopsis>
+      <description>
+          Return the current value of the total GC CPU timer, in nanoseconds.
+          <p/>
+          The value returned represents nanoseconds since some fixed but
+          arbitrary time (perhaps in the future, so values may be
+          negative).  This function provides nanosecond precision, but not
+          necessarily nanosecond accuracy. No guarantees are made about
+          how frequently values change.
+          <p/>
+          Get information about this timer with
+          <functionlink id="GetGCCpuTimerInfo"/>.
+      </description>
+      <origin>new</origin>
+      <capabilities>
+        <required id="can_get_gc_cpu_time">
+            Can get GC cpu time.
+        </required>
       </capabilities>
       <parameters>
         <param id="nanos_ptr">
@@ -15469,6 +15537,11 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="10 January 2025" version="25.0.0">
       Add new function ClearAllFramePops. Needed to speedup debugger single stepping.
+  </change>
+  <change date="30 October 2025" version="26.0.0">
+      Provide GC CPU time details.
+      Add new functions: GetGCCpuTimerInfo and GetTotalGCCpuTime.
+      Add new capability: can_get_gc_cpu_time.
   </change>
 </changehistory>
 

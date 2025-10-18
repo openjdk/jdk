@@ -92,6 +92,7 @@ jvmtiCapabilities JvmtiManageCapabilities::init_always_capabilities() {
   if (os::is_thread_cpu_time_supported()) {
     jc.can_get_current_thread_cpu_time = 1;
     jc.can_get_thread_cpu_time = 1;
+    jc.can_get_gc_cpu_time = 1;
   }
   jc.can_redefine_classes = 1;
   jc.can_redefine_any_class = 1;
@@ -461,6 +462,8 @@ void JvmtiManageCapabilities:: print(const jvmtiCapabilities* cap) {
     log_trace(jvmti)("can_get_current_thread_cpu_time");
   if (cap->can_get_thread_cpu_time)
     log_trace(jvmti)("can_get_thread_cpu_time");
+  if (cap->can_get_gc_cpu_time)
+    log_trace(jvmti)("can_get_gc_cpu_time");
   if (cap->can_generate_method_entry_events)
     log_trace(jvmti)("can_generate_method_entry_events");
   if (cap->can_generate_method_exit_events)
