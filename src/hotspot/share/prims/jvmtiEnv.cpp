@@ -3796,7 +3796,7 @@ JvmtiEnv::GetGCCpuTimerInfo(jvmtiTimerInfo* info_ptr) {
 
 // nanos_ptr - pre-checked for null
 jvmtiError
-JvmtiEnv::GetTotalGCCpuTime(long* nanos_ptr) {
+JvmtiEnv::GetTotalGCCpuTime(jlong* nanos_ptr) {
   {
     MutexLocker hl(Heap_lock);
     if (!os::is_thread_cpu_time_supported() ||
