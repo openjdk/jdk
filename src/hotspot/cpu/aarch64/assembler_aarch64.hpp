@@ -27,12 +27,12 @@
 #define CPU_AARCH64_ASSEMBLER_AARCH64_HPP
 
 #include "asm/register.hpp"
+#include "cppstdlib/type_traits.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include <type_traits>
 
 #ifdef __GNUC__
 

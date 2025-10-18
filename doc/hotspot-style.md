@@ -413,12 +413,12 @@ support for more recent Standards must of course stick with the
 original C++98/03 subset.)
 
 This section describes that subset.  Features from the C++98/03
-language may be used unless explicitly excluded here.  Features from
-C++11, C++14, and C++17 may be explicitly permitted or explicitly excluded,
+language may be used unless explicitly forbidden here.  Features from
+C++11, C++14, and C++17 may be explicitly permitted or explicitly forbidden,
 and discussed accordingly here.  There is a third category, undecided
 features, about which HotSpot developers have not yet reached a
 consensus, or perhaps have not discussed at all.  Use of these
-features is also excluded.
+features is also forbidden.
 
 (The use of some features may not be immediately obvious and may slip
 in anyway, since the compiler will accept them.  The code review
@@ -427,7 +427,7 @@ process is the main defense against this.)
 Some features are discussed in their own subsection, typically to provide
 more extensive discussion or rationale for limitations.  Features that
 don't have their own subsection are listed in omnibus feature sections
-for permitted, excluded, and undecided features.
+for permitted, forbidden, and undecided features.
 
 Lists of new features for C++11, C++14, and C++17, along with links to their
 descriptions, can be found in the online documentation for some of the
@@ -494,15 +494,16 @@ worthwhile, given the alternatives.
 
 ### Memory Allocation
 
-Do not use the standard global allocation and deallocation functions
-(operator new and related functions).  Use of these functions by HotSpot
-code is disabled for some platforms.
+Do not use the standard global allocation and deallocation functions (global
+`operator new` and related functions), other than the non-allocating forms of
+those functions.  Use of these functions by HotSpot code is disabled for some
+platforms.
 
 Rationale: HotSpot often uses "resource" or "arena" allocation.  Even
 where heap allocation is used, the standard global functions are
-avoided in favor of wrappers around malloc and free that support the
-VM's Native Memory Tracking (NMT) feature.  Typically, uses of the global
-operator new are inadvertent and therefore often associated with memory
+avoided in favor of wrappers around `malloc` and `free` that support the
+JVM's Native Memory Tracking (NMT) feature.  Typically, uses of the global
+`operator new` are inadvertent and therefore often associated with memory
 leaks.
 
 Native memory allocation failures are often treated as non-recoverable.
@@ -560,7 +561,39 @@ Bug for similar gdb problems.
 
 ### C++ Standard Library
 
-Avoid using the C++ Standard Library.
+Only curated parts of the C++ Standard Library may be used by HotSpot code.
+
+Functions that may throw exceptions must not be used.  This is in accordance
+with the HotSpot policy of [not using exceptions](#error-handling).
+
+Also in accordance with HotSpot policy, the
+[standard global allocator must not be used](#memory-allocation).  This means
+that uses of standard container classes cannot presently be used, as doing so
+requires specialization on some allocator type that is integrated with the
+existing HotSpot allocation mechanisms. (Such allocators may be provided in
+the future.)
+
+Standard Library identifiers should usually be fully qualified; `using`
+directives must not be used to bring Standard Library identifiers into scope
+just to remove the need for namespace qualification.  Requiring qualification
+makes it easy to distinguish between references to external libraries and code
+that is part of HotSpot.
+
+As with language features, Standard Library facilities are either permitted,
+explicitly forbidden, or undecided (and so implicitly forbidden).
+
+Most HotSpot code should not directly `#include` C++ Standard Library headers.
+HotSpot provides a set of wrapper headers for the Standard Library headers
+containing permitted definitions.  These wrappers are in the `cppstdlib`
+directory, with the same name as the corresponding Standard Library header and
+a `.hpp` extension.  These wrappers provide a place for any additional code
+(some of which may be platform-specific) needed to support HotSpot usage.
+
+These wrappers also provide a place to document HotSpot usage, including any
+restrictions.  The set of wrappers and the usage documentation should be
+considered part of HotSpot style.  Any changes are subject to the same process
+as applies to this document. (For historical reasons, there may be many direct
+inclusions of some C++ Standard Library headers.)
 
 Historically, HotSpot has mostly avoided use of the Standard
 Library.
@@ -577,43 +610,59 @@ Some reasons for this include
 Standard Library facilities is exceptions. HotSpot does not use
 exceptions and, for platforms which allow doing so, builds with them
 turned off.  Many Standard Library facilities implicitly or explicitly
+use exceptions. On the other hand, many don't, and can be used without
+concern for this issue. Others may have a useful subset that doesn't
 use exceptions.
 
 * `assert`.  An issue that is quickly encountered is the `assert` macro name
 collision ([JDK-8007770](https://bugs.openjdk.org/browse/JDK-8007770)).
-Some mechanism for addressing this would be needed before much of the
-Standard Library could be used.  (Not all Standard Library implementations
-use assert in header files, but some do.)
+(Not all Standard Library implementations use `assert` in header files, but
+some  do.) HotSpot provides a mechanism for addressing this, by establishing a
+scope around the include of a library header where the HotSpot `assert` macro
+is suppressed.  One of the reasons for using wrapper headers rather than
+directly including standard headers is to provide a central place to deal with
+this issue for each header.
 
-* Memory allocation. HotSpot requires explicit control over where
-allocations occur. The C++98/03 `std::allocator` class is too limited
-to support our usage.  (Changes in more recent Standards may remove
-this limitation.)
+* Memory allocation. HotSpot requires explicit control over where allocations
+occur. The C++98/03 `std::allocator` class is too limited to support our
+usage. But changes to the allocator concept in more recent Standards removed
+some of the limitations, supporting stateful allocators. HotSpot may, in the
+future, provide standard-conforming allocators that are integrated with
+HotSpot's existing allocation mechanisms.
 
 * Implementation vagaries. Bugs, or simply different implementation choices,
 can lead to different behaviors among the various Standard Libraries we need
-to deal with.
+to deal with. But only selected parts of the Standard Library are being
+permitted, and one of the selection criteria is maturity. Some of these
+facilities are among the most heavily tested and used C++ codes that exist.
 
-* Inconsistent naming conventions. HotSpot and the C++ Standard use
-different naming conventions. The coexistence of those different conventions
-might appear jarring and reduce readability.
+* Inconsistent naming conventions. HotSpot and the C++ Standard use different
+naming conventions. The coexistence of those different conventions might
+appear jarring and reduce readability. However, experience in some other code
+bases suggests this isn't a significant problem, so long as Standard Library
+names are namespace-qualified. It is tempting to bring the Standard Library
+names into scope via a `using std;` directive. Doing so makes writing code
+using those names easier, since the qualifiers don't need to be included. But
+there are several reasons not to do that.
 
-There are a few exceptions to this rule.
+    * There is a risk of future name collisions. Additional Standard Library
+    headers may be included, adding to the list of names being used. Also,
+    future versions of the Standard Library may add currently unknown names to
+    the headers already being included.
 
-* `#include <new>` to use placement `new`, `std::nothrow`, and `std::nothrow_t`.
-* `#include <limits>` to use `std::numeric_limits`.
-* `#include <type_traits>` with some restrictions, listed below.
-* `#include <cstddef>` to use `std::nullptr_t` and `std::max_align_t`.
+    * It may harm readability. Code where this is relevant is a mixture of the
+    local HotSpot naming conventions and the Standard Library's (or other
+    3rd-party library's) naming conventions. With only unqualified names, any
+    distinctions from the naming conventions for the different code sources
+    are lost. Instead one may end up with an undifferentiated mess, where it's
+    not obvious whether an identifier is from local code that is inconsistent
+    with HotSpot style (and there's a regretable amount of that for historical
+    reasons), or is following some other convention. Having the qualifiers
+    disambiguates that.
 
-Certain restrictions apply to the declarations provided by `<type_traits>`.
-
-* The `alignof` operator should be used rather than `std::alignment_of<>`.
-
-TODO: Rather than directly \#including (permitted) Standard Library
-headers, use a convention of \#including wrapper headers (in some
-location like hotspot/shared/stdcpp).  This provides a single place
-for dealing with issues we might have for any given header, esp.
-platform-specific issues.
+    * It can be helpful to know, at a glance, whether the definition is in
+    HotSpot or elsewhere, for purposes of looking up the definition or
+    documentation.
 
 ### Type Deduction
 
@@ -1529,9 +1578,9 @@ single-argument form are permitted.
 * Allow `typename` in template template parameter
 ([n4051](http://wg21.link/n4051)) &mdash; template template parameters are
 barely used (if at all) in HotSpot, but there's no reason to artificially
-disallow this syntactic regularization in any such uses.
+forbid this syntactic regularization in any such uses.
 
-## Excluded Features
+## Forbidden Features
 
 ### Structured Bindings
 
@@ -1581,7 +1630,32 @@ initialization for classes with base classes
 aggregate classes, preferring explicit constructors even for very simple
 classes.
 
-### Additional Excluded Features
+### Additional Forbidden Features
+
+* `<algorithm>`, `<iterator>`, `<numeric>`<br>
+Not useful without standard containers or similar classes in HotSpot.
+
+* `<bitset>` - Overlap with HotSpot `BitMap`.
+
+* `<cassert>`, `assert.h` - HotSpot has its own `assert` macro.
+
+* `<exception>`, `<stdexcept>` - Use of [exceptions](#error-handling) is not
+permitted.
+
+* Thread support - `<thread>`, `<mutex>`, `<shared_mutex>`,
+`<condition_varible>`, `<future>`<br>
+HotSpot has its own threading support.
+
+* Streams - HotSpot doesn't use the C++ I/O library.
+
+* `<scoped_allocator>` - Not useful without specialized allocators.
+
+* `<string>` - Requires allocator support, similar to standard containers.
+
+* `<typeinfo>`, `<typeindex>`<br>
+Use of [runtime type information](#runtime-type-information) is not permitted.
+
+* `<valarray>` - May allocate, but is not allocator-aware.
 
 * New string and character literals
     * New character types
@@ -1880,9 +1954,40 @@ should need to know about this feature.  But if someone does come up with a
 good use-case, it's likely that the alternatives are significantly worse,
 because pack manipulation without this can be complicated.
 
+* [`<tuple>`](https://en.cppreference.com/w/cpp/header/tuple.html) &mdash;
+Prefer named access to class objects, rather than indexed access
+to anonymous heterogeneous sequences.  In particular, a standard-layout
+class is preferred to a tuple.
+
 * `std::invoke<>()`
 ([n4169](http://wg21.link/n4169))
 
+* [`<chrono>`](https://en.cppreference.com/w/cpp/header/chrono.html) &mdash;
+The argument for chrono is that our existing APIs aren't serving us well.
+chrono provides strong type safety. We've had multiple cases of mistakes like
+a double seconds being treated as double milliseconds or vice versa, and other
+similar errors. But it would be a large effort to adopt chrono. We'd also need
+to decide whether to use the predefined clocks or hook up chrono to our
+clocks. It may be that using the predefined clocks is fine, but it's a
+question that needs careful study.
+
+* [`<initializer_list>`](https://en.cppreference.com/w/cpp/header/initializer_list.html) &mdash;
+The potential ambiguity between some forms of direct initialization and
+initializer list initialization, and the resolution of that ambiguity, is
+unfortunate.
+
+* [`<ratio>`](https://en.cppreference.com/w/cpp/header/ratio.html) &mdash;
+`<ratio>` is a *compile-time* rational arithmetic package. It's also fixed
+(though parameterized) precision. It's not a general purpose rational
+arithmetic facility. It appears to have started out as an implementation
+detail of chrono, and was extracted and promoted to a public facility in the
+belief that it has broader utility.
+
+* [`<system_error>`](https://en.cppreference.com/w/cpp/header/system_error.html) &mdash;
+We don't really have a generally agreed upon mechanism for managing
+errors. Instead, we have a plethora of bespoke ad hoc mechanisms. Managing
+errors is a topic of substantial discussion. `<system_error>` might end up
+being a part of a result from that discussion.
 
 
 [ADL]: https://en.cppreference.com/w/cpp/language/adl
