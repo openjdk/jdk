@@ -29,8 +29,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Serial
+ * @requires vm.opt.DeoptimizeALot != true & vm.gc.Serial
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -45,8 +44,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Parallel
+ * @requires vm.opt.DeoptimizeALot != true & vm.gc.Parallel
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -61,8 +59,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.G1
+ * @requires vm.opt.DeoptimizeALot != true & vm.gc.G1
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -77,8 +74,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Shenandoah
+ * @requires vm.opt.DeoptimizeALot != true & vm.gc.Shenandoah
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -93,8 +89,7 @@
  * @library /test/lib /
  * @modules java.base/jdk.internal.misc java.management
  *
- * @requires vm.opt.DeoptimizeALot != true
- * @requires vm.gc.Z
+ * @requires vm.opt.DeoptimizeALot != true & vm.gc.Z
  *
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -132,7 +127,7 @@ public class RelocateNMethod extends CompilerWhiteBoxTest {
         checkCompiled();
         NMethod origNmethod = NMethod.get(method, false);
 
-        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodProfiled.id);
+        WHITE_BOX.relocateNMethodFromMethod(method, BlobType.MethodNonProfiled.id);
 
         WHITE_BOX.fullGC();
 
