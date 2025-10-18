@@ -29,6 +29,7 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/compile.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/predicates_enums.hpp"
@@ -1794,7 +1795,8 @@ static int subsuming_bool_test_encode(Node* node) {
 Node* IfProjNode::Identity(PhaseGVN* phase) {
   // Can only optimize if cannot go the other way
   const TypeTuple *t = phase->type(in(0))->is_tuple();
-  if (t == TypeTuple::IFNEITHER || (always_taken(t) &&
+  bool taken = always_taken(t);
+  if (t == TypeTuple::IFNEITHER || (taken &&
        // During parsing (GVN) we don't remove dead code aggressively.
        // Cut off dead branch and let PhaseRemoveUseless take care of it.
       (!phase->is_IterGVN() ||
@@ -1805,6 +1807,9 @@ Node* IfProjNode::Identity(PhaseGVN* phase) {
        // will cause this node to be reprocessed once the dead branch is killed.
        in(0)->outcnt() == 1))) {
     // IfNode control
+    if (taken) {
+      phase->C->record_optimization_event(OptEvent_ConditionalExpressionElimination);
+    }
     if (in(0)->is_BaseCountedLoopEnd()) {
       // CountedLoopEndNode may be eliminated by if subsuming, replace CountedLoopNode with LoopNode to
       // avoid mismatching between CountedLoopNode and CountedLoopEndNode in the following optimization.

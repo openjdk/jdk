@@ -37,6 +37,7 @@
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/compile.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -698,6 +699,9 @@ void Parse::do_call() {
   if (cg->is_inline()) {
     // Accumulate has_loops estimate
     C->env()->notice_inlined_method(cg->method());
+    if (!cg->is_late_inline()) {
+      C->record_optimization_event(OptEvent_FunctionInlining);
+    }
   }
 
   // Reset parser state from [new_]jvms, which now carries results of the call.

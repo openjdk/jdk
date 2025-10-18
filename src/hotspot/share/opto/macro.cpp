@@ -2126,6 +2126,7 @@ bool PhaseMacroExpand::eliminate_locking_node(AbstractLockNode *alock) {
 #endif
 
   alock->log_lock_optimization(C, "eliminate_lock");
+  C->record_optimization_event(OptEvent_EliminateLocks);
 
 #ifndef PRODUCT
   if (PrintEliminateLocks) {

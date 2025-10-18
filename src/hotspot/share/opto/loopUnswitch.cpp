@@ -405,6 +405,7 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree* loop, Node_List& old_new) {
   increment_unswitch_counts(original_head, new_head);
 
   NOT_PRODUCT(trace_loop_unswitching_result(unswitched_loop_selector, original_head, new_head);)
+  C->record_optimization_event(OptEvent_LoopUnswitching);
   C->print_method(PHASE_AFTER_LOOP_UNSWITCHING, 4, new_head);
   C->set_major_progress();
 }
@@ -688,4 +689,3 @@ void PhaseIdealLoop::increment_unswitch_counts(LoopNode* original_head, LoopNode
   original_head->set_unswitch_count(unswitch_count);
   new_head->set_unswitch_count(unswitch_count);
 }
-

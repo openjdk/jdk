@@ -4441,6 +4441,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     set_ctrl(add, cl);
 
     _igvn.replace_node( phi2, add );
+    C->record_optimization_event(OptEvent_ParallelInductionVars);
     // Sometimes an induction variable is unused
     if (add->outcnt() == 0) {
       _igvn.remove_dead_node(add);
