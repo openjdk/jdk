@@ -2131,6 +2131,7 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
   }
 #endif
 
+  C->record_optimization_event(OptEvent_LoopUnrolling);
   C->print_method(PHASE_AFTER_LOOP_UNROLLING, 4, clone_head);
 }
 
