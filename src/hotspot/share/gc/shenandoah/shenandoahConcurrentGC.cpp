@@ -91,8 +91,8 @@ public:
 };
 
 ShenandoahConcurrentGC::ShenandoahConcurrentGC(ShenandoahGeneration* generation, bool do_old_gc_bootstrap) :
+  ShenandoahGC(generation),
   _mark(generation),
-  _generation(generation),
   _degen_point(ShenandoahDegenPoint::_degenerated_unset),
   _abbreviated(false),
   _do_old_gc_bootstrap(do_old_gc_bootstrap) {
@@ -576,7 +576,7 @@ void ShenandoahConcurrentGC::entry_promote_in_place() const {
   ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::promote_in_place);
   EventMark em("%s", "Promote in place");
 
-  ShenandoahGenerationalHeap::heap()->promote_regions_in_place(true);
+  ShenandoahGenerationalHeap::heap()->promote_regions_in_place(_generation, true);
 }
 
 void ShenandoahConcurrentGC::entry_update_thread_roots() {
@@ -706,7 +706,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_mark_verify);
-    heap->verifier()->verify_before_concmark();
+    heap->verifier()->verify_before_concmark(_generation);
   }
 
   if (VerifyBeforeGC) {
@@ -763,7 +763,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   if (!heap->cancelled_gc()) {
@@ -791,7 +791,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
 
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
-        heap->verifier()->verify_before_evacuation();
+        heap->verifier()->verify_before_evacuation(_generation);
       }
 
       heap->set_evacuation_in_progress(true);
@@ -806,9 +806,9 @@ void ShenandoahConcurrentGC::op_final_mark() {
       if (ShenandoahVerify) {
         ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_mark_verify);
         if (has_in_place_promotions(heap)) {
-          heap->verifier()->verify_after_concmark_with_promotions();
+          heap->verifier()->verify_after_concmark_with_promotions(_generation);
         } else {
-          heap->verifier()->verify_after_concmark();
+          heap->verifier()->verify_after_concmark(_generation);
         }
       }
     }
@@ -877,18 +877,20 @@ void ShenandoahConcurrentGC::op_weak_refs() {
 class ShenandoahEvacUpdateCleanupOopStorageRootsClosure : public BasicOopIterateClosure {
 private:
   ShenandoahHeap* const _heap;
+  ShenandoahGeneration* const _generation;
   ShenandoahMarkingContext* const _mark_context;
   bool  _evac_in_progress;
   Thread* const _thread;
 
 public:
-  ShenandoahEvacUpdateCleanupOopStorageRootsClosure();
+  explicit ShenandoahEvacUpdateCleanupOopStorageRootsClosure(ShenandoahGeneration* generation);
   void do_oop(oop* p);
   void do_oop(narrowOop* p);
 };
 
-ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure() :
+ShenandoahEvacUpdateCleanupOopStorageRootsClosure::ShenandoahEvacUpdateCleanupOopStorageRootsClosure(ShenandoahGeneration* generation) :
   _heap(ShenandoahHeap::heap()),
+  _generation(generation),
   _mark_context(ShenandoahHeap::heap()->marking_context()),
   _evac_in_progress(ShenandoahHeap::heap()->is_evacuation_in_progress()),
   _thread(Thread::current()) {
@@ -898,8 +900,7 @@ void ShenandoahEvacUpdateCleanupOopStorageRootsClosure::do_oop(oop* p) {
   const oop obj = RawAccess<>::oop_load(p);
   if (!CompressedOops::is_null(obj)) {
     if (!_mark_context->is_marked(obj)) {
-      shenandoah_assert_generations_reconciled();
-      if (_heap->is_in_active_generation(obj)) {
+      if (_generation->contains(obj)) {
         // Note: The obj is dead here. Do not touch it, just clear.
         ShenandoahHeap::atomic_clear_oop(p, obj);
       }
@@ -942,14 +943,16 @@ private:
   ShenandoahClassLoaderDataRoots<true /* concurrent */>
                                              _cld_roots;
   ShenandoahConcurrentNMethodIterator        _nmethod_itr;
+  ShenandoahGeneration*                      _generation;
   ShenandoahPhaseTimings::Phase              _phase;
 
 public:
-  ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahPhaseTimings::Phase phase) :
+  ShenandoahConcurrentWeakRootsEvacUpdateTask(ShenandoahGeneration* generation, ShenandoahPhaseTimings::Phase phase) :
     WorkerTask("Shenandoah Evacuate/Update Concurrent Weak Roots"),
     _vm_roots(phase),
     _cld_roots(phase, ShenandoahHeap::heap()->workers()->active_workers(), false /*heap iteration*/),
     _nmethod_itr(ShenandoahCodeRoots::table()),
+    _generation(generation),
     _phase(phase) {}
 
   ~ShenandoahConcurrentWeakRootsEvacUpdateTask() {
@@ -957,14 +960,14 @@ public:
     _vm_roots.report_num_dead();
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     ShenandoahSuspendibleThreadSetJoiner sts_join;
     {
       ShenandoahEvacOOMScope oom;
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
       // may race against OopStorage::release() calls.
-      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl;
+      ShenandoahEvacUpdateCleanupOopStorageRootsClosure cl(_generation);
       _vm_roots.oops_do(&cl, worker_id);
     }
 
@@ -999,7 +1002,7 @@ void ShenandoahConcurrentGC::op_weak_roots() {
     // Concurrent weak root processing
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_weak_roots_work);
     ShenandoahGCWorkerPhase worker_phase(ShenandoahPhaseTimings::conc_weak_roots_work);
-    ShenandoahConcurrentWeakRootsEvacUpdateTask task(ShenandoahPhaseTimings::conc_weak_roots_work);
+    ShenandoahConcurrentWeakRootsEvacUpdateTask task(_generation, ShenandoahPhaseTimings::conc_weak_roots_work);
     heap->workers()->run_task(&task);
   }
 
@@ -1105,19 +1108,19 @@ void ShenandoahConcurrentGC::op_cleanup_early() {
 }
 
 void ShenandoahConcurrentGC::op_evacuate() {
-  ShenandoahHeap::heap()->evacuate_collection_set(true /*concurrent*/);
+  ShenandoahHeap::heap()->evacuate_collection_set(_generation, true /*concurrent*/);
 }
 
 void ShenandoahConcurrentGC::op_init_update_refs() {
-  ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if (ShenandoahVerify) {
+    ShenandoahHeap* const heap = ShenandoahHeap::heap();
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::init_update_refs_verify);
-    heap->verifier()->verify_before_update_refs();
+    heap->verifier()->verify_before_update_refs(_generation);
   }
 }
 
 void ShenandoahConcurrentGC::op_update_refs() {
-  ShenandoahHeap::heap()->update_heap_references(true /*concurrent*/);
+  ShenandoahHeap::heap()->update_heap_references(_generation, true /*concurrent*/);
 }
 
 class ShenandoahUpdateThreadHandshakeClosure : public HandshakeClosure {
@@ -1163,7 +1166,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   // Has to be done before cset is clear
   if (ShenandoahVerify) {
-    heap->verifier()->verify_roots_in_to_space();
+    heap->verifier()->verify_roots_in_to_space(_generation);
   }
 
   // If we are running in generational mode and this is an aging cycle, this will also age active
@@ -1198,7 +1201,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
 
   if (ShenandoahVerify) {
     ShenandoahTimingsTracker v(ShenandoahPhaseTimings::final_update_refs_verify);
-    heap->verifier()->verify_after_update_refs();
+    heap->verifier()->verify_after_update_refs(_generation);
   }
 
   if (VerifyAfterGC) {
