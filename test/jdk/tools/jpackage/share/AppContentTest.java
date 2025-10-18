@@ -169,7 +169,6 @@ public class AppContentTest {
             var appContentArg = TKit.createTempDirectory("app-content").resolve(RESOURCES_DIR);
             var srcPath = TKit.TEST_SRC_ROOT.resolve(appContentPath);
             var dstPath = appContentArg.resolve(srcPath.getFileName());
-            Files.createDirectories(dstPath.getParent());
             FileUtils.copyRecursive(srcPath, dstPath);
             return appContentArg;
         }
