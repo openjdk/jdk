@@ -777,6 +777,7 @@ void PhaseIdealLoop::peeled_dom_test_elim(IdealLoopTree* loop, Node_List& old_ne
 void PhaseIdealLoop::do_peeling(IdealLoopTree *loop, Node_List &old_new) {
 
   C->set_major_progress();
+  C->record_optimization_event(OptEvent_LoopPeeling);
   // Peeling a 'main' loop in a pre/main/post situation obfuscates the
   // 'pre' loop from the main and the 'pre' can no longer have its
   // iterations adjusted.  Therefore, we need to declare this loop as
