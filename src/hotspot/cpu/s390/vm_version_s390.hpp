@@ -589,6 +589,9 @@ class VM_Version: public Abstract_VM_Version {
   static unsigned long z_SIGILL();
   static unsigned long z_SIGSEGV();
 
+  // Check intrinsic support
+  static bool is_intrinsic_supported(vmIntrinsicID id);
+
   static void initialize_cpu_information(void);
 };
 
