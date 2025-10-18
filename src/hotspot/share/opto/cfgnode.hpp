@@ -741,7 +741,7 @@ public:
     // Fake the incoming arguments mask for blackholes: accept all registers
     // and all stack slots. This would avoid any redundant register moves
     // for blackhole inputs.
-    return RegMask::All;
+    return RegMask::ALL;
   }
 #ifndef PRODUCT
   virtual void format(PhaseRegAlloc* ra, outputStream* st) const;
