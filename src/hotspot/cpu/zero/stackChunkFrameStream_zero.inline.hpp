@@ -85,7 +85,8 @@ inline int StackChunkFrameStream<frame_kind>::interpreter_frame_stack_argsize() 
 }
 
 template <ChunkFrames frame_kind>
-inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops() const {
+template <typename RegisterMapT>
+inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops(RegisterMapT* map) const {
   Unimplemented();
   return 0;
 }
