@@ -2213,7 +2213,6 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
   Method *method;
   address address;
 
-  // The frame might be still compiled if not executed yet after deoptimization.
   if (last_frame.is_interpreted_frame()) {
     method = last_frame.interpreter_frame_method();
     address = last_frame.interpreter_frame_bcp();
