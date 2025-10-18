@@ -3250,6 +3250,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
           }
         }
 #endif
+        C->record_optimization_event(OptEvent_OptimizePtrCompare);
         igvn->replace_node(n, cmp);
       }
     }
