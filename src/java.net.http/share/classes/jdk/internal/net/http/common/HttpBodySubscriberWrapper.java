@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Flow;
 import java.util.concurrent.Flow.Subscription;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -51,7 +50,6 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     public static final Comparator<HttpBodySubscriberWrapper<?>> COMPARE_BY_ID
             = Comparator.comparing(HttpBodySubscriberWrapper::id);
 
-
     public static final Flow.Subscription NOP = new Flow.Subscription() {
         @Override
         public void request(long n) { }
@@ -67,12 +65,22 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
     static final AtomicLong IDS = new AtomicLong();
     final long id = IDS.incrementAndGet();
     final BodySubscriber<T> userSubscriber;
+    private final Runnable preTerminationCallback;
     private volatile int state;
     final ReentrantLock subscriptionLock = new ReentrantLock();
     volatile SubscriptionWrapper subscription;
     volatile Throwable withError;
-    public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber) {
-        this.userSubscriber = userSubscriber;
+
+    /**
+     * Creates a new instance using provided details.
+     *
+     * @param userSubscriber a subscriber to wrap and delegate to
+     * @param preTerminationCallback a callback to be invoked before completion
+     *                              with either success or failure, can be null
+     */
+    public HttpBodySubscriberWrapper(BodySubscriber<T> userSubscriber, Runnable preTerminationCallback) {
+        this.userSubscriber = Objects.requireNonNull(userSubscriber);
+        this.preTerminationCallback = preTerminationCallback;
     }
 
     private class SubscriptionWrapper implements Subscription {
@@ -396,13 +404,21 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
             userSubscriber.onNext(item);
         }
     }
+
     @Override
     public void onError(Throwable throwable) {
+        if (preTerminationCallback != null) {
+            preTerminationCallback.run();
+        }
         complete(throwable);
     }
 
     @Override
     public void onComplete() {
+        if (preTerminationCallback != null) {
+            preTerminationCallback.run();
+        }
         complete(null);
     }
+
 }

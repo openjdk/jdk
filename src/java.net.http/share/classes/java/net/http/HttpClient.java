@@ -308,10 +308,18 @@ public abstract class HttpClient implements AutoCloseable {
          * need to be established, for example if a connection can be reused
          * from a previous request, then this timeout duration has no effect.
          *
+         * @implSpec
+         * When a connection timeout value is present, an {@link HttpClient}
+         * implementation should apply it over the duration measured from the
+         * instant a connection is requested to the instant that one is
+         * established. This duration includes SSL handshakes, if required.
+         *
          * @param duration the duration to allow the underlying connection to be
          *                 established
          * @return this builder
          * @throws IllegalArgumentException if the duration is non-positive
+         * @see HttpRequest.Builder#timeout(Duration) Configuration timeout for
+         * request execution
          */
         public Builder connectTimeout(Duration duration);
 

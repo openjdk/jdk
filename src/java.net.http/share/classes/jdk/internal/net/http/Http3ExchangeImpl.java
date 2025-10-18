@@ -554,8 +554,8 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
     }
 
     final class Http3StreamResponseSubscriber<U> extends HttpBodySubscriberWrapper<U> {
-        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber) {
-            super(subscriber);
+        Http3StreamResponseSubscriber(BodySubscriber<U> subscriber, Runnable preTerminationCallback) {
+            super(subscriber, preTerminationCallback);
         }
 
         @Override
@@ -585,18 +585,17 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
         }
     }
 
-
     @Override
     Http3StreamResponseSubscriber<T> createResponseSubscriber(BodyHandler<T> handler,
-                                                              ResponseInfo response) {
+                                                              ResponseInfo response,
+                                                              Runnable preTerminationCallback) {
         if (debug.on()) debug.log("Creating body subscriber");
-        Http3StreamResponseSubscriber<T> subscriber =
-                new Http3StreamResponseSubscriber<>(handler.apply(response));
-        return subscriber;
+        return new Http3StreamResponseSubscriber<>(handler.apply(response), preTerminationCallback);
     }
 
     @Override
     CompletableFuture<T> readBodyAsync(BodyHandler<T> handler,
+                                       Runnable preTerminationCallback,
                                        boolean returnConnectionToPool,
                                        Executor executor) {
         try {
@@ -605,7 +604,7 @@ final class Http3ExchangeImpl<T> extends Http3Stream<T> {
             }
             if (debug.on()) debug.log("Getting BodySubscriber for: " + response);
             Http3StreamResponseSubscriber<T> bodySubscriber =
-                    createResponseSubscriber(handler, new ResponseInfoImpl(response));
+                    createResponseSubscriber(handler, new ResponseInfoImpl(response), preTerminationCallback);
             CompletableFuture<T> cf = receiveResponseBody(bodySubscriber, executor);
 
             PushGroup<?> pg = exchange.getPushGroup();
