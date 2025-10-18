@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8365077
+ * @bug 8365077 8370160
  * @summary confirm that an instance which is created with Enum ranges is
  * equal to another instance which is created with equivalent traditional
  * ranges, and that in such a case the hashCodes are also equal.
@@ -37,6 +37,12 @@ import java.util.EnumSet;
 public class NSEqualsTest {
 
     public static void main(String[] args) {
+
+        // Invalid ranges should be discarded
+        NumericShaper cs1 =
+            NumericShaper.getContextualShaper(NumericShaper.ALL_RANGES);
+        NumericShaper cs2 = NumericShaper.getContextualShaper(-1);
+        printAndCompare(cs1, cs2);
 
         for (Range r1 : Range.values()) {
            test(r1);
