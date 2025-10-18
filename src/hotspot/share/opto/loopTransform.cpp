@@ -2574,6 +2574,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 #endif
 
   assert(RangeCheckElimination, "");
+  bool eliminated_range_check = false;
   CountedLoopNode *cl = loop->_head->as_CountedLoop();
 
   // protect against stride not being a constant
@@ -2747,6 +2748,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
       // sense of the test.
 
       C->print_method(PHASE_BEFORE_RANGE_CHECK_ELIMINATION, 4, iff);
+      eliminated_range_check = true;
 
       // Perform the limit computations in jlong to avoid overflow
       jlong lscale_con = scale_con;
@@ -2926,6 +2928,9 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
   assert(is_dominator(new_limit_ctrl, get_ctrl(iffm->in(1)->in(1))), "control of cmp should be below control of updated input");
 
   C->print_method(PHASE_AFTER_RANGE_CHECK_ELIMINATION, 4, cl);
+  if (eliminated_range_check) {
+    C->record_optimization_event(OptEvent_RangeCheckElimination);
+  }
 }
 
 // Adjust control for node and its inputs (and inputs of its inputs) to be above the pre end
