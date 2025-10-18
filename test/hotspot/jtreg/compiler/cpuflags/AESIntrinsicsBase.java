@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ public abstract class AESIntrinsicsBase {
             + ".provider\\.CipherBlockChaining::"
             + "(implEncrypt|implDecrypt) \\([0-9]+ bytes\\)\\s+\\(intrinsic[,\\)]";
     public static final String AES_INTRINSIC = "com\\.sun\\.crypto\\"
-            + ".provider\\.AESCrypt::(implEncryptBlock|implDecryptBlock) \\([0-9]+ "
+            + ".provider\\.AES_Crypt::(implEncryptBlock|implDecryptBlock) \\([0-9]+ "
             + "bytes\\)\\s+\\(intrinsic[,\\)]";
     public static final String USE_AES = "UseAES";
     public static final String USE_AES_INTRINSICS = "UseAESIntrinsics";

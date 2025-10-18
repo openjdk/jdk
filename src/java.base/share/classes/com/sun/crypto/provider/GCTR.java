@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import java.util.Arrays;
  * to 16 bytes.
  *
  * If any invariant is broken, failures can occur because the
- * AESCrypt.encryptBlock method can be intrinsified on the HotSpot VM
+ * AES_Crypt.encryptBlock method can be intrinsified on the HotSpot VM
  * (see JDK-8067648 for details).
  *
  * The counter mode operations can be intrinsified and parallelized
