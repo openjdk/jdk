@@ -187,7 +187,7 @@ public final class ObjectMapper {
     }
 
     public static Object wrapIdentity(Object v) {
-        if (v instanceof IdentityWrapper wrapper) {
+        if (v instanceof IdentityWrapper<?> wrapper) {
             return wrapper;
         } else {
             return new IdentityWrapper<Object>(v);
