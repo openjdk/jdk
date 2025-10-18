@@ -25,6 +25,7 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -340,23 +341,69 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // structures don't support efficiently performing the needed
       // additional tests or scrubbing of the mark stack.
       //
-      // However, we presently only nominate is_typeArray() objects.
-      // A humongous object containing references induces remembered
-      // set entries on other regions.  In order to reclaim such an
-      // object, those remembered sets would need to be cleaned up.
+      // We handle humongous objects specially, because frequent allocation and
+      // dropping of large binary blobs is an important use case for eager reclaim,
+      // and this special handling increases needed headroom.
+      // It also helps with G1 allocating humongous objects as old generation
+      // objects although they might also die quite quickly.
       //
-      // We also treat is_typeArray() objects specially, allowing them
-      // to be reclaimed even if allocated before the start of
-      // concurrent mark.  For this we rely on mark stack insertion to
-      // exclude is_typeArray() objects, preventing reclaiming an object
+      // TypeArray objects are allowed to be reclaimed even if allocated before
+      // the start of concurrent mark.  For this we rely on mark stack insertion
+      // to exclude is_typeArray() objects, preventing reclaiming an object
       // that is in the mark stack.  We also rely on the metadata for
       // such objects to be built-in and so ensured to be kept live.
-      // Frequent allocation and drop of large binary blobs is an
-      // important use case for eager reclaim, and this special handling
-      // may reduce needed headroom.
+      //
+      // Non-typeArrays that were allocated before marking are excluded from
+      // eager reclaim during marking.  One issue is the problem described
+      // above with scrubbing the mark stack, but there is also a problem
+      // causing these humongous objects being collected incorrectly:
+      //
+      // E.g. if the mutator is running, we may have objects o1 and o2 in the same
+      // region, where o1 has already been scanned and o2 is only reachable by
+      // the candidate object h, which is humongous.
+      //
+      // If the mutator read the reference to o2 from h and installed it into o1,
+      // no remembered set entry would be created for keeping alive o2, as o1 and
+      // o2 are in the same region.  Object h might be reclaimed by the next
+      // garbage collection. o1 still has the reference to o2, but since o1 had
+      // already been scanned we do not detect o2 to be still live and reclaim it.
+      //
+      // There is another minor problem with non-typeArray regions being the source
+      // of remembered set entries in other region's remembered sets.  There are
+      // two cases: first, the remembered set entry is in a Free region after reclaim.
+      // We handle this case by ignoring these cards during merging the remembered
+      // sets.
+      //
+      // Second, there may be cases where eagerly reclaimed regions were already
+      // reallocated.  This may cause scanning of these outdated remembered set
+      // entries, containing some objects. But apart from extra work this does
+      // not cause correctness issues.
+      // There is no difference between scanning cards covering an effectively
+      // dead humongous object vs. some other objects in reallocated regions.
+      //
+      // TAMSes are only reset after completing the entire mark cycle, during
+      // bitmap clearing. It is worth to not wait until then, and allow reclamation
+      // outside of actual (concurrent) SATB marking.
+      // This also applies to the concurrent start pause - we only set
+      // mark_in_progress() at the end of that GC: no mutator is running that can
+      // sneakily install a new reference to the potentially reclaimed humongous
+      // object.
+      // During the concurrent start pause the situation described above where we
+      // miss a reference can not happen. No mutator is modifying the object
+      // graph to install such an overlooked reference.
+      //
+      // After the pause, having reclaimed h, obviously the mutator can't fetch
+      // the reference from h any more.
+      if (!obj->is_typeArray()) {
+        // All regions that were allocated before marking have a TAMS != bottom.
+        bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
+        bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
 
-      return obj->is_typeArray() &&
-             _g1h->is_potential_eager_reclaim_candidate(region);
+        if (allocated_before_mark_start && mark_in_progress) {
+          return false;
+        }
+      }
+      return _g1h->is_potential_eager_reclaim_candidate(region);
     }
 
   public:
@@ -392,7 +439,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
         _g1h->register_region_with_region_attr(hr);
       }
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
-                               "marked %d pinned count %zu reclaim candidate %d type array %d",
+                               "marked %d pinned count %zu reclaim candidate %d type %s",
                                index,
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
@@ -401,7 +448,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
                                _g1h->concurrent_mark()->mark_bitmap()->is_marked(hr->bottom()),
                                hr->pinned_count(),
                                _g1h->is_humongous_reclaim_candidate(index),
-                               cast_to_oop(hr->bottom())->is_typeArray()
+                               cast_to_oop(hr->bottom())->is_typeArray() ? "tA"
+                                                                         : (cast_to_oop(hr->bottom())->is_objArray() ? "oA" : "ob")
                               );
       _worker_humongous_total++;
 
@@ -750,7 +798,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
 
   Ticks start_processing = Ticks::now();
   {
-    G1RootProcessor root_processor(_g1h, num_workers);
+    G1RootProcessor root_processor(_g1h, num_workers > 1 /* is_parallel */);
     G1EvacuateRegionsTask g1_par_task(_g1h,
                                       per_thread_states,
                                       task_queues(),
@@ -793,14 +841,11 @@ public:
 };
 
 void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states) {
-  // To access the protected constructor/destructor
-  class G1MarkScope : public MarkScope { };
-
   Tickspan task_time;
 
   Ticks start_processing = Ticks::now();
   {
-    G1MarkScope code_mark_scope;
+    NMethodMarkingScope nmethod_marking_scope;
     G1EvacuateOptionalRegionsTask task(per_thread_states, task_queues(), workers()->active_workers());
     task_time = run_task_timed(&task);
     // See comment in evacuate_initial_collection_set() for the reason of the scope.
