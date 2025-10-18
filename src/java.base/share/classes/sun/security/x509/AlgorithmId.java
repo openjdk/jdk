@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,10 +127,35 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;
-        if (params != null) {
-            encodedParams = params.toByteArray();
-            decodeParams();
+
+        if (params == null) {
+            this.encodedParams = null;
+            this.algParams = null;
+            return;
         }
+
+        /*
+         * If the parameters field explicitly contains an ASN.1 NULL, treat it as
+         * "no parameters" rather than storing a literal NULL encoding.
+         *
+         * This canonicalization ensures consistent encoding/decoding behavior:
+         *  - Algorithms that omit parameters and those that encode explicit NULL
+         *   are treated equivalently (encodedParams == null).
+         */
+        if (params.tag == DerValue.tag_Null) {
+            if (params.length() != 0) {
+                throw new IOException("Invalid ASN.1 NULL in AlgorithmId parameters: " +
+                        "non-zero length");
+            }
+            // Canonicalize to "no parameters" representation for consistency
+            this.encodedParams = null;
+            this.algParams = null;
+            return;
+        }
+
+        // Normal case: non-NULL params -> store and decode
+        this.encodedParams = params.toByteArray();
+        decodeParams();
     }
 
     protected void decodeParams() throws IOException {
@@ -163,38 +188,10 @@ public class AlgorithmId implements Serializable, DerEncoder {
         bytes.putOID(algid);
 
         if (encodedParams == null) {
-            // MessageDigest algorithms usually have a NULL parameters even
-            // if most RFCs suggested absent.
-            // RSA key and signature algorithms requires the NULL parameters
-            // to be present, see A.1 and A.2.4 of RFC 8017.
-            if (algid.equals(RSAEncryption_oid)
-                    || algid.equals(MD2_oid)
-                    || algid.equals(MD5_oid)
-                    || algid.equals(SHA_oid)
-                    || algid.equals(SHA224_oid)
-                    || algid.equals(SHA256_oid)
-                    || algid.equals(SHA384_oid)
-                    || algid.equals(SHA512_oid)
-                    || algid.equals(SHA512_224_oid)
-                    || algid.equals(SHA512_256_oid)
-                    || algid.equals(SHA3_224_oid)
-                    || algid.equals(SHA3_256_oid)
-                    || algid.equals(SHA3_384_oid)
-                    || algid.equals(SHA3_512_oid)
-                    || algid.equals(SHA1withRSA_oid)
-                    || algid.equals(SHA224withRSA_oid)
-                    || algid.equals(SHA256withRSA_oid)
-                    || algid.equals(SHA384withRSA_oid)
-                    || algid.equals(SHA512withRSA_oid)
-                    || algid.equals(SHA512$224withRSA_oid)
-                    || algid.equals(SHA512$256withRSA_oid)
-                    || algid.equals(MD2withRSA_oid)
-                    || algid.equals(MD5withRSA_oid)
-                    || algid.equals(SHA3_224withRSA_oid)
-                    || algid.equals(SHA3_256withRSA_oid)
-                    || algid.equals(SHA3_384withRSA_oid)
-                    || algid.equals(SHA3_512withRSA_oid)) {
+            if (OIDS_REQUIRING_NULL.contains(algid.toString())) {
                 bytes.putNull();
+            } else {
+                // Parameters omitted
             }
         } else {
             bytes.writeBytes(encodedParams);
@@ -646,30 +643,54 @@ public class AlgorithmId implements Serializable, DerEncoder {
     public static final ObjectIdentifier MGF1_oid =
             ObjectIdentifier.of(KnownOIDs.MGF1);
 
-    public static final ObjectIdentifier SHA1withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA1withRSA);
-    public static final ObjectIdentifier SHA224withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA224withRSA);
-    public static final ObjectIdentifier SHA256withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA256withRSA);
-    public static final ObjectIdentifier SHA384withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA384withRSA);
-    public static final ObjectIdentifier SHA512withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512withRSA);
-    public static final ObjectIdentifier SHA512$224withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512$224withRSA);
-    public static final ObjectIdentifier SHA512$256withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA512$256withRSA);
-    public static final ObjectIdentifier MD2withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.MD2withRSA);
-    public static final ObjectIdentifier MD5withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.MD5withRSA);
-    public static final ObjectIdentifier SHA3_224withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_224withRSA);
-    public static final ObjectIdentifier SHA3_256withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_256withRSA);
-    public static final ObjectIdentifier SHA3_384withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_384withRSA);
-    public static final ObjectIdentifier SHA3_512withRSA_oid =
-            ObjectIdentifier.of(KnownOIDs.SHA3_512withRSA);
+    /* Set of OIDs that must explicitly encode a NULL parameter in AlgorithmIdentifier.
+     * References:
+         - RFC 8017 (PKCS #1) §A.1, §A.2.4: RSA key and signature algorithms
+         - RFC 9879 (HMAC) §4: HMAC algorithm identifiers
+         - RFC 9688 (HMAC with SHA-3) §4.3: HMAC-SHA3 algorithms MUST omit parameters
+     */
+    private static final Set<String> OIDS_REQUIRING_NULL = Set.of(
+            // MessageDigest algorithms usually have a NULL parameters even
+            // if most RFCs suggested absent.
+            KnownOIDs.MD2.value(),
+            KnownOIDs.MD5.value(),
+            KnownOIDs.SHA_1.value(),
+            KnownOIDs.SHA_224.value(),
+            KnownOIDs.SHA_256.value(),
+            KnownOIDs.SHA_384.value(),
+            KnownOIDs.SHA_512.value(),
+            KnownOIDs.SHA_512$224.value(),
+            KnownOIDs.SHA_512$256.value(),
+            KnownOIDs.SHA3_224.value(),
+            KnownOIDs.SHA3_256.value(),
+            KnownOIDs.SHA3_384.value(),
+            KnownOIDs.SHA3_512.value(),
+
+            //--- RSA key and signature algorithms (RFC 8017 §A.1, §A.2.4)
+            KnownOIDs.RSA.value(),
+            KnownOIDs.SHA1withRSA.value(),
+            KnownOIDs.SHA224withRSA.value(),
+            KnownOIDs.SHA256withRSA.value(),
+            KnownOIDs.SHA384withRSA.value(),
+            KnownOIDs.SHA512withRSA.value(),
+            KnownOIDs.SHA512$224withRSA.value(),
+            KnownOIDs.SHA512$256withRSA.value(),
+            KnownOIDs.MD2withRSA.value(),
+            KnownOIDs.MD5withRSA.value(),
+            KnownOIDs.SHA3_224withRSA.value(),
+            KnownOIDs.SHA3_256withRSA.value(),
+            KnownOIDs.SHA3_384withRSA.value(),
+            KnownOIDs.SHA3_512withRSA.value(),
+
+            // HMACs per RFC 9879 (Section 4): these require explicit NULL parameters
+            // Note: HMAC-SHA3 algorithms (RFC 9688 §4.3) MUST omit parameters,
+            // so they are intentionally excluded from this list.
+            KnownOIDs.HmacSHA1.value(),
+            KnownOIDs.HmacSHA224.value(),
+            KnownOIDs.HmacSHA256.value(),
+            KnownOIDs.HmacSHA384.value(),
+            KnownOIDs.HmacSHA512.value(),
+            KnownOIDs.HmacSHA512$224.value(),
+            KnownOIDs.HmacSHA512$256.value()
+    );
 }
