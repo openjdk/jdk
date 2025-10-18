@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.spec.ChaCha20ParameterSpec;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.HPKEParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -96,6 +97,11 @@ public class Deterministic {
             key = new SecretKeySpec("isthisakey".getBytes(StandardCharsets.UTF_8), "PBE");
             // Some cipher requires salt to be 8 byte long
             spec = new PBEParameterSpec("saltsalt".getBytes(StandardCharsets.UTF_8), 100);
+        } else if (alg.equals("HPKE")) {
+            key = KeyPairGenerator.getInstance("x25519").generateKeyPair().getPublic();
+            spec = HPKEParameterSpec.of(HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256,
+                    HPKEParameterSpec.KDF_HKDF_SHA256,
+                    HPKEParameterSpec.AEAD_AES_256_GCM);
         } else {
             key = generateKey(alg.split("/")[0], s.getProvider());
             if (!alg.contains("/") || alg.contains("/ECB/")) {
@@ -239,6 +245,8 @@ public class Deterministic {
             return g.generateKey();
         } if (s.equals("RSA")) {
             return generateKeyPair("RSA", 3).getPublic();
+        } if (s.equals("HPKE")) {
+            return generateKeyPair("EC", 3).getPublic();
         } else {
             var g = KeyGenerator.getInstance(s, p);
             g.init(new SeededSecureRandom(SEED + 4));
