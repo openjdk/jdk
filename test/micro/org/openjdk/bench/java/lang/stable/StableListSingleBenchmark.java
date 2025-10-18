@@ -28,22 +28,18 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
-import org.openjdk.jmh.annotations.OperationsPerInvocation;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.util.function.IntFunction;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring stable list performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -54,52 +50,35 @@ import java.util.stream.IntStream;
         "--enable-preview"
 })
 @Threads(Threads.MAX)   // Benchmark under contention
-@OperationsPerInvocation(100)
-public class StableFunctionBenchmark {
+public class StableListSingleBenchmark {
 
     private static final int SIZE = 100;
-    private static final Set<Integer> SET = IntStream.range(0, SIZE).boxed().collect(Collectors.toSet());
+    private static final IntFunction<Integer> IDENTITY = i -> i;
 
-    private static final Map<Integer, Integer> MAP = StableValue.map(SET, Function.identity());
-    private static final Function<Integer, Integer> FUNCTION = StableValue.function(SET, Function.identity());
+    private static final List<Integer> STABLE = List.ofLazy(SIZE, IDENTITY);
+    private static final IntFunction<Integer> INT_FUNCTION = STABLE::get;
 
-    private final Map<Integer, Integer> map = StableValue.map(SET, Function.identity());
-    private final Function<Integer, Integer> function = StableValue.function(SET, Function.identity());
+    private final List<Integer> stable = List.ofLazy(SIZE, IDENTITY);
+    private final IntFunction<Integer> intFunction = stable::get;
 
     @Benchmark
-    public int map() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += map.get(i);
-        }
-        return sum;
+    public int list() {
+        return stable.get(1);
     }
 
     @Benchmark
-    public int function() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += function.apply(i);
-        }
-        return sum;
+    public int intFunction() {
+        return intFunction.apply(1);
     }
 
     @Benchmark
-    public int staticSMap() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += MAP.get(i);
-        }
-        return sum;
+    public int staticList() {
+        return STABLE.get(1);
     }
 
     @Benchmark
     public int staticIntFunction() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += FUNCTION.apply(i);
-        }
-        return sum;
+        return INT_FUNCTION.apply(1);
     }
 
 }
