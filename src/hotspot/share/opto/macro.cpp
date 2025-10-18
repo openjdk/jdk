@@ -1099,6 +1099,9 @@ bool PhaseMacroExpand::eliminate_allocate_node(AllocateNode *alloc) {
   }
 
   process_users_of_allocation(alloc);
+  if (boxing_alloc) {
+    C->record_optimization_event(OptEvent_EliminateAutobox);
+  }
 
 #ifndef PRODUCT
   if (PrintEliminateAllocations) {
