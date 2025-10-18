@@ -24,6 +24,7 @@
 
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/aotCodeCache.hpp"
@@ -80,6 +81,7 @@
 #include "opto/type.hpp"
 #include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
+#include "opto/c2_globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
@@ -89,6 +91,30 @@
 #include "utilities/copy.hpp"
 #include "utilities/hashTable.hpp"
 #include "utilities/macros.hpp"
+
+#ifndef PRODUCT
+static const char* const optimization_event_names[OptEvent_Count] = {
+  "Loop Unrolling",
+  "Loop Peeling",
+  "Parallel Induction Variables",
+  "Split If",
+  "Loop Unswitching",
+  "Conditional Expression Elimination",
+  "Function Inlining",
+  "Deoptimization",
+  "Escape Analysis",
+  "Eliminate Locks",
+  "Locks Coarsening",
+  "Conditional Constant Propagation",
+  "Eliminate Autobox",
+  "Block Elimination",
+  "Simplify Phi Function",
+  "Canonicalization",
+  "Null Check Elimination",
+  "Range Check Elimination",
+  "Optimize Ptr Compare"
+};
+#endif
 
 // -------------------- Compile::mach_constant_base_node -----------------------
 // Constant table base node singleton.
@@ -707,6 +733,10 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
   TraceTime t1("Total compilation time", &_t_totalCompilation, CITime, CITimeVerbose);
   TraceTime t2(nullptr, &_t_methodCompilation, CITime, false);
 
+#ifndef PRODUCT
+  Copy::zero_to_bytes(_optimization_counters, sizeof(_optimization_counters));
+#endif
+
 #if defined(SUPPORT_ASSEMBLY) || defined(SUPPORT_ABSTRACT_ASSEMBLY)
   bool print_opto_assembly = directive->PrintOptoAssemblyOption;
   // We can always print a disassembly, either abstract (hex dump) or
@@ -891,6 +921,41 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // Now generate code
   Code_Gen();
+  if (TraceC2Optimizations) {
+    if (method() == nullptr) {
+      // Skip C2 runtime stubs (notify_jvmti_vthread_mount_blob, …).
+      return;
+    }
+    bool printed_header = false;
+    for (int i = 0; i < OptEvent_Count; i++) {
+      int count = _optimization_counters[i];
+        if (!printed_header) {
+          printed_header = true;
+          ResourceMark rm;
+          const char* holder_name = "<no-klass>";
+          const char* method_name = "<no-method>";
+          const char* method_signature = "<no-signature>";
+          int current_entry_bci = this->entry_bci();
+          if (method() != nullptr) {
+            ciInstanceKlass* holder = method()->holder();
+            if (holder != nullptr) {
+              holder_name = holder->name()->as_klass_external_name();
+            }
+            method_name = method()->name()->as_utf8();
+            method_signature = method()->signature()->as_symbol()->as_utf8();
+            current_entry_bci = this->entry_bci();
+          } else if (_stub_name != nullptr) {
+            method_name = _stub_name;
+            current_entry_bci = InvocationEntryBci;
+          }
+          const char* compilation_kind = is_osr_compilation() ? "OSR" : "non-OSR";
+          tty->print_cr("OPTS_START");
+          tty->print_cr("Opts|%s|%s|%s|%s|%d|%d", holder_name, method_name, method_signature, compilation_kind, current_entry_bci, _compile_id);
+        }
+        tty->print_cr("%s=%d", optimization_event_names[i], count);
+    }
+    tty->print_cr("OPTS_END");
+  }
 }
 
 //------------------------------Compile----------------------------------------
@@ -964,6 +1029,10 @@ Compile::Compile(ciEnv* ci_env,
       _allowed_reasons(0) {
   C = this;
 
+#ifndef PRODUCT
+  Copy::zero_to_bytes(_optimization_counters, sizeof(_optimization_counters));
+#endif
+
   // try to reuse an existing stub
   {
     BlobId blob_id = StubInfo::blob(_stub_id);
@@ -1010,11 +1079,60 @@ Compile::Compile(ciEnv* ci_env,
   NOT_PRODUCT( verify_graph_edges(); )
 
   Code_Gen();
+
+  if (TraceC2Optimizations) {
+    if (method() == nullptr) {
+      // Skip C2 runtime stubs (notify_jvmti_vthread_mount_blob, …).
+      return;
+    }
+    bool printed_header = false;
+    for (int i = 0; i < OptEvent_Count; i++) {
+      int count = _optimization_counters[i];
+        if (!printed_header) {
+          printed_header = true;
+          ResourceMark rm;
+          const char* holder_name = "<no-klass>";
+          const char* method_name = "<no-method>";
+          const char* method_signature = "<no-signature>";
+          int current_entry_bci = this->entry_bci();
+          if (method() != nullptr) {
+            ciInstanceKlass* holder = method()->holder();
+            if (holder != nullptr) {
+              holder_name = holder->name()->as_klass_external_name();
+            }
+            method_name = method()->name()->as_utf8();
+            method_signature = method()->signature()->as_symbol()->as_utf8();
+            current_entry_bci = this->entry_bci();
+          } else if (_stub_name != nullptr) {
+            method_name = _stub_name;
+            current_entry_bci = InvocationEntryBci;
+          }
+          const char* compilation_kind = is_osr_compilation() ? "OSR" : "non-OSR";
+          tty->print_cr("OPTS_START");
+          tty->print_cr("Opts|%s|%s|%s|%s|%d|%d", holder_name, method_name, method_signature, compilation_kind, current_entry_bci, _compile_id);
+        }
+        tty->print_cr("%s=%d", optimization_event_names[i], count);
+    }
+    tty->print_cr("OPTS_END");
+  }
+
+  // Insert printing here (see below)
 }
 
 Compile::~Compile() {
   delete _first_failure_details;
 };
+
+
+#ifndef PRODUCT
+void Compile::record_optimization_event(OptimizationEvent event) {
+  if (!TraceC2Optimizations) {
+    return;
+  }
+  assert((int)event >= 0 && (int)event < OptEvent_Count, "optimization event out of bounds");
+  _optimization_counters[event]++;
+}
+#endif
 
 //------------------------------Init-------------------------------------------
 // Prepare for a single compilation
@@ -1934,7 +2052,7 @@ void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
     igvn.optimize();
     if (failing()) return;
     assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
-    print_method(PHASE_AFTER_MERGE_STORES, 3);
+    print_method(PHASE_AFTER_MERGE_STORES, 3); // INTERESTING
   }
 }
 
@@ -4835,6 +4953,7 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
       }
     }
     _coarsened_locks.append(locks_list);
+    record_optimization_event(OptEvent_LockCoarsening);
   }
 }
 
