@@ -679,6 +679,8 @@ public:
 void ShenandoahHeap::post_initialize() {
   CollectedHeap::post_initialize();
 
+  check_soft_max_changed();
+
   // Schedule periodic task to report on gc thread CPU utilization
   _mmu_tracker.initialize();
 
