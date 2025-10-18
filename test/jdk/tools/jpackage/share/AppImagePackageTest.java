@@ -21,20 +21,20 @@
  * questions.
  */
 
-import java.nio.file.Path;
-import java.nio.file.Files;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.internal.util.XmlUtils;
-import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.AppImageFile;
 import jdk.jpackage.test.CannedFormattedString;
-import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.RunnablePackageTest.Action;
-import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.TKit;
 
 /**
  * Test --app-image parameter. The output installer should provide the same
@@ -144,7 +144,7 @@ public class AppImagePackageTest {
         final var appImageDir = appImageCmd.outputBundle();
 
         final var expectedError = JPackageStringBundle.MAIN.cannedFormattedString(
-                "error.invalid-app-image", appImageDir, AppImageFile.getPathInAppImage(appImageDir));
+                "error.invalid-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir);
 
         configureBadAppImage(appImageDir, expectedError).addRunOnceInitializer(() -> {
             appImageCmd.execute();
@@ -156,8 +156,8 @@ public class AppImagePackageTest {
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir) {
-        return configureBadAppImage(appImageDir,
-                JPackageStringBundle.MAIN.cannedFormattedString("error.foreign-app-image", appImageDir));
+        return configureBadAppImage(appImageDir, JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.missing-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir));
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir, CannedFormattedString expectedError) {

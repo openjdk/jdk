@@ -33,12 +33,14 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.ExternalApplication.LauncherInfo;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.RuntimeBuilder;
@@ -51,11 +53,9 @@ final class ApplicationBuilder {
         final var launchersAsList = Optional.ofNullable(launchers).map(
                 ApplicationLaunchers::asList).orElseGet(List::of);
 
-        final var launcherCount = launchersAsList.size();
-
-        if (launcherCount != launchersAsList.stream().map(Launcher::name).distinct().count()) {
-            throw buildConfigException("ERR_NoUniqueName").create();
-        }
+        launchersAsList.stream().collect(Collectors.toMap(Launcher::name, x -> x, (a, b) -> {
+            throw new JPackageException(I18N.format("error.launcher-duplicate-name", a.name()));
+        }));
 
         final String effectiveName;
         if (name != null) {
@@ -86,6 +86,9 @@ final class ApplicationBuilder {
 
     ApplicationBuilder initFromExternalApplication(ExternalApplication app,
             Function<LauncherInfo, Launcher> mapper) {
+
+        externalApp = Objects.requireNonNull(app);
+
         if (version == null) {
             version = app.getAppVersion();
         }
@@ -94,7 +97,7 @@ final class ApplicationBuilder {
         }
         runtimeBuilder = null;
 
-        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false, Map.of());
+        var mainLauncherInfo = new LauncherInfo(app.getLauncherName(), false);
 
         launchers = new ApplicationLaunchers(
                 mapper.apply(mainLauncherInfo),
@@ -110,6 +113,19 @@ final class ApplicationBuilder {
 
     Optional<ApplicationLaunchers> launchers() {
         return Optional.ofNullable(launchers);
+    }
+
+    Optional<ExternalApplication> externalApplication() {
+        return Optional.ofNullable(externalApp);
+    }
+
+    Optional<String> mainLauncherClassName() {
+        return launchers()
+                .map(ApplicationLaunchers::mainLauncher)
+                .flatMap(Launcher::startupInfo)
+                .map(LauncherStartupInfo::qualifiedClassName).or(() -> {
+                    return externalApplication().map(ExternalApplication::getMainClass);
+                });
     }
 
     ApplicationBuilder appImageLayout(AppImageLayout v) {
@@ -208,6 +224,7 @@ final class ApplicationBuilder {
     private String vendor;
     private String copyright;
     private Path srcDir;
+    private ExternalApplication externalApp;
     private List<Path> contentDirs;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
