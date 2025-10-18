@@ -25,7 +25,6 @@
 #include "opto/rangeinference.hpp"
 #include "opto/type.hpp"
 #include "utilities/intn_t.hpp"
-#include "utilities/tuple.hpp"
 
 // If the cardinality of a TypeInt is below this threshold, use min widen, see
 // TypeIntPrototype<S, U>::normalize_widen
