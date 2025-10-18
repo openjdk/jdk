@@ -70,29 +70,52 @@ public class TestExpressions {
         var withConstantsTemplate = Template.make("expression", (Expression expression) -> {
             // Create a token: fill the expression with a fixed set of constants.
             // We then use the same token with the same constants, once compiled and once not compiled.
+            //
+            // Some expressions can throw Exceptions. We have to catch them. In such a case, we return
+            // the Exception instead of the value from the expression, and compare the Exceptions.
+            //
+            // Some Expressions do not have a deterministic result. For example, different NaN or
+            // precision results from some operators. We only compare the results if we know that the
+            // result is deterministically the same.
             TemplateToken expressionToken = expression.asToken(expression.argumentTypes.stream().map(t -> t.con()).toList());
             return body(
                 let("returnType", expression.returnType),
                 """
                 @Test
                 public static void $primitiveConTest() {
-                    #returnType v0 = ${primitiveConTest}_compiled();
-                    #returnType v1 = ${primitiveConTest}_reference();
-                    Verify.checkEQ(v0, v1);
+                    Object v0 = ${primitiveConTest}_compiled();
+                    Object v1 = ${primitiveConTest}_reference();
+                """,
+                expression.info.isResultDeterministic ? "Verify.checkEQ(v0, v1);\n" : "",
+                """
                 }
 
                 @DontInline
-                public static #returnType ${primitiveConTest}_compiled() {
+                public static Object ${primitiveConTest}_compiled() {
+                try {
                 """,
-                "return ", expressionToken, ";\n",
+                    "return ", expressionToken, ";\n",
+                    expression.info.exceptions.stream().map(exception ->
+                        "} catch (" + exception + " e) { return e;\n"
+                    ).toList(),
                 """
+                    } finally {
+                        // Just so that javac is happy if there are no exceptions to catch.
+                    }
                 }
 
                 @DontCompile
-                public static #returnType ${primitiveConTest}_reference() {
+                public static Object ${primitiveConTest}_reference() {
+                try {
                 """,
-                "return ", expressionToken, ";\n",
+                    "return ", expressionToken, ";\n",
+                    expression.info.exceptions.stream().map(exception ->
+                        "} catch (" + exception + " e) { return e;\n"
+                    ).toList(),
                 """
+                    } finally {
+                        // Just so that javac is happy if there are no exceptions to catch.
+                    }
                 }
                 """
             );

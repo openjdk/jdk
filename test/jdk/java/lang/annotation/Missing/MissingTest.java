@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @bug 6322301 5041778
  * @summary Verify when missing annotation classes cause exceptions
- * @author Joseph D. Darcy
  * @compile MissingTest.java A.java B.java C.java D.java Marker.java Missing.java MissingWrapper.java MissingDefault.java
  * @clean Missing
  * @run main MissingTest

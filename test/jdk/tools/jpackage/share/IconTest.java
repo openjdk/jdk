@@ -24,7 +24,9 @@
 import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.function.Consumer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -39,7 +41,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
-import jdk.jpackage.test.AdditionalLauncher;
+import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
@@ -98,18 +100,18 @@ public class IconTest {
             IconType additionalLauncherIconType, String[] extraJPackageArgs) {
         this.appImage = (bundleType == BundleType.AppImage);
         this.extraJPackageArgs = extraJPackageArgs;
-        config = Map.of(
+        config = new TreeMap<>(Map.of(
                 Launcher.Main, mainLauncherIconType,
-                Launcher.Additional, additionalLauncherIconType);
+                Launcher.Additional, additionalLauncherIconType));
     }
 
     public IconTest(BundleType bundleType, IconType mainLauncherIconType,
             IconType additionalLauncherIconType) {
         this.appImage = (bundleType == BundleType.AppImage);
         this.extraJPackageArgs = new String[0];
-        config = Map.of(
+        config = new TreeMap<>(Map.of(
                 Launcher.Main, mainLauncherIconType,
-                Launcher.Additional, additionalLauncherIconType);
+                Launcher.Additional, additionalLauncherIconType));
     }
 
     public IconTest(BundleType bundleType, IconType mainLauncherIconType) {

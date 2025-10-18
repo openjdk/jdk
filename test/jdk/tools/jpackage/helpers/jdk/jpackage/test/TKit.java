@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.Closeable;
@@ -794,6 +795,35 @@ public final class TKit {
         } else {
             assertTrue(!path.toFile().exists(), String.format(
                     "Check [%s] path doesn't exist", path));
+        }
+    }
+
+    public static void assertMismatchFileContent(Path a, Path b) {
+        assertFilesMismatch(a, b, true, Optional.empty());
+    }
+
+    public static void assertMismatchFileContent(Path a, Path b, String msg) {
+        assertFilesMismatch(a, b, true, Optional.of(msg));
+    }
+
+    public static void assertSameFileContent(Path a, Path b) {
+        assertFilesMismatch(a, b, false, Optional.empty());
+    }
+
+    public static void assertSameFileContent(Path a, Path b, String msg) {
+        assertFilesMismatch(a, b, false, Optional.of(msg));
+    }
+
+    public static void assertFilesMismatch(Path a, Path b, boolean expectMismatch, Optional<String> msg) {
+        var mismatch = toBiFunction(Files::mismatch).apply(a, b) != -1;
+        if (expectMismatch) {
+            assertTrue(mismatch, msg.orElseGet(() -> {
+                return String.format("Check the content of [%s] and [%s] files mismatch", a, b);
+            }));
+        } else {
+            assertTrue(!mismatch, msg.orElseGet(() -> {
+                return String.format("Check the content of [%s] and [%s] files is the same", a, b);
+            }));
         }
     }
 

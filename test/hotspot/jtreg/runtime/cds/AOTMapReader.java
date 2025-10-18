@@ -26,6 +26,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,7 +34,7 @@ import java.util.regex.Pattern;
 
 This is a simple parser for parsing the output of
 
-   java -Xshare:dump -Xlog:aot+map=debug,aot+map+oops=trace:file=cds.map:none:filesize=0
+   java -Xshare:dump -Xlog:aot+map=debug,aot+map+oops=trace:file=aot.map:none:filesize=0
 
 The map file contains patterns like this for the heap objects:
 
@@ -59,8 +60,9 @@ more analysis on the HeapObjects.
 
 */
 
-public class CDSMapReader {
+public class AOTMapReader {
     public static class MapFile {
+        HashSet<String> classes = new HashSet<>();
         ArrayList<HeapObject> heapObjects = new ArrayList<>();
         HashMap<Long, HeapObject> oopToObject = new HashMap<>();
         HashMap<Long, HeapObject> narrowOopToObject = new HashMap<>();
@@ -79,6 +81,20 @@ public class CDSMapReader {
 
         public int heapObjectCount() {
             return heapObjects.size();
+        }
+
+        void addClass(String className) {
+            classes.add(className);
+        }
+
+        public boolean hasClass(String className) {
+            return classes.contains(className);
+        }
+
+        public void shouldHaveClass(String className) {
+            if (!hasClass(className)) {
+                throw new RuntimeException("AOT map file is missing class " + className);
+            }
         }
     }
 
@@ -140,12 +156,16 @@ public class CDSMapReader {
             this.name = name;
             this.offset = Integer.parseInt(offset);
             this.referentAddress = new HeapAddress(oopStr, narrowOopStr);
-            this.lineCount = CDSMapReader.lineCount;
+            this.lineCount = AOTMapReader.lineCount;
         }
     }
 
     // 0x00000007ffc00000:   4a5b8701 00000063 00010290 00000000 00010100 fff80003
     static Pattern rawDataPattern = Pattern.compile("^0x([0-9a-f]+): *( [0-9a-f]+)+ *$");
+
+    // -------------------------------------------------------------------------------
+    // Patterns for heap objects
+    // -------------------------------------------------------------------------------
 
     // (one address)
     // 0x00000007ffc00000: @@ Object java.lang.String
@@ -178,6 +198,15 @@ public class CDSMapReader {
     // (injected module_entry)
     //  - injected 'module_entry' 'J' @16 0 (0x0000000000000000)
     static Pattern moduleEntryPattern = Pattern.compile("- injected 'module_entry' 'J' @[0-9]+[ ]+([0-9]+)");
+
+    // -------------------------------------------------------------------------------
+    // Patterns for metaspace objects
+    // -------------------------------------------------------------------------------
+
+    // 0x00000008000d1698: @@ Class             512 [Ljdk.internal.vm.FillerElement;
+    // 0x00000008000d18a0: @@ Class             520 java.lang.Cloneable
+    static Pattern classPattern = Pattern.compile("^0x([0-9a-f]+): @@ Class [ ]*([0-9]+) (.*)");
+
 
     private static Matcher match(String line, Pattern pattern) {
         Matcher m = pattern.matcher(line);
@@ -253,6 +282,11 @@ public class CDSMapReader {
         }
     }
 
+    private static void parseClassObject(String className, String addr, String size) throws IOException {
+        mapFile.addClass(className);
+        nextLine();
+    }
+
     static MapFile mapFile;
     static BufferedReader reader;
     static String line = null; // current line being parsed
@@ -277,6 +311,8 @@ public class CDSMapReader {
                     parseHeapObject(m.group(3), m.group(1), m.group(2));
                 } else if ((m = match(line, objPattern1)) != null) {
                     parseHeapObject(m.group(2), m.group(1), null);
+                } else if ((m = match(line, classPattern)) != null) {
+                    parseClassObject(m.group(3), m.group(1), m.group(2)); // name, addr, size
                 } else {
                     nextLine();
                 }
@@ -303,8 +339,15 @@ public class CDSMapReader {
         }
     }
 
+    public static void validate(MapFile mapFile, String classLoadLogFile) throws IOException {
+        validateOops(mapFile);
+        if (classLoadLogFile != null) {
+            validateClasses(mapFile, classLoadLogFile);
+        }
+    }
+
     // Check that each oop fields in the HeapObjects must point to a valid HeapObject.
-    public static void validate(MapFile mapFile) {
+    static void validateOops(MapFile mapFile) {
         int count1 = 0;
         int count2 = 0;
         for (HeapObject heapObject : mapFile.heapObjects) {
@@ -333,10 +376,10 @@ public class CDSMapReader {
         if (mapFile.heapObjectCount() > 0) {
             // heapObjectCount() may be zero if the selected GC doesn't support heap object archiving.
             if (mapFile.stringCount <= 0) {
-                throw new RuntimeException("CDS map file should contain at least one string");
+                throw new RuntimeException("AOT map file should contain at least one string");
             }
             if (count1 < mapFile.stringCount) {
-                throw new RuntimeException("CDS map file seems incorrect: " + mapFile.heapObjectCount() +
+                throw new RuntimeException("AOT map file seems incorrect: " + mapFile.heapObjectCount() +
                                            " objects (" + mapFile.stringCount + " strings). Each string should" +
                                            " have one non-null oop field but we found only " + count1 +
                                            " non-null oop field references");
@@ -344,8 +387,26 @@ public class CDSMapReader {
         }
     }
 
-    public static void main(String args[]) {
+    // classLoadLogFile should be generated with -Xlog:class+load:file=<classLoadLogFile>:none:filesize=0
+    // Check that every class loaded from "source: shared objects file" have an entry inside the mapFile.
+    static void validateClasses(MapFile mapFile, String classLoadLogFile) throws IOException {
+        try (BufferedReader r = new BufferedReader(new FileReader(classLoadLogFile))) {
+            String line;
+            String suffix = " source: shared objects file";
+            int suffixLen = suffix.length();
+            while ((line = r.readLine()) != null) {
+                if (line.endsWith(suffix)) {
+                    String className = line.substring(0, line.length() - suffixLen);
+                    if (!mapFile.hasClass(className)) {
+                        throw new RuntimeException("AOT map file is missing class " + className);
+                    }
+                }
+            }
+        }
+    }
+
+    public static void main(String args[]) throws IOException {
         MapFile mapFile = read(args[0]);
-        validate(mapFile);
+        validate(mapFile, null);
     }
 }

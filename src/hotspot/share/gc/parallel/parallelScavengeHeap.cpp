@@ -79,7 +79,6 @@ jint ParallelScavengeHeap::initialize() {
   card_table->initialize(old_rs.base(), young_rs.base());
 
   CardTableBarrierSet* const barrier_set = new CardTableBarrierSet(card_table);
-  barrier_set->initialize();
   BarrierSet::set_barrier_set(barrier_set);
 
   // Set up WorkerThreads

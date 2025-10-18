@@ -131,6 +131,13 @@ class DefNewGeneration: public Generation {
     return n > alignment ? align_down(n, alignment) : alignment;
   }
 
+  size_t calculate_desired_young_gen_bytes() const;
+
+  void expand_eden_by(size_t delta_bytes);
+
+  void resize_inner();
+  void post_resize();
+
  public:
   DefNewGeneration(ReservedSpace rs,
                    size_t initial_byte_size,
@@ -183,9 +190,8 @@ class DefNewGeneration: public Generation {
 
   HeapWord* block_start(const void* p) const;
 
-  // Allocate requested size or return null; single-threaded and lock-free versions.
-  HeapWord* allocate(size_t word_size);
   HeapWord* par_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(size_t word_size);
 
   void gc_epilogue();
 
@@ -196,8 +202,8 @@ class DefNewGeneration: public Generation {
   // Reset for contribution of "to-space".
   void reset_scratch();
 
-  // GC support
-  void compute_new_size();
+  void resize_after_young_gc();
+  void resize_after_full_gc();
 
   bool collect(bool clear_all_soft_refs);
 
@@ -220,13 +226,9 @@ class DefNewGeneration: public Generation {
 
   DefNewTracer* gc_tracer() const { return _gc_tracer; }
 
- protected:
-  // If clear_space is true, clear the survivor spaces.  Eden is
-  // cleared if the minimum size of eden is 0.  If mangle_space
-  // is true, also mangle the space in debug mode.
-  void compute_space_boundaries(uintx minimum_eden_size,
-                                bool clear_space,
-                                bool mangle_space);
+ private:
+  // Initialize eden/from/to spaces.
+  void init_spaces();
 
   // Return adjusted new size for NewSizeThreadIncrease.
   // If any overflow happens, revert to previous new size.
