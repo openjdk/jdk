@@ -70,7 +70,7 @@ private:
     _call_stub_size = 11 * MacroAssembler::instruction_size +
                       1 * MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
-    _exception_handler_size = DEBUG_ONLY(256) NOT_DEBUG(32), // or smaller
+    _exception_handler_size = DEBUG_ONLY(256) NOT_DEBUG(64), // or smaller
     // See emit_deopt_handler for detail
     // auipc (1) + far_jump (2)
     _deopt_handler_size = 1 * MacroAssembler::instruction_size +
