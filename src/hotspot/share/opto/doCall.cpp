@@ -698,6 +698,9 @@ void Parse::do_call() {
   if (cg->is_inline()) {
     // Accumulate has_loops estimate
     C->env()->notice_inlined_method(cg->method());
+    if (!cg->is_late_inline()) {
+      C->record_optimization_event(OptEvent_FunctionInlining);
+    }
   }
 
   // Reset parser state from [new_]jvms, which now carries results of the call.
