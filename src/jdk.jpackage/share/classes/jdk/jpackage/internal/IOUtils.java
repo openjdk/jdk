@@ -25,8 +25,6 @@
 
 package jdk.jpackage.internal;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -45,31 +43,11 @@ final class IOUtils {
 
     public static void copyFile(Path sourceFile, Path destFile)
             throws IOException {
-        Files.createDirectories(getParent(destFile));
+        Files.createDirectories(destFile.getParent());
 
         Files.copy(sourceFile, destFile,
                    StandardCopyOption.REPLACE_EXISTING,
                    StandardCopyOption.COPY_ATTRIBUTES);
-    }
-
-    public static boolean exists(Path path) {
-        if (path == null) {
-            return false;
-        }
-
-        return Files.exists(path);
-    }
-
-    // run "launcher paramfile" in the directory where paramfile is kept
-    public static void run(String launcher, Path paramFile)
-            throws IOException {
-        if (IOUtils.exists(paramFile)) {
-            ProcessBuilder pb =
-                    new ProcessBuilder(launcher,
-                        getFileName(paramFile).toString());
-            pb = pb.directory(getParent(paramFile).toFile());
-            exec(pb);
-        }
     }
 
     public static void exec(ProcessBuilder pb)
@@ -81,21 +59,6 @@ final class IOUtils {
     public static void exec(ProcessBuilder pb, long timeout)
             throws IOException {
         exec(pb, false, null, false, timeout);
-    }
-
-    // See JDK-8236282
-    // Reading output from some processes (currently known "hdiutil attach")
-    // might hang even if process already exited. Only possible workaround found
-    // in "hdiutil attach" case is to redirect the output to a temp file and then
-    // read this file back.
-    public static void exec(ProcessBuilder pb, boolean writeOutputToFile)
-            throws IOException {
-        exec(pb, false, null, writeOutputToFile, Executor.INFINITE_TIMEOUT);
-    }
-
-    static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
-            PrintStream consumer) throws IOException {
-        exec(pb, testForPresenceOnly, consumer, false, Executor.INFINITE_TIMEOUT);
     }
 
     static void exec(ProcessBuilder pb, boolean testForPresenceOnly,
@@ -127,51 +90,6 @@ final class IOUtils {
         }
     }
 
-    public static int getProcessOutput(List<String> result, String... args)
-            throws IOException, InterruptedException {
-
-        ProcessBuilder pb = new ProcessBuilder(args);
-
-        final Process p = pb.start();
-
-        List<String> list = new ArrayList<>();
-
-        final BufferedReader in =
-                new BufferedReader(new InputStreamReader(p.getInputStream()));
-        final BufferedReader err =
-                new BufferedReader(new InputStreamReader(p.getErrorStream()));
-
-        Thread t = new Thread(() -> {
-            try {
-                String line;
-                while ((line = in.readLine()) != null) {
-                    list.add(line);
-                }
-            } catch (IOException ioe) {
-                Log.verbose(ioe);
-            }
-
-            try {
-                String line;
-                while ((line = err.readLine()) != null) {
-                    Log.error(line);
-                }
-            } catch (IOException ioe) {
-                  Log.verbose(ioe);
-            }
-        });
-        t.setDaemon(true);
-        t.start();
-
-        int ret = p.waitFor();
-        Log.verbose(pb.command(), list, ret, IOUtils.getPID(p));
-
-        result.clear();
-        result.addAll(list);
-
-        return ret;
-    }
-
     static void writableOutputDir(Path outdir) throws PackagerException {
         if (!Files.isDirectory(outdir)) {
             try {
@@ -186,28 +104,6 @@ final class IOUtils {
             throw new PackagerException("error.cannot-write-to-output-dir",
                     outdir.toAbsolutePath().toString());
         }
-    }
-
-    public static Path getParent(Path p) {
-        Path parent = p.getParent();
-        if (parent == null) {
-            IllegalArgumentException iae =
-                    new IllegalArgumentException(p.toString());
-            Log.verbose(iae);
-            throw iae;
-        }
-        return parent;
-    }
-
-    public static Path getFileName(Path p) {
-        Path filename = p.getFileName();
-        if (filename == null) {
-            IllegalArgumentException iae =
-                    new IllegalArgumentException(p.toString());
-            Log.verbose(iae);
-            throw iae;
-        }
-        return filename;
     }
 
     public static long getPID(Process p) {

@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -178,6 +179,15 @@ final class OverridableResource {
 
     OverridableResource setExternal(File v) {
         return setExternal(toPath(v));
+    }
+
+    Source probe() {
+        try {
+            return saveToStream(null);
+        } catch (IOException ex) {
+            // Should never happen.
+            throw new UncheckedIOException(ex);
+        }
     }
 
     Source saveToStream(OutputStream dest) throws IOException {

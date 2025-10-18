@@ -57,12 +57,12 @@ public record ApplicationLaunchers(Launcher mainLauncher, List<Launcher> additio
         }).orElseGet(List::of);
     }
 
-    public static Optional<ApplicationLaunchers> fromList(List<Launcher> launchers) {
+    public static Optional<ApplicationLaunchers> fromList(List<? extends Launcher> launchers) {
         if (launchers == null || launchers.isEmpty()) {
             return Optional.empty();
         } else {
             return Optional.of(new ApplicationLaunchers(launchers.getFirst(),
-                    launchers.subList(1, launchers.size())));
+                    List.copyOf(launchers.subList(1, launchers.size()))));
         }
     }
 }
