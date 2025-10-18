@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +35,6 @@ public:
   void flush_bundle(bool start_new_bundle) {}
   static constexpr bool supports_shared_stubs() { return true; }
 
-  void share_trampoline_for(address dest, int caller_offset);
+  void share_trampoline_for(address key, address dest, int caller_offset);
 
 #endif // CPU_AARCH64_CODEBUFFER_AARCH64_HPP
