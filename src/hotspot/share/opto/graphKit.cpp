@@ -1309,6 +1309,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         // If so, then the value is already null.
         if (t->higher_equal(TypePtr::NULL_PTR)) {
           NOT_PRODUCT(explicit_null_checks_elided++);
+          C->record_optimization_event(OptEvent_NullCheckElimination);
           return value;           // Elided null assert quickly!
         }
       } else {
@@ -1318,6 +1319,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
         if (t->meet(TypePtr::NULL_PTR) != t->remove_speculative()) {
           // same as: if (!TypePtr::NULL_PTR->higher_equal(t)) ...
           NOT_PRODUCT(explicit_null_checks_elided++);
+          C->record_optimization_event(OptEvent_NullCheckElimination);
           return value;           // Elided null check quickly!
         }
       }
