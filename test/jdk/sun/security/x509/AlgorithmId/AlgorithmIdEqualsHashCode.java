@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,8 @@ import sun.security.util.DerValue;
 import sun.security.x509.*;
 
 public class AlgorithmIdEqualsHashCode {
+
+    static boolean failed = false;
 
     public static void main(String[] args) throws Exception {
 
@@ -96,6 +98,45 @@ public class AlgorithmIdEqualsHashCode {
             throw new Exception("Failed equals() contract");
         } else {
             System.out.println("PASSED equals() test");
+        }
+
+        try {
+            System.out.println("\nTesting explicit ASN.1 NULL parameter canonicalization...");
+
+            // Construct an AlgorithmId with explicit DER NULL parameters
+            DerValue explicitNullParams = new DerValue(DerValue.tag_Null, new byte[0]);
+            AlgorithmId aiNullParams = new AlgorithmId(AlgorithmId.SHA256_oid, explicitNullParams);
+
+            // The constructor should canonicalize this to "no parameters"
+            if (aiNullParams.getEncodedParams() != null) {
+                System.out.println("FAILED: explicit NULL not canonicalized to absent parameters");
+                failed = true;
+            } else {
+                System.out.println("PASSED explicit ASN.1 NULL canonicalization test");
+            }
+
+            // Ensure equality and hashCode are consistent for canonicalized vs. normal AlgorithmId
+            AlgorithmId aiNormal = AlgorithmId.get("SHA-256");
+            if (!aiNullParams.equals(aiNormal) ||
+                    aiNullParams.hashCode() != aiNormal.hashCode()) {
+                System.out.println("FAILED: equals()/hashCode() NULL vs absent parameters");
+                failed = true;
+            } else {
+                System.out.println("PASSED equals()/hashCode() NULL vs absent parameters test");
+            }
+        } catch (Exception e) {
+            System.out.println("FAILED: Exception during explicit NULL parameter test - " + e);
+            failed = true;
+        }
+
+        try {
+            DerValue invalidNull = new DerValue(DerValue.tag_Null, new byte[]{0x00});
+            new AlgorithmId(AlgorithmId.SHA256_oid, invalidNull);
+            throw new Exception("FAILED invalid ASN.1 NULL test: expected IOException not thrown");
+        } catch (IOException expected) {
+            System.out.println("PASSED invalid ASN.1 NULL test (caught expected IOException)");
+        } catch (Exception e) {
+            throw new Exception("FAILED invalid ASN.1 NULL test: unexpected exception type", e);
         }
     }
 }
