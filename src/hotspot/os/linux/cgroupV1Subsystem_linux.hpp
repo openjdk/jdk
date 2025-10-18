@@ -193,15 +193,15 @@ class CgroupV1Subsystem: public CgroupSubsystem {
     const char * container_type() {
       return "cgroupv1";
     }
-    CachingCgroupController<CgroupMemoryController>* memory_controller() { return _memory; }
-    CachingCgroupController<CgroupCpuController>* cpu_controller() { return _cpu; }
+    CachingCgroupController<CgroupMemoryController, jlong>* memory_controller() { return _memory; }
+    CachingCgroupController<CgroupCpuController, double>* cpu_controller() { return _cpu; }
     CgroupCpuacctController* cpuacct_controller() { return _cpuacct; }
 
   private:
     /* controllers */
-    CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
+    CachingCgroupController<CgroupMemoryController, jlong>* _memory = nullptr;
     CgroupV1Controller* _cpuset = nullptr;
-    CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
+    CachingCgroupController<CgroupCpuController, double>* _cpu = nullptr;
     CgroupV1CpuacctController* _cpuacct = nullptr;
     CgroupV1Controller* _pids = nullptr;
 

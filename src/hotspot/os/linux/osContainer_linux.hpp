@@ -61,7 +61,7 @@ class OSContainer: AllStatic {
   static jlong rss_usage_in_bytes();
   static jlong cache_usage_in_bytes();
 
-  static int active_processor_count();
+  static double active_processor_count();
 
   static char * cpu_cpuset_cpus();
   static char * cpu_cpuset_memory_nodes();

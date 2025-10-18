@@ -25,26 +25,19 @@
 #include "cgroupUtil_linux.hpp"
 #include "os_linux.hpp"
 
-int CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
+double CgroupUtil::processor_count(CgroupCpuController* cpu_ctrl, int host_cpus) {
   assert(host_cpus > 0, "physical host cpus must be positive");
-  int limit_count = host_cpus;
   int quota  = cpu_ctrl->cpu_quota();
   int period = cpu_ctrl->cpu_period();
-  int quota_count = 0;
-  int result = 0;
+  double result = static_cast<double>(host_cpus);
 
-  if (quota > -1 && period > 0) {
-    quota_count = ceilf((float)quota / (float)period);
-    log_trace(os, container)("CPU Quota count based on quota/period: %d", quota_count);
+  if (quota > 0 && period > 0) { // Use quotas
+    double cpu_quota = static_cast<double>(quota) / period;
+    log_trace(os, container)("CPU Quota based on quota/period: %.2f", cpu_quota);
+    result = MIN2(result, cpu_quota);
   }
 
-  // Use quotas
-  if (quota_count != 0) {
-    limit_count = quota_count;
-  }
-
-  result = MIN2(host_cpus, limit_count);
-  log_trace(os, container)("OSContainer::active_processor_count: %d", result);
+  log_trace(os, container)("OSContainer::active_processor_count: %.2f", result);
   return result;
 }
 
