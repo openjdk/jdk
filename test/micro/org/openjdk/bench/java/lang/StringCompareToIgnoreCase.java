@@ -36,29 +36,12 @@ import java.util.concurrent.TimeUnit;
 @Fork(3)
 public class StringCompareToIgnoreCase {
 
-    public String upper = "\u0100\u0102\u0104\u0106\u0108";
-    public String upperLower = "\u0100\u0102\u0104\u0106\u0109";
-    public String lower = "\u0101\u0103\u0105\u0107\u0109";
-    public String supUpper = "\ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc04";
-    public String supUpperLower = "\ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc2c";
-    public String supLower = "\ud801\udc28\ud801\udc29\ud801\udc2a\ud801\udc2b\ud801\udc2c";
-
-    public String asciiUpper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    public String asciiUpperLower = "ABCDEFGHIJKLMNOpqrstuvwxyz";
-    public String asciiLower = "abcdefghijklmnopqrstuvwxyz";
-
-    public String greekUpper = "\u0391\u0392\u0393\u0394\u0395"; // ΑΒΓΔΕ
-    public String greekUpperLower = "\u0391\u0392\u0393\u0394\u03B5"; // ΑΒΓΔε
-    public String greekLower = "\u03B1\u03B2\u03B3\u03B4\u03B5"; // αβγδε
-
-    public String asciiGreekUpper = "ABC\u0391\u0392\u0393"; // ABCΑΒΓ
-    public String asciiGreekUpperLower = "ABC\u0391\u0392\u03B3"; // ABCΑΒγ
-    public String asciiGreekLower = "abc\u03B1\u03B2\u03B3"; // abcαβγ
-
-    public String utf16SupUpper = "\uD835\uDC00\uD835\uDC01\uD835\uDC02\uD835\uDC03\uD835\uDC04"; // 1D400..1D404
-    public String utf16SupUpperLower = "\uD835\uDC00\uD835\uDC01\uD835\uDC02\uD835\uDC03\uD835\uDC1C"; // 1D400..1D41C
-    public String utf16SubLower = "\uD835\uDC1C\uD835\uDC1D\uD835\uDC1E\uD835\uDC1F\uD835\uDC20"; // 1D41C..1D420
-
+    public String upper = new String("\u0100\u0102\u0104\u0106\u0108");
+    public String upperLower = new String("\u0100\u0102\u0104\u0106\u0109");
+    public String lower = new String("\u0101\u0103\u0105\u0107\u0109");
+    public String supUpper = new String("\ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc04");
+    public String supUpperLower = new String("\ud801\udc00\ud801\udc01\ud801\udc02\ud801\udc03\ud801\udc2c");
+    public String supLower = new String("\ud801\udc28\ud801\udc29\ud801\udc2a\ud801\udc2b\ud801\udc2c");
 
     @Benchmark
     public int upperLower() {
@@ -79,106 +62,4 @@ public class StringCompareToIgnoreCase {
     public int supLower() {
         return supUpper.compareToIgnoreCase(supLower);
     }
-
-    @Benchmark
-    public int upperLowerCF() {
-        return upper.compareToFoldCase(upperLower);
-    }
-
-    @Benchmark
-    public int lowerrCF() {
-        return upper.compareToFoldCase(lower);
-    }
-
-    @Benchmark
-    public int supUpperLowerCF() {
-        return supUpper.compareToFoldCase(supUpperLower);
-    }
-
-    @Benchmark
-    public int supLowerCF() {
-        return supUpper.compareToFoldCase(supLower);
-    }
-
-    @Benchmark
-    public int asciiUpperLower() {
-        return asciiUpper.compareToIgnoreCase(asciiUpperLower);
-    }
-
-    @Benchmark
-    public int asciiLower() {
-        return asciiUpper.compareToIgnoreCase(asciiLower);
-    }
-
-    @Benchmark
-    public int asciiGreekUpperLower() {
-        return asciiGreekUpper.compareToIgnoreCase(asciiGreekUpperLower);
-    }
-
-    @Benchmark
-    public int asciiGreekLower() {
-        return asciiGreekUpper.compareToIgnoreCase(asciiGreekLower);
-    }
-
-    @Benchmark
-    public int greekUpperLower() {
-        return greekUpper.compareToIgnoreCase(greekUpperLower);
-    }
-
-    @Benchmark
-    public int greekLower() {
-        return greekUpper.compareToIgnoreCase(greekLower);
-    }
-
-    @Benchmark
-    public int utf16SupUpperLower() {
-        return utf16SupUpper.compareToIgnoreCase(utf16SupUpperLower);
-    }
-
-    @Benchmark
-    public int utf16SubLower() {
-        return utf16SupUpper.compareToIgnoreCase(utf16SubLower);
-    }
-
-    @Benchmark
-    public int asciiUpperLowerCF() {
-        return asciiUpper.compareToFoldCase(asciiUpperLower);
-    }
-
-    @Benchmark
-    public int asciiLowerCF() {
-        return asciiUpper.compareToFoldCase(asciiLower);
-    }
-
-    @Benchmark
-    public int greekUpperLowerCF() {
-        return greekUpper.compareToFoldCase(greekUpperLower);
-    }
-
-    @Benchmark
-    public int greekLowerCF() {
-        return greekUpper.compareToFoldCase(greekLower);
-    }
-
-    @Benchmark
-    public int asciiGreekUpperLowerCF() {
-        return asciiGreekUpper.compareToFoldCase(asciiGreekUpperLower);
-    }
-
-    @Benchmark
-    public int asciiGreekLowerCF() {
-        return asciiGreekUpper.compareToFoldCase(asciiGreekLower);
-    }
-
-
-    @Benchmark
-    public int utf16SupUpperLowerCF() {
-        return utf16SupUpper.compareToFoldCase(utf16SupUpperLower);
-    }
-
-    @Benchmark
-    public int utf16SubLowerCF() {
-        return utf16SupUpper.compareToFoldCase(utf16SubLower);
-    }
-
 }

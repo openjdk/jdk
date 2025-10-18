@@ -33,8 +33,8 @@ import java.util.stream.IntStream;
 import static java.util.Map.entry;
 
 /**
- * Utility class for {@code String.toCaseFold()} that handles Unicode case folding
- * properties defined in CasingFolding.txt, including 1:M full case folding.
+ * Utility class that handles Unicode case folding properties defined in
+ * CasingFolding.txt, including 1:M full case folding.
  */
  public final class CaseFolding {
 
@@ -59,6 +59,18 @@ import static java.util.Map.entry;
 	}
 
     /**
+     * Tests whether the specified code point has a folding mapping entry defined.
+     *
+     * @param  cp
+     *         the Unicode code point to test
+     * @return {@code true} if the given code point has a case folding mapping entry
+     *         defined in (@code caseFoldingMap}, {@code false} otherwise
+     */
+    public static boolean isDefined(int cp) {
+        return caseFoldingMap.get(cp) != null;
+    }
+
+    /**
      * Returns the case-folded form of the specified code point, according
      * to the Unicode case folding mappings.
      * <p>
@@ -74,11 +86,11 @@ import static java.util.Map.entry;
      *
      * @see #isFolded(int)
      */
-    public static char[] fold(int cp) {
+    public static int[] fold(int cp) {
         var entry = caseFoldingMap.get(cp);
         if (entry != null)
           return entry.folding;
-        return Character.toChars(cp);
+        return new int[] { cp };
     }
 
    /**
@@ -95,7 +107,7 @@ import static java.util.Map.entry;
      *         case-folded form of the input code point, null if
 	 *         there is no mapping defined.
      */
-    public static char[] foldIfDefined(int cp) {
+    public static int[] foldIfDefined(int cp) {
         var entry = caseFoldingMap.get(cp);
         return entry != null ? entry.folding : null;
     }
@@ -137,8 +149,12 @@ import static java.util.Map.entry;
             if (CaseFolding.isFolded(cp)) {
                 sb.appendCodePoint(cp);
             } else {
-                char[] folded = CaseFolding.fold(cp);
-                sb.append(folded);
+                int[] folded = CaseFolding.fold(cp);
+                 if (folded != null) {
+                     for (int f : folded) {
+                         sb.appendCodePoint(f);
+                     }
+                 }
             }
             cpCnt = Character.charCount(cp);
         }
@@ -227,21 +243,13 @@ import static java.util.Map.entry;
 
      private static class CaseFoldingEntry {
         final int cp;
-        final char[] folding;
+        final int[] folding;
         CaseFoldingEntry next = null;
 
-        CaseFoldingEntry(int cp, char[] folding) {
+        CaseFoldingEntry(int cp, int[] folding) {
             this.cp = cp;
-             this.folding = folding;
+            this.folding = folding;
         };
-
-        public String toString() {
-            return String.format("[%x %s]",
-                    cp,
-                    IntStream.range(0, folding.length)
-					         .mapToObj(i -> String.format("%x", (int)folding[i]))
-                             .collect(Collectors.joining(" ", "", "")));
-        }
     }
 
     private static class CaseFoldingMap {

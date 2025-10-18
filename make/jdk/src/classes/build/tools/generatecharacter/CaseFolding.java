@@ -54,15 +54,11 @@ public class CaseFolding {
                     for (int i = 0; i < folding.length; i++) {
                         folding[i] = Integer.parseInt(fields[i], 16);
                     }
-                    var foldingChars = Arrays.stream(folding)
-                            .mapToObj(Character::toChars)
-                            .flatMapToInt(chars -> IntStream.range(0, chars.length).map(i -> (int) chars[i]))
-                            .toArray();
                     return String.format("\t\tnew CaseFoldingEntry(0x%04x, %s)",
                             cp,
-                            Arrays.stream(foldingChars)
-                                    .mapToObj(c -> String.format("0x%04x", c))
-                                    .collect(Collectors.joining(", ", "new char[] {", "}"))
+                            Arrays.stream(folding)
+                                    .mapToObj(f -> String.format("0x%04x", f))
+                                    .collect(Collectors.joining(", ", "new int[] {", "}"))
                     );
                 })
                 .collect(Collectors.joining(",\n", "", ""));

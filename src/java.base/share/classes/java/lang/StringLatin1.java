@@ -185,36 +185,30 @@ final class StringLatin1 {
         return len1 - len2;
     }
 
-    public static int compareToFC(byte[] value, byte[] other) {
-        int len1 = value.length;
-        int len2 = other.length;
-        char[] folded1 = null;
-        char[] folded2 = null;
-        int k1 = 0, k2 = 0, fk1 = 0, fk2 = 0;
-        while ((k1 < len1 || folded1 != null && fk1 < folded1.length) &&
-               (k2 < len2 || folded2 != null && fk2 < folded2.length)) {
-            char c1, c2;
+    private static int compareToFC0(byte[] value, int off, int last, byte[] other, int ooff, int olast) {
+        int[] folded1 = null;
+        int[] folded2 = null;
+        int k1 = off, k2 = ooff, fk1 = 0, fk2 = 0;
+        while ((k1 < last || folded1 != null && fk1 < folded1.length) &&
+               (k2 < olast || folded2 != null && fk2 < folded2.length)) {
+            int c1, c2;
             if (folded1 != null && fk1 < folded1.length) {
                 c1 = folded1[fk1++];
             } else {
-                int cp = codePointAt(value, k1++, len1);  // no surrogate
-                folded1 = CaseFolding.foldIfDefined(cp);
+                c1 = getChar(value, k1++);
+                folded1 = CaseFolding.foldIfDefined(c1);
                 fk1 = 0;
-                if (folded1 == null) {
-                    c1 = (char)cp;
-                } else {
-                    c1 = folded1[fk1++];
+                if (folded1 != null) {
+                   c1 = folded1[fk1++];
                 }
             }
             if (folded2 != null && fk2 < folded2.length) {
                 c2 = folded2[fk2++];
             } else {
-                int cp = codePointAt(other, k2++, len2);
-                folded2 = CaseFolding.foldIfDefined(cp);
+                c2 = getChar(other, k2++);
+                folded2 = CaseFolding.foldIfDefined(c2);
                 fk2 = 0;
-                if (folded2 == null) {
-                    c2 = (char)cp;
-                } else {
+                if (folded2 != null) {
                     c2 = folded2[fk2++];
                 }
             }
@@ -222,47 +216,61 @@ final class StringLatin1 {
                 return c1 - c2;
             }
         }
-        if (k1 < len1 || folded1 != null && fk1 < folded1.length) {
+        if (k1 < last || folded1 != null && fk1 < folded1.length) {
             return 1;
         }
-        if (k2 < len2 || folded2 != null && fk2 < folded2.length) {
+        if (k2 < olast || folded2 != null && fk2 < folded2.length) {
             return -1;
         }
         return 0;
     }
 
-    public static int compareToFC_UTF16(byte[] value, byte[] other) {
-        int len1 = value.length;
-        int len2 = StringUTF16.length(other);
-        char[] folded1 = null;
-        char[] folded2 = null;
-        int k1 = 0, k2 = 0, fk1 = 0, fk2 = 0;
+    static int compareToFC(byte[] value, byte[] other) {
+        int len = value.length;
+        int olen = other.length;
+        int lim = Math.min(len, olen);
+        for (int k = 0; k < lim; k++) {
+            byte b1 = value[k];
+            byte b2 = other[k];
+            if (CharacterDataLatin1.equalsIgnoreCase(b1, b2)) {
+                continue;
+            }
+            int c1 = b1 & 0xff;
+            int c2 = b2 & 0xff;
+            if (c1 == 0xdf || c2 == 0xdf) {
+                return compareToFC0(value, k, len, other, k, olen);
+            }
+            return Character.toLowerCase(c1) - Character.toLowerCase(c2);
 
-        while ((k1 < len1 || folded1 != null && fk1 < folded1.length) &&
-               (k2 < len2 || folded2 != null && fk2 < folded2.length)) {
-            char c1, c2;
+        }
+        return len - olen;
+    }
+
+    private static int compareToFC0_UTF16(byte[] value, int off, int last, byte[] other, int ooff, int olast) {
+        int[] folded1 = null;
+        int[] folded2 = null;
+        int k1 = off, k2 = ooff, fk1 = 0, fk2 = 0;
+        while ((k1 < last || folded1 != null && fk1 < folded1.length) &&
+               (k2 < olast || folded2 != null && fk2 < folded2.length)) {
+            int c1, c2;
             if (folded1 != null && fk1 < folded1.length) {
                 c1 = folded1[fk1++];
             } else {
-                int cp = codePointAt(value, k1++, len1);
-                folded1 = CaseFolding.foldIfDefined(cp);
+                c1 = getChar(value, k1++);
+                folded1 = CaseFolding.foldIfDefined(c1);
                 fk1 = 0;
-                if (folded1 == null) {
-                    c1 = (char)cp;
-                } else {
+                if (folded1 != null) {
                     c1 = folded1[fk1++];
                 }
             }
             if (folded2 != null && fk2 < folded2.length) {
                 c2 = folded2[fk2++];
             } else {
-                int cp = StringUTF16.codePointAt(other, k2, len2);
-                k2 += Character.charCount(cp);
-                folded2 = CaseFolding.foldIfDefined(cp);
+                c2 = StringUTF16.codePointAt(other, k2, olast, true);
+                k2 += Character.charCount(c2);
+                folded2 = CaseFolding.foldIfDefined(c2);
                 fk2 = 0;
-                if (folded2 == null) {
-                    c2 = (char)cp;
-                } else {
+                if (folded2 != null) {
                     c2 = folded2[fk2++];
                 }
             }
@@ -270,13 +278,45 @@ final class StringLatin1 {
                 return c1 - c2;
             }
         }
-        if (k1 < len1 || folded1 != null && fk1 < folded1.length) {
+        if (k1 < last || folded1 != null && fk1 < folded1.length) {
             return 1;
         }
-        if (k2 < len2 || folded2 != null && fk2 < folded2.length) {
+        if (k2 < olast || folded2 != null && fk2 < folded2.length) {
             return -1;
         }
         return 0;
+    }
+
+    // latin1 vs utf16
+    static int compareToFC_UTF16(byte[] value, byte[] other) {
+        int last = length(value);
+        int olast = StringUTF16.length(other);
+        int lim = Math.min(last, olast);
+        for (int k = 0; k < lim; k++) {
+            int cp1 = getChar(value, k);
+            int cp2 = StringUTF16.codePointAt(other, k, olast, true);
+            if (cp1 == cp2) {
+                continue;
+            }
+            int[] folded = CaseFolding.foldIfDefined(cp1);
+            if (folded != null) {
+                if (folded.length > 1) {
+                    return compareToFC0_UTF16(value, k, last, other, k, olast);
+                }
+                cp1 = folded[0];
+            }
+            folded = CaseFolding.foldIfDefined(cp2);
+            if (folded != null) {
+                if (folded.length > 1) {
+                    return compareToFC0_UTF16(value, k, last, other, k, olast);
+                }
+                cp2 = folded[0];
+            }
+            if (cp1 != cp2) {
+                return cp1 - cp2;
+            }
+        }
+        return last - olast;
     }
 
     static int hashCode(byte[] value) {
