@@ -1441,6 +1441,9 @@ public final class NumericShaper implements java.io.Serializable {
      * EUROPEAN digits are encountered before any strong directional
      * text in the string, the context is presumed to be EUROPEAN, and
      * so the digits will not shape.
+     * Any bit set in the {@code ranges} bitmask which is not a
+     * recognised value is discarded. Similarly if two bits are
+     * specified where one takes precedence, the lesser one is discarded.
      * @param ranges the specified Unicode ranges
      * @return a shaper for the specified ranges
      */
@@ -1459,6 +1462,9 @@ public final class NumericShaper implements java.io.Serializable {
      * is, if EUROPEAN digits are encountered before any strong
      * directional text in the string, the context is presumed to be
      * EUROPEAN, and so the digits will not shape.
+     *
+     * If two ranges are specified where one takes precedence over the
+     * other the lesser range is discarded.
      *
      * @param ranges the specified Unicode ranges
      * @return a contextual shaper for the specified ranges
@@ -1499,6 +1505,9 @@ public final class NumericShaper implements java.io.Serializable {
      * range is one of the provided ranges. The shaper uses {@code
      * defaultContext} as the starting context.
      *
+     * If two ranges are specified where one takes precedence over the
+     * other the lesser range is discarded.
+     *
      * @param ranges the specified Unicode ranges
      * @param defaultContext the starting context, such as
      *                       {@code NumericShaper.Range.EUROPEAN}
@@ -1522,7 +1531,7 @@ public final class NumericShaper implements java.io.Serializable {
      */
     private NumericShaper(int key, int mask) {
         this.key = key;
-        this.mask = mask;
+        this.mask = mask & (CONTEXTUAL_MASK | ALL_RANGES);
         if (((this.mask & ARABIC) != 0) && ((this.mask & EASTERN_ARABIC) != 0)) {
             this.mask &= ~ARABIC;
         }
