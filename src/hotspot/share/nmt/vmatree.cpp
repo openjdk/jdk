@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (cMemTagFactory::number_of_tags()/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -192,8 +192,8 @@ void VMATree::compute_summary_diff(const SingleDiff::delta region_size,
                                         {0,a,  0,a, -a,a },    // op == Commit
                                         {0,0,  0,0, -a,0 }     // op == Uncommit
                                      };
-  SingleDiff& from_rescom = diff.tag[NMTUtil::tag_to_index(current_tag)];
-  SingleDiff&   to_rescom = diff.tag[NMTUtil::tag_to_index(operation_tag)];
+  SingleDiff& from_rescom = diff[NMTUtil::tag_to_index(current_tag)];
+  SingleDiff&   to_rescom = diff[NMTUtil::tag_to_index(operation_tag)];
   int st = state_to_index(ex);
   from_rescom.reserve += reserve[op][st * 2    ];
     to_rescom.reserve += reserve[op][st * 2 + 1];
@@ -649,7 +649,7 @@ void VMATree::register_mapping(position _A, position _B, StateType state,
 #ifdef ASSERT
 void VMATree::print_on(outputStream* out) {
   visit_in_order([&](const TNode* current) {
-    out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), NMTUtil::tag_to_name(out_state(current).mem_tag()),
+    out->print("%zu (%s) - %s [%d, %d]-> ", current->key(), MemTagFactory::human_readable_name_of(out_state(current).mem_tag()),
               statetype_to_string(out_state(current).type()), current->val().out.reserved_stack(), current->val().out.committed_stack());
     return true;
   });
@@ -735,12 +735,12 @@ VMATree::SummaryDiff VMATree::set_tag(const position start, const size size, con
 
 #ifdef ASSERT
 void VMATree::SummaryDiff::print_on(outputStream* out) {
-  for (int i = 0; i < mt_number_of_tags; i++) {
-    if (tag[i].reserve == 0 && tag[i].commit == 0) {
+  for (int i = 0; i < tag.length(); i++) {
+    if (tag.at(i).reserve == 0 && tag.at(i).commit == 0) {
       continue;
     }
-    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, NMTUtil::tag_to_enum_name((MemTag)i), tag[i].reserve,
-                  tag[i].commit);
+    out->print_cr("Tag %s R: " INT64_FORMAT " C: " INT64_FORMAT, MemTagFactory::name_of((MemTag)i), tag.at(i).reserve,
+                  tag.at(i).commit);
   }
 }
 #endif

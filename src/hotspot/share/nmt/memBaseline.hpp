@@ -57,7 +57,7 @@ class MemBaseline {
 
  private:
   // Summary information
-  MallocMemorySnapshot   _malloc_memory_snapshot;
+  MallocMemorySnapshot*   _malloc_memory_snapshot;
   VirtualMemorySnapshot  _virtual_memory_snapshot;
   MetaspaceCombinedStats _metaspace_stats;
 
@@ -86,10 +86,10 @@ class MemBaseline {
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
     _vma_allocations(nullptr),
-    _baseline_type(Not_baselined) {
-  }
+    _baseline_type(Not_baselined) {}
 
   ~MemBaseline() {
+    delete _malloc_memory_snapshot;
     delete _vma_allocations;
   }
 
@@ -98,7 +98,7 @@ class MemBaseline {
   BaselineType baseline_type() const { return _baseline_type; }
 
   MallocMemorySnapshot* malloc_memory_snapshot() {
-    return &_malloc_memory_snapshot;
+    return _malloc_memory_snapshot;
   }
 
   VirtualMemorySnapshot* virtual_memory_snapshot() {
@@ -123,7 +123,7 @@ class MemBaseline {
   // memory
   size_t total_reserved_memory() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    size_t amount = _malloc_memory_snapshot.total() +
+    size_t amount = _malloc_memory_snapshot->total() +
            _virtual_memory_snapshot.total_reserved();
     return amount;
   }
@@ -132,25 +132,25 @@ class MemBaseline {
   // virtual memory
   size_t total_committed_memory() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    size_t amount = _malloc_memory_snapshot.total() +
+    size_t amount = _malloc_memory_snapshot->total() +
            _virtual_memory_snapshot.total_committed();
     return amount;
   }
 
   size_t total_arena_memory() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.total_arena();
+    return _malloc_memory_snapshot->total_arena();
   }
 
   size_t malloc_tracking_overhead() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
     MemBaseline* bl = const_cast<MemBaseline*>(this);
-    return bl->_malloc_memory_snapshot.malloc_overhead();
+    return bl->_malloc_memory_snapshot->malloc_overhead();
   }
 
   MallocMemory* malloc_memory(MemTag mem_tag) {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot.by_tag(mem_tag);
+    return _malloc_memory_snapshot->by_tag(mem_tag);
   }
 
   VirtualMemory* virtual_memory(MemTag mem_tag) {
