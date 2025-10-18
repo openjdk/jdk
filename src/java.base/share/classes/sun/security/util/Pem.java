@@ -25,13 +25,19 @@
 
 package sun.security.util;
 
+import jdk.internal.access.SharedSecrets;
+import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 
+import javax.crypto.EncryptedPrivateKeyInfo;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.security.PEMRecord;
-import java.security.Security;
+import java.security.*;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HexFormat;
@@ -159,7 +165,7 @@ public class Pem {
      * but the read position in the stream is at the end of the block, so
      * future reads can be successful.
      */
-    public static PEMRecord readPEM(InputStream is, boolean shortHeader)
+    public static PEM readPEM(InputStream is, boolean shortHeader)
         throws IOException {
         Objects.requireNonNull(is);
 
@@ -311,10 +317,10 @@ public class Pem {
             preData = Arrays.copyOf(os.toByteArray(), os.size() - 5);
         }
 
-        return new PEMRecord(typeConverter(headerType), data, preData);
+        return new PEM(typeConverter(headerType), data, preData);
     }
 
-    public static PEMRecord readPEM(InputStream is) throws IOException {
+    public static PEM readPEM(InputStream is) throws IOException {
         return readPEM(is, false);
     }
 
@@ -342,8 +348,114 @@ public class Pem {
      * is not used with this method.
      * @return PEM in a string
      */
-    public static String pemEncoded(PEMRecord pem) {
+    public static String pemEncoded(PEM pem) {
         String p = pem.content().replaceAll("(.{64})", "$1\r\n");
         return pemEncoded(pem.type(), p);
     }
+
+    /*
+     * Get PKCS8 encoding from an encrypted private key encoding.
+     */
+    public static byte[] decryptEncoding(byte[] encoded, char[] password)
+        throws GeneralSecurityException {
+        EncryptedPrivateKeyInfo ekpi;
+
+        Objects.requireNonNull(password, "password cannot be null");
+        try {
+            ekpi = new EncryptedPrivateKeyInfo(encoded);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(e);
+        }
+        return decryptEncoding(ekpi, password);
+    }
+
+    public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi, char[] password)
+        throws GeneralSecurityException {
+
+        PBEKeySpec keySpec = new PBEKeySpec(password);
+        SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
+        PKCS8EncodedKeySpec p8KeySpec =
+            ekpi.getKeySpec(skf.generateSecret(keySpec));
+        byte[] result = p8KeySpec.getEncoded();
+            SharedSecrets.getJavaSecuritySpecAccess().
+                clearEncodedKeySpec(p8KeySpec);
+            keySpec.clearPassword();
+        return result;
+    }
+
+
+    /**
+     * With a given PKCS8 encoding, construct a PrivateKey or KeyPair.  A
+     * KeyPair is returned if requested and the encoding has a public key;
+     * otherwise, a PrivateKey is returned.
+     *
+     * @param encoded PKCS8 encoding
+     * @param pair set to true for returning a KeyPair, if possible. Otherwise,
+     *             return a PrivateKey
+     * @param provider KeyFactory provider
+     */
+    public static DEREncodable toDEREncodable(byte[] encoded, boolean pair,
+        Provider provider) throws InvalidKeyException {
+
+        PrivateKey privKey;
+        PublicKey pubKey = null;
+        PKCS8EncodedKeySpec p8KeySpec;
+        PKCS8Key p8key = new PKCS8Key(encoded);
+        KeyFactory kf;
+
+        try {
+            p8KeySpec = new PKCS8EncodedKeySpec(encoded);
+        } catch (NullPointerException e) {
+            throw new InvalidKeyException("No encoding found", e);
+        }
+
+        try {
+            if (provider == null) {
+                kf = KeyFactory.getInstance(p8key.getAlgorithm());
+            } else {
+                kf = KeyFactory.getInstance(p8key.getAlgorithm(), provider);
+            }
+        } catch (NoSuchAlgorithmException e) {
+            p8key.clear();
+            SharedSecrets.getJavaSecuritySpecAccess().
+                clearEncodedKeySpec(p8KeySpec);
+            throw new InvalidKeyException("Unable to find the algorithm: " +
+                p8key.getAlgorithm(), e);
+        }
+
+        try {
+            privKey = kf.generatePrivate(p8KeySpec);
+
+            // Only want the PrivateKey? then return it.
+            if (!pair) {
+                return privKey;
+            }
+
+            if (p8key.hasPublicKey()) {
+                // PKCS8Key.decode() has extracted the public key already
+                pubKey = kf.generatePublic(
+                    new X509EncodedKeySpec(p8key.getPubKeyEncoded()));
+            } else {
+                // In case decode() could not read the public key, the
+                // KeyFactory can try.  Failure is ok as there may not
+                // be a public key in the encoding.
+                try {
+                    pubKey = kf.generatePublic(p8KeySpec);
+                } catch (InvalidKeySpecException e) {
+                    // ignore
+                }
+            }
+        } catch (InvalidKeySpecException e) {
+            throw new InvalidKeyException(e);
+        } finally {
+            p8key.clear();
+            SharedSecrets.getJavaSecuritySpecAccess().
+                clearEncodedKeySpec(p8KeySpec);
+        }
+        if (pair && pubKey != null) {
+            return new KeyPair(pubKey, privKey);
+        }
+        return privKey;
+    }
+
 }
