@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @bug 4833089 4992454
  * @summary Check for proper handling of uncaught exceptions
  * @author Martin Buchholz
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @build jdk.test.lib.process.*
  * @run junit UncaughtExceptionsTest

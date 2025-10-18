@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -148,6 +149,7 @@ final class ApplicationImageUtils {
             }
         }
 
-        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes, LinkOption.NOFOLLOW_LINKS);
+        FileUtils.copyRecursive(srcDir, dstDir.toAbsolutePath(), excludes,
+                LinkOption.NOFOLLOW_LINKS, StandardCopyOption.REPLACE_EXISTING);
     }
 }

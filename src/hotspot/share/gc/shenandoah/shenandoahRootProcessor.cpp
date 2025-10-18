@@ -58,9 +58,9 @@ void ShenandoahJavaThreadsIterator::threads_do(ThreadClosure* cl, uint worker_id
 }
 
 ShenandoahThreadRoots::ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase, bool is_par) :
-  _phase(phase), _is_par(is_par) {
-  Threads::change_thread_claim_token();
-}
+  _phase(phase),
+  _is_par(is_par),
+  _threads_claim_token_scope() {}
 
 void ShenandoahThreadRoots::oops_do(OopClosure* oops_cl, NMethodClosure* code_cl, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
@@ -72,10 +72,6 @@ void ShenandoahThreadRoots::threads_do(ThreadClosure* tc, uint worker_id) {
   ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_threads_do(_is_par, tc);
-}
-
-ShenandoahThreadRoots::~ShenandoahThreadRoots() {
-  Threads::assert_all_threads_claimed();
 }
 
 ShenandoahCodeCacheRoots::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase phase) : _phase(phase) {

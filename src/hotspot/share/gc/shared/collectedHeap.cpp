@@ -623,6 +623,8 @@ void CollectedHeap::stall_for_vm_shutdown() {
   //   - short enough to avoid excessive stall time if the shutdown itself
   //     triggers a GC.
   JavaThread::current()->sleep(2 * MILLIUNITS);
+
+  ResourceMark rm;
   log_warning(gc, alloc)("%s: Stall for VM-Shutdown timed out; allocation may fail with OOME", Thread::current()->name());
 }
 

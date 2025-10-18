@@ -1391,7 +1391,6 @@ jint G1CollectedHeap::initialize() {
   G1CardTable* refinement_table = new G1CardTable(_reserved);
 
   G1BarrierSet* bs = new G1BarrierSet(card_table, refinement_table);
-  bs->initialize();
   assert(bs->is_a(BarrierSet::G1BarrierSet), "sanity");
 
   // Create space mappers.

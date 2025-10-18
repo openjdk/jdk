@@ -45,7 +45,7 @@
 #include "services/lowMemoryDetector.hpp"
 #include "services/threadIdTable.hpp"
 
-DEBUG_ONLY(JavaThread* ServiceThread::_instance = nullptr;)
+JavaThread* ServiceThread::_instance = nullptr;
 JvmtiDeferredEvent* ServiceThread::_jvmti_event = nullptr;
 // The service thread has it's own static deferred event queue.
 // Events can be posted before JVMTI vm_start, so it's too early to call JvmtiThreadState::state_for
@@ -62,7 +62,7 @@ void ServiceThread::initialize() {
   JavaThread::vm_exit_on_osthread_failure(thread);
 
   JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
-  DEBUG_ONLY(_instance = thread;)
+  _instance = thread;
 }
 
 static void cleanup_oopstorages() {

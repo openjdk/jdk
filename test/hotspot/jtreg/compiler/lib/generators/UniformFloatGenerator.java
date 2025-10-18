@@ -35,6 +35,9 @@ final class UniformFloatGenerator extends UniformIntersectionRestrictableGenerat
      */
     public UniformFloatGenerator(Generators g, float lo, float hi) {
         super(g, lo, hi);
+        if (Float.compare(lo, hi) >= 0) {
+            throw new EmptyGeneratorException();
+        }
     }
 
     @Override

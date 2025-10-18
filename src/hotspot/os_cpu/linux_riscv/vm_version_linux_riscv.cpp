@@ -103,6 +103,14 @@ uint32_t VM_Version::cpu_vector_length() {
   return (uint32_t)read_csr(CSR_VLENB);
 }
 
+void VM_Version::RVExtFeatureValue::log_enabled() {
+  log_debug(os, cpu)("Enabled RV64 feature \"%s\"", pretty());
+}
+
+void VM_Version::RVNonExtFeatureValue::log_enabled() {
+  log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)", pretty(), value());
+}
+
 void VM_Version::setup_cpu_available_features() {
 
   assert(ext_i.feature_bit() == HWCAP_ISA_I, "Bit for I must follow Linux HWCAP");
@@ -144,9 +152,8 @@ void VM_Version::setup_cpu_available_features() {
         continue;
       }
 
-      log_debug(os, cpu)("Enabled RV64 feature \"%s\" (%ld)",
-             _feature_list[i]->pretty(),
-             _feature_list[i]->value());
+      _feature_list[i]->log_enabled();
+
       // The feature string
       if (_feature_list[i]->feature_string()) {
         const char* tmp = _feature_list[i]->pretty();
