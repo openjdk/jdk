@@ -1296,9 +1296,8 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi, GrowableArray<Node *>  &alloc_wo
       castpps.push(use);
     } else if (use->is_AddP() || use->is_Cmp()) {
       others.push(use);
-    } else if (use->is_SafePoint()) {
-      // processed later
     } else {
+      // Safepoints to be processed later; other users aren't expected here
       assert(use->is_SafePoint(), "Unexpected user of reducible Phi %d -> %d:%s:%d", ophi->_idx, use->_idx, use->Name(), use->outcnt());
     }
   }
