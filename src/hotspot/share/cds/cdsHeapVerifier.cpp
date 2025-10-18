@@ -181,9 +181,10 @@ public:
       return;
     }
 
-    if (fd->signature()->equals("Ljdk/internal/access/JavaLangAccess;")) {
-      // A few classes have static fields that point to SharedSecrets.getJavaLangAccess().
-      // This object carries no state and we can create a new one in the production run.
+    if (fd->signature()->starts_with("Ljdk/internal/access/") &&
+        fd->signature()->ends_with("Access;")) {
+      // The jdk/internal/access/*Access classes carry no states so they can be safely
+      // cached.
       return;
     }
     oop static_obj_field = _ik->java_mirror()->obj_field(fd->offset());
