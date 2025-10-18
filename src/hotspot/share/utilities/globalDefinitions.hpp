@@ -1374,6 +1374,14 @@ template<typename K> int primitive_compare(const K& k0, const K& k1) {
 template<typename T>
 std::add_rvalue_reference_t<T> declval() noexcept;
 
+// This provides a workaround for static_assert(false) in discarded or
+// otherwise uninstantiated places.  Instead use
+//   static_assert(DependentAlwaysFalse<T>, "...")
+// See http://wg21.link/p2593r1. Some, but not all, compiler versions we're
+// using have implemented that change as a DR:
+// https://cplusplus.github.io/CWG/issues/2518.html
+template<typename T> inline constexpr bool DependentAlwaysFalse = false;
+
 // Quickly test to make sure IEEE-754 subnormal numbers are correctly
 // handled.
 bool IEEE_subnormal_handling_OK();
