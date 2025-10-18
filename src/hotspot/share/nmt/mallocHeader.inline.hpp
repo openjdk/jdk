@@ -103,7 +103,7 @@ inline OutTypeParam MallocHeader::resolve_checked_impl(InTypeParam memblock) {
   }
   OutTypeParam header_pointer = (OutTypeParam)memblock - 1;
   if (!header_pointer->check_block_integrity(msg, sizeof(msg), &corruption)) {
-    header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer);
+    header_pointer->print_block_on_error(tty, corruption != nullptr ? corruption : (address)header_pointer, (address)header_pointer);
     fatal("NMT has detected a memory corruption bug. Block at " PTR_FORMAT ": %s", p2i(memblock), msg);
   }
   return header_pointer;
