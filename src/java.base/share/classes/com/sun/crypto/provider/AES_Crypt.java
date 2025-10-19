@@ -928,7 +928,7 @@ final class AES_Crypt extends SymmetricCipher {
                 Arrays.fill(sessionK[1], 0);
             }
             sessionK[0] = genRoundKeys(key, rounds);
-            sessionK[1] = invGenRoundKeys();
+            sessionK[1] = genInvRoundKeys(sessionK[0], rounds);
             if (prevKey != null) {
                 Arrays.fill(prevKey, (byte) 0);
             }
@@ -972,31 +972,31 @@ final class AES_Crypt extends SymmetricCipher {
      *
      * @return w1 the inverse cipher round keys.
      */
-    private int[] invGenRoundKeys() {
-        int kLen = sessionK[0].length;;
-        int[] tmp = new int[WB];
-        int[] w = new int[kLen];
+    private static int[] genInvRoundKeys(int[] w, int rounds) {
+        int kLen = w.length;;
+        int[] temp = new int[WB];
+        int[] dw = new int[kLen];
 
         // Intrinsics requires the inverse key expansion to be reverse order
         // except for the first and last round key as the first two round keys
         // are without a mix column transform.
         for (int i = 1; i < rounds; i++) {
-            System.arraycopy(sessionK[0], i * WB, tmp, 0, WB);
-            tmp[0] = TMI0[tmp[0] >>> 24] ^ TMI1[(tmp[0] >> 16) & 0xFF]
-                    ^ TMI2[(tmp[0] >> 8) & 0xFF] ^ TMI3[tmp[0] & 0xFF];
-            tmp[1] = TMI0[tmp[1] >>> 24] ^ TMI1[(tmp[1] >> 16) & 0xFF]
-                    ^ TMI2[(tmp[1] >> 8) & 0xFF] ^ TMI3[tmp[1] & 0xFF];
-            tmp[2] = TMI0[tmp[2] >>> 24] ^ TMI1[(tmp[2] >> 16) & 0xFF]
-                    ^ TMI2[(tmp[2] >> 8) & 0xFF] ^ TMI3[tmp[2] & 0xFF];
-            tmp[3] = TMI0[tmp[3] >>> 24] ^ TMI1[(tmp[3] >> 16) & 0xFF]
-                    ^ TMI2[(tmp[3] >> 8) & 0xFF] ^ TMI3[tmp[3] & 0xFF];
-            System.arraycopy(tmp, 0, w, kLen - (i * WB), WB);
+            System.arraycopy(w, i * WB, temp, 0, WB);
+            temp[0] = TMI0[temp[0] >>> 24] ^ TMI1[(temp[0] >> 16) & 0xFF]
+                    ^ TMI2[(temp[0] >> 8) & 0xFF] ^ TMI3[temp[0] & 0xFF];
+            temp[1] = TMI0[temp[1] >>> 24] ^ TMI1[(temp[1] >> 16) & 0xFF]
+                    ^ TMI2[(temp[1] >> 8) & 0xFF] ^ TMI3[temp[1] & 0xFF];
+            temp[2] = TMI0[temp[2] >>> 24] ^ TMI1[(temp[2] >> 16) & 0xFF]
+                    ^ TMI2[(temp[2] >> 8) & 0xFF] ^ TMI3[temp[2] & 0xFF];
+            temp[3] = TMI0[temp[3] >>> 24] ^ TMI1[(temp[3] >> 16) & 0xFF]
+                    ^ TMI2[(temp[3] >> 8) & 0xFF] ^ TMI3[temp[3] & 0xFF];
+            System.arraycopy(temp, 0, dw, kLen - (i * WB), WB);
         }
-        System.arraycopy(sessionK[0], kLen - WB, w, WB, WB);
-        System.arraycopy(sessionK[0], 0, w, 0, WB);
-        Arrays.fill(tmp, 0);
+        System.arraycopy(w, kLen - WB, dw, WB, WB);
+        System.arraycopy(w, 0, dw, 0, WB);
+        Arrays.fill(temp, 0);
 
-        return w;
+        return dw;
     }
 
     /**
