@@ -133,27 +133,11 @@ inline void ShenandoahHeapRegion::increase_live_data_gc_words(size_t s) {
   internal_increase_live_data(s);
 }
 
-#ifdef KELVIN_EXPERIMENT
-inline void ShenandoahHeapRegion::increase_original_live_data_alloc_words(size_t s) {
-  AtomicAccess::add(&_original_live_data, s, memory_order_relaxed);
-  log_info(gc)("Region [%zu]::increase_original_live_data(%zu) yields %zu", index(), s, _original_live_data);
-}
-#endif
-
 inline void ShenandoahHeapRegion::internal_increase_live_data(size_t s) {
   AtomicAccess::add(&_live_data, s, memory_order_relaxed);
-#ifdef KELVIN_EXPERIMENT
-  AtomicAccess::add(&_original_live_data, s, memory_order_relaxed);
-  log_info(gc)("Region [%zu]::internal_increase_live_data(%zu) yields %zu, originally %zu",
-               index(), s, _live_data, _original_live_data);
-#endif
 }
 
 inline void ShenandoahHeapRegion::clear_live_data() {
-#ifdef KELVIN_EXPERIMENT
-  log_info(gc)("Clearing live data for region %zu", index());
-  AtomicAccess::store(&_original_live_data, (size_t)0);
-#endif
   AtomicAccess::store(&_live_data, (size_t)0);
 }
 
@@ -165,13 +149,6 @@ inline size_t ShenandoahHeapRegion::get_live_data_words(ShenandoahMarkingContext
   HeapWord* tams = ctx->top_at_mark_start(index);
   size_t words_above_tams = pointer_delta(top(), tams);
   size_t result = AtomicAccess::load(&_live_data) + words_above_tams;
-#ifdef KELVIN_EXPERIMENT
-  size_t orig_result = AtomicAccess::load(&_original_live_data);
-  if (orig_result != result) {
-    log_info(gc)("Region[%zu]::get_live_data_words() returns %zu (%zu + %zu) rather than %zu",
-                 index(), result, result - words_above_tams, words_above_tams, orig_result);
-  }
-#endif
   return result;
 }
 

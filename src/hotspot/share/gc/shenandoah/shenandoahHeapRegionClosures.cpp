@@ -57,17 +57,6 @@ ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStat
 
 void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapRegion* r) {
   if (r->is_active()) {
-#ifdef KELVIN_EXPERIMENT
-    if (_ctx != nullptr) {
-      HeapWord *tams = _ctx->top_at_mark_start(r);
-      HeapWord *top = r->top();
-      if (top > tams) {
-        r->increase_original_live_data_alloc_words(pointer_delta(top, tams));
-        log_info(gc)("ShenFinalMarkUpdateRegionStateClosure::heap_region_do() adds %zu to live_data for region %zu",
-                     pointer_delta(top, tams), r->index());
-      }
-    }
-#endif
     // We are about to select the collection set, make sure it knows about
     // current pinning status. Also, this allows trashing more regions that
     // now have their pinning status dropped.
