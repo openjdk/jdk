@@ -920,6 +920,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // Now generate code
   Code_Gen();
+#ifndef PRODUCT
   if (TraceC2Optimizations) {
     if (method() == nullptr) {
       // Skip C2 runtime stubs (notify_jvmti_vthread_mount_blob, …).
@@ -955,6 +956,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     }
     tty->print_cr("OPTS_END");
   }
+#endif
 }
 
 //------------------------------Compile----------------------------------------
@@ -1078,6 +1080,7 @@ Compile::Compile(ciEnv* ci_env,
 
   Code_Gen();
 
+#ifndef PRODUCT
   if (TraceC2Optimizations) {
     if (method() == nullptr) {
       // Skip C2 runtime stubs (notify_jvmti_vthread_mount_blob, …).
@@ -1113,6 +1116,7 @@ Compile::Compile(ciEnv* ci_env,
     }
     tty->print_cr("OPTS_END");
   }
+#endif
 
   // Insert printing here (see below)
 }
