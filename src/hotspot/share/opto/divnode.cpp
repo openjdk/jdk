@@ -505,7 +505,7 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
 }
 
 template<typename IntegerType>
-static const IntegerType* compute_generic_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
+static const IntegerType* compute_signed_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
   typedef typename IntegerType::NativeType NativeType;
   assert(!i2->is_con() || i2->get_con() != 0, "Can't handle zero constant divisor");
 
@@ -517,9 +517,9 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   // the max of all upper‐bounds from the two halves.
   if (i2->_lo < 0 && i2->_hi > 0) {
     // Handle negative part of the divisor range
-    const IntegerType* neg_part = compute_generic_div_type(i1, IntegerType::make(i2->_lo, -1, widen), widen);
+    const IntegerType* neg_part = compute_signed_div_type(i1, IntegerType::make(i2->_lo, -1, widen), widen);
     // Handle positive part of the divisor range
-    const IntegerType* pos_part = compute_generic_div_type(i1, IntegerType::make(1, i2->_hi, widen), widen);
+    const IntegerType* pos_part = compute_signed_div_type(i1, IntegerType::make(1, i2->_hi, widen), widen);
     // Merge results
     NativeType new_lo = MIN2(neg_part->_lo, pos_part->_lo);
     NativeType new_hi = MAX2(neg_part->_hi, pos_part->_hi);
@@ -529,8 +529,7 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
 
   // Case B: divisor range does NOT span zero.
   // Here i2 is entirely negative or entirely positive.
-  // Let d_min and d_max be the nonzero endpoints of i2.
-  // Then a/b is monotonic in a and in b (when b keeps the same sign).
+  // Then i1/i2 is monotonic in i1 and i2 (when i2 keeps the same sign).
   // Therefore the extrema occur at the four “corners”:
   //   (i1->_lo, i2->_hi), (i1->_lo, i2->_lo), (i1->_hi, i2->_lo), (i1->_hi, i2->_hi).
   // We compute all four and take the min and max.
@@ -539,20 +538,20 @@ static const IntegerType* compute_generic_div_type(const IntegerType* i1, const 
   // adjust i2 bounds to not include zero, as zero always throws
   NativeType i2_lo = i2->_lo == 0 ? 1 : i2->_lo;
   NativeType i2_hi = i2->_hi == 0 ? -1 : i2->_hi;
-  NativeType min_val = std::numeric_limits<NativeType>::min();
-  assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
+  constexpr NativeType min_val = std::numeric_limits<NativeType>::min();
+  static_assert(min_val == min_jint || min_val == min_jlong, "min has to be either min_jint or min_jlong");
 
   // Special overflow case: min_val / (-1) == min_val (cf. JVMS§6.5 idiv/ldiv)
   // We need to be careful that we never run min_val / (-1) in C++ code, as this overflow is UB there
-  // We also must include min_val in the output if i1->_lo == min_val and i2->_hi.
   if (i1->_lo == min_val && i2_hi == -1) {
-    // special overflow case as defined above, and as min_val is the lowest possible value, this is our lower bound
     NativeType new_lo = min_val;
     NativeType new_hi;
-    // compute new_hi for non-constant divisor and/or dividend.
-    // i2 is purely in the negative domain here, which means the maximum value this division can yield is either
-    // a) (min_val + 1) / -1 for non-constant dividend or
-    // b) (min_val)     / -2 for non-constant divisor
+    // compute new_hi depending on whether divisor or dividend is non-constant.
+    // i2 is purely in the negative domain here (as i2_hi is -1)
+    // which means the maximum value this division can yield is either
+    // a) (min_val + 1) / -1 (which is the same as max_val) for non-constant dividend or
+    // b) (min_val)     / -2 for constant dividend and non-constant divisor or
+    // c) min_val            for constant dividend and constant divisor
     if (!i1->is_con()) {
       new_hi = (min_val + 1) / -1;
     } else if (i2_lo != i2_hi) {
@@ -664,7 +663,7 @@ const Type* DivINode::Value(PhaseGVN* phase) const {
     }
   }
 
-  return compute_generic_div_type<TypeInt>(i1, i2, widen);
+  return compute_signed_div_type<TypeInt>(i1, i2, widen);
 }
 
 
@@ -741,7 +740,7 @@ const Type* DivLNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  return compute_generic_div_type<TypeLong>(i1, i2, widen);
+  return compute_signed_div_type<TypeLong>(i1, i2, widen);
 }
 
 

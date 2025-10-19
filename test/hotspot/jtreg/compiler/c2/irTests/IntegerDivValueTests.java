@@ -42,18 +42,23 @@ public class IntegerDivValueTests {
         TestFramework.run();
     }
 
+    @ForceInline
+    private int getIntConstant(int value) {
+        return value;
+    }
+
     @Test
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public int testIntConstantFolding() {
         // All constants available during parsing
-        return 50 / 25;
+        return getIntConstant(50) / getIntConstant(25);
     }
 
     @Test
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public int testIntConstantFoldingSpecialCase() {
         // All constants available during parsing
-        return Integer.MIN_VALUE / -1;
+        return getIntConstant(Integer.MIN_VALUE) / getIntConstant(-1);
     }
 
     @Test
@@ -120,13 +125,86 @@ public class IntegerDivValueTests {
         return a / b; // [1, 1] -> can be constant
     }
 
+    private static final int INT_LIMIT_1 = INTS.next();
+    private static final int INT_LIMIT_2 = INTS.next();
+    private static final int INT_LIMIT_3 = INTS.next();
+    private static final int INT_LIMIT_4 = INTS.next();
+    private static final int INT_LIMIT_5 = INTS.next();
+    private static final int INT_LIMIT_6 = INTS.next();
+    private static final int INT_LIMIT_7 = INTS.next();
+    private static final int INT_LIMIT_8 = INTS.next();
+    private static final int INT_RANGE_LIMIT_X_LO;
+    private static final int INT_RANGE_LIMIT_X_HI;
+    private static final int INT_RANGE_LIMIT_Y_LO;
+    private static final int INT_RANGE_LIMIT_Y_HI;
+
+    static {
+        int limit1 = INTS.next();
+        int limit2 = INTS.next();
+        if (limit2 > limit1) {
+            INT_RANGE_LIMIT_X_LO = limit1;
+            INT_RANGE_LIMIT_X_HI = limit2;
+        } else {
+            INT_RANGE_LIMIT_X_LO = limit2;
+            INT_RANGE_LIMIT_X_HI = limit1;
+        }
+
+        int limit3 = INTS.next();
+        int limit4 = INTS.next();
+        if (limit4 > limit3) {
+            INT_RANGE_LIMIT_Y_LO = limit3;
+            INT_RANGE_LIMIT_Y_HI = limit4;
+        } else {
+            INT_RANGE_LIMIT_Y_LO = limit4;
+            INT_RANGE_LIMIT_Y_HI = limit3;
+        }
+    }
+
+    @ForceInline
+    private int clampInt(int val, int lo, int hi) {
+        return Math.min(hi, Math.max(val, lo));
+    }
+
+    @ForceInline
+    private int calculateIntSum(int z) {
+        int sum = 0;
+        if (z < INT_LIMIT_1) sum += 1;
+        if (z < INT_LIMIT_2) sum += 2;
+        if (z < INT_LIMIT_3) sum += 4;
+        if (z < INT_LIMIT_4) sum += 8;
+        if (z > INT_LIMIT_5) sum += 16;
+        if (z > INT_LIMIT_6) sum += 32;
+        if (z > INT_LIMIT_7) sum += 64;
+        if (z > INT_LIMIT_8) sum += 128;
+
+        return sum;
+    }
+
+    @Test
+    public int testIntRandomLimits(int x, int y) {
+        x = clampInt(x, INT_RANGE_LIMIT_X_LO, INT_RANGE_LIMIT_X_HI);
+        y = clampInt(y, INT_RANGE_LIMIT_Y_LO, INT_RANGE_LIMIT_Y_HI);
+        int z = x / y;
+
+        return calculateIntSum(z);
+    }
+
+    @DontCompile
+    public int testIntRandomLimitsInterpreted(int x, int y) {
+        x = clampInt(x, INT_RANGE_LIMIT_X_LO, INT_RANGE_LIMIT_X_HI);
+        y = clampInt(y, INT_RANGE_LIMIT_Y_LO, INT_RANGE_LIMIT_Y_HI);
+        int z = x / y;
+
+        return calculateIntSum(z);
+    }
+
     @Run(test = {"testIntConstantFolding", "testIntConstantFoldingSpecialCase"})
     public void checkIntConstants(RunInfo info) {
         Asserts.assertEquals(2, testIntConstantFolding());
         Asserts.assertEquals(Integer.MIN_VALUE, testIntConstantFoldingSpecialCase());
     }
 
-    @Run(test = {"testIntRange", "testIntRange2", "testIntRange3", "testIntRange4", "testIntRange5", "testIntRange6", "testIntRange7", "testIntRange8"})
+    @Run(test = {"testIntRange", "testIntRange2", "testIntRange3", "testIntRange4", "testIntRange5", "testIntRange6", "testIntRange7", "testIntRange8", "testIntRandomLimits"})
     public void checkIntRanges(RunInfo info) {
         for (int j = 0; j < 20; j++) {
             int i1 = INTS.next();
@@ -168,6 +246,20 @@ public class IntegerDivValueTests {
         a = (in & 31) + 128;
         b = (in2 & 15) + 100;
         Asserts.assertEquals(a / b, testIntRange8(in, in2));
+
+        int res;
+        try {
+            res = testIntRandomLimitsInterpreted(a, b);
+        } catch (ArithmeticException _) {
+            try {
+                testIntRandomLimits(a, b);
+                Asserts.fail("Expected ArithmeticException");
+                return; // unreachable
+            } catch (ArithmeticException _) {
+                return; // test succeeded, no result to assert
+            }
+        }
+        Asserts.assertEQ(res, testIntRandomLimits(a, b));
     }
 
     // Long variants
@@ -250,13 +342,87 @@ public class IntegerDivValueTests {
         return a / b; // [1, 1] -> can be constant
     }
 
+
+    private static final long LONG_LIMIT_1 = LONGS.next();
+    private static final long LONG_LIMIT_2 = LONGS.next();
+    private static final long LONG_LIMIT_3 = LONGS.next();
+    private static final long LONG_LIMIT_4 = LONGS.next();
+    private static final long LONG_LIMIT_5 = LONGS.next();
+    private static final long LONG_LIMIT_6 = LONGS.next();
+    private static final long LONG_LIMIT_7 = LONGS.next();
+    private static final long LONG_LIMIT_8 = LONGS.next();
+    private static final long LONG_RANGE_LIMIT_X_LO;
+    private static final long LONG_RANGE_LIMIT_X_HI;
+    private static final long LONG_RANGE_LIMIT_Y_LO;
+    private static final long LONG_RANGE_LIMIT_Y_HI;
+
+    static {
+        long limit1 = LONGS.next();
+        long limit2 = LONGS.next();
+        if (limit2 > limit1) {
+            LONG_RANGE_LIMIT_X_LO = limit1;
+            LONG_RANGE_LIMIT_X_HI = limit2;
+        } else {
+            LONG_RANGE_LIMIT_X_LO = limit2;
+            LONG_RANGE_LIMIT_X_HI = limit1;
+        }
+
+        long limit3 = LONGS.next();
+        long limit4 = LONGS.next();
+        if (limit4 > limit3) {
+            LONG_RANGE_LIMIT_Y_LO = limit3;
+            LONG_RANGE_LIMIT_Y_HI = limit4;
+        } else {
+            LONG_RANGE_LIMIT_Y_LO = limit4;
+            LONG_RANGE_LIMIT_Y_HI = limit3;
+        }
+    }
+
+    @ForceInline
+    private long clampLong(long val, long lo, long hi) {
+        return Math.min(hi, Math.max(val, lo));
+    }
+
+    @ForceInline
+    private int calculateLongSum(long z) {
+        int sum = 0;
+        if (z < LONG_LIMIT_1) sum += 1;
+        if (z < LONG_LIMIT_2) sum += 2;
+        if (z < LONG_LIMIT_3) sum += 4;
+        if (z < LONG_LIMIT_4) sum += 8;
+        if (z > LONG_LIMIT_5) sum += 16;
+        if (z > LONG_LIMIT_6) sum += 32;
+        if (z > LONG_LIMIT_7) sum += 64;
+        if (z > LONG_LIMIT_8) sum += 128;
+
+        return sum;
+    }
+
+    @Test
+    public int testLongRandomLimits(long x, long y) {
+        x = clampLong(x, LONG_RANGE_LIMIT_X_LO, LONG_RANGE_LIMIT_X_HI);
+        y = clampLong(y, LONG_RANGE_LIMIT_Y_LO, LONG_RANGE_LIMIT_Y_HI);
+        long z = x / y;
+
+        return calculateLongSum(z);
+    }
+
+    @DontCompile
+    public int testLongRandomLimitsInterpreted(long x, long y) {
+        x = clampLong(x, LONG_RANGE_LIMIT_X_LO, LONG_RANGE_LIMIT_X_HI);
+        y = clampLong(y, LONG_RANGE_LIMIT_Y_LO, LONG_RANGE_LIMIT_Y_HI);
+        long z = x / y;
+
+        return calculateLongSum(z);
+    }
+
     @Run(test = {"testLongConstantFolding", "testLongConstantFoldingSpecialCase"})
-    public void checkLongConstants(RunInfo info) {
+    public void checkLongConstants(RunInfo infoLong) {
         Asserts.assertEquals(2L, testLongConstantFolding());
         Asserts.assertEquals(Long.MIN_VALUE, testLongConstantFoldingSpecialCase());
     }
 
-    @Run(test = {"testLongRange", "testLongRange2", "testLongRange3", "testLongRange4", "testLongRange5", "testLongRange6", "testLongRange7", "testLongRange8"})
+    @Run(test = {"testLongRange", "testLongRange2", "testLongRange3", "testLongRange4", "testLongRange5", "testLongRange6", "testLongRange7", "testLongRange8", "testLongRandomLimits"})
     public void checkLongRanges(RunInfo info) {
         for (int j = 0; j < 20; j++) {
             long l1 = LONGS.next();
@@ -298,5 +464,19 @@ public class IntegerDivValueTests {
         a = (in & 31L) + 128L;
         b = (in2 & 15L) + 100L;
         Asserts.assertEquals(a / b, testLongRange8(in, in2));
+
+        int res;
+        try {
+            res = testLongRandomLimitsInterpreted(a, b);
+        } catch (ArithmeticException _) {
+            try {
+                testLongRandomLimits(a, b);
+                Asserts.fail("Expected ArithmeticException");
+                return; // unreachable
+            } catch (ArithmeticException _) {
+                return; // test succeeded, no result to assert
+            }
+        }
+        Asserts.assertEQ(res, testLongRandomLimits(a, b));
     }
 }
