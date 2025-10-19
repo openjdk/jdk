@@ -264,18 +264,23 @@ public class IntegerDivValueTests {
 
     // Long variants
 
+    @ForceInline
+    private long getLongConstant(long value) {
+        return value;
+    }
+
     @Test
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public long testLongConstantFolding() {
         // All constants available during parsing
-        return 50L / 25L;
+        return getLongConstant(50L) / getLongConstant(25L);
     }
 
     @Test
     @IR(failOn = {IRNode.DIV_I, IRNode.DIV_L})
     public long testLongConstantFoldingSpecialCase() {
         // All constants available during parsing
-        return Long.MIN_VALUE / -1L;
+        return getLongConstant(Long.MIN_VALUE) / getLongConstant(-1L);
     }
 
     @Test
