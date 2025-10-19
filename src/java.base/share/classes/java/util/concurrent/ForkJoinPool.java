@@ -518,7 +518,7 @@ public class ForkJoinPool extends AbstractExecutorService
      * and/or running tasks (we cannot accurately determine
      * which). Unreleased ("available") workers are recorded in the
      * ctl stack. These workers are made eligible for signalling by
-     * enqueuing in ctl (see method tryDeactivate).  This "queue" is a
+     * enqueuing in ctl (see method deactivate).  This "queue" is a
      * form of Treiber stack. This is ideal for activating threads in
      * most-recently used order, and improves performance and
      * locality, outweighing the disadvantages of being prone to
@@ -646,13 +646,13 @@ public class ForkJoinPool extends AbstractExecutorService
      * indices lag updates, as described above), which is accommodated
      * when (tentatively) idle by scanning for work etc, and then
      * re-invoking. This includes cases in which the final unparked
-     * thread uses quiescent() to check for tasks that could have been
-     * added during a race window that would not be accompanied by a
-     * signal, in which case re-activating itself (or any other
-     * worker) to rescan. Method helpQuiesce acts similarly but cannot
-     * rely on ctl counts to determine that all workers are inactive
-     * because the caller and any others executing helpQuiesce are not
-     * included in counts.
+     * thread (in deactivate()) uses quiescent() to check for tasks
+     * that could have been added during a race window that would not
+     * be accompanied by a signal, in which case re-activating itself
+     * (or any other worker) to rescan. Method helpQuiesce acts
+     * similarly but cannot rely on ctl counts to determine that all
+     * workers are inactive because the caller and any others
+     * executing helpQuiesce are not included in counts.
      *
      * Termination. Termination is initiated by setting STOP in one of
      * three ways (via methods tryTerminate and quiescent):
@@ -1977,13 +1977,15 @@ public class ForkJoinPool extends AbstractExecutorService
             int phase = w.phase, r = w.stackPred;         // seed from registerWorker
             int fifo = (int)config & FIFO;
             int nsteals = 0;                              // shadow w.nsteals
+            boolean rescan = true;
             WorkQueue[] qs; int n;
-            while ((runState & STOP) == 0L && (qs = queues) != null &&
+            while ((rescan || (phase = deactivate(w, phase)) != 0) &&
+                   (runState & STOP) == 0L && (qs = queues) != null &&
                    (n = qs.length) > 0) {
+                rescan = false;
                 int i = r, step = (r >>> 16) | 1;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-                boolean rescan = false;
-                scan: for (int j = n << 1; j != 0; --j, i += step) { // 2 sweeps
+                scan: for (int j = -n; j < n; ++j, i += step) { // 2 passes
                     WorkQueue q; int qid;
                     if ((q = qs[qid = i & (n - 1)]) != null) {
                         for (;;) {                        // poll queue q
@@ -1994,72 +1996,74 @@ public class ForkJoinPool extends AbstractExecutorService
                             long np = slotOffset(nk = m & (nb = b + 1));
                             ForkJoinTask<?> t = (ForkJoinTask<?>)
                                 U.getReferenceAcquire(a, bp);
-                            if (q.base == b && U.getReference(a, bp) == t) {
-                                if (t == null) {
-                                    if (rescan) {          // end of run
-                                        w.nsteals = nsteals;
-                                        break scan;
-                                    }
-                                    if (U.getReference(a, np) != null) {
-                                        rescan = true;
-                                        break scan;       // stalled; reorder scan
-                                    }
-                                    if (j < n && q.top - b > 0) {
-                                        rescan = true;
-                                        break scan;       // full check on 2nd sweep
-                                    }
-                                    break;                // probably empty
+                            if (q.base != b || U.getReference(a, bp) != t)
+                                continue;                 // inconsistent
+                            if (t == null) {
+                                if (rescan) {             // end of run
+                                    w.nsteals = nsteals;
+                                    break scan;
                                 }
-                                else if ((phase & IDLE) != 0) // can't take yet
-                                    phase = tryReactivate(w, phase);
-                                else if (U.compareAndSetReference(a, bp, t, null)) {
-                                    q.base = nb;
-                                    Object nt = U.getReferenceAcquire(a, np);
-                                    if (!rescan) {        // begin run
-                                        rescan = true;
-                                        w.source = qid;
-                                    }
-                                    ++nsteals;
-                                    if (nt != null &&     // confirm a[nk]
-                                        U.getReference(a, np) == nt)
-                                        signalWork(a, nk); // propagate
-                                    if (fifo != 0)        // run t & its subtasks
-                                        w.topLevelExecFifo(t);
-                                    else
-                                        w.topLevelExecLifo(t);
+                                if (U.getReference(a, np) != null) {
+                                    rescan = true;
+                                    break scan;           // stalled; reorder scan
                                 }
+                                if (j >= 0 && q.top - b > 0) {
+                                    rescan = true;
+                                    break scan;           // size check on 2nd pass
+                                }
+                                break;                    // probably empty
+                            }
+                            if ((phase & IDLE) != 0)      // can't take yet
+                                phase = tryReactivate(w, phase);
+                            else if (U.compareAndSetReference(a, bp, t, null)) {
+                                q.base = nb;
+                                Object nt = U.getReferenceAcquire(a, np);
+                                if (!rescan) {            // begin run
+                                    rescan = true;
+                                    w.source = qid;
+                                }
+                                ++nsteals;
+                                if (nt != null &&         // confirm a[nk]
+                                    U.getReference(a, np) == nt)
+                                    signalWork(a, nk);    // propagate
+                                if (fifo != 0)            // run t & its subtasks
+                                    w.topLevelExecFifo(t);
+                                else
+                                    w.topLevelExecLifo(t);
                             }
                         }
                     }
-                }
-                if (!rescan) {
-                    if ((phase & IDLE) == 0)
-                        phase = tryDeactivate(w, phase);
-                    else if (awaitWork(w, phase += IDLE) != 0)
-                        break;
                 }
             }
         }
     }
 
     /**
-     * Tries to deactivate worker, keeping active on contention.
+     * If active, tries to deactivate worker, keeping active on contention,
+     * else awaits signal or termination.
      *
      * @param w the work queue
-     * @param phase w's current (active) phase
-     * @return current phase
+     * @param phase w's currently known phase
+     * @return current phase or 0 on exit
      */
-    private int tryDeactivate(WorkQueue w, int phase) {
-        if (w != null) {                          // always true; hoist checks
-            long pc; int idlePhase;
-            w.stackPred = (int)(pc = ctl);        // set ctl stack link
-            w.phase = idlePhase = phase | IDLE;   // try to enqueue
-            if (compareAndSetCtl(pc, (((phase + (IDLE << 1)) & LMASK) |
-                                      ((pc - RC_UNIT) & UMASK))))
-                phase = idlePhase;
-            else
+    private int deactivate(WorkQueue w, int phase) {
+        if ((phase & IDLE) == 0 && w != null) {
+            int idlePhase = phase | IDLE;
+            long pc = ctl, e;
+            long qc = ((phase + (IDLE << 1)) & LMASK) | ((pc - RC_UNIT) & UMASK);
+            w.stackPred = (int)pc;                // set ctl stack link
+            w.phase = idlePhase;                  // try to enqueue
+            if (!compareAndSetCtl(pc, qc))
                 w.phase = phase;                  // back out on contention
+            else {
+                phase = idlePhase;
+                if ((qc & RC_MASK) <= 0L && ((e = runState) & SHUTDOWN) != 0L &&
+                    (e & STOP) == 0L)
+                    quiescent();                  // check quiescent termination
+            }
         }
+        else
+            phase = awaitWork(w, phase);
         return phase;
     }
 
@@ -2083,14 +2087,13 @@ public class ForkJoinPool extends AbstractExecutorService
      * Awaits signal or termination.
      *
      * @param w the work queue
-     * @param activePhase w's next active phase
-     * @return zero if now active
+     * @param phase w's currently known (idle) phase
+     * @return current phase or 0 on exit
      */
-    private int awaitWork(WorkQueue w, int activePhase) {
-        int idle = 1; long e;
-        if (((e = runState) & STOP) == 0 &&
-            ((e & SHUTDOWN) == 0L || quiescent() <= 0) &&
-            w != null && (idle = w.phase - activePhase) != 0) {
+    private int awaitWork(WorkQueue w, int phase) {
+        int idle = 1, activePhase = phase + IDLE;
+        if ((runState & STOP) == 0L && w != null &&
+            (idle = w.phase - activePhase) != 0) {
             WorkQueue[] qs;
             int cfg = w.config;
             long waitTime = (w.source == INVALID_ID) ? 0L : keepAlive;
@@ -2130,7 +2133,7 @@ public class ForkJoinPool extends AbstractExecutorService
             }
             LockSupport.setCurrentBlocker(null);
         }
-        return idle;
+        return (idle == 0) ? activePhase : 0;
     }
 
     /**
