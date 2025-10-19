@@ -541,6 +541,13 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return nullptr;
 
+  // Keep this node as-is for now; we want Value() and
+  // other optimizations checking for this node type to work
+  if (phase->is_IterGVN() == nullptr) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
+
   return transform_int_divide( phase, in(1), i );
 }
 
@@ -646,6 +653,13 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 
   // Dividing by MINLONG does not optimize as a power-of-2 shift.
   if( l == min_jlong ) return nullptr;
+
+  // Keep this node as-is for now; we want Value() and
+  // other optimizations checking for this node type to work
+  if (phase->is_IterGVN() == nullptr) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
 
   return transform_long_divide( phase, in(1), l );
 }
@@ -1094,6 +1108,13 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return this;
   }
 
+  // Keep this node as-is for now; we want Value() and
+  // other optimizations checking for this node type to work
+  if (phase->is_IterGVN() == nullptr) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
+  }
+
   // See if we are MOD'ing by 2^k or 2^k-1.
   if( !ti->is_con() ) return nullptr;
   jint con = ti->get_con();
@@ -1387,6 +1408,13 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
     set_req(0, nullptr);        // Yank control input
     return this;
+  }
+
+  // Keep this node as-is for now; we want Value() and
+  // other optimizations checking for this node type to work
+  if (phase->is_IterGVN() == nullptr) {
+    phase->C->record_for_igvn(this);
+    return nullptr;
   }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
