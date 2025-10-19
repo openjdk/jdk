@@ -35,7 +35,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 /**
  * @test
- * @bug 8369505
+ * @bug 8370176
  * @requires vm.hasSA
  * @requires os.family == "linux"
  * @requires (os.arch == "amd64" | os.arch == "aarch64")
