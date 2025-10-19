@@ -42,10 +42,12 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceIn
 void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                            RegionData* data, size_t size,
                                                                            size_t free) {
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (r->garbage() > 0) {
-      cset->add_region(r);
+    size_t region_index = r->index();
+    if (r->garbage(context, region_index) > 0) {
+      cset->add_region(r, context, region_index);
     }
   }
 }

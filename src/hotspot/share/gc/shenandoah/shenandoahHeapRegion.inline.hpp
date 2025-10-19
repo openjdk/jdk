@@ -161,9 +161,8 @@ inline size_t ShenandoahHeapRegion::get_marked_data_bytes() const {
   return AtomicAccess::load(&_live_data) * HeapWordSize;
 }
 
-inline size_t ShenandoahHeapRegion::get_live_data_words() const {
-  ShenandoahMarkingContext *ctx = ShenandoahHeap::heap()->marking_context();
-  HeapWord* tams = ctx->top_at_mark_start(this);
+inline size_t ShenandoahHeapRegion::get_live_data_words(ShenandoahMarkingContext* ctx, size_t index) const {
+  HeapWord* tams = ctx->top_at_mark_start(index);
   size_t words_above_tams = pointer_delta(top(), tams);
   size_t result = AtomicAccess::load(&_live_data) + words_above_tams;
 #ifdef KELVIN_EXPERIMENT
@@ -176,23 +175,23 @@ inline size_t ShenandoahHeapRegion::get_live_data_words() const {
   return result;
 }
 
-inline size_t ShenandoahHeapRegion::get_live_data_bytes() const {
-  return get_live_data_words() * HeapWordSize;
+inline size_t ShenandoahHeapRegion::get_live_data_bytes(ShenandoahMarkingContext* ctx, size_t index) const {
+  return get_live_data_words(ctx, index) * HeapWordSize;
 }
 
 inline bool ShenandoahHeapRegion::has_marked() const {
   return AtomicAccess::load(&_live_data) != 0;
 }
 
-inline bool ShenandoahHeapRegion::has_live() const {
-  return get_live_data_words() != 0;
+inline bool ShenandoahHeapRegion::has_live(ShenandoahMarkingContext* ctx, size_t index) const {
+  return get_live_data_words(ctx, index) != 0;
 }
 
-inline size_t ShenandoahHeapRegion::garbage() const {
-  assert(used() >= get_live_data_bytes(),
+inline size_t ShenandoahHeapRegion::garbage(ShenandoahMarkingContext* context, size_t index) const {
+  assert(used() >= get_live_data_bytes(context, index),
          "Live Data must be a subset of used() live: %zu used: %zu",
-         get_live_data_bytes(), used());
-  size_t result = used() - get_live_data_bytes();
+         get_live_data_bytes(context, index), used());
+  size_t result = used() - get_live_data_bytes(context, index);
   return result;
 }
 

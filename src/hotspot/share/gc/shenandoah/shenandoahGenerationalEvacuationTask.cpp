@@ -115,6 +115,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
   ShenandoahConcurrentEvacuator cl(_heap);
   ShenandoahHeapRegion* r;
 
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   while ((r = _regions->next()) != nullptr) {
     if (lt.is_enabled()) {
       LogStream ls(lt);
@@ -122,7 +123,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
     }
 
     if (r->is_cset()) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+      assert(r->has_live(context, r->index()), "Region %zu should have been reclaimed early", r->index());
       _heap->marked_object_iterate(r, &cl);
     } else {
       maybe_promote_region(r);

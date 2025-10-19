@@ -65,11 +65,12 @@ void ShenandoahStaticHeuristics::choose_collection_set_from_regiondata(Shenandoa
                                                                        RegionData* data, size_t size,
                                                                        size_t free) {
   size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
-
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (r->garbage() > threshold) {
-      cset->add_region(r);
+    size_t region_index = r->index();
+    if (r->garbage(context, region_index) > threshold) {
+      cset->add_region(r, context, region_index);
     }
   }
 }

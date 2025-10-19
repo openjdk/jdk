@@ -75,18 +75,19 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   // This counts bytes of garbage memory in regular regions to be promoted in place.
   size_t regular_regions_promoted_garbage = 0;
 
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
+    ShenandoahHeapRegion* const region = heap->get_region(i);
     if (!_generation->contains(region)) {
       continue;
     }
-    size_t garbage = region->garbage();
+    size_t garbage = region->garbage(context, i);
     total_garbage += garbage;
     if (region->is_empty()) {
       free_regions++;
       free += region_size_bytes;
     } else if (region->is_regular()) {
-      if (!region->has_live()) {
+      if (!region->has_live(context, i)) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;
@@ -112,7 +113,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
             regular_regions_promoted_in_place++;
             regular_regions_promoted_usage += region->used_before_promote();
             regular_regions_promoted_free += region->free();
-            regular_regions_promoted_garbage += region->garbage();
+            regular_regions_promoted_garbage += region->garbage(context, i);
           }
           is_candidate = false;
         } else {
@@ -126,13 +127,13 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
     } else if (region->is_humongous_start()) {
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
-      bool reg_live = region->has_live();
-      bool bm_live = heap->active_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
+      bool reg_live = region->has_live(context, i);
+      bool bm_live = context->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
-             BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
+             BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words(context, i));
 #endif
-      if (!region->has_live()) {
+      if (!region->has_live(context, i)) {
         heap->trash_humongous_region_at(region);
 
         // Count only the start. Continuations would be counted on "trash" path
@@ -204,9 +205,11 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
   // are known to be promoted out of young-gen, we count this as cur_young_garbage because this memory is reclaimed
   // from young-gen and becomes available to serve future young-gen allocation requests.
   size_t cur_young_garbage = 0;
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_preselected(r->index())) {
+    if (cset->is_preselected(idx)) {
+      size_t region_index = r->index();
       assert(ShenandoahGenerationalHeap::heap()->is_tenurable(r), "Preselected regions must have tenure age");
       // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
       // This region has been pre-selected and its impact on promotion reserve is already accounted for.
@@ -217,8 +220,8 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
       // reclaim highly utilized young-gen regions just for the sake of finding min_garbage to reclaim
       // within young-gen memory.
 
-      cur_young_garbage += r->garbage();
-      cset->add_region(r);
+      cur_young_garbage += r->garbage(context, region_index);
+      cset->add_region(r, context, region_index);
     }
   }
   return cur_young_garbage;

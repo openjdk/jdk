@@ -454,10 +454,11 @@ void ShenandoahPrepareForCompactionTask::prepare_for_compaction(ClosureType& cl,
                                                                 GrowableArray<ShenandoahHeapRegion*>& empty_regions,
                                                                 ShenandoahHeapRegionSetIterator& it,
                                                                 ShenandoahHeapRegion* from_region) {
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   while (from_region != nullptr) {
     assert(is_candidate_region(from_region), "Sanity");
     cl.set_from_region(from_region);
-    if (from_region->has_live()) {
+    if (from_region->has_live(context, from_region->index())) {
       _heap->marked_object_iterate(from_region, &cl);
     }
 
@@ -564,16 +565,16 @@ public:
     if (r->is_humongous_start()) {
       oop humongous_obj = cast_to_oop(r->bottom());
       if (!_ctx->is_marked(humongous_obj)) {
-        assert(!r->has_live(), "Region %zu is not marked, should not have live", r->index());
+        assert(!r->has_live(_ctx, r->index()), "Region %zu is not marked, should not have live", r->index());
         _heap->trash_humongous_region_at(r);
       } else {
-        assert(r->has_live(), "Region %zu should have live", r->index());
+        assert(r->has_live(_ctx, r->index()), "Region %zu should have live", r->index());
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
+      assert(r->humongous_start_region()->has_live(_ctx, r->index()), "Region %zu should have live", r->index());
     } else if (r->is_regular()) {
-      if (!r->has_live()) {
+      if (!r->has_live(_ctx, r->index())) {
         r->make_trash_immediate();
       }
     }
@@ -617,11 +618,12 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
 
   // Compute how much live data is there. This would approximate the size of dense prefix
   // we target to create.
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->global_generation()->complete_marking_context();
   size_t total_live = 0;
   for (size_t idx = 0; idx < n_regions; idx++) {
     ShenandoahHeapRegion *r = heap->get_region(idx);
     if (ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
-      total_live += r->get_live_data_words();
+      total_live += r->get_live_data_words(context, idx);
     }
   }
 
@@ -662,7 +664,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
       ShenandoahHeapRegion *r = heap->get_region(prefix_idx);
       if (ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
         slice->add_region(r);
-        live[wid] += r->get_live_data_words();
+        live[wid] += r->get_live_data_words(context, prefix_idx);
         regs++;
       }
       prefix_idx++;
@@ -677,7 +679,7 @@ void ShenandoahFullGC::distribute_slices(ShenandoahHeapRegionSet** worker_slices
     if (ShenandoahPrepareForCompactionTask::is_candidate_region(r)) {
       assert(wid < n_workers, "Sanity");
 
-      size_t live_region = r->get_live_data_words();
+      size_t live_region = r->get_live_data_words(context, tail_idx);
 
       // Select next worker that still needs live data.
       size_t old_wid = wid;
@@ -820,8 +822,9 @@ public:
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahAdjustPointersObjectClosure obj_cl;
     ShenandoahHeapRegion* r = _regions.next();
+    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
     while (r != nullptr) {
-      if (!r->is_humongous_continuation() && r->has_live()) {
+      if (!r->is_humongous_continuation() && r->has_live(context, r->index())) {
         _heap->marked_object_iterate(r, &obj_cl);
       }
       if (_heap->mode()->is_generational()) {
@@ -917,9 +920,10 @@ public:
 
     ShenandoahCompactObjectsClosure cl(worker_id);
     ShenandoahHeapRegion* r = slice.next();
+    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
     while (r != nullptr) {
       assert(!r->is_humongous(), "must not get humongous regions here");
-      if (r->has_live()) {
+      if (r->has_live(context, r->index())) {
         _heap->marked_object_iterate(r, &cl);
       }
       r->set_top(r->new_top());
@@ -992,7 +996,7 @@ public:
         ShenandoahGenerationalFullGC::account_for_region(r, _young_regions, _young_usage, _young_humongous_waste);
       }
     }
-    r->set_live_data_after_fullgc(live);
+    r->set_live_data_after_fullgc(live, _mark_context, r->index());
     r->reset_alloc_metadata();
   }
 

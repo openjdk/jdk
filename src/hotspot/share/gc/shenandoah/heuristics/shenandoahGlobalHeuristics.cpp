@@ -93,31 +93,33 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
                      byte_size_in_proper_unit(max_old_cset), proper_unit_for_byte_size(max_old_cset),
                      byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free));
 
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
-    ShenandoahHeapRegion* r = data[idx].get_region();
-    assert(!cset->is_preselected(r->index()), "There should be no preselected regions during GLOBAL GC");
+    ShenandoahHeapRegion* const r = data[idx].get_region();
+    const size_t region_index = r->index();
+    const size_t region_garbage = r->garbage(context, region_index);
+    assert(!cset->is_preselected(region_index), "There should be no preselected regions during GLOBAL GC");
     bool add_region = false;
     if (r->is_old() || heap->is_tenurable(r)) {
-      size_t new_cset = old_cur_cset + r->get_live_data_bytes();
-      if ((r->garbage() > garbage_threshold)) {
+      size_t new_cset = old_cur_cset + r->get_live_data_bytes(context, region_index);
+      if ((region_garbage > garbage_threshold)) {
         while ((new_cset > max_old_cset) && (unaffiliated_young_regions > 0)) {
           unaffiliated_young_regions--;
           regions_transferred_to_old++;
           max_old_cset += region_size_bytes / ShenandoahOldEvacWaste;
         }
       }
-      if ((new_cset <= max_old_cset) && (r->garbage() > garbage_threshold)) {
+      if ((new_cset <= max_old_cset) && (region_garbage > garbage_threshold)) {
         add_region = true;
         old_cur_cset = new_cset;
       }
     } else {
       assert(r->is_young() && !heap->is_tenurable(r), "DeMorgan's law (assuming r->is_affiliated)");
-      size_t new_cset = young_cur_cset + r->get_live_data_bytes();
-      size_t region_garbage = r->garbage();
+      size_t new_cset = young_cur_cset + r->get_live_data_bytes(context, region_index);
       size_t new_garbage = cur_young_garbage + region_garbage;
       bool add_regardless = (region_garbage > ignore_threshold) && (new_garbage < min_garbage);
 
-      if (add_regardless || (r->garbage() > garbage_threshold)) {
+      if (add_regardless || (region_garbage > garbage_threshold)) {
         while ((new_cset > max_young_cset) && (unaffiliated_young_regions > 0)) {
           unaffiliated_young_regions--;
           max_young_cset += region_size_bytes / ShenandoahEvacWaste;
@@ -130,7 +132,7 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
       }
     }
     if (add_region) {
-      cset->add_region(r);
+      cset->add_region(r, context, region_index);
     }
   }
 

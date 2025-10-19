@@ -206,10 +206,11 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
   if (lt.is_enabled()) {
     LogStream ls(lt);
     AgeTable young_region_ages(false);
+    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
     for (uint i = 0; i < _heap->num_regions(); ++i) {
       const ShenandoahHeapRegion* r = _heap->get_region(i);
       if (r->is_young()) {
-        young_region_ages.add(r->age(), r->get_live_data_words());
+        young_region_ages.add(r->age(), r->get_live_data_words(context, i));
       }
     }
 

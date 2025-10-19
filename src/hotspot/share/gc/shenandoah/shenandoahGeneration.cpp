@@ -119,7 +119,7 @@ public:
       }
       // TODO: check significance of _ctx != nullptr above, can that
       // spoof _total_pop in some corner cases?
-      NOT_PRODUCT(_total_pop += r->get_live_data_words();)
+      NOT_PRODUCT(_total_pop += r->get_live_data_words(_ctx, r->index());)
     }
   }
 
@@ -551,15 +551,15 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
 
   ResourceMark rm;
   AgedRegionData* sorted_regions = NEW_RESOURCE_ARRAY(AgedRegionData, num_regions);
-
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const r = heap->get_region(i);
-    if (r->is_empty() || !r->has_live() || !r->is_young() || !r->is_regular()) {
+    if (r->is_empty() || !r->has_live(context, i) || !r->is_young() || !r->is_regular()) {
       // skip over regions that aren't regular young with some live data
       continue;
     }
     if (heap->is_tenurable(r)) {
-      if ((r->garbage() < old_garbage_threshold) && (r->used() > pip_used_threshold)) {
+      if ((r->garbage(context, i) < old_garbage_threshold) && (r->used() > pip_used_threshold)) {
         // We prefer to promote this region in place because is has a small amount of garbage and a large usage.
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
@@ -593,7 +593,7 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
         // happens, we will consider this region as part of the anticipated promotion potential for the next GC
         // pass; see further below.
         sorted_regions[candidates]._region = r;
-        sorted_regions[candidates++]._live_data = r->get_live_data_bytes();
+        sorted_regions[candidates++]._live_data = r->get_live_data_bytes(context, i);
       }
     } else {
       // We only evacuate & promote objects from regular regions whose garbage() is above old-garbage-threshold.
@@ -612,8 +612,8 @@ size_t ShenandoahGeneration::select_aged_regions(size_t old_available) {
       // in the current cycle and we will anticipate that they will be promoted in the next cycle.  This will cause
       // us to reserve more old-gen memory so that these objects can be promoted in the subsequent cycle.
       if (heap->is_aging_cycle() && heap->age_census()->is_tenurable(r->age() + 1)) {
-        if (r->garbage() >= old_garbage_threshold) {
-          promo_potential += r->get_live_data_bytes();
+        if (r->garbage(context, i) >= old_garbage_threshold) {
+          promo_potential += r->get_live_data_bytes(context, i);
         }
       }
     }

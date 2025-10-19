@@ -83,7 +83,7 @@ public:
   ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base);
 
   // Add region to collection set
-  void add_region(ShenandoahHeapRegion* r);
+  void add_region(ShenandoahHeapRegion* r, ShenandoahMarkingContext* context, size_t index);
 
   // MT version
   ShenandoahHeapRegion* claim_next();

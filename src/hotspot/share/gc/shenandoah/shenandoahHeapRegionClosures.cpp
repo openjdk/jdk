@@ -77,7 +77,7 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
     // from-space-refs written from here on.
     r->set_update_watermark_at_safepoint(r->top());
   } else {
-    assert(!r->has_live(), "Region %zu should have no live data", r->index());
+    assert(!r->has_live(ShenandoahHeap::heap()->marking_context(), r->index()), "Region %zu should have no live data", r->index());
     assert(_ctx == nullptr || _ctx->top_at_mark_start(r) == r->top(),
            "Region %zu should have correct TAMS", r->index());
   }

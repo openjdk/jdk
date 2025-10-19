@@ -106,7 +106,8 @@ class ShenandoahOldHeuristicTest : public ::testing::Test {
     size_t live_bytes = ShenandoahHeapRegion::region_size_bytes() - garbage_bytes;
     region->increase_live_data_gc_words(live_bytes / HeapWordSize);
     region->set_top(region->end());
-    return region->garbage();
+    ShenandoahMarkingContext* context = _heap->marking_context();
+    return region->garbage(context, region->index());
   }
 
   size_t create_too_much_garbage_for_one_mixed_evacuation() {
