@@ -66,7 +66,7 @@ public class UnicodeCaseFoldingTest {
                     assertEquals(expected, CaseFolding.fold(source), "CaseFolding.fold()");
 
                     // (2) Verify compareToFoldCase() result
-                    assertEquals(0, source.compareToFoldCase(expected), line); //"source.compareToFoldCase(expected)");
+                    assertEquals(0, source.compareToFoldCase(expected), "source.compareToFoldCase(expected)");
                     assertEquals(0, expected.compareToFoldCase(source), "expected.compareToFoldCase(source)");
 
                     // (3) Verify equalsFoldCase() result
