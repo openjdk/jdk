@@ -505,9 +505,10 @@ Node* unsigned_div_ideal(PhaseGVN* phase, bool can_reshape, Node* div) {
 }
 
 template<typename IntegerType>
-static const IntegerType* compute_signed_div_type(const IntegerType* i1, const IntegerType* i2, int widen) {
+static const IntegerType* compute_signed_div_type(const IntegerType* i1, const IntegerType* i2) {
   typedef typename IntegerType::NativeType NativeType;
   assert(!i2->is_con() || i2->get_con() != 0, "Can't handle zero constant divisor");
+  int widen = MAX2(i1->_widen, i2->_widen);
 
   // Case A: divisor range spans zero (i2->_lo < 0 < i2->_hi)
   // We split into two subproblems to avoid division by 0:
@@ -517,9 +518,9 @@ static const IntegerType* compute_signed_div_type(const IntegerType* i1, const I
   // the max of all upper‐bounds from the two halves.
   if (i2->_lo < 0 && i2->_hi > 0) {
     // Handle negative part of the divisor range
-    const IntegerType* neg_part = compute_signed_div_type(i1, IntegerType::make(i2->_lo, -1, widen), widen);
+    const IntegerType* neg_part = compute_signed_div_type(i1, IntegerType::make(i2->_lo, -1, widen));
     // Handle positive part of the divisor range
-    const IntegerType* pos_part = compute_signed_div_type(i1, IntegerType::make(1, i2->_hi, widen), widen);
+    const IntegerType* pos_part = compute_signed_div_type(i1, IntegerType::make(1, i2->_hi, widen));
     // Merge results
     NativeType new_lo = MIN2(neg_part->_lo, pos_part->_lo);
     NativeType new_hi = MAX2(neg_part->_hi, pos_part->_hi);
@@ -634,36 +635,26 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // prevent hoisting the divide above an unsafe test.
 const Type* DivINode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  if (t2 == TypeInt::ZERO) {
+    // this division will always throw an exception
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeInt::ONE;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const TypeInt* i1 = t1->is_int();
+  const TypeInt* i2 = t2->is_int();
 
-  // Divide the two numbers.  We approximate.
-  // If divisor is a constant and not zero
-  const TypeInt *i1 = t1->is_int();
-  const TypeInt *i2 = t2->is_int();
-  int widen = MAX2(i1->_widen, i2->_widen);
-  if (i2->is_con()) {
-    jint d = i2->get_con();    // Divisor
-    if (d == 0) {
-      // this division will always throw an exception
-      return Type::TOP;
-    }
-  }
-
-  return compute_signed_div_type<TypeInt>(i1, i2, widen);
+  return compute_signed_div_type<TypeInt>(i1, i2);
 }
 
 
@@ -711,36 +702,26 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 // prevent hoisting the divide above an unsafe test.
 const Type* DivLNode::Value(PhaseGVN* phase) const {
   // Either input is TOP ==> the result is TOP
-  const Type *t1 = phase->type( in(1) );
-  const Type *t2 = phase->type( in(2) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t2 == Type::TOP ) return Type::TOP;
+  const Type* t1 = phase->type(in(1));
+  const Type* t2 = phase->type(in(2));
+  if (t1 == Type::TOP || t2 == Type::TOP) {
+    return Type::TOP;
+  }
+
+  if (t2 == TypeLong::ZERO) {
+    // this division will always throw an exception
+    return Type::TOP;
+  }
 
   // x/x == 1 since we always generate the dynamic divisor check for 0.
   if (in(1) == in(2)) {
     return TypeLong::ONE;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  const Type *bot = bottom_type();
-  if( (t1 == bot) || (t2 == bot) ||
-      (t1 == Type::BOTTOM) || (t2 == Type::BOTTOM) )
-    return bot;
+  const TypeLong* i1 = t1->is_long();
+  const TypeLong* i2 = t2->is_long();
 
-  // Divide the two numbers.  We approximate.
-  // If divisor is a constant and not zero
-  const TypeLong *i1 = t1->is_long();
-  const TypeLong *i2 = t2->is_long();
-  int widen = MAX2(i1->_widen, i2->_widen);
-  if (i2->is_con()) {
-    jlong d = i2->get_con();    // Divisor
-    if (d == 0) {
-      // this division will always throw an exception
-      return Type::TOP;
-    }
-  }
-
-  return compute_signed_div_type<TypeLong>(i1, i2, widen);
+  return compute_signed_div_type<TypeLong>(i1, i2);
 }
 
 
