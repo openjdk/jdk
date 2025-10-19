@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -553,24 +553,13 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
 const char* nearest_symbol(struct symtab* symtab, uintptr_t offset,
                            uintptr_t* poffset) {
   int n = 0;
-  const char *COLD_SUFFIX = ".cold";
-  const int COLD_SUFFIX_LEN = strlen(COLD_SUFFIX);
-
   if (!symtab) return NULL;
-
   for (; n < symtab->num_symbols; n++) {
      struct elf_symbol* sym = &(symtab->symbols[n]);
-     if (sym->name != NULL) {
-       uintptr_t offset_max = sym->offset + sym->size;
-       int symname_len = strlen(sym->name);
-       if (symname_len > COLD_SUFFIX_LEN &&
-           strncmp(&sym->name[symname_len - COLD_SUFFIX_LEN], COLD_SUFFIX, COLD_SUFFIX_LEN) == 0) {
-         offset_max++;
-       }
-       if (offset >= sym->offset && offset < offset_max) {
-          if (poffset) *poffset = (offset - sym->offset);
-          return sym->name;
-       }
+     if (sym->name != NULL &&
+         offset >= sym->offset && offset < sym->offset + sym->size) {
+        if (poffset) *poffset = (offset - sym->offset);
+        return sym->name;
      }
   }
   return NULL;
