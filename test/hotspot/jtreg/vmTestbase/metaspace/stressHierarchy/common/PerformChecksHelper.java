@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,16 @@ public class PerformChecksHelper {
                     }
                 }
             }
+        } catch (InvocationTargetException ite) {
+            if (ite.getCause() != null && ite.getCause().getMessage().trim().toLowerCase().contains("Metaspace")) {
+                // avoid string concatenation, which may create more classes.
+                System.out.println("Got OOME in metaspace in PerformChecksHelper.callMethods(Class clazz). ");
+                System.out.println("This is possible with -triggerUnloadingByFillingMetaspace");
+            } else {
+                throw ite;
+            }
         } catch (OutOfMemoryError e) {
-            if (e.getMessage().trim().toLowerCase().contains("metaspace")) {
+            if (e.getMessage().trim().toLowerCase().contains("Metaspace")) {
                 // avoid string concatenation, which may create more classes.
                 System.out.println("Got OOME in metaspace in PerformChecksHelper.callMethods(Class clazz). ");
                 System.out.println("This is possible with -triggerUnloadingByFillingMetaspace");
