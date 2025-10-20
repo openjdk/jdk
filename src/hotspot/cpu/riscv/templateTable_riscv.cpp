@@ -3033,7 +3033,9 @@ void TemplateTable::fast_storefield(TosState state) {
 
   // X11: field offset, X12: field holder, X13: flags
   load_resolved_field_entry(x12, x12, noreg, x11, x13);
+#ifdef ASSERT
   __ verify_field_offset(x11);
+#endif // ASSERT
 
   {
     Label notVolatile;
@@ -3121,7 +3123,9 @@ void TemplateTable::fast_accessfield(TosState state) {
   __ load_field_entry(x12, x11);
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+#ifdef ASSERT
   __ verify_field_offset(x11);
+#endif // ASSERT
 
   __ load_unsigned_byte(x13, Address(x12, in_bytes(ResolvedFieldEntry::flags_offset())));
 
@@ -3180,7 +3184,9 @@ void TemplateTable::fast_xaccess(TosState state) {
   __ load_field_entry(x12, x13, 2);
 
   __ load_sized_value(x11, Address(x12, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
+#ifdef ASSERT
   __ verify_field_offset(x11);
+#endif // ASSERT
 
   // make sure exception is reported in correct bcp range (getfield is
   // next instruction)
