@@ -42,9 +42,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
            ),
   _vpointer_for_main_loop_alignment(nullptr),
   _aw_for_main_loop_alignment(0),
-  _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
-  _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0)                                        // amount of reduction work we have
+  _do_vector_loop(phase()->C->do_vector_loop())             // whether to do vectorization/simd style
 {
 }
 
@@ -1567,18 +1565,6 @@ void SuperWord::filter_packs_for_implemented() {
 
 // Remove packs that are not profitable.
 void SuperWord::filter_packs_for_profitable() {
-  // Count the number of reductions vs other vector ops, for the
-  // reduction profitability heuristic.
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    Node* n = pack->at(0);
-    if (is_marked_reduction(n)) {
-      _num_reductions++;
-    } else {
-      _num_work_vecs++;
-    }
-  }
-
   // Remove packs that are not profitable
   auto filter = [&](const Node_List* pack) {
     return profitable(pack);
@@ -1595,31 +1581,7 @@ bool SuperWord::implemented(const Node_List* pack, const uint size) const {
   if (p0 != nullptr) {
     int opc = p0->Opcode();
     if (is_marked_reduction(p0)) {
-      const Type *arith_type = p0->bottom_type();
-      // This heuristic predicts that 2-element reductions for INT/LONG are not
-      // profitable. This heuristic was added in JDK-8078563. The argument
-      // was that reductions are not just a single instruction, but multiple, and
-      // hence it is not directly clear that they are profitable. If we only have
-      // two elements per vector, then the performance gains from non-reduction
-      // vectors are at most going from 2 scalar instructions to 1 vector instruction.
-      // But a 2-element reduction vector goes from 2 scalar instructions to
-      // 3 instructions (1 shuffle and two reduction ops).
-      // However, this optimization assumes that these reductions stay in the loop
-      // which may not be true any more in most cases after the introduction of:
-      // See: VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop
-      // Hence, this heuristic has room for improvement.
-      bool is_two_element_int_or_long_reduction = (size == 2) &&
-                                                  (arith_type->basic_type() == T_INT ||
-                                                   arith_type->basic_type() == T_LONG);
-      if (is_two_element_int_or_long_reduction && AutoVectorizationOverrideProfitability != 2) {
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("\nPerformance heuristic: 2-element INT/LONG reduction not profitable.");
-          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
-        }
-#endif
-        return false;
-      }
+      const Type* arith_type = p0->bottom_type();
       retValue = ReductionNode::implemented(opc, size, arith_type->basic_type());
     } else if (VectorNode::is_convert_opcode(opc)) {
       retValue = VectorCastNode::implemented(opc, size, velt_basic_type(p0->in(1)), velt_basic_type(p0));
@@ -1771,26 +1733,6 @@ bool SuperWord::profitable(const Node_List* p) const {
     if (second_pk == nullptr) {
       // The second input has to be the vector we wanted to reduce,
       // but it was not packed.
-      return false;
-    } else if (_num_work_vecs == _num_reductions && AutoVectorizationOverrideProfitability != 2) {
-      // This heuristic predicts that the reduction is not profitable.
-      // Reduction vectors can be expensive, because they require multiple
-      // operations to fold all the lanes together. Hence, vectorizing the
-      // reduction is not profitable on its own. Hence, we need a lot of
-      // other "work vectors" that deliver performance improvements to
-      // balance out the performance loss due to reductions.
-      // This heuristic is a bit simplistic, and assumes that the reduction
-      // vector stays in the loop. But in some cases, we can move the
-      // reduction out of the loop, replacing it with a single vector op.
-      // See: VTransformReductionVectorNode::optimize_move_non_strict_order_reductions_out_of_loop
-      // Hence, this heuristic has room for improvement.
-#ifndef PRODUCT
-        if (is_trace_superword_rejections()) {
-          tty->print_cr("\nPerformance heuristic: not enough vectors in the loop to make");
-          tty->print_cr("  reduction profitable.");
-          tty->print_cr("  Can override with AutoVectorizationOverrideProfitability=2");
-        }
-#endif
       return false;
     } else if (second_pk->size() != p->size()) {
       return false;
@@ -1950,6 +1892,9 @@ bool SuperWord::do_vtransform() const {
   vtransform.optimize();
 
   if (!vtransform.schedule()) { return false; }
+
+  // TODO: use AutoVectorizationOverrideProfitability
+  //       Maybe order it after the general bailout?
   if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
 
   if (AutoVectorizationOverrideProfitability == 0) {
@@ -1960,6 +1905,8 @@ bool SuperWord::do_vtransform() const {
 #endif
     return false;
   }
+
+  // TODO: check cost
 
   vtransform.apply();
   return true;
