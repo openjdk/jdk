@@ -5274,6 +5274,9 @@ void PhaseIdealLoop::build_and_optimize() {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       AutoVectorizeStatus status = auto_vectorize(lpt, vshared);
+      if (status == AutoVectorizeStatus::Success) {
+        C->record_optimization_event(OptEvent_AutoVectorization);
+      }
 
       if (status == AutoVectorizeStatus::TriedAndFailed) {
         // We tried vectorization, but failed. From now on only unroll the loop.
