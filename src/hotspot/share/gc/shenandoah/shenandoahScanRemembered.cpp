@@ -249,15 +249,23 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   // if marking context is valid and we are below tams, we use the marking bit map to find the first marked object that
   // intersects with this card, and if no such object exists, we return null
   if ((ctx != nullptr) && (left < tams)) {
-    if (ctx->is_marked(left)) {
+    if (ctx->is_marked_strong(left)) {
       oop obj = cast_to_oop(left);
       assert(oopDesc::is_oop(obj), "Should be an object");
       return left;
     }
     // get the previous marked object, if any
     if (region->bottom() < left) {
+      // Whether this region was previously marked as young and was subsequently promoted in place, or was marked as old.
+      // In the case that this region was most recently marked as young, the fact that this region has been promoted
+      // in place denotes that final mark (Young) has copmleted.  In the case that this region was most recently marked
+      // as old, the fact that (ctx != nullptr) denotes that old marking has completed.  Otherwise, ctx would equal null.
+      //
+      // Given that marking has completed, if this object is only marked weakly, then this object is dead.  Its memory will
+      // be reclaimed momentarily.  Given that this object is dead, its class may also be reclaimed.  Therefore, we cannot
+      // rely on its size() method, and we should not scan its pointers.
       HeapWord* prev = ctx->get_prev_marked_addr(region->bottom(), left);
-      if (prev <= left) {
+      if ((prev <= left) && ctx->is_marked_strong(prev)) {
         oop obj = cast_to_oop(prev);
         assert(oopDesc::is_oop(obj), "Should be an object");
         HeapWord* obj_end = prev + obj->size();
@@ -266,19 +274,27 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
         }
       }
     }
-    // Either prev >= left (no previous object found), or the previous object that was found ends before my card range begins.
-    // In eiher case, find the next marked object if any on this card
-    assert(!ctx->is_marked(left), "Was dealt with above");
+    // Either prev >= left (no previous object found), or the previous object that was found ends before my card range begins,
+    // or the previously object that was found was only weakly marked, so it should not be scanned.  In all of these cases,
+    // find the next strongly marked object if any on this card
+    assert(!ctx->is_marked_strong(left), "Was dealt with above");
     HeapWord* right = MIN2(region->top(), ctx->top_at_mark_start(region));
     assert(right > left, "We don't expect to be examining cards above the smaller of TAMS or top");
-    HeapWord* next = ctx->get_next_marked_addr(left, right);
+    HeapWord* next = left;
+    do {
+      next = ctx->get_next_marked_addr(next, right);
+    } while ((next <  right) && !ctx->is_marked_strong(next));
 #ifdef ASSERT
     if (next < right) {
       oop obj = cast_to_oop(next);
       assert(oopDesc::is_oop(obj), "Should be an object");
     }
 #endif
-    // Note: returned value may point beyond this card's range of memory, and may not point to an allocated object.
+    // If top_at_mark_start(region) is within this card's range, we will return its value.  If the returned value
+    // is less than region->top(), then the returned value represents an object that should be scanned.  Otherwise,
+    // the returned value equals region->top() and will not be scanned.  There are no races with ongoing allocations
+    // within old generation because this function is only called during concurrent marking and during concurrent
+    // update references.
     return next;
   }
 
@@ -288,8 +304,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   assert((left >= tams) || ShenandoahGenerationalHeap::heap()->old_generation()->is_parsable(),
          "The code that follows expects a parsable heap");
   if (starts_object(card_index) && get_first_start(card_index) == 0) {
-    // This card contains a co-initial object; a fortiori, it covers
-    // also the case of a card being the first in a region.
+    // This card contains a co-initial object; a fortiori, it covers also the case of a card being the first in a region.
     assert(oopDesc::is_oop(cast_to_oop(left)), "Should be an object");
     return left;
   }
@@ -311,14 +326,15 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
   // can avoid call via card size arithmetic below instead
   HeapWord* p = _rs->addr_for_card_index(cur_index) + offset;
   if ((ctx != nullptr) && (p < tams)) {
-    if (ctx->is_marked(p)) {
+    if (ctx->is_marked_strong(p)) {
       oop obj = cast_to_oop(p);
       assert(oopDesc::is_oop(obj), "Should be an object");
       assert(Klass::is_valid(obj->klass()), "Not a valid klass ptr");
       assert(p + obj->size() > left, "This object should span start of card");
       return p;
     } else {
-      // Object that spans start of card is dead, so should not be scanned
+      // Object that spans start of card is dead, so should not be scanned.
+      // From above, we know that if (ctx != nullptr), left >= tams.  Therefore, left + offset >= tams.
       assert((ctx == nullptr) || (left + get_first_start(card_index) >= tams), "Should have handled this case above");
       if (starts_object(card_index)) {
         return left + get_first_start(card_index);
@@ -335,6 +351,9 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
       }
     }
   }
+
+  // p points to first object that precedes the start of card card_index.  The object is "alive".
+  assert((ctx == nullptr) || (p >= tams), "Sanity");
 
   // Recall that we already dealt with the co-initial object case above
   assert(p < left, "obj should start before left");
@@ -360,7 +379,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #ifdef ASSERT
 #define WALK_FORWARD_IN_BLOCK_START true
 #else
-#define WALK_FORWARD_IN_BLOCK_START true
+#define WALK_FORWARD_IN_BLOCK_START false
 #endif // ASSERT
   while (WALK_FORWARD_IN_BLOCK_START && p + obj->size() < left) {
     p += obj->size();
