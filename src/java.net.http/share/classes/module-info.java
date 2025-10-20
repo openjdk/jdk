@@ -48,7 +48,10 @@
  * depending on the context. These restrictions cannot be overridden by this property.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.bufsize}</b> (default: 16384 bytes or 16 kB)<br>
- * The size to use for internal allocated buffers in bytes.
+ * The capacity of ephemeral buffers allocated to pass data to and from the
+ * client. It accepts values between 1 and 2^14 (16384), including both
+ * extremums. Values outside this range will be discarded and substituted with
+ * the default.
  * </li>
  * <li><p><b>{@systemProperty jdk.httpclient.connectionPoolSize}</b> (default: 0)<br>
  * The maximum number of connections to keep in the HTTP/1.1 keep alive cache. A value of 0
