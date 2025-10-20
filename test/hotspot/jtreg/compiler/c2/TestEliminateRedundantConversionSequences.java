@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8359603
+ * @bug 8359603 8369646
  * @summary Redundant ConvX2Y->ConvY2X->ConvX2Y sequences should be
  *          simplified to a single ConvX2Y operation when applicable
  *          VerifyIterativeGVN checks that this optimization was applied
