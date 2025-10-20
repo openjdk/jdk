@@ -3799,8 +3799,7 @@ jvmtiError
 JvmtiEnv::GetTotalGCCpuTime(jlong* nanos_ptr) {
   {
     MutexLocker hl(Heap_lock);
-    if (!os::is_thread_cpu_time_supported() ||
-        Universe::heap()->is_shutting_down()) {
+    if (Universe::heap()->is_shutting_down()) {
       *nanos_ptr = -1;
     }
     *nanos_ptr = CPUTimeUsage::GC::total();

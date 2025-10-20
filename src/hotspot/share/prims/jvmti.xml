@@ -11264,12 +11264,6 @@ myInit() {
       <description>
           Return the current value of the total GC CPU timer, in nanoseconds.
           <p/>
-          The value returned represents nanoseconds since some fixed but
-          arbitrary time (perhaps in the future, so values may be
-          negative).  This function provides nanosecond precision, but not
-          necessarily nanosecond accuracy. No guarantees are made about
-          how frequently values change.
-          <p/>
           Get information about this timer with
           <functionlink id="GetGCCpuTimerInfo"/>.
       </description>
