@@ -1273,8 +1273,11 @@ public:
 
   Node *idom(uint didx) const {
     Node *n = idom_no_update(didx);
-
-    _idom[didx] = n; // Lazily remove dead CFG nodes from table.
+    // We store the found idom in the side-table again. In most cases,
+    // this is a no-op, since we just read from _idom. But in cases where
+    // there was a ctrl forwarding via dead ctrl nodes, this shortens the path.
+    // See: install_lazy_ctrl_and_idom_forwarding
+    _idom[didx] = n;
     return n;
   }
 
