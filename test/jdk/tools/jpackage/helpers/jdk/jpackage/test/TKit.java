@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.Closeable;
@@ -41,7 +42,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
-import java.nio.file.WatchService;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
@@ -611,44 +611,44 @@ public final class TKit {
         trace(String.format("Wait for file [%s] to be available",
                                                 fileToWaitFor.toAbsolutePath()));
 
-        WatchService ws = FileSystems.getDefault().newWatchService();
+        try (var ws = FileSystems.getDefault().newWatchService()) {
 
-        Path watchDirectory = fileToWaitFor.toAbsolutePath().getParent();
-        watchDirectory.register(ws, ENTRY_CREATE, ENTRY_MODIFY);
+            Path watchDirectory = fileToWaitFor.toAbsolutePath().getParent();
+            watchDirectory.register(ws, ENTRY_CREATE, ENTRY_MODIFY);
 
-        var waitUntil = Instant.now().plus(timeout);
-        for (;;) {
-            var remainderTimeout = Instant.now().until(waitUntil);
-            assertTrue(remainderTimeout.isPositive(), String.format(
-                    "Check timeout value %dms is positive", remainderTimeout.toMillis()));
+            var waitUntil = Instant.now().plus(timeout);
+            for (;;) {
+                var remainderTimeout = Instant.now().until(waitUntil);
+                assertTrue(remainderTimeout.isPositive(), String.format(
+                        "Check timeout value %dms is positive", remainderTimeout.toMillis()));
 
-            WatchKey key = ThrowingSupplier.toSupplier(() -> {
-                return ws.poll(remainderTimeout.toMillis(), TimeUnit.MILLISECONDS);
-            }).get();
-            if (key == null) {
-                if (Files.exists(fileToWaitFor)) {
-                    trace(String.format(
-                            "File [%s] is available after poll timeout expired",
-                            fileToWaitFor));
-                    return;
+                WatchKey key = ThrowingSupplier.toSupplier(() -> {
+                    return ws.poll(remainderTimeout.toMillis(), TimeUnit.MILLISECONDS);
+                }).get();
+                if (key == null) {
+                    if (Files.exists(fileToWaitFor)) {
+                        trace(String.format(
+                                "File [%s] is available after poll timeout expired",
+                                fileToWaitFor));
+                        return;
+                    }
+                    assertUnexpected(String.format("Timeout %dms expired", remainderTimeout.toMillis()));
                 }
-                assertUnexpected(String.format("Timeout %dms expired", remainderTimeout.toMillis()));
-            }
 
-            for (WatchEvent<?> event : key.pollEvents()) {
-                if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
-                    continue;
+                for (WatchEvent<?> event : key.pollEvents()) {
+                    if (event.kind() == StandardWatchEventKinds.OVERFLOW) {
+                        continue;
+                    }
+                    Path contextPath = (Path) event.context();
+                    if (Files.exists(fileToWaitFor) && Files.isSameFile(watchDirectory.resolve(contextPath), fileToWaitFor)) {
+                        trace(String.format("File [%s] is available", fileToWaitFor));
+                        return;
+                    }
                 }
-                Path contextPath = (Path) event.context();
-                if (Files.isSameFile(watchDirectory.resolve(contextPath),
-                        fileToWaitFor)) {
-                    trace(String.format("File [%s] is available", fileToWaitFor));
-                    return;
-                }
-            }
 
-            if (!key.reset()) {
-                assertUnexpected("Watch key invalidated");
+                if (!key.reset()) {
+                    assertUnexpected("Watch key invalidated");
+                }
             }
         }
     }
@@ -795,6 +795,35 @@ public final class TKit {
         } else {
             assertTrue(!path.toFile().exists(), String.format(
                     "Check [%s] path doesn't exist", path));
+        }
+    }
+
+    public static void assertMismatchFileContent(Path a, Path b) {
+        assertFilesMismatch(a, b, true, Optional.empty());
+    }
+
+    public static void assertMismatchFileContent(Path a, Path b, String msg) {
+        assertFilesMismatch(a, b, true, Optional.of(msg));
+    }
+
+    public static void assertSameFileContent(Path a, Path b) {
+        assertFilesMismatch(a, b, false, Optional.empty());
+    }
+
+    public static void assertSameFileContent(Path a, Path b, String msg) {
+        assertFilesMismatch(a, b, false, Optional.of(msg));
+    }
+
+    public static void assertFilesMismatch(Path a, Path b, boolean expectMismatch, Optional<String> msg) {
+        var mismatch = toBiFunction(Files::mismatch).apply(a, b) != -1;
+        if (expectMismatch) {
+            assertTrue(mismatch, msg.orElseGet(() -> {
+                return String.format("Check the content of [%s] and [%s] files mismatch", a, b);
+            }));
+        } else {
+            assertTrue(!mismatch, msg.orElseGet(() -> {
+                return String.format("Check the content of [%s] and [%s] files is the same", a, b);
+            }));
         }
     }
 

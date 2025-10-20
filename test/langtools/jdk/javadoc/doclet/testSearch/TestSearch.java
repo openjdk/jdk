@@ -427,7 +427,8 @@ public class TestSearch extends JavadocTester {
                     <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
                 """
                     const pathtoroot = "./";
-                    loadScripts(document, 'script');""",
+                    loadScripts();
+                    initTheme();""",
                 "<div class=\"nav-list-search\">",
                 """
                     <li><a href="search.html">Search</a></li>""",

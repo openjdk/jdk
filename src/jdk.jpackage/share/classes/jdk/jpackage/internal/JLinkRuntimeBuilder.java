@@ -215,7 +215,7 @@ final class JLinkRuntimeBuilder implements RuntimeBuilder {
     }
 
     private static String getStringList(Set<String> strings) {
-        return strings.stream().collect(Collectors.joining(","));
+        return strings.stream().sorted().collect(Collectors.joining(","));
     }
 
     private final List<String> jlinkCmdLine;

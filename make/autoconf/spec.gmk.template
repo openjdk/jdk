@@ -386,9 +386,22 @@ CAPSTONE_ARCH_AARCH64_NAME := @CAPSTONE_ARCH_AARCH64_NAME@
 # it in sync.
 BOOT_JDK := @BOOT_JDK@
 
-BUILD_JDK := @BUILD_JDK@
-CREATE_BUILDJDK := @CREATE_BUILDJDK@
-EXTERNAL_BUILDJDK := @EXTERNAL_BUILDJDK@
+EXTERNAL_BUILDJDK_PATH := @EXTERNAL_BUILDJDK_PATH@
+
+ifneq ($(EXTERNAL_BUILDJDK_PATH), )
+  EXTERNAL_BUILDJDK := true
+  CREATE_BUILDJDK := false
+  BUILD_JDK := $(EXTERNAL_BUILDJDK_PATH)
+else
+  EXTERNAL_BUILDJDK := false
+  ifeq ($(COMPILE_TYPE), cross)
+    CREATE_BUILDJDK := true
+    BUILD_JDK := $(BUILDJDK_OUTPUTDIR)/jdk
+  else
+    CREATE_BUILDJDK := false
+    BUILD_JDK := $(JDK_OUTPUTDIR)
+  endif
+endif
 
 # Whether the boot jdk jar supports --date=TIMESTAMP
 BOOT_JDK_JAR_SUPPORTS_DATE := @BOOT_JDK_JAR_SUPPORTS_DATE@
@@ -491,7 +504,6 @@ CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
 # Legacy support
 HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
 
-CC_OUT_OPTION := @CC_OUT_OPTION@
 AS_NON_ASM_EXTENSION_OPTION := @AS_NON_ASM_EXTENSION_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
@@ -624,16 +636,7 @@ ASFLAGS_DEBUG_SYMBOLS := @ASFLAGS_DEBUG_SYMBOLS@
 # Compress (or not) jars
 COMPRESS_JARS := @COMPRESS_JARS@
 
-# Options to linker to specify the library name.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_NAME = @SET_SHARED_LIBRARY_NAME@
-
 SHARED_LIBRARY_FLAGS := @SHARED_LIBRARY_FLAGS@
-
-# Set origin using the linker, ie use the relative path to the dependent library to find the dependencies.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_ORIGIN = @SET_SHARED_LIBRARY_ORIGIN@
-SET_EXECUTABLE_ORIGIN = @SET_EXECUTABLE_ORIGIN@
 
 LIBRARY_PREFIX := @LIBRARY_PREFIX@
 SHARED_LIBRARY_SUFFIX := @SHARED_LIBRARY_SUFFIX@
@@ -657,8 +660,8 @@ JAVA_CMD := @JAVA@
 JAVAC_CMD := @JAVAC@
 JAVADOC_CMD := @JAVADOC@
 JAR_CMD := @JAR@
-JLINK_CMD := @JLINK@
-JMOD_CMD := @JMOD@
+JLINK_CMD := @FIXPATH@ $(BUILD_JDK)/bin/jlink
+JMOD_CMD := @FIXPATH@ $(BUILD_JDK)/bin/jmod
 # These variables are meant to be used. They are defined with = instead of := to make
 # it possible to override only the *_CMD variables.
 JAVA = $(JAVA_CMD) $(JAVA_FLAGS_BIG) $(JAVA_FLAGS)
