@@ -216,7 +216,6 @@ public class BasicHTTP3Test implements HttpServerAdapters {
                 .proxy(HttpClient.Builder.NO_PROXY)
                 .executor(executor)
                 .sslContext(sslContext)
-                .connectTimeout(Duration.ofSeconds(10))
                 .build();
         return TRACKER.track(client);
     }
