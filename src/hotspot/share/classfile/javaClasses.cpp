@@ -2127,7 +2127,7 @@ int java_lang_VirtualThread::_objectWaiter_offset;
   macro(_next_offset,                      k, "next",               vthread_signature,           false); \
   macro(_onWaitingList_offset,             k, "onWaitingList",      bool_signature,              false); \
   macro(_notified_offset,                  k, "notified",           bool_signature,              false); \
-  macro(_interruptible_wait_offset,        k, "interruptableWait",  bool_signature,              false); \
+  macro(_interruptible_wait_offset,        k, "interruptibleWait",  bool_signature,              false); \
   macro(_timeout_offset,                   k, "timeout",            long_signature,              false);
 
 

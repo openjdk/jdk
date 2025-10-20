@@ -111,10 +111,8 @@ void ContinuationEntry::describe(FrameValues& values, int frame_no) const {
 #endif
 
 #ifdef ASSERT
-bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread, bool preempted) {
+bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
   assert(thread->has_last_Java_frame(), "Wrong place to use this assertion");
-
-  if (preempted) return true;
 
   ContinuationEntry* entry = thread->last_continuation();
   assert(entry != nullptr, "");

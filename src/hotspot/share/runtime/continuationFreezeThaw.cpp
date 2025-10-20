@@ -193,7 +193,7 @@ static void verify_continuation(oop continuation) { Continuation::debug_verify_c
 
 static void do_deopt_after_thaw(JavaThread* thread);
 static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, outputStream* st);
-static void log_frames(JavaThread* thread, bool dolog = true);
+static void log_frames(JavaThread* thread, bool do_log = true);
 static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont, intptr_t* sp);
 static void print_frame_layout(const frame& f, bool callee_complete, outputStream* st = tty);
 static void verify_frame_kind(frame& top, Continuation::preempt_kind preempt_kind, Method** m_ptr = nullptr, const char** code_name_ptr = nullptr, int* bci_ptr = nullptr, stackChunkOop chunk = nullptr);
@@ -3167,10 +3167,10 @@ static bool do_verify_after_thaw(JavaThread* thread, stackChunkOop chunk, output
   return true;
 }
 
-static void log_frames(JavaThread* thread, bool dolog) {
+static void log_frames(JavaThread* thread, bool do_log) {
   const static int show_entry_callers = 3;
   LogTarget(Trace, continuations) lt;
-  if (!lt.develop_is_enabled() || !dolog) {
+  if (!lt.develop_is_enabled() || !do_log) {
     return;
   }
   LogStream ls(lt);
@@ -3230,7 +3230,7 @@ static void log_frames_after_thaw(JavaThread* thread, ContinuationWrapper& cont,
   if (LoomVerifyAfterThaw) {
     assert(do_verify_after_thaw(thread, cont.tail(), tty), "");
   }
-  assert(ContinuationEntry::assert_entry_frame_laid_out(thread, preempted), "");
+  assert(preempted || ContinuationEntry::assert_entry_frame_laid_out(thread), "");
   clear_anchor(thread);
 
   LogTarget(Trace, continuations) lt;
