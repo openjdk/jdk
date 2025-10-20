@@ -23,7 +23,6 @@
 
 /*
  * @test Loading and writing AOT archived heap objects with ZGC
- * @bug 8274788
  * @requires vm.cds
  * @requires vm.gc.Z
  * @requires vm.gc.G1
