@@ -61,14 +61,14 @@ class SmallRegisterMapType {
 
   JavaThread* thread() const {
   #ifndef ASSERT
-    guarantee (false, "");
+    guarantee (false, "unreachable");
   #endif
     return nullptr;
   }
 
   bool update_map()    const { return false; }
   bool walk_cont()     const { return false; }
-  bool include_argument_oops() const { return false; }
+  bool include_argument_oops() const { return IncludeArgs; }
   void set_include_argument_oops(bool f)  {}
   bool in_cont()       const { return false; }
   stackChunkHandle stack_chunk() const { return stackChunkHandle(); }
@@ -76,7 +76,7 @@ class SmallRegisterMapType {
 #ifdef ASSERT
   bool should_skip_missing() const  { return false; }
   VMReg find_register_spilled_here(void* p, intptr_t* sp) {
-    Unimplemented();
+    assert(false, "Shouldn't reach here! p:" PTR_FORMAT " sp:" PTR_FORMAT, p2i(p), p2i(p));
     return nullptr;
   }
   void print() const { print_on(tty); }

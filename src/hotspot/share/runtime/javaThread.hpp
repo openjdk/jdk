@@ -516,15 +516,22 @@ class JavaThread: public Thread {
   int _interp_at_preemptable_vmcall_cnt;
   int interp_at_preemptable_vmcall_cnt() { return _interp_at_preemptable_vmcall_cnt; }
 
+  bool _interp_redoing_vm_call;
+  bool interp_redoing_vm_call() const { return _interp_redoing_vm_call; };
+
   class AtRedoVMCall : public StackObj {
     JavaThread* _thread;
    public:
     AtRedoVMCall(JavaThread* t) : _thread(t) {
+      assert(!_thread->_interp_redoing_vm_call, "");
+      _thread->_interp_redoing_vm_call = true;
       _thread->_interp_at_preemptable_vmcall_cnt++;
       assert(_thread->_interp_at_preemptable_vmcall_cnt > 0, "Unexpected count: %d",
              _thread->_interp_at_preemptable_vmcall_cnt);
     }
     ~AtRedoVMCall() {
+      assert(_thread->_interp_redoing_vm_call, "");
+      _thread->_interp_redoing_vm_call = false;
       _thread->_interp_at_preemptable_vmcall_cnt--;
       assert(_thread->_interp_at_preemptable_vmcall_cnt >= 0, "Unexpected count: %d",
              _thread->_interp_at_preemptable_vmcall_cnt);

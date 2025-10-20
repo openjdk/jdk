@@ -496,6 +496,7 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _at_preemptable_init(false),
   DEBUG_ONLY(_preempt_init_klass(nullptr) COMMA)
   DEBUG_ONLY(_interp_at_preemptable_vmcall_cnt(0) COMMA)
+  DEBUG_ONLY(_interp_redoing_vm_call(false) COMMA)
 
   _handshake(this),
   _suspend_resume_manager(this, &_handshake._lock),
