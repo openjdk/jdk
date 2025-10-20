@@ -1133,25 +1133,25 @@ bool Matcher::use_asm_for_ldiv_by_con( jlong divisor ) {
 // Register for DIVI projection of divmodI
 const RegMask& Matcher::divI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 // Register for MODI projection of divmodI
 const RegMask& Matcher::modI_proj_mask() {
   ShouldNotReachHere();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 // Register for DIVL projection of divmodL
 const RegMask& Matcher::divL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 // Register for MODL projection of divmodL
 const RegMask& Matcher::modL_proj_mask() {
   ShouldNotReachHere();
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 bool maybe_far_call(const CallNode *n) {
