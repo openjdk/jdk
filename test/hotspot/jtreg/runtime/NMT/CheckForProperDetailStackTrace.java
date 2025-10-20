@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,8 @@ public class CheckForProperDetailStackTrace {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
-    private static final boolean expectSourceInformation = Platform.isLinux() || Platform.isWindows();
+    // Windows has source information only in full pdbs, not in stripped pdbs
+    private static final boolean expectSourceInformation = Platform.isLinux();
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
