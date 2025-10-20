@@ -302,8 +302,8 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   const size_t maximum_old_evacuation_reserve = get_maximum_old_evacuation_reserve(maximum_young_evacuation_reserve, old_available);
 
 
-  log_debug(gc, cset)("max_young_evac_reserver: %zu, max_old_evac_reserve: %zu, old_available: %zu",
-                      maximum_young_evacuation_reserve, maximum_old_evacuation_reserve, old_available);
+  log_debug(gc, cset)("max_young_evac_reserver: " PROPERFMT", max_old_evac_reserve: " PROPERFMT ", old_available: " PROPERFMT,
+                      PROPERFMTARGS(maximum_young_evacuation_reserve), PROPERFMTARGS(maximum_old_evacuation_reserve), PROPERFMTARGS(old_available));
 
   // Second priority is to reclaim garbage out of old-gen if there are old-gen collection candidates.  Third priority
   // is to promote as much as we have room to promote.  However, if old-gen memory is in short supply, this means young
@@ -361,6 +361,9 @@ void ShenandoahGeneration::compute_evacuation_budgets(ShenandoahHeap* const heap
   assert(consumed_by_advance_promotion <= maximum_old_evacuation_reserve, "Cannot promote more than available old-gen memory");
   assert(consumed_by_advance_promotion <= old_promo_reserve, "Cannot promote more than was reserved");
 
+  log_info(gc, ergo)("Initial evacuation reserves: young: " PROPERFMT ", promotion: " PROPERFMT ", old: " PROPERFMT,
+                     PROPERFMTARGS(young_evacuation_reserve), PROPERFMTARGS(consumed_by_advance_promotion), PROPERFMTARGS(old_evacuation_reserve));
+
   // Note that unused old_promo_reserve might not be entirely consumed_by_advance_promotion.  Do not transfer this
   // to old_evacuation_reserve because this memory is likely very fragmented, and we do not want to increase the likelihood
   // of old evacuation failure.
@@ -409,7 +412,7 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     // Leave old_evac_reserve as previously configured
   } else if (old_evacuated_committed < old_evacuation_reserve) {
     // This happens if the old-gen collection consumes less than full budget.
-    log_debug(gc, cset)("Shrinking old evac reserve to match old_evac_commited: %zu", old_evacuated_committed);
+    log_debug(gc, cset)("Shrinking old evac reserve to match old_evac_commited: " PROPERFMT, PROPERFMTARGS(old_evacuated_committed));
     old_evacuation_reserve = old_evacuated_committed;
     old_generation->set_evacuation_reserve(old_evacuation_reserve);
   }
@@ -467,15 +470,19 @@ void ShenandoahGeneration::adjust_evacuation_budgets(ShenandoahHeap* const heap,
     assert(excess_old >= regions_to_xfer * region_size_bytes,
            "Cannot transfer (%zu, %zu) more than excess old (%zu)",
            regions_to_xfer, region_size_bytes, excess_old);
-    log_debug(gc, ergo)("Giving away %zu old regions (old_available, %zu, old_evac: %zu, unaffiliated_old: %zu)",
-                        regions_to_xfer, old_available, old_evacuated_committed, unaffiliated_old);
-    bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
+    log_debug(gc, ergo)("Giving away %zu old regions (old_available, " PROPERFMT ", old_evac: " PROPERFMT ", unaffiliated_old: " PROPERFMT ")",
+                        regions_to_xfer, PROPERFMTARGS(old_available), PROPERFMTARGS(old_evacuated_committed), PROPERFMTARGS(unaffiliated_old));
+    const bool result = ShenandoahGenerationalHeap::cast(heap)->generation_sizer()->transfer_to_young(regions_to_xfer);
     excess_old -= regions_to_xfer * region_size_bytes;
     log_debug(gc, ergo)("%s transferred %zu excess regions to young before start of evacuation",
                        result? "Successfully": "Unsuccessfully", regions_to_xfer);
   }
 
   old_generation->reset_promoted_expended();
+  log_info(gc, ergo)("Adjusted evacuation reserves: young: " PROPERFMT ", promotion: " PROPERFMT ", old: " PROPERFMT,
+                     PROPERFMTARGS(young_generation->get_evacuation_reserve()),
+                     PROPERFMTARGS(old_generation->get_promoted_reserve()),
+                     PROPERFMTARGS(old_generation->get_evacuation_reserve()));
 }
 
 typedef struct {
@@ -616,7 +623,7 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
     // Subsequent regions may be selected if they have smaller live data.
   }
 
-  log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: %zu", promo_potential);
+  log_info(gc, ergo)("Promotion potential of aged regions with sufficient garbage: " PROPERFMT, PROPERFMTARGS(promo_potential));
 
   // Sort in increasing order according to live data bytes.  Note that candidates represents the number of regions
   // that qualify to be promoted by evacuation.
@@ -643,17 +650,17 @@ size_t ShenandoahGeneration::select_aged_regions(const size_t old_promotion_rese
       // We keep going even if one region is excluded from selection because we need to accumulate all eligible
       // regions that are not preselected into promo_potential
     }
-    log_info(gc, ergo)("Preselected %zu regions containing %zu live bytes,"
-                 " consuming: %zu of budgeted: %zu",
-                 selected_regions, selected_live, old_consumed, old_promotion_reserve);
+    log_info(gc, ergo)("Preselected %zu regions containing " PROPERFMT " live data,"
+                 " consuming: " PROPERFMT " of budgeted: " PROPERFMT,
+                 selected_regions, PROPERFMTARGS(selected_live), PROPERFMTARGS(old_consumed), PROPERFMTARGS(old_promotion_reserve));
   }
 
   const uint tenuring_threshold = heap->age_census()->tenuring_threshold();
   const size_t tenurable_next_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold - 1);
   const size_t tenurable_this_cycle = heap->age_census()->get_tenurable_bytes(tenuring_threshold);
 
-  log_info(gc, ergo)("Promotion potential: %zu, tenurable next cycle: %zu, tenurable this cycle: %zu, selected for promotion: %zu",
-                     promo_potential, tenurable_next_cycle, tenurable_this_cycle, old_consumed);
+  log_info(gc, ergo)("Promotion potential: " PROPERFMT ", tenurable next cycle: " PROPERFMT ", tenurable this cycle: " PROPERFMT ", selected for promotion: " PROPERFMT ,
+                     PROPERFMTARGS(promo_potential), PROPERFMTARGS(tenurable_next_cycle), PROPERFMTARGS(tenurable_this_cycle), PROPERFMTARGS(old_consumed));
 
   heap->old_generation()->set_pad_for_promote_in_place(promote_in_place_pad);
   heap->old_generation()->set_promotion_potential(tenurable_next_cycle);
