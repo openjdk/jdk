@@ -2171,7 +2171,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     Node* con = makecon(t);     // Make a constant
     add_users_to_worklist(k);
     subsume_node(k, con);       // Everybody using k now uses con
-    C->record_optimization_event(OptEvent_Canonicalization);
     return con;
   }
 
@@ -2181,7 +2180,6 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     NOT_PRODUCT(set_progress();)
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
-    C->record_optimization_event(OptEvent_Canonicalization);
     return i;
   }
 
@@ -2192,12 +2190,10 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     NOT_PRODUCT(set_progress();)
     add_users_to_worklist(k);
     subsume_node(k, i);       // Everybody using k now uses i
-    C->record_optimization_event(OptEvent_Canonicalization);
     return i;
   }
 
   // Return Idealized original
-  C->record_optimization_event(OptEvent_Canonicalization);
   return k;
 }
 
