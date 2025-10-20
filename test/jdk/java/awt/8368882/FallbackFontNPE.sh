@@ -53,7 +53,7 @@ if Reg QUERY "${reg_eudc_1252}"; then
    Reg EXPORT "${reg_eudc_1252}" ${old_reg_record} /y
    Reg DELETE "${reg_eudc_1252}" /va /f
 fi
-Reg import eudc.reg
+Reg ADD "${reg_eudc_1252}" /v SystemDefaultEUDCFont /d EUDC.TTE /f
 
 windows_eudc_tte=$(cygpath -m ${WINDIR}/Fonts/EUDC.tte)
 delete_eudc_tte=false
@@ -79,6 +79,7 @@ echo Restore registry record
 Reg DELETE ${reg_eudc_1252} /f
 if [ -f "${old_reg_record}" ]; then
   Reg import ${old_reg_record}
+  rm "${old_reg_record}"
 fi
 
 if [ ${delete_eudc_tte} = true ]; then
