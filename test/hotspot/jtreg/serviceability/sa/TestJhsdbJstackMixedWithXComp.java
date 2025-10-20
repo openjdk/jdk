@@ -46,7 +46,7 @@ public class TestJhsdbJstackMixedWithXComp {
 
     private static void runJstack(LingeredApp app) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
-        launcher.addVMArgs(Utils.getTestJavaOpts());
+        launcher.addVMArgs(Utils.getFilteredTestJavaOpts("-showversion"));
         launcher.addToolArg("jstack");
         launcher.addToolArg("--mixed");
         launcher.addToolArg("--pid");
