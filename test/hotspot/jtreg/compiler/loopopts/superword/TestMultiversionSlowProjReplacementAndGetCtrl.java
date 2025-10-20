@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 8369902
+ * @bug 8369898
  * @summary Bug in PhaseIdealLoop::create_new_if_for_multiversion, that messed up the
  *          _loop_or_ctrl data structure while doing SuperWord for a first loop, and
  *          then get_ctrl asserted for a second loop that was also SuperWord-ed in the
  *          same loop-opts-phase.
  * @run main/othervm
- *      -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,*TestMultiversionSlowProjReplacementAndGetCtrl::test
  *      -XX:CompileCommand=exclude,*TestMultiversionSlowProjReplacementAndGetCtrl::dontinline
  *      -XX:-TieredCompilation
@@ -89,7 +88,7 @@ public class TestMultiversionSlowProjReplacementAndGetCtrl {
     }
 
     public static void main(String[] strArr) {
-        for (int i = 0; i < 10_00; i++) {
+        for (int i = 0; i < 1_000; i++) {
             test();
         }
     }
