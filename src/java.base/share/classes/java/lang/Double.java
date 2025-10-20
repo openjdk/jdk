@@ -723,11 +723,12 @@ public final class Double extends Number
                 // This ensures we always have 13 hex digits to work with (52 bits / 4 bits per hex digit)
                 long signifBits = (Double.doubleToLongBits(d)
                         & DoubleConsts.SIGNIF_BIT_MASK) |
-                        0x1000000000000000L;
+                        0x1000_0000_0000_0000L;
 
                 // Calculate the number of trailing zeros in the significand (in groups of 4 bits)
                 // This is used to remove trailing zeros from the hex representation
                 // We limit to 12 because we want to keep at least 1 hex digit (13 total - 12 = 1)
+                // assert 0 <= trailingZeros && trailingZeros <= 12
                 int trailingZeros = Math.min(12, ((Long.numberOfTrailingZeros(signifBits) & 0xFC) >> 2));
 
                 // Determine the exponent value based on whether the number is subnormal or normal
