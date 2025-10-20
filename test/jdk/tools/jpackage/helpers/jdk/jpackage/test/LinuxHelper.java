@@ -22,6 +22,7 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
 import static java.util.Collections.unmodifiableSortedSet;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
@@ -513,7 +514,20 @@ public final class LinuxHelper {
         TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
                 "Check for missing %s keys in the file", mandatoryKeys));
 
-        for (var e : List.of(Map.entry("Type", "Application"), Map.entry("Terminal", "false"))) {
+        final String launcherDescription;
+        if (cmd.name().equals(launcherName) || predefinedAppImage.isPresent()) {
+            launcherDescription = Optional.ofNullable(cmd.getArgumentValue("--description")).orElseGet(cmd::name);
+        } else {
+            launcherDescription = getAdditionalLauncherProperties(cmd, launcherName).findProperty("description").or(() -> {
+                return Optional.ofNullable(cmd.getArgumentValue("--description"));
+            }).orElseGet(cmd::name);
+        }
+
+        for (var e : List.of(
+                Map.entry("Type", "Application"),
+                Map.entry("Terminal", "false"),
+                Map.entry("Comment", launcherDescription)
+        )) {
             String key = e.getKey();
             TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
                     "Check value of [%s] key", key));
