@@ -810,6 +810,17 @@ public:
   const VLoopVPointers& vpointers()              const { return _vpointers; }
   const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
+  // Compute the cost of the (scalar) body.
+  float cost() const;
+  // TODO: impl
+  // bool has_zero_cost(Node* n) const;
+
+  // TODO: impl
+  // // Cost-modeling with tracing.
+  // float cost_for_scalar(int opcode) const;
+  // float cost_for_vector(int opcode, int vlen, BasicType bt) const;
+  // float cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const;
+
 private:
   bool setup_submodules();
   VStatus setup_submodules_helper();

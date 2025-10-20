@@ -194,6 +194,7 @@ public:
   void optimize(VTransform& vtransform);
   bool schedule();
   bool has_store_to_load_forwarding_failure(const VLoopAnalyzer& vloop_analyzer) const;
+  float cost() const;
   void apply_vectorization_for_each_vtnode(uint& max_vector_length, uint& max_vector_width) const;
 
 private:
@@ -257,6 +258,7 @@ public:
   void optimize() { return _graph.optimize(*this); }
   bool schedule() { return _graph.schedule(); }
   bool is_profitable() const;
+  float cost() const { return _graph.cost(); }
   bool has_store_to_load_forwarding_failure() const { return _graph.has_store_to_load_forwarding_failure(_vloop_analyzer); }
   void apply();
 

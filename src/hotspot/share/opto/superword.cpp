@@ -1899,6 +1899,7 @@ bool SuperWord::do_vtransform() const {
   return true;
 }
 
+// TODO: move to other file
 bool VTransform::is_profitable() const {
   assert(_graph.is_scheduled(), "must already be scheduled");
 
@@ -1920,11 +1921,23 @@ bool VTransform::is_profitable() const {
     return true;
   }
 
+  // Note: currently we only do throughput-based cost-modeling. In the future, we could
+  //       also implement latency-based cost-modeling and take store-to-load-forwarding
+  //       failures into account as the latency between the load and store. This would
+  //       allow a more precise tradeoff between the forwarding failure penalty versus
+  //       the vectorization gains.
   if (has_store_to_load_forwarding_failure()) { return false; }
 
-  // TODO: check cost
-
-  return true;
+  // Cost-model
+  float scalar_cost = _vloop_analyzer.cost();
+  float vector_cost = cost();
+#ifndef PRODUCT
+  if (_trace._info) {
+    tty->print_cr("\nVTransform: scalar_cost = %.2f vs vector_cost = %.2f",
+                  scalar_cost, vector_cost);
+  }
+#endif
+  return vector_cost < scalar_cost;
 }
 
 // Apply the vectorization, i.e. we irreversibly edit the C2 graph. At this point, all
