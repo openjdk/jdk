@@ -652,13 +652,13 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
   constantPoolHandle pool(current, last_frame.method()->constants());
   methodHandle m(current, last_frame.method());
 
-  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, StaticMode::initialize_klass_preemptable, CHECK_AND_CLEAR_PREEMPTED);
+  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, ClassInitMode::init_preemptable, CHECK_AND_CLEAR_PREEMPTED);
 }
 
 void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_index,
                                          methodHandle& m,
                                          constantPoolHandle& pool,
-                                         StaticMode static_mode, TRAPS) {
+                                         ClassInitMode init_mode, TRAPS) {
   fieldDescriptor info;
   bool is_put    = (bytecode == Bytecodes::_putfield  || bytecode == Bytecodes::_nofast_putfield ||
                     bytecode == Bytecodes::_putstatic);
@@ -666,8 +666,7 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
 
   {
     JvmtiHideSingleStepping jhss(THREAD);
-    LinkResolver::resolve_field_access(info, pool, field_index,
-                                       m, bytecode, static_mode, CHECK);
+    LinkResolver::resolve_field_access(info, pool, field_index, m, bytecode, init_mode, CHECK);
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
@@ -826,7 +825,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
     JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  method_index, bytecode,
-                                 StaticMode::initialize_klass_preemptable, THREAD);
+                                 ClassInitMode::init_preemptable, THREAD);
 
     if (HAS_PENDING_EXCEPTION) {
       if (ProfileTraps && PENDING_EXCEPTION->klass()->name() == vmSymbols::java_lang_NullPointerException()) {

@@ -243,7 +243,7 @@ void JavaCalls::call_special(JavaValue* result, Handle receiver, Klass* klass, S
 void JavaCalls::call_static(JavaValue* result, Klass* klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   LinkInfo link_info(klass, name, signature);
-  LinkResolver::resolve_static_call(callinfo, link_info, StaticMode::initialize_klass, CHECK);
+  LinkResolver::resolve_static_call(callinfo, link_info, ClassInitMode::init, CHECK);
   methodHandle method(THREAD, callinfo.selected_method());
   assert(method.not_null(), "should have thrown exception");
 

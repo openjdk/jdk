@@ -94,7 +94,7 @@ class InterpreterRuntime: AllStatic {
 
   // Used by AOTConstantPoolResolver
   static void resolve_get_put(Bytecodes::Code bytecode, int field_index,
-                              methodHandle& m, constantPoolHandle& pool, StaticMode static_mode, TRAPS);
+                              methodHandle& m, constantPoolHandle& pool, ClassInitMode init_mode, TRAPS);
   static void cds_resolve_invoke(Bytecodes::Code bytecode, int method_index,
                                  constantPoolHandle& pool, TRAPS);
   static void cds_resolve_invokehandle(int raw_index,

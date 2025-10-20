@@ -986,14 +986,14 @@ void LinkResolver::resolve_field_access(fieldDescriptor& fd,
                                         int index,
                                         const methodHandle& method,
                                         Bytecodes::Code byte,
-                                        StaticMode static_mode, TRAPS) {
+                                        ClassInitMode init_mode, TRAPS) {
   LinkInfo link_info(pool, index, method, byte, CHECK);
-  resolve_field(fd, link_info, byte, static_mode, CHECK);
+  resolve_field(fd, link_info, byte, init_mode, CHECK);
 }
 
 void LinkResolver::resolve_field(fieldDescriptor& fd,
                                  const LinkInfo& link_info,
-                                 Bytecodes::Code byte, StaticMode static_mode,
+                                 Bytecodes::Code byte, ClassInitMode init_mode,
                                  TRAPS) {
   assert(byte == Bytecodes::_getstatic || byte == Bytecodes::_putstatic ||
          byte == Bytecodes::_getfield  || byte == Bytecodes::_putfield  ||
@@ -1078,9 +1078,9 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
     // note 2: we don't want to force initialization if we are just checking
     //         if the field access is legal; e.g., during compilation
     if (is_static) {
-      if (static_mode == StaticMode::initialize_klass) {
+      if (init_mode == ClassInitMode::init) {
         sel_klass->initialize(CHECK);
-      } else if (static_mode == StaticMode::initialize_klass_preemptable) {
+      } else if (init_mode == ClassInitMode::init_preemptable) {
         sel_klass->initialize_preemptable(CHECK);
       }
     }
@@ -1108,17 +1108,17 @@ void LinkResolver::resolve_field(fieldDescriptor& fd,
 
 void LinkResolver::resolve_static_call(CallInfo& result,
                                        const LinkInfo& link_info,
-                                       StaticMode static_mode, TRAPS) {
+                                       ClassInitMode init_mode, TRAPS) {
   Method* resolved_method = linktime_resolve_static_method(link_info, CHECK);
 
   // The resolved class can change as a result of this resolution.
   Klass* resolved_klass = resolved_method->method_holder();
 
   // Initialize klass (this should only happen if everything is ok)
-  if (static_mode != StaticMode::dont_initialize_klass && resolved_klass->should_be_initialized()) {
-    if (static_mode == StaticMode::initialize_klass) {
+  if (init_mode != ClassInitMode::dont_init && resolved_klass->should_be_initialized()) {
+    if (init_mode == ClassInitMode::init) {
       resolved_klass->initialize(CHECK);
-    } else if (static_mode == StaticMode::initialize_klass_preemptable) {
+    } else if (init_mode == ClassInitMode::init_preemptable) {
       resolved_klass->initialize_preemptable(CHECK);
     }
     // Use updated LinkInfo to reresolve with resolved method holder
@@ -1682,7 +1682,7 @@ int LinkResolver::resolve_virtual_vtable_index(Klass* receiver_klass,
 Method* LinkResolver::resolve_static_call_or_null(const LinkInfo& link_info) {
   EXCEPTION_MARK;
   CallInfo info;
-  resolve_static_call(info, link_info, StaticMode::dont_initialize_klass, THREAD);
+  resolve_static_call(info, link_info, ClassInitMode::dont_init, THREAD);
   if (HAS_PENDING_EXCEPTION) {
     CLEAR_PENDING_EXCEPTION;
     return nullptr;
@@ -1706,15 +1706,15 @@ Method* LinkResolver::resolve_special_call_or_null(const LinkInfo& link_info) {
 //------------------------------------------------------------------------------------------------------------------------
 // ConstantPool entries
 
-void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, Bytecodes::Code byte, StaticMode static_mode, TRAPS) {
+void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, Bytecodes::Code byte, ClassInitMode init_mode, TRAPS) {
   switch (byte) {
-    case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, static_mode, CHECK); break;
-    case Bytecodes::_invokespecial  : resolve_invokespecial  (result, recv, pool, index,              CHECK); break;
-    case Bytecodes::_invokevirtual  : resolve_invokevirtual  (result, recv, pool, index,              CHECK); break;
-    case Bytecodes::_invokehandle   : resolve_invokehandle   (result,       pool, index,              CHECK); break;
-    case Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index,              CHECK); break;
-    case Bytecodes::_invokeinterface: resolve_invokeinterface(result, recv, pool, index,              CHECK); break;
-    default                         :                                                                         break;
+    case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, init_mode, CHECK); break;
+    case Bytecodes::_invokespecial  : resolve_invokespecial  (result, recv, pool, index,            CHECK); break;
+    case Bytecodes::_invokevirtual  : resolve_invokevirtual  (result, recv, pool, index,            CHECK); break;
+    case Bytecodes::_invokehandle   : resolve_invokehandle   (result,       pool, index,            CHECK); break;
+    case Bytecodes::_invokedynamic  : resolve_invokedynamic  (result,       pool, index,            CHECK); break;
+    case Bytecodes::_invokeinterface: resolve_invokeinterface(result, recv, pool, index,            CHECK); break;
+    default                         :                                                                       break;
   }
   return;
 }
@@ -1736,7 +1736,7 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
                              /*check_null_and_abstract=*/true, CHECK);
       break;
     case Bytecodes::_invokestatic:
-      resolve_static_call(result, link_info, StaticMode::dont_initialize_klass, CHECK);
+      resolve_static_call(result, link_info, ClassInitMode::dont_init, CHECK);
       break;
     case Bytecodes::_invokespecial:
       resolve_special_call(result, recv, link_info, CHECK);
@@ -1747,9 +1747,9 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
   }
 }
 
-void LinkResolver::resolve_invokestatic(CallInfo& result, const constantPoolHandle& pool, int index, StaticMode static_mode, TRAPS) {
+void LinkResolver::resolve_invokestatic(CallInfo& result, const constantPoolHandle& pool, int index, ClassInitMode init_mode, TRAPS) {
   LinkInfo link_info(pool, index, Bytecodes::_invokestatic, CHECK);
-  resolve_static_call(result, link_info, static_mode, CHECK);
+  resolve_static_call(result, link_info, init_mode, CHECK);
 }
 
 
