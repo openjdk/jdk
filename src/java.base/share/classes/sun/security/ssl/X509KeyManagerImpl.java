@@ -224,11 +224,11 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
         int firstDot = alias.indexOf('.');
         int secondDot = alias.indexOf('.', firstDot + 1);
 
-        if (firstDot < 1 ||
-            secondDot - firstDot < 2 ||
-            alias.length() - secondDot < 2) {
+        if ((firstDot < 1)
+                || (secondDot - firstDot < 2)
+                || (alias.length() - secondDot < 2)) {
 
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                 SSLLogger.warning("Invalid alias format: " + alias);
             }
             return null;
@@ -255,7 +255,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                  NoSuchAlgorithmException |
                  IndexOutOfBoundsException e) {
             // ignore and only log exception
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
                 SSLLogger.warning("Exception thrown while getting an alias " +
                                   alias + ": " + e);
             }

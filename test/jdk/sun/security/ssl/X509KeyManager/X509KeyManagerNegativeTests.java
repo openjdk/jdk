@@ -35,6 +35,7 @@ import java.io.OutputStream;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreSpi;
+import java.security.Provider;
 import java.security.Security;
 import java.security.cert.Certificate;
 import java.util.ConcurrentModificationException;
@@ -56,15 +57,19 @@ public class X509KeyManagerNegativeTests {
 
         // initialising exception throwing ks
         // cleaned up after the tests are complete
-        final KeyManagerFactory exceptionThrowingKMF = KeyManagerFactory.getInstance("NewSunX509");
+        final KeyManagerFactory exceptionThrowingKMF =
+                KeyManagerFactory.getInstance("NewSunX509");
 
         // adding dummy provider
         Security.addProvider(new MyCustomKSProvider());
-        final KeyStore exceptionThrowingKS = KeyStore.getInstance("MyExceptionKS");
+        final KeyStore exceptionThrowingKS =
+                KeyStore.getInstance("MyExceptionKS");
         exceptionThrowingKS.load(null, null);
 
-        exceptionThrowingKMF.init((KeyStore) exceptionThrowingKS, null);
-        exceptionThrowingKM = (X509KeyManager) exceptionThrowingKMF.getKeyManagers()[0];
+        exceptionThrowingKMF
+                .init((KeyStore) exceptionThrowingKS, null);
+        exceptionThrowingKM =
+                (X509KeyManager) exceptionThrowingKMF.getKeyManagers()[0];
     }
 
     @AfterAll
@@ -82,9 +87,11 @@ public class X509KeyManagerNegativeTests {
                 () -> exceptionThrowingKM.getPrivateKey("RSA.0.0"));
     }
 
-    public static class MyCustomKSProvider extends java.security.Provider {
+    public static class MyCustomKSProvider extends Provider {
         public MyCustomKSProvider() {
-            super("MyCustomKSProvider", 1.0, "My Custom KS Provider");
+            super("MyCustomKSProvider",
+                    "1.0",
+                    "My Custom KS Provider");
             put("KeyStore.MyExceptionKS", MyExceptionKS.class.getName());
         }
     }
@@ -92,7 +99,8 @@ public class X509KeyManagerNegativeTests {
     public static class MyExceptionKS extends KeyStoreSpi {
 
         @Override
-        public KeyStore.Entry engineGetEntry(String alias, KeyStore.ProtectionParameter param) {
+        public KeyStore.Entry engineGetEntry(String alias,
+                                             KeyStore.ProtectionParameter param) {
             throw new ConcurrentModificationException("getEntry exception");
         }
 
@@ -155,15 +163,21 @@ public class X509KeyManagerNegativeTests {
         }
 
         @Override
-        public void engineSetKeyEntry(String alias, Key key, char[] password, Certificate[] chain) {
+        public void engineSetKeyEntry(String alias,
+                                      Key key,
+                                      char[] password,
+                                      Certificate[] chain) {
         }
 
         @Override
-        public void engineSetKeyEntry(String alias, byte[] key, Certificate[] chain) {
+        public void engineSetKeyEntry(String alias,
+                                      byte[] key,
+                                      Certificate[] chain) {
         }
 
         @Override
-        public void engineSetCertificateEntry(String alias, Certificate cert) {
+        public void engineSetCertificateEntry(String alias,
+                                              Certificate cert) {
         }
 
         @Override
