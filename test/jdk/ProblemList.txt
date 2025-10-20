@@ -743,6 +743,8 @@ sun/tools/jstatd/TestJstatdRmiPort.java                         8251259,8293577 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
 
+sun/misc/SunMiscSignalTest.java                                 8370207 generic-all
+
 ############################################################################
 
 # jdk_jfr
@@ -750,6 +752,7 @@ jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-
 jdk/jfr/event/compiler/TestCodeSweeper.java                     8338127 generic-all
 jdk/jfr/event/oldobject/TestShenandoah.java                     8342951 generic-all
 jdk/jfr/event/runtime/TestResidentSetSizeEvent.java             8309846 aix-ppc64
+jdk/jfr/jvm/TestWaste.java                                      8369949 generic-all
 
 ############################################################################
 
