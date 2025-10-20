@@ -711,11 +711,11 @@ public final class Double extends Number
         }
 
         boolean negative = Double.doubleToLongBits(d) < 0;
-        d = Math.abs(d);
 
         if (d == 0.0) {
             return negative ? "-0x0.0p0" : "0x0.0p0";
         }
+        d = Math.abs(d);
         // Check if the value is subnormal (less than the smallest normal value)
         boolean subnormal = d < Double.MIN_NORMAL;
 
