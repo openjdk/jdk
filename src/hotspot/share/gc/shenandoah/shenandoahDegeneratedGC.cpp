@@ -94,7 +94,7 @@ void ShenandoahDegenGC::op_degenerated() {
   // Degenerated GC is STW, but it can also fail. Current mechanics communicates
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
-  heap->clear_cancelled_gc(true /* clear oom handler */);
+  heap->clear_cancelled_gc();
 
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
@@ -115,8 +115,7 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 #endif
 
-  ShenandoahMetricsSnapshot metrics;
-  metrics.snap_before();
+  ShenandoahMetricsSnapshot metrics(heap->free_set());
 
   switch (_degen_point) {
     // The cases below form the Duff's-like device: it describes the actual GC cycle,
@@ -308,10 +307,8 @@ void ShenandoahDegenGC::op_degenerated() {
     Universe::verify();
   }
 
-  metrics.snap_after();
-
   // Decide if this cycle made good progress, and, if not, should it upgrade to a full GC.
-  const bool progress = metrics.is_good_progress(_generation);
+  const bool progress = metrics.is_good_progress();
   ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
   policy->record_degenerated(_generation->is_young(), _abbreviated, progress);
   if (progress) {
