@@ -22,6 +22,7 @@
  */
 
 // key: compiler.err.not.exhaustive.statement.details
+// key: compiler.misc.not.exhaustive.detail
 // options: -XDexhaustivityTimeout=-1
 
 class NotExhaustiveDetails {
