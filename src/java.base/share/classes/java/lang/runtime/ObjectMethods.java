@@ -73,6 +73,8 @@ public final class ObjectMethods {
     private static final MethodHandle HASH_COMBINER;
     private static final MethodType MT_OBJECT_BOOLEAN = MethodType.methodType(boolean.class, Object.class);
     private static final MethodType MT_INT = MethodType.methodType(int.class);
+    private static final MethodTypeDesc MTD_OBJECT_BOOLEAN = MethodTypeDesc.of(CD_boolean, CD_Object);
+    private static final MethodTypeDesc MTD_INT = MethodTypeDesc.of(CD_int);
 
     private static final HashMap<Class<?>, MethodHandle> primitiveEquals = new HashMap<>();
     private static final HashMap<Class<?>, MethodHandle> primitiveHashers = new HashMap<>();
@@ -248,7 +250,7 @@ public final class ObjectMethods {
                                .labelBinding(nonNullPath)
                                .aload(0) // arg0.equals(arg1) - bytecode subject to customized profiling
                                .aload(1)
-                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "equals", MethodTypeDesc.of(CD_boolean, CD_Object), isInterface)
+                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "equals", MTD_OBJECT_BOOLEAN, isInterface)
                                .ireturn();
                         });
                     }
@@ -324,7 +326,7 @@ public final class ObjectMethods {
                                .ireturn()
                                .labelBinding(nonNullPath)
                                .aload(0) // arg0.hashCode() - bytecode subject to customized profiling
-                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "hashCode", MethodTypeDesc.of(CD_int), isInterface)
+                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "hashCode", MTD_INT, isInterface)
                                .ireturn();
                         });
                     }
