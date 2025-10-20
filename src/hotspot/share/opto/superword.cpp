@@ -1893,22 +1893,37 @@ bool SuperWord::do_vtransform() const {
 
   if (!vtransform.schedule()) { return false; }
 
-  // TODO: use AutoVectorizationOverrideProfitability
-  //       Maybe order it after the general bailout?
-  if (vtransform.has_store_to_load_forwarding_failure()) { return false; }
+  if (!vtransform.is_profitable()) { return false; }
+
+  vtransform.apply();
+  return true;
+}
+
+bool VTransform::is_profitable() const {
+  assert(_graph.is_scheduled(), "must already be scheduled");
 
   if (AutoVectorizationOverrideProfitability == 0) {
 #ifndef PRODUCT
-    if (is_trace_superword_any()) {
+    if (_trace._info) {
       tty->print_cr("\nForced bailout of vectorization (AutoVectorizationOverrideProfitability=0).");
     }
 #endif
     return false;
   }
 
+  if (AutoVectorizationOverrideProfitability == 2) {
+#ifndef PRODUCT
+    if (_trace._info) {
+      tty->print_cr("\nForced vectorization, ignoring profitability (AutoVectorizationOverrideProfitability=2).");
+    }
+#endif
+    return true;
+  }
+
+  if (has_store_to_load_forwarding_failure()) { return false; }
+
   // TODO: check cost
 
-  vtransform.apply();
   return true;
 }
 

@@ -256,6 +256,7 @@ public:
 
   void optimize() { return _graph.optimize(*this); }
   bool schedule() { return _graph.schedule(); }
+  bool is_profitable() const;
   bool has_store_to_load_forwarding_failure() const { return _graph.has_store_to_load_forwarding_failure(_vloop_analyzer); }
   void apply();
 
