@@ -58,7 +58,7 @@ public class ServerMemoryMXBean extends ServerMXBean implements MemoryMXBean {
                 return getIntAttribute(OBJECT_PENDING_FINALIZATION_COUNT);
         }
 
-        public long getGcCpuTime() {
+        public long getTotalGcCpuTime() {
                 throw new UnsupportedOperationException("This method is not supported");
         }
 

@@ -931,7 +931,7 @@ static jlong get_long_attribute(jmmLongAttribute att) {
   case JMM_JVM_UPTIME_MS:
     return Management::ticks_to_ms(os::elapsed_counter());
 
-  case JMM_GC_CPU_TIME:
+  case JMM_TOTAL_GC_CPU_TIME:
     return get_gc_cpu_time();
 
   case JMM_COMPILE_TOTAL_TIME_MS:

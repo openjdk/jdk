@@ -222,8 +222,8 @@ public class MXBeanInteropTest1 {
                     + memory.getNonHeapMemoryUsage());
             System.out.println("getObjectPendingFinalizationCount\t\t"
                     + memory.getObjectPendingFinalizationCount());
-            System.out.println("getGcCpuTime\t\t"
-                    + memory.getGcCpuTime());
+            System.out.println("getTotalGcCpuTime\t\t"
+                    + memory.getTotalGcCpuTime());
             System.out.println("isVerbose\t\t"
                     + memory.isVerbose());
 
