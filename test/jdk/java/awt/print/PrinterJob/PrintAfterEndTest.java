@@ -47,7 +47,7 @@ public class PrintAfterEndTest implements Printable {
         PrinterJob pjob = PrinterJob.getPrinterJob();
         pjob.setPrintable(new PrintAfterEndTest());
         pjob.print();
-       
+
 
         System.out.println("PeekGraphics= " + peekgraphics);
         System.out.println("PathGraphics= " + pathgraphics);
@@ -68,7 +68,7 @@ public class PrintAfterEndTest implements Printable {
         if (pageIndex > 0) {
             return NO_SUCH_PAGE;
         }
-        if (peekgraphics == null) { 
+        if (peekgraphics == null) {
             peekgraphics = g.create();
         } else if (pathgraphics == null) {
             pathgraphics = g.create();
