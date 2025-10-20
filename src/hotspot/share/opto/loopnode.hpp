@@ -1075,17 +1075,26 @@ public:
     }
     set_ctrl(n, ctrl);
   }
-  // Control nodes can be replaced or subsumed.  During this pass they
-  // get their replacement Node in slot 1.  Instead of updating the block
-  // location of all Nodes in the subsumed block, we lazily do it.  As we
-  // pull such a subsumed block out of the array, we write back the final
-  // correct block.
+
+  // Retreives the ctrl for a data node i.
+  // The ctrl info is stored in the _loop_or_ctrl side-table. However, it
+  // could be that the ctrl of the node i has been replaced or subsumed by
+  // another ctrl node (see lazy_replace). Instead of updating all affected
+  // data nodes that used to have the old ctrl, we simply install a ctrl
+  // forwarding at the old ctrl. When computing get_ctrl, we then have to
+  // trace over those forwardings, and eventually find the new live ctrl.
+  // In the end, we can update the ctrl of i in _loop_or_ctrl, dropping the
+  // extra steps required with the forwarding, so that a next query returns
+  // immediately (this shortens the path).
   Node* get_ctrl(const Node* i) {
-    assert(has_node(i), "");
-    Node *n = get_ctrl_no_update(i);
+    assert(has_node(i) && has_ctrl(i), "must be data node with ctrl");
+    Node* n = get_ctrl_no_update(i);
+    // We store the found ctrl in the side-table again. In most cases,
+    // this is a no-op, since we just read from _loop_or_ctrl. But in cases
+    // where there was a ctrl forwarding via dead ctrl nodes, this shortens the path.
     _loop_or_ctrl.map(i->_idx, (Node*)((intptr_t)n + 1));
-    assert(has_node(i) && has_ctrl(i), "");
-    assert(n == find_non_split_ctrl(n), "must return legal ctrl" );
+    assert(has_node(i) && has_ctrl(i), "must still be data node with ctrl");
+    assert(n == find_non_split_ctrl(n), "must return legal ctrl");
     return n;
   }
 
@@ -1109,19 +1118,16 @@ public:
     return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
-  // TODO: desc
+  // Compute the ctrl of node i, jumping over ctrl forwardings.
   Node* get_ctrl_no_update(const Node* i) const {
     assert(has_ctrl(i), "only data nodes expected");
     Node* n = get_ctrl_no_update_helper(i);
     if (n->in(0) == nullptr) {
-      // Skip dead CFG nodes
-      // With "lazy_update" or "lazy_replace", we may have created a
-      // ctrl "forwarding" from the dead node to some other node. This
-      // "forwarding" ensures that get_ctrl responds with the other node
-      // instead of with the dead node, lazily moving all those "controllees"
-      // from the dead ctrl node to the other ctrl node.
-      // There may be repeated "forwardings", so we must loop until we find
-      // a live ctrl node.
+      // We encountered a dead CFG node.
+      // If everything went right, this dead CFG node should have had a ctrl
+      // forwarding installed, using "lazy_replace" or "lazy_update". We now
+      // have to jump from the old (dead) ctrl node to the new (live) ctrl node,
+      // in possibly multiple ctrl forwarding steps.
       do {
         n = get_ctrl_no_update_helper(n);
       } while (n->in(0) == nullptr);
@@ -1140,15 +1146,27 @@ public:
   void set_loop( Node *n, IdealLoopTree *loop ) {
     _loop_or_ctrl.map(n->_idx, (Node*)loop);
   }
-  // Lazy-dazy update of 'get_ctrl' and 'idom_at' mechanisms.  Replace
-  // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
-  // from old_node to new_node to support the lazy update.  Reference
-  // replaces loop reference, since that is not needed for dead node.
-  // TODO: desc
-  //
-  // Install a ctrl "forwarding" from an old control node
+
+  // Install a ctrl "forwarding" from an old (dead) control node.
+  // This is a "lazy" update of the "get_ctrl" and "idom" mechanism:
+  // - Install a forwarding from old_node (dead ctrl) to new_node.
+  // - When querying "get_ctrl": jump from data node over possibly
+  //   multiple dead ctrl nodes with ctrl forwarding to eventually
+  //   reach a live ctrl node. Shorten the path to avoid chasing the
+  //   forwarding in the future.
+  // - When querying "idom": from some node get its old idom, which
+  //   may be dead but has a ctrl forwarding to the new and live
+  //   idom. Shorten the path to avoid chasing the forwarding in the
+  //   future.
+  // Using "lazy_update" allows us to only edit the entry for the old dead
+  // node now, and we do not have to update all the nodes that had the
+  // old_node as their "get_ctrl" or "idom". We clean up the forwarding
+  // links when we query "get_ctrl" or "idom".
   void lazy_update(Node* old_node, Node* new_node) {
-    assert(!has_ctrl(old_node), "only expect live ctrl nodes");
+    assert(!has_ctrl(old_node), "must be ctrl node");
+    assert(!has_ctrl(new_node), "must be ctrl node");
+    assert(old_node->in(0) == nullptr, "old node must be dead");
+    assert(new_node->in(0) != nullptr, "new node must be live");
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
@@ -1156,7 +1174,9 @@ public:
     assert(has_ctrl(old_node), "must have installed ctrl forwarding");
   }
 
-  // TODO: desc
+  // Replace the old ctrl node with a new ctrl node.
+  // - Update the node inputs of all uses.
+  // - Lazily update the ctrl and idom info of all uses, via a ctrl forwarding.
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
     lazy_update(old_node, new_node);
