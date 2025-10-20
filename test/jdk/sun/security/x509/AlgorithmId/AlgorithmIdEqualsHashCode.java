@@ -24,7 +24,7 @@
 /*
  * @test
  * @author Gary Ellison
- * @bug 4170635 8258247
+ * @bug 4170635 8258247 8367008
  * @library /test/lib
  * @summary Verify equals()/hashCode() contract honored
  * @modules java.base/sun.security.x509 java.base/sun.security.util
