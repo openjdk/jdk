@@ -514,13 +514,6 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
 
   while (true) {
     cb = (CodeBlob*)heap->allocate(size);
-
-#ifdef MACOS_AARCH64
-    if (TraceWXHealing) {
-      ThreadWXEnable::test((address)heap->low());
-    }
-#endif // MACOS_AARCH64
-
     if (cb != nullptr) break;
     if (!heap->expand_by(CodeCacheExpansionSize)) {
       // Save original type for error reporting

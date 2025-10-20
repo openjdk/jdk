@@ -636,10 +636,15 @@ void VM_Version::initialize() {
   DefaultWXWriteMode = UseOldWX ? WXWrite : WXArmedForWrite;
 
   if (TraceWXHealing) {
-    tty->print_cr("### TraceWXHealing is in use");
-  }
-  if (StressWXHealing) {
-    tty->print_cr("### StressWXHealing is in use");
+    if (pthread_jit_write_protect_supported_np()) {
+      tty->print_cr("### TraceWXHealing is in use");
+      if (StressWXHealing) {
+        tty->print_cr("### StressWXHealing is in use");
+      }
+    } else {
+      tty->print_cr("WX Healing is not in use because MAP_JIT write protection "
+                    "does not work on this system.");
+    }
   }
 #endif
 

@@ -46,9 +46,9 @@ public:
     JavaThread* javaThread
       = _thread && _thread->is_Java_thread()
                 ? JavaThread::cast(_thread) : nullptr;
-    _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
-    _old_mode = _thread ? _thread->enable_wx(*new_mode) : WXWrite;
-    if (javaThread) {
+    _prev = javaThread != nullptr ? javaThread->_cur_wx_enable: nullptr;
+    _old_mode = _thread != nullptr ? _thread->enable_wx(*new_mode) : WXWrite;
+    if (javaThread != nullptr) {
       javaThread->_cur_wx_enable = this;
       javaThread->_cur_wx_mode = new_mode;
     }
@@ -59,8 +59,8 @@ public:
     JavaThread* javaThread
       = _thread && _thread->is_Java_thread()
         ? JavaThread::cast(_thread) : nullptr;
-    _prev = javaThread ? javaThread->_cur_wx_enable: nullptr;
-    _old_mode = _thread ? _thread->enable_wx(new_mode) : WXWrite;
+    _prev = javaThread != nullptr ? javaThread->_cur_wx_enable: nullptr;
+    _old_mode = _thread != nullptr ? _thread->enable_wx(new_mode) : WXWrite;
     if (javaThread) {
       javaThread->_cur_wx_enable = this;
       javaThread->_cur_wx_mode = nullptr;
@@ -74,9 +74,9 @@ public:
       JavaThread* javaThread
         = _thread && _thread->is_Java_thread()
           ? JavaThread::cast(_thread) : nullptr;
-      if (javaThread) {
+      if (javaThread != nullptr) {
         javaThread->_cur_wx_enable = _prev;
-        javaThread->_cur_wx_mode = _prev ? _prev->_this_wx_mode : nullptr;
+        javaThread->_cur_wx_mode = _prev != nullptr ? _prev->_this_wx_mode : nullptr;
       }
     }
   }
