@@ -357,12 +357,12 @@ static void jdk_misc_signal_init() {
 }
 
 void os::signal_notify(int sig) {
-    // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
-    // initialization isn't called. This code is also never called.
-    assert(!ReduceSignalUsage, "Should not reach here if ReduceSignalUsage is set");
-
+  // Signal thread is not created with ReduceSignalUsage and jdk_misc_signal_init
+  // initialization isn't called.
+  if (!ReduceSignalUsage) {
     AtomicAccess::inc(&pending_signals[sig]);
     sig_semaphore->signal();
+  }
 }
 
 static int check_pending_signals() {
