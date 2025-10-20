@@ -29,10 +29,11 @@
  * @library /test/lib
  * @summary Testing getKeyPair using ML-KEM
  * @enablePreview
+ * @modules java.base/sun.security.util
  */
 
 import jdk.test.lib.Asserts;
-
+import sun.security.util.DerValue;
 import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -57,6 +58,7 @@ public class GetKeyPair {
     private static final char[] password = passwdText.toCharArray();
     private static final SecretKey key = new SecretKeySpec(
         passwdText.getBytes(), "PBE");
+    static byte[] keyOrigPub, keyOrigPriv;
 
     public static void main(String[] args) throws Exception {
         Provider p = Security.getProvider(
@@ -64,52 +66,55 @@ public class GetKeyPair {
 
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM");
         KeyPair kpOrig = kpg.generateKeyPair();
-        // Generate the PEM, constructing a OneAsymmetricKey (OAS) encoding
+        keyOrigPub = kpOrig.getPublic().getEncoded();
+        keyOrigPriv = getPrivateKey(kpOrig.getPrivate());
+
+        // Encode the KeyPair into PEM, constructing an OneAsymmetricKey encoding
         String pem = PEMEncoder.of().withEncryption(password).
             encodeToString(kpOrig);
-        // Extracted the KeyPair from the generated PEM for verification.
+        // Decode to a KeyPair from the generated PEM for verification.
         KeyPair mlkemKP = PEMDecoder.of().withDecryption(password).
             decode(pem, KeyPair.class);
-        // Extract the EncryptedPrivateKeyInfo.
+
+        // Check decoded public key pair with original.
+        Asserts.assertEqualsByteArray(mlkemKP.getPublic().getEncoded(),
+            keyOrigPub, "Initial PublicKey compare didn't match.");
+        byte[] priv = getPrivateKey(mlkemKP.getPrivate());
+        Asserts.assertEqualsByteArray(priv, keyOrigPriv,
+            "Initial PrivateKey compare didn't match");
+
+        // Decode to a EncryptedPrivateKeyInfo.
         EncryptedPrivateKeyInfo ekpi = PEMDecoder.of().decode(pem,
             EncryptedPrivateKeyInfo.class);
 
-        KeyPairs kps = new KeyPairs(kpOrig, mlkemKP);
+        // Test getKeyPair(password)
+        System.out.print("Testing getKeyPair(char[]): ");
+        arrayCheck(ekpi.getKeyPair(password));
 
-        // Test getKey(password)
-        System.out.println("Testing getKeyPair(char[]) ");
-        KeyPair kp = ekpi.getKeyPair(password);
-        arrayCheck(kps, kp);
+        // Test getKeyPair(key, provider) provider null
+        System.out.print("Testing getKeyPair(key, null): ");
+        arrayCheck(ekpi.getKeyPair(key, null));
 
-        // Test getKey(key, provider) provider null
-        System.out.println("Testing getKeyPair(key, null)");
-        kp = ekpi.getKeyPair(key, null);
-        arrayCheck(kps, kp);
-
-        // Test getKey(key, provider) provider SunJCE
-        System.out.println("Testing getKeyPair(key, SunJCE)");
-        kp = ekpi.getKeyPair(key, p);
-        arrayCheck(kps, kp);
+        // Test getKeyPair(key, provider) provider SunJCE
+        System.out.print("Testing getKeyPair(key, SunJCE): ");
+        arrayCheck(ekpi.getKeyPair(key, p));
     }
 
-    static void arrayCheck(KeyPairs kps, KeyPair actual) {
-        byte[] actualPrivEncoding = actual.getPrivate().getEncoded();
-        byte[] actualPubEncoding = actual.getPublic().getEncoded();
-        Asserts.assertEqualsByteArray(kps.mlkemPrivEncoding, actualPrivEncoding,
+    static void arrayCheck(KeyPair kp) throws Exception {
+        Asserts.assertEqualsByteArray(getPrivateKey(kp.getPrivate()), keyOrigPriv,
             "PrivateKey didn't match with expected.");
-        Asserts.assertEqualsByteArray(kps.mlkemPubEncoding, actualPubEncoding,
-            "PublicKey didn't match with decoded.");
-        Asserts.assertEqualsByteArray(kps.origPubEncoding, actualPubEncoding,
-            "PublicKey didn't match with decoded.");
-        System.out.println("Got KeyPair:  Pass");
+        Asserts.assertEqualsByteArray(kp.getPublic().getEncoded(), keyOrigPub,
+            "PublicKey didn't match with expected.");
+        System.out.println("PASS");
     }
 
-    record KeyPairs(byte[] origPubEncoding, byte[] mlkemPrivEncoding,
-                    byte[] mlkemPubEncoding) {
-         KeyPairs(KeyPair orig, KeyPair mlkem) {
-             this(orig.getPublic().getEncoded(),
-                 mlkem.getPrivate().getEncoded(),
-                 mlkem.getPublic().getEncoded());
-         }
-    };
+    static byte[] getPrivateKey(PrivateKey p) throws Exception{
+        var val = new DerValue(p.getEncoded());
+        // Get version
+        val.data.getInteger();
+        // Get AlgorithmID
+        val.data.getDerValue();
+        // Return PrivateKey
+        return val.data.getOctetString();
+    }
 }

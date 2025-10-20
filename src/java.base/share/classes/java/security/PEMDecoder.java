@@ -27,6 +27,7 @@ package java.security;
 
 import jdk.internal.javac.PreviewFeature;
 
+import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
 import sun.security.util.KeyUtil;
@@ -35,19 +36,19 @@ import sun.security.util.Pem;
 import javax.crypto.EncryptedPrivateKeyInfo;
 import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
+import java.lang.ref.Reference;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.*;
 import java.security.spec.*;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
 /**
  * {@code PEMDecoder} implements a decoder for Privacy-Enhanced Mail (PEM) data.
- * PEM is a textual encoding used to store and transfer security
+ * PEM is a textual encoding used to store and transfer cryptographic
  * objects, such as asymmetric keys, certificates, and certificate revocation
  * lists (CRLs).  It is defined in RFC 1421 and RFC 7468. PEM consists of a
- * Base64-formatted binary encoding enclosed by a type-identifying header
+ * Base64-encoded binary encoding enclosed by a type-identifying header
  * and footer.
  *
  * <p> The {@link #decode(String)} and {@link #decode(InputStream)}
@@ -55,31 +56,28 @@ import java.util.Objects;
  * implements {@link DEREncodable}.
  *
  * <p> The following lists the supported PEM types and the {@code DEREncodable}
- * types that each are decoded as:
+ * they decode as:
  * <ul>
  *  <li>CERTIFICATE : {@code X509Certificate}</li>
- *  <li>X509 CERTIFICATE : {@code X509Certificate}</li>
- *  <li>X.509 CERTIFICATE : {@code X509Certificate}</li>
- *  <li>CRL : {@code X509CRL}</li>
  *  <li>X509 CRL : {@code X509CRL}</li>
  *  <li>PUBLIC KEY : {@code PublicKey}</li>
- *  <li>PUBLIC KEY : {@code X509EncodedKeySpec} (When passed as a {@code Class}
+ *  <li>PUBLIC KEY : {@code X509EncodedKeySpec} (when passed as a {@code Class}
  *  parameter)</li>
  *  <li>PRIVATE KEY : {@code PrivateKey}</li>
- *  <li>PRIVATE KEY : {@code PKCS8EncodedKeySpec} (When passed as a {@code Class}
+ *  <li>PRIVATE KEY : {@code PKCS8EncodedKeySpec} (when passed as a {@code Class}
  *  parameter)</li>
- *  <li>PRIVATE KEY : {@code PublicKey} (If the encoding contains a public key
+ *  <li>PRIVATE KEY : {@code PublicKey} (if the encoding contains a public key
  *  and is passed as a {@code Class} parameter)</li>
- *  <li>PRIVATE KEY : {@code KeyPair} (If the encoding contains a public key)
+ *  <li>PRIVATE KEY : {@code KeyPair} (if the encoding contains a public key)
  *  </li>
  *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (If configured with
+ *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with
  *  decryption)</li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code KeyPair} (If configured with decryption)
+ *  <li>ENCRYPTED PRIVATE KEY : {@code KeyPair} (if configured with decryption)
  *  </li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PKCS8EncodedKeySpec} (If configured with
+ *  <li>ENCRYPTED PRIVATE KEY : {@code PKCS8EncodedKeySpec} (if configured with
  *  decryption)</li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PublicKey} (If configured with
+ *  <li>ENCRYPTED PRIVATE KEY : {@code PublicKey} (if configured with
  *  decryption, the encoding contains a public key, and is passed as a
  *  {@code Class} parameter)</li>
  *  <li>Other types : {@code PEM} </li>
@@ -87,14 +85,14 @@ import java.util.Objects;
  *
  * <p> For {@code PublicKey} and {@code PrivateKey} types, an algorithm-specific
  * subclass is returned if the algorithm is supported. For example, an
- * {@code ECPublicKey} and {@code ECPrivateKey} for Elliptic Curve keys.
+ * {@code ECPublicKey} or an {@code ECPrivateKey} for Elliptic Curve keys.
  *
  * <p> If the PEM type does not have a corresponding class,
  * {@code decode(String)} and {@code decode(InputStream)} will return a
  * {@link PEM} object.
  *
  * <p> The {@link #decode(String, Class)} and
- * {@link #decode(InputStream, Class)} methods take a class parameter which
+ * {@link #decode(InputStream, Class)} methods take a class parameter, which
  * specifies the type of {@code DEREncodable} that is returned. These methods
  * are useful to avoid casting the return type when the PEM type is known, or
  * when extracting a specific type when there is more than one choice.
@@ -111,12 +109,12 @@ import java.util.Objects;
  * with {@link #withFactory(Provider)} or {@link #withDecryption(char[])}.
  * The {@link #withFactory(Provider)} method uses the specified provider
  * to produce cryptographic objects from {@link KeyFactory} and
- * {@link CertificateFactory}. The {@link #withDecryption(char[])} configures the
+ * {@link CertificateFactory}. The {@link #withDecryption(char[])} method configures the
  * decoder to decrypt and decode encrypted private key PEM data using the given
  * password.  If decryption fails, an {@link IllegalArgumentException} is thrown.
  * If an encrypted private key PEM is processed by a decoder not configured
  * for decryption, an {@link EncryptedPrivateKeyInfo} object is returned.
- * Decryption configured instances will decode unencrypted PEM.
+ * A PEMDecoder configured for decryption will decode unencrypted PEM.
  *
  * <p> This class is immutable and thread-safe.
  *
@@ -133,8 +131,10 @@ import java.util.Objects;
  *     DEREncodable pemData = pd.decode(privKeyPEM);
  * }
  *
- * @implNote This implementation decodes PEM type {@code RSA PRIVATE KEY} as
- * {@code PRIVATE KEY}. Other implementations may support additional types.
+ * @implNote This implementation decodes {@code RSA PRIVATE KEY} as {@code PRIVATE KEY},
+ * {@code X509 CERTIFICATE} and {@code X.509 CERTIFICATE} as {@code CERTIFICATE},
+ * and {@code CRL} as {@code X509 CRL}. Other implementations may recognize
+ * additional PEM types.
  *
  * @see PEMEncoder
  * @see PEM
@@ -153,7 +153,7 @@ import java.util.Objects;
 @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMDecoder {
     private final Provider factory;
-    private final PBEKeySpec password;
+    private final PBEKeySpec keySpec;
 
     // Singleton instance for PEMDecoder
     private final static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
@@ -165,8 +165,12 @@ public final class PEMDecoder {
      *                    decryption
      */
     private PEMDecoder(Provider withFactory, PBEKeySpec withPassword) {
-        password = withPassword;
+        keySpec = withPassword;
         factory = withFactory;
+        if (withPassword != null) {
+            final var k = this.keySpec;
+            CleanerFactory.cleaner().register(this, k::clearPassword);
+        }
     }
 
     /**
@@ -196,43 +200,57 @@ public final class PEMDecoder {
                         generatePublic(spec);
                 }
                 case Pem.PRIVATE_KEY -> {
-                    PKCS8Key p8key = new PKCS8Key(decoder.decode(pem.content()));
-                    String algo = p8key.getAlgorithm();
-                    KeyFactory kf = getKeyFactory(algo);
-                    DEREncodable d = kf.generatePrivate(
-                        new PKCS8EncodedKeySpec(p8key.getEncoded(), algo));
+                    DEREncodable d;
+                    PKCS8Key p8key = null;
+                    PKCS8EncodedKeySpec p8spec = null;
+                    byte[] encoding = decoder.decode(pem.content());
 
-                    // Look for a public key inside the pkcs8 encoding.
-                    if (p8key.getPubKeyEncoded() != null) {
-                        // Check if this is a OneAsymmetricKey encoding
-                        X509EncodedKeySpec spec = new X509EncodedKeySpec(
-                            p8key.getPubKeyEncoded(), algo);
-                        yield new KeyPair(getKeyFactory(algo).
-                            generatePublic(spec), (PrivateKey) d);
+                    try {
+                        p8key = new PKCS8Key(encoding);
+                        String algo = p8key.getAlgorithm();
+                        KeyFactory kf = getKeyFactory(algo);
+                        p8spec = new PKCS8EncodedKeySpec(encoding, algo);
+                        d = kf.generatePrivate(p8spec);
 
-                    } else if (d instanceof PKCS8Key p8 &&
-                        p8.getPubKeyEncoded() != null) {
-                        // If the KeyFactory decoded an algorithm-specific
-                        // encodings, look for the public key again.
-                        X509EncodedKeySpec spec = new X509EncodedKeySpec(
-                            p8.getPubKeyEncoded(), algo);
-                        yield new KeyPair(getKeyFactory(algo).
-                            generatePublic(spec), p8);
-                    } else {
-                        // No public key, return the private key.
-                        yield d;
+                        // Look for a public key inside the pkcs8 encoding.
+                        if (p8key.getPubKeyEncoded() != null) {
+                            // Check if this is a OneAsymmetricKey encoding
+                            X509EncodedKeySpec spec = new X509EncodedKeySpec(
+                                p8key.getPubKeyEncoded(), algo);
+                            yield new KeyPair(getKeyFactory(algo).
+                                generatePublic(spec), (PrivateKey) d);
+
+                        } else if (d instanceof PKCS8Key p8 &&
+                            p8.getPubKeyEncoded() != null) {
+                            // If the KeyFactory decoded an algorithm-specific
+                            // encodings, look for the public key again.
+                            X509EncodedKeySpec spec = new X509EncodedKeySpec(
+                                p8.getPubKeyEncoded(), algo);
+                            yield new KeyPair(getKeyFactory(algo).
+                                generatePublic(spec), (PrivateKey) d);
+                        } else {
+                            // No public key, return the private key.
+                            yield d;
+                        }
+                    } finally {
+                        KeyUtil.clear(encoding, p8spec, p8key);
                     }
                 }
                 case Pem.ENCRYPTED_PRIVATE_KEY -> {
-                    if (password == null) {
-                        yield new EncryptedPrivateKeyInfo(decoder.decode(
-                            pem.content()));
+                    byte[] p8 = null;
+                    byte[] encoding = null;
+                    try {
+                        encoding = decoder.decode(pem.content());
+                        var ekpi = new EncryptedPrivateKeyInfo(encoding);
+                        if (keySpec == null) {
+                            yield ekpi;
+                        }
+                        p8 = Pem.decryptEncoding(ekpi, keySpec);
+                        yield Pem.toDEREncodable(p8, true, factory);
+                    } finally {
+                        Reference.reachabilityFence(this);
+                        KeyUtil.clear(encoding, p8);
                     }
-                    byte[] p8 = Pem.decryptEncoding(
-                        decoder.decode(pem.content()), password.getPassword());
-                    DEREncodable d = Pem.toDEREncodable(p8, true, factory);
-                    Arrays.fill(p8, (byte)0x0);
-                    yield d;
                 }
                 case Pem.CERTIFICATE, Pem.X509_CERTIFICATE,
                      Pem.X_509_CERTIFICATE -> {
@@ -277,8 +295,7 @@ public final class PEMDecoder {
      *
      * @param str a String containing PEM data
      * @return a {@code DEREncodable}
-     * @throws IllegalArgumentException on error in decoding or no PEM data
-     * found
+     * @throws IllegalArgumentException on error in decoding or no PEM data found
      * @throws NullPointerException when {@code str} is {@code null}
      */
     public DEREncodable decode(String str) {
@@ -307,10 +324,9 @@ public final class PEMDecoder {
      * returned containing the type identifier, Base64-encoded data, and any
      * leading data preceding the PEM header. For {@code DEREncodable} types
      * other than {@code PEM}, leading data is ignored and not returned as part
-     * of the DEREncodable object.
+     * of the {@code DEREncodable} object.
      *
-     * <p> If no PEM data is found, an {@code IllegalArgumentException} is
-     * thrown.
+     * <p> If no PEM data is found, an {@code EOFException} is thrown.
      *
      * @param is InputStream containing PEM data
      * @return a {@code DEREncodable}
@@ -348,10 +364,9 @@ public final class PEMDecoder {
      * @param <S> Class type parameter that extends {@code DEREncodable}
      * @param str the String containing PEM data
      * @param tClass the returned object class that extends or implements
-     * {@code DEREncodable}
+     *   {@code DEREncodable}
      * @return a {@code DEREncodable} specified by {@code tClass}
-     * @throws IllegalArgumentException on error in decoding or no PEM data
-     * found
+     * @throws IllegalArgumentException on error in decoding or no PEM data found
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
      * @throws NullPointerException when any input values are {@code null}
      */
@@ -383,8 +398,7 @@ public final class PEMDecoder {
      * other than {@code PEM}, leading data is ignored and not returned as part
      * of the DEREncodable object.
      *
-     * <p> If no PEM data is found, an {@code IllegalArgumentException} is
-     * thrown.
+     * <p> If no PEM data is found, an {@code EOFException} is thrown.
      *
      * @param <S> Class type parameter that extends {@code DEREncodable}.
      * @param is an InputStream containing PEM data
@@ -496,12 +510,12 @@ public final class PEMDecoder {
      * Any errors using the {@code Provider} will occur during decoding.
      *
      * @param provider the factory provider
-     * @return a new PEMEncoder instance configured with the {@code Provider}.
+     * @return a new PEMDecoder instance configured with the {@code Provider}
      * @throws NullPointerException if {@code provider} is {@code null}
      */
     public PEMDecoder withFactory(Provider provider) {
         Objects.requireNonNull(provider);
-        return new PEMDecoder(provider, password);
+        return new PEMDecoder(provider, keySpec);
     }
 
     /**

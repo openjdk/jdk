@@ -124,6 +124,15 @@ public class PEMEncoderTest {
         if (!Arrays.equals(origPriv.getEncoded(), newPriv.getEncoded())) {
             throw new AssertionError("compare fails");
         }
+
+        // Encoded non-encrypted Keypair
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XDH");
+        kp = kpg.generateKeyPair();
+        s = PEMEncoder.of().encodeToString(kp);
+        DEREncodable der = d.decode(s);
+        if (!(der instanceof KeyPair)) {
+            throw new AssertionError("returned Private key instead of KeyPair");
+        }
     }
 
     static Map generateObjKeyMap(List<PEMData.Entry> list) {

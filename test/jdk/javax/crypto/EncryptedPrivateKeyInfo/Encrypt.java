@@ -91,8 +91,7 @@ public class Encrypt {
         }
 
         // Test encryptKey(PrivateKey, char[], String, ...) with provider and null algorithm
-        e = EncryptedPrivateKeyInfo.encrypt(priKey, password, null, null,
-                p);
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, password, Pem.DEFAULT_ALGO, null, p);
         assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
 
         // Test encryptKey(PrivateKey, Key, String, ...)
@@ -120,7 +119,7 @@ public class Encrypt {
         }
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and null algorithm
-        e = EncryptedPrivateKeyInfo.encrypt(priKey, key, null, null,
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key, Pem.DEFAULT_ALGO, null,
                 p, new SecureRandom());
         assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
     }

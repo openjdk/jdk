@@ -35,35 +35,35 @@ import java.util.Objects;
 
 /**
  * {@code PEM} is a {@link DEREncodable} that represents Privacy-Enhanced
- * Mail (PEM) data by its type and Base64 content.
+ * Mail (PEM) data by its type and Base64-encoded content.
  *
  * <p> The {@link PEMDecoder#decode(String)} and
  * {@link PEMDecoder#decode(InputStream)} methods return a {@code PEM} object
  * when the data type cannot be represented by a cryptographic object.
- * If you need access to the leading data of a PEM text, or if you want to
+ * If you need access to the leading data of a PEM text, or want to
  * handle the text content directly, use the decoding methods
  * {@link PEMDecoder#decode(String, Class)} or
- * {@link PEMDecoder#decode(InputStream, Class)} with {@code PEM.class} as a
+ * {@link PEMDecoder#decode(InputStream, Class)} with {@code PEM.class} as an
  * argument type.
  *
  * <p> A {@code PEM} object can be encoded back to its textual format by calling
- * {@link #toString()} or using the encode methods in {@link PEMEncoder}.
+ * {@link #toString()} or by using the encode methods in {@link PEMEncoder}.
  *
  * <p> When constructing a {@code PEM} instance, both {@code type} and
  * {@code content} must not be {@code null}.
  *
  * <p>No validation is performed during instantiation to ensure that
  * {@code type} conforms to RFC 7468 or other legacy formats, that
- * {@code content} is valid Base64, or that {@code content} matches the
+ * {@code content} is valid Base64 data, or that {@code content} matches the
  * {@code type}.
 
  * <p> Common {@code type} values include, but are not limited to:
  * CERTIFICATE, CERTIFICATE REQUEST, ATTRIBUTE CERTIFICATE, X509 CRL, PKCS7,
- * CMS, PRIVATE KEY, ENCRYPTED PRIVATE KEY, RSA PRIVATE KEY, or PUBLIC KEY.
+ * CMS, PRIVATE KEY, ENCRYPTED PRIVATE KEY, and PUBLIC KEY.
  *
  * <p> {@code leadingData} is {@code null} if there is no data preceding the PEM
  * header during decoding.  {@code leadingData} can be useful for reading
- * metadata that accompanies the PEM data. This value was not defensively
+ * metadata that accompanies the PEM data. This value is not defensively
  * copied by the constructor, and the {@link #leadingData()} method does not
  * return a clone.
  *
@@ -72,7 +72,7 @@ import java.util.Objects;
  *             "PUBLIC KEY"
  * @param content the Base64-encoded data, excluding the PEM header and footer
  * @param leadingData any non-PEM data that precedes the PEM header during
- *                   decoding.  This value may be {@code null}.
+ *                    decoding.  This value may be {@code null}.
  *
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
@@ -90,14 +90,11 @@ public record PEM(String type, String content, byte[] leadingData)
      * Creates a {@code PEM} instance with the specified parameters.
      *
      * @param type the PEM type identifier
-     * @param content the Base64-encoded data, excluding the PEM header and
-     *               footer
+     * @param content the Base64-encoded data, excluding the PEM header and footer
      * @param leadingData any non-PEM data read during the decoding process
-     *                    before the PEM header.  This value may be {@code null}
-     * @throws IllegalArgumentException if {@code type} is incorrectly
-     * formatted
-     * @throws NullPointerException if {@code type} or {@code content} is
-     * {@code null}
+     *                    before the PEM header.  This value may be {@code null}.
+     * @throws IllegalArgumentException if {@code type} is incorrectly formatted
+     * @throws NullPointerException if {@code type} or {@code content} is {@code null}
      */
     public PEM {
         Objects.requireNonNull(type, "\"type\" cannot be null.");
@@ -107,8 +104,8 @@ public record PEM(String type, String content, byte[] leadingData)
         // including lowercase.  The onus is on the caller.
         if (type.startsWith("-") || type.startsWith("BEGIN ") ||
             type.startsWith("END ")) {
-            throw new IllegalArgumentException("PEM syntax labels found.  " +
-                "Only the PEM type identifier is allowed");
+            throw new IllegalArgumentException("PEM syntax labels found. " +
+                "Only the PEM type identifier is allowed.");
         }
     }
 
@@ -117,12 +114,9 @@ public record PEM(String type, String content, byte[] leadingData)
      * constructor sets {@code leadingData} to {@code null}.
      *
      * @param type the PEM type identifier
-     * @param content the Base64-encoded data, excluding the PEM header and
-     *               footer
-     * @throws IllegalArgumentException if {@code type} is incorrectly
-     * formatted
-     * @throws NullPointerException if {@code type} or {@code content} is
-     * {@code null}
+     * @param content the Base64-encoded data, excluding the PEM header and footer
+     * @throws IllegalArgumentException if {@code type} is incorrectly formatted
+     * @throws NullPointerException if {@code type} or {@code content} is {@code null}
      */
     public PEM(String type, String content) {
         this(type, content, null);
@@ -143,8 +137,8 @@ public record PEM(String type, String content, byte[] leadingData)
      * Returns a Base64-decoded byte array of {@code content}, using
      * {@link Base64#getMimeDecoder()}.
      *
-     * @return a new decoded byte array of {@code content}
-     * @throws IllegalArgumentException on a decoding fails
+     * @return a decoded byte array
+     * @throws IllegalArgumentException if decoding fails
      */
     public byte[] decode() {
         return Base64.getMimeDecoder().decode(content);

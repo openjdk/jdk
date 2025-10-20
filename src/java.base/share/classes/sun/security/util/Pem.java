@@ -25,7 +25,6 @@
 
 package sun.security.util;
 
-import jdk.internal.access.SharedSecrets;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
 
@@ -361,26 +360,30 @@ public class Pem {
         EncryptedPrivateKeyInfo ekpi;
 
         Objects.requireNonNull(password, "password cannot be null");
+        PBEKeySpec keySpec = new PBEKeySpec(password);
         try {
             ekpi = new EncryptedPrivateKeyInfo(encoded);
+            return decryptEncoding(ekpi, keySpec);
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
+        } finally {
+            keySpec.clearPassword();
         }
-        return decryptEncoding(ekpi, password);
     }
 
-    public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi, char[] password)
-        throws GeneralSecurityException {
+    public static byte[] decryptEncoding(EncryptedPrivateKeyInfo ekpi, PBEKeySpec keySpec)
+        throws NoSuchAlgorithmException, InvalidKeyException {
 
-        PBEKeySpec keySpec = new PBEKeySpec(password);
-        SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
-        PKCS8EncodedKeySpec p8KeySpec =
-            ekpi.getKeySpec(skf.generateSecret(keySpec));
-        byte[] result = p8KeySpec.getEncoded();
-            SharedSecrets.getJavaSecuritySpecAccess().
-                clearEncodedKeySpec(p8KeySpec);
-            keySpec.clearPassword();
-        return result;
+        PKCS8EncodedKeySpec p8KeySpec = null;
+        try {
+            SecretKeyFactory skf = SecretKeyFactory.getInstance(ekpi.getAlgName());
+            p8KeySpec = ekpi.getKeySpec(skf.generateSecret(keySpec));
+            return p8KeySpec.getEncoded();
+        } catch (InvalidKeySpecException e) {
+            throw new InvalidKeyException(e);
+        } finally {
+            KeyUtil.clear(p8KeySpec);
+        }
     }
 
 
@@ -406,6 +409,7 @@ public class Pem {
         try {
             p8KeySpec = new PKCS8EncodedKeySpec(encoded);
         } catch (NullPointerException e) {
+            p8key.clear();
             throw new InvalidKeyException("No encoding found", e);
         }
 
@@ -416,9 +420,7 @@ public class Pem {
                 kf = KeyFactory.getInstance(p8key.getAlgorithm(), provider);
             }
         } catch (NoSuchAlgorithmException e) {
-            p8key.clear();
-            SharedSecrets.getJavaSecuritySpecAccess().
-                clearEncodedKeySpec(p8KeySpec);
+            KeyUtil.clear(p8KeySpec, p8key);
             throw new InvalidKeyException("Unable to find the algorithm: " +
                 p8key.getAlgorithm(), e);
         }
@@ -448,9 +450,7 @@ public class Pem {
         } catch (InvalidKeySpecException e) {
             throw new InvalidKeyException(e);
         } finally {
-            p8key.clear();
-            SharedSecrets.getJavaSecuritySpecAccess().
-                clearEncodedKeySpec(p8KeySpec);
+            KeyUtil.clear(p8KeySpec, p8key);
         }
         if (pair && pubKey != null) {
             return new KeyPair(pubKey, privKey);
