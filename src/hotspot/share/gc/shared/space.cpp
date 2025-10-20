@@ -30,7 +30,7 @@
 #include "memory/iterator.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
@@ -53,7 +53,10 @@ void ContiguousSpace::initialize(MemRegion mr,
   set_bottom(bottom);
   set_end(end);
   if (clear_space) {
-    clear(mangle_space);
+    clear(SpaceDecorator::DontMangle);
+  }
+  if (ZapUnusedHeapArea && mangle_space) {
+    mangle_unused_area();
   }
 }
 
@@ -76,10 +79,11 @@ void ContiguousSpace::mangle_unused_area(MemRegion mr) {
 
 #endif  // NOT_PRODUCT
 
-void ContiguousSpace::print() const { print_on(tty); }
+void ContiguousSpace::print() const { print_on(tty, ""); }
 
-void ContiguousSpace::print_on(outputStream* st) const {
-  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+void ContiguousSpace::print_on(outputStream* st, const char* prefix) const {
+  st->print_cr("%sspace %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               prefix,
                capacity() / K, (int) ((double) used() * 100 / capacity()),
                p2i(bottom()), p2i(top()), p2i(end()));
 }
@@ -125,7 +129,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
     HeapWord* obj = top();
     if (pointer_delta(end(), obj) >= size) {
       HeapWord* new_top = obj + size;
-      HeapWord* result = Atomic::cmpxchg(top_addr(), obj, new_top);
+      HeapWord* result = AtomicAccess::cmpxchg(top_addr(), obj, new_top);
       // result can be one of two:
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.

@@ -241,7 +241,7 @@ abstract class XDragSourceProtocol {
         return targetProtocolVersion;
     }
 
-    public static class TargetWindowInfo {
+    public static final class TargetWindowInfo {
         private final long proxyWindow;
         private final int protocolVersion;
         public TargetWindowInfo(long proxy, int version) {

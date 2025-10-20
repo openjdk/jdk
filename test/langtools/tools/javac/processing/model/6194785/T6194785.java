@@ -25,7 +25,7 @@
  * @test
  * @bug     6194785
  * @summary ParameterDeclaration.getSimpleName does not return actual name from class files
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @library /tools/javac/lib
  * @modules java.compiler
  *          jdk.compiler

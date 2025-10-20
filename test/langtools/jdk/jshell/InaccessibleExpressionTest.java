@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,23 +29,21 @@
  *          jdk.jdeps/com.sun.tools.javap
  * @library /tools/lib
  * @build KullaTesting Compiler
- * @run testng InaccessibleExpressionTest
+ * @run junit InaccessibleExpressionTest
  */
 
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import org.testng.annotations.BeforeMethod;
 import jdk.jshell.VarSnippet;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-
-@Test
 public class InaccessibleExpressionTest extends KullaTesting {
 
-    @BeforeMethod
+    @BeforeEach
     @Override
     public void setUp() {
         Path path = Paths.get("eit");
@@ -76,20 +74,22 @@ public class InaccessibleExpressionTest extends KullaTesting {
                 .compilerOptions("--class-path", tpath));
     }
 
+    @Test
     public void testExternal() {
         assertEval("import static priv.GetPriv.*;");
         VarSnippet down = varKey(assertEval("down()", "Packp"));
-        assertEquals(down.typeName(), "priv.Packp");
+        assertEquals("priv.Packp", down.typeName());
         assertEval(down.name() + ".get()", "5");
         VarSnippet list = varKey(assertEval("list()", "[]"));
-        assertEquals(list.typeName(), "priv.MyList");
+        assertEquals("priv.MyList", list.typeName());
         assertEval(list.name() + ".size()", "0");
         VarSnippet one = varKey(assertEval("priv()", "One"));
-        assertEquals(one.typeName(), "priv.GetPriv.Count");
+        assertEquals("priv.GetPriv.Count", one.typeName());
         assertEval("var v = down();", "Packp");
         assertDeclareFail("v.toString()", "compiler.err.not.def.access.class.intf.cant.access");
     }
 
+    @Test
     public void testInternal() {
         assertEval(
                 "class Top {" +
@@ -98,7 +98,7 @@ public class InaccessibleExpressionTest extends KullaTesting {
                 "    }" +
                 "    Inner n = new Inner(); }");
         VarSnippet n = varKey(assertEval("new Top().n", "Inner"));
-        assertEquals(n.typeName(), "Top.Inner");
+        assertEquals("Top.Inner", n.typeName());
     }
 
 }

@@ -61,7 +61,9 @@ public class T6348499 {
                                                   "-processorpath", testClassPath);
             StringWriter out = new StringWriter();
             JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
-            task.call();
+            if (task.call()) {
+                throw new AssertionError("test compilation was expected to fail");
+            }
             String s = out.toString();
             System.err.print(s);
             // Expect the following 1 multi-line diagnostic, and no output to log

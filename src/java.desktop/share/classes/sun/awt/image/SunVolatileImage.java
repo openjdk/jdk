@@ -37,7 +37,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.awt.image.VolatileImage;
 import sun.java2d.SunGraphics2D;
-import sun.java2d.SurfaceManagerFactory;
 import sun.java2d.DestSurfaceProvider;
 import sun.java2d.Surface;
 import sun.java2d.pipe.Region;
@@ -158,29 +157,19 @@ public class SunVolatileImage extends VolatileImage
         return forcedAccelSurfaceType;
     }
 
-    protected VolatileSurfaceManager createSurfaceManager(Object context,
-                                                          ImageCapabilities caps)
-    {
-        /**
-         * Platform-specific SurfaceManagerFactories will return a
-         * manager suited to acceleration on each platform.  But if
-         * the user is asking for a VolatileImage from a BufferedImageGC,
-         * then we need to return the appropriate unaccelerated manager.
-         * Note: this could change in the future; if some platform would
-         * like to accelerate BIGC volatile images, then this special-casing
-         * of the BIGC graphicsConfig should live in platform-specific
-         * code instead.
-         * We do the same for a Printer Device, and if user requested an
-         * unaccelerated VolatileImage by passing the capabilities object.
-         */
-        if (graphicsConfig instanceof BufferedImageGraphicsConfig ||
-            graphicsConfig instanceof sun.print.PrinterGraphicsConfig ||
-            (caps != null && !caps.isAccelerated()))
-        {
+    private VolatileSurfaceManager createSurfaceManager(
+            Object context, ImageCapabilities caps) {
+        // GraphicsConfig may provide some specific surface manager
+        // implementation.
+        // In case it doesn't, or we were specifically requested to use
+        // an unaccelerated surface, fall back to the buffered image
+        // surface manager.
+        if ((caps == null || caps.isAccelerated()) &&
+            graphicsConfig instanceof SurfaceManager.Factory factory) {
+            return factory.createVolatileManager(this, context);
+        } else {
             return new BufImgVolatileSurfaceManager(this, context);
         }
-        SurfaceManagerFactory smf = SurfaceManagerFactory.getInstance();
-        return smf.createVolatileManager(this, context);
     }
 
     private Color getForeground() {

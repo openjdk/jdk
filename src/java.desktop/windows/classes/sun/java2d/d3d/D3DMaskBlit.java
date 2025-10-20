@@ -36,7 +36,7 @@ import sun.java2d.pipe.BufferedMaskBlit;
 import static sun.java2d.loops.CompositeType.*;
 import static sun.java2d.loops.SurfaceType.*;
 
-class D3DMaskBlit extends BufferedMaskBlit {
+final class D3DMaskBlit extends BufferedMaskBlit {
 
     static void register() {
         GraphicsPrimitive[] primitives = {

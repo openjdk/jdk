@@ -35,7 +35,7 @@ import javax.sound.sampled.Mixer;
  * @test
  * @key sound
  * @bug 4946945
- * @summary Crash in javasound while running TicTacToe demo applet tiger b26
+ * @summary Crash in javasound while running TicTacToe demo tiger b26
  */
 public class ClipFlushCrash {
     static int frameCount = 441000; // lets say 10 seconds

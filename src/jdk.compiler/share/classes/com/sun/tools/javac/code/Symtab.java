@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,9 +228,10 @@ public class Symtab {
     public final Type constantBootstrapsType;
     public final Type valueBasedType;
     public final Type valueBasedInternalType;
+    public final Type requiresIdentityType;
+    public final Type requiresIdentityInternalType;
     public final Type classDescType;
     public final Type enumDescType;
-    public final Type ioType;
 
     // For serialization lint checking
     public final Type objectStreamFieldType;
@@ -383,9 +384,15 @@ public class Symtab {
     // Enter a synthetic class that is used to mark classes in ct.sym.
     // This class does not have a class file.
     private Type enterSyntheticAnnotation(String name) {
+        return enterSyntheticAnnotation(names.fromString(name));
+    }
+
+    // Enter a synthetic class that is used to mark classes in ct.sym.
+    // This class does not have a class file.
+    private Type enterSyntheticAnnotation(Name name) {
         // for now, leave the module null, to prevent problems from synthesizing the
         // existence of a class in any specific module, including noModule
-        ClassType type = (ClassType)enterClass(java_base, names.fromString(name)).type;
+        ClassType type = (ClassType)enterClass(java_base, name).type;
         ClassSymbol sym = (ClassSymbol)type.tsym;
         sym.completer = Completer.NULL_COMPLETER;
         sym.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
@@ -611,9 +618,10 @@ public class Symtab {
         constantBootstrapsType = enterClass("java.lang.invoke.ConstantBootstraps");
         valueBasedType = enterClass("jdk.internal.ValueBased");
         valueBasedInternalType = enterSyntheticAnnotation("jdk.internal.ValueBased+Annotation");
+        requiresIdentityType = enterClass("jdk.internal.RequiresIdentity");
+        requiresIdentityInternalType = enterSyntheticAnnotation(names.requiresIdentityInternal);
         classDescType = enterClass("java.lang.constant.ClassDesc");
         enumDescType = enterClass("java.lang.Enum$EnumDesc");
-        ioType = enterClass("java.io.IO");
         // For serialization lint checking
         objectStreamFieldType = enterClass("java.io.ObjectStreamField");
         objectInputStreamType = enterClass("java.io.ObjectInputStream");

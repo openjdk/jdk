@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,92 +26,75 @@
  * @key headful
  * @bug 8077409
  * @summary Drawing deviates when validate() is invoked on java.awt.ScrollPane
- * @author mikhail.cherkasov@oracle.com
  * @run main bug8077409Test
  */
 
-
-import java.awt.*;
-import java.awt.event.*;
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.ScrollPane;
+import java.awt.event.KeyEvent;
 
 public class bug8077409Test extends Frame {
-  ScrollPane pane;
-  MyCanvas myCanvas;
+    ScrollPane pane;
+    MyCanvas myCanvas;
 
-  class MyCanvas extends Canvas {
-    public Dimension getPreferredSize() {
-      return new Dimension(400, 800);
+    public bug8077409Test() {
+        super();
+        setLayout(new BorderLayout());
+        pane = new ScrollPane();
+        myCanvas = new MyCanvas();
+        pane.add(myCanvas);
+        add(pane, BorderLayout.CENTER);
+        setSize(320, 480);
     }
 
-    public void paint(Graphics g) {
-      g.setColor(Color.BLACK);
-      g.drawLine(0, 0, 399, 0);
-      g.setColor(Color.RED);
-      g.drawLine(0, 1, 399, 1);
-      g.setColor(Color.BLUE);
-      g.drawLine(0, 2, 399, 2);
-      g.setColor(Color.GREEN);
-      g.drawLine(0, 3, 399, 3);
-    }
-
-  }
-
-  public bug8077409Test() {
-    super();
-    setLayout(new BorderLayout());
-    pane = new ScrollPane();
-
-    myCanvas = new MyCanvas();
-    pane.add(myCanvas);
-
-    add(pane, BorderLayout.CENTER);
-    setSize(320, 480);
-
-  }
-
-  @Override
-  protected void processKeyEvent(KeyEvent e) {
-    super.processKeyEvent(e);
-
-  }
-
-  public static void main(String[] args) throws AWTException, InterruptedException {
-    final bug8077409Test obj = new bug8077409Test();
-    obj.setVisible(true);
-    Toolkit.getDefaultToolkit().addAWTEventListener(new AWTEventListener() {
-      @Override
-      public void eventDispatched(AWTEvent e) {
-        KeyEvent keyEvent = (KeyEvent) e;
-        if(keyEvent.getID() == KeyEvent.KEY_RELEASED) {
-            if (keyEvent.getKeyCode() == KeyEvent.VK_1) {
-              System.out.println(obj.pane.toString());
-              System.out.println("obj.myCanvas.pos: " + obj.myCanvas.getBounds());
-              System.out.println(obj.myCanvas.toString());
-            }  else if (keyEvent.getKeyCode() == KeyEvent.VK_2) {
-              obj.repaint();
-           } else if (keyEvent.getKeyCode() == KeyEvent.VK_DOWN) {
-              Point scrollPosition = obj.pane.getScrollPosition();
-              scrollPosition.translate(0, 1);
-              obj.pane.setScrollPosition(scrollPosition);
-            } else if (keyEvent.getKeyCode() == KeyEvent.VK_UP) {
-              Point scrollPosition = obj.pane.getScrollPosition();
-              scrollPosition.translate(0, -1);
-              obj.pane.setScrollPosition(scrollPosition);
-            } else if (keyEvent.getKeyCode() == KeyEvent.VK_SPACE) {
-              obj.pane.validate();
+    public static void main(String[] args) throws AWTException, InterruptedException {
+        final bug8077409Test obj = new bug8077409Test();
+        try {
+            obj.setLocationRelativeTo(null);
+            obj.setVisible(true);
+            Point scrollPosition = obj.pane.getScrollPosition();
+            scrollPosition.translate(0, 1);
+            obj.pane.setScrollPosition(scrollPosition);
+            int y = obj.pane.getComponent(0).getLocation().y;
+            obj.pane.validate();
+            if (y != obj.pane.getComponent(0).getLocation().y) {
+                throw new RuntimeException("Wrong position of component in ScrollPane");
             }
-          }
+        } finally {
+            obj.dispose();
         }
-    }, AWTEvent.KEY_EVENT_MASK);
-      Point scrollPosition = obj.pane.getScrollPosition();
-      scrollPosition.translate(0, 1);
-      obj.pane.setScrollPosition(scrollPosition);
+    }
 
-      int y = obj.pane.getComponent(0).getLocation().y;
-      obj.pane.validate();
-      if(y != obj.pane.getComponent(0).getLocation().y){
-          throw new RuntimeException("Wrong position of component in ScrollPane");
-      }
-  }
+    @Override
+    protected void processKeyEvent(KeyEvent e) {
+        super.processKeyEvent(e);
+    }
+
+    class MyCanvas extends Canvas {
+        @Override
+        public Dimension getPreferredSize() {
+            return new Dimension(400, 800);
+        }
+
+        @Override
+        public void paint(Graphics g) {
+            g.setColor(Color.BLACK);
+            g.drawLine(0, 0, 399, 0);
+            g.setColor(Color.RED);
+            g.drawLine(0, 1, 399, 1);
+            g.setColor(Color.BLUE);
+            g.drawLine(0, 2, 399, 2);
+            g.setColor(Color.GREEN);
+            g.drawLine(0, 3, 399, 3);
+        }
+
+    }
 
 }

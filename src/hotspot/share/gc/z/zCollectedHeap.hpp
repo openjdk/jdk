@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZCOLLECTEDHEAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/softRefPolicy.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zHeap.hpp"
 #include "gc/z/zInitialize.hpp"
@@ -55,6 +54,9 @@ private:
                               size_t requested_size,
                               size_t* actual_size) override;
 
+  void print_tracing_info() const override;
+  void stop() override;
+
 public:
   static ZCollectedHeap* heap();
 
@@ -63,19 +65,17 @@ public:
   const char* name() const override;
   jint initialize() override;
   void initialize_serviceability() override;
-  void stop() override;
 
   size_t max_capacity() const override;
   size_t capacity() const override;
   size_t used() const override;
   size_t unused() const override;
 
-  bool is_maximal_no_gc() const override;
   bool is_in(const void* p) const override;
   bool requires_barriers(stackChunkOop obj) const override;
 
   oop array_allocate(Klass* klass, size_t size, int length, bool do_zero, TRAPS) override;
-  HeapWord* mem_allocate(size_t size, bool* gc_overhead_limit_was_exceeded) override;
+  HeapWord* mem_allocate(size_t size) override;
   MetaWord* satisfy_failed_metadata_allocation(ClassLoaderData* loader_data,
                                                size_t size,
                                                Metaspace::MetadataType mdtype) override;
@@ -115,9 +115,8 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
-  void print_on(outputStream* st) const override;
-  void print_on_error(outputStream* st) const override;
-  void print_tracing_info() const override;
+  void print_heap_on(outputStream* st) const override;
+  void print_gc_on(outputStream* st) const override;
   bool print_location(outputStream* st, void* addr) const override;
 
   void prepare_for_verify() override;

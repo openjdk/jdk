@@ -26,18 +26,19 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
 
-#include "memory/iterator.hpp"
-#include "oops/oop.hpp"
-#include "oops/objArrayOop.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
+
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
+#include "oops/objArrayOop.hpp"
+#include "oops/oop.hpp"
 
 // Process all objects starting within count clusters beginning with first_cluster and for which the start address is
 // less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,
@@ -342,9 +343,9 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
     }
   }
 
-  log_debug(gc)("Remembered set scan processing Region %zu, from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
-                region->index(), p2i(start_of_range), p2i(end_of_range),
-                use_write_table? "read/write (updating)": "read (marking)");
+  log_debug(gc, remset)("Remembered set scan processing Region %zu, from " PTR_FORMAT " to " PTR_FORMAT ", using %s table",
+                        region->index(), p2i(start_of_range), p2i(end_of_range),
+                        use_write_table? "read/write (updating)": "read (marking)");
 
   // Note that end_of_range may point to the middle of a cluster because we limit scanning to
   // region->top() or region->get_update_watermark(). We avoid processing past end_of_range.
@@ -368,7 +369,7 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   if (_index >= _total_chunks) {
     return false;
   }
-  size_t new_index = Atomic::add(&_index, (size_t) 1, memory_order_relaxed);
+  size_t new_index = AtomicAccess::add(&_index, (size_t) 1, memory_order_relaxed);
   if (new_index > _total_chunks) {
     // First worker that hits new_index == _total_chunks continues, other
     // contending workers return false.

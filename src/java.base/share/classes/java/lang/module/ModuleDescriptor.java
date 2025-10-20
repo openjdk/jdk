@@ -54,6 +54,8 @@ import static java.util.Objects.*;
 
 import jdk.internal.module.Checks;
 import jdk.internal.module.ModuleInfo;
+import jdk.internal.vm.annotation.AOTRuntimeSetup;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 
 /**
@@ -91,6 +93,7 @@ import jdk.internal.module.ModuleInfo;
  * @since 9
  */
 
+@AOTSafeClassInitializer
 public final class ModuleDescriptor
     implements Comparable<ModuleDescriptor>
 {
@@ -1516,11 +1519,7 @@ public final class ModuleDescriptor
     }
 
     /**
-     * Returns the set of packages in the module.
-     *
-     * <p> The set of packages includes all exported and open packages, as well
-     * as the packages of any service providers, and the package for the main
-     * class. </p>
+     * Returns the set of all packages in the module.
      *
      * @return A possibly-empty unmodifiable set of the packages in the module
      */
@@ -2020,7 +2019,7 @@ public final class ModuleDescriptor
 
         /**
          * Provides a service with one or more implementations. The package for
-         * each {@link Provides#providers provider} (or provider factory) is
+         * each {@link Provides#providers() provider} (or provider factory) is
          * added to the module if not already added.
          *
          * @param  p
@@ -2669,6 +2668,11 @@ public final class ModuleDescriptor
     }
 
     static {
+        runtimeSetup();
+    }
+
+    @AOTRuntimeSetup
+    private static void runtimeSetup() {
         /**
          * Setup the shared secret to allow code in other packages access
          * private package methods in java.lang.module.

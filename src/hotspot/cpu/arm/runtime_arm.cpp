@@ -47,13 +47,16 @@ UncommonTrapBlob* OptoRuntime::generate_uncommon_trap_blob() {
   ResourceMark rm;
 
   // setup code generation tools
-  const char* name = OptoRuntime::stub_name(OptoStubId::uncommon_trap_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_uncommon_trap_id);
 #ifdef _LP64
   CodeBuffer buffer(name, 2700, 512);
 #else
   // Measured 8/7/03 at 660 in 32bit debug build
   CodeBuffer buffer(name, 2000, 512);
 #endif
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   // bypassed when code generation useless
   MacroAssembler* masm               = new MacroAssembler(&buffer);
   const Register Rublock = R6;
@@ -207,8 +210,11 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
 
   // setup code generation tools
   // Measured 8/7/03 at 256 in 32bit debug build
-  const char* name = OptoRuntime::stub_name(OptoStubId::exception_id);
+  const char* name = OptoRuntime::stub_name(StubId::c2_exception_id);
   CodeBuffer buffer(name, 600, 512);
+  if (buffer.blob() == nullptr) {
+    return nullptr;
+  }
   MacroAssembler* masm     = new MacroAssembler(&buffer);
 
   int framesize_in_words = 2; // FP + LR
@@ -257,11 +263,6 @@ ExceptionBlob* OptoRuntime::generate_exception_blob() {
   __ reset_last_Java_frame(Rtemp);
 
   __ raw_pop(FP, LR);
-
-  // Restore SP from its saved reg (FP) if the exception PC is a MethodHandle call site.
-  __ ldr(Rtemp, Address(Rthread, JavaThread::is_method_handle_return_offset()));
-  __ cmp(Rtemp, 0);
-  __ mov(SP, Rmh_SP_save, ne);
 
   // R0 contains handler address
   // Since this may be the deopt blob we must set R5 to look like we returned

@@ -26,16 +26,17 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
-#include "gc/shared/plab.hpp"
-#include "gc/shared/gcThreadLocalData.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcThreadLocalData.hpp"
+#include "gc/shared/plab.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/sizes.hpp"
@@ -56,8 +57,6 @@ private:
   // In generational mode, it is exclusive to the young generation.
   PLAB* _gclab;
   size_t _gclab_size;
-
-  double _paced_time;
 
   // Thread-local allocation buffer only used in generational mode.
   // Used both by mutator threads and by GC worker threads
@@ -159,20 +158,15 @@ public:
     data(thread)->_gclab_size = v;
   }
 
-  static void begin_evacuation(Thread* thread, size_t bytes) {
-    data(thread)->_evacuation_stats->begin_evacuation(bytes);
+  static void begin_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->begin_evacuation(bytes, from, to);
   }
 
-  static void end_evacuation(Thread* thread, size_t bytes) {
-    data(thread)->_evacuation_stats->end_evacuation(bytes);
-  }
-
-  static void record_age(Thread* thread, size_t bytes, uint age) {
-    data(thread)->_evacuation_stats->record_age(bytes, age);
+  static void end_evacuation(Thread* thread, size_t bytes, ShenandoahAffiliation from, ShenandoahAffiliation to) {
+    data(thread)->_evacuation_stats->end_evacuation(bytes, from, to);
   }
 
   static ShenandoahEvacuationStats* evacuation_stats(Thread* thread) {
-    shenandoah_assert_generational();
     return data(thread)->_evacuation_stats;
   }
 
@@ -235,18 +229,6 @@ public:
 
   static size_t get_plab_actual_size(Thread* thread) {
     return data(thread)->_plab_actual_size;
-  }
-
-  static void add_paced_time(Thread* thread, double v) {
-    data(thread)->_paced_time += v;
-  }
-
-  static double paced_time(Thread* thread) {
-    return data(thread)->_paced_time;
-  }
-
-  static void reset_paced_time(Thread* thread) {
-    data(thread)->_paced_time = 0;
   }
 
   // Evacuation OOM handling

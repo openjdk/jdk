@@ -36,7 +36,7 @@
 //=============================================================================
 //------------------------------MultiNode--------------------------------------
 const RegMask &MultiNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 Node *MultiNode::match( const ProjNode *proj, const Matcher *m ) { return proj->clone(); }
@@ -120,6 +120,10 @@ const TypePtr *ProjNode::adr_type() const {
   if (bottom_type() == Type::MEMORY) {
     // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
     Node* ctrl = in(0);
+    if (ctrl->Opcode() == Op_Tuple) {
+      // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
+      ctrl = ctrl->in(_con);
+    }
     if (ctrl == nullptr)  return nullptr; // node is dead
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
@@ -163,6 +167,15 @@ void ProjNode::check_con() const {
   assert(_con < t->is_tuple()->cnt(), "ProjNode::_con must be in range");
 }
 
+//------------------------------Identity---------------------------------------
+Node* ProjNode::Identity(PhaseGVN* phase) {
+  if (in(0) != nullptr && in(0)->Opcode() == Op_Tuple) {
+    // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
+    return in(0)->in(_con);
+  }
+  return this;
+}
+
 //------------------------------Value------------------------------------------
 const Type* ProjNode::Value(PhaseGVN* phase) const {
   if (in(0) == nullptr) return Type::TOP;
@@ -172,7 +185,7 @@ const Type* ProjNode::Value(PhaseGVN* phase) const {
 //------------------------------out_RegMask------------------------------------
 // Pass the buck uphill
 const RegMask &ProjNode::out_RegMask() const {
-  return RegMask::Empty;
+  return RegMask::EMPTY;
 }
 
 //------------------------------ideal_reg--------------------------------------

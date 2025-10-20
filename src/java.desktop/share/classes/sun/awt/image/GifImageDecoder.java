@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  */
 package sun.awt.image;
 
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.io.InputStream;
 import java.io.IOException;
@@ -568,6 +569,9 @@ public class GifImageDecoder extends ImageDecoder {
                               global_height-height-y, model, trans_rasline,
                               0, 0);
                 }
+            }
+            if (model.getTransparentPixel() > 0) {
+                Arrays.fill(saved_image, (byte) model.getTransparentPixel());
             }
         }
 

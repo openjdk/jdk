@@ -412,7 +412,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   size_t defrag_count = 0;
   size_t total_uncollected_old_regions = _last_old_region - _last_old_collection_candidate;
 
-  if (cand_idx > _last_old_collection_candidate) {
+  if ((ShenandoahGenerationalHumongousReserve > 0) && (cand_idx > _last_old_collection_candidate)) {
     // Above, we have added into the set of mixed-evacuation candidates all old-gen regions for which the live memory
     // that they contain is below a particular old-garbage threshold.  Regions that were not selected for the collection
     // set hold enough live memory that it is not considered efficient (by "garbage-first standards") to compact these
@@ -639,12 +639,9 @@ bool ShenandoahOldHeuristics::should_resume_old_cycle() {
 bool ShenandoahOldHeuristics::should_start_gc() {
 
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (_old_generation->is_doing_mixed_evacuations()) {
-    // Do not try to start an old cycle if we are waiting for old regions to be evacuated (we need
-    // a young cycle for this). Note that the young heuristic has a feature to expedite old evacuations.
-    // Future refinement: under certain circumstances, we might be more sophisticated about this choice.
-    // For example, we could choose to abandon the previous old collection before it has completed evacuations.
-    log_debug(gc)("Not starting an old cycle because we are waiting for mixed evacuations");
+  if (!_old_generation->is_idle()) {
+    // Do not try to start an old cycle if old-gen is marking, doing mixed evacuations, or coalescing and filling.
+    log_debug(gc)("Not starting an old cycle because old gen is busy");
     return false;
   }
 

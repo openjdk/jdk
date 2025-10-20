@@ -26,6 +26,13 @@
 #ifndef CPU_AARCH64_STUBDECLARATIONS_HPP
 #define CPU_AARCH64_STUBDECLARATIONS_HPP
 
+#define STUBGEN_PREUNIVERSE_BLOBS_ARCH_DO(do_stub,                      \
+                                          do_arch_blob,                 \
+                                          do_arch_entry,                \
+                                          do_arch_entry_init)           \
+  do_arch_blob(preuniverse, 0)                                          \
+
+
 #define STUBGEN_INITIAL_BLOBS_ARCH_DO(do_stub,                          \
                                       do_arch_blob,                     \
                                       do_arch_entry,                    \
@@ -44,7 +51,7 @@
                                        do_arch_blob,                    \
                                        do_arch_entry,                   \
                                        do_arch_entry_init)              \
-  do_arch_blob(compiler, 55000 ZGC_ONLY(+5000))                         \
+  do_arch_blob(compiler, 70000)                                         \
   do_stub(compiler, vector_iota_indices)                                \
   do_arch_entry(aarch64, compiler, vector_iota_indices,                 \
                 vector_iota_indices, vector_iota_indices)               \
@@ -109,7 +116,7 @@
                                     do_arch_blob,                       \
                                     do_arch_entry,                      \
                                     do_arch_entry_init)                 \
-  do_arch_blob(final, 20000 ZGC_ONLY(+60000))                           \
+  do_arch_blob(final, 20000 ZGC_ONLY(+85000))                           \
   do_stub(final, copy_byte_f)                                           \
   do_arch_entry(aarch64, final, copy_byte_f, copy_byte_f,               \
                 copy_byte_f)                                            \

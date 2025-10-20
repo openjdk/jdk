@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Reference;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.security.GeneralSecurityException;
 import java.security.KeyRep;
 import java.security.MessageDigest;
@@ -45,8 +43,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 
 import jdk.internal.ref.CleanerFactory;
-
-import static java.nio.charset.StandardCharsets.UTF_8;
+import sun.security.util.PBEUtil;
 
 /**
  * This class represents a PBE key derived using PBKDF2 defined
@@ -72,18 +69,6 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     private final transient Mac prf;
     private final transient Cleaner.Cleanable cleaner;
 
-    private static byte[] getPasswordBytes(char[] passwd) {
-        CharBuffer cb = CharBuffer.wrap(passwd);
-        ByteBuffer bb = UTF_8.encode(cb);
-
-        int len = bb.limit();
-        byte[] passwdBytes = new byte[len];
-        bb.get(passwdBytes, 0, len);
-        bb.clear().put(new byte[len]);
-
-        return passwdBytes;
-    }
-
     /**
      * Creates a PBE key from a given PBE key specification.
      *
@@ -93,8 +78,8 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     PBKDF2KeyImpl(PBEKeySpec keySpec, String prfAlgo)
         throws InvalidKeySpecException {
         this.passwd = keySpec.getPassword();
-        // Convert the password from char[] to byte[]
-        byte[] passwdBytes = getPasswordBytes(this.passwd);
+        // Convert the password from char[] to byte[] in UTF-8
+        byte[] passwdBytes = PBEUtil.encodePassword(this.passwd);
 
         byte[] key = null;
         try {

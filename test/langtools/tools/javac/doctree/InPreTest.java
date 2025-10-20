@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8078320 8273244 8284908 8352249
+ * @bug 8078320 8273244 8284908 8352249 8352389
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -159,6 +159,50 @@ DocComment[DOC_COMMENT, pos:1
     Text[TEXT, pos:6, _abc]
     Literal[CODE, pos:10, |def__]
     Text[TEXT, pos:23, ghi]
+  body: 1
+    EndElement[END_ELEMENT, pos:26, pre]
+  block tags: empty
+]
+*/
+    /**
+     * <pre> {@code
+     * abc  }
+     * def</pre>
+     */
+    public void in_pre_with_space_at_code_nl() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 3
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    Literal[CODE, pos:6, abc__]
+    Text[TEXT, pos:19, |def]
+  body: 1
+    EndElement[END_ELEMENT, pos:23, pre]
+  block tags: empty
+]
+*/
+    /**
+     * <pre> <code>
+     *   abc
+     * </code></pre>
+     */
+    public void in_pre_with_space_code_nl() { }
+/*
+DocComment[DOC_COMMENT, pos:0
+  firstSentence: 4
+    StartElement[START_ELEMENT, pos:0
+      name:pre
+      attributes: empty
+    ]
+    StartElement[START_ELEMENT, pos:6
+      name:code
+      attributes: empty
+    ]
+    Text[TEXT, pos:13, __abc|]
+    EndElement[END_ELEMENT, pos:19, code]
   body: 1
     EndElement[END_ELEMENT, pos:26, pre]
   block tags: empty

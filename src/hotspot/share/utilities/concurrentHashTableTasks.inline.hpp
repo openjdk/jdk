@@ -27,9 +27,9 @@
 
 // No concurrentHashTableTasks.hpp
 
-#include "runtime/atomic.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/concurrentHashTable.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // This inline file contains BulkDeleteTask and GrowTasks which are both bucket
 // operations, which they are serialized with each other.
@@ -62,8 +62,8 @@ public:
     }
 
     bool claim(size_t* start, size_t* stop) {
-      if (Atomic::load(&_next) < _limit) {
-        size_t claimed = Atomic::fetch_then_add(&_next, _size);
+      if (AtomicAccess::load(&_next) < _limit) {
+        size_t claimed = AtomicAccess::fetch_then_add(&_next, _size);
         if (claimed < _limit) {
           *start = claimed;
           *stop  = MIN2(claimed + _size, _limit);
@@ -78,7 +78,7 @@ public:
     }
 
     bool have_more_work() {
-      return Atomic::load_acquire(&_next) >= _limit;
+      return AtomicAccess::load_acquire(&_next) >= _limit;
     }
   };
 

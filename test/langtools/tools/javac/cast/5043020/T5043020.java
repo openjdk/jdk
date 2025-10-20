@@ -25,7 +25,7 @@
  * @test
  * @bug     5043020
  * @summary Spurious unchecked cast warning
- * @author  Peter von der Ah\u00e9
+ * @author  Peter von der Ahé
  * @compile -Werror -Xlint:unchecked T5043020.java
  */
 

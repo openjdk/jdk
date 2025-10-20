@@ -43,7 +43,9 @@ class PartialArraySplitter {
   TASKQUEUE_STATS_ONLY(PartialArrayTaskStats _stats;)
 
 public:
-  PartialArraySplitter(PartialArrayStateManager* manager, uint num_workers);
+  PartialArraySplitter(PartialArrayStateManager* manager,
+                       uint num_workers,
+                       size_t chunk_size);
   ~PartialArraySplitter() = default;
 
   NONCOPYABLE(PartialArraySplitter);

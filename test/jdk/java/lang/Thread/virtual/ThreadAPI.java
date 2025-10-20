@@ -27,7 +27,6 @@
  * @summary Test Thread API with virtual threads
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
  * @run junit/othervm/native --enable-native-access=ALL-UNNAMED ThreadAPI
  */
 
@@ -36,7 +35,6 @@
  * @requires vm.continuations
  * @modules java.base/java.lang:+open jdk.management
  * @library /test/lib
- * @build LockingMode
  * @run junit/othervm/native -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations
  *     --enable-native-access=ALL-UNNAMED ThreadAPI
  */
@@ -70,7 +68,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -253,35 +250,6 @@ class ThreadAPI {
         }
 
         assertThrows(NullPointerException.class, () -> Thread.startVirtualThread(null));
-    }
-
-    /**
-     * Test Thread::stop from current thread.
-     */
-    @Test
-    void testStop1() throws Exception {
-        VThreadRunner.run(() -> {
-            Thread t = Thread.currentThread();
-            assertThrows(UnsupportedOperationException.class, t::stop);
-        });
-    }
-
-    /**
-     * Test Thread::stop from another thread.
-     */
-    @Test
-    void testStop2() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> {
-            try {
-                Thread.sleep(20*1000);
-            } catch (InterruptedException e) { }
-        });
-        try {
-            assertThrows(UnsupportedOperationException.class, thread::stop);
-        } finally {
-            thread.interrupt();
-            thread.join();
-        }
     }
 
     /**
@@ -1112,7 +1080,6 @@ class ThreadAPI {
      * Test Thread.yield releases carrier thread when virtual thread holds a monitor.
      */
     @Test
-    @DisabledIf("LockingMode#isLegacy")
     void testYieldReleasesCarrierWhenHoldingMonitor() throws Exception {
         assumeTrue(VThreadScheduler.supportsCustomScheduler(), "No support for custom schedulers");
         var list = new CopyOnWriteArrayList<String>();

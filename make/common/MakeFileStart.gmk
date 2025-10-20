@@ -47,7 +47,7 @@ endif
 # We need spec.gmk to get $(TOPDIR)
 include $(SPEC)
 
-THIS_MAKEFILE := $(patsubst make/%,%,$(patsubst $(TOPDIR)/%,%,$(THIS_MAKEFILE_PATH)))
+THIS_MAKEFILE := $(patsubst make/%,%,$(patsubst $(TOPDIR_ALT)/make/%,%,$(patsubst $(TOPDIR)/%,%,$(THIS_MAKEFILE_PATH))))
 
 ifeq ($(LOG_FLOW), true)
   $(info :Enter $(THIS_MAKEFILE))

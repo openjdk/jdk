@@ -32,6 +32,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
@@ -55,6 +56,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   bool           _is_wait;
   bool        _at_reenter;
   bool       _interrupted;
+  bool     _do_timed_park;
   bool            _active;    // Contention monitoring is enabled
  public:
   ObjectWaiter(JavaThread* current);
@@ -72,20 +74,19 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 
-  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
   void set_bad_pointers() {
 #ifdef ASSERT
-    this->_prev  = badObjectWaiterPtr;
-    this->_next  = badObjectWaiterPtr;
+    this->_prev  = (ObjectWaiter*) badAddressVal;
+    this->_next  = (ObjectWaiter*) badAddressVal;
     this->TState = ObjectWaiter::TS_RUN;
 #endif
   }
   ObjectWaiter* next() {
-    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    assert (_next != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _next;
   }
   ObjectWaiter* prev() {
-    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    assert (_prev != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _prev;
   }
 };
@@ -148,9 +149,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 #define OM_CACHE_LINE_SIZE DEFAULT_CACHE_LINE_SIZE
 
 class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
-  friend class LightweightSynchronizer;
-  friend class ObjectSynchronizer;
-  friend class ObjectWaiter;
   friend class VMStructs;
   JVMCI_ONLY(friend class JVMCIVMStructs;)
 
@@ -163,9 +161,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   // Because of frequent access, the metadata field is at offset zero (0).
   // Enforced by the assert() in metadata_addr().
-  // * LM_LIGHTWEIGHT with UseObjectMonitorTable:
-  // Contains the _object's hashCode.
-  // * LM_LEGACY, LM_MONITOR, LM_LIGHTWEIGHT without UseObjectMonitorTable:
+  // * Lightweight locking with UseObjectMonitorTable:
+  //   Contains the _object's hashCode.
+  // * * Lightweight locking without UseObjectMonitorTable:
   // Contains the displaced object header word - mark
   volatile uintptr_t _metadata;     // metadata
   WeakHandle _object;               // backward object pointer
@@ -202,13 +200,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
+  int64_t _unmounted_vthreads;      // Number of nodes in the _entry_list associated with unmounted vthreads.
+                                    // It might be temporarily more than the actual number but never less.
 
   ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
   volatile int _wait_set_lock;      // protects wait set queue - simple spinlock
-
-  // Used in LM_LEGACY mode to store BasicLock* in case of inflation by contending thread.
-  BasicLock* volatile _stack_locker;
 
  public:
 
@@ -287,7 +284,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Same as above but uses owner_id of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
-  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // old_value, using AtomicAccess::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
   // Same as above but uses owner_id of current as new_value.
@@ -321,10 +318,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
     set_owner_from(ANONYMOUS_OWNER, owner);
   }
 
-  // Get and set _stack_locker.
-  BasicLock* stack_locker() const;
-  void set_stack_locker(BasicLock* locker);
-
   // Simply get _next_om field.
   ObjectMonitor* next_om() const;
   // Simply set _next_om field to new_value.
@@ -334,6 +327,10 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      add_to_contentions(int value);
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
+  void      increment_recursions(JavaThread* current);
+  void      inc_unmounted_vthreads();
+  void      dec_unmounted_vthreads();
+  bool      has_unmounted_vthreads() const;
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
@@ -385,6 +382,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   void      wait(jlong millis, bool interruptible, TRAPS);
   void      notify(TRAPS);
   void      notifyAll(TRAPS);
+  void      quick_notify(JavaThread* current);
+  void      quick_notifyAll(JavaThread* current);
 
   void      print() const;
 #ifdef ASSERT
@@ -422,13 +421,12 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   bool      short_fixed_spin(JavaThread* current, int spin_count, bool adapt);
   void      exit_epilog(JavaThread* current, ObjectWaiter* Wakee);
 
+ public:
   // Deflation support
   bool      deflate_monitor(Thread* current);
- private:
   void      install_displaced_markword_in_object(const oop obj);
 
   // JFR support
-public:
   static bool is_jfr_excluded(const Klass* monitor_klass);
 };
 

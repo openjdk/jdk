@@ -70,7 +70,7 @@ public:
   ~G1CardSetTest() { }
 
   static uint next_random(uint& seed, uint i) {
-    // Park–Miller random number generator
+    // Park-Miller random number generator
     seed = (seed * 279470273u) % 0xfffffffb;
     return (seed % i);
   }
@@ -413,8 +413,8 @@ public:
         found++;
       }
     }
-    Atomic::add(&_added, added);
-    Atomic::add(&_found, found);
+    AtomicAccess::add(&_added, added);
+    AtomicAccess::add(&_found, found);
   }
 
   size_t added() const { return _added; }

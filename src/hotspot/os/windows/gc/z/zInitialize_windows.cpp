@@ -24,6 +24,9 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zSyscall_windows.hpp"
 
+void ZVirtualMemoryReserverImpl_initialize();
+
 void ZInitialize::pd_initialize() {
   ZSyscall::initialize();
+  ZVirtualMemoryReserverImpl_initialize();
 }

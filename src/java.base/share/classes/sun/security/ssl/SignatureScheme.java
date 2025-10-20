@@ -132,8 +132,9 @@ enum SignatureScheme {
                                     "DSA",
                                     ProtocolVersion.PROTOCOLS_TO_12),
     ECDSA_SHA1              (0x0203, "ecdsa_sha1", "SHA1withECDSA",
-                                    "EC",
-                                    ProtocolVersion.PROTOCOLS_TO_13),
+                                    "EC", null, null, -1,
+                                    ProtocolVersion.PROTOCOLS_TO_13,
+                                    ProtocolVersion.PROTOCOLS_TO_12),
     RSA_PKCS1_SHA1          (0x0201, "rsa_pkcs1_sha1", "SHA1withRSA",
                                     "RSA", null, null, 511,
                                     ProtocolVersion.PROTOCOLS_TO_13,
@@ -145,12 +146,12 @@ enum SignatureScheme {
                                     "RSA", 511,
                                     ProtocolVersion.PROTOCOLS_TO_12);
 
-    final int id;                       // hash + signature
-    final String name;                  // literal name
-    private final String algorithm;     // signature algorithm
-    final String keyAlgorithm;          // signature key algorithm
-    private final SigAlgParamSpec signAlgParams;    // signature parameters
-    private final NamedGroup namedGroup;    // associated named group
+    final int id;                         // hash + signature
+    final String name;                    // literal name
+    final String algorithm;               // signature algorithm
+    final String keyAlgorithm;            // signature key algorithm
+    final SigAlgParamSpec signAlgParams;  // signature parameters
+    private final NamedGroup namedGroup;  // associated named group
 
     // The minimal required key size in bits.
     //
@@ -184,7 +185,7 @@ enum SignatureScheme {
         RSA_PSS_SHA384 ("SHA-384", 48),
         RSA_PSS_SHA512 ("SHA-512", 64);
 
-        private final AlgorithmParameterSpec parameterSpec;
+        final AlgorithmParameterSpec parameterSpec;
         private final AlgorithmParameters parameters;
         private final boolean isAvailable;
 
@@ -373,9 +374,40 @@ enum SignatureScheme {
                 && (namedGroup == null || namedGroup.isPermitted(constraints));
     }
 
+    // Helper method to update all locally supported signature schemes for
+    // a given HandshakeContext.
+    static void updateHandshakeLocalSupportedAlgs(HandshakeContext hc) {
+        // To improve performance we only update when necessary.
+        // No need to do anything if we already computed the local supported
+        // algorithms and either there is no negotiated protocol yet or the
+        // only active protocol ends up to be the negotiated protocol.
+        if (hc.localSupportedSignAlgs != null
+                && hc.localSupportedCertSignAlgs != null
+                && (hc.negotiatedProtocol == null
+                || hc.activeProtocols.size() == 1)) {
+            return;
+        }
+
+        List<ProtocolVersion> protocols = hc.negotiatedProtocol != null ?
+                List.of(hc.negotiatedProtocol) :
+                hc.activeProtocols;
+
+        hc.localSupportedSignAlgs = getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                protocols,
+                HANDSHAKE_SCOPE);
+
+        hc.localSupportedCertSignAlgs = getSupportedAlgorithms(
+                hc.sslConfig,
+                hc.algorithmConstraints,
+                protocols,
+                CERTIFICATE_SCOPE);
+    }
+
     // Get local supported algorithm collection complying to algorithm
     // constraints and SSL scopes.
-    static List<SignatureScheme> getSupportedAlgorithms(
+    private static List<SignatureScheme> getSupportedAlgorithms(
             SSLConfiguration config,
             SSLAlgorithmConstraints constraints,
             List<ProtocolVersion> activeProtocols,

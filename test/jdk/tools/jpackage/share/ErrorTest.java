@@ -26,8 +26,10 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.test.CannedFormattedString.cannedAbsolutePath;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +43,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.TokenReplace;
+import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
@@ -87,7 +90,27 @@ public final class ErrorTest {
 
             return appImageCmd.outputBundle().toString();
         }),
-        ADD_LAUNCHER_PROPERTY_FILE;
+        INVALID_MAC_RUNTIME_BUNDLE(toFunction(cmd -> {
+            // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib".
+            final Path root = TKit.createTempDirectory("mac-invalid-runtime-bundle");
+            Files.createDirectories(root.resolve("Contents/Home"));
+            Files.createFile(root.resolve("Contents/Info.plist"));
+            Files.createDirectories(root.resolve("Contents/MacOS"));
+            Files.createFile(root.resolve("Contents/MacOS/libjli.dylib"));
+            return root.toString();
+        })),
+        INVALID_MAC_RUNTIME_IMAGE(toFunction(cmd -> {
+            // Has some files in the "lib" subdirectory, but doesn't have the "lib/libjli.dylib" file.
+            final Path root = TKit.createTempDirectory("mac-invalid-runtime-image");
+            Files.createDirectories(root.resolve("lib"));
+            Files.createFile(root.resolve("lib/foo"));
+            return root.toString();
+        })),
+        EMPTY_DIR(toFunction(cmd -> {
+            return TKit.createTempDirectory("empty-dir");
+        })),
+        ADD_LAUNCHER_PROPERTY_FILE,
+        ;
 
         private Token() {
             this.valueSupplier = Optional.empty();
@@ -575,6 +598,9 @@ public final class ErrorTest {
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
 
+        invalidShortcut(testCases::add, "--win-menu");
+        invalidShortcut(testCases::add, "--win-shortcut");
+
         return toTestArgs(testCases.stream());
     }
 
@@ -598,12 +624,10 @@ public final class ErrorTest {
                         .error("message.invalid-identifier", "#1"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
-                        .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
-                testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
-                        .error("ERR_MacAppStoreRuntimeBinExists", JPackageCommand.cannedArgument(cmd -> {
-                            return Path.of(cmd.getArgumentValue("--runtime-image")).toAbsolutePath();
-                        }, Token.JAVA_HOME.token()))
+                        .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands")
         ).map(TestSpec.Builder::create).toList());
+
+        macInvalidRuntime(testCases::add);
 
         // Test a few app-image options that should not be used when signing external app image
         testCases.addAll(Stream.of(
@@ -641,7 +665,47 @@ public final class ErrorTest {
                         .error("error.rpm-invalid-value-for-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
 
+        invalidShortcut(testCases::add, "--linux-shortcut");
+
         return toTestArgs(testCases.stream());
+    }
+
+    @Test(ifOS = MACOS)
+    @Parameter({"MAC_PKG", "--mac-signing-key-user-name", "false"})
+    @Parameter({"MAC_DMG", "--mac-signing-key-user-name", "false"})
+    @Parameter({"IMAGE", "--mac-signing-key-user-name", "false"})
+    @Parameter({"MAC_PKG", "--mac-app-image-sign-identity", "true"})
+    @Parameter({"MAC_DMG", "--mac-app-image-sign-identity", "true"})
+    @Parameter({"IMAGE", "--mac-app-image-sign-identity", "true"})
+    @Parameter({"MAC_PKG", "--mac-installer-sign-identity", "true"})
+    public static void testMacSigningIdentityValidation(PackageType type, String option, boolean passThroughOption) {
+
+        final var signingId = "foo";
+
+        final List<CannedFormattedString> errorMessages = new ArrayList<>();
+        errorMessages.add(JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.cert.not.found", "Developer ID Application: " + signingId, ""));
+        errorMessages.addAll(Stream.of(
+                "error.explicit-sign-no-cert",
+                "error.explicit-sign-no-cert.advice"
+        ).map(JPackageStringBundle.MAIN::cannedFormattedString).toList());
+
+        final var cmd = JPackageCommand.helloAppImage()
+                .ignoreDefaultVerbose(true)
+                .addArguments("--mac-sign")
+                .addArguments(option, signingId)
+                .setPackageType(type);
+
+        if (passThroughOption) {
+            errorMessages.stream()
+                    .map(CannedFormattedString::getValue)
+                    .map(TKit::assertTextStream)
+                    .map(TKit.TextStreamVerifier::negate).forEach(cmd::validateOutput);
+        } else {
+            cmd.validateOutput(errorMessages.toArray(CannedFormattedString[]::new));
+        }
+
+        cmd.execute(1);
     }
 
     private static void duplicate(TestSpec.Builder builder, Consumer<TestSpec> accumulator, Consumer<TestSpec.Builder> mutator) {
@@ -656,6 +720,66 @@ public final class ErrorTest {
 
     private static void duplicateForMacSign(TestSpec.Builder builder, Consumer<TestSpec> accumulator) {
         duplicateAddArgs(builder, accumulator, "--mac-sign");
+    }
+
+    private static void invalidShortcut(Consumer<TestSpec> accumulator, String shortcutOption) {
+        Objects.requireNonNull(shortcutOption);
+        Stream.of("true", "false", "").map(value -> {
+            return testSpec().nativeType().addArgs(shortcutOption, value).error("error.invalid-option-value", value, shortcutOption).create();
+        }).forEach(accumulator);
+    }
+
+    private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
+        var runtimeWithBinDirErr = JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
+                    return Path.of(cmd.getArgumentValue("--runtime-image"));
+                }, Token.JAVA_HOME.token()));
+        var runtimeWithBinDirErrAdvice = JPackageStringBundle.MAIN.cannedFormattedString(
+                "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
+
+        Stream.of(
+                testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
+                        .errors(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
+        ).map(TestSpec.Builder::create).forEach(accumulator);
+
+        Stream.of(
+                Token.INVALID_MAC_RUNTIME_BUNDLE,
+                Token.EMPTY_DIR,
+                Token.INVALID_MAC_RUNTIME_IMAGE
+        ).map(MissingRuntimeFileError::missingLibjli).forEach(mapper -> {
+            Stream.of(
+                    testSpec(),
+                    testSpec().nativeType(),
+                    testSpec().nativeType().noAppDesc()
+            ).map(mapper::applyTo).map(TestSpec.Builder::create).forEach(accumulator);
+        });
+    }
+
+    private record MissingRuntimeFileError(Token runtimeDir, String missingFile) {
+
+        MissingRuntimeFileError {
+            Objects.requireNonNull(runtimeDir);
+            Objects.requireNonNull(missingFile);
+        }
+
+        static MissingRuntimeFileError missingLibjli(Token runtimeDir) {
+            if (runtimeDir == Token.INVALID_MAC_RUNTIME_BUNDLE) {
+                return new MissingRuntimeFileError(runtimeDir, "Contents/Home/lib/**/libjli.dylib");
+            } else {
+                return new MissingRuntimeFileError(runtimeDir, "lib/**/libjli.dylib");
+            }
+        }
+
+        TestSpec.Builder applyTo(TestSpec.Builder builder) {
+            return builder.addArgs("--runtime-image", runtimeDir.token()).errors(expectedErrorMsg());
+        }
+
+        private CannedFormattedString expectedErrorMsg() {
+            return JPackageStringBundle.MAIN.cannedFormattedString(
+                    "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
+                        return Path.of(cmd.getArgumentValue("--runtime-image"));
+                    }, runtimeDir.token()), missingFile);
+        }
     }
 
     private record UnsupportedPlatformOption(String name, Optional<String> value) {
@@ -732,7 +856,7 @@ public final class ErrorTest {
         // It will affect jpackage error messages if the command line is malformed.
         cmd.ignoreDefaultVerbose(true);
 
-        // Ignore external runtime as it will interfer
+        // Ignore external runtime as it will interfere
         // with jpackage arguments in this test.
         cmd.ignoreDefaultRuntime(true);
 

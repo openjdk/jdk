@@ -144,13 +144,13 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 // c1 rnr -> FloatRegister
 FloatRegister FrameMap::nr2floatreg (int rnr) {
   assert(_init_done, "tables not initialized");
-  debug_only(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(rnr);)
   return _fpu_rnr2reg[rnr];
 }
 
 void FrameMap::map_float_register(int rnr, FloatRegister reg) {
-  debug_only(fpu_range_check(rnr);)
-  debug_only(fpu_range_check(reg->encoding());)
+  DEBUG_ONLY(fpu_range_check(rnr);)
+  DEBUG_ONLY(fpu_range_check(reg->encoding());)
   _fpu_rnr2reg[rnr] = reg;              // mapping c1 regnr. -> FloatRegister
   _fpu_reg2rnr[reg->encoding()] = rnr;  // mapping assembler encoding -> c1 regnr.
 }
@@ -280,13 +280,6 @@ VMReg FrameMap::fpu_regname (int n) {
 
 LIR_Opr FrameMap::stack_pointer() {
   return Z_SP_opr;
-}
-
-// JSR 292
-// On ZARCH_64, there is no need to save the SP, because neither
-// method handle intrinsics nor compiled lambda forms modify it.
-LIR_Opr FrameMap::method_handle_invoke_SP_save_opr() {
-  return LIR_OprFact::illegalOpr;
 }
 
 bool FrameMap::validate_frame() {

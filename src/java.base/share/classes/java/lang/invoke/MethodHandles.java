@@ -32,6 +32,7 @@ import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.ValueConversions;
@@ -83,6 +84,7 @@ import static java.lang.invoke.MethodType.methodType;
  * @author John Rose, JSR 292 EG
  * @since 1.7
  */
+@AOTSafeClassInitializer
 public final class MethodHandles {
 
     private MethodHandles() { }  // do not instantiate
@@ -501,7 +503,7 @@ public final class MethodHandles {
      * <tbody>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findGetter lookup.findGetter(C.class,"f",FT.class)}</th>
-     *     <td>{@code FT f;}</td><td>{@code (T) this.f;}</td>
+     *     <td>{@code FT f;}</td><td>{@code (FT) this.f;}</td>
      * </tr>
      * <tr>
      *     <th scope="row">{@link java.lang.invoke.MethodHandles.Lookup#findStaticGetter lookup.findStaticGetter(C.class,"f",FT.class)}</th>
@@ -2821,10 +2823,10 @@ assertEquals("[x, y, z]", pb.command().toString());
          * if and only if one of the following is true:
          * <ul>
          * <li>{@code targetClass} is in {@code M0} and {@code M1}
-         *     {@linkplain Module#reads reads} {@code M0} and the type is
+         *     {@linkplain Module#canRead(Module)}  reads} {@code M0} and the type is
          *     in a package that is exported to at least {@code M1}.
          * <li>{@code targetClass} is in {@code M1} and {@code M0}
-         *     {@linkplain Module#reads reads} {@code M1} and the type is
+         *     {@linkplain Module#canRead(Module)}  reads} {@code M1} and the type is
          *     in a package that is exported to at least {@code M0}.
          * <li>{@code targetClass} is in a third module {@code M2} and both {@code M0}
          *     and {@code M1} reads {@code M2} and the type is in a package
@@ -4305,9 +4307,10 @@ return mh1;
      * If access is aligned then following access modes are supported and are
      * guaranteed to support atomic access:
      * <ul>
-     * <li>read write access modes for all {@code T}, with the exception of
-     *     access modes {@code get} and {@code set} for {@code long} and
-     *     {@code double} on 32-bit platforms.
+     * <li>read write access modes for all {@code T}.  Access modes {@code get}
+     *     and {@code set} for {@code long} and {@code double} are supported but
+     *     have no atomicity guarantee, as described in Section {@jls 17.7} of
+     *     <cite>The Java Language Specification</cite>.
      * <li>atomic update access modes for {@code int}, {@code long},
      *     {@code float} or {@code double}.
      *     (Future major platform releases of the JDK may support additional
@@ -4890,7 +4893,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @param type the type of the desired method handle
      * @return a constant method handle of the given type, which returns a default value of the given return type
      * @throws NullPointerException if the argument is null
-     * @see MethodHandles#primitiveZero
+     * @see MethodHandles#zero(Class)
      * @see MethodHandles#constant
      * @since 9
      */

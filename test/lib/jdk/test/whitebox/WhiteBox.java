@@ -24,7 +24,11 @@
 package jdk.test.whitebox;
 
 import java.lang.management.MemoryUsage;
+import java.lang.ref.Reference;
 import java.lang.reflect.Executable;
+import java.lang.reflect.InaccessibleObjectException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -293,10 +297,6 @@ public class WhiteBox {
   public native int g1ActiveMemoryNodeCount();
   public native int[] g1MemoryNodeIds();
 
-  // Parallel GC
-  public native long psVirtualSpaceAlignment();
-  public native long psHeapGenerationAlignment();
-
   /**
    * Enumerates old regions with liveness less than specified and produces some statistics
    * @param liveness percent of region's liveness (live_objects / total_region_size * 100).
@@ -321,6 +321,10 @@ public class WhiteBox {
   public native long NMTNewArena(long initSize);
   public native void NMTFreeArena(long arena);
   public native void NMTArenaMalloc(long arena, long size);
+
+  // Sanitizers
+  public native boolean isAsanEnabled();
+  public native boolean isUbsanEnabled();
 
   // Compiler
 
@@ -486,6 +490,12 @@ public class WhiteBox {
     Objects.requireNonNull(method);
     return getNMethod0(method, isOsr);
   }
+  private native void     relocateNMethodFromMethod0(Executable method, int type);
+  public         void     relocateNMethodFromMethod(Executable method, int type) {
+    Objects.requireNonNull(method);
+    relocateNMethodFromMethod0(method, type);
+  }
+  public native void    relocateNMethodFromAddr(long address, int type);
   public native long    allocateCodeBlob(int size, int type);
   public        long    allocateCodeBlob(long size, int type) {
       int intSize = (int) size;
@@ -555,6 +565,53 @@ public class WhiteBox {
 
   // Force Full GC
   public native void fullGC();
+
+  // Infrastructure for waitForReferenceProcessing()
+  private static volatile Method waitForReferenceProcessingMethod = null;
+
+  private static Method getWaitForReferenceProcessingMethod() {
+    Method wfrp = waitForReferenceProcessingMethod;
+    if (wfrp == null) {
+      try {
+        wfrp = Reference.class.getDeclaredMethod("waitForReferenceProcessing");
+        wfrp.setAccessible(true);
+        assert wfrp.getReturnType().equals(boolean.class);
+        Class<?>[] ev = wfrp.getExceptionTypes();
+        assert ev.length == 1;
+        assert ev[0] == InterruptedException.class;
+        waitForReferenceProcessingMethod = wfrp;
+      } catch (InaccessibleObjectException e) {
+        throw new RuntimeException("Need to add @modules java.base/java.lang.ref:open to test?", e);
+      } catch (NoSuchMethodException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return wfrp;
+  }
+
+  /**
+   * Wait for reference processing, via Reference.waitForReferenceProcessing().
+   * Callers of this method will need the
+   * @modules java.base/java.lang.ref:open
+   * jtreg tag.
+   *
+   * This method should usually be called after a call to WhiteBox.fullGC().
+   */
+  public boolean waitForReferenceProcessing() throws InterruptedException {
+    try {
+      Method wfrp = getWaitForReferenceProcessingMethod();
+      return (Boolean) wfrp.invoke(null);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException("Shouldn't happen, we call setAccessible()", e);
+    } catch (InvocationTargetException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof InterruptedException) {
+        throw (InterruptedException) cause;
+      } else {
+        throw new RuntimeException(e);
+      }
+    }
+  }
 
   // Returns true if the current GC supports concurrent collection control.
   public native boolean supportsConcurrentGCBreakpoints();
@@ -765,6 +822,7 @@ public class WhiteBox {
                                    String procSelfMountinfo);
   public native void printOsInfo();
   public native long hostPhysicalMemory();
+  public native long hostAvailableMemory();
   public native long hostPhysicalSwap();
   public native int hostCPUs();
 
@@ -789,6 +847,12 @@ public class WhiteBox {
 
   public native void waitUnsafe(int time_ms);
 
+  public native void busyWaitCPUTime(int cpuTimeMs);
+
+
+  // returns true if supported, false if not
+  public native boolean cpuSamplerSetOutOfStackWalking(boolean enable);
+
   public native void pinObject(Object o);
 
   public native void unpinObject(Object o);
@@ -799,4 +863,7 @@ public class WhiteBox {
   public native long rss();
 
   public native boolean isStatic();
+
+  // Force a controlled crash (debug builds only)
+  public native void controlledCrash(int how);
 }

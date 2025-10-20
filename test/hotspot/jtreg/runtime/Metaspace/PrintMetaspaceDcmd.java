@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, SAP and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,9 +22,8 @@
  * questions.
  */
 
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.JDKToolFinder;
 
 /*
  * @test id=test-64bit-ccs
@@ -71,10 +70,8 @@ public class PrintMetaspaceDcmd {
     private static void doTheNoSpecifiedPropTest() throws Exception {
         ProcessBuilder pb = new ProcessBuilder();
         OutputAnalyzer output;
-        // Grab my own PID
-        String pid = Long.toString(ProcessTools.getProcessId());
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "basic"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "basic"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldMatch("MaxMetaspaceSize: unlimited");
@@ -83,10 +80,8 @@ public class PrintMetaspaceDcmd {
     private static void doTheCCSPropTest(boolean usesCompressedClassSpace) throws Exception {
         ProcessBuilder pb = new ProcessBuilder();
         OutputAnalyzer output;
-        // Grab my own PID
-        String pid = Long.toString(ProcessTools.getProcessId());
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "basic"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "basic"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (usesCompressedClassSpace) {
@@ -97,7 +92,7 @@ public class PrintMetaspaceDcmd {
         output.shouldContain("Chunk freelists:");
         output.shouldMatch("MaxMetaspaceSize:.*201.00.*MB");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (usesCompressedClassSpace) {
@@ -109,12 +104,12 @@ public class PrintMetaspaceDcmd {
         output.shouldContain("Waste");
         output.shouldMatch("MaxMetaspaceSize:.*201.00.*MB");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "show-loaders"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "show-loaders"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldMatch("CLD.*<bootstrap>");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "by-chunktype"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "by-chunktype"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("1k:");
@@ -131,13 +126,13 @@ public class PrintMetaspaceDcmd {
         output.shouldContain("2m:");
         output.shouldContain("4m:");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "vslist"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "vslist"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldContain("Virtual space list");
         output.shouldMatch("node.*reserved.*committed.*used.*");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "chunkfreelist"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "chunkfreelist"));
         // Output should look somewhat like this...
         // vvvvvvvvvvvvvvvv
         // Chunk freelist details:
@@ -161,17 +156,17 @@ public class PrintMetaspaceDcmd {
         output.shouldMatch(".*total chunks.*total word size.*");
 
         // Test with different scales
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "scale=G"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "scale=G"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldMatch("MaxMetaspaceSize:.*0.2.*GB");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "scale=K"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "scale=K"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldMatch("MaxMetaspaceSize:.*205824.00 KB");
 
-        pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.metaspace", "scale=1"});
+        pb.command(new PidJcmdExecutor().getCommandLine("VM.metaspace", "scale=1"));
         output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         output.shouldMatch("MaxMetaspaceSize:.*210763776 bytes");

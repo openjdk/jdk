@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,9 +164,9 @@ CfgFile* AppLauncher::createCfgFile() const {
                                 << cfgFilePath << "\"");
 
     CfgFile::Macros macros;
-    macros[_T("$APPDIR")] = appDirPath;
-    macros[_T("$BINDIR")] = FileUtils::dirname(launcherPath);
-    macros[_T("$ROOTDIR")] = imageRoot;
+    macros[_T("APPDIR")] = appDirPath;
+    macros[_T("BINDIR")] = FileUtils::dirname(launcherPath);
+    macros[_T("ROOTDIR")] = imageRoot;
     std::unique_ptr<CfgFile> dummy(new CfgFile());
     CfgFile::load(cfgFilePath).expandMacros(macros).swap(*dummy);
     return dummy.release();

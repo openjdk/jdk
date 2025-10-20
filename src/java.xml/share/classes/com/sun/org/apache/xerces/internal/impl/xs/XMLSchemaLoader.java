@@ -74,6 +74,7 @@ import java.util.StringTokenizer;
 import java.util.WeakHashMap;
 import javax.xml.XMLConstants;
 import jdk.xml.internal.JdkConstants;
+import jdk.xml.internal.JdkXmlConfig;
 import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.XMLSecurityManager;
 import jdk.xml.internal.XMLSecurityPropertyManager;
@@ -102,7 +103,7 @@ import org.xml.sax.InputSource;
  * @xerces.internal
  *
  * @author Neil Graham, IBM
- * @LastModified: Apr 2025
+ * @LastModified: May 2025
  */
 
 public class XMLSchemaLoader implements XMLGrammarLoader, XMLComponent, XSElementDeclHelper,
@@ -1001,13 +1002,13 @@ XSLoader, DOMConfiguration {
 
         XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
         if (spm == null) {
-            spm = new XMLSecurityPropertyManager();
+            spm = JdkXmlConfig.getInstance(false).getXMLSecurityPropertyManager(false);
             setProperty(XML_SECURITY_PROPERTY_MANAGER, spm);
         }
 
         XMLSecurityManager sm = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER);
         if (sm == null)
-            setProperty(SECURITY_MANAGER,new XMLSecurityManager(true));
+            setProperty(SECURITY_MANAGER, JdkXmlConfig.getInstance(false).getXMLSecurityManager(false));
 
         faccessExternalSchema = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
 

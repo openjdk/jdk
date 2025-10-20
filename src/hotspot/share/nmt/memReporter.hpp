@@ -40,7 +40,6 @@ class MemReporterBase : public StackObj {
  private:
   const size_t  _scale;         // report in this scale
   outputStream* const _output;  // destination
-  StreamAutoIndentor _auto_indentor;
 
  public:
 
@@ -108,7 +107,7 @@ class MemReporterBase : public StackObj {
 
   // Print summary total, malloc and virtual memory
   void print_total(size_t reserved, size_t committed, size_t peak = 0) const;
-  void print_malloc(const MemoryCounter* c, MemTag mem_tag = mtNone) const;
+  void print_malloc(const MemoryCounter* c, MemTag mem_tag) const;
   void print_virtual_memory(size_t reserved, size_t committed, size_t peak) const;
   void print_arena(const MemoryCounter* c) const;
 

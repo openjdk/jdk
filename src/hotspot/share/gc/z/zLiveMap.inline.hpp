@@ -31,7 +31,7 @@
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zMark.hpp"
 #include "gc/z/zUtils.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
@@ -40,7 +40,7 @@ inline void ZLiveMap::reset() {
 }
 
 inline bool ZLiveMap::is_marked(ZGenerationId id) const {
-  return Atomic::load_acquire(&_seqnum) == ZGeneration::generation(id)->seqnum();
+  return AtomicAccess::load_acquire(&_seqnum) == ZGeneration::generation(id)->seqnum();
 }
 
 inline uint32_t ZLiveMap::live_objects() const {
@@ -87,10 +87,6 @@ inline BitMap::idx_t ZLiveMap::next_live_segment(BitMap::idx_t segment) const {
   return segment_live_bits().find_first_set_bit(segment + 1, NumSegments);
 }
 
-inline BitMap::idx_t ZLiveMap::segment_size() const {
-  return _bitmap_size / NumSegments;
-}
-
 inline BitMap::idx_t ZLiveMap::index_to_segment(BitMap::idx_t index) const {
   return index >> _segment_shift;
 }
@@ -120,16 +116,16 @@ inline bool ZLiveMap::set(ZGenerationId id, BitMap::idx_t index, bool finalizabl
 }
 
 inline void ZLiveMap::inc_live(uint32_t objects, size_t bytes) {
-  Atomic::add(&_live_objects, objects);
-  Atomic::add(&_live_bytes, bytes);
+  AtomicAccess::add(&_live_objects, objects);
+  AtomicAccess::add(&_live_bytes, bytes);
 }
 
 inline BitMap::idx_t ZLiveMap::segment_start(BitMap::idx_t segment) const {
-  return segment_size() * segment;
+  return segment * _segment_size;
 }
 
 inline BitMap::idx_t ZLiveMap::segment_end(BitMap::idx_t segment) const {
-  return segment_start(segment) + segment_size();
+  return segment_start(segment) + _segment_size;
 }
 
 inline size_t ZLiveMap::do_object(ObjectClosure* cl, zaddress addr) const {

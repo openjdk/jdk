@@ -178,6 +178,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_oop_arraycopy;
   }
 
+  void generate_preuniverse_stubs() {
+    StubRoutines::_fence_entry               = ShouldNotCallThisStub();
+    StubRoutines::_atomic_xchg_entry         = ShouldNotCallThisStub();
+    StubRoutines::_atomic_cmpxchg_entry      = ShouldNotCallThisStub();
+    StubRoutines::_atomic_cmpxchg_long_entry = ShouldNotCallThisStub();
+    StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();
+  }
+
   void generate_initial_stubs() {
     // entry points that exist in all platforms Note: This is code
     // that could be shared among different platforms - however the
@@ -188,13 +196,6 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_forward_exception_entry   = ShouldNotCallThisStub();
     StubRoutines::_call_stub_entry           = (address) call_stub;
     StubRoutines::_catch_exception_entry     = ShouldNotCallThisStub();
-
-    // atomic calls
-    StubRoutines::_atomic_xchg_entry         = ShouldNotCallThisStub();
-    StubRoutines::_atomic_cmpxchg_entry      = ShouldNotCallThisStub();
-    StubRoutines::_atomic_cmpxchg_long_entry = ShouldNotCallThisStub();
-    StubRoutines::_atomic_add_entry          = ShouldNotCallThisStub();
-    StubRoutines::_fence_entry               = ShouldNotCallThisStub();
   }
 
   void generate_continuation_stubs() {
@@ -212,28 +213,31 @@ class StubGenerator: public StubCodeGenerator {
   }
 
  public:
-  StubGenerator(CodeBuffer* code, StubGenBlobId blob_id) : StubCodeGenerator(code, blob_id) {
+  StubGenerator(CodeBuffer* code, BlobId blob_id) : StubCodeGenerator(code, blob_id) {
     switch(blob_id) {
-    case initial_id:
+    case BlobId::stubgen_preuniverse_id:
+      generate_preuniverse_stubs();
+      break;
+    case BlobId::stubgen_initial_id:
       generate_initial_stubs();
       break;
-     case continuation_id:
+     case BlobId::stubgen_continuation_id:
        generate_continuation_stubs();
       break;
-    case compiler_id:
+    case BlobId::stubgen_compiler_id:
        // do nothing
       break;
-    case final_id:
+    case BlobId::stubgen_final_id:
       generate_final_stubs();
       break;
     default:
-      fatal("unexpected blob id: %d", blob_id);
+      fatal("unexpected blob id: %s", StubInfo::name(blob_id));
       break;
     };
   }
 };
 
-void StubGenerator_generate(CodeBuffer* code, StubGenBlobId blob_id) {
+void StubGenerator_generate(CodeBuffer* code, BlobId blob_id) {
   StubGenerator g(code, blob_id);
 }
 

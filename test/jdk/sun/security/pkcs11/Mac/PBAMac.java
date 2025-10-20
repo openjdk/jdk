@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2023, 2025, Red Hat, Inc.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,14 +37,14 @@ import javax.crypto.spec.PBEParameterSpec;
 
 /*
  * @test
- * @bug 8301553
+ * @bug 8301553 8348732
  * @summary test password based authentication on SunPKCS11's Mac service
  * @library /test/lib ..
  * @run main/othervm/timeout=30 PBAMac
  */
 
 public final class PBAMac extends PKCS11Test {
-    private static final char[] password = "123456".toCharArray();
+    private static final char[] password = "123456\uA4F7".toCharArray();
     private static final byte[] salt = "abcdefgh".getBytes(
             StandardCharsets.UTF_8);
     private static final int iterations = 1000;
@@ -55,10 +55,6 @@ public final class PBAMac extends PKCS11Test {
     private enum Configuration {
         // Pass salt and iterations to a Mac through a PBEParameterSpec.
         PBEParameterSpec,
-
-        // Derive a key using SunPKCS11's SecretKeyFactory (wrapping password,
-        // salt and iterations in a PBEKeySpec), and pass it to a Mac.
-        SecretKeyFactoryDerivedKey,
 
         // Pass password, salt and iterations and iterations to
         // a Mac through an anonymous class implementing the
@@ -106,19 +102,19 @@ public final class PBAMac extends PKCS11Test {
     // Generated with SunJCE.
     private static final AssertionData[] assertionData = new AssertionData[]{
             macAssertionData("HmacPBESHA1", "HmacSHA1",
-                    "707606929395e4297adc63d520ac7d22f3f5fa66"),
+                    "8611414ddb1875d9f576282199ab492a802b7d49"),
             macAssertionData("HmacPBESHA224", "HmacSHA224",
-                    "4ffb5ad4974a7a9fca5a36ebe3e34dd443c07fb68c392f8b611657e6"),
+                    "cebb12b48eb90c07336c695f771d1d0ef4ccf5b9524fc0ab6fb9813a"),
             macAssertionData("HmacPBESHA256", "HmacSHA256",
-                    "9e8c102c212d2fd1334dc497acb4e002b04e84713b7eda5a63807af2" +
-                    "989d3e50"),
+                    "d83a6a4e8b0e1ec939d05790f385dd774bd2b7c17cfa2dd004efc894" +
+                    "e5d53f51"),
             macAssertionData("HmacPBESHA384", "HmacSHA384",
-                    "77f31a785d4f2220251143a4ba80f5610d9d0aeaebb4a278b8a7535c" +
-                    "8cea8e8211809ba450458e351c5b66d691839c23"),
+                    "ae6b69cf9edfd9cd8c3b51cdf2b0243502f35a3e6007f33b1ab73568" +
+                    "2ea81ea562f4383bb9512ff70752367b7259b16f"),
             macAssertionData("HmacPBESHA512", "HmacSHA512",
-                    "a53f942a844b234a69c1f92cba20ef272c4394a3cf4024dc16d9dbac" +
-                    "1969870b1c2b28b897149a1a3b9ad80a7ca8c547dfabf3ed5f144c6b" +
-                    "593900b62e120c45"),
+                    "46f6d09b0e7e50a66fa559ea4c4e9737a9d9e258b94f0075230d0acb" +
+                    "40f2c926f96a152c4f6b03b631efc7f99c84f052f1c78d79e07f2a9e" +
+                    "4a96164f5b46e70b"),
     };
 
     public void main(Provider sunPKCS11) throws Exception {
@@ -134,13 +130,13 @@ public final class PBAMac extends PKCS11Test {
         System.out.println("TEST PASS - OK");
     }
 
-    private static void testWith(Provider sunPKCS11, AssertionData data,
+    private static void testWith(Provider p, AssertionData data,
             boolean testPBEService, Configuration conf) throws Exception {
         String svcAlgo = testPBEService ? data.pbeHmacAlgo : data.hmacAlgo;
         System.out.println(sep + System.lineSeparator() + svcAlgo
                 + " (with " + conf.name() + ")");
 
-        BigInteger mac = computeMac(sunPKCS11, svcAlgo, data.pbeHmacAlgo, conf);
+        BigInteger mac = computeMac(p, svcAlgo, data.pbeHmacAlgo, conf);
         printHex("HMAC", mac);
 
         if (!mac.equals(data.expectedMac)) {
@@ -158,15 +154,13 @@ public final class PBAMac extends PKCS11Test {
                 SecretKey key = getPasswordOnlyPBEKey();
                 mac.init(key, new PBEParameterSpec(salt, iterations));
             }
-            case SecretKeyFactoryDerivedKey -> {
-                SecretKey key = getDerivedSecretKey(p, keyAlgo);
-                mac.init(key);
-            }
             case AnonymousPBEKey -> {
                 SecretKey key = getAnonymousPBEKey(keyAlgo);
                 mac.init(key);
             }
+            default -> throw new RuntimeException("Unsupported configuration");
         }
+
         return new BigInteger(1, mac.doFinal(
                 plainText.getBytes(StandardCharsets.UTF_8)));
     }
@@ -175,12 +169,6 @@ public final class PBAMac extends PKCS11Test {
             throws GeneralSecurityException {
         return SecretKeyFactory.getInstance("PBE")
                 .generateSecret(new PBEKeySpec(password));
-    }
-
-    private static SecretKey getDerivedSecretKey(Provider sunPKCS11,
-            String algorithm) throws GeneralSecurityException {
-        return SecretKeyFactory.getInstance(algorithm, sunPKCS11)
-                .generateSecret(new PBEKeySpec(password, salt, iterations));
     }
 
     private static SecretKey getAnonymousPBEKey(String algorithm) {

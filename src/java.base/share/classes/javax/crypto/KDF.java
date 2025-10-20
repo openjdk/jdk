@@ -25,7 +25,6 @@
 
 package javax.crypto;
 
-import jdk.internal.javac.PreviewFeature;
 import sun.security.jca.GetInstance;
 import sun.security.jca.GetInstance.Instance;
 import sun.security.util.Debug;
@@ -98,9 +97,8 @@ import java.util.Objects;
  *
  * @see KDFParameters
  * @see SecretKey
- * @since 24
+ * @since 25
  */
-@PreviewFeature(feature = PreviewFeature.Feature.KEY_DERIVATION)
 public final class KDF {
 
     private static final Debug pdebug = Debug.getInstance("provider",
@@ -479,6 +477,25 @@ public final class KDF {
         throw e;
     }
 
+    // Rethrows the IAPE thrown by an implementation, adding an explanation
+    // for the situation in which it fails.
+    private void rethrow(InvalidAlgorithmParameterException e)
+            throws InvalidAlgorithmParameterException {
+        var source = serviceIterator == null
+                ? "specified" : "previously selected";
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("A " + this.getAlgorithm()
+                    + " derivation cannot be performed "
+                    + "using the supplied derivation "
+                    + "inputs with the " + source + " "
+                    + theOne.provider().getName()
+                    + " provider.");
+        }
+        throw new InvalidAlgorithmParameterException(
+                "The " + source + " " + theOne.provider.getName()
+                + " provider does not support this input", e);
+    }
+
     /**
      * Derives a key, returned as a {@code SecretKey} object.
      *
@@ -523,7 +540,12 @@ public final class KDF {
         }
         Objects.requireNonNull(derivationSpec);
         if (checkSpiNonNull(theOne)) {
-            return theOne.spi().engineDeriveKey(alg, derivationSpec);
+            try {
+                return theOne.spi().engineDeriveKey(alg, derivationSpec);
+            } catch (InvalidAlgorithmParameterException e) {
+                rethrow(e);
+                return null; // will not be called
+            }
         } else {
             return (SecretKey) chooseProvider(alg, derivationSpec);
         }
@@ -554,7 +576,12 @@ public final class KDF {
 
         Objects.requireNonNull(derivationSpec);
         if (checkSpiNonNull(theOne)) {
-            return theOne.spi().engineDeriveData(derivationSpec);
+            try {
+                return theOne.spi().engineDeriveData(derivationSpec);
+            } catch (InvalidAlgorithmParameterException e) {
+                rethrow(e);
+                return null; // will not be called
+            }
         } else {
             try {
                 return (byte[]) chooseProvider(null, derivationSpec);
@@ -613,6 +640,11 @@ public final class KDF {
                                         derivationSpec);
                         // found a working KDFSpi
                         this.theOne = currOne;
+                        if (!skipDebug && pdebug != null) {
+                            pdebug.println("The provider "
+                                    + currOne.provider().getName()
+                                    + " is selected");
+                        }
                         return result;
                     } catch (Exception e) {
                         if (!skipDebug && pdebug != null) {
@@ -649,7 +681,8 @@ public final class KDF {
                     e.printStackTrace(pdebug.getPrintStream());
                 }
                 // getNext reached end without finding an implementation
-                throw new InvalidAlgorithmParameterException(lastException);
+                throw new InvalidAlgorithmParameterException(
+                        "No provider supports this input", lastException);
             }
         }
     }

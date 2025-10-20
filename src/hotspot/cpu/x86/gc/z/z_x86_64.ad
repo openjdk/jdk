@@ -118,6 +118,10 @@ instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
   predicate(UseZGC && n->as_Load()->barrier_data() != 0);
   match(Set dst (LoadP mem));
   effect(TEMP dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks. The
+  // barrier's slow path includes an identical reload, which does not need to be
+  // registered in the exception table because it is dominated by the main one.
+  ins_is_late_expanded_null_check_candidate(true);
 
   ins_cost(125);
 

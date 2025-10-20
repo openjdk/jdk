@@ -30,7 +30,7 @@ import java.awt.Window;
 import java.util.EventObject;
 
 @SuppressWarnings("serial") // JDK implementation class
-public class FullScreenEvent extends EventObject {
+public final class FullScreenEvent extends EventObject {
 
         final Window window;
 

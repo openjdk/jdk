@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,42 +25,60 @@
  * @test
  * @bug 4313052
  * @summary Test cursor changes after mouse dragging ends
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @run main/manual ListDragCursor
  */
 
+import java.awt.BorderLayout;
+import java.awt.Button;
 import java.awt.Cursor;
+import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.List;
 import java.awt.Panel;
 import java.awt.TextArea;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class ListDragCursor {
-    public static void main(String[] args) throws Exception {
-        String INSTRUCTIONS = """
+    private static final String INSTRUCTIONS = """
                 1. Move mouse to the TextArea.
                 2. Press the left mouse button.
                 3. Drag mouse to the list.
                 4. Release the left mouse button.
 
-                If the mouse cursor starts as a Text Line Cursor and changes
-                to a regular Pointer Cursor, then Hand Cursor when hovering
-                the list, pass the test. This test fails if the cursor does
-                not update at all when pointing over the different components.
+                The mouse cursor should appear as an I-beam cursor
+                and should stay the same while dragging across the
+                components. Once you reach the list, release the
+                left mouse button. As soon as you release the left
+                mouse button, the cursor should change to a Hand
+                cursor. If true, this test passes.
+
+                The test fails if the cursor updates while dragging
+                over the components before releasing the left
+                mouse button.
                 """;
 
-        PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(35)
-                .testUI(ListDragCursor::createUI)
-                .build()
-                .awaitAndCheck();
+    private static Frame testFrame;
+    private static Frame instructionsFrame;
+
+    private static final CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    public static void main(String[] args) throws Exception {
+        try {
+            EventQueue.invokeAndWait(() -> {
+                instructionsFrame = createInstructionsFrame();
+                testFrame = createTestFrame();
+            });
+            if (!countDownLatch.await(5, TimeUnit.MINUTES)) {
+                throw new RuntimeException("Test timeout : No action was"
+                        + " taken on the test.");
+            }
+        } finally {
+            EventQueue.invokeAndWait(ListDragCursor::disposeFrames);
+        }
     }
 
-    public static Frame createUI() {
+    static Frame createTestFrame() {
         Frame frame = new Frame("Cursor change after drag");
         Panel panel = new Panel();
 
@@ -78,7 +96,51 @@ public class ListDragCursor {
         panel.add(list);
 
         frame.add(panel);
-        frame.setBounds(300, 100, 300, 150);
+        frame.setSize(300, 150);
+        frame.setLocation(instructionsFrame.getX()
+                + instructionsFrame.getWidth(),
+                instructionsFrame.getY());
+        frame.setVisible(true);
         return frame;
+    }
+
+    static Frame createInstructionsFrame() {
+        Frame frame = new Frame("Test Instructions");
+        Panel mainPanel = new Panel(new BorderLayout());
+        TextArea textArea = new TextArea(INSTRUCTIONS,
+                15, 35, TextArea.SCROLLBARS_NONE);
+
+        Panel btnPanel = new Panel();
+        Button passBtn = new Button("Pass");
+        Button failBtn = new Button("Fail");
+        btnPanel.add(passBtn);
+        btnPanel.add(failBtn);
+
+        passBtn.addActionListener(e -> {
+            countDownLatch.countDown();
+            System.out.println("Test passed.");
+        });
+        failBtn.addActionListener(e -> {
+            countDownLatch.countDown();
+            throw new RuntimeException("Test Failed.");
+        });
+
+        mainPanel.add(textArea, BorderLayout.CENTER);
+        mainPanel.add(btnPanel, BorderLayout.SOUTH);
+
+        frame.add(mainPanel);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+        return frame;
+    }
+
+    static void disposeFrames() {
+        if (testFrame != null) {
+            testFrame.dispose();
+        }
+        if (instructionsFrame != null) {
+            instructionsFrame.dispose();
+        }
     }
 }

@@ -125,6 +125,7 @@ implements Serializable
      * @see PermissionCollection#isReadOnly()
      */
     @Override
+    @SuppressWarnings("removal")
     public void add(Permission permission) {
         if (isReadOnly())
             throw new SecurityException(
@@ -288,6 +289,7 @@ implements Serializable
      *  or {@code null} if there were no unresolved permissions of type p.
      *
      */
+    @SuppressWarnings("removal")
     private PermissionCollection getUnresolvedPermissions(Permission p)
     {
         UnresolvedPermissionCollection uc =
@@ -392,6 +394,7 @@ implements Serializable
      * permsMap field. Reads in allPermission.
      */
     @java.io.Serial
+    @SuppressWarnings("removal")
     private void readObject(ObjectInputStream in) throws IOException,
     ClassNotFoundException {
         // Don't call defaultReadObject()

@@ -352,9 +352,6 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * @spec https://standards.ieee.org/ieee/754/6210/
  *       IEEE Standard for Floating-Point Arithmetic
  *
- * @author  Lee Boynton
- * @author  Arthur van Hoff
- * @author  Joseph D. Darcy
  * @since 1.0
  */
 @jdk.internal.ValueBased
@@ -695,7 +692,6 @@ public final class Double extends Number
      * @param   d   the {@code double} to be converted.
      * @return a hex string representation of the argument.
      * @since 1.5
-     * @author Joseph D. Darcy
      */
     public static String toHexString(double d) {
         /*
@@ -1041,7 +1037,7 @@ public final class Double extends Number
      * {@link #valueOf(double)} is generally a better choice, as it is
      * likely to yield significantly better space and time performance.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Double(double value) {
         this.value = value;
     }
@@ -1062,7 +1058,7 @@ public final class Double extends Number
      * {@code double} primitive, or use {@link #valueOf(String)}
      * to convert a string to a {@code Double} object.
      */
-    @Deprecated(since="9", forRemoval = true)
+    @Deprecated(since="9")
     public Double(String s) throws NumberFormatException {
         value = parseDouble(s);
     }
@@ -1242,6 +1238,8 @@ public final class Double extends Number
      * the same if and only if the method {@link
      * #doubleToLongBits(double)} returns the identical
      * {@code long} value when applied to each.
+     * In other words, {@linkplain ##repEquivalence representation
+     * equivalence} is used to compare the {@code double} values.
      *
      * @apiNote
      * This method is defined in terms of {@link
@@ -1423,12 +1421,28 @@ public final class Double extends Number
      *      This method chooses to define positive zero ({@code +0.0d}),
      *      to be greater than negative zero ({@code -0.0d}).
      * </ul>
-
+     *
      * This ensures that the <i>natural ordering</i> of {@code Double}
      * objects imposed by this method is <i>consistent with
      * equals</i>; see {@linkplain ##equivalenceRelation this
      * discussion for details of floating-point comparison and
      * ordering}.
+     *
+     * @apiNote
+     * The inclusion of a total order idiom in the Java SE API
+     * predates the inclusion of that functionality in the IEEE 754
+     * standard. The ordering of the totalOrder predicate chosen by
+     * IEEE 754 differs from the total order chosen by this method.
+     * While this method treats all NaN representations as being in
+     * the same equivalence class, the IEEE 754 total order defines an
+     * ordering based on the bit patterns of the NaN among the
+     * different NaN representations. The IEEE 754 order regards
+     * "negative" NaN representations, that is NaN representations
+     * whose sign bit is set, to be less than any finite or infinite
+     * value and less than any "positive" NaN. In addition, the IEEE
+     * order regards all positive NaN values as greater than positive
+     * infinity. See the IEEE 754 standard for full details of its
+     * total ordering.
      *
      * @param   anotherDouble   the {@code Double} to be compared.
      * @return  the value {@code 0} if {@code anotherDouble} is
@@ -1455,6 +1469,12 @@ public final class Double extends Number
      *    Double.valueOf(d1).compareTo(Double.valueOf(d2))
      * </pre>
      *
+     * @apiNote
+     * One idiom to implement {@linkplain ##repEquivalence
+     * representation equivalence} on {@code double} values is
+     * {@snippet lang="java" :
+     * Double.compare(a, b) == 0
+     * }
      * @param   d1        the first {@code double} to compare
      * @param   d2        the second {@code double} to compare
      * @return  the value {@code 0} if {@code d1} is

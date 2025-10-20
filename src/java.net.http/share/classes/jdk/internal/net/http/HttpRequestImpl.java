@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,24 +31,30 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.net.http.HttpClient.Version;
+import java.net.http.HttpOption;
+import java.net.http.HttpOption.Http3DiscoveryMode;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
+import java.util.function.BiPredicate;
 
 import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
 
-import static java.net.Authenticator.RequestorType.PROXY;
+import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.Authenticator.RequestorType.SERVER;
 import static jdk.internal.net.http.common.Utils.ALLOWED_HEADERS;
 import static jdk.internal.net.http.common.Utils.ProxyHeaders;
+import static jdk.internal.net.http.common.Utils.copyProxy;
 
 public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
@@ -64,6 +70,8 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     private volatile boolean isWebSocket;
     private final Duration timeout;  // may be null
     private final Optional<HttpClient.Version> version;
+    // An alternative would be to have one field per supported option
+    private final Map<HttpOption<?>, Object> options;
     private volatile boolean userSetAuthorization;
     private volatile boolean userSetProxyAuthorization;
 
@@ -91,6 +99,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.requestPublisher = builder.bodyPublisher();  // may be null
         this.timeout = builder.timeout();
         this.version = builder.version();
+        this.options = Map.copyOf(builder.options());
         this.authority = null;
     }
 
@@ -109,12 +118,13 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                 "uri must be non null");
         Duration timeout = request.timeout().orElse(null);
         this.method = method == null ? "GET" : method;
+        this.options = HttpRequestBuilderImpl.copySupportedOptions(request);
         this.userHeaders = HttpHeaders.of(request.headers().map(), Utils.VALIDATE_USER_HEADER);
-        if (request instanceof HttpRequestImpl) {
+        if (request instanceof HttpRequestImpl impl) {
             // all cases exception WebSocket should have a new system headers
-            this.isWebSocket = ((HttpRequestImpl) request).isWebSocket;
+            this.isWebSocket = impl.isWebSocket;
             if (isWebSocket) {
-                this.systemHeadersBuilder = ((HttpRequestImpl)request).systemHeadersBuilder;
+                this.systemHeadersBuilder = impl.systemHeadersBuilder;
             } else {
                 this.systemHeadersBuilder = new HttpHeadersBuilder();
             }
@@ -127,15 +137,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
             this.systemHeadersBuilder.setHeader("User-Agent", USER_AGENT);
         }
         this.uri = requestURI;
-        if (isWebSocket) {
-            // WebSocket determines and sets the proxy itself
-            this.proxy = ((HttpRequestImpl) request).proxy;
-        } else {
-            if (ps != null)
-                this.proxy = retrieveProxy(ps, uri);
-            else
-                this.proxy = null;
-        }
+        this.proxy = retrieveProxy(request, ps, uri);
         this.expectContinue = request.expectContinue();
         this.secure = uri.getScheme().toLowerCase(Locale.US).equals("https");
         this.requestPublisher = request.bodyPublisher().orElse(null);
@@ -156,7 +158,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                                                             String method,
                                                             HttpRequestImpl other,
                                                             boolean mayHaveBody) {
-        return new HttpRequestImpl(uri, method, other, mayHaveBody);
+        if (uri.getScheme().equalsIgnoreCase(other.uri.getScheme()) &&
+                uri.getRawAuthority().equals(other.uri.getRawAuthority())) {
+            return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.empty());
+        }
+        return new HttpRequestImpl(uri, method, other, mayHaveBody, Optional.of(Utils.ALLOWED_REDIRECT_HEADERS));
     }
 
     /** Returns a new instance suitable for authentication. */
@@ -176,9 +182,19 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
                             String method,
                             HttpRequestImpl other,
                             boolean mayHaveBody) {
+        this(uri, method, other, mayHaveBody, Optional.empty());
+    }
+
+    private HttpRequestImpl(URI uri,
+                            String method,
+                            HttpRequestImpl other,
+                            boolean mayHaveBody,
+                            Optional<BiPredicate<String, String>> redirectHeadersFilter) {
         assert method == null || Utils.isValidName(method);
-        this.method = method == null? "GET" : method;
-        this.userHeaders = other.userHeaders;
+        this.method = method == null ? "GET" : method;
+        HttpHeaders userHeaders = redirectHeadersFilter.isPresent() ?
+                HttpHeaders.of(other.userHeaders.map(), redirectHeadersFilter.get()) : other.userHeaders;
+        this.userHeaders = userHeaders;
         this.isWebSocket = other.isWebSocket;
         this.systemHeadersBuilder = new HttpHeadersBuilder();
         if (userHeaders.firstValue("User-Agent").isEmpty()) {
@@ -192,6 +208,19 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.timeout = other.timeout;
         this.version = other.version();
         this.authority = null;
+        this.options = other.optionsFor(this.uri);
+    }
+
+    private Map<HttpOption<?>, Object> optionsFor(URI uri) {
+        if (this.uri == uri || Objects.equals(this.uri.getRawAuthority(), uri.getRawAuthority())) {
+            return options;
+        }
+        // preserve config if version is HTTP/3
+        if (version.orElse(null) == Version.HTTP_3) {
+            Http3DiscoveryMode h3DiscoveryMode = (Http3DiscoveryMode)options.get(H3_DISCOVERY);
+            if (h3DiscoveryMode != null) return Map.of(H3_DISCOVERY, h3DiscoveryMode);
+        }
+        return Map.of();
     }
 
     private BodyPublisher publisher(HttpRequestImpl other) {
@@ -227,10 +256,24 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         // What we want to possibly upgrade is the tunneled connection to the
         // target server (so not the CONNECT request itself)
         this.version = Optional.of(HttpClient.Version.HTTP_1_1);
+        this.options = Map.of();
     }
 
     final boolean isConnect() {
         return "CONNECT".equalsIgnoreCase(method);
+    }
+
+    final boolean isHttp3Only(Version version) {
+        return version == Version.HTTP_3 && http3Discovery() == HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+    }
+
+    final Http3DiscoveryMode http3Discovery() {
+        // see if discovery mode is set on the request
+        final var h3Discovery = getOption(H3_DISCOVERY);
+        // if no explicit discovery mode is set, then default to "ANY"
+        // irrespective of whether the HTTP/3 version may have been
+        // set on the HttpClient or the HttpRequest
+        return h3Discovery.orElse(Http3DiscoveryMode.ANY);
     }
 
     /**
@@ -269,6 +312,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
         this.timeout = parent.timeout;
         this.version = parent.version;
         this.authority = null;
+        this.options = parent.options;
     }
 
     @Override
@@ -292,16 +336,27 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public boolean expectContinue() { return expectContinue; }
 
-    /** Retrieves the proxy, from the given ProxySelector, if there is one. */
-    private static Proxy retrieveProxy(ProxySelector ps, URI uri) {
-        Proxy proxy = null;
-        List<Proxy> pl = ps.select(uri);
-        if (!pl.isEmpty()) {
-            Proxy p = pl.get(0);
-            if (p.type() == Proxy.Type.HTTP)
-                proxy = p;
+    /** Retrieves a copy of the proxy either from the given {@link HttpRequest} or {@link ProxySelector}, if there is one. */
+    private static Proxy retrieveProxy(HttpRequest request, ProxySelector ps, URI uri) {
+
+        // WebSocket determines and sets the proxy itself
+        if (request instanceof HttpRequestImpl requestImpl && requestImpl.isWebSocket) {
+            return requestImpl.proxy;
         }
-        return proxy;
+
+        // Try to find a matching one from the `ProxySelector`
+        if (ps != null) {
+            List<Proxy> pl = ps.select(uri);
+            if (!pl.isEmpty()) {
+                Proxy p = pl.getFirst();
+                if (p.type() == Proxy.Type.HTTP) {
+                    return copyProxy(p);
+                }
+            }
+        }
+
+        return null;
+
     }
 
     InetSocketAddress proxy() {
@@ -317,7 +372,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
     @Override
     public void setProxy(Proxy proxy) {
         assert isWebSocket;
-        this.proxy = proxy;
+        this.proxy = copyProxy(proxy);
     }
 
     @Override
@@ -380,6 +435,11 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     @Override
     public Optional<HttpClient.Version> version() { return version; }
+
+    @Override
+    public <T> Optional<T> getOption(HttpOption<T> option) {
+        return Optional.ofNullable(option.type().cast(options.get(option)));
+    }
 
     @Override
     public void setSystemHeader(String name, String value) {

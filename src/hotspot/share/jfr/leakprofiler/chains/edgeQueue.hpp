@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_LEAKPROFILER_CHAINS_EDGEQUEUE_HPP
 #define SHARE_JFR_LEAKPROFILER_CHAINS_EDGEQUEUE_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.hpp"
+#include "memory/allocation.hpp"
 
 class JfrVirtualMemory;
 

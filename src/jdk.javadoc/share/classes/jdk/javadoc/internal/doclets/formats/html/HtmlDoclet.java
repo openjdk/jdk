@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,16 +311,27 @@ public class HtmlDoclet extends AbstractDoclet {
             copyFontResources();
         }
 
-        // If a stylesheet file is not specified, copy the default stylesheet
-        // and replace newline with platform-specific newline.
+        var syntaxHighlight = options.syntaxHighlight();
+        if (syntaxHighlight) {
+            copyResource(DocPaths.HIGHLIGHT_CSS, DocPaths.RESOURCE_FILES.resolve(DocPaths.HIGHLIGHT_CSS), true);
+            copyResource(DocPaths.HIGHLIGHT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.HIGHLIGHT_JS), true);
+        }
+
+        // If a stylesheet file is not specified, copy the default stylesheet,
+        // replace newline with platform-specific newline,
+        // and remove the reference to fonts if --no-fonts is used.
         if (options.stylesheetFile().isEmpty()) {
-            copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
+            copyStylesheet(options);
         }
         copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.DOWN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.DOWN_SVG), true);
         copyResource(DocPaths.LEFT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LEFT_SVG), true);
         copyResource(DocPaths.RIGHT_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.RIGHT_SVG), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
+        copyResource(DocPaths.MOON_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.MOON_SVG), true);
+        copyResource(DocPaths.SUN_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.SUN_SVG), true);
+        copyResource(DocPaths.SORT_A_Z_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.SORT_A_Z_SVG), true);
 
         if (options.createIndex()) {
             copyResource(DocPaths.SEARCH_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SEARCH_JS), true);
@@ -335,7 +346,7 @@ public class HtmlDoclet extends AbstractDoclet {
             copyResource(DocPaths.JQUERY_DIR.resolve(DocPaths.JQUERY_UI_CSS),
                     DocPaths.RESOURCE_FILES.resolve(DocPaths.JQUERY_UI_CSS), false);        }
 
-        copyLegalFiles(options.createIndex());
+        copyLegalFiles(options.createIndex(), options.syntaxHighlight());
         // Print a notice if the documentation contains diagnostic markers
         if (messages.containsDiagnosticMarkers()) {
             messages.notice("doclet.contains.diagnostic.markers");
@@ -351,7 +362,7 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
-    private void copyLegalFiles(boolean includeJQuery) throws DocletException {
+    private void copyLegalFiles(boolean includeJQuery, boolean includeHighlightJs) throws DocletException {
         Path legalNoticesDir;
         String legalNotices = configuration.getOptions().legalNotices();
         switch (legalNotices) {
@@ -395,6 +406,9 @@ public class HtmlDoclet extends AbstractDoclet {
                     if (entry.getFileName().toString().startsWith("jquery") && !includeJQuery) {
                         continue;
                     }
+                    if (entry.getFileName().toString().equals("highlightjs.md") && !includeHighlightJs) {
+                        continue;
+                    }
                     DocPath filePath = DocPaths.LEGAL.resolve(entry.getFileName().toString());
                     DocFile df = DocFile.createFileForOutput(configuration, filePath);
                     df.copyFile(DocFile.createFileForInput(configuration, entry));
@@ -409,7 +423,7 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
         for (TypeElement te : typeElems) {
-            if (utils.hasHiddenTag(te) ||
+            if (utils.isHidden(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
@@ -452,18 +466,13 @@ public class HtmlDoclet extends AbstractDoclet {
 
     private void copyResource(DocPath sourcePath, DocPath targetPath, boolean replaceNewLine)
             throws DocletException {
-        DocPath resourcePath = DocPaths.RESOURCES.resolve(sourcePath);
-        // Resolve resources against doclets.formats.html package
-        URL resourceURL = HtmlConfiguration.class.getResource(resourcePath.getPath());
-        if (resourceURL == null) {
-            throw new ResourceIOException(sourcePath, new FileNotFoundException(resourcePath.getPath()));
-        }
+        ReadableResource resource = resolveResource(sourcePath);
         DocFile f = DocFile.createFileForOutput(configuration, targetPath);
 
         if (sourcePath.getPath().toLowerCase(Locale.ROOT).endsWith(".template")) {
-            f.copyResource(resourcePath, resourceURL, configuration.docResources);
+            f.copyResource(resource.path(), resource.url(), configuration.docResources);
         } else {
-            f.copyResource(resourcePath, resourceURL, replaceNewLine);
+            f.copyResource(resource.path(), resource.url(), replaceNewLine);
         }
     }
 
@@ -492,6 +501,23 @@ public class HtmlDoclet extends AbstractDoclet {
         }
     }
 
+    private void copyStylesheet(HtmlOptions options) throws DocletException {
+        ReadableResource resource = resolveResource(DocPaths.STYLESHEET);
+        var targetPath = DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET);
+        DocFile f = DocFile.createFileForOutput(configuration, targetPath);
+
+        if (options.noFonts()) {
+            f.copyResource(resource.path(), resource.url(), line -> {
+                if (line.startsWith("@import url('fonts")) {
+                    return null; // remove the line
+                }
+                return line;
+            });
+        } else {
+            f.copyResource(resource.path(), resource.url(), true);
+        }
+    }
+
     private void copyFile(String filename, DocPath targetPath) throws DocFileIOException {
         if (filename.isEmpty()) {
             return;
@@ -507,5 +533,18 @@ public class HtmlDoclet extends AbstractDoclet {
         messages.notice("doclet.Copying_File_0_To_File_1",
                 fromfile.getPath(), path.getPath());
         toFile.copyFile(fromfile);
+    }
+
+    private ReadableResource resolveResource(DocPath sourcePath) throws ResourceIOException {
+        DocPath resolvedPath = DocPaths.RESOURCES.resolve(sourcePath);
+        // Resolve resources against doclets.formats.html package
+        URL resourceURL = HtmlConfiguration.class.getResource(resolvedPath.getPath());
+        if (resourceURL == null) {
+            throw new ResourceIOException(sourcePath, new FileNotFoundException(resolvedPath.getPath()));
+        }
+        return new ReadableResource(resolvedPath, resourceURL);
+    }
+
+    private record ReadableResource(DocPath path, URL url) {
     }
 }

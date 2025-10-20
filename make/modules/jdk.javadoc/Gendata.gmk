@@ -51,7 +51,7 @@ $(eval $(call SetupJavaCompilation, COMPILE_CREATE_SYMBOLS, \
     TARGET_RELEASE := $(TARGET_RELEASE_BOOTJDK), \
     SRC := $(TOPDIR)/make/langtools/src/classes \
         $(TOPDIR)/src/jdk.jdeps/share/classes, \
-    INCLUDES := build/tools/symbolgenerator com/sun/tools/classfile, \
+    INCLUDES := build/tools/symbolgenerator, \
     BIN := $(BUILDTOOLS_OUTPUTDIR)/create_symbols_javadoc, \
     DISABLED_WARNINGS := options, \
     JAVAC_FLAGS := \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,11 +34,17 @@ import java.util.List;
  */
 public abstract class JcmdExecutor extends CommandExecutor {
     protected String jcmdBinary;
+    // VM option to disable streaming output
+    protected String jcmdDisableStreamingOption = "-J-Djdk.attach.allowStreamingOutput=false";
 
     protected abstract List<String> createCommandLine(String cmd) throws CommandExecutorException;
 
     protected JcmdExecutor() {
         jcmdBinary = JDKToolFinder.getJDKTool("jcmd");
+    }
+
+    public List<String> getCommandLine(String... cmds) {
+        return createCommandLine(String.join(" ", cmds));
     }
 
     protected OutputAnalyzer executeImpl(String cmd) throws CommandExecutorException {

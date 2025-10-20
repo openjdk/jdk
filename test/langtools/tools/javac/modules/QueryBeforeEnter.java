@@ -359,7 +359,9 @@ public class QueryBeforeEnter extends ModuleTestBase {
                                                                             "-Xplugin:test"),
                                                               null,
                                                               fm.getJavaFileObjects(testSource));
-            task.call();
+            if (!task.call()) {
+                throw new AssertionError("test failed due to a compilation error");
+            }
         }
 
         Main.compile(new String[] {"--processor-path", processorPath,

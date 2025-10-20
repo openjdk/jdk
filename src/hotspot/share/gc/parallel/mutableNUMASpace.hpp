@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,6 @@
  */
 
 class MutableNUMASpace : public MutableSpace {
-  friend class VMStructs;
-
   class LGRPSpace : public CHeapObj<mtGC> {
     uint _lgrp_id;
     MutableSpace* _space;
@@ -152,7 +150,7 @@ class MutableNUMASpace : public MutableSpace {
   void select_tails(MemRegion new_region, MemRegion intersection,
                     MemRegion* bottom_region, MemRegion *top_region);
 
-  int lgrp_space_index(int lgrp_id) const;
+  LGRPSpace *lgrp_space_for_thread(Thread *thr) const;
 
 public:
   GrowableArray<LGRPSpace*>* lgrp_spaces() const     { return _lgrp_spaces;       }
@@ -186,7 +184,7 @@ public:
   virtual HeapWord* cas_allocate(size_t word_size);
 
   // Debugging
-  virtual void print_on(outputStream* st) const;
+  virtual void print_on(outputStream* st, const char* prefix) const;
   virtual void print_short_on(outputStream* st) const;
   virtual void verify();
 

@@ -173,9 +173,10 @@ define PrintFailureReports
 	  $(RM) $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log ; \
 	  $(if $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log), \
 	    ( \
-	      $(PRINTF) "\n=== Output from failing command(s) repeated here ===\n" ;  \
+	      $(ECHO) "" ; \
+	      $(ECHO) "=== Output from failing command(s) repeated here ===" ;  \
 	      $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*.log)), \
-	          $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" ; \
+	          $(ECHO) "* For target $(notdir $(basename $(logfile))):" ; \
 	          $(if $(filter all, $(LOG_REPORT)), \
 	            $(GREP) -v -e "^Note: including file:" <  $(logfile) || true ; \
 	          , \
@@ -185,8 +186,9 @@ define PrintFailureReports
 	            fi ; \
 	          ) \
 	      ) \
-	      $(PRINTF) "\n* All command lines available in $(MAKESUPPORT_OUTPUTDIR)/failure-logs.\n" ; \
-	      $(PRINTF) "=== End of repeated output ===\n" ; \
+	      $(ECHO) "" ; \
+	      $(ECHO) "* All command lines available in $(MAKESUPPORT_OUTPUTDIR)/failure-logs." ; \
+	      $(ECHO) "=== End of repeated output ===" ; \
 	    )  >> $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log  \
 	  ) \
 	)
@@ -195,13 +197,16 @@ endef
 define PrintBuildLogFailures
 	$(if $(filter none, $(LOG_REPORT)), , \
 	  if $(GREP) -q "recipe for target .* failed" $(BUILD_LOG) 2> /dev/null; then  \
-	    $(PRINTF) "\n=== Make failed targets repeated here ===\n" ; \
+	    $(ECHO) "" ; \
+	    $(ECHO) "=== Make failed targets repeated here ===" ; \
 	    $(GREP) "recipe for target .* failed" $(BUILD_LOG) ; \
-	    $(PRINTF) "=== End of repeated output ===\n" ; \
-	    $(PRINTF) "\nHELP: Try searching the build log for the name of the first failed target.\n" ; \
+	    $(ECHO) "=== End of repeated output ===" ; \
+	    $(ECHO) "" ; \
+	    $(ECHO) "HELP: Try searching the build log for the name of the first failed target." ; \
 	  else \
-	    $(PRINTF) "\nNo indication of failed target found.\n" ; \
-	    $(PRINTF) "HELP: Try searching the build log for '] Error'.\n" ; \
+	    $(ECHO) "" ; \
+	    $(ECHO) "No indication of failed target found." ; \
+	    $(ECHO) "HELP: Try searching the build log for '] Error'." ; \
 	  fi >> $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log ; \
 	  $(CAT) $(MAKESUPPORT_OUTPUTDIR)/failure-summary.log \
 	)

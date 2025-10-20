@@ -277,8 +277,8 @@ HeapWord* TenuredGeneration::block_start(const void* addr) const {
   }
 }
 
-void TenuredGeneration::scan_old_to_young_refs(HeapWord* saved_top_in_old_gen) {
-  _rs->scan_old_to_young_refs(this, saved_top_in_old_gen);
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(this, space()->top());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -368,7 +368,7 @@ void TenuredGeneration::update_promote_stats() {
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all(_virtual_space.committed_size());
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 
@@ -439,15 +439,12 @@ void TenuredGeneration::verify() {
 }
 
 void TenuredGeneration::print_on(outputStream* st)  const {
-  st->print(" %-10s", name());
+  st->print("%-10s", name());
 
-  st->print(" total %zuK, used %zuK",
+  st->print(" total %zuK, used %zuK ",
             capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+  _virtual_space.print_space_boundaries_on(st);
 
-  st->print("   the");
-  _the_space->print_on(st);
+  StreamIndentor si(st, 1);
+  _the_space->print_on(st, "the  ");
 }

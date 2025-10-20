@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@ import sun.security.util.Debug;
 import sun.security.x509.*;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static sun.security.ssl.Utilities.LINE_SEP;
 
 /**
  * Implementation of SSL logger.
@@ -61,6 +62,7 @@ public final class SSLLogger {
     private static final System.Logger logger;
     private static final String property;
     public static final boolean isOn;
+
 
     static {
         String p = System.getProperty("javax.net.debug");
@@ -142,8 +144,10 @@ public final class SSLLogger {
         if (property.contains("all")) {
             return true;
         } else {
-            int offset = property.indexOf("ssl");
-            if (offset != -1 && property.indexOf("sslctx", offset) != -1) {
+            // remove first occurrence of "sslctx" since
+            // it interferes with search for "ssl"
+            String modified = property.replaceFirst("sslctx", "");
+            if (modified.contains("ssl")) {
                 // don't enable data and plaintext options by default
                 if (!(option.equals("data")
                         || option.equals("packet")
@@ -177,7 +181,7 @@ public final class SSLLogger {
     }
 
     public static void finest(String msg, Object... params) {
-        SSLLogger.log(Level.ALL, msg, params);
+        SSLLogger.log(Level.TRACE, msg, params);
     }
 
     private static void log(Level level, String msg, Object... params) {
@@ -188,7 +192,12 @@ public final class SSLLogger {
                 try {
                     String formatted =
                             SSLSimpleFormatter.formatParameters(params);
-                    logger.log(level, msg, formatted);
+                    // use the customized log method for SSLConsoleLogger
+                    if (logger instanceof SSLConsoleLogger) {
+                        logger.log(level, msg, formatted);
+                    } else {
+                        logger.log(level, msg + ":" + LINE_SEP + formatted);
+                    }
                 } catch (Exception exp) {
                     // ignore it, just for debugging.
                 }
@@ -280,7 +289,7 @@ public final class SSLLogger {
                         """,
                 Locale.ENGLISH);
 
-        private static final MessageFormat extendedCertFormart =
+        private static final MessageFormat extendedCertFormat =
             new MessageFormat(
                     """
                             "version"            : "v{0}",
@@ -296,15 +305,6 @@ public final class SSLLogger {
                             ]
                             """,
                 Locale.ENGLISH);
-
-        //
-        // private static MessageFormat certExtFormat = new MessageFormat(
-        //         "{0} [{1}] '{'\n" +
-        //         "  critical: {2}\n" +
-        //         "  value: {3}\n" +
-        //         "'}'",
-        //         Locale.ENGLISH);
-        //
 
         private static final MessageFormat messageFormatNoParas =
             new MessageFormat(
@@ -323,7 +323,7 @@ public final class SSLLogger {
 
         private static final MessageFormat messageCompactFormatNoParas =
             new MessageFormat(
-                "{0}|{1}|{2}|{3}|{4}|{5}|{6}\n",
+                "{0}|{1}|{2}|{3}|{4}|{5}|{6}" + LINE_SEP,
                 Locale.ENGLISH);
 
         private static final MessageFormat messageFormatWithParas =
@@ -421,7 +421,7 @@ public final class SSLLogger {
                 if (isFirst) {
                     isFirst = false;
                 } else {
-                    builder.append(",\n");
+                    builder.append("," + LINE_SEP);
                 }
 
                 if (parameter instanceof Throwable) {
@@ -502,10 +502,10 @@ public final class SSLLogger {
                         if (isFirst) {
                             isFirst = false;
                         } else {
-                            extBuilder.append(",\n");
+                            extBuilder.append("," + LINE_SEP);
                         }
-                        extBuilder.append("{\n" +
-                            Utilities.indent(certExt.toString()) + "\n}");
+                        extBuilder.append("{" + LINE_SEP +
+                            Utilities.indent(certExt.toString()) + LINE_SEP +"}");
                     }
                     Object[] certFields = {
                         x509.getVersion(),
@@ -519,7 +519,7 @@ public final class SSLLogger {
                         Utilities.indent(extBuilder.toString())
                         };
                     builder.append(Utilities.indent(
-                            extendedCertFormart.format(certFields)));
+                            extendedCertFormat.format(certFields)));
                 }
             } catch (Exception ce) {
                 // ignore the exception
@@ -576,7 +576,7 @@ public final class SSLLogger {
                 //          "string c"
                 //        ]
                 StringBuilder builder = new StringBuilder(512);
-                builder.append("\"" + key + "\": [\n");
+                builder.append("\"" + key + "\": [" + LINE_SEP);
                 int len = strings.length;
                 for (int i = 0; i < len; i++) {
                     String string = strings[i];
@@ -584,7 +584,7 @@ public final class SSLLogger {
                     if (i != len - 1) {
                         builder.append(",");
                     }
-                    builder.append("\n");
+                    builder.append(LINE_SEP);
                 }
                 builder.append("      ]");
 
