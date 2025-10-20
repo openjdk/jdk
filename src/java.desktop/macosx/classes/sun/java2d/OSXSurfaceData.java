@@ -197,11 +197,6 @@ public abstract class OSXSurfaceData extends BufImgSurfaceData {
 
     // END compositing support API
 
-    @Override
-    public void invalidate() {
-        // always valid
-    }
-
      // graphics primitives drawing implementation:
 
     // certain primitives don't care about all the states (ex. drawing an image needs not involve setting current paint)
