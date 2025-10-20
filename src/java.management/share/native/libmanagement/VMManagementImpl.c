@@ -122,7 +122,7 @@ Java_sun_management_VMManagementImpl_getUnloadedClassCount
 }
 
 JNIEXPORT jlong JNICALL
-Java_sun_management_VMManagementImpl_getTotalGcCpuTime
+Java_sun_management_VMManagementImpl_getGcCpuTime
   (JNIEnv *env, jobject dummy)
 {
     return jmm_interface->GetLongAttribute(env, NULL, JMM_GC_CPU_TIME);

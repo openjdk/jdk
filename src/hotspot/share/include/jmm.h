@@ -81,8 +81,8 @@ typedef enum {
   JMM_COMPILE_TOTAL_TIME_MS          = 8,    /* Total accumulated time spent in compilation */
   JMM_GC_TIME_MS                     = 9,    /* Total accumulated time spent in collection */
   JMM_GC_COUNT                       = 10,   /* Total number of collections */
-  JMM_JVM_UPTIME_MS                  = 11,   /* The JVM uptime in milliseconds */
-  JMM_GC_CPU_TIME                    = 12,   /* Total accumulated GC CPU time */
+  JMM_GC_CPU_TIME                    = 11,   /* Total accumulated GC CPU time */
+  JMM_JVM_UPTIME_MS                  = 12,   /* The JVM uptime in milliseconds */
 
   JMM_INTERNAL_ATTRIBUTE_INDEX       = 100,
   JMM_CLASS_LOADED_BYTES             = 101,  /* Number of bytes loaded instance classes */

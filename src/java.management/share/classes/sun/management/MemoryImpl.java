@@ -43,10 +43,10 @@ import javax.management.openmbean.CompositeData;
  * ManagementFactory.getMemoryMXBean() returns an instance
  * of this class.
  */
-public class MemoryImpl extends NotificationEmitterSupport
+class MemoryImpl extends NotificationEmitterSupport
                  implements MemoryMXBean {
 
-    protected final VMManagement jvm;
+    private final VMManagement jvm;
 
     private static MemoryPoolMXBean[] pools = null;
     private static MemoryManagerMXBean[] mgrs = null;
@@ -54,7 +54,7 @@ public class MemoryImpl extends NotificationEmitterSupport
     /**
      * Constructor of MemoryImpl class
      */
-    protected MemoryImpl(VMManagement vm) {
+    MemoryImpl(VMManagement vm) {
         this.jvm = vm;
     }
 
@@ -65,6 +65,10 @@ public class MemoryImpl extends NotificationEmitterSupport
 
     public void gc() {
         Runtime.getRuntime().gc();
+    }
+
+    public long getGcCpuTime() {
+        return jvm.getGcCpuTime();
     }
 
     // Need to make a VM call to get coherent value

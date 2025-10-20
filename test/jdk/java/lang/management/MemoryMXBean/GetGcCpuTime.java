@@ -25,30 +25,29 @@
  * @test
  * @bug     8368527
  * @library /test/lib
- * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @summary Stress MemoryMXBean.getGcCpuTime during shutdown
  *
- * @run main/othervm -XX:+UseSerialGC GetTotalGcCpuTime _
- * @run main/othervm -XX:+UseParallelGC GetTotalGcCpuTime _
- * @run main/othervm -XX:+UseG1GC GetTotalGcCpuTime _
- * @run main/othervm -XX:+UseZGC GetTotalGcCpuTime _
+ * @run main/othervm -XX:+UseSerialGC GetGcCpuTime _
+ * @run main/othervm -XX:+UseParallelGC GetGcCpuTime _
+ * @run main/othervm -XX:+UseG1GC GetGcCpuTime _
+ * @run main/othervm -XX:+UseZGC GetGcCpuTime _
  */
 
 import jdk.test.lib.process.OutputAnalyzer;
 import static jdk.test.lib.process.ProcessTools.createTestJavaProcessBuilder;
 import static jdk.test.lib.process.ProcessTools.executeProcess;
 
-import com.sun.management.MemoryMXBean;
-
 import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
 
-public class GetTotalGcCpuTime {
+public class GetGcCpuTime {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
-    static final MemoryMXBean mxMemoryBean = ManagementFactory.getPlatformMXBean(MemoryMXBean.class);
+    static final MemoryMXBean mxMemoryBean = ManagementFactory.getMemoryMXBean();
 
     public static void main(String[] args) throws Exception {
         if (args.length > 0) {
-            ProcessBuilder pb = createTestJavaProcessBuilder("GetTotalGcCpuTime");
+            ProcessBuilder pb = createTestJavaProcessBuilder("GetGcCpuTime");
             OutputAnalyzer output = executeProcess(pb);
             output.shouldNotContain("GC CPU time should");
             output.shouldHaveExitValue(0);
@@ -60,7 +59,7 @@ public class GetTotalGcCpuTime {
                 return;
             }
         } catch (UnsupportedOperationException e) {
-            if (mxMemoryBean.getTotalGcCpuTime() != -1) {
+            if (mxMemoryBean.getGcCpuTime() != -1) {
                 throw new Error("GC CPU time should be -1");
             }
             return;
@@ -70,7 +69,7 @@ public class GetTotalGcCpuTime {
         for (int i = 0; i < numberOfThreads; i++) {
             Thread t = new Thread(() -> {
                 while (true) {
-                    long gcCpuTimeFromThread = mxMemoryBean.getTotalGcCpuTime();
+                    long gcCpuTimeFromThread = mxMemoryBean.getGcCpuTime();
                     if (gcCpuTimeFromThread < -1) {
                         throw new Error("GC CPU time should never be less than -1 but was " + gcCpuTimeFromThread);
                     }
