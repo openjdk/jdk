@@ -170,9 +170,11 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
     /**
      * Invoked by the thread for a subtask when the subtask completes before scope is cancelled.
      */
-    private void onComplete(SubtaskImpl<? extends T> subtask) {
+    private <U extends T> void onComplete(SubtaskImpl<U> subtask) {
         assert subtask.state() != Subtask.State.UNAVAILABLE;
-        if (joiner.onComplete(subtask)) {
+        @SuppressWarnings("unchecked")
+        var j = (Joiner<U, ? extends R>) joiner;
+        if (j.onComplete(subtask)) {
             cancel();
         }
     }
@@ -189,7 +191,9 @@ final class StructuredTaskScopeImpl<T, R> implements StructuredTaskScope<T, R> {
         var subtask = new SubtaskImpl<U>(this, task);
 
         // notify joiner, even if cancelled
-        if (joiner.onFork(subtask)) {
+        @SuppressWarnings("unchecked")
+        var j = (Joiner<U, ? extends R>) joiner;
+        if (j.onFork(subtask)) {
             cancel();
         }
 
