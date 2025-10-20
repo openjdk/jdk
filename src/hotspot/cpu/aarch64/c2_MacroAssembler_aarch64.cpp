@@ -1881,6 +1881,7 @@ void C2_MacroAssembler::reduce_mul_integral_256b(Register dst, BasicType bt, Reg
                                                  FloatRegister vtmp1, FloatRegister vtmp2,
                                                  FloatRegister vtmp3) {
   assert(vector_length_in_bytes == 32, "unsupported vector length");
+  assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported type");
   if (bt == T_LONG) {
     assert_different_registers(vsrc, vtmp1);
   } else {
@@ -1897,17 +1898,7 @@ void C2_MacroAssembler::reduce_mul_integral_256b(Register dst, BasicType bt, Reg
   vector_length_in_bytes = vector_length_in_bytes / 2;
   vector_length = vector_length / 2;
 
-  switch (bt) {
-  case T_BYTE:
-  case T_SHORT:
-  case T_INT:
-  case T_LONG:
-    reduce_mul_integral_le128b(dst, bt, isrc, vtmp1, FloatRegister::neon_vl, vtmp2, vtmp3);
-    break;
-  default:
-    assert(false, "unsupported");
-    ShouldNotReachHere();
-  }
+  reduce_mul_integral_le128b(dst, bt, isrc, vtmp1, FloatRegister::neon_vl, vtmp2, vtmp3);
   BLOCK_COMMENT("} reduce_mul_integral_256b");
 }
 
