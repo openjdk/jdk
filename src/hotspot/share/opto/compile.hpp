@@ -125,11 +125,13 @@ enum OptimizationEvent {
   OptEvent_ConditionalConstantPropagation,
   OptEvent_EliminateAutobox,
   OptEvent_BlockElimination,
-  OptEvent_SimplifyPhiFunction,
-  OptEvent_Canonicalization,
   OptEvent_NullCheckElimination,
   OptEvent_RangeCheckElimination,
   OptEvent_OptimizePtrCompare,
+  OptEvent_MergeStores,
+  OptEvent_LoopPredication,
+  OptEvent_AutoVectorization,
+  OptEvent_PartialPeeling,
   OptEvent_Count
 };
 
