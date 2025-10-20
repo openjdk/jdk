@@ -1111,6 +1111,7 @@ public:
     }
   }
 
+private:
   Node* get_ctrl_no_update_helper(const Node* i) const {
     // We expect only data nodes (which must have a ctrl set), or
     // dead ctrl nodes that have a ctrl "forwarding", see lazy_replace.
@@ -1118,6 +1119,7 @@ public:
     return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
+public:
   // Compute the ctrl of node i, jumping over ctrl forwardings.
   Node* get_ctrl_no_update(const Node* i) const {
     assert(has_ctrl(i), "only data nodes expected");
