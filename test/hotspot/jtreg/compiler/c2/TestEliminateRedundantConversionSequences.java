@@ -34,7 +34,7 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
  *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110
- *      -XX:+StressIGVN -XX:StressSeed=115074401
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=115074401
  *      compiler.c2.TestEliminateRedundantConversionSequences
  * @run main compiler.c2.TestEliminateRedundantConversionSequences
  *
