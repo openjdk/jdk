@@ -70,7 +70,7 @@ class FreeListAllocator {
 
     Atomic<FreeNode*>* next_addr() { return &_next; }
 
-    void set_next(FreeNode* next) { _next.relaxed_store(next); }
+    void set_next(FreeNode* next) { _next.store_relaxed(next); }
   };
 
   struct NodeList {

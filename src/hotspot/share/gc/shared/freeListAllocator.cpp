@@ -53,9 +53,9 @@ size_t FreeListAllocator::PendingList::add(FreeNode* node) {
 
 typename FreeListAllocator::NodeList FreeListAllocator::PendingList::take_all() {
   NodeList result{_head.load_relaxed(), _tail, _count.load_relaxed()};
-  _head.relaxed_store(nullptr);
+  _head.store_relaxed(nullptr);
   _tail = nullptr;
-  _count.relaxed_store(0u);
+  _count.store_relaxed(0u);
   return result;
 }
 
@@ -96,7 +96,7 @@ void FreeListAllocator::reset() {
   uint index = _active_pending_list.load_relaxed();
   _pending_lists[index].take_all();
   _free_list.pop_all();
-  _free_count.relaxed_store(0u);
+  _free_count.store_relaxed(0u);
 }
 
 size_t FreeListAllocator::free_count() const {

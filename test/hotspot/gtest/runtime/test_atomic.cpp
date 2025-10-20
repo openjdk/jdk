@@ -42,7 +42,7 @@ struct AtomicIntegerArithmeticTestSupport {
   AtomicIntegerArithmeticTestSupport() : _test_value(0) {}
 
   void fetch_then_add() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value + _change_value;
     T result = _test_value.fetch_then_add(_change_value);
     EXPECT_EQ(_old_value, result);
@@ -50,7 +50,7 @@ struct AtomicIntegerArithmeticTestSupport {
   }
 
   void fetch_then_sub() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value - _change_value;
     T result = _test_value.fetch_then_sub(_change_value);
     EXPECT_EQ(_old_value, result);
@@ -58,7 +58,7 @@ struct AtomicIntegerArithmeticTestSupport {
   }
 
   void add_then_fetch() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value + _change_value;
     T result = _test_value.add_then_fetch(_change_value);
     EXPECT_EQ(expected, result);
@@ -66,7 +66,7 @@ struct AtomicIntegerArithmeticTestSupport {
   }
 
   void sub_then_fetch() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value - _change_value;
     T result = _test_value.sub_then_fetch(_change_value);
     EXPECT_EQ(expected, result);
@@ -74,14 +74,14 @@ struct AtomicIntegerArithmeticTestSupport {
   }
 
   void atomic_inc() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value + 1;
     _test_value.atomic_inc();
     EXPECT_EQ(expected, _test_value.load_relaxed());
   }
 
   void atomic_dec() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value - 1;
     _test_value.atomic_dec();
     EXPECT_EQ(expected, _test_value.load_relaxed());
@@ -126,7 +126,7 @@ struct AtomicIntegerXchgTestSupport {
   void test() {
     T zero = 0;
     T five = 5;
-    _test_value.relaxed_store(zero);
+    _test_value.store_relaxed(zero);
     T res = _test_value.fetch_then_set(five);
     EXPECT_EQ(zero, res);
     EXPECT_EQ(five, _test_value.load_relaxed());
@@ -153,7 +153,7 @@ struct AtomicIntegerCmpxchgTestSupport {
     T zero = 0;
     T five = 5;
     T ten = 10;
-    _test_value.relaxed_store(zero);
+    _test_value.store_relaxed(zero);
     T res = _test_value.cmpxchg(five, ten);
     EXPECT_EQ(zero, res);
     EXPECT_EQ(zero, _test_value.load_relaxed());
@@ -210,7 +210,7 @@ struct AtomicCmpxchg1ByteStressSupport {
 
   void test() {
     for (size_t i = 0; i < ARRAY_SIZE(_array); ++i) {
-      _array[i].relaxed_store(_default_val);
+      _array[i].store_relaxed(_default_val);
     }
     for (int i = _base; i < (_base+32); i++) {
       test_index(i);
@@ -231,13 +231,13 @@ struct AtomicEnumTestSupport {
 
   void test_store_load(T value) {
     EXPECT_NE(value, _test_value.load_relaxed());
-    _test_value.relaxed_store(value);
+    _test_value.store_relaxed(value);
     EXPECT_EQ(value, _test_value.load_relaxed());
   }
 
   void test_cmpxchg(T value1, T value2) {
     EXPECT_NE(value1, _test_value.load_relaxed());
-    _test_value.relaxed_store(value1);
+    _test_value.store_relaxed(value1);
     EXPECT_EQ(value1, _test_value.cmpxchg(value2, value2));
     EXPECT_EQ(value1, _test_value.load_relaxed());
     EXPECT_EQ(value1, _test_value.cmpxchg(value1, value2));
@@ -246,7 +246,7 @@ struct AtomicEnumTestSupport {
 
   void test_xchg(T value1, T value2) {
     EXPECT_NE(value1, _test_value.load_relaxed());
-    _test_value.relaxed_store(value1);
+    _test_value.store_relaxed(value1);
     EXPECT_EQ(value1, _test_value.fetch_then_set(value2));
     EXPECT_EQ(value2, _test_value.load_relaxed());
   }
@@ -288,7 +288,7 @@ struct AtomicBitopsTestSupport {
   AtomicBitopsTestSupport() : _test_value(0) {}
 
   void fetch_then_and() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value & _change_value;
     EXPECT_NE(_old_value, expected);
     T result = _test_value.fetch_then_and(_change_value);
@@ -297,7 +297,7 @@ struct AtomicBitopsTestSupport {
   }
 
   void fetch_then_or() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value | _change_value;
     EXPECT_NE(_old_value, expected);
     T result = _test_value.fetch_then_or(_change_value);
@@ -306,7 +306,7 @@ struct AtomicBitopsTestSupport {
   }
 
   void fetch_then_xor() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value ^ _change_value;
     EXPECT_NE(_old_value, expected);
     T result = _test_value.fetch_then_xor(_change_value);
@@ -315,7 +315,7 @@ struct AtomicBitopsTestSupport {
   }
 
   void and_then_fetch() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value & _change_value;
     EXPECT_NE(_old_value, expected);
     T result = _test_value.and_then_fetch(_change_value);
@@ -324,7 +324,7 @@ struct AtomicBitopsTestSupport {
   }
 
   void or_then_fetch() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value | _change_value;
     EXPECT_NE(_old_value, expected);
     T result = _test_value.or_then_fetch(_change_value);
@@ -333,7 +333,7 @@ struct AtomicBitopsTestSupport {
   }
 
   void xor_then_fetch() {
-    _test_value.relaxed_store(_old_value);
+    _test_value.store_relaxed(_old_value);
     T expected = _old_value ^ _change_value;
     EXPECT_NE(_old_value, expected);
     T result = _test_value.xor_then_fetch(_change_value);
@@ -381,7 +381,7 @@ struct AtomicPointerTestSupport {
   AtomicPointerTestSupport() : _test_value(nullptr) {}
 
   void fetch_then_add() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* expected = _initial_ptr + 2;
     T* result = _test_value.fetch_then_add(2);
     EXPECT_EQ(_initial_ptr, result);
@@ -389,7 +389,7 @@ struct AtomicPointerTestSupport {
   }
 
   void fetch_then_sub() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* expected = _initial_ptr - 2;
     T* result = _test_value.fetch_then_sub(2);
     EXPECT_EQ(_initial_ptr, result);
@@ -397,7 +397,7 @@ struct AtomicPointerTestSupport {
   }
 
   void add_then_fetch() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* expected = _initial_ptr + 2;
     T* result = _test_value.add_then_fetch(2);
     EXPECT_EQ(expected, result);
@@ -405,7 +405,7 @@ struct AtomicPointerTestSupport {
   }
 
   void sub_then_fetch() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* expected = _initial_ptr - 2;
     T* result = _test_value.sub_then_fetch(2);
     EXPECT_EQ(expected, result);
@@ -413,21 +413,21 @@ struct AtomicPointerTestSupport {
   }
 
   void atomic_inc() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* expected = _initial_ptr + 1;
     _test_value.atomic_inc();
     EXPECT_EQ(expected, _test_value.load_relaxed());
   }
 
   void atomic_dec() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* expected = _initial_ptr - 1;
     _test_value.atomic_dec();
     EXPECT_EQ(expected, _test_value.load_relaxed());
   }
 
   void fetch_then_set() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* replace = _initial_ptr + 3;
     T* result = _test_value.fetch_then_set(replace);
     EXPECT_EQ(_initial_ptr, result);
@@ -435,7 +435,7 @@ struct AtomicPointerTestSupport {
   }
 
   void cmpxchg() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* not_initial_ptr = _initial_ptr - 1;
     T* replace = _initial_ptr + 3;
 
@@ -449,7 +449,7 @@ struct AtomicPointerTestSupport {
   }
 
   void replace_if_null() {
-    _test_value.relaxed_store(nullptr);
+    _test_value.store_relaxed(nullptr);
     EXPECT_TRUE(_test_value.replace_if_null(_initial_ptr));
     EXPECT_EQ(_initial_ptr, _test_value.load_relaxed());
 
@@ -459,7 +459,7 @@ struct AtomicPointerTestSupport {
   }
 
   void clear_if_equal() {
-    _test_value.relaxed_store(_initial_ptr);
+    _test_value.store_relaxed(_initial_ptr);
     T* compare = _initial_ptr + 3;
     EXPECT_FALSE(_test_value.clear_if_equal(compare));
     EXPECT_EQ(_initial_ptr, _test_value.load_relaxed());
@@ -611,7 +611,7 @@ static void test_atomic_translated_type() {
   using Translated = PrimitiveConversions::Translate<T>;
 
   EXPECT_EQ(0, Translated::decay(_test_value.load_relaxed()));
-  _test_value.relaxed_store(Translated::recover(5));
+  _test_value.store_relaxed(Translated::recover(5));
   EXPECT_EQ(5, Translated::decay(_test_value.load_relaxed()));
   EXPECT_EQ(5, Translated::decay(_test_value.cmpxchg(Translated::recover(5),
                                                      Translated::recover(10))));
@@ -647,7 +647,7 @@ TEST_VM(AtomicTranslatedTypeTest, chain) {
 
   EXPECT_EQ(TranslatedAtomicTestObject2::DefaultObject1Value,
             resolve(_test_value.load_relaxed()));
-  _test_value.relaxed_store(construct(5));
+  _test_value.store_relaxed(construct(5));
   EXPECT_EQ(5, resolve(_test_value.load_relaxed()));
   EXPECT_EQ(5, resolve(_test_value.cmpxchg(construct(5), construct(10))));
   EXPECT_EQ(10, resolve(_test_value.load_relaxed()));

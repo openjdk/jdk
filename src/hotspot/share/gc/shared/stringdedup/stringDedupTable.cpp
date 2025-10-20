@@ -245,13 +245,13 @@ void StringDedup::Table::num_dead_callback(size_t num_dead) {
 
   switch (_dead_state.load_relaxed()) {
   case DeadState::good:
-    _dead_count.relaxed_store(num_dead);
+    _dead_count.store_relaxed(num_dead);
     break;
 
   case DeadState::wait1:
     // Set count first, so dedup thread gets this or a later value if it
     // sees the good state.
-    _dead_count.relaxed_store(num_dead);
+    _dead_count.store_relaxed(num_dead);
     _dead_state.release_store(DeadState::good);
     break;
 
@@ -672,8 +672,8 @@ bool StringDedup::Table::cleanup_start_if_needed(bool grow_only, bool force) {
 
 void StringDedup::Table::set_dead_state_cleaning() {
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  _dead_count.relaxed_store(0);
-  _dead_state.relaxed_store(DeadState::cleaning);
+  _dead_count.store_relaxed(0);
+  _dead_state.store_relaxed(DeadState::cleaning);
 }
 
 bool StringDedup::Table::start_resizer(bool grow_only, size_t number_of_entries) {
@@ -707,7 +707,7 @@ void StringDedup::Table::cleanup_end() {
   delete _cleanup_state;
   _cleanup_state = nullptr;
   MutexLocker ml(StringDedup_lock, Mutex::_no_safepoint_check_flag);
-  _dead_state.relaxed_store(DeadState::wait2);
+  _dead_state.store_relaxed(DeadState::wait2);
 }
 
 void StringDedup::Table::verify() {

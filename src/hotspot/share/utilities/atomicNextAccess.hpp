@@ -72,7 +72,7 @@ struct AtomicNextAccess<T, next_access> {
   }
 
   static void set_next(T& value, T* new_next) {
-    next_access(value)->relaxed_store(new_next);
+    next_access(value)->store_relaxed(new_next);
   }
 
   static T* cmpxchg(T& value, const T* compare, T* exchange) {

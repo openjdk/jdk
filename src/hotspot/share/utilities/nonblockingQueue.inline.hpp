@@ -137,7 +137,7 @@ void NonblockingQueue<T, next_access>::append(T& first, T& last) {
   }
   // The queue was empty, and first should become the new _head.  The queue
   // will appear to be empty to any further try_pops until done.
-  _head.relaxed_store(&first);
+  _head.store_relaxed(&first);
 }
 
 template<typename T, auto next_access>
@@ -243,8 +243,8 @@ Pair<T*, T*> NonblockingQueue<T, next_access>::take_all() {
   T* tail = _tail.load_relaxed();
   if (tail != nullptr) set_next(*tail, nullptr); // Clear end marker.
   Pair<T*, T*> result(_head.load_relaxed(), tail);
-  _head.relaxed_store(nullptr);
-  _tail.relaxed_store(nullptr);
+  _head.store_relaxed(nullptr);
+  _tail.store_relaxed(nullptr);
   return result;
 }
 

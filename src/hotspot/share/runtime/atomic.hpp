@@ -72,7 +72,7 @@
 //   member functions:
 //     v.load_relaxed() -> T
 //     v.load_acquire() -> T
-//     v.relaxed_store(x) -> void
+//     v.store_relaxed(x) -> void
 //     v.release_store(x) -> void
 //     v.release_store_fence(x) -> void
 //     v.cmpxchg(x, y [, o]) -> T
@@ -156,9 +156,9 @@
 // for testing for that are not provided. (There might have been some types on
 // some platforms that used a lock long-ago, but that's no longer the case.)
 //
-// * Rather than load/store operations with a memory order parameter,
-// Atomic<T> provides load_{relaxed,acquire}() and {relaxed,release}_store()
-// operations, as well as release_store_fence().
+// * Rather than load and store operations with a memory order parameter,
+// Atomic<T> provides load_relaxed(), load_acquire(), release_store(),
+// store_relaxed(), and release_store_fence() operations.
 //
 // * Atomic<T> doesn't provide operator overloads that perform various
 // operations with sequentially consistent ordering semantics. The rationale
@@ -266,7 +266,7 @@ public:
     return AtomicAccess::load_acquire(value_ptr());
   }
 
-  void relaxed_store(T value) {
+  void store_relaxed(T value) {
     AtomicAccess::store(value_ptr(), value);
   }
 
@@ -546,8 +546,8 @@ public:
     return recover(_value.load_acquire());
   }
 
-  void relaxed_store(T value) {
-    _value.relaxed_store(decay(value));
+  void store_relaxed(T value) {
+    _value.store_relaxed(decay(value));
   }
 
   void release_store(T value) {

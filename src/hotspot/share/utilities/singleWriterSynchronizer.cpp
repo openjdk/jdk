@@ -62,7 +62,7 @@ void SingleWriterSynchronizer::synchronize() {
   uint old;
   do {
     old = value;
-    new_exit.relaxed_store(++value);
+    new_exit.store_relaxed(++value);
     value = _enter.cmpxchg(old, value);
   } while (old != value);
   // Critical sections entered before we changed the polarity will use
@@ -74,7 +74,7 @@ void SingleWriterSynchronizer::synchronize() {
   // a pending synchronize waiting.  The thread that completes the
   // request (_exit value == old) will signal the _wakeup semaphore to
   // allow us to proceed.
-  _waiting_for.relaxed_store(old);
+  _waiting_for.store_relaxed(old);
   // Write of _waiting_for must precede read of _exit and associated
   // conditional semaphore wait.  If they were re-ordered then a
   // critical section exit could miss the wakeup request, failing to
