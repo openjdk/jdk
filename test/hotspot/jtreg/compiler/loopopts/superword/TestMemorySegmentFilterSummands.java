@@ -65,10 +65,8 @@ public class TestMemorySegmentFilterSummands {
     public static void main(String[] args) {
         TestFramework f = new TestFramework();
         f.addFlags("-XX:+IgnoreUnrecognizedVMOptions");
-        f.addScenarios(new Scenario(0, "-XX:-AlignVector", "-XX:-ShortRunningLongLoop"),
-                       new Scenario(1, "-XX:+AlignVector", "-XX:-ShortRunningLongLoop"),
-                       new Scenario(2, "-XX:-AlignVector", "-XX:+ShortRunningLongLoop"),
-                       new Scenario(3, "-XX:+AlignVector", "-XX:+ShortRunningLongLoop"));
+        f.addCrossProductScenarios(Set.of("-XX:-AlignVector", "-XX:+AlignVector"),
+                                   Set.of("-XX:-ShortRunningLongLoop", "-XX:+ShortRunningLoop);
         f.start();
     }
 
