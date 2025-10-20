@@ -245,8 +245,6 @@ void frame::zero_print_on_error(int           frame_index,
     os::snprintf_checked(fieldbuf, buflen, "word[%d]", offset);
     os::snprintf_checked(valuebuf, buflen, PTR_FORMAT, *addr);
     zeroframe()->identify_word(frame_index, offset, fieldbuf, valuebuf, buflen);
-    fieldbuf[buflen - 1] = '\0';
-    valuebuf[buflen - 1] = '\0';
 
     // Print the result
     st->print_cr(" " PTR_FORMAT ": %-21s = %s", p2i(addr), fieldbuf, valuebuf);
