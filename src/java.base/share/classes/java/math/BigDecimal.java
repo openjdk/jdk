@@ -2174,7 +2174,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         // The code below favors relative simplicity over checking
         // for special cases that could run faster.
-        // final int preferredScale = this.scale/2;
         final int preferredScale = Math.ceilDiv(this.scale, 2);
 
         BigDecimal result;
