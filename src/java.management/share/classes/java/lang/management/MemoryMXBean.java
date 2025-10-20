@@ -273,18 +273,18 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * <p> This is the CPU time used by all garbage collection
      * activity, including any overhead, which means the result
      * may be non-zero even if no GC has occurred.
-	 *
-	 * This method return {@code -1} if the platform does
+     *
+     * This method return {@code -1} if the platform does
      * not support this operation or the information is not
      * available.
-	 *
+     *
      * @implNote Reported time will include relevant
      * implementation-specific details such as driver threads,
      * workers, VM Operations and string deduplication (if enabled).
-	 * The return value can be -1 if called when measurement is
+     * The return value can be -1 if called when measurement is
      * not possible, such as during shutdown.
      *
-	 * @return the total accumulated CPU time for garbage collection
+     * @return the total accumulated CPU time for garbage collection
      * in nanoseconds, or -1
      *
      * @since 26
