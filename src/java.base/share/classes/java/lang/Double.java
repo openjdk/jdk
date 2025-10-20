@@ -722,7 +722,7 @@ public final class Double extends Number
         // Isolate significand bits and OR in a high-order bit
         // so that the string representation has a known length.
         // This ensures we always have 13 hex digits to work with (52 bits / 4 bits per hex digit)
-        long signifBits = (Double.doubleToLongBits(d) & DoubleConsts.SIGNIF_BIT_MASK) | 0x1000_0000_0000_0000L;
+        long signifBits = Double.doubleToLongBits(d) & DoubleConsts.SIGNIF_BIT_MASK;
 
         // Calculate the number of trailing zeros in the significand (in groups of 4 bits)
         // This is used to remove trailing zeros from the hex representation
