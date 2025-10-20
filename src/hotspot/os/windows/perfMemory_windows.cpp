@@ -63,9 +63,7 @@ static char* create_standard_memory(size_t size) {
 
   // commit memory
   if (!os::commit_memory(mapAddress, size, !ExecMem)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("Could not commit PerfData memory");
-    }
+    log_debug(perf)("Could not commit PerfData memory");
     os::release_memory(mapAddress, size);
     return nullptr;
   }
@@ -97,19 +95,15 @@ static void save_memory_to_file(char* addr, size_t size) {
                    _S_IREAD|_S_IWRITE);
 
   if (fd == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("Could not create Perfdata save file: %s: %s",
-                      destfile, os::strerror(errno));
-    }
+    log_debug(perf)("Could not create Perfdata save file: %s: %s",
+                    destfile, os::strerror(errno));
   } else {
     for (size_t remaining = size; remaining > 0;) {
 
       int nbytes = ::_write(fd, addr, (unsigned int)remaining);
       if (nbytes == OS_ERR) {
-        if (log_is_enabled(Debug, perf)) {
-          log_debug(perf)("Could not write Perfdata save file: %s: %s",
-                          destfile, os::strerror(errno));
-        }
+        log_debug(perf)("Could not write Perfdata save file: %s: %s",
+                        destfile, os::strerror(errno));
         break;
       }
 
@@ -119,9 +113,7 @@ static void save_memory_to_file(char* addr, size_t size) {
 
     int result = ::_close(fd);
     if (result == OS_ERR) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("Could not close %s: %s", destfile, os::strerror(errno));
-      }
+      log_debug(perf)("Could not close %s: %s", destfile, os::strerror(errno));
     }
   }
 
@@ -221,10 +213,8 @@ static bool is_directory_secure(const char* path) {
     }
     else {
       // unexpected error, declare the path insecure
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("could not get attributes for file %s: "
-                        " lasterror = %d", path, lasterror);
-      }
+      log_debug(perf)("could not get attributes for file %s: "
+                      " lasterror = %d", path, lasterror);
       return false;
     }
   }
@@ -235,9 +225,7 @@ static bool is_directory_secure(const char* path) {
     // as some types of reparse points might be acceptable, but it
     // is probably more secure to avoid these conditions.
     //
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("%s is a reparse point", path);
-    }
+    log_debug(perf)("%s is a reparse point", path);
     return false;
   }
 
@@ -254,10 +242,8 @@ static bool is_directory_secure(const char* path) {
     // this is either a regular file or some other type of file,
     // any of which are unexpected and therefore insecure.
     //
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("%s is not a directory, file attributes = "
-                      INTPTR_FORMAT, path, fa);
-    }
+    log_debug(perf)("%s is not a directory, file attributes = "
+                    INTPTR_FORMAT, path, fa);
     return false;
   }
 }
@@ -494,10 +480,8 @@ static void remove_file(const char* dirname, const char* filename) {
 
   if (::unlink(path) == OS_ERR) {
     if (errno != ENOENT) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("Could not unlink shared memory backing"
-                        " store file %s : %s", path, os::strerror(errno));
-      }
+      log_debug(perf)("Could not unlink shared memory backing"
+                      " store file %s : %s", path, os::strerror(errno));
     }
   }
 
@@ -516,20 +500,16 @@ static bool is_alive(int pid) {
   HANDLE ph = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
   if (ph == nullptr) {
     // the process does not exist.
-    if (log_is_enabled(Debug, perf)) {
-      DWORD lastError = GetLastError();
-      if (lastError != ERROR_INVALID_PARAMETER) {
-        log_debug(perf)("OpenProcess failed: %d", GetLastError());
-      }
+    DWORD lastError = GetLastError();
+    if (lastError != ERROR_INVALID_PARAMETER) {
+      log_debug(perf)("OpenProcess failed: %d", GetLastError());
     }
     return false;
   }
 
   DWORD exit_status;
   if (!GetExitCodeProcess(ph, &exit_status)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("GetExitCodeProcess failed: %d", GetLastError());
-    }
+    log_debug(perf)("GetExitCodeProcess failed: %d", GetLastError());
     CloseHandle(ph);
     return false;
   }
@@ -546,17 +526,13 @@ static bool is_filesystem_secure(const char* path) {
   char fs_type[MAX_PATH];
 
   if (PerfBypassFileSystemCheck) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("bypassing file system criteria checks for %s", path);
-    }
+    log_debug(perf)("bypassing file system criteria checks for %s", path);
     return true;
   }
 
   char* first_colon = strchr((char *)path, ':');
   if (first_colon == nullptr) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("expected device specifier in path: %s", path);
-    }
+    log_debug(perf)("expected device specifier in path: %s", path);
     return false;
   }
 
@@ -577,29 +553,23 @@ static bool is_filesystem_secure(const char* path) {
   if (!GetVolumeInformation(root_path, nullptr, 0, nullptr, &maxpath,
                             &flags, fs_type, MAX_PATH)) {
     // we can't get information about the volume, so assume unsafe.
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("could not get device information for %s: "
-                      " path = %s: lasterror = %d",
-                      root_path, path, GetLastError());
-    }
+    log_debug(perf)("could not get device information for %s: "
+                    " path = %s: lasterror = %d",
+                    root_path, path, GetLastError());
     return false;
   }
 
   if ((flags & FS_PERSISTENT_ACLS) == 0) {
     // file system doesn't support ACLs, declare file system unsafe
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("file system type %s on device %s does not support"
-                      " ACLs", fs_type, root_path);
-    }
+    log_debug(perf)("file system type %s on device %s does not support"
+                    " ACLs", fs_type, root_path);
     return false;
   }
 
   if ((flags & FS_VOL_IS_COMPRESSED) != 0) {
     // file system is compressed, declare file system unsafe
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("file system type %s on device %s is compressed",
-                      fs_type, root_path);
-    }
+    log_debug(perf)("file system type %s on device %s is compressed",
+                    fs_type, root_path);
     return false;
   }
 
@@ -705,9 +675,7 @@ static HANDLE create_file_mapping(const char* name, HANDLE fh, LPSECURITY_ATTRIB
                name);              /* LPCTSTR name for object */
 
   if (fmh == nullptr) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("CreateFileMapping failed, lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("CreateFileMapping failed, lasterror = %d", GetLastError());
     return nullptr;
   }
 
@@ -718,9 +686,7 @@ static HANDLE create_file_mapping(const char* name, HANDLE fh, LPSECURITY_ATTRIB
     // the other processes either exit or close their mapping objects
     // and/or mapped views of this mapping object.
     //
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("file mapping already exists, lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("file mapping already exists, lasterror = %d", GetLastError());
 
     CloseHandle(fmh);
     return nullptr;
@@ -784,9 +750,7 @@ static PSID get_user_sid(HANDLE hProcess) {
 
   // get the process token
   if (!OpenProcessToken(hProcess, TOKEN_READ, &hAccessToken)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("OpenProcessToken failure: lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("OpenProcessToken failure: lasterror = %d", GetLastError());
     return nullptr;
   }
 
@@ -796,10 +760,8 @@ static PSID get_user_sid(HANDLE hProcess) {
   if (!GetTokenInformation(hAccessToken, TokenUser, nullptr, rsize, &rsize)) {
     DWORD lasterror = GetLastError();
     if (lasterror != ERROR_INSUFFICIENT_BUFFER) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
-                        " rsize = %d", lasterror, rsize);
-      }
+      log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
+                      " rsize = %d", lasterror, rsize);
       CloseHandle(hAccessToken);
       return nullptr;
     }
@@ -809,10 +771,8 @@ static PSID get_user_sid(HANDLE hProcess) {
 
   // get the user token information
   if (!GetTokenInformation(hAccessToken, TokenUser, token_buf, rsize, &rsize)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
-                      " rsize = %d", GetLastError(), rsize);
-    }
+    log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
+                    " rsize = %d", GetLastError(), rsize);
     FREE_C_HEAP_ARRAY(char, token_buf);
     CloseHandle(hAccessToken);
     return nullptr;
@@ -822,10 +782,8 @@ static PSID get_user_sid(HANDLE hProcess) {
   PSID pSID = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   if (!CopySid(nbytes, pSID, token_buf->User.Sid)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
-                      " rsize = %d", GetLastError(), rsize);
-    }
+    log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
+                    " rsize = %d", GetLastError(), rsize);
     FREE_C_HEAP_ARRAY(char, token_buf);
     FREE_C_HEAP_ARRAY(char, pSID);
     CloseHandle(hAccessToken);
@@ -867,10 +825,8 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
 
   // retrieve any existing access control list.
   if (!GetSecurityDescriptorDacl(pSD, &exists, &oldACL, &isdefault)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("GetSecurityDescriptor failure: lasterror = %d",
-                      GetLastError());
-    }
+    log_debug(perf)("GetSecurityDescriptor failure: lasterror = %d",
+                    GetLastError());
     return false;
   }
 
@@ -887,10 +843,8 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     if (!GetAclInformation(oldACL, &aclinfo,
                            sizeof(ACL_SIZE_INFORMATION),
                            AclSizeInformation)) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("GetAclInformation failure: lasterror = %d", GetLastError());
-        return false;
-      }
+      log_debug(perf)("GetAclInformation failure: lasterror = %d", GetLastError());
+      return false;
     }
   } else {
     aclinfo.AceCount = 0; // assume null DACL
@@ -915,9 +869,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
   newACL = (PACL) NEW_C_HEAP_ARRAY(char, newACLsize, mtInternal);
 
   if (!InitializeAcl(newACL, newACLsize, ACL_REVISION)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
     FREE_C_HEAP_ARRAY(char, newACL);
     return false;
   }
@@ -928,9 +880,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     while (ace_index < aclinfo.AceCount) {
       LPVOID ace;
       if (!GetAce(oldACL, ace_index, &ace)) {
-        if (log_is_enabled(Debug, perf)) {
-          log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
-        }
+        log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
         FREE_C_HEAP_ARRAY(char, newACL);
         return false;
       }
@@ -955,9 +905,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
       if (matches == 0) {
         if (!AddAce(newACL, ACL_REVISION, MAXDWORD, ace,
                     ((PACE_HEADER)ace)->AceSize)) {
-          if (log_is_enabled(Debug, perf)) {
-            log_debug(perf)("AddAce failure: lasterror = %d", GetLastError());
-          }
+          log_debug(perf)("AddAce failure: lasterror = %d", GetLastError());
           FREE_C_HEAP_ARRAY(char, newACL);
           return false;
         }
@@ -970,10 +918,8 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
   for (int i = 0; i < ace_count; i++) {
     if (!AddAccessAllowedAce(newACL, ACL_REVISION,
                              aces[i].mask, aces[i].pSid)) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("AddAccessAllowedAce failure: lasterror = %d",
-                        GetLastError());
-      }
+      log_debug(perf)("AddAccessAllowedAce failure: lasterror = %d",
+                      GetLastError());
       FREE_C_HEAP_ARRAY(char, newACL);
       return false;
     }
@@ -986,17 +932,13 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     while (ace_index < aclinfo.AceCount) {
       LPVOID ace;
       if (!GetAce(oldACL, ace_index, &ace)) {
-        if (log_is_enabled(Debug, perf)) {
-          log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
-        }
+        log_debug(perf)("InitializeAcl failure: lasterror = %d", GetLastError());
         FREE_C_HEAP_ARRAY(char, newACL);
         return false;
       }
       if (!AddAce(newACL, ACL_REVISION, MAXDWORD, ace,
                   ((PACE_HEADER)ace)->AceSize)) {
-        if (log_is_enabled(Debug, perf)) {
-          log_debug(perf)("AddAce failure: lasterror = %d", GetLastError());
-        }
+        log_debug(perf)("AddAce failure: lasterror = %d", GetLastError());
         FREE_C_HEAP_ARRAY(char, newACL);
         return false;
       }
@@ -1006,10 +948,8 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
 
   // add the new ACL to the security descriptor.
   if (!SetSecurityDescriptorDacl(pSD, TRUE, newACL, FALSE)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("SetSecurityDescriptorDacl failure:"
-                      " lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("SetSecurityDescriptorDacl failure:"
+                    " lasterror = %d", GetLastError());
     FREE_C_HEAP_ARRAY(char, newACL);
     return false;
   }
@@ -1026,10 +966,8 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     // protected prevents that.
     if (!_SetSecurityDescriptorControl(pSD, SE_DACL_PROTECTED,
                                             SE_DACL_PROTECTED)) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("SetSecurityDescriptorControl failure:"
-                        " lasterror = %d", GetLastError());
-      }
+      log_debug(perf)("SetSecurityDescriptorControl failure:"
+                      " lasterror = %d", GetLastError());
       FREE_C_HEAP_ARRAY(char, newACL);
       return false;
     }
@@ -1058,10 +996,8 @@ static LPSECURITY_ATTRIBUTES make_security_attr(ace_data_t aces[], int count) {
 
   // initialize the security descriptor
   if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("InitializeSecurityDescriptor failure: "
-                      "lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("InitializeSecurityDescriptor failure: "
+                    "lasterror = %d", GetLastError());
     free_security_desc(pSD);
     return nullptr;
   }
@@ -1114,11 +1050,8 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
            SECURITY_BUILTIN_DOMAIN_RID,
            DOMAIN_ALIAS_RID_ADMINS,
            0, 0, 0, 0, 0, 0, &administratorsSid)) {
-
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("AllocateAndInitializeSid failure: "
-                      "lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("AllocateAndInitializeSid failure: "
+                    "lasterror = %d", GetLastError());
     return nullptr;
   }
 
@@ -1132,11 +1065,8 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
 
   if (!AllocateAndInitializeSid( &SIDAuthEverybody, 1, SECURITY_WORLD_RID,
            0, 0, 0, 0, 0, 0, 0, &everybodySid)) {
-
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("AllocateAndInitializeSid failure: "
-                      "lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("AllocateAndInitializeSid failure: "
+                    "lasterror = %d", GetLastError());
     return nullptr;
   }
 
@@ -1237,9 +1167,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       //
       if (!is_directory_secure(dirname)) {
         // directory is not secure
-        if (log_is_enabled(Debug, perf)) {
-          log_debug(perf)("%s directory is insecure", dirname);
-        }
+        log_debug(perf)("%s directory is insecure", dirname);
         free_security_attr(pDirSA);
         return false;
       }
@@ -1250,15 +1178,11 @@ static bool make_user_tmp_dir(const char* dirname) {
       // DACLs might fix the corrupted the DACLs.
       SECURITY_INFORMATION secInfo = DACL_SECURITY_INFORMATION;
       if (!SetFileSecurity(dirname, secInfo, pDirSA->lpSecurityDescriptor)) {
-        if (log_is_enabled(Debug, perf)) {
-          lasterror = GetLastError();
-          log_debug(perf)("SetFileSecurity failed for %s directory. lasterror %d", dirname, lasterror);
-        }
+        lasterror = GetLastError();
+        log_debug(perf)("SetFileSecurity failed for %s directory. lasterror %d", dirname, lasterror);
       }
     } else {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("CreateDirectory failed: %d", GetLastError());
-      }
+      log_debug(perf)("CreateDirectory failed: %d", GetLastError());
       free_security_attr(pDirSA);
       return false;
     }
@@ -1324,10 +1248,8 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
   free_security_attr(lpFileSA);
 
   if (fh == INVALID_HANDLE_VALUE) {
-    if (log_is_enabled(Debug, perf)) {
-      DWORD lasterror = GetLastError();
-      log_debug(perf)("could not create file %s: %d", filename, lasterror);
-    }
+    DWORD lasterror = GetLastError();
+    log_debug(perf)("could not create file %s: %d", filename, lasterror);
     free_security_attr(lpSmoSA);
     return nullptr;
   }
@@ -1353,10 +1275,8 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
     struct stat statbuf;
     int ret_code = ::stat(filename, &statbuf);
     if (ret_code == OS_ERR) {
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("Could not get status information from file %s: %s",
-                        filename, os::strerror(errno));
-      }
+      log_debug(perf)("Could not get status information from file %s: %s",
+                      filename, os::strerror(errno));
       CloseHandle(fmh);
       CloseHandle(fh);
       fh = nullptr;
@@ -1369,9 +1289,7 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
     // call it when we observe the size as zero (0).
     if (statbuf.st_size == 0 && FlushFileBuffers(fh) != TRUE) {
       DWORD lasterror = GetLastError();
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("could not flush file %s: %d", filename, lasterror);
-      }
+      log_debug(perf)("could not flush file %s: %d", filename, lasterror);
       CloseHandle(fmh);
       CloseHandle(fh);
       fh = nullptr;
@@ -1402,10 +1320,8 @@ static HANDLE open_sharedmem_object(const char* objectname, DWORD ofm_access, TR
 
   if (fmh == nullptr) {
     DWORD lasterror = GetLastError();
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("OpenFileMapping failed for shared memory object %s:"
-                      " lasterror = %d", objectname, lasterror);
-    }
+    log_debug(perf)("OpenFileMapping failed for shared memory object %s:"
+                    " lasterror = %d", objectname, lasterror);
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
                err_msg("Could not open PerfMemory, error %d", lasterror),
                INVALID_HANDLE_VALUE);
@@ -1485,9 +1401,7 @@ static char* mapping_create_shared(size_t size) {
                    (DWORD)size);            /* DWORD Number of bytes to map */
 
   if (mapAddress == nullptr) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("MapViewOfFile failed, lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("MapViewOfFile failed, lasterror = %d", GetLastError());
     CloseHandle(sharedmem_fileMapHandle);
     sharedmem_fileMapHandle = nullptr;
     return nullptr;
@@ -1551,17 +1465,13 @@ static size_t sharedmem_filesize(const char* filename, TRAPS) {
   // inconsistencies
   //
   if (::stat(filename, &statbuf) == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("stat %s failed: %s", filename, os::strerror(errno));
-    }
+    log_debug(perf)("stat %s failed: %s", filename, os::strerror(errno));
     THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Could not determine PerfMemory size");
   }
 
   if ((statbuf.st_size == 0) || (statbuf.st_size % os::vm_page_size() != 0)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("unexpected file size: size = %zu", statbuf.st_size);
-    }
+    log_debug(perf)("unexpected file size: size = %zu", statbuf.st_size);
     THROW_MSG_0(vmSymbols::java_io_IOException(), "Invalid PerfMemory size");
   }
 
@@ -1635,9 +1545,7 @@ static void open_file_mapping(int vmid, char** addrp, size_t* sizep, TRAPS) {
                  size);           /* DWORD Number of bytes to map */
 
   if (mapAddress == nullptr) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("MapViewOfFile failed, lasterror = %d", GetLastError());
-    }
+    log_debug(perf)("MapViewOfFile failed, lasterror = %d", GetLastError());
     CloseHandle(fmh);
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               "Could not map PerfMemory");
@@ -1706,9 +1614,7 @@ void PerfMemory::create_memory_region(size_t size) {
       // creation of the shared memory region failed, attempt
       // to create a contiguous, non-shared memory region instead.
       //
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("Reverting to non-shared PerfMemory region.");
-      }
+      log_debug(perf)("Reverting to non-shared PerfMemory region.");
       FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }

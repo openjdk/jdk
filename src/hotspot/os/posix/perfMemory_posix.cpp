@@ -72,9 +72,7 @@ static char* create_standard_memory(size_t size) {
 
   // commit memory
   if (!os::commit_memory(mapAddress, size, !ExecMem)) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("Could not commit PerfData memory");
-    }
+    log_debug(perf)("Could not commit PerfData memory");
     os::release_memory(mapAddress, size);
     return nullptr;
   }
@@ -373,9 +371,7 @@ static DIR *open_directory_secure_cwd(const char* dirname, int *saved_cwd_fd) {
   // handle errors, otherwise shared memory files will be created in cwd.
   result = fchdir(fd);
   if (result == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("could not change to directory %s", dirname);
-    }
+    log_debug(perf)("could not change to directory %s", dirname);
     if (*saved_cwd_fd != -1) {
       ::close(*saved_cwd_fd);
       *saved_cwd_fd = -1;
@@ -413,16 +409,12 @@ static bool is_file_secure(int fd, const char *filename) {
   // Determine if the file is secure.
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("fstat failed on %s: %s", filename, os::strerror(errno));
-    }
+    log_debug(perf)("fstat failed on %s: %s", filename, os::strerror(errno));
     return false;
   }
   if (statbuf.st_nlink > 1) {
     // A file with multiple links is not expected.
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("file %s has multiple links", filename);
-    }
+    log_debug(perf)("file %s has multiple links", filename);
     return false;
   }
   return true;
@@ -821,18 +813,14 @@ static bool make_user_tmp_dir(const char* dirname) {
       // deliberate symlink. Verify that the existing directory is safe.
       if (!is_directory_secure(dirname)) {
         // directory is not secure
-        if (log_is_enabled(Debug, perf)) {
-          log_debug(perf)("%s directory is insecure", dirname);
-        }
+        log_debug(perf)("%s directory is insecure", dirname);
         return false;
       }
     }
     else {
       // we encountered some other failure while attempting
       // to create the directory
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("could not create directory %s: %s", dirname, os::strerror(errno));
-      }
+      log_debug(perf)("could not create directory %s: %s", dirname, os::strerror(errno));
       return false;
     }
   }
@@ -922,18 +910,14 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
   // truncate the file to get rid of any existing data
   RESTARTABLE(::ftruncate(fd, (off_t)0), result);
   if (result == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("could not truncate shared memory file: %s", os::strerror(errno));
-    }
+    log_debug(perf)("could not truncate shared memory file: %s", os::strerror(errno));
     ::close(fd);
     return -1;
   }
   // set the file size
   RESTARTABLE(::ftruncate(fd, (off_t)size), result);
   if (result == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("could not set shared memory file size: %s", os::strerror(errno));
-    }
+    log_debug(perf)("could not set shared memory file size: %s", os::strerror(errno));
     ::close(fd);
     return -1;
   }
@@ -1055,9 +1039,7 @@ static char* mmap_create_shared(size_t size) {
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("mmap failed -  %s", os::strerror(errno));
-    }
+    log_debug(perf)("mmap failed -  %s", os::strerror(errno));
     remove_file(filename);
     FREE_C_HEAP_ARRAY(char, filename);
     return nullptr;
@@ -1133,9 +1115,7 @@ static size_t sharedmem_filesize(int fd, TRAPS) {
 
   RESTARTABLE(::fstat(fd, &statbuf), result);
   if (result == OS_ERR) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("fstat failed: %s", os::strerror(errno));
-    }
+    log_debug(perf)("fstat failed: %s", os::strerror(errno));
     THROW_MSG_0(vmSymbols::java_io_IOException(),
                 "Could not determine PerfMemory size");
   }
@@ -1210,9 +1190,7 @@ static void mmap_attach_shared(int vmid, char** addr, size_t* sizep, TRAPS) {
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
-    if (log_is_enabled(Debug, perf)) {
-      log_debug(perf)("mmap failed: %s", os::strerror(errno));
-    }
+    log_debug(perf)("mmap failed: %s", os::strerror(errno));
     THROW_MSG(vmSymbols::java_lang_OutOfMemoryError(),
               "Could not map PerfMemory");
   }
@@ -1244,9 +1222,7 @@ void PerfMemory::create_memory_region(size_t size) {
     if (_start == nullptr) {
       // creation of the shared memory region failed, attempt
       // to create a contiguous, non-shared memory region instead.
-      if (log_is_enabled(Debug, perf)) {
-        log_debug(perf)("Reverting to non-shared PerfMemory region.");
-      }
+      log_debug(perf)("Reverting to non-shared PerfMemory region.");
       FLAG_SET_ERGO(PerfDisableSharedMem, true);
       _start = create_standard_memory(size);
     }
