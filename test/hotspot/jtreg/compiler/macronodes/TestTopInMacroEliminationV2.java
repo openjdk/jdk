@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8325030 8362832
+ * @bug 8325030
  * @summary Regression test for an assert triggered during allocation elimination because top is found during
  * constructing new phis.
  * @run main/othervm -XX:-ProfileExceptionHandlers compiler.macronodes.TestTopInMacroElimination
@@ -31,9 +31,9 @@
 
 package compiler.macronodes;
 
-public class TestTopInMacroElimination {
+public class TestTopInMacroEliminationV2 {
     public static class A {
-        int a;
+        int a = 5;
     }
 
     public static void main(String[] strArr) {
@@ -41,7 +41,7 @@ public class TestTopInMacroElimination {
         for (int i = 0; i < 50; ++i) {
             try {
                 synchronized (new A()) {
-                    synchronized (TestTopInMacroElimination.class) {
+                    synchronized (TestTopInMacroEliminationV2.class) {
                         for (int var19 = 0; var19 < Integer.valueOf(i2);) {
                             Integer.valueOf(var19);
                         }
