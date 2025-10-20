@@ -94,7 +94,7 @@ void ShenandoahDegenGC::op_degenerated() {
   // Degenerated GC is STW, but it can also fail. Current mechanics communicates
   // GC failure via cancelled_concgc() flag. So, if we detect the failure after
   // some phase, we have to upgrade the Degenerate GC to Full GC.
-  heap->clear_cancelled_gc(true /* clear oom handler */);
+  heap->clear_cancelled_gc();
 
 #ifdef ASSERT
   if (heap->mode()->is_generational()) {
