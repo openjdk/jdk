@@ -84,30 +84,30 @@ public class TimeoutResponseTestSupport {
     protected static final int RETRY_LIMIT =
             Integer.parseInt(System.getProperty("jdk.httpclient.redirects.retrylimit", "0"));
 
-    private static final long RESPONSE_Failure_WAIT_DURATION_MILLIS =
+    private static final long RESPONSE_FAILURE_WAIT_DURATION_MILLIS =
             Long.parseLong(System.getProperty("test.responseFailureWaitDurationMillis", "0"));
 
     static {
         if (RETRY_LIMIT > 0) {
 
             // Verify that response failure wait duration is provided
-            if (RESPONSE_Failure_WAIT_DURATION_MILLIS <= 0) {
+            if (RESPONSE_FAILURE_WAIT_DURATION_MILLIS <= 0) {
                 String message = String.format(
                         "`jdk.httpclient.redirects.retrylimit` (%s) is greater than zero. " +
                                 "`test.responseFailureWaitDurationMillis` (%s) must be greater than zero too.",
-                        RETRY_LIMIT, RESPONSE_Failure_WAIT_DURATION_MILLIS);
+                        RETRY_LIMIT, RESPONSE_FAILURE_WAIT_DURATION_MILLIS);
                 throw new AssertionError(message);
             }
 
             // Verify that the total response failure waits exceed the request timeout
             Duration totalResponseFailureWaitDuration = Duration
-                    .ofMillis(RESPONSE_Failure_WAIT_DURATION_MILLIS)
+                    .ofMillis(RESPONSE_FAILURE_WAIT_DURATION_MILLIS)
                     .multipliedBy(RETRY_LIMIT);
             if (totalResponseFailureWaitDuration.compareTo(REQUEST_TIMEOUT) <= 0) {
                 String message = ("`test.responseFailureWaitDurationMillis * jdk.httpclient.redirects.retrylimit` (%s * %s = %s) " +
                         "must be greater than `test.requestTimeoutMillis` (%s)")
                         .formatted(
-                                RESPONSE_Failure_WAIT_DURATION_MILLIS,
+                                RESPONSE_FAILURE_WAIT_DURATION_MILLIS,
                                 RETRY_LIMIT,
                                 totalResponseFailureWaitDuration,
                                 REQUEST_TIMEOUT);
