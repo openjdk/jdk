@@ -709,7 +709,7 @@ public final class Double extends Number
             // For infinity and NaN, use the decimal output.
             return Double.toString(d);
         else {
-            boolean negative = Math.copySign(1.0, d) == -1.0;
+            boolean negative = Double.doubleToLongBits(d) < 0;
             d = Math.abs(d);
 
             if (d == 0.0) {
