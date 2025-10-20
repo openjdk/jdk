@@ -25,6 +25,7 @@
  * @test
  * @author Gary Ellison
  * @bug 4170635 8258247
+ * @library /test/lib
  * @summary Verify equals()/hashCode() contract honored
  * @modules java.base/sun.security.x509 java.base/sun.security.util
  */
@@ -33,6 +34,8 @@ import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.spec.MGF1ParameterSpec;
 import java.security.spec.PSSParameterSpec;
+
+import jdk.test.lib.Asserts;
 
 import sun.security.util.DerValue;
 import sun.security.x509.*;
@@ -98,55 +101,19 @@ public class AlgorithmIdEqualsHashCode {
             System.out.println("PASSED equals() test");
         }
 
-        try {
-            System.out.println("\nTesting explicit ASN.1 NULL parameter " +
-                    "canonicalization...");
-
-            // Assume failure by default
-            boolean passed = false;
-
-            // Construct an AlgorithmId with explicit DER NULL parameters
-            DerValue explicitNullParams = new DerValue(DerValue.tag_Null, new byte[0]);
-            AlgorithmId aiNullParams = new AlgorithmId(AlgorithmId.SHA256_oid,
-                    explicitNullParams);
-
-            // The constructor should canonicalize this to "no parameters"
-            if (aiNullParams.getEncodedParams() == null) {
-                // Ensure equals() and hashCode() are consistent for canonicalized
-                // vs normal AlgorithmId
-                AlgorithmId aiNormal = AlgorithmId.get("SHA-256");
-                if (aiNullParams.equals(aiNormal) &&
-                        aiNullParams.hashCode() == aiNormal.hashCode()) {
-                    passed = true; // Only pass if *both* conditions succeed
-                }
-            }
-
-            if (!passed) {
-                throw new Exception("FAILED: explicit NULL canonicalization or" +
-                        " equals()/hashCode() test");
-            }
-
-            System.out.println("PASSED explicit ASN.1 NULL canonicalization and" +
-                    " equality test");
-
-        } catch (Exception e) {
-            System.out.println("FAILED: Exception during explicit NULL parameter test - "
-                    + e);
-            throw e; // Rethrow to mark test failure
-        }
+        // Construct an AlgorithmId with explicit DER NULL parameters
+        DerValue explicitNullParams = new DerValue(DerValue.tag_Null, new byte[0]);
+        AlgorithmId aiNullParams = new AlgorithmId(AlgorithmId.SHA256_oid,
+                explicitNullParams);
+        // The constructor should canonicalize this to "no parameters"
+        Asserts.assertTrue(aiNullParams.getEncodedParams() == null);
+        AlgorithmId aiNormal = AlgorithmId.get("SHA-256");
+        Asserts.assertEquals(aiNullParams, aiNormal);
+        Asserts.assertEquals(aiNullParams.hashCode(), aiNormal.hashCode());
 
         // Test invalid ASN.1 NULL (non-zero length)
-        try {
-            DerValue invalidNull = new DerValue(DerValue.tag_Null, new byte[]{0x00});
-            new AlgorithmId(AlgorithmId.SHA256_oid, invalidNull);
-            throw new Exception("FAILED invalid ASN.1 NULL test: expected IOException " +
-                    "not thrown");
-        } catch (IOException expected) {
-            System.out.println("PASSED invalid ASN.1 NULL test " +
-                    "(caught expected IOException)");
-        } catch (Exception e) {
-            throw new Exception("FAILED invalid ASN.1 NULL test: unexpected exception" +
-                    " type", e);
-        }
+        DerValue invalidNull = new DerValue(DerValue.tag_Null, new byte[]{0x00});
+        Asserts.assertThrows(IOException.class,
+                () -> new AlgorithmId(AlgorithmId.SHA256_oid, invalidNull));
     }
 }
