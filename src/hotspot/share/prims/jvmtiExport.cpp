@@ -880,7 +880,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
   JvmtiThreadState *   _state;
   Klass*               _class_being_redefined;
   JvmtiClassLoadKind   _load_kind;
-  bool                 _has_been_modified;
 
  public:
   inline JvmtiClassFileLoadHookPoster(Symbol* h_name, Handle class_loader,
@@ -897,7 +896,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _curr_data = *data_ptr;
     _curr_env = nullptr;
     _cached_class_file_ptr = cache_ptr;
-    _has_been_modified = false;
 
     _state = JvmtiExport::get_jvmti_thread_state(_thread);
     if (_state != nullptr) {
@@ -935,8 +933,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     post_all_envs();
     copy_modified_data();
   }
-
-  bool has_been_modified() { return _has_been_modified; }
 
  private:
   void post_all_envs() {
@@ -984,7 +980,6 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     }
     if (new_data != nullptr) {
       // this agent has modified class data.
-      _has_been_modified = true;
       if (caching_needed && *_cached_class_file_ptr == nullptr) {
         // data has been changed by the new retransformable agent
         // and it hasn't already been cached, cache it
@@ -1059,18 +1054,18 @@ bool JvmtiExport::_should_post_class_file_load_hook = false;
 int JvmtiExport::_should_notify_object_alloc = 0;
 
 // this entry is for class file load hook on class load, redefine and retransform
-bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
+void JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                             Handle class_loader,
                                             Handle h_protection_domain,
                                             unsigned char **data_ptr,
                                             unsigned char **end_ptr,
                                             JvmtiCachedClassFileData **cache_ptr) {
   if (JvmtiEnv::get_phase() < JVMTI_PHASE_PRIMORDIAL) {
-    return false;
+    return;
   }
 
   if (JavaThread::current()->should_hide_jvmti_events()) {
-    return false;
+    return;
   }
 
   JvmtiClassFileLoadHookPoster poster(h_name, class_loader,
@@ -1078,7 +1073,6 @@ bool JvmtiExport::post_class_file_load_hook(Symbol* h_name,
                                       data_ptr, end_ptr,
                                       cache_ptr);
   poster.post();
-  return poster.has_been_modified();
 }
 
 void JvmtiExport::report_unsupported(bool on) {
@@ -1702,7 +1696,7 @@ bool JvmtiExport::has_frame_pops(JavaThread* thread) {
   if (!can_post_frame_pop()) {
     return false;
   }
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
     return false;
   }
@@ -1721,7 +1715,7 @@ void JvmtiExport::continuation_yield_cleanup(JavaThread* thread, jint continuati
   }
 
   assert(thread == JavaThread::current(), "must be");
-  JvmtiThreadState *state = get_jvmti_thread_state(thread);
+  JvmtiThreadState *state = thread->jvmti_thread_state();
   if (state == nullptr) {
     return;
   }

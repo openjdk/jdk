@@ -34,8 +34,11 @@
 
 class ArchiveMappedHeapInfo;
 class ArchiveStreamedHeapInfo;
+class CompileTrainingData;
 class DumpRegion;
 class FileMapInfo;
+class KlassTrainingData;
+class MethodTrainingData;
 class outputStream;
 
 // Write detailed info to a mapfile to analyze contents of the AOT cache/CDS archive.
@@ -140,6 +143,9 @@ private:
   static void log_klass(Klass* k, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_method(Method* m, address requested_addr, const char* type_name, int bytes, Thread* current);
   static void log_symbol(Symbol* s, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name, int bytes, Thread* current);
+  static void log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name, int bytes, Thread* current);
 
 
 #if INCLUDE_CDS_JAVA_HEAP
