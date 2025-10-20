@@ -729,7 +729,7 @@ public final class Double extends Number
                 // This is used to remove trailing zeros from the hex representation
                 // We limit to 12 because we want to keep at least 1 hex digit (13 total - 12 = 1)
                 // assert 0 <= trailingZeros && trailingZeros <= 12
-                int trailingZeros = Math.min(12, ((Long.numberOfTrailingZeros(signifBits) & 0xFC) >> 2));
+                int trailingZeros = Long.numberOfTrailingZeros(signifBits | 1L << 4 * 12) >> 2;
 
                 // Determine the exponent value based on whether the number is subnormal or normal
                 // Subnormal numbers use the minimum exponent, normal numbers use the actual exponent
