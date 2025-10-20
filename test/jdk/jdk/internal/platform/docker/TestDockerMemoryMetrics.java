@@ -113,7 +113,11 @@ public class TestDockerMemoryMetrics {
 
         // Check whether swapping really works for this test
         // On some systems there is no swap space enabled. And running
-        // 'java -Xms{mem-limit} -Xmx{mem-limit} -version' would fail due to swap space size being 0.
+        // 'java -Xms{mem-limit} -Xmx{mem-limit} -XX:+AlwaysPreTouch -version'
+        // would fail due to swap space size being 0. Note that when swap is
+        // properly enabled on the system the container gets the same amount
+        // of swap as is configured for memory. Thus, 2x{mem-limit} is the actual
+        // memory and swap bound for this pre-test.
         DockerRunOptions preOpts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "-version");
         preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
