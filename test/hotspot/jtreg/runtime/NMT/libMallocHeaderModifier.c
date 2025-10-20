@@ -22,6 +22,7 @@
  */
 
 #include "jni.h"
+#include <stdint.h>
 #include <string.h>
 
 JNIEXPORT jint JNICALL
