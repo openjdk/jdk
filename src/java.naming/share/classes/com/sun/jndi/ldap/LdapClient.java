@@ -460,14 +460,12 @@ public final class LdapClient implements PooledConnection {
                 if (debug > 0) System.err.println("LdapClient: closed connection " + this);
                 if (!pooled) {
                     // Not being pooled; continue with closing
-                    conn.cleanup(reqCtls, false);
-                    closeOpenedResource();
+                    conn.cleanupAndClose(reqCtls);
                 } else {
                     // Pooled
                     // Is this a real close or a request to return conn to pool
                     if (hardClose) {
-                        conn.cleanup(reqCtls, false);
-                        closeOpenedResource();
+                        conn.cleanupAndClose(reqCtls);
                         pcb.removePooledConnection(this);
                     } else {
                         pcb.releasePooledConnection(this);
@@ -479,23 +477,6 @@ public final class LdapClient implements PooledConnection {
         }
     }
 
-    // 8313657 socket is not closed until GC is run
-    // it caused the bug 8362268, hence moved here
-    private void closeOpenedResource() {
-        try {
-            if (conn != null) {
-                if (conn.outStream != null) {
-                    conn.outStream.close();
-                }
-
-                if (!conn.sock.isClosed()) {
-                    conn.sock.close();
-                }
-            }
-        } catch (IOException ioEx) {
-            //ignore the error;
-        }
-    }
 
     // NOTE: Should NOT be synchronized otherwise won't be able to close
     private void forceClose(boolean cleanPool) {
@@ -509,7 +490,6 @@ public final class LdapClient implements PooledConnection {
                     "LdapClient: forced close of connection " + this);
         }
         conn.cleanup(null, false);
-        closeOpenedResource();
         if (cleanPool) {
             pcb.removePooledConnection(this);
         }

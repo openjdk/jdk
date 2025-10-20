@@ -714,7 +714,26 @@ public final class Connection implements Runnable {
             }
         }
     }
+    void cleanupAndClose(Control[] reqCtls) {
+        lock.lock();
+        try {
 
+            cleanup(reqCtls, false);
+
+            // 8313657 socket is not closed until GC is run
+            // it caused the bug 8362268, hence moved here
+            if (outStream != null) {
+                outStream.close();
+            }
+            if (!sock.isClosed()) {
+                sock.close();
+            }
+        } catch (IOException ignored) {
+            // we're closing, ignore IO.
+        } finally {
+            lock.unlock();
+        }
+    }
     // unpause reader
     private void tryUnpauseReader() {
         try {
