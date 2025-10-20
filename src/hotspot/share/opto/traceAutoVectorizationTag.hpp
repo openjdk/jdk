@@ -47,6 +47,8 @@
   flags(SW_VERBOSE,                 "Trace SuperWord verbose (all SW tags enabled)") \
   flags(VTRANSFORM,                 "Trace VTransform Graph") \
   flags(OPTIMIZATION,               "Trace VTransform::optimize") \
+  flags(COST,                       "Trace cost of VLoop (scalar) and VTransform (vector)") \
+  flags(COST_VERBOSE,               "Trace like COST, but more verbose") \
   flags(ALIGN_VECTOR,               "Trace AlignVector") \
   flags(SPECULATIVE_ALIASING_ANALYSIS, "Trace Speculative Aliasing Analysis") \
   flags(SPECULATIVE_RUNTIME_CHECKS, "Trace VTransform::apply_speculative_runtime_checks") \

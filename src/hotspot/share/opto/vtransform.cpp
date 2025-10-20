@@ -195,65 +195,67 @@ int VTransformGraph::count_alive_vtnodes() const {
 //   - backedges
 //   - loads and stores that are in the loop
 //   - and all their transitive uses.
-//void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
-//  assert(is_scheduled(), "must already be scheduled");
 //
-//  // Phase 1: find all nodes that are not before the loop.
-//  VectorSet is_not_before_loop;
-//  for (int i = 0; i < _schedule.length(); i++) {
-//    VTransformNode* vtn = _schedule.at(i);
-//    // Is vtn a loop-phi?
-//    if (vtn->isa_LoopPhi() != nullptr ||
-//        vtn->is_load_or_store_in_loop()) {
-//      is_not_before_loop.set(vtn->_idx);
-//      continue;
-//    }
-//    // Or one of its transitive uses?
-//    for (uint j = 0; j < vtn->req(); j++) {
-//      VTransformNode* def = vtn->in(j);
-//      if (def != nullptr && is_not_before_loop.test(def->_idx)) {
-//        is_not_before_loop.set(vtn->_idx);
-//        break;
-//      }
-//    }
-//  }
-//
-//  // Phase 2: find all nodes that are not after the loop.
-//  for (int i = _schedule.length()-1; i >= 0; i--) {
-//    VTransformNode* vtn = _schedule.at(i);
-//    if (!is_not_before_loop.test(vtn->_idx)) { continue; }
-//    // Is load or store?
-//    if (vtn->is_load_or_store_in_loop()) {
-//        in_loop.set(vtn->_idx);
-//        continue;
-//    }
-//    for (int i = 0; i < vtn->outs(); i++) {
-//      VTransformNode* use = vtn->out(i);
-//      // Or is vtn a backedge or one of its transitive defs?
-//      if (in_loop.test(use->_idx) ||
-//          use->isa_LoopPhi() != nullptr) {
-//        in_loop.set(vtn->_idx);
-//        break;
-//      }
-//    }
-//  }
-//}
+// in_loop: vtn->_idx -> bool
+void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
+  assert(is_scheduled(), "must already be scheduled");
+
+  // Phase 1: find all nodes that are not before the loop.
+  VectorSet is_not_before_loop;
+  for (int i = 0; i < _schedule.length(); i++) {
+    VTransformNode* vtn = _schedule.at(i);
+    // Is vtn a loop-phi?
+    if (vtn->isa_LoopPhi() != nullptr ||
+        // TODO: what about VTransformCountedLoopNode?
+        vtn->is_load_or_store_in_loop()) {
+      is_not_before_loop.set(vtn->_idx);
+      continue;
+    }
+    // Or one of its transitive uses?
+    for (uint j = 0; j < vtn->req(); j++) {
+      VTransformNode* def = vtn->in_req(j);
+      if (def != nullptr && is_not_before_loop.test(def->_idx)) {
+        is_not_before_loop.set(vtn->_idx);
+        break;
+      }
+    }
+  }
+
+  // Phase 2: find all nodes that are not after the loop.
+  for (int i = _schedule.length()-1; i >= 0; i--) {
+    VTransformNode* vtn = _schedule.at(i);
+    if (!is_not_before_loop.test(vtn->_idx)) { continue; }
+    // Is load or store?
+    if (vtn->is_load_or_store_in_loop()) {
+        in_loop.set(vtn->_idx);
+        continue;
+    }
+    for (uint i = 0; i < vtn->out_strong_edges(); i++) {
+      VTransformNode* use = vtn->out_strong_edge(i);
+      // Or is vtn a backedge or one of its transitive defs?
+      if (in_loop.test(use->_idx) ||
+          use->isa_LoopPhi() != nullptr) {
+        in_loop.set(vtn->_idx);
+        break;
+      }
+    }
+    // TODO: what about CFG nodes?
+  }
+}
 
 float VTransformGraph::cost() const {
   assert(is_scheduled(), "must already be scheduled");
-  return 1;
-}
-//#ifndef PRODUCT
-//  if (_vloop.is_trace_cost()) {
-//    tty->print_cr("\nVTransformGraph::cost:");
-//  }
-//#endif
-//
-//  ResourceMark rm;
-//  VectorSet in_loop;
-//  mark_vtnodes_in_loop(in_loop);
-//
-//  float sum = 0;
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("\nVTransformGraph::cost:");
+  }
+#endif
+
+  ResourceMark rm;
+  VectorSet in_loop; // vtn->_idx -> bool
+  mark_vtnodes_in_loop(in_loop);
+
+  float sum = 0;
 //  for (int i = 0; i < _schedule.length(); i++) {
 //    VTransformNode* vtn = _schedule.at(i);
 //    if (!in_loop.test(vtn->_idx)) { continue; }
@@ -272,8 +274,8 @@ float VTransformGraph::cost() const {
 //    tty->print_cr("  total_cost = %.2f", sum);
 //  }
 //#endif
-//  return sum;
-//}
+  return sum;
+}
 
 #ifndef PRODUCT
 void VTransformGraph::trace_schedule_cycle(const GrowableArray<VTransformNode*>& stack,

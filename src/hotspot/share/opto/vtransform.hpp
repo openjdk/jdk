@@ -205,6 +205,7 @@ private:
 
   void collect_nodes_without_strong_in_edges(GrowableArray<VTransformNode*>& stack) const;
   int count_alive_vtnodes() const;
+  void mark_vtnodes_in_loop(VectorSet& in_loop) const;
 
 #ifndef PRODUCT
   void print_vtnodes() const;

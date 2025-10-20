@@ -209,6 +209,14 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::OPTIMIZATION);
   }
 
+  bool is_trace_cost() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST);
+  }
+
+  bool is_trace_cost_verbose() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::COST_VERBOSE);
+  }
+
   bool is_trace_speculative_runtime_checks() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::SPECULATIVE_RUNTIME_CHECKS);
   }
