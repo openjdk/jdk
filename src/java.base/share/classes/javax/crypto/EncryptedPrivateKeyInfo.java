@@ -425,7 +425,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param de the {@code DEREncodable} to encrypt. Supported types include
      *           {@link PrivateKey}, {@link KeyPair}, and {@link PKCS8EncodedKeySpec}.
      * @param encryptKey the key used to encrypt the encoding.
-     * @param algorithm the password-based encryption (PBE) algorithm.
+     * @param algorithm the encryption algorithm, such as a password-based
+     *                  encryption (PBE) algorithm.
      * @param params the {@code AlgorithmParameterSpec} used for encryption. If
      *               {@code null}, the provider’s default parameters are used
      * @param random the {@code SecureRandom} instance used during encryption.
@@ -477,7 +478,14 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
             }
             c.init(Cipher.ENCRYPT_MODE, encryptKey, params, random);
             encryptedData = c.doFinal(encoded);
-            algId = new AlgorithmId(Pem.getPBEID(algorithm), c.getParameters());
+            try {
+                // Use shared PEM method for very likely case the algorithm is PBE.
+                algId = new AlgorithmId(Pem.getPBEID(algorithm), c.getParameters());
+            } catch (IllegalArgumentException e) {
+                // For the unlikely case a non-PBE cipher is used, get the OID.
+                algId = new AlgorithmId(AlgorithmId.get(algorithm).getOID(),
+                    c.getParameters());
+            }
             out = new DerOutputStream();
             algId.encode(out);
             out.putOctetString(encryptedData);

@@ -84,10 +84,10 @@ public class Encrypt {
 
         // Test encryptKey(PrivateKey, char[], String, ...) with provider
         e = EncryptedPrivateKeyInfo.encrypt(priKey, password, ekpi.getAlgName(),
-                ap.getParameterSpec(PBEParameterSpec.class), p);
+            ap.getParameterSpec(PBEParameterSpec.class), p);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
-                    " with expected.");
+                " with expected.");
         }
 
         // Test encryptKey(PrivateKey, char[], String, ...) with provider and null algorithm
@@ -96,7 +96,7 @@ public class Encrypt {
 
         // Test encryptKey(PrivateKey, Key, String, ...)
         e = EncryptedPrivateKeyInfo.encrypt(priKey, key, ekpi.getAlgName(),
-            ap.getParameterSpec(PBEParameterSpec.class),null, null);
+            ap.getParameterSpec(PBEParameterSpec.class), null, null);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
                 " with expected.");
@@ -104,23 +104,32 @@ public class Encrypt {
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and null random
         e = EncryptedPrivateKeyInfo.encrypt(priKey, key, ekpi.getAlgName(),
-                ap.getParameterSpec(PBEParameterSpec.class), p, null);
+            ap.getParameterSpec(PBEParameterSpec.class), p, null);
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
-                    " with expected.");
+                " with expected.");
         }
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and SecureRandom
         e = EncryptedPrivateKeyInfo.encrypt(priKey, key, ekpi.getAlgName(),
-                ap.getParameterSpec(PBEParameterSpec.class), p, new SecureRandom());
+            ap.getParameterSpec(PBEParameterSpec.class), p, new SecureRandom());
         if (!Arrays.equals(ekpi.getEncryptedData(), e.getEncryptedData())) {
             throw new AssertionError("encryptKey() didn't match" +
-                    " with expected.");
+                " with expected.");
         }
 
         // Test encryptKey(PrivateKey, Key, String, ...) with provider and null algorithm
         e = EncryptedPrivateKeyInfo.encrypt(priKey, key, Pem.DEFAULT_ALGO, null,
-                p, new SecureRandom());
+            p, new SecureRandom());
         assertEquals(e.getAlgName(), Pem.DEFAULT_ALGO);
+
+
+        SecretKey key2 = new SecretKeySpec("1234567890123456".getBytes(), "AES");
+
+        // Test encryptKey(PrivateKey, Key, String, ...) with provider and SecureRandom
+        e = EncryptedPrivateKeyInfo.encrypt(priKey, key2, "AES_128/GCM/NoPadding",
+            null, p, new SecureRandom());
+        PrivateKey key3 = e.getKey(key2, null);
+        assertEquals(key3, priKey, "AES encryption failed");
     }
 }
