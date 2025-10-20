@@ -26,6 +26,7 @@
 #include "nmt/mallocHeader.inline.hpp"
 #include "nmt/mallocSiteTable.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -36,7 +37,7 @@
 // fitting into eight bits.
 STATIC_ASSERT(sizeof(MemTag) == sizeof(uint8_t));
 
-void MallocHeader::print_block_on_error(outputStream* st, address bad_address) const {
+void MallocHeader::print_block_on_error(outputStream* st, address bad_address, address block_address) const {
   assert(bad_address >= (address)this, "sanity");
 
   // This function prints block information, including hex dump, in case of a detected
@@ -48,6 +49,18 @@ void MallocHeader::print_block_on_error(outputStream* st, address bad_address) c
 
   st->print_cr("NMT Block at " PTR_FORMAT ", corruption at: " PTR_FORMAT ": ",
                p2i(this), p2i(bad_address));
+  if (MemTracker::tracking_level() == NMT_TrackingLevel::NMT_detail) {
+    MallocHeader* mh = (MallocHeader*)block_address;
+    NativeCallStack stack;
+    if (MallocSiteTable::access_stack(stack, *mh)) {
+      st->print_cr("allocated from:");
+      stack.print_on(st);
+    } else {
+      st->print_cr("allocation-site cannot be shown since the marker is also corrupted.");
+    }
+    st->print_cr("");
+  }
+
   static const size_t min_dump_length = 256;
   address from1 = align_down((address)this, sizeof(void*)) - (min_dump_length / 2);
   address to1 = from1 + min_dump_length;
