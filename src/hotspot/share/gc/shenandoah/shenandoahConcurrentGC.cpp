@@ -292,7 +292,7 @@ bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
     ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
     ShenandoahFlushSATBHandshakeClosure complete_thread_local_satb_buffers(satb_queues);
     heap->concurrent_final_roots(&complete_thread_local_satb_buffers);
-    heap->old_generation()->concurrent_transfer_pointers_from_satb();
+    // heap->old_generation()->concurrent_transfer_pointers_from_satb();
   }
   return true;
 }
@@ -692,7 +692,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // old generation mark queue. Any pointers in a young region will be
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
-      heap->old_generation()->transfer_pointers_from_satb();
+      // heap->old_generation()->transfer_pointers_from_satb();
     }
     {
       // After we swap card table below, the write-table is all clean, and the read table holds
@@ -1189,7 +1189,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     // with no live objects cannot have been written to and so cannot have entries in the SATB
     // buffers.
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
-    heap->old_generation()->transfer_pointers_from_satb();
+    // heap->old_generation()->transfer_pointers_from_satb();
 
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
     // entire regions.  Both of these relevant operations occur before final update refs.
