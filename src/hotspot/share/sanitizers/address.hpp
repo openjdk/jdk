@@ -26,6 +26,7 @@
 #define SHARE_SANITIZERS_ADDRESS_HPP
 
 #ifdef ADDRESS_SANITIZER
+#define __SANITIZE_ADDRESS__
 #include <sanitizer/asan_interface.h>
 #endif
 
@@ -73,5 +74,32 @@
     }                                           \
   } while (false)
 #endif
+
+template<typename T>
+class AsanPoisoningHelper {
+  const T* _memory_region;
+ public:
+  AsanPoisoningHelper() = delete;
+  AsanPoisoningHelper(const T* addr) : _memory_region(addr) {
+    #if INCLUDE_ASAN
+      ASAN_UNPOISON_MEMORY_REGION(_memory_region, sizeof(T));
+    #endif
+  }
+  ~AsanPoisoningHelper() {
+    #if INCLUDE_ASAN
+      ASAN_POISON_MEMORY_REGION(_memory_region, sizeof(T));
+    #endif
+  }
+  static void poison_memory(const T* addr) {
+    #if INCLUDE_ASAN
+      ASAN_POISON_MEMORY_REGION(addr, sizeof(T));
+    #endif
+  }
+  static void unpoison_memory(const T* addr) {
+    #if INCLUDE_ASAN
+      ASAN_UNPOISON_MEMORY_REGION(addr, sizeof(T));
+    #endif
+  }
+};
 
 #endif // SHARE_SANITIZERS_ADDRESS_HPP
