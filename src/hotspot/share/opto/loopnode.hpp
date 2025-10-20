@@ -957,6 +957,11 @@ class PhaseIdealLoop : public PhaseTransform {
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
   // Returns true if "n" is a data node, false if it's a control node.
+  //
+  // Exception: control nodes that are dead because of "lazy_replace" or have
+  // otherwise modified their ctrl state by "lazy_update". They return "true",
+  // because they have a ctrl "forwarding" to the other ctrl node they were
+  // replaced with.
   bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_or_ctrl[n->_idx]) & 1; }
 
 private:
@@ -1098,18 +1103,28 @@ public:
   }
 
   Node* get_ctrl_no_update_helper(const Node* i) const {
-    assert(has_ctrl(i), "should be control, not loop");
+    // We expect only data nodes (which must have a ctrl set), or
+    // dead ctrl nodes that have a ctrl "forwarding", see lazy_replace.
+    assert(has_ctrl(i), "only data nodes or ctrl nodes with ctrl forwarding expected");
     return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
 
+  // TODO: desc
   Node* get_ctrl_no_update(const Node* i) const {
-    assert( has_ctrl(i), "" );
-    Node *n = get_ctrl_no_update_helper(i);
-    if (!n->in(0)) {
+    assert(has_ctrl(i), "only data nodes expected");
+    Node* n = get_ctrl_no_update_helper(i);
+    if (n->in(0) == nullptr) {
       // Skip dead CFG nodes
+      // With "lazy_update" or "lazy_replace", we may have created a
+      // ctrl "forwarding" from the dead node to some other node. This
+      // "forwarding" ensures that get_ctrl responds with the other node
+      // instead of with the dead node, lazily moving all those "controllees"
+      // from the dead ctrl node to the other ctrl node.
+      // There may be repeated "forwardings", so we must loop until we find
+      // a live ctrl node.
       do {
         n = get_ctrl_no_update_helper(n);
-      } while (!n->in(0));
+      } while (n->in(0) == nullptr);
       n = find_non_split_ctrl(n);
     }
     return n;
@@ -1129,12 +1144,19 @@ public:
   // the 'old_node' with 'new_node'.  Kill old-node.  Add a reference
   // from old_node to new_node to support the lazy update.  Reference
   // replaces loop reference, since that is not needed for dead node.
-  void lazy_update(Node *old_node, Node *new_node) {
+  // TODO: desc
+  //
+  // Install a ctrl "forwarding" from an old control node
+  void lazy_update(Node* old_node, Node* new_node) {
+    assert(!has_ctrl(old_node), "only expect live ctrl nodes");
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
     _loop_or_ctrl.map(old_node->_idx, (Node*)((intptr_t)new_node + 1));
+    assert(has_ctrl(old_node), "must have installed ctrl forwarding");
   }
+
+  // TODO: desc
   void lazy_replace(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
     lazy_update(old_node, new_node);
