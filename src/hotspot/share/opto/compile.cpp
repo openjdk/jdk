@@ -108,11 +108,13 @@ static const char* const optimization_event_names[OptEvent_Count] = {
   "Conditional Constant Propagation",
   "Eliminate Autobox",
   "Block Elimination",
-  "Simplify Phi Function",
-  "Canonicalization",
   "Null Check Elimination",
   "Range Check Elimination",
-  "Optimize Ptr Compare"
+  "Optimize Ptr Compare",
+  "Merge Stores",
+  "Loop Predication",
+  "Auto Vectorization",
+  "Partial Peeling"
 };
 #endif
 
@@ -2048,15 +2050,20 @@ void Compile::process_for_merge_stores_igvn(PhaseIterGVN& igvn) {
   C->set_merge_stores_phase();
 
   if (_for_merge_stores_igvn.length() > 0) {
+    bool performed_merge = false;
     while (_for_merge_stores_igvn.length() > 0) {
       Node* n = _for_merge_stores_igvn.pop();
       n->remove_flag(Node::NodeFlags::Flag_for_merge_stores_igvn);
       igvn._worklist.push(n);
+      performed_merge = true;
     }
     igvn.optimize();
     if (failing()) return;
     assert(_for_merge_stores_igvn.length() == 0, "no more delayed nodes allowed");
     print_method(PHASE_AFTER_MERGE_STORES, 3); // INTERESTING
+    if (performed_merge) {
+      record_optimization_event(OptEvent_MergeStores);
+    }
   }
 }
 

@@ -4166,6 +4166,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 #endif
 
   C->print_method(PHASE_AFTER_PARTIAL_PEELING, 4, new_head_clone);
+  C->record_optimization_event(OptEvent_PartialPeeling);
 
   return true;
 }
