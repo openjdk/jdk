@@ -541,25 +541,27 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-//bool VLoopAnalyzer::has_zero_cost(Node* n) const {
-//  // Outside body?
-//  if (!_vloop.in_bb(n)) { return true; }
-//
-//  // Internal nodes of pointer expressions are most likely folded into
-//  // the load / store and have no additional cost.
-//  if (vpointers().is_in_pointer_expression(n)) { return true; }
-//
-//  if (n->is_AddP() || // Pointer expression
-//      n->is_CFG() ||  // CFG
-//      n->is_Phi() ||  // CFG
-//      n->is_Cmp() ||  // CFG
-//      n->is_Bool()) { // CFG
-//    return true;
-//  }
-//
-//  // All other nodes have a non-zero cost.
-//  return false;
-//}
+bool VLoopAnalyzer::has_zero_cost(Node* n) const {
+  // Outside body?
+  if (!_vloop.in_bb(n)) { return true; }
+  // TODO: can we widen this to the loop, not just bb?
+
+  // Internal nodes of pointer expressions are most likely folded into
+  // the load / store and have no additional cost.
+  // TODO: implement
+  // if (vpointers().is_in_pointer_expression(n)) { return true; }
+
+  if (n->is_AddP() || // Pointer expression
+      n->is_CFG() ||  // CFG
+      n->is_Phi() ||  // CFG
+      n->is_Cmp() ||  // CFG
+      n->is_Bool()) { // CFG
+    return true;
+  }
+
+  // All other nodes have a non-zero cost.
+  return false;
+}
 
 // Compute the cost over all operations in the (scalar) loop.
 float VLoopAnalyzer::cost() const {
@@ -594,39 +596,39 @@ float VLoopAnalyzer::cost() const {
 //#endif
 //  return sum;
 //}
-//
-//float VLoopAnalyzer::cost_for_scalar(int opcode) const {
-//  float c = Matcher::cost_for_scalar(opcode);
-//#ifndef PRODUCT
-//  if (_vloop.is_trace_cost()) {
-//    tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
-//  }
-//#endif
-//  return c;
-//}
-//
-//float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
-//  float c = Matcher::cost_for_vector(opcode, vlen, bt);
-//#ifndef PRODUCT
-//  if (_vloop.is_trace_cost()) {
-//    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
-//                  c, NodeClassNames[opcode], vlen, type2name(bt));
-//  }
-//#endif
-//  return c;
-//}
-//
-//float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
-//  float c = Matcher::cost_for_vector_reduction(opcode, vlen, bt, requires_strict_order);
-//#ifndef PRODUCT
-//  if (_vloop.is_trace_cost()) {
-//    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",
-//                  c, NodeClassNames[opcode], vlen, type2name(bt),
-//                  requires_strict_order ? "true" : "false");
-//  }
-//#endif
-//  return c;
-//}
+
+float VLoopAnalyzer::cost_for_scalar(int opcode) const {
+  float c = Matcher::cost_for_scalar(opcode);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s", c, NodeClassNames[opcode]);
+  }
+#endif
+  return c;
+}
+
+float VLoopAnalyzer::cost_for_vector(int opcode, int vlen, BasicType bt) const {
+  float c = Matcher::cost_for_vector(opcode, vlen, bt);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt));
+  }
+#endif
+  return c;
+}
+
+float VLoopAnalyzer::cost_for_vector_reduction(int opcode, int vlen, BasicType bt, bool requires_strict_order) const {
+  float c = Matcher::cost_for_vector_reduction(opcode, vlen, bt, requires_strict_order);
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  cost = %.2f opc=%s vlen=%d bt=%s requires_strict_order=%s",
+                  c, NodeClassNames[opcode], vlen, type2name(bt),
+                  requires_strict_order ? "true" : "false");
+  }
+#endif
+  return c;
+}
 
 // Computing aliasing runtime check using init and last of main-loop
 // -----------------------------------------------------------------

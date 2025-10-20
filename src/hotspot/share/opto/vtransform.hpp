@@ -557,6 +557,8 @@ public:
 
   virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) { return false; }
 
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const = 0;
+
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const = 0;
   virtual void apply_backedge(VTransformApplyState& apply_state) const {};
   void apply_vtn_inputs_to_node(Node* n, VTransformApplyState& apply_state) const;
@@ -587,6 +589,7 @@ public:
   virtual bool is_load_or_store_in_loop() const override { return true; }
 
   virtual const VPointer& vpointer() const override { return _vpointer; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "MemopScalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -603,6 +606,7 @@ public:
     assert(!_node->is_Mem() && !_node->is_Phi() && !_node->is_CFG(), "must be data node: %s", _node->Name());
   }
 
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "DataScalar"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -620,6 +624,7 @@ public:
   }
 
   virtual VTransformLoopPhiNode* isa_LoopPhi() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   virtual void apply_backedge(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoopPhi"; };)
@@ -637,6 +642,7 @@ public:
     assert(_node->is_CFG(), "must be CFG node: %s", _node->Name());
   }
 
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "CFG"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -663,6 +669,7 @@ public:
     VTransformNode(vtransform, n->req()), _node(n) {}
 
   virtual VTransformOuterNode* isa_Outer() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { ShouldNotReachHere(); }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Outer"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -676,6 +683,7 @@ private:
 public:
   VTransformReplicateNode(VTransform& vtransform, int vlen, BasicType element_type) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_type(element_type) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "Replicate"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -685,6 +693,7 @@ public:
 class VTransformConvI2LNode : public VTransformNode {
 public:
   VTransformConvI2LNode(VTransform& vtransform) : VTransformNode(vtransform, 2) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ConvI2L"; };)
 };
@@ -699,6 +708,7 @@ private:
 public:
   VTransformShiftCountNode(VTransform& vtransform, int vlen, BasicType element_bt, juint mask, int shift_opcode) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt), _mask(mask), _shift_opcode(shift_opcode) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ShiftCount"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -712,6 +722,7 @@ private:
 public:
   VTransformPopulateIndexNode(VTransform& vtransform, int vlen, const BasicType element_bt) :
     VTransformNode(vtransform, 2), _vlen(vlen), _element_bt(element_bt) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "PopulateIndex"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -777,6 +788,7 @@ public:
   VTransformElementWiseVectorNode(VTransform& vtransform, uint req, const VTransformVectorNodeProperties properties, const int vector_opcode) :
     VTransformVectorNode(vtransform, req, properties), _vector_opcode(vector_opcode) {}
   virtual VTransformElementWiseVectorNode* isa_ElementWiseVector() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -789,6 +801,7 @@ class VTransformElementWiseLongOpWithCastToIntVectorNode : public VTransformVect
 public:
   VTransformElementWiseLongOpWithCastToIntVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
     VTransformVectorNode(vtransform, 2, properties) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ElementWiseLongOpWithCastToIntVector"; };)
 };
@@ -799,6 +812,7 @@ private:
 public:
   VTransformReinterpretVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties, const BasicType src_bt) :
     VTransformVectorNode(vtransform, 2, properties), _src_bt(src_bt) {}
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReinterpretVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -819,6 +833,7 @@ public:
   VTransformCmpVectorNode(VTransform& vtransform, const VTransformVectorNodeProperties properties) :
     VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformCmpVectorNode* isa_CmpVector() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override { return 0; }
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override { return VTransformApplyResult::make_empty(); }
   NOT_PRODUCT(virtual const char* name() const override { return "CmpVector"; };)
 };
@@ -831,6 +846,7 @@ public:
     VTransformVectorNode(vtransform, 2, properties), _test(test) {}
   VTransformBoolTest test() const { return _test; }
   virtual VTransformBoolVectorNode* isa_BoolVector() override { return this; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "BoolVector"; };)
   NOT_PRODUCT(virtual void print_spec() const override;)
@@ -843,6 +859,7 @@ public:
     VTransformVectorNode(vtransform, 3, properties) {}
   virtual VTransformReductionVectorNode* isa_ReductionVector() override { return this; }
   virtual bool optimize(const VLoopAnalyzer& vloop_analyzer, VTransform& vtransform) override;
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "ReductionVector"; };)
 
@@ -885,6 +902,7 @@ public:
   LoadNode::ControlDependency control_dependency() const;
   virtual VTransformLoadVectorNode* isa_LoadVector() override { return this; }
   virtual bool is_load_in_loop() const override { return true; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "LoadVector"; };)
 };
@@ -896,6 +914,7 @@ public:
     VTransformMemVectorNode(vtransform, 4, properties, vpointer, adr_type) {}
   virtual VTransformStoreVectorNode* isa_StoreVector() override { return this; }
   virtual bool is_load_in_loop() const override { return false; }
+  virtual float cost(const VLoopAnalyzer& vloop_analyzer) const override;
   virtual VTransformApplyResult apply(VTransformApplyState& apply_state) const override;
   NOT_PRODUCT(virtual const char* name() const override { return "StoreVector"; };)
 };
