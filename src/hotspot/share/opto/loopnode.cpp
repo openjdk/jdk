@@ -1736,9 +1736,9 @@ void PhaseIdealLoop::LoopIVIncr::build(Node* old_incr) {
 
   Node* incr = old_incr;
   // Trip-counter increment must be commutative & associative.
-  if (incr->is_Phi()) { // Requires simple trip counter expression
-    if (incr->as_Phi()->region() == _head && incr->req() == 3) {
-      return;
+  if (incr->is_Phi()) {
+    if (incr->as_Phi()->region() != _head || incr->req() != 3) {
+      return; // Not simple trip counter expression
     }
     Node* phi_incr = incr;
     Node* back_control = phi_incr->in(LoopNode::LoopBackControl); // Assume incr is on backedge of Phi
@@ -1816,7 +1816,10 @@ void CountedLoopConverter::LoopStructure::build() {
   }
 
   _iv_incr.build(incr);
-  if (!_iv_incr.is_valid_with_bt(_iv_bt)) {
+  // if (!_iv_incr.is_valid_with_bt(_iv_bt)) {
+  //   return;
+  // }
+  if (!_iv_incr.is_valid()) {
     return;
   }
 

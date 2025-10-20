@@ -1369,8 +1369,9 @@ public:
 
     void build(Node* old_incr);
 
+    bool is_valid() const { return _is_valid; }
     bool is_valid_with_bt(const BasicType bt) const {
-      return _is_valid && _incr != nullptr && _incr->Opcode() == Op_Add(bt);
+      return _is_valid && _incr->Opcode() == Op_Add(bt);
     }
 
     Node* incr() const { return _incr; }
