@@ -172,9 +172,10 @@ public final class ObjectMethods {
 
     // If this type must be a monomorphic receiver, that is, one that has no
     // subtypes in the JVM.  For example, Object-typed fields may have a more
-    // specific one type at runtime and optimized so.
+    // specific one type at runtime and thus need optimizations.
     private static boolean isMonomorphic(Class<?> type) {
-        // Includes primitives and final classes
+        // Includes primitives and final classes, but not arrays.
+        // All array classes are reported to be final, but Object[] can have subtypes like String[]
         return Modifier.isFinal(type.getModifiers()) && !type.isArray();
     }
 
@@ -318,13 +319,13 @@ public final class ObjectMethods {
                         clb.withMethodBody(name, MethodTypeDesc.of(CD_int, typeDesc), ACC_STATIC, cob -> {
                             var nonNullPath = cob.newLabel();
                             cob.aload(0)
-                                    .ifnonnull(nonNullPath)
-                                    .iconst_0() // null hash is 0
-                                    .ireturn()
-                                    .labelBinding(nonNullPath)
-                                    .aload(0) // arg0.hashCode() - bytecode subject to customized profiling
-                                    .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "hashCode", MethodTypeDesc.of(CD_int), isInterface)
-                                    .ireturn();
+                               .ifnonnull(nonNullPath)
+                               .iconst_0() // null hash is 0
+                               .ireturn()
+                               .labelBinding(nonNullPath)
+                               .aload(0) // arg0.hashCode() - bytecode subject to customized profiling
+                               .invoke(isInterface ? Opcode.INVOKEINTERFACE : Opcode.INVOKEVIRTUAL, typeDesc, "hashCode", MethodTypeDesc.of(CD_int), isInterface)
+                               .ireturn();
                         });
                     }
                 }
