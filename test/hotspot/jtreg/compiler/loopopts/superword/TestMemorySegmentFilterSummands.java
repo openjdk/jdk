@@ -24,6 +24,7 @@
 package compiler.loopopts.superword;
 
 import java.lang.foreign.*;
+import java.util.Set;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
@@ -66,7 +67,7 @@ public class TestMemorySegmentFilterSummands {
         TestFramework f = new TestFramework();
         f.addFlags("-XX:+IgnoreUnrecognizedVMOptions");
         f.addCrossProductScenarios(Set.of("-XX:-AlignVector", "-XX:+AlignVector"),
-                                   Set.of("-XX:-ShortRunningLongLoop", "-XX:+ShortRunningLoop);
+                                   Set.of("-XX:-ShortRunningLongLoop", "-XX:+ShortRunningLoop"));
         f.start();
     }
 
