@@ -1267,12 +1267,12 @@ private:
   }
 
 public:
-  Node *idom(Node* d) const {
+  Node* idom(Node* d) const {
     return idom(d->_idx);
   }
 
-  Node *idom(uint didx) const {
-    Node *n = idom_no_update(didx);
+  Node* idom(uint didx) const {
+    Node* n = idom_no_update(didx);
     // We store the found idom in the side-table again. In most cases,
     // this is a no-op, since we just read from _idom. But in cases where
     // there was a ctrl forwarding via dead ctrl nodes, this shortens the path.
