@@ -1215,7 +1215,7 @@ public class TestTemplate {
         // we can see DataNames of outer scopes.
         var template = Template.make(() -> scope(
             // Outer scope DataName:
-            addDataName("x", myInt, MUTABLE),
+            addDataName("outerInt", myInt, MUTABLE),
             dataNames(MUTABLE).exactOf(myInt).sample((DataName dn) -> scope(
                 let("name1", dn.name()),
                 "sample: #name1.\n",
@@ -1223,7 +1223,7 @@ public class TestTemplate {
                 dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("name2"),
                 "sample: #name2.\n",
                 // Local DataName:
-                addDataName("y", myLong, MUTABLE),
+                addDataName("innerLong", myLong, MUTABLE),
                 dataNames(MUTABLE).exactOf(myLong).sampleAndLetAs("name3"),
                 "sample: #name3.\n"
             )),
@@ -1231,8 +1231,8 @@ public class TestTemplate {
             dataNames(MUTABLE).exactOf(myInt).sampleAndLetAs("name4"),
             "sample: #name4.\n",
             // But we cannot see the DataNames that are local to the inner scope.
-            // So here, we will always see "z", and never "y".
-            addDataName("z", myLong, MUTABLE),
+            // So here, we will always see "outerLong", and never "innerLong".
+            addDataName("outerLong", myLong, MUTABLE),
             dataNames(MUTABLE).exactOf(myLong).sampleAndLetAs("name5"),
             "sample: #name5.\n"
         ));
@@ -1240,11 +1240,11 @@ public class TestTemplate {
         String code = template.render();
         String expected =
             """
-            sample: x.
-            sample: x.
-            sample: y.
-            sample: x.
-            sample: z.
+            sample: outerInt.
+            sample: outerInt.
+            sample: innerLong.
+            sample: outerInt.
+            sample: outerLong.
             """;
         checkEQ(code, expected);
     }
