@@ -1889,14 +1889,11 @@ void C2_MacroAssembler::reduce_mul_integral_256b(Register dst, BasicType bt, Reg
   }
 
   BLOCK_COMMENT("reduce_mul_integral_256b {");
-  unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
 
   // Handle the first iteration separately to preserve the original values in vsrc
   sve_movprfx(vtmp1, vsrc);                                // copy
   sve_ext(vtmp1, vtmp1, vector_length_in_bytes / 2);       // swap halves
   sve_mul(vtmp1, elemType_to_regVariant(bt), ptrue, vsrc); // multiply halves
-  vector_length_in_bytes = vector_length_in_bytes / 2;
-  vector_length = vector_length / 2;
 
   reduce_mul_integral_le128b(dst, bt, isrc, vtmp1, FloatRegister::neon_vl, vtmp2, vtmp3);
   BLOCK_COMMENT("} reduce_mul_integral_256b");
@@ -1947,11 +1944,9 @@ void C2_MacroAssembler::reduce_non_strict_order_mul_fp_256b(FloatRegister dst, B
   assert(vector_length_in_bytes == 32, "unsupported vector length");
 
   // Handle the first iteration separately to preserve the original values in vsrc
-  unsigned vector_length = vector_length_in_bytes / type2aelembytes(bt);
   sve_movprfx(vtmp1, vsrc);                                 // copy
   sve_ext(vtmp1, vtmp1, vector_length_in_bytes / 2);        // swap halves
   sve_fmul(vtmp1, elemType_to_regVariant(bt), ptrue, vsrc); // multiply halves
-  vector_length_in_bytes = vector_length_in_bytes / 2;
 
   reduce_mul_fp_le128b(dst, bt, fsrc, vtmp1, FloatRegister::neon_vl, vtmp2);
   BLOCK_COMMENT("} reduce_non_strict_order_mul_fp_gt128b");
