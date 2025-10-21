@@ -1827,8 +1827,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       }
 #ifndef PRODUCT
       if (!masm && !do_size) {
-        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy%s",
-                  "STX", Matcher::regName[src_lo], dst_offset, is_aligned(dst_offset, 16) ? "" : " (unaligned)");
+        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "STX", Matcher::regName[src_lo], dst_offset);
       }
 #endif // !PRODUCT
     }
@@ -1849,8 +1848,7 @@ uint MachSpillCopyNode::implementation(C2_MacroAssembler *masm, PhaseRegAlloc *r
       }
 #ifndef PRODUCT
       if (!masm && !do_size) {
-        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy%s",
-                  "LXV", Matcher::regName[dst_lo], src_offset, is_aligned(src_offset, 16) ? "" : " (unaligned)");
+        st->print("%-7s %s, [R1_SP + #%d] \t// vector spill copy", "LXV", Matcher::regName[dst_lo], src_offset);
       }
 #endif // !PRODUCT
     }

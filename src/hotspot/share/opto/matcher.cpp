@@ -287,12 +287,8 @@ void Matcher::match( ) {
   // pointer have to be aligned to the size of the access. For this _new_SP is
   // aligned to the size of the largest register set with the stack alignment as
   // limit and a minimum of SlotsPerLong (2).
-  if (UseNewCode) {
-    int vector_aligment = MIN2(C->max_vector_size(), stack_alignment_in_bytes()) / VMRegImpl::stack_slot_size;
-    _new_SP = OptoReg::Name(align_up(_in_arg_limit, MAX2((int)RegMask::SlotsPerLong, vector_aligment)));
-  } else {
-    _new_SP = OptoReg::Name(align_up(_in_arg_limit, (int)RegMask::SlotsPerLong));
-  }
+  int vector_aligment = MIN2(C->max_vector_size(), stack_alignment_in_bytes()) / VMRegImpl::stack_slot_size;
+  _new_SP = OptoReg::Name(align_up(_in_arg_limit, MAX2((int)RegMask::SlotsPerLong, vector_aligment)));
 
   // Compute highest outgoing stack argument as
   //   _new_SP + out_preserve_stack_slots + max(outgoing argument size).
