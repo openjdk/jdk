@@ -54,6 +54,7 @@ public class AOTMapTest {
 
         // Use the same heap size as make/Images.gmk
         vmArgs.add("-Xmx128M");
+        vmArgs.add("-XX:+UnlockDiagnosticVMOptions");
         if (streamHeap) {
             vmArgs.add("-XX:+AOTStreamableObjects");
         } else {

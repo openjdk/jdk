@@ -78,12 +78,13 @@ public class TestZGCWithAOTHeap {
                               dumpGC,
                               coops,
                               coh,
+                              "-XX:+UnlockDiagnosticVMOptions",
                               stream,
                               "-Xlog:cds,aot,aot+heap");
         out.shouldContain("Dumping shared data to file:");
         out.shouldHaveExitValue(0);
 
-        System.out.println("1. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream);
+        System.out.println("1. Exec with " + execGC + ", " + coops + ", " + coh);
         out = TestCommon.exec(helloJar,
                               unlockDiagnostic,
                               execGC,
@@ -109,7 +110,7 @@ public class TestZGCWithAOTHeap {
         // Regardless of which GC dumped the heap, there will be an object archive, either
         // created with mapping if dumped with G1, or streaming if dumped with parallel GC.
         // At exec time, try to load them into a small ZGC heap that may be too small.
-        System.out.println("2. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream);
+        System.out.println("2. Exec with " + execGC + ", " + coops + ", " + coh);
         out = TestCommon.exec(helloJar,
                               unlockDiagnostic,
                               execGC,
@@ -130,7 +131,7 @@ public class TestZGCWithAOTHeap {
         out.shouldNotHaveFatalError();
 
         if (shouldStream) {
-            System.out.println("3. Exec with " + execGC + ", " + coops + ", " + coh + ", " + stream + ", " + eagerLoading);
+            System.out.println("3. Exec with " + execGC + ", " + coops + ", " + coh + ", " + eagerLoading);
             out = TestCommon.exec(helloJar,
                                   unlockDiagnostic,
                                   execGC,
