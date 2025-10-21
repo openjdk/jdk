@@ -241,7 +241,7 @@ final class WixPipeline {
         lightCmdline.addAll(lightOptions);
         wixObjs.stream().map(Path::toString).forEach(lightCmdline::add);
 
-        Files.createDirectories(IOUtils.getParent(msi));
+        Files.createDirectories(msi.getParent());
         execute(lightCmdline);
     }
 
