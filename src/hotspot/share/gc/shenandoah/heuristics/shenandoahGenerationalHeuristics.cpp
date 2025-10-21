@@ -208,8 +208,8 @@ size_t ShenandoahGenerationalHeuristics::add_preselected_regions_to_collection_s
   ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    if (cset->is_preselected(idx)) {
-      size_t region_index = r->index();
+    size_t region_index = r->index();
+    if (cset->is_preselected(region_index)) {
       assert(ShenandoahGenerationalHeap::heap()->is_tenurable(r), "Preselected regions must have tenure age");
       // Entire region will be promoted, This region does not impact young-gen or old-gen evacuation reserve.
       // This region has been pre-selected and its impact on promotion reserve is already accounted for.

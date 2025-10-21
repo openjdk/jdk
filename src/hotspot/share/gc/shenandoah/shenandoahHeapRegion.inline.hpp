@@ -146,7 +146,7 @@ inline size_t ShenandoahHeapRegion::get_marked_data_bytes() const {
 }
 
 inline size_t ShenandoahHeapRegion::get_live_data_words(ShenandoahMarkingContext* ctx, size_t index) const {
-  assert(r->index() == index, "Consistency");
+  assert(this->index() == index, "Consistency: %zu != %zu", this->index(), index);
   HeapWord* tams = ctx->top_at_mark_start(index);
   size_t words_above_tams = pointer_delta(top(), tams);
   size_t result = AtomicAccess::load(&_live_data) + words_above_tams;
