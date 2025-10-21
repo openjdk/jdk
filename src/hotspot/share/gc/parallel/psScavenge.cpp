@@ -521,8 +521,8 @@ void PSScavenge::clean_up_failed_promotion() {
 }
 
 bool PSScavenge::should_attempt_scavenge() {
-  const bool SHOULD_RUN_YOUNG_GC = true;
-  const bool SHOULD_RUN_FULL_GC = false;
+  const bool ShouldRunYoungGC = true;
+  const bool ShouldRunFullGC = false;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
@@ -530,7 +530,7 @@ bool PSScavenge::should_attempt_scavenge() {
 
   if (!young_gen->to_space()->is_empty()) {
     log_debug(gc, ergo)("To-space is not empty; run full-gc instead.");
-    return SHOULD_RUN_FULL_GC;
+    return ShouldRunFullGC;
   }
 
   // Check if the predicted promoted bytes will overflow free space in old-gen.
@@ -548,7 +548,7 @@ bool PSScavenge::should_attempt_scavenge() {
   if (promotion_estimate >= free_in_old_gen_with_expansion) {
     log_debug(gc, ergo)("Run full-gc; predicted promotion size >= max free space in old-gen: %zu >= %zu",
       promotion_estimate, free_in_old_gen_with_expansion);
-    return SHOULD_RUN_FULL_GC;
+    return ShouldRunFullGC;
   }
 
   if (UseAdaptiveSizePolicy) {
@@ -564,13 +564,13 @@ bool PSScavenge::should_attempt_scavenge() {
       if (promotion_estimate > actual_free) {
         log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
           promotion_estimate, actual_free);
-        return SHOULD_RUN_FULL_GC;
+        return ShouldRunFullGC;
       }
     }
   }
 
   // No particular reasons to run full-gc, so young-gc.
-  return SHOULD_RUN_YOUNG_GC;
+  return ShouldRunYoungGC;
 }
 
 // Adaptive size policy support.
