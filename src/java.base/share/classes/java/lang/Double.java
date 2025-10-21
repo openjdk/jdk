@@ -760,11 +760,11 @@ public final class Double extends Number
         // Convert significand to hex digits manually to avoid creating temporary strings
         // Extract the 13 hex digits (52 bits) from signifBits
         // We need to extract bits 48-51, 44-47, ..., 0-3 (13 groups of 4 bits)
-        for (int i = 0, end = 13 - trailingZeros; i < end; i++) {
+        for (int sh = 48, end = 4 * trailingZeros; sh >= end; sh -= 4) {
             // Extract 4 bits at a time from left to right
-            // Shift right by (12 - i) * 4 positions and mask with 0xF
+            // Shift right by sh positions and mask with 0xF
             // Integer.digits maps values 0-15 to '0'-'f' characters
-            chars[index++] = Integer.digits[((int)(signifBits >> ((12 - i) << 2))) & 0xF];
+            chars[index++] = Integer.digits[((int)(signifBits >> sh)) & 0xF];
         }
 
         // Add the exponent indicator
