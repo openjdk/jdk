@@ -1124,7 +1124,7 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
   load_key(xmm_temp2, key, 0xa0, xmm_key_shuf_mask);
 
   __ cmpl(keylen, 44);
-  __ jccb(Assembler::equal, L_doLast);
+  __ jcc(Assembler::equal, L_doLast);
 
   __ aesenc(xmm_result, xmm_temp1);
   __ aesenc(xmm_result, xmm_temp2);
@@ -1133,7 +1133,7 @@ address StubGenerator::generate_aescrypt_encryptBlock() {
   load_key(xmm_temp2, key, 0xc0, xmm_key_shuf_mask);
 
   __ cmpl(keylen, 52);
-  __ jccb(Assembler::equal, L_doLast);
+  __ jcc(Assembler::equal, L_doLast);
 
   __ aesenc(xmm_result, xmm_temp1);
   __ aesenc(xmm_result, xmm_temp2);
@@ -1217,7 +1217,7 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
   load_key(xmm_temp3, key, 0x00, xmm_key_shuf_mask);
 
   __ cmpl(keylen, 44);
-  __ jccb(Assembler::equal, L_doLast);
+  __ jcc(Assembler::equal, L_doLast);
 
   __ aesdec(xmm_result, xmm_temp1);
   __ aesdec(xmm_result, xmm_temp2);
@@ -1226,7 +1226,7 @@ address StubGenerator::generate_aescrypt_decryptBlock() {
   load_key(xmm_temp2, key, 0xc0, xmm_key_shuf_mask);
 
   __ cmpl(keylen, 52);
-  __ jccb(Assembler::equal, L_doLast);
+  __ jcc(Assembler::equal, L_doLast);
 
   __ aesdec(xmm_result, xmm_temp1);
   __ aesdec(xmm_result, xmm_temp2);
@@ -1759,25 +1759,44 @@ void StubGenerator::roundDeclast(XMMRegister xmm_reg) {
   __ vaesdeclast(xmm8, xmm8, xmm_reg, Assembler::AVX_512bit);
 }
 
+// Check incoming byte offset against the int[] len. key is the pointer to the int[0].
+void StubGenerator::check_key_offset(Register key, int offset, int load_size) {
+#ifdef ASSERT
+  Register tmp = (key != rscratch1) ? rscratch1 : rscratch2;
+  Label L_good;
+  __ push(tmp);
+  __ movl(tmp, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
+  __ shll(tmp, 2); // int -> byte length
+  __ cmpl(tmp, offset + load_size);
+  __ jcc(Assembler::greaterEqual, L_good);
+  __ stop("Incorrect offset");
+  __ bind(L_good);
+  __ pop(tmp);
+#endif
+}
 
 // Utility routine for loading a 128-bit key word in little endian format
 void StubGenerator::load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, xmm_shuf_mask);
 }
 
 void StubGenerator::load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, ExternalAddress(key_shuffle_mask_addr()), rscratch);
 }
 
 void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, xmm_shuf_mask);
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
 }
 
 void StubGenerator::ev_load_key(XMMRegister xmmdst, Register key, int offset, Register rscratch) {
+  check_key_offset(key, offset, 16);
   __ movdqu(xmmdst, Address(key, offset));
   __ pshufb(xmmdst, ExternalAddress(key_shuffle_mask_addr()), rscratch);
   __ evshufi64x2(xmmdst, xmmdst, xmmdst, 0x0, Assembler::AVX_512bit);
@@ -3205,12 +3224,12 @@ void StubGenerator::ghash16_encrypt_parallel16_avx512(Register in, Register out,
 
   //AES round 9
   roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
-  ev_load_key(AESKEY2, key, 11 * 16, rbx);
   //AES rounds up to 11 (AES192) or 13 (AES256)
   //AES128 is done
   __ cmpl(NROUNDS, 52);
   __ jcc(Assembler::less, last_aes_rnd);
   __ bind(aes_192);
+  ev_load_key(AESKEY2, key, 11 * 16, rbx);
   roundEncode(AESKEY1, B00_03, B04_07, B08_11, B12_15);
   ev_load_key(AESKEY1, key, 12 * 16, rbx);
   roundEncode(AESKEY2, B00_03, B04_07, B08_11, B12_15);
