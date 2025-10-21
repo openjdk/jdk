@@ -2735,7 +2735,8 @@ public final class Locale implements Cloneable, Serializable {
          * <p>Duplicate variants are accepted and included by the builder.
          * However, duplicate extension singleton keys and their associated type
          * are accepted but ignored. The same behavior applies to duplicate locale
-         * keys and attributes within a U extension.
+         * keys and attributes within a U extension. Note that subsequent subtags after
+         * the occurrence of a duplicate are not ignored.
          *
          * <p>See {@link Locale##langtag_conversions converions} for a full list
          * of conversions that are performed on {@code languageTag}.
