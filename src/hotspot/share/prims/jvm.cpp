@@ -799,16 +799,14 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
   return (jclass) JNIHandles::make_local(THREAD, k->java_mirror());
 JVM_END
 
-// Find a class with this name in this loader, using the caller's protection domain.
-JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
-                                          jboolean init, jobject loader,
-                                          jclass caller))
+// Find a class with this name in this loader.
+JVM_ENTRY(jclass, JVM_FindClassFromLoader(JNIEnv* env, const char* name,
+                                          jboolean init, jobject loader))
   TempNewSymbol h_name =
        SystemDictionary::class_name_symbol(name, vmSymbols::java_lang_ClassNotFoundException(),
                                            CHECK_NULL);
 
   oop loader_oop = JNIHandles::resolve(loader);
-  oop from_class = JNIHandles::resolve(caller);
   Handle h_loader(THREAD, loader_oop);
 
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
@@ -2253,12 +2251,26 @@ JVM_END
 // Reflection for the verifier /////////////////////////////////////////////////////////////////
 
 // RedefineClasses support: bug 6214132 caused verification to fail.
-// All functions from this section should call the jvmtiThreadSate function:
-//   Klass* class_to_verify_considering_redefinition(Klass* klass).
-// The function returns a Klass* of the _scratch_class if the verifier
-// was invoked in the middle of the class redefinition.
-// Otherwise it returns its argument value which is the _the_class Klass*.
-// Please, refer to the description in the jvmtiThreadState.hpp.
+// All functions from this section, unless noted otherwise, should call the functions
+//   get_klass_considering_redefinition(), or
+//   get_instance_klass_considering_redefinition()
+// These functions return JvmtiThreadState::_scratch_class if the verifier
+// was invoked in the middle of the redefinition of cls.
+// See jvmtiThreadState.hpp for details.
+
+inline Klass* get_klass_considering_redefinition(jclass cls, JavaThread* thread) {
+  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
+  if (k->is_instance_klass()) {
+    return JvmtiThreadState::class_to_verify_considering_redefinition(InstanceKlass::cast(k), thread);
+  } else {
+    return k;
+  }
+}
+
+inline InstanceKlass* get_instance_klass_considering_redefinition(jclass cls, JavaThread* thread) {
+  InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve_non_null(cls));
+  return JvmtiThreadState::class_to_verify_considering_redefinition(ik, thread);
+}
 
 JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
   oop mirror = JNIHandles::resolve_non_null(cls);
@@ -2266,26 +2278,24 @@ JVM_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
     return JNI_FALSE;
   }
   Klass* k = java_lang_Class::as_Klass(mirror);
-  // This isn't necessary since answer is the same since redefinition
+  // This isn't necessary since answer is the same because redefinition
   // has already checked this matches for the scratch class.
-  // k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  // k = get_klass_considering_redefinition(cls, thread)
   jboolean result = k->is_interface();
   assert(!result || k->is_instance_klass(),
          "all interfaces are instance types");
   return result;
 JVM_END
 
-
 JVM_ENTRY(const char*, JVM_GetClassNameUTF(JNIEnv *env, jclass cls))
+  // No need to call get_klass_considering_redefinition() as redefinition cannot change a class's name.
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
   return k->name()->as_utf8();
 JVM_END
 
 
 JVM_ENTRY(void, JVM_GetClassCPTypes(JNIEnv *env, jclass cls, unsigned char *types))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Klass* k = get_klass_considering_redefinition(cls, thread);
   // types will have length zero if this is not an InstanceKlass
   // (length is determined by call to JVM_GetClassCPEntriesCount)
   if (k->is_instance_klass()) {
@@ -2299,22 +2309,19 @@ JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetClassCPEntriesCount(JNIEnv *env, jclass cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Klass* k = get_klass_considering_redefinition(cls, thread);
   return (!k->is_instance_klass()) ? 0 : InstanceKlass::cast(k)->constants()->length();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetClassFieldsCount(JNIEnv *env, jclass cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Klass* k = get_klass_considering_redefinition(cls, thread);
   return (!k->is_instance_klass()) ? 0 : InstanceKlass::cast(k)->java_fields_count();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetClassMethodsCount(JNIEnv *env, jclass cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
+  Klass* k = get_klass_considering_redefinition(cls, thread);
   return (!k->is_instance_klass()) ? 0 : InstanceKlass::cast(k)->methods()->length();
 JVM_END
 
@@ -2325,9 +2332,8 @@ JVM_END
 // by the results of JVM_GetClass{Fields,Methods}Count, which return
 // zero for arrays.
 JVM_ENTRY(void, JVM_GetMethodIxExceptionIndexes(JNIEnv *env, jclass cls, jint method_index, unsigned short *exceptions))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   int length = method->checked_exceptions_length();
   if (length > 0) {
     CheckedExceptionElement* table= method->checked_exceptions_start();
@@ -2339,33 +2345,29 @@ JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxExceptionsCount(JNIEnv *env, jclass cls, jint method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->checked_exceptions_length();
 JVM_END
 
 
 JVM_ENTRY(void, JVM_GetMethodIxByteCode(JNIEnv *env, jclass cls, jint method_index, unsigned char *code))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   memcpy(code, method->code_base(), method->code_size());
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxByteCodeLength(JNIEnv *env, jclass cls, jint method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->code_size();
 JVM_END
 
 
 JVM_ENTRY(void, JVM_GetMethodIxExceptionTableEntry(JNIEnv *env, jclass cls, jint method_index, jint entry_index, JVM_ExceptionTableEntryType *entry))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   ExceptionTable extable(method);
   entry->start_pc   = extable.start_pc(entry_index);
   entry->end_pc     = extable.end_pc(entry_index);
@@ -2375,81 +2377,71 @@ JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxExceptionTableLength(JNIEnv *env, jclass cls, int method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->exception_table_length();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxModifiers(JNIEnv *env, jclass cls, int method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->access_flags().as_method_flags();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetFieldIxModifiers(JNIEnv *env, jclass cls, int field_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  return InstanceKlass::cast(k)->field_access_flags(field_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  return ik->field_access_flags(field_index);
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxLocalsCount(JNIEnv *env, jclass cls, int method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->max_locals();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxArgsSize(JNIEnv *env, jclass cls, int method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->size_of_parameters();
 JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetMethodIxMaxStack(JNIEnv *env, jclass cls, int method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->verifier_max_stack();
 JVM_END
 
 
 JVM_ENTRY(jboolean, JVM_IsConstructorIx(JNIEnv *env, jclass cls, int method_index))
   ResourceMark rm(THREAD);
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->name() == vmSymbols::object_initializer_name();
 JVM_END
 
 
 JVM_ENTRY(jboolean, JVM_IsVMGeneratedMethodIx(JNIEnv *env, jclass cls, int method_index))
   ResourceMark rm(THREAD);
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->is_overpass();
 JVM_END
 
 JVM_ENTRY(const char*, JVM_GetMethodIxNameUTF(JNIEnv *env, jclass cls, jint method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->name()->as_utf8();
 JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetMethodIxSignatureUTF(JNIEnv *env, jclass cls, jint method_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  Method* method = InstanceKlass::cast(k)->methods()->at(method_index);
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  Method* method = ik->methods()->at(method_index);
   return method->signature()->as_utf8();
 JVM_END
 
@@ -2462,9 +2454,8 @@ JVM_END
  * constant pool, so we must use cp->uncached_x methods when appropriate.
  */
 JVM_ENTRY(const char*, JVM_GetCPFieldNameUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref:
       return cp->uncached_name_ref_at(cp_index)->as_utf8();
@@ -2477,9 +2468,8 @@ JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetCPMethodNameUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
@@ -2493,9 +2483,8 @@ JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetCPMethodSignatureUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_InterfaceMethodref:
     case JVM_CONSTANT_Methodref:
@@ -2509,9 +2498,8 @@ JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetCPFieldSignatureUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref:
       return cp->uncached_signature_ref_at(cp_index)->as_utf8();
@@ -2524,18 +2512,16 @@ JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetCPClassNameUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   Symbol* classname = cp->klass_name_at(cp_index);
   return classname->as_utf8();
 JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetCPFieldClassNameUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref: {
       int class_index = cp->uncached_klass_ref_index_at(cp_index);
@@ -2551,9 +2537,8 @@ JVM_END
 
 
 JVM_ENTRY(const char*, JVM_GetCPMethodClassNameUTF(JNIEnv *env, jclass cls, jint cp_index))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  k = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref: {
@@ -2570,18 +2555,15 @@ JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetCPFieldModifiers(JNIEnv *env, jclass cls, int cp_index, jclass called_cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  Klass* k_called = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(called_cls));
-  k        = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  k_called = JvmtiThreadState::class_to_verify_considering_redefinition(k_called, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
-  ConstantPool* cp_called = InstanceKlass::cast(k_called)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  InstanceKlass* ik_called = get_instance_klass_considering_redefinition(called_cls, thread);
+  ConstantPool* cp = ik->constants();
+  ConstantPool* cp_called = ik_called->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Fieldref: {
       Symbol* name      = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      InstanceKlass* ik = InstanceKlass::cast(k_called);
-      for (JavaFieldStream fs(ik); !fs.done(); fs.next()) {
+      for (JavaFieldStream fs(ik_called); !fs.done(); fs.next()) {
         if (fs.name() == name && fs.signature() == signature) {
           return fs.access_flags().as_field_flags();
         }
@@ -2597,17 +2579,15 @@ JVM_END
 
 
 JVM_ENTRY(jint, JVM_GetCPMethodModifiers(JNIEnv *env, jclass cls, int cp_index, jclass called_cls))
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  Klass* k_called = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(called_cls));
-  k        = JvmtiThreadState::class_to_verify_considering_redefinition(k, thread);
-  k_called = JvmtiThreadState::class_to_verify_considering_redefinition(k_called, thread);
-  ConstantPool* cp = InstanceKlass::cast(k)->constants();
+  InstanceKlass* ik = get_instance_klass_considering_redefinition(cls, thread);
+  InstanceKlass* ik_called = get_instance_klass_considering_redefinition(called_cls, thread);
+  ConstantPool* cp = ik->constants();
   switch (cp->tag_at(cp_index).value()) {
     case JVM_CONSTANT_Methodref:
     case JVM_CONSTANT_InterfaceMethodref: {
       Symbol* name      = cp->uncached_name_ref_at(cp_index);
       Symbol* signature = cp->uncached_signature_ref_at(cp_index);
-      Array<Method*>* methods = InstanceKlass::cast(k_called)->methods();
+      Array<Method*>* methods = ik_called->methods();
       int methods_count = methods->length();
       for (int i = 0; i < methods_count; i++) {
         Method* method = methods->at(i);

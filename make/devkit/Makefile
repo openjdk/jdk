@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,61 +57,61 @@
 
 COMMA := ,
 
-os := $(shell uname -o)
-cpu := $(shell uname -p)
+OS := $(shell uname -o)
+CPU := $(shell uname -m)
 
 # Figure out what platform this is building on.
-me := $(cpu)-$(if $(findstring Linux,$(os)),linux-gnu)
+ME := $(CPU)-$(if $(findstring Linux,$(OS)),linux-gnu)
 
-$(info Building on platform $(me))
+$(info Building on platform $(ME))
 
 #
 # By default just build for the current platform, which is assumed to be Linux
 #
 ifeq ($(TARGETS), )
-  platforms := $(me)
-  host_platforms := $(platforms)
+  PLATFORMS := $(ME)
+  HOST_PLATFORMS := $(PLATFORMS)
 else
-  platforms := $(subst $(COMMA), , $(TARGETS))
-  host_platforms := $(me)
+  PLATFORMS := $(subst $(COMMA), , $(TARGETS))
+  HOST_PLATFORMS := $(ME)
 endif
-target_platforms := $(platforms)
-$(info host_platforms $(host_platforms))
-$(info target_platforms $(target_platforms))
+TARGET_PLATFORMS := $(PLATFORMS)
+$(info HOST_PLATFORMS $(HOST_PLATFORMS))
+$(info TARGET_PLATFORMS $(TARGET_PLATFORMS))
 
-all compile : $(platforms)
+all compile : $(PLATFORMS)
 
 ifeq ($(SKIP_ME), )
-  $(foreach p,$(filter-out $(me),$(platforms)),$(eval $(p) : $$(me)))
+  $(foreach p,$(filter-out $(ME),$(PLATFORMS)),$(eval $(p) : $$(ME)))
 endif
 
 OUTPUT_ROOT = $(abspath ../../build/devkit)
 RESULT = $(OUTPUT_ROOT)/result
 
-submakevars = HOST=$@ BUILD=$(me) RESULT=$(RESULT) OUTPUT_ROOT=$(OUTPUT_ROOT)
+SUBMAKEVARS = HOST=$@ BUILD=$(ME) RESULT=$(RESULT) OUTPUT_ROOT=$(OUTPUT_ROOT)
 
-$(host_platforms) :
+$(HOST_PLATFORMS) :
 	@echo 'Building compilers for $@'
-	@echo 'Targets: $(target_platforms)'
-	for p in $(filter $@, $(target_platforms)) $(filter-out $@, $(target_platforms)); do \
-	  $(MAKE) -f Tools.gmk download-rpms $(submakevars) \
+	@echo 'Targets: $(TARGET_PLATFORMS)'
+	for p in $(filter $@, $(TARGET_PLATFORMS)) $(filter-out $@, $(TARGET_PLATFORMS)); do \
+	  $(MAKE) -f Tools.gmk download-rpms $(SUBMAKEVARS) \
               TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
-	  $(MAKE) -f Tools.gmk all $(submakevars) \
+	  $(MAKE) -f Tools.gmk all $(SUBMAKEVARS) \
               TARGET=$$p PREFIX=$(RESULT)/$@-to-$$p && \
-	  $(MAKE) -f Tools.gmk ccache $(submakevars) \
+	  $(MAKE) -f Tools.gmk ccache $(SUBMAKEVARS) \
               TARGET=$@ PREFIX=$(RESULT)/$@-to-$$p || exit 1 ; \
 	done
 	@echo 'All done"'
 
-today := $(shell date +%Y%m%d)
+TODAY := $(shell date +%Y%m%d)
 
 define Mktar
-  $(1)-to-$(2)_tar = $$(RESULT)/sdk-$(1)-to-$(2)-$$(today).tar.gz
+  $(1)-to-$(2)_tar = $$(RESULT)/sdk-$(1)-to-$(2)-$$(TODAY).tar.gz
   $$($(1)-to-$(2)_tar) : PLATFORM = $(1)-to-$(2)
   TARFILES += $$($(1)-to-$(2)_tar)
 endef
 
-$(foreach p,$(host_platforms),$(foreach t,$(target_platforms),$(eval $(call Mktar,$(p),$(t)))))
+$(foreach p,$(HOST_PLATFORMS),$(foreach t,$(TARGET_PLATFORMS),$(eval $(call Mktar,$(p),$(t)))))
 
 tars : all $(TARFILES)
 onlytars : $(TARFILES)
@@ -119,9 +119,9 @@ onlytars : $(TARFILES)
 	$(MAKE) -r -f Tars.gmk SRC_DIR=$(RESULT)/$(PLATFORM) TAR_FILE=$@
 
 clean :
-	rm -rf $(addprefix ../../build/devkit/, result $(host_platforms))
+	rm -rf $(addprefix ../../build/devkit/, result $(HOST_PLATFORMS))
 dist-clean: clean
 	rm -rf $(addprefix ../../build/devkit/, src download)
 
 FORCE :
-.PHONY : all compile tars $(configs) $(host_platforms) clean dist-clean
+.PHONY : all compile tars $(HOST_PLATFORMS) clean dist-clean

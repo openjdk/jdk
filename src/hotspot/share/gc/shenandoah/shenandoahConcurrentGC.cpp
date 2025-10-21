@@ -114,6 +114,8 @@ void ShenandoahConcurrentGC::entry_concurrent_update_refs_prepare(ShenandoahHeap
 
 bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  _generation->ref_processor()->set_soft_reference_policy(
+      GCCause::should_clear_all_soft_refs(cause));
 
   ShenandoahBreakpointGCScope breakpoint_gc_scope(cause);
 
@@ -732,7 +734,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   rp->reset_thread_locals();
-  rp->set_soft_reference_policy(heap->soft_ref_policy()->should_clear_all_soft_refs());
 
   // Make above changes visible to worker threads
   OrderAccess::fence();
@@ -1157,7 +1158,7 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   // Clear cancelled GC, if set. On cancellation path, the block before would handle
   // everything.
   if (heap->cancelled_gc()) {
-    heap->clear_cancelled_gc(true /* clear oom handler */);
+    heap->clear_cancelled_gc();
   }
 
   // Has to be done before cset is clear

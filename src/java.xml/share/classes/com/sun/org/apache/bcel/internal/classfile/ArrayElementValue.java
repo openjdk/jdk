@@ -31,12 +31,12 @@ public class ArrayElementValue extends ElementValue {
     // For array types, this is the array
     private final ElementValue[] elementValues;
 
-    public ArrayElementValue(final int type, final ElementValue[] datums, final ConstantPool cpool) {
+    public ArrayElementValue(final int type, final ElementValue[] elementValues, final ConstantPool cpool) {
         super(type, cpool);
         if (type != ARRAY) {
             throw new ClassFormatException("Only element values of type array can be built with this ctor - type specified: " + type);
         }
-        this.elementValues = datums;
+        this.elementValues = elementValues != null ? elementValues : EMPTY_ARRAY;
     }
 
     @Override

@@ -183,6 +183,7 @@ int             Universe::_base_vtable_size = 0;
 bool            Universe::_bootstrapping = false;
 bool            Universe::_module_initialized = false;
 bool            Universe::_fully_initialized = false;
+volatile bool   Universe::_is_shutting_down = false;
 
 OopStorage*     Universe::_vm_weak = nullptr;
 OopStorage*     Universe::_vm_global = nullptr;
@@ -503,7 +504,7 @@ void Universe::genesis(TRAPS) {
   // Since some of the old system object arrays have been converted to
   // ordinary object arrays, _objectArrayKlass will be loaded when
   // SystemDictionary::initialize(CHECK); is run. See the extra check
-  // for Object_klass_loaded in objArrayKlassKlass::allocate_objArray_klass_impl.
+  // for Object_klass_is_loaded in ObjArrayKlass::allocate_objArray_klass.
   {
     Klass* oak = vmClasses::Object_klass()->array_klass(CHECK);
     _objectArrayKlass = ObjArrayKlass::cast(oak);
@@ -583,11 +584,16 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
 }
 
 void Universe::fixup_mirrors(TRAPS) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    // All mirrors of preloaded classes are already restored. No need to fix up.
+    return;
+  }
+
   // Bootstrap problem: all classes gets a mirror (java.lang.Class instance) assigned eagerly,
   // but we cannot do that for classes created before java.lang.Class is loaded. Here we simply
   // walk over permanent objects created so far (mostly classes) and fixup their mirrors. Note
   // that the number of objects allocated at this point is very small.
-  assert(vmClasses::Class_klass_loaded(), "java.lang.Class should be loaded");
+  assert(vmClasses::Class_klass_is_loaded(), "java.lang.Class should be loaded");
   HandleMark hm(THREAD);
 
   if (!CDSConfig::is_using_archive()) {
@@ -949,7 +955,7 @@ void Universe::initialize_tlab() {
   }
 }
 
-ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
+ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment, size_t desired_page_size) {
 
   assert(alignment <= Arguments::conservative_max_heap_alignment(),
          "actual alignment %zu must be within maximum heap alignment %zu",
@@ -960,15 +966,21 @@ ReservedHeapSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
   assert(!UseCompressedOops || (total_reserved <= (OopEncodingHeapMax - os::vm_page_size())),
       "heap size is too big for compressed oops");
 
-  size_t page_size = os::vm_page_size();
-  if (UseLargePages && is_aligned(alignment, os::large_page_size())) {
-    page_size = os::large_page_size();
+  size_t page_size;
+  if (desired_page_size == 0) {
+    if (UseLargePages) {
+      page_size = os::large_page_size();
+    } else {
+      page_size = os::vm_page_size();
+    }
   } else {
     // Parallel is the only collector that might opt out of using large pages
     // for the heap.
-    assert(!UseLargePages || UseParallelGC , "Wrong alignment to use large pages");
+    assert(UseParallelGC , "only Parallel");
+    // Use caller provided value.
+    page_size = desired_page_size;
   }
-
+  assert(is_aligned(heap_size, page_size), "inv");
   // Now create the space.
   ReservedHeapSpace rhs = HeapReserver::reserve(total_reserved, alignment, page_size, AllocateHeapAt);
 
@@ -1344,7 +1356,14 @@ static void log_cpu_time() {
 }
 
 void Universe::before_exit() {
-  log_cpu_time();
+  {
+    // Acquire the Heap_lock to synchronize with VM_Heap_Sync_Operations,
+    // which may depend on the value of _is_shutting_down flag.
+    MutexLocker hl(Heap_lock);
+    log_cpu_time();
+    AtomicAccess::release_store(&_is_shutting_down, true);
+  }
+
   heap()->before_exit();
 
   // Print GC/heap related information.
