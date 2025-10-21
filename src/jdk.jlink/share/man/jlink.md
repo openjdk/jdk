@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -279,8 +279,6 @@ Suggested providers:
   java.smartcardio provides java.security.Provider used by java.base
   java.xml.crypto provides java.security.Provider used by java.base
   jdk.crypto.cryptoki provides java.security.Provider used by java.base
-  jdk.crypto.ec provides java.security.Provider used by java.base
-  jdk.crypto.mscapi provides java.security.Provider used by java.base
   jdk.security.jgss provides java.security.Provider used by java.base
 ```
 
