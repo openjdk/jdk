@@ -1159,10 +1159,10 @@ public:
   // the nodes that had the old_node as their "get_ctrl" or "idom". We
   // clean up the forwarding links when we query "get_ctrl" or "idom".
   void install_lazy_ctrl_and_idom_forwarding(Node* old_node, Node* new_node) {
-    assert(!has_ctrl(old_node), "must be ctrl node");
-    assert(!has_ctrl(new_node), "must be ctrl node");
-    assert(old_node->in(0) == nullptr, "old node must be dead");
-    assert(new_node->in(0) != nullptr, "new node must be live");
+    assert(!has_ctrl(old_node) && old_node->is_CFG() && old_node->in(0) == nullptr,
+           "must be dead ctrl (CFG) node");
+    assert(!has_ctrl(new_node) && new_node->is_CFG() && new_node->in(0) != nullptr,
+           "must be live ctrl (CFG) node");
     assert(old_node != new_node, "no cycles please");
     // Re-use the side array slot for this node to provide the
     // forwarding pointer.
