@@ -1031,7 +1031,7 @@ final class AES_Crypt extends SymmetricCipher {
     private void implEncryptBlock(byte[] p, int po, byte[] c, int co) {
         int ti0, ti1, ti2, ti3;
         int a0, a1, a2, a3;
-        int w = K.length - 4;
+        int w = K.length - WB;
 
         a0 = ((p[po] & 0xFF) << 24) ^ ((p[po + 1] & 0xFF) << 16)
                 ^ ((p[po + 2] & 0xFF) << 8) ^ (p[po + 3] & 0xFF) ^ K[0];
