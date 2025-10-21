@@ -701,7 +701,6 @@ void ShenandoahConcurrentGC::op_init_mark() {
   }
 
   _generation->set_concurrent_mark_in_progress(true);
-  ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(false);
 
   start_mark();
 
@@ -800,10 +799,6 @@ void ShenandoahConcurrentGC::op_final_mark() {
         }
       }
     }
-  }
-
-  if (heap->is_concurrent_old_mark_in_progress()) {
-    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(true);
   }
 
   {
