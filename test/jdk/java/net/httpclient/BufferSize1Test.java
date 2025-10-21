@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
+import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestEchoHandler;
 import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
@@ -40,6 +40,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
+import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderFor;
 
 /*
  * @test
@@ -76,7 +77,7 @@ public class BufferSize1Test {
 
             // Add the handler and start the server
             var serverHandlerPath = "/" + BufferSize1Test.class.getSimpleName();
-            server.addHandler(new BodyEchoingHandler(), serverHandlerPath);
+            server.addHandler(new HttpTestEchoHandler(), serverHandlerPath);
             server.start();
 
             // Create the client
@@ -98,8 +99,7 @@ public class BufferSize1Test {
     }
 
     private static HttpClient createClient(Version version, SSLContext sslContext) {
-        var clientBuilder = HttpServerAdapters
-                .createClientBuilderFor(version)
+        var clientBuilder = createClientBuilderFor(version)
                 .proxy(NO_PROXY)
                 .version(version);
         if (sslContext != null) {
@@ -108,7 +108,12 @@ public class BufferSize1Test {
         return clientBuilder.build();
     }
 
-    private static HttpRequest createRequest(SSLContext sslContext, HttpTestServer server, String serverHandlerPath, Version version, byte[] requestBodyBytes) {
+    private static HttpRequest createRequest(
+            SSLContext sslContext,
+            HttpTestServer server,
+            String serverHandlerPath,
+            Version version,
+            byte[] requestBodyBytes) {
         var requestUri = URI.create(String.format(
                 "%s://%s%s/x",
                 sslContext == null ? "http" : "https",
@@ -138,24 +143,6 @@ public class BufferSize1Test {
                     responseBodyBytes.length, requestBodyBytes.length, mismatchIndex);
             throw new AssertionError(message);
         }
-    }
-
-    private static final class BodyEchoingHandler implements HttpServerAdapters.HttpTestHandler {
-
-        @Override
-        public void handle(HttpServerAdapters.HttpTestExchange exchange) throws IOException {
-            try (exchange) {
-                byte[] body;
-                try (var requestBodyStream = exchange.getRequestBody()) {
-                    body = requestBodyStream.readAllBytes();
-                }
-                exchange.sendResponseHeaders(200, body.length);
-                try (var responseBodyStream = exchange.getResponseBody()) {
-                    responseBodyStream.write(body);
-                }
-            }
-        }
-
     }
 
 }
