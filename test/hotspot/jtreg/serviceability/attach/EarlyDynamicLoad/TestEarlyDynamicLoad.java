@@ -55,7 +55,7 @@ public class TestEarlyDynamicLoad {
                 "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
                 "-version").start();
 
-        // Wait the process to enter VMStartCallback
+        // Wait until the process enters VMStartCallback
         child.getInputStream().read();
     }
 
