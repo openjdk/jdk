@@ -37,7 +37,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @modules java.base/sun.security.x509
  *
- * @run junit/othervm -Djavax.net.debug=ssl:keymanager NullCases
+ * @run junit NullCases
  */
 
 import jdk.test.lib.Asserts;
@@ -48,8 +48,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.X509KeyManager;
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.KeyStore;
@@ -63,12 +61,9 @@ import static jdk.httpclient.test.lib.common.DynamicKeyStoreUtil.generateRSAKeyP
 
 
 public class NullCases {
-    private static final String KEY_MGR_EXCEPTION_MESSAGE =
-            "Exception thrown while getting an alias";
 
     private static KeyManagerFactory kmf;
     private static X509KeyManager km;
-    private final PrintStream initialErrStream = System.err;
 
     @BeforeAll
     public static void beforeAll() throws Exception {
@@ -145,44 +140,26 @@ public class NullCases {
      * The following tests are testing JDK-8369995
      */
 
-    private ByteArrayOutputStream replaceSystemError() {
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        final PrintStream newErrStream = new PrintStream(outputStream);
-        System.setErr(newErrStream);
-
-        return outputStream;
-    }
-
     @Test
     public void incompleteChainAndKeyTest() {
         final X509Certificate[] certs = km.getCertificateChain("1.1");
         final PrivateKey priv = km.getPrivateKey("1.1");
 
         Asserts.assertNull(certs,
-                "Should return null if the alias can't be found");
+                "Should return null if the alias is incomplete");
         Asserts.assertNull(priv,
-                "Should return null if the alias can't be found");
+                "Should return null if the alias is incomplete");
     }
 
     @Test
     public void nonexistentBuilderTest() {
-        // recording logs to the output stream
-        final ByteArrayOutputStream outputStream = replaceSystemError();
-
         final X509Certificate[] certs = km.getCertificateChain("RSA.1.1");
         final PrivateKey priv = km.getPrivateKey("RSA.1.1");
 
         Asserts.assertNull(certs,
-                "Should return null if the alias can't be found");
+                "Should return null if builder doesn't exist");
         Asserts.assertNull(priv,
-                "Should return null if the alias can't be found");
-
-        System.setErr(initialErrStream);
-        System.err.println(" => nonexistentBuilderTest: \n" + outputStream);
-
-        Asserts.assertFalse(
-                !outputStream.toString().contains(KEY_MGR_EXCEPTION_MESSAGE),
-                "No log triggered");
+                "Should return null if builder doesn't exist");
     }
 
     @Test
@@ -192,53 +169,36 @@ public class NullCases {
         final PrivateKey priv = km.getPrivateKey("RSA.0.1");
 
         Asserts.assertNull(certs,
-                "Should return null if the alias can't be found");
+                "Should return null if KS doesn't exist");
         Asserts.assertNull(priv,
-                "Should return null if the alias can't be found");
+                "Should return null if KS doesn't exist");
     }
 
     @Test
     public void wrongNumberFormatTest() {
-        // recording logs to the output stream
-        final ByteArrayOutputStream outputStream = replaceSystemError();
         final X509Certificate[] certs =
                 km.getCertificateChain("RSA.not.exist");
         final PrivateKey priv = km.getPrivateKey("RSA.not.exist");
 
         Asserts.assertNull(certs,
-                "Should return null if the alias can't be found");
+                "Should return null if number format is wrong in alias");
         Asserts.assertNull(priv,
-                "Should return null if the alias can't be found");
-
-        System.setErr(initialErrStream);
-        System.err.println(" => wrongNumberFormatTest: \n" + outputStream);
-
-        Asserts.assertFalse(
-                !outputStream.toString().contains(KEY_MGR_EXCEPTION_MESSAGE),
-                "No log triggered");
-
+                "Should return null if number format is wrong in alias");
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"1..",".1.", "..1", ".9.123456789"})
+    @ValueSource(strings = {"1..1", "1..",".1.", "..1", ".9.123456789"})
     public void invalidAliasTest(final String alias) {
-        // recording logs to the output stream
-        final ByteArrayOutputStream outputStream = replaceSystemError();
         final X509Certificate[] certs = km.getCertificateChain(alias);
         final PrivateKey priv = km.getPrivateKey(alias);
 
         Asserts.assertNull(certs,
-                "Should return null if the alias can't be found");
+                String.format(
+                        "Should return null if the alias is invalid <%s>",
+                        alias));
         Asserts.assertNull(priv,
-                "Should return null if the alias can't be found");
-
-        System.setErr(initialErrStream);
-        System.err.println(" => wrongNumberFormatTest alias<" + alias + ">: \n"
-                           + outputStream);
-
-        Asserts.assertFalse(!outputStream.toString()
-                            .contains("Invalid alias format:"),
-                "No log triggered");
-
+                String.format(
+                        "Should return null if the alias is invalid <%s>",
+                        alias));
     }
 }
