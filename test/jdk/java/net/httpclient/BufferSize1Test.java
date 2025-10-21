@@ -26,10 +26,15 @@ import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
 
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_3;
@@ -71,44 +76,84 @@ public class BufferSize1Test {
 
             // Add the handler and start the server
             var serverHandlerPath = "/" + BufferSize1Test.class.getSimpleName();
-            HttpServerAdapters.HttpTestHandler serverHandler = exchange -> {
-                try (exchange) {
-                    exchange.sendResponseHeaders(200, 0);
-                }
-            };
-            server.addHandler(serverHandler, serverHandlerPath);
+            server.addHandler(new BodyEchoingHandler(), serverHandlerPath);
             server.start();
 
             // Create the client
-            var clientBuilder = HttpServerAdapters
-                    .createClientBuilderFor(version)
-                    .proxy(NO_PROXY)
-                    .version(version);
-            if (sslContext != null) {
-                clientBuilder.sslContext(sslContext);
-            }
-            try (var client = clientBuilder.build()) {
+            try (var client = createClient(version, sslContext)) {
 
-                // Create the request
-                var requestUri = URI.create(String.format(
-                        "%s://%s%s/x",
-                        sslContext == null ? "http" : "https",
-                        server.serverAuthority(),
-                        serverHandlerPath));
-                var requestBuilder = HttpRequest.newBuilder(requestUri).version(version).HEAD();
-                if (HTTP_3.equals(version)) {
-                    requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
-                }
-                var request = requestBuilder.build();
+                // Create the request with body to ensure that `ByteBuffer`s
+                // will be used throughout the entire end-to-end interaction.
+                byte[] requestBodyBytes = "body".repeat(1000).getBytes(StandardCharsets.US_ASCII);
+                var request = createRequest(sslContext, server, serverHandlerPath, version, requestBodyBytes);
 
-                // Execute and verify the request
-                var response = client.send(request, HttpResponse.BodyHandlers.discarding());
-                if (response.statusCode() != 200) {
-                    throw new AssertionError("Was expecting status code 200, found: " + response.statusCode());
-                }
+                // Execute and verify the request, twice for certainty.
+                requestAndVerify(client, request, requestBodyBytes);
+                requestAndVerify(client, request, requestBodyBytes);
 
             }
 
+        }
+
+    }
+
+    private static HttpClient createClient(Version version, SSLContext sslContext) {
+        var clientBuilder = HttpServerAdapters
+                .createClientBuilderFor(version)
+                .proxy(NO_PROXY)
+                .version(version);
+        if (sslContext != null) {
+            clientBuilder.sslContext(sslContext);
+        }
+        return clientBuilder.build();
+    }
+
+    private static HttpRequest createRequest(SSLContext sslContext, HttpTestServer server, String serverHandlerPath, Version version, byte[] requestBodyBytes) {
+        var requestUri = URI.create(String.format(
+                "%s://%s%s/x",
+                sslContext == null ? "http" : "https",
+                server.serverAuthority(),
+                serverHandlerPath));
+        var requestBuilder = HttpRequest
+                .newBuilder(requestUri)
+                .version(version)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(requestBodyBytes));
+        if (HTTP_3.equals(version)) {
+            requestBuilder.setOption(H3_DISCOVERY, HTTP_3_URI_ONLY);
+        }
+        return requestBuilder.build();
+    }
+
+    private static void requestAndVerify(HttpClient client, HttpRequest request, byte[] requestBodyBytes)
+            throws IOException, InterruptedException {
+        var response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+        if (response.statusCode() != 200) {
+            throw new AssertionError("Was expecting status code 200, found: " + response.statusCode());
+        }
+        byte[] responseBodyBytes = response.body();
+        int mismatchIndex = Arrays.mismatch(requestBodyBytes, responseBodyBytes);
+        if (mismatchIndex >= 0) {
+            var message = String.format(
+                    "Response body (%s bytes) mismatches the request body (%s bytes) at index %s!",
+                    responseBodyBytes.length, requestBodyBytes.length, mismatchIndex);
+            throw new AssertionError(message);
+        }
+    }
+
+    private static final class BodyEchoingHandler implements HttpServerAdapters.HttpTestHandler {
+
+        @Override
+        public void handle(HttpServerAdapters.HttpTestExchange exchange) throws IOException {
+            try (exchange) {
+                byte[] body;
+                try (var requestBodyStream = exchange.getRequestBody()) {
+                    body = requestBodyStream.readAllBytes();
+                }
+                exchange.sendResponseHeaders(200, body.length);
+                try (var responseBodyStream = exchange.getResponseBody()) {
+                    responseBodyStream.write(body);
+                }
+            }
         }
 
     }
