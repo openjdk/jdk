@@ -25,9 +25,9 @@
  * @test
  * @summary Test verifies that field access/modification events are correctly posted from JNI.
  * @bug 8224852
- * @run main/othervm/native -agentlib:JvmtiFieldEventsFromJNI TestFieldsEventsFromJNI
+ * @run main/othervm/native -agentlib:JvmtiFieldEventsFromJNI FieldsEventsFromJNI
  */
-public class TestFieldsEventsFromJNI {
+public class FieldsEventsFromJNI {
 
     private String accessField = "accessFieldValue";
     private String modifyField = "modifyFieldValue";
@@ -45,7 +45,7 @@ public class TestFieldsEventsFromJNI {
 
     public static void main(String[] args) throws InterruptedException {
         System.loadLibrary("JvmtiFieldEventsFromJNI");
-        TestFieldsEventsFromJNI c = new TestFieldsEventsFromJNI();
+        FieldsEventsFromJNI c = new FieldsEventsFromJNI();
         // anotherThread doesn't access fields, it is needed only to
         // enable notification somewhere.
         Thread anotherThread = new Thread(() -> {

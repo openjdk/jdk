@@ -57,7 +57,7 @@ cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
 
   char* obj_class_name = get_object_class_name(jvmti, jni, object);
   LOG("The object class '%s'\n", obj_class_name);
-  if (strcmp(obj_class_name, "LTestFieldsEventsFromJNI;") != 0) {
+  if (strcmp(obj_class_name, "LFieldsEventsFromJNI;") != 0) {
     fatal(jni, "The fields's class name is incorrect.");
   }
   deallocate(jvmti,jni, obj_class_name);
@@ -90,7 +90,7 @@ cbFieldModification(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID meth
 
   char* obj_class_name = get_object_class_name(jvmti, jni, object);
   LOG("The object class '%s'\n", obj_class_name);
-  if (strcmp(obj_class_name, "LTestFieldsEventsFromJNI;") != 0) {
+  if (strcmp(obj_class_name, "LFieldsEventsFromJNI;") != 0) {
     fatal(jni, "The fields's class name is incorrect.");
   }
   deallocate(jvmti,jni, obj_class_name);
@@ -124,7 +124,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(
+Java_FieldsEventsFromJNI_enableEventsAndAccessField(
     JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
 
   jvmtiError err = JVMTI_ERROR_NONE;
@@ -166,7 +166,7 @@ Java_TestFieldsEventsFromJNI_enableEventsAndAccessField(
 
 
 JNIEXPORT void JNICALL
-Java_TestFieldsEventsFromJNI_enableEventsAndModifyField(
+Java_FieldsEventsFromJNI_enableEventsAndModifyField(
     JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   jclass cls = jni->GetObjectClass(self);
