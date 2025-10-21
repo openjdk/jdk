@@ -1077,7 +1077,7 @@ public:
     set_ctrl(n, ctrl);
   }
 
-  // Retreives the ctrl for a data node i.
+  // Retrieves the ctrl for a data node i.
   Node* get_ctrl(const Node* i) {
     assert(has_node(i) && has_ctrl(i), "must be data node with ctrl");
     Node* n = get_ctrl_no_update(i);
@@ -1122,7 +1122,7 @@ private:
       // If everything went right, this dead CFG node should have had a ctrl
       // forwarding installed, using "install_lazy_ctrl_and_idom_forwarding".
       // We now have to jump from the old (dead) ctrl node to the new (live)
-      // ctrl node, in possibly multiple ctrl/idom forwarding steps.
+      // ctrl node, in possibly multiple ctrl forwarding steps.
       do {
         n = get_ctrl_no_update_helper(n);
       } while (n->in(0) == nullptr);
@@ -1256,9 +1256,9 @@ private:
     assert(n != nullptr,"Bad immediate dominator info.");
     while (n->in(0) == nullptr) { // Skip dead CFG nodes
       // We encountered a dead CFG node.
-      // If everything went right, this dead CFG node should have had a idom/ctrl
+      // If everything went right, this dead CFG node should have had an idom
       // forwarding installed, using "install_lazy_ctrl_and_idom_forwarding".
-      // We now have to jump from the old (dead) ctrl node to the new (live)
+      // We now have to jump from the old (dead) idom node to the new (live)
       // ctrl/idom node, in possibly multiple ctrl/idom forwarding steps.
       n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
       assert(n != nullptr,"Bad immediate dominator info.");
@@ -1267,8 +1267,8 @@ private:
   }
 
 public:
-  Node* idom(Node* d) const {
-    return idom(d->_idx);
+  Node* idom(Node* n) const {
+    return idom(n->_idx);
   }
 
   Node* idom(uint didx) const {
