@@ -27,16 +27,14 @@ import com.sun.tools.attach.AgentLoadException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 
 import java.io.File;
 import java.io.InputStream;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
-import jdk.test.lib.JDKToolLauncher;
-import jdk.test.lib.Utils;
-import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.Utils;
 
 /*
  * @test TestEarlyDynamicLoad
@@ -70,7 +68,7 @@ public class TestEarlyDynamicLoad {
     @Test
     public void virtualMachine() throws Exception {
         try {
-            VirtualMachine vm = VirtualMachine.attach(child.pid() + "");
+            VirtualMachine vm = VirtualMachine.attach(String.valueOf(child.pid()));
             vm.loadAgent("some.jar");
             vm.detach();
             throw new AssertionError("Should have failed with AgentLoadException");
@@ -83,20 +81,8 @@ public class TestEarlyDynamicLoad {
 
     @Test
     public void jcmd() throws Exception {
-        JDKToolLauncher jcmd;
-        try {
-            jcmd = JDKToolLauncher.create("jcmd");
-        } catch (Exception exception) {
-            Assumptions.abort("jcmd wasn't found: " + exception.getMessage());
-            return;
-        }
-
-        jcmd.addToolArg(child.pid() + "");
-        jcmd.addToolArg("JVMTI.agent_load");
-        jcmd.addToolArg("some.jar");
-
-        ProcessBuilder pb = new ProcessBuilder(jcmd.getCommand());
-        OutputAnalyzer out = new OutputAnalyzer(pb.start());
+        PidJcmdExecutor executor = new PidJcmdExecutor(String.valueOf(child.pid()));
+        OutputAnalyzer out = executor.execute("JVMTI.agent_load some.jar");
 
         out.shouldHaveExitValue(0);
         out.stdoutShouldContain(EXPECTED_MESSAGE);
