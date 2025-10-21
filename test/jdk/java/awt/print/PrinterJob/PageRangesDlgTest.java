@@ -41,7 +41,7 @@ import jtreg.SkippedException;
  * @build PassFailJFrame
  * @build jtreg.SkippedException
  * @summary The specified page range should be displayed in the dialog
- * @run main/manual PageRangesDlgTest
+ * @run main PageRangesDlgTest
  */
 
 public class PageRangesDlgTest implements Printable {
