@@ -1680,26 +1680,28 @@ uint PhaseChaitin::Select( ) {
 
     Node* def = lrg->_def;
     MachNode* mdef = lrg->is_singledef() && !lrg->_is_bound && def->is_Mach() ? def->as_Mach() : nullptr;
-    if (mdef != nullptr && mdef->req() > 1) {
-      Node* in1 = mdef->in(mdef->oper_input_base());
-      if (in1 != nullptr) {
-        uint lrin1 = _lrg_map.find(in1);
-        // If a def does not interfere with first input's def,
-        // then bias its color towards its input's def.
-        if (lrin1 != 0 && lrg->_copy_bias == 0 && _ifg->test_edge_sq(lidx, lrin1) == 0) {
-          lrg->_copy_bias = lrin1;
+    if (mdef != nullptr && Matcher::should_attempt_register_biasing(mdef->Opcode())) {
+      if (mdef->req() > 1) {
+        Node* in1 = mdef->in(mdef->oper_input_base());
+        if (in1 != nullptr) {
+          uint lrin1 = _lrg_map.find(in1);
+          // If a def does not interfere with first input's def,
+          // then bias its color towards its input's def.
+          if (lrin1 != 0 && lrg->_copy_bias == 0 && _ifg->test_edge_sq(lidx, lrin1) == 0) {
+            lrg->_copy_bias = lrin1;
+          }
         }
       }
-    }
 
-    if (is_commutative_oper(mdef) && mdef->req() > 2) {
-      Node* in2 = mdef->in(mdef->oper_input_base() + 1);
-      if (in2 != nullptr) {
-        uint lrin2 = _lrg_map.find(in2);
-        // If a def does not interfere with second input's def,
-        // then bias its color towards its input's def.
-        if (lrin2 != 0 && lrg->_copy_bias2 == 0 && _ifg->test_edge_sq(lidx, lrin2) == 0) {
-          lrg->_copy_bias2 = lrin2;
+      if (is_commutative_oper(mdef) && mdef->req() > 2) {
+        Node* in2 = mdef->in(mdef->oper_input_base() + 1);
+        if (in2 != nullptr) {
+          uint lrin2 = _lrg_map.find(in2);
+          // If a def does not interfere with second input's def,
+          // then bias its color towards its input's def.
+          if (lrin2 != 0 && lrg->_copy_bias2 == 0 && _ifg->test_edge_sq(lidx, lrin2) == 0) {
+            lrg->_copy_bias2 = lrin2;
+          }
         }
       }
     }

@@ -303,7 +303,7 @@ class StoreNTest {
         phase = {CompilePhase.FINAL_CODE},
         applyIf = {"OptoPeephole", "true"})
     // Test that the peephole removes a spill.
-    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=3"},
+    @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=4"},
         phase = {CompilePhase.FINAL_CODE},
         applyIfAnd ={"OptoPeephole", "false", "UseCompactObjectHeaders", "false"})
     @IR(counts = {IRNode.MEM_TO_REG_SPILL_COPY, "=3"},

@@ -434,6 +434,70 @@ bool castLL_is_imm32(const Node* n) {
   return (t->_lo == min_jlong || Assembler::is_simm32(t->_lo)) && (t->_hi == max_jlong || Assembler::is_simm32(t->_hi));
 }
 
+bool Matcher::should_attempt_register_biasing(int mopc) {
+  switch(mopc) {
+    default:
+      return false;
+    case addI_rReg_ndd_rule:
+    case addI_rReg_rReg_imm_ndd_rule:
+    case addI_rReg_rReg_mem_ndd_rule:
+    case addL_rReg_ndd_rule:
+    case addL_rReg_rReg_imm_ndd_rule:
+    case andI_rReg_ndd_rule:
+    case andI_rReg_rReg_imm_ndd_rule:
+    case andI_rReg_rReg_mem_ndd_rule:
+    case andL_rReg_ndd_rule:
+    case andL_rReg_rReg_imm_ndd_rule:
+    case decI_rReg_ndd_rule:
+    case decL_rReg_ndd_rule:
+    case incI_rReg_ndd_rule:
+    case incL_rReg_ndd_rule:
+    case mulI_rReg_ndd_rule:
+    case mulI_rReg_rReg_mem_ndd_rule:
+    case mulL_rReg_ndd_rule:
+    case mulL_rReg_rReg_mem_ndd_rule:
+    case negI_rReg_2_ndd_rule:
+    case negI_rReg_ndd_rule:
+    case negL_rReg_2_ndd_rule:
+    case negL_rReg_ndd_rule:
+    case orI_rReg_imm_rReg_ndd_rule:
+    case orI_rReg_ndd_rule:
+    case orI_rReg_rReg_imm_ndd_rule:
+    case orI_rReg_rReg_mem_ndd_rule:
+    case orL_rReg_imm_rReg_ndd_rule:
+    case orL_rReg_ndd_rule:
+    case orL_rReg_rReg_imm_ndd_rule:
+    case orL_rReg_rReg_mem_ndd_rule:
+    case rolI_rReg_Var_ndd_rule:
+    case rolL_rReg_Var_ndd_rule:
+    case rorI_rReg_Var_ndd_rule:
+    case rorL_rReg_Var_ndd_rule:
+    case salI_rReg_immI2_ndd_rule:
+    case salI_rReg_imm_ndd_rule:
+    case salL_rReg_immI2_ndd_rule:
+    case salL_rReg_imm_ndd_rule:
+    case sarI_rReg_imm_ndd_rule:
+    case sarL_rReg_imm_ndd_rule:
+    case shrI_rReg_imm_ndd_rule:
+    case shrL_rReg_imm_ndd_rule:
+    case subI_rReg_ndd_rule:
+    case subI_rReg_rReg_imm_ndd_rule:
+    case subI_rReg_rReg_mem_ndd_rule:
+    case subL_rReg_ndd_rule:
+    case subL_rReg_rReg_imm_ndd_rule:
+    case subL_rReg_rReg_mem_ndd_rule:
+    case xorI_rReg_im1_ndd_rule:
+    case xorI_rReg_ndd_rule:
+    case xorI_rReg_rReg_imm_ndd_rule:
+    case xorI_rReg_rReg_mem_ndd_rule:
+    case xorL_rReg_im1_ndd_rule:
+    case xorL_rReg_ndd_rule:
+    case xorL_rReg_rReg_mem_ndd_rule:
+      assert(VM_Version::supports_apx_f(), "");
+      return true;
+  }
+}
+
 %}
 
 // Register masks
