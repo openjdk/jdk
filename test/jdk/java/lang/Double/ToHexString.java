@@ -29,7 +29,6 @@
  * @library ../Math
  * @build DoubleConsts
  * @run main ToHexString
- * @author Joseph D. Darcy
  */
 
 import java.util.regex.*;
