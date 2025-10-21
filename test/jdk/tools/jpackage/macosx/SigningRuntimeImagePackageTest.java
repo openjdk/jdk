@@ -21,51 +21,53 @@
  * questions.
  */
 
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
 /**
- * Tests generation of dmg and pkg with --mac-sign and related arguments.
- * Test will generate pkg and verifies its signature. It verifies that dmg
- * is not signed, but runtime image inside dmg is signed.
+ * Tests generation of dmg and pkg with --mac-sign and related arguments. Test
+ * will generate pkg and verifies its signature. It verifies that dmg is not
+ * signed, but runtime image inside dmg is signed.
  *
- * Note: Specific UNICODE signing is not tested, since it is shared code
- * with app image signing and it will be covered by SigningPackageTest.
+ * <p>
+ * Note: Specific UNICODE signing is not tested, since it is shared code with
+ * app image signing and it will be covered by SigningPackageTest.
  *
+ * <p>
  * Following combinations are tested:
- * 1) "--runtime-image" points to unsigned JDK bundle and --mac-sign is not
+ * <ol>
+ * <li>"--runtime-image" points to unsigned JDK bundle and --mac-sign is not
  * provided. Expected result: runtime image ad-hoc signed.
- * 2) "--runtime-image" points to unsigned JDK bundle and --mac-sign is
+ * <li>"--runtime-image" points to unsigned JDK bundle and --mac-sign is
  * provided. Expected result: Everything is signed with provided certificate.
- * 3) "--runtime-image" points to signed JDK bundle and --mac-sign is not
+ * <li>"--runtime-image" points to signed JDK bundle and --mac-sign is not
  * provided. Expected result: runtime image is signed with original certificate.
- * 4) "--runtime-image" points to signed JDK bundle and --mac-sign is provided.
+ * <li>"--runtime-image" points to signed JDK bundle and --mac-sign is provided.
  * Expected result: runtime image is signed with provided certificate.
- * 5) "--runtime-image" points to JDK image and --mac-sign is not provided.
+ * <li>"--runtime-image" points to JDK image and --mac-sign is not provided.
  * Expected result: runtime image ad-hoc signed.
- * 6) "--runtime-image" points to JDK image and --mac-sign is provided.
+ * <li>"--runtime-image" points to JDK image and --mac-sign is provided.
  * Expected result: Everything is signed with provided certificate.
+ * </ol>
  *
  * This test requires that the machine is configured with test certificate for
- * "Developer ID Installer: jpackage.openjdk.java.net" in
- * jpackagerTest keychain with
- * always allowed access to this keychain for user which runs test.
- * note:
+ * "Developer ID Installer: jpackage.openjdk.java.net" in jpackagerTest keychain
+ * with always allowed access to this keychain for user which runs test. note:
  * "jpackage.openjdk.java.net" can be over-ridden by system property
- * "jpackage.mac.signing.key.user.name", and
- * "jpackagerTest" can be over-ridden by system property
- * "jpackage.mac.signing.keychain"
+ * "jpackage.mac.signing.key.user.name"
  */
 
 /*
@@ -84,17 +86,17 @@ import jdk.jpackage.test.TKit;
  */
 public class SigningRuntimeImagePackageTest {
 
-    private static JPackageCommand addSignOptions(JPackageCommand cmd, int certIndex) {
+    private static JPackageCommand addSignOptions(JPackageCommand cmd, MacSign.ResolvedKeychain keychain, int certIndex) {
         if (certIndex != SigningBase.CertIndex.INVALID_INDEX.value()) {
             cmd.addArguments(
                     "--mac-sign",
-                    "--mac-signing-keychain", SigningBase.getKeyChain(),
+                    "--mac-signing-keychain", keychain.name(),
                     "--mac-signing-key-user-name", SigningBase.getDevName(certIndex));
         }
         return cmd;
     }
 
-    private static Path createInputRuntimeBundle(int certIndex) throws IOException {
+    private static Path createInputRuntimeBundle(MacSign.ResolvedKeychain keychain, int certIndex) throws IOException {
 
         final var runtimeImage = JPackageCommand.createInputRuntimeImage();
 
@@ -111,7 +113,7 @@ public class SigningRuntimeImagePackageTest {
                 .addArguments("--runtime-image", runtimeImage)
                 .addArguments("--dest", runtimeBundleWorkDir);
 
-        addSignOptions(cmd, certIndex);
+        addSignOptions(cmd, keychain, certIndex);
 
         cmd.execute();
 
@@ -147,13 +149,21 @@ public class SigningRuntimeImagePackageTest {
     public static void test(boolean useJDKBundle,
                             SigningBase.CertIndex jdkBundleCert,
                             SigningBase.CertIndex signCert) throws Exception {
+        MacSign.withKeychain(toConsumer(keychain -> {
+            test(keychain, useJDKBundle, jdkBundleCert, signCert);
+        }), SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private static void test(MacSign.ResolvedKeychain keychain, boolean useJDKBundle,
+            SigningBase.CertIndex jdkBundleCert,
+            SigningBase.CertIndex signCert) throws Exception {
 
         final Path inputRuntime[] = new Path[1];
 
         new PackageTest()
                 .addRunOnceInitializer(() -> {
                     if (useJDKBundle) {
-                        inputRuntime[0] = createInputRuntimeBundle(jdkBundleCert.value());
+                        inputRuntime[0] = createInputRuntimeBundle(keychain, jdkBundleCert.value());
                     } else {
                         inputRuntime[0] = JPackageCommand.createInputRuntimeImage();
                     }
@@ -164,7 +174,7 @@ public class SigningRuntimeImagePackageTest {
                     // create input directory in the test and jpackage fails
                     // if --input references non existent directory.
                     cmd.removeArgumentWithValue("--input");
-                    addSignOptions(cmd, signCert.value());
+                    addSignOptions(cmd, keychain, signCert.value());
                 })
                 .addInstallVerifier(cmd -> {
                     final var certIndex = Stream.of(signCert, jdkBundleCert)
