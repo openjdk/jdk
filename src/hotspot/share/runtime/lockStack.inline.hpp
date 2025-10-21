@@ -250,44 +250,29 @@ inline void LockStack::oops_do(OopClosure* cl) {
 }
 
 inline void OMCache::set_monitor(ObjectMonitor *monitor) {
-  const int end = OMCache::CAPACITY - 1;
-
   oop obj = monitor->object_peek();
   assert(obj != nullptr, "must be alive");
   assert(monitor == LightweightSynchronizer::get_monitor_from_table(JavaThread::current(), obj), "must exist in table");
 
-  OMCacheEntry to_insert = {obj, monitor};
-
-  for (int i = 0; i < end; ++i) {
-    if (_entries[i]._oop == obj ||
-        _entries[i]._monitor == nullptr ||
-        _entries[i]._monitor->is_being_async_deflated()) {
-      // Use stale slot.
-      _entries[i] = to_insert;
-      return;
-    }
-    // Swap with the most recent value.
-    ::swap(to_insert, _entries[i]);
-  }
-  _entries[end] = to_insert;
+  markWord mark = obj->mark_acquire();
+  intptr_t hash = mark.hash();
+  assert(hash != 0, "must be");
+  int slot = checked_cast<int>(hash & OMCache::capacity_mask);
+  _entries[slot]._oop = obj;
+  _entries[slot]._monitor = monitor;
 }
 
 inline ObjectMonitor* OMCache::get_monitor(oop o) {
-  for (int i = 0; i < CAPACITY; ++i) {
-    if (_entries[i]._oop == o) {
-      assert(_entries[i]._monitor != nullptr, "monitor must exist");
-      if (_entries[i]._monitor->is_being_async_deflated()) {
-        // Bad monitor
-        // Shift down rest
-        for (; i < CAPACITY - 1; ++i) {
-          _entries[i] = _entries[i + 1];
-        }
-        // Clear end
-        _entries[i] = {};
-        return nullptr;
-      }
-      return _entries[i]._monitor;
+  markWord mark = o->mark_acquire();
+  intptr_t hash = mark.hash();
+  int slot = checked_cast<int>(hash & OMCache::capacity_mask);
+  if (_entries[slot]._oop == o) {
+    assert(_entries[slot]._monitor != nullptr, "monitor must exist");
+    if (!_entries[slot]._monitor->is_being_async_deflated()) {
+      return _entries[slot]._monitor;
     }
+    // Bad monitor
+    _entries[slot] = {};
   }
   return nullptr;
 }
