@@ -489,7 +489,7 @@ void InterpreterMacroAssembler::load_field_or_method_entry(bool is_method, Regis
   add(cache, cache, index);
 
   if (for_fast_bytecode) {
-    // Prevent loading inconsistent resolved info which may have been written by another thread.
+    // Prevent speculative loading from ResolvedFieldEntry/ResolvedMethodEntry as it can miss the info written by another thread.
     // TemplateTable::patch_bytecode uses release-store.
     // We reached here via control dependency (Bytecode dispatch has used the rewritten Bytecode).
     // So, we can use control-isync based ordering.
