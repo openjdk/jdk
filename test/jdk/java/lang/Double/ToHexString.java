@@ -177,8 +177,8 @@ public class ToHexString {
 
             // Test cases for trailing zeros in significand
             // These test the removal of trailing zeros in the hexadecimal representation
-            {"0x1.1p1",                                 "4001000000000000"}, // No trailing zeros in significand
-            {"0x1.0p1",                                 "4000000000000000"}, // Maximum trailing zeros (all zeros after '1')
+            {"0x1.1p1",                                 "4001000000000000"}, // Maximum trailing zeros (all zeros after '1')
+            {"0x1.0p1",                                 "4000000000000000"}, // Maximum trailing zeros (all zeros after '0')
             {"0x1.01p1",                                "4000100000000000"}, // 1  trailing zero removed
             {"0x1.001p1",                               "4000010000000000"}, // 2  trailing zeros removed
             {"0x1.0001p1",                              "4000001000000000"}, // 3  trailing zeros removed
