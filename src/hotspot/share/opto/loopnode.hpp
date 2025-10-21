@@ -890,6 +890,9 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class AutoNodeBudget;
 
   // Map loop membership for CFG nodes, and ctrl for non-CFG nodes.
+  //
+  // Exception: dead CFG nodes may instead have a ctrl/idom forwarding
+  //            installed. See: install_ctrl_and_idom_forwarding
   Node_List _loop_or_ctrl;
 
   // Pre-computed def-use info
@@ -956,11 +959,11 @@ class PhaseIdealLoop : public PhaseTransform {
 
 public:
   // Set/get control node out.  Set lower bit to distinguish from IdealLoopTree
-  // Returns true if "n" is a data node, false if it's a control node.
+  // Returns true if "n" is a data node, false if it's a CFG node.
   //
   // Exception:
   // control nodes that are dead because of "replace_ctrl_node_and_forward_ctrl_and_idom"
-  // or have otherwise modified their ctrl state by "install_lazy_ctrl_and_idom_forwarding".
+  // or have otherwise modified their ctrl state by "install_ctrl_and_idom_forwarding".
   // They return "true", because they have a ctrl "forwarding" to the other ctrl node they
   // were replaced with.
   bool has_ctrl(const Node* n) const { return ((intptr_t)_loop_or_ctrl[n->_idx]) & 1; }
@@ -1084,7 +1087,7 @@ public:
     // We store the found ctrl in the side-table again. In most cases,
     // this is a no-op, since we just read from _loop_or_ctrl. But in cases
     // where there was a ctrl forwarding via dead ctrl nodes, this shortens the path.
-    // See: install_lazy_ctrl_and_idom_forwarding
+    // See: install_ctrl_and_idom_forwarding
     _loop_or_ctrl.map(i->_idx, (Node*)((intptr_t)n + 1));
     assert(has_node(i) && has_ctrl(i), "must still be data node with ctrl");
     assert(n == find_non_split_ctrl(n), "must return legal ctrl");
@@ -1108,7 +1111,7 @@ private:
   Node* get_ctrl_no_update_helper(const Node* i) const {
     // We expect only data nodes (which must have a ctrl set), or
     // dead ctrl nodes that have a ctrl "forwarding".
-    // See: install_lazy_ctrl_and_idom_forwarding.
+    // See: install_ctrl_and_idom_forwarding.
     assert(has_ctrl(i), "only data nodes or ctrl nodes with ctrl forwarding expected");
     return (Node*)(((intptr_t)_loop_or_ctrl[i->_idx]) & ~1);
   }
@@ -1120,7 +1123,7 @@ private:
     if (n->in(0) == nullptr) {
       // We encountered a dead CFG node.
       // If everything went right, this dead CFG node should have had a ctrl
-      // forwarding installed, using "install_lazy_ctrl_and_idom_forwarding".
+      // forwarding installed, using "install_ctrl_and_idom_forwarding".
       // We now have to jump from the old (dead) ctrl node to the new (live)
       // ctrl node, in possibly multiple ctrl forwarding steps.
       do {
@@ -1151,14 +1154,18 @@ public:
   //   reach a live ctrl node. Shorten the path to avoid chasing the
   //   forwarding in the future.
   // - When querying "idom": from some node get its old idom, which
-  //   may be dead but has a ctrl forwarding to the new and live
+  //   may be dead but has an idom forwarding to the new and live
   //   idom. Shorten the path to avoid chasing the forwarding in the
   //   future.
-  // Using "install_lazy_ctrl_and_idom_forwarding" allows us to only edit
+  //   Note: while the "idom" information is stored in the "_idom"
+  //   side-table, the idom forwarding piggy-packs on the ctrl
+  //   forwarding on "_loop_or_ctrl".
+  // Using "install_ctrl_and_idom_forwarding" allows us to only edit
   // the entry for the old dead node now, and we do not have to update all
   // the nodes that had the old_node as their "get_ctrl" or "idom". We
-  // clean up the forwarding links when we query "get_ctrl" or "idom".
-  void install_lazy_ctrl_and_idom_forwarding(Node* old_node, Node* new_node) {
+  // clean up the forwarding links when we query "get_ctrl" or "idom"
+  // for these nodes the next time.
+  void install_ctrl_and_idom_forwarding(Node* old_node, Node* new_node) {
     assert(!has_ctrl(old_node) && old_node->is_CFG() && old_node->in(0) == nullptr,
            "must be dead ctrl (CFG) node");
     assert(!has_ctrl(new_node) && new_node->is_CFG() && new_node->in(0) != nullptr,
@@ -1175,7 +1182,7 @@ public:
   // - Lazily update the ctrl and idom info of all uses, via a ctrl/idom forwarding.
   void replace_ctrl_node_and_forward_ctrl_and_idom(Node *old_node, Node *new_node) {
     _igvn.replace_node(old_node, new_node);
-    install_lazy_ctrl_and_idom_forwarding(old_node, new_node);
+    install_ctrl_and_idom_forwarding(old_node, new_node);
   }
 
 private:
@@ -1250,16 +1257,19 @@ private:
     return idom_no_update(d->_idx);
   }
 
-  Node* idom_no_update(uint didx) const {
-    assert(didx < _idom_size, "oob");
-    Node* n = _idom[didx];
+  Node* idom_no_update(uint node_idx) const {
+    assert(node_idx < _idom_size, "oob");
+    Node* n = _idom[node_idx];
     assert(n != nullptr,"Bad immediate dominator info.");
     while (n->in(0) == nullptr) { // Skip dead CFG nodes
       // We encountered a dead CFG node.
       // If everything went right, this dead CFG node should have had an idom
-      // forwarding installed, using "install_lazy_ctrl_and_idom_forwarding".
+      // forwarding installed, using "install_ctrl_and_idom_forwarding".
       // We now have to jump from the old (dead) idom node to the new (live)
-      // ctrl/idom node, in possibly multiple ctrl/idom forwarding steps.
+      // idom node, in possibly multiple idom forwarding steps.
+      // Note that we piggy-back on "_loop_or_ctrl" to do the forwarding,
+      // since we forward both "get_ctrl" and "idom" from the dead to the
+      // new live ctrl/idom nodes.
       n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
       assert(n != nullptr,"Bad immediate dominator info.");
     }
@@ -1271,13 +1281,13 @@ public:
     return idom(n->_idx);
   }
 
-  Node* idom(uint didx) const {
-    Node* n = idom_no_update(didx);
+  Node* idom(uint node_idx) const {
+    Node* n = idom_no_update(node_idx);
     // We store the found idom in the side-table again. In most cases,
     // this is a no-op, since we just read from _idom. But in cases where
-    // there was a ctrl forwarding via dead ctrl nodes, this shortens the path.
-    // See: install_lazy_ctrl_and_idom_forwarding
-    _idom[didx] = n;
+    // there was an idom forwarding via dead idom nodes, this shortens the path.
+    // See: install_ctrl_and_idom_forwarding
+    _idom[node_idx] = n;
     return n;
   }
 
