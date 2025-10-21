@@ -100,17 +100,21 @@ public:
 
     verify_op_code(current_instruction, Assembler::LD_OPCODE);
 
-    // cmpw (mnemonic)
-    verify_op_code(current_instruction, Assembler::CMP_OPCODE);
+    if (TrapBasedNMethodEntryBarriers) {
+      verify_op_code(current_instruction, Assembler::TW_OPCODE);
+    } else {
+      // cmpw (mnemonic)
+      verify_op_code(current_instruction, Assembler::CMP_OPCODE);
 
-    // calculate_address_from_global_toc (compound instruction)
-    verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
-    verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
+      // calculate_address_from_global_toc (compound instruction)
+      verify_op_code_manually(current_instruction, MacroAssembler::is_addis(*current_instruction));
+      verify_op_code_manually(current_instruction, MacroAssembler::is_addi(*current_instruction));
 
-    verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
+      verify_op_code_manually(current_instruction, MacroAssembler::is_mtctr(*current_instruction));
 
-    // bnectrl (mnemonic) (weak check; not checking the exact type)
-    verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
+      // bnectrl (mnemonic) (weak check; not checking the exact type)
+      verify_op_code(current_instruction, Assembler::BCCTR_OPCODE);
+    }
 
     // isync is optional
   }
@@ -131,9 +135,10 @@ private:
 
 static NativeNMethodBarrier* get_nmethod_barrier(nmethod* nm) {
   BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-  address barrier_address = nm->code_begin() + nm->frame_complete_offset() + (-8 * 4);
+  address barrier_address = nm->code_begin() + nm->frame_complete_offset() -
+                            (TrapBasedNMethodEntryBarriers ? 4 : 8) * BytesPerInstWord;
   if (bs_asm->nmethod_patching_type() != NMethodPatchingType::stw_instruction_and_data_patch) {
-    barrier_address -= 4; // isync (see nmethod_entry_barrier)
+    barrier_address -= BytesPerInstWord; // isync (see nmethod_entry_barrier)
   }
 
   auto barrier = reinterpret_cast<NativeNMethodBarrier*>(barrier_address);

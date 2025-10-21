@@ -24,7 +24,6 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class LauncherIconVerifier {
@@ -77,7 +76,7 @@ public final class LauncherIconVerifier {
         } else {
             TKit.assertFileExists(iconPath);
             if (!verifyFileInAppImageOnly) {
-                TKit.assertTrue(-1 == Files.mismatch(expectedIcon, iconPath),
+                TKit.assertSameFileContent(expectedIcon, iconPath,
                         String.format(
                         "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
                         iconPath, label, expectedIcon));
