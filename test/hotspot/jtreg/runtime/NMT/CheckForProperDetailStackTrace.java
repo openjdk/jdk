@@ -26,11 +26,14 @@
  * @bug 8133747 8218458
  * @summary Running with NMT detail should produce expected stack traces.
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.debug
+ * @build jdk.test.whitebox.WhiteBox
  * @compile ../modules/CompilerUtils.java
- * @run driver CheckForProperDetailStackTrace
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CheckForProperDetailStackTrace
  */
 
 import jdk.test.lib.Platform;
@@ -40,6 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * We are checking for details that should be seen with NMT detail enabled.
@@ -60,7 +64,9 @@ public class CheckForProperDetailStackTrace {
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
     // Windows has source information only in full pdbs, not in stripped pdbs
-    private static final boolean expectSourceInformation = Platform.isLinux();
+    private static boolean expectSourceInformation = Platform.isLinux() || Platform.isWindows();
+
+    static WhiteBox wb = WhiteBox.getWhiteBox();
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
@@ -138,6 +144,8 @@ public class CheckForProperDetailStackTrace {
             output.reportDiagnosticSummary();
             throw new RuntimeException("Expected stack trace missing from output");
         }
+
+        if (wb.hasExternalSymbolsStripped()) { expectSourceInformation = false; }
 
         System.out.println("Looking for source information:");
         if (expectSourceInformation) {
