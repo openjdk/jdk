@@ -23,12 +23,12 @@
 
 /**
  * @test
- * @bug 6575331
+ * @bug 6575331 8320677
  * @key printer
  * @summary The specified pages should be printed.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main PageRanges
+ * @run main/manual PageRanges
  */
 
 import java.awt.Graphics;
