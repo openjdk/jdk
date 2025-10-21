@@ -120,7 +120,7 @@ final class FromParams {
 
                 final var runtimeBuilderBuilder = new RuntimeBuilderBuilder();
 
-                MODULE_PATH.copyInto(params, runtimeBuilderBuilder::modulePath);
+                runtimeBuilderBuilder.modulePath(MODULE_PATH.fetchFrom(params));
 
                 predefinedRuntimeDirectory.ifPresentOrElse(runtimeBuilderBuilder::forRuntime, () -> {
                     final var startupInfos = launchers.asList().stream()
