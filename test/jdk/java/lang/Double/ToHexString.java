@@ -175,6 +175,22 @@ public class ToHexString {
             {"+4.9e-324",                               "0000000000000001"},
             {"-4.9e-324",                               "8000000000000001"},
 
+            // Test cases for trailing zeros in significand
+            // These test the removal of trailing zeros in the hexadecimal representation
+            {"0x1.1p1",                                 "4001000000000000"}, // No trailing zeros in significand
+            {"0x1.0p1",                                 "4000000000000000"}, // Maximum trailing zeros (all zeros after '1')
+            {"0x1.01p1",                                "4000100000000000"}, // 1  trailing zero removed
+            {"0x1.001p1",                               "4000010000000000"}, // 2  trailing zeros removed
+            {"0x1.0001p1",                              "4000001000000000"}, // 3  trailing zeros removed
+            {"0x1.00001p1",                             "4000000100000000"}, // 4  trailing zeros removed
+            {"0x1.000001p1",                            "4000000010000000"}, // 5  trailing zeros removed
+            {"0x1.0000001p1",                           "4000000001000000"}, // 6  trailing zeros removed
+            {"0x1.00000001p1",                          "4000000000100000"}, // 7  trailing zeros removed
+            {"0x1.000000001p1",                         "4000000000010000"}, // 8  trailing zeros removed
+            {"0x1.0000000001p1",                        "4000000000001000"}, // 9  trailing zeros removed
+            {"0x1.00000000001p1",                       "4000000000000100"}, // 10 trailing zeros removed
+            {"0x1.000000000001p1",                      "4000000000000010"}, // 11 trailing zeros removed (minimum)
+
             // fdlibm k_sin.c
             {"+5.00000000000000000000e-01",             "3FE0000000000000"},
             {"-1.66666666666666324348e-01",             "BFC5555555555549"},
