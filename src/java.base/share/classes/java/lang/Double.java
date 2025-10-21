@@ -710,7 +710,8 @@ public final class Double extends Number
             return Double.toString(d);
         }
 
-        boolean negative = Double.doubleToLongBits(d) < 0;
+        long doubleToLongBits = Double.doubleToLongBits(d);
+        boolean negative = doubleToLongBits < 0;
 
         if (d == 0.0) {
             return negative ? "-0x0.0p0" : "0x0.0p0";
@@ -722,7 +723,7 @@ public final class Double extends Number
         // Isolate significand bits and OR in a high-order bit
         // so that the string representation has a known length.
         // This ensures we always have 13 hex digits to work with (52 bits / 4 bits per hex digit)
-        long signifBits = Double.doubleToLongBits(d) & DoubleConsts.SIGNIF_BIT_MASK;
+        long signifBits = doubleToLongBits & DoubleConsts.SIGNIF_BIT_MASK;
 
         // Calculate the number of trailing zeros in the significand (in groups of 4 bits)
         // This is used to remove trailing zeros from the hex representation
