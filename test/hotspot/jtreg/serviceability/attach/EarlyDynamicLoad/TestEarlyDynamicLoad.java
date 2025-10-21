@@ -53,9 +53,9 @@ public class TestEarlyDynamicLoad {
     @BeforeAll
     static void startAndWaitChild() throws Exception {
         child = ProcessTools.createTestJavaProcessBuilder(
-                "-XX:+StartAttachListener",
-                "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
-                "-version").start();
+                        "-XX:+StartAttachListener",
+                        "-agentpath:" + Utils.TEST_NATIVE_PATH + File.separator + System.mapLibraryName("EarlyDynamicLoad"),
+                        "--version").start();
 
         // Wait until the process enters VMStartCallback
         try (InputStream is = child.getInputStream()) {
@@ -70,11 +70,13 @@ public class TestEarlyDynamicLoad {
         }
 
         if (!child.waitFor(5, TimeUnit.SECONDS)) {
+            child.destroyForcibly();
             throw new AssertionError("Timed out while waiting child process to complete");
         }
-        if (child.exitValue() != 0) {
-            throw new AssertionError("Expected child exit code to be 0, but was " + child.exitValue());
-        }
+
+        OutputAnalyzer analyzer = new OutputAnalyzer(child);
+        analyzer.shouldHaveExitValue(0);
+        analyzer.stderrShouldBeEmpty();
     }
 
     @Test
