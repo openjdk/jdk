@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8041902
+ * @bug 8041902 8320677
  * @key printer
  * @summary Test printing of wide poly lines.
  * @library /java/awt/regtesthelpers
