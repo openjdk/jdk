@@ -21,13 +21,15 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 6575331 8320677
+ * @bug 6575331
  * @key printer
  * @summary The specified pages should be printed.
  * @library /java/awt/regtesthelpers
+ * @library /test/lib
  * @build PassFailJFrame
+ * @build jtreg.SkippedException
  * @run main/manual PageRanges
  */
 
@@ -36,21 +38,29 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import jtreg.SkippedException;
 
 public class PageRanges implements Printable {
     private static final String INSTRUCTIONS = """
-                "This test prints two jobs, and tests that the specified range",
-                "of pages is printed. You must have a printer installed for this test.",
-                "In the first dialog, select a page range of 2 to 3, and press OK",
-                "In the second dialog, select ALL, to print all pages (in total 5 pages).",
-                "Collect the two print outs and confirm the jobs printed correctly",
-                """;
+                 This test prints two jobs, and tests that the specified range.
+                 of pages is printed. You must have a printer installed for this test.
+                 In the first dialog, select a page range of 2 to 3, and press OK
+                 In the second dialog, select ALL, to print all pages (in total 5 pages).
+                 Collect the two print outs and confirm the jobs printed correctly.
+                 """;
 
     public static void main(String args[]) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
-        passFailJFrame.positionTestWindow(null, PassFailJFrame.Position.HORIZONTAL);
-
         PrinterJob job = PrinterJob.getPrinterJob();
+        if(job == null) {
+            throw new SkippedException("Printer not configured or available.");
+        }
+
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(45)
+                .build();
+
         if (job.getPrintService() == null) {
             System.out.println("No printer available");
             PassFailJFrame.forcePass();

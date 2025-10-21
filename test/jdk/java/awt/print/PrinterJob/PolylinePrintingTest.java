@@ -21,9 +21,9 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @bug 8041902 8320677
+ * @bug 8041902
  * @key printer
  * @summary Test printing of wide poly lines.
  * @library /java/awt/regtesthelpers
@@ -43,15 +43,18 @@ import java.awt.print.PrinterJob;
 
 public class PolylinePrintingTest implements Printable {
     private static final String INSTRUCTIONS = """
-             "You must have a printer available to perform this test.",
-             "OK the print dialog, and collect the printed page.",
-             "Passing test : Output should show two identical chevrons.",
-             "Failing test : The line joins will appear different."
-           """;
+              You must have a printer available to perform this test.
+              OK the print dialog, and collect the printed page.
+              Passing test : Output should show two identical chevrons.
+              Failing test : The line joins will appear different.
+              """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame(INSTRUCTIONS);
-        passFailJFrame.positionTestWindow(null, PassFailJFrame.Position.HORIZONTAL);
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(45)
+                .build();
 
         new PolylinePrintingTest();
 
