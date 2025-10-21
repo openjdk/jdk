@@ -50,6 +50,7 @@ ChunkPoolLocker::ChunkPoolLocker(LockStrategy ls) {
     GlobalChunkPoolMutex->lock();
     _locked = true;
   } else {
+    precond(ls == LockStrategy::Try);
     _locked = GlobalChunkPoolMutex->try_lock();
   }
 };
