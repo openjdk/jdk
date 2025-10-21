@@ -3162,6 +3162,8 @@ public class ClassReader {
                         member.flags_field = flags;
                         enterMember(c, member);
                     }
+                } else if ((flags & STATIC) != (member.flags_field & STATIC)) {
+                    log.warning(LintWarnings.InconsistentInnerClasses(member, currentClassFile));
                 }
             }
         }
