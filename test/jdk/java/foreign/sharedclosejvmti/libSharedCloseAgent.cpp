@@ -28,7 +28,7 @@
 static jclass MAIN_CLS;
 static jmethodID TARGET_ID;
 
-static const char* TARGET_CLASS_NAME = "TestJvmtiSharedClose$EventDuringScopedAccessRunner";
+static const char* TARGET_CLASS_NAME = "TestSharedCloseJvmti$EventDuringScopedAccessRunner";
 static const char* TARGET_METHOD_NAME = "target";
 static const char* TARGET_METHOD_SIG = "()V";
 

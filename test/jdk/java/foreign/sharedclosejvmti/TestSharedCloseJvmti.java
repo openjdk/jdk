@@ -25,7 +25,7 @@
  * @test
  * @bug 8351032
  * @library /test/lib
- * @run junit/native TestJvmtiSharedClose
+ * @run junit/native TestSharedCloseJvmti
  */
 
 import jdk.test.lib.Utils;
@@ -45,7 +45,7 @@ import java.util.concurrent.TimeoutException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestJvmtiSharedClose {
+public class TestSharedCloseJvmti {
 
     private static final String JVMTI_AGENT_LIB = Path.of(Utils.TEST_NATIVE_PATH, System.mapLibraryName("SharedCloseAgent"))
             .toAbsolutePath().toString();
