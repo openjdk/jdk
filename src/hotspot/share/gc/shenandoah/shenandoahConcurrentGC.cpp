@@ -692,7 +692,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // old generation mark queue. Any pointers in a young region will be
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
-      // heap->old_generation()->transfer_pointers_from_satb();
+      heap->old_generation()->transfer_pointers_from_satb();
     }
     {
       // After we swap card table below, the write-table is all clean, and the read table holds
