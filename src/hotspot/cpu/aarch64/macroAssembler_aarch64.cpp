@@ -473,6 +473,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
 // Patch any kind of instruction; there may be several instructions.
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address insn_addr, address target) {
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   return RelocActions<Patcher>::run(insn_addr, target);
 }
 
