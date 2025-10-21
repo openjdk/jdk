@@ -36,7 +36,7 @@ import jdk.jpackage.test.TKit;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Annotations.Parameter;
 
-/**
+/*
  * Test generates signed app-image with custom entitlements file from the
  * "--mac-entitlements" parameter and the resource directory. Following cases
  * are covered:
@@ -46,7 +46,7 @@ import jdk.jpackage.test.Annotations.Parameter;
  * "--mac-entitlements" parameter.
  */
 
- /*
+/*
  * @test
  * @summary jpackage with --type app-image "--mac-entitlements" parameter
  * @library /test/jdk/tools/jpackage/helpers
@@ -104,24 +104,19 @@ public class EntitlementsTest {
         }
 
         JPackageCommand cmd = JPackageCommand.helloAppImage()
-                .addArguments("--mac-sign",
-                              "--mac-signing-keychain",
-                                SigningBase.getKeyChain(),
-                              "--mac-app-image-sign-identity",
-                                SigningBase.getAppCert(
-                                    SigningBase.CertIndex.ASCII_INDEX.value()));
+                .addArguments("--mac-sign", "--mac-signing-keychain",
+                        SigningBase.getKeyChain(), "--mac-app-image-sign-identity",
+                        SigningBase.getAppCert(SigningBase.CertIndex.ASCII_INDEX.value()));
         if (appStore) {
             cmd.addArguments("--mac-app-store");
         }
         if (doMacEntitlements) {
             cmd.addArguments("--mac-entitlements",
-                             macEntitlementsFile.toAbsolutePath().toString());
-
+                    macEntitlementsFile.toAbsolutePath().toString());
         }
         if (doResources) {
             cmd.addArguments("--resource-dir",
-                             resourcesDir.toAbsolutePath().toString());
-
+                    resourcesDir.toAbsolutePath().toString());
         }
 
         cmd.executeAndAssertHelloAppImageCreated();
