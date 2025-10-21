@@ -103,17 +103,6 @@ void VM_Version::common_initialize() {
     useRVA23U64Profile();
   }
 
-  // Enable vendor specific features
-
-  if (mvendorid.enabled()) {
-    // Rivos
-    if (mvendorid.value() == RIVOS) {
-      if (FLAG_IS_DEFAULT(UseConservativeFence)) {
-        FLAG_SET_DEFAULT(UseConservativeFence, false);
-      }
-    }
-  }
-
   if (UseZic64b) {
     if (CacheLineSize != 64) {
       assert(!FLAG_IS_DEFAULT(CacheLineSize), "default cache line size should be 64 bytes");
@@ -199,7 +188,7 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UsePopCountInstruction, false);
   }
 
-  if (UseZicboz && zicboz_block_size.enabled() && zicboz_block_size.value() > 0) {
+  if (UseZicboz && zicboz_block_size.value() > 0) {
     assert(is_power_of_2(zicboz_block_size.value()), "Sanity");
     if (FLAG_IS_DEFAULT(UseBlockZeroing)) {
       FLAG_SET_DEFAULT(UseBlockZeroing, true);

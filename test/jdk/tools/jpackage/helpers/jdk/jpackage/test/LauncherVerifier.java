@@ -394,7 +394,7 @@ public final class LauncherVerifier {
     private static final class DefaultEntitlements {
         private static Map<String, Object> loadFromResources(String resourceName) {
             return ThrowingSupplier.toSupplier(() -> {
-                var bytes = ResourceLocator.class.getResourceAsStream("entitlements.plist").readAllBytes();
+                var bytes = ResourceLocator.class.getResourceAsStream(resourceName).readAllBytes();
                 return new PListReader(bytes).toMap(true);
             }).get();
         }

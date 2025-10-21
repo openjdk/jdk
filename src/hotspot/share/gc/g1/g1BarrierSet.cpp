@@ -111,7 +111,7 @@ void G1BarrierSet::write_ref_array_pre(narrowOop* dst, size_t count, bool dest_u
   }
 }
 
-void G1BarrierSet::write_region(JavaThread* thread, MemRegion mr) {
+void G1BarrierSet::write_region(MemRegion mr) {
   if (mr.is_empty()) {
     return;
   }
