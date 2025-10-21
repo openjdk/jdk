@@ -34,7 +34,7 @@
 class BSDMemoryTaggingTest : public ::testing::Test {
 protected:
   static const size_t test_size = 64 * 1024; // 64KB test allocation
- 
+
   // Helper to allocate memory with VM_MEMORY_JAVA tag using mmap directly
   void* allocate_with_java_tag(size_t size) {
     // Use mmap with VM_FLAGS_ALIAS_MASK to set VM_MEMORY_JAVA tag
