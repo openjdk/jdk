@@ -340,10 +340,10 @@ public class TestGeneral extends PKCS11Test {
             testIv(c, ivLen, allowCustomIv);
         }
 
-        //Check if algorithm was skipped.
-        if(skippedAlgoList.isEmpty()){
+        //Check if tests were skipped.
+        if (skippedAlgoList.isEmpty()) {
             System.out.println("All Tests Passed");
-        }else{
+        } else {
             System.err.println("Some tests were skipped due to no support : " + skippedAlgoList);
         }
     }

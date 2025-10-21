@@ -46,6 +46,8 @@ import java.util.List;
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/NISTWrapKAT.java
 public class NISTWrapKAT extends PKCS11Test {
 
+    private static List<String> skippedAlgoList = new ArrayList<>();
+
     private static final String KEK =
         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
     private static final String DATA =
@@ -262,7 +264,9 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte key with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            throw new SkippedException("Skip, exceeds max allowed size " + allowed);
+            System.err.println("Skip, exceeds max allowed size " + allowed);
+            skippedAlgoList.add(algo);
+            return;
         }
         Cipher c1 = Cipher.getInstance(algo,
                 System.getProperty("test.provider.name", "SunJCE"));
@@ -324,7 +328,9 @@ public class NISTWrapKAT extends PKCS11Test {
             dataLen + "-byte data with " + 8*keyLen + "-bit KEK");
         int allowed = Cipher.getMaxAllowedKeyLength("AES");
         if (keyLen > allowed) {
-            throw new SkippedException("Skip, exceeds max allowed size " + allowed);
+            System.err.println("Skip, exceeds max allowed size " + allowed);
+            skippedAlgoList.add(algo);
+            return;
         }
         Cipher c1 = Cipher.getInstance(algo,
                 System.getProperty("test.provider.name", "SunJCE"));
@@ -388,11 +394,11 @@ public class NISTWrapKAT extends PKCS11Test {
     @Override
     public void main(Provider p) throws Exception {
         Object[][] testDatum = testData();
-        List<String> skippedAlgoList = new ArrayList<>();
         for (int i = 0; i < testDatum.length; i++) {
             Object[] td = testDatum[i];
             String algo = (String) td[0];
             if (p.getService("Cipher", algo) == null) {
+                System.err.println("Skip, due to no support:  " + algo);
                 skippedAlgoList.add(algo);
                 continue;
             }
@@ -402,11 +408,11 @@ public class NISTWrapKAT extends PKCS11Test {
                     (int)td[4], (String)td[5], p);
         }
 
-        //Check if algorithm was skipped.
-        if(skippedAlgoList.isEmpty()){
+        //Check if tests were skipped.
+        if (skippedAlgoList.isEmpty()) {
             System.out.println("All Tests Passed");
-        }else{
-            System.err.println("Some tests were skipped due to no support : " + skippedAlgoList);
+        } else {
+            System.err.println("Some tests were skipped : " + skippedAlgoList);
         }
     }
 }
