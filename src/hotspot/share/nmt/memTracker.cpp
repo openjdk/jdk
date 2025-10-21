@@ -52,8 +52,6 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 DeferredStatic<MemBaseline> MemTracker::_baseline;
 
-bool MemTracker::NmtVirtualMemoryLocker::_safe_to_use;
-
 void MemTracker::initialize() {
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
@@ -63,11 +61,9 @@ void MemTracker::initialize() {
   assert(level == NMT_off || level == NMT_summary || level == NMT_detail,
          "Invalid setting for NativeMemoryTracking (%s)", NativeMemoryTracking);
 
-  // Memory tag is encoded into tracking header as a byte field,
-  // make sure that we don't overflow it.
-  STATIC_ASSERT(mt_number_of_tags <= max_jubyte);
-
   if (level > NMT_off) {
+    VirtualMemorySummary::initialize();
+    MemTagFactory::initialize();
     _baseline.initialize();
     if (!MallocTracker::initialize(level) ||
         !MemoryFileTracker::Instance::initialize(level) ||

@@ -44,20 +44,22 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
   VMATree::RegionData regiondata(sidx, mem_tag);
   VMATree::SummaryDiff diff;
   file->_tree.commit_mapping(offset, size, regiondata, diff);
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  auto num_tags = diff.number_of_tags();
+  for (int i = 0; i < num_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.tag[i].commit);
-    summary->commit_memory(diff.tag[i].commit);
+    summary->reserve_memory(diff[i].commit);
+    summary->commit_memory(diff[i].commit);
   }
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
   VMATree::SummaryDiff diff;
   file->_tree.release_mapping(offset, size, diff);
-  for (int i = 0; i < mt_number_of_tags; i++) {
+  auto num_tags = diff.number_of_tags();
+  for (int i = 0; i < num_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
-    summary->reserve_memory(diff.tag[i].commit);
-    summary->commit_memory(diff.tag[i].commit);
+    summary->reserve_memory(diff[i].commit);
+    summary->commit_memory(diff[i].commit);
   }
 }
 
@@ -90,7 +92,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* file, outputStream* st
                        start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
-                       NMTUtil::tag_to_name(prev->val().out.mem_tag()));
+                       MemTagFactory::human_readable_name_of(prev->val().out.mem_tag()));
       {
         StreamIndentor si(stream, 4);
         _stack_storage.get(prev->val().out.reserved_stack()).print_on(stream);

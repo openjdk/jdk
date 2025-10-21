@@ -31,6 +31,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/deferredStatic.hpp"
 
 // VirtualMemoryTracker (VMT) is an internal class of the MemTracker.
 // All the Hotspot code use only the MemTracker interface to register the memory operations in NMT.
@@ -104,11 +105,16 @@ class VirtualMemorySummary;
 
 // This class represents a snapshot of virtual memory at a given time.
 // The latest snapshot is saved in a static area.
-class VirtualMemorySnapshot : public ResourceObj {
+class VirtualMemorySnapshot {
   friend class VirtualMemorySummary;
 
- private:
-  VirtualMemory  _virtual_memory[mt_number_of_tags];
+private:
+  using IndexType = std::underlying_type_t<MemTag>;
+
+  static constexpr int num_tags()  {
+    return static_cast<int>(std::numeric_limits<IndexType>::max());
+  }
+  VirtualMemory  _virtual_memory[static_cast<size_t>(std::numeric_limits<IndexType>::max())];
 
  public:
   inline VirtualMemory* by_tag(MemTag mem_tag) {
@@ -123,7 +129,7 @@ class VirtualMemorySnapshot : public ResourceObj {
 
   inline size_t total_reserved() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < num_tags(); index++) {
       amount += _virtual_memory[index].reserved();
     }
     return amount;
@@ -131,14 +137,14 @@ class VirtualMemorySnapshot : public ResourceObj {
 
   inline size_t total_committed() const {
     size_t amount = 0;
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < num_tags(); index++) {
       amount += _virtual_memory[index].committed();
     }
     return amount;
   }
 
   void copy_to(VirtualMemorySnapshot* s) {
-    for (int index = 0; index < mt_number_of_tags; index ++) {
+    for (int index = 0; index < num_tags(); index++) {
       s->_virtual_memory[index] = _virtual_memory[index];
     }
   }
@@ -146,7 +152,6 @@ class VirtualMemorySnapshot : public ResourceObj {
 
 class VirtualMemorySummary : AllStatic {
  public:
-
   static inline void record_reserved_memory(size_t size, MemTag mem_tag) {
     as_snapshot()->by_tag(mem_tag)->reserve_memory(size);
   }
@@ -180,11 +185,15 @@ class VirtualMemorySummary : AllStatic {
   static void snapshot(VirtualMemorySnapshot* s);
 
   static VirtualMemorySnapshot* as_snapshot() {
-    return &_snapshot;
+    return _snapshot.get();
+  }
+
+  static void initialize() {
+    _snapshot.initialize();
   }
 
  private:
-  static VirtualMemorySnapshot _snapshot;
+  static DeferredStatic<VirtualMemorySnapshot> _snapshot;
 };
 
 
@@ -340,7 +349,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
     return *this;
   }
 
-  const char* tag_name() const { return NMTUtil::tag_to_name(_mem_tag); }
+  const char* mem_tag_name() const { return MemTagFactory::name_of(_mem_tag); }
 };
 
 class VirtualMemoryWalker : public StackObj {

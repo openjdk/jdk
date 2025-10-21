@@ -26,7 +26,10 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/memTag.hpp"
+#include "nmt/nmtCommon.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -34,6 +37,7 @@
 #include "utilities/rbTree.inline.hpp"
 
 #include <cstdint>
+#include <utility>
 
 // A VMATree stores a sequence of points on the natural number line.
 // Each of these points stores information about a state change.
@@ -239,21 +243,47 @@ public:
   };
 
   struct SummaryDiff {
-    SingleDiff tag[mt_number_of_tags];
-    SummaryDiff() {
-      clear();
+    GrowableArrayCHeap<SingleDiff, mtNMT> tag;
+    SummaryDiff()
+    : tag() {
+      int num_tags = MemTagFactory::number_of_tags();
+      tag.at_grow(MAX2(0, num_tags-1), {0, 0});
     }
+
     void clear() {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i] = SingleDiff{0, 0};
+      tag.clear_and_deallocate();
+    }
+
+    SummaryDiff(const SummaryDiff& other) : tag(other.tag.length()) {
+      clear();
+      tag.at_grow(other.tag.length()-1); // Grow once
+      for (int i = 0; i < other.tag.length(); i++) {
+        tag.at_grow(i, other.tag.at(i));
       }
     }
 
-    void add(SummaryDiff& other) {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i].reserve += other.tag[i].reserve;
-        tag[i].commit += other.tag[i].commit;
+    SummaryDiff operator=(const SummaryDiff& other) {
+      clear();
+      tag.at_grow(other.tag.length()-1); // Grow once
+      for (int i = 0; i < other.tag.length(); i++) {
+        tag.at_grow(i, other.tag.at(i));
       }
+      return *this;
+    }
+
+    void add(SummaryDiff& other) {
+      for (int i = 0; i < other.tag.length(); i++) {
+        tag.at_grow(i, {0, 0}).reserve += other.tag.at(i).reserve;
+        tag.at_grow(i, {0, 0}).commit += other.tag.at(i).commit;
+      }
+    }
+
+    SingleDiff& operator[](int i) {
+      return tag.at_grow(i);
+    }
+
+    int number_of_tags() const {
+      return tag.length();
     }
 
 #ifdef ASSERT
