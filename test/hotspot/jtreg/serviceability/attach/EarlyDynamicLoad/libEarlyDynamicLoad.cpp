@@ -36,7 +36,7 @@ static void JNICALL VMStartCallback(jvmtiEnv* jvmti, JNIEnv* env) {
 JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   jvmtiEnv* jvmti;
   if (vm->GetEnv((void**) &jvmti, JVMTI_VERSION_1_0) != JVMTI_ERROR_NONE) {
-    fprintf(stderr, "JVMTI error occurred during GetEnv call\n");
+    fprintf(stderr, "JVMTI error occurred during GetEnv\n");
     return 1;
   }
 
@@ -45,11 +45,11 @@ JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
   callbacks.VMStart = VMStartCallback;
 
   if (jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks)) != JVMTI_ERROR_NONE) {
-    fprintf(stderr, "JVMTI error occurred during SetEventCallbacks call\n");
+    fprintf(stderr, "JVMTI error occurred during SetEventCallbacks\n");
     return 1;
   }
   if (jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr) != JVMTI_ERROR_NONE) {
-    fprintf(stderr, "JVMTI error occurred during SetEventNotificationMode call\n");
+    fprintf(stderr, "JVMTI error occurred during SetEventNotificationMode\n");
     return 1;
   }
 
