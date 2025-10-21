@@ -701,7 +701,7 @@ public final class Double extends Number
          * 7.19.6.1; however, the output of this method is more
          * tightly specified.
          */
-        if (!isFinite(d) ) {
+        if (!isFinite(d)) {
             // For infinity and NaN, use the decimal output.
             return Double.toString(d);
         }
