@@ -28,25 +28,25 @@
 extern "C" {
 
 static void JNICALL VMStartCallback(jvmtiEnv* jvmti, JNIEnv* env) {
-    putchar('1');
-    fflush(stdout);
-    getchar();
+  putchar('1');
+  fflush(stdout);
+  getchar();
 }
 
 JNIEXPORT int Agent_OnLoad(JavaVM* vm, char* options, void* reserved) {
-    jvmtiEnv* jvmti;
-    if (vm->GetEnv((void**) &jvmti, JVMTI_VERSION_1_0) != 0) {
-        return 1;
-    }
+  jvmtiEnv* jvmti;
+  if (vm->GetEnv((void**) &jvmti, JVMTI_VERSION_1_0) != 0) {
+      return 1;
+  }
 
-    jvmtiEventCallbacks callbacks;
-    memset(&callbacks, 0, sizeof(callbacks));
-    callbacks.VMStart = VMStartCallback;
+  jvmtiEventCallbacks callbacks;
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.VMStart = VMStartCallback;
 
-    jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
+  jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_START, nullptr);
 
-    return 0;
+  return 0;
 }
 
 }
