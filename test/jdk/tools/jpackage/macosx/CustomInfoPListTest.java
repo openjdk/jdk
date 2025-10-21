@@ -91,7 +91,7 @@ public class CustomInfoPListTest {
     public void testNativePackage(TestConfig cfg) {
         List<ThrowingConsumer<JPackageCommand>> verifier = new ArrayList<>();
         new PackageTest().configureHelloApp().addInitializer(cmd -> {
-            cfg.init(cmd.setFakeRuntime());
+            cfg.init(cmd.setFakeRuntime(cfg.customPLists.contains(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN)));
         }).addRunOnceInitializer(() -> {
             verifier.add(cfg.createPListFilesVerifier(JPackageCommand.helloAppImage().executePrerequisiteActions()));
         }).addInstallVerifier(cmd -> {
@@ -122,6 +122,7 @@ public class CustomInfoPListTest {
                 Set.of(CustomPListType.APP),
                 Set.of(CustomPListType.APP_WITH_FA),
                 Set.of(CustomPListType.EMBEDDED_RUNTIME),
+                Set.of(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN),
                 Set.of(CustomPListType.APP, CustomPListType.EMBEDDED_RUNTIME)
         ).map(TestConfig::new).map(cfg -> {
             return new Object[] { cfg };
@@ -164,6 +165,11 @@ public class CustomInfoPListTest {
                 cmd.setArgumentValue("--file-associations", propFile);
             }
 
+            if (customPLists.contains(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN)) {
+                cmd.addArguments("--jlink-options",
+                        "--strip-debug --no-man-pages --no-header-files");
+            }
+
             cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
             for (var customPList : customPLists) {
                 customPList.createInputPListFile(cmd);
@@ -183,7 +189,8 @@ public class CustomInfoPListTest {
             if (defaultPListFiles.isEmpty()) {
                 return defaultVerifier;
             } else {
-                var vanillaCmd = new JPackageCommand().setFakeRuntime()
+                boolean includeBin = customPLists.contains(CustomPListType.EMBEDDED_RUNTIME_WITH_BIN);
+                var vanillaCmd = new JPackageCommand().setFakeRuntime(includeBin)
                         .addArguments(cmd.getAllArguments())
                         .setPackageType(PackageType.IMAGE)
                         .removeArgumentWithValue("--resource-dir")
@@ -237,6 +244,11 @@ public class CustomInfoPListTest {
         APP_WITH_FA(APP),
 
         EMBEDDED_RUNTIME(
+                CustomPListFactory.PLIST_INPUT::writeEmbeddedRuntimePlist,
+                CustomPListFactory.PLIST_OUTPUT::writeEmbeddedRuntimePlist,
+                "Runtime-Info.plist"),
+
+        EMBEDDED_RUNTIME_WITH_BIN(
                 CustomPListFactory.PLIST_INPUT::writeEmbeddedRuntimePlist,
                 CustomPListFactory.PLIST_OUTPUT::writeEmbeddedRuntimePlist,
                 "Runtime-Info.plist"),
