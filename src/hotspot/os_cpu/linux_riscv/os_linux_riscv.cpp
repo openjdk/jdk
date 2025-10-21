@@ -288,8 +288,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       }
     }
 
-    if (sig == SIGBUS && VM_Version::is_check_misaligned_vector_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, VM_Version::continuation_for_check_misaligned_vector_fault(pc));
+    if (sig == SIGBUS && VM_Version::is_misaligned_vector_fault(pc)) {
+      os::Posix::ucontext_set_pc(uc, VM_Version::continuation_for_misaligned_vector_fault(pc));
       return true;
     }
   }

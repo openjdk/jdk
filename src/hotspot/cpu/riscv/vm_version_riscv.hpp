@@ -502,13 +502,13 @@ private:
 
   constexpr static bool supports_secondary_supers_table() { return true; }
 
-  static bool supports_misaligned_vector_accesses() { return unaligned_vector.value() == MISALIGNED_VECTOR_FAST; }
+  static bool supports_misaligned_vector_accesses() { return !AlignVector; }
 
-  static bool is_check_misaligned_vector_fault(address pc) {
+  static bool is_misaligned_vector_fault(address pc) {
     return pc != NULL && (pc == _misaligned_vector_fault_pc1 || pc == _misaligned_vector_fault_pc2);
   }
 
-  static address continuation_for_check_misaligned_vector_fault(address pc) {
+  static address continuation_for_misaligned_vector_fault(address pc) {
     assert(_misaligned_vector_continuation_pc != NULL , "not initialized");
     return _misaligned_vector_continuation_pc;
   }
