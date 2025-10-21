@@ -1054,7 +1054,7 @@ static void* dll_load_library(const char *filename, int *eno, char *ebuf, int eb
       error_report = "dlerror returned no error description";
     }
     if (ebuf != nullptr && ebuflen > 0) {
-      os::snprintf_checked(ebuf, ebuflen - 1, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
+      os::snprintf_checked(ebuf, ebuflen, "%s, LIBPATH=%s, LD_LIBRARY_PATH=%s : %s",
                            filename, ::getenv("LIBPATH"), ::getenv("LD_LIBRARY_PATH"), error_report);
     }
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
