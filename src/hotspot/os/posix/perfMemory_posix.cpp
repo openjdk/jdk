@@ -461,7 +461,7 @@ static char* get_user_name(uid_t uid) {
       }
       else {
         log.print_cr("Could not determine user name: %s",
-                p->pw_name == nullptr ? "pw_name = null" : "pw_name zero length");
+                     p->pw_name == nullptr ? "pw_name = null" : "pw_name zero length");
       }
     }
     FREE_C_HEAP_ARRAY(char, pwbuf);
@@ -674,8 +674,8 @@ static void remove_file(const char* path) {
   RESTARTABLE(::unlink(path), result);
   if (log_is_enabled(Debug, perf) && result == OS_ERR) {
     if (errno != ENOENT) {
-      log_debug(perf)("Could not unlink shared memory backing"
-                      " store file %s : %s", path, os::strerror(errno));
+      log_debug(perf)("Could not unlink shared memory backing store file %s : %s",
+                      path, os::strerror(errno));
     }
   }
 }

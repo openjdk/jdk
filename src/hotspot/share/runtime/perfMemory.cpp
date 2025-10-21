@@ -248,8 +248,7 @@ char* PerfMemory::get_perfdata_file_path() {
     if(!Arguments::copy_expand_pid(PerfDataSaveFile, strlen(PerfDataSaveFile),
                                    dest_file, JVM_MAXPATHLEN)) {
       FREE_C_HEAP_ARRAY(char, dest_file);
-      log_debug(perf)("Invalid performance data file path name specified, "
-                      "fall back to a default name");
+      log_debug(perf)("Invalid performance data file path name specified, fall back to a default name");
     } else {
       return dest_file;
     }

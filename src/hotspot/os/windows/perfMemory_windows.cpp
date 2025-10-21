@@ -213,8 +213,8 @@ static bool is_directory_secure(const char* path) {
     }
     else {
       // unexpected error, declare the path insecure
-      log_debug(perf)("could not get attributes for file %s: "
-                      " lasterror = %d", path, lasterror);
+      log_debug(perf)("could not get attributes for file %s: lasterror = %d",
+                      path, lasterror);
       return false;
     }
   }
@@ -480,8 +480,8 @@ static void remove_file(const char* dirname, const char* filename) {
 
   if (::unlink(path) == OS_ERR) {
     if (errno != ENOENT) {
-      log_debug(perf)("Could not unlink shared memory backing"
-                      " store file %s : %s", path, os::strerror(errno));
+      log_debug(perf)("Could not unlink shared memory backing store file %s : %s",
+                      path, os::strerror(errno));
     }
   }
 
@@ -502,7 +502,7 @@ static bool is_alive(int pid) {
     // the process does not exist.
     DWORD lastError = GetLastError();
     if (lastError != ERROR_INVALID_PARAMETER) {
-      log_debug(perf)("OpenProcess failed: %d", GetLastError());
+      log_debug(perf)("OpenProcess failed: %d", lastError);
     }
     return false;
   }
@@ -553,16 +553,15 @@ static bool is_filesystem_secure(const char* path) {
   if (!GetVolumeInformation(root_path, nullptr, 0, nullptr, &maxpath,
                             &flags, fs_type, MAX_PATH)) {
     // we can't get information about the volume, so assume unsafe.
-    log_debug(perf)("could not get device information for %s: "
-                    " path = %s: lasterror = %d",
+    log_debug(perf)("could not get device information for %s: path = %s: lasterror = %d",
                     root_path, path, GetLastError());
     return false;
   }
 
   if ((flags & FS_PERSISTENT_ACLS) == 0) {
     // file system doesn't support ACLs, declare file system unsafe
-    log_debug(perf)("file system type %s on device %s does not support"
-                    " ACLs", fs_type, root_path);
+    log_debug(perf)("file system type %s on device %s does not support ACLs",
+                    fs_type, root_path);
     return false;
   }
 
@@ -760,8 +759,8 @@ static PSID get_user_sid(HANDLE hProcess) {
   if (!GetTokenInformation(hAccessToken, TokenUser, nullptr, rsize, &rsize)) {
     DWORD lasterror = GetLastError();
     if (lasterror != ERROR_INSUFFICIENT_BUFFER) {
-      log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
-                      " rsize = %d", lasterror, rsize);
+      log_debug(perf)("GetTokenInformation failure: lasterror = %d, rsize = %d",
+                      lasterror, rsize);
       CloseHandle(hAccessToken);
       return nullptr;
     }
@@ -771,8 +770,8 @@ static PSID get_user_sid(HANDLE hProcess) {
 
   // get the user token information
   if (!GetTokenInformation(hAccessToken, TokenUser, token_buf, rsize, &rsize)) {
-    log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
-                    " rsize = %d", GetLastError(), rsize);
+    log_debug(perf)("GetTokenInformation failure: lasterror = %d, rsize = %d",
+                    GetLastError(), rsize);
     FREE_C_HEAP_ARRAY(char, token_buf);
     CloseHandle(hAccessToken);
     return nullptr;
@@ -782,8 +781,8 @@ static PSID get_user_sid(HANDLE hProcess) {
   PSID pSID = NEW_C_HEAP_ARRAY(char, nbytes, mtInternal);
 
   if (!CopySid(nbytes, pSID, token_buf->User.Sid)) {
-    log_debug(perf)("GetTokenInformation failure: lasterror = %d,"
-                    " rsize = %d", GetLastError(), rsize);
+    log_debug(perf)("GetTokenInformation failure: lasterror = %d, rsize = %d",
+                    GetLastError(), rsize);
     FREE_C_HEAP_ARRAY(char, token_buf);
     FREE_C_HEAP_ARRAY(char, pSID);
     CloseHandle(hAccessToken);
@@ -948,8 +947,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
 
   // add the new ACL to the security descriptor.
   if (!SetSecurityDescriptorDacl(pSD, TRUE, newACL, FALSE)) {
-    log_debug(perf)("SetSecurityDescriptorDacl failure:"
-                    " lasterror = %d", GetLastError());
+    log_debug(perf)("SetSecurityDescriptorDacl failure: lasterror = %d", GetLastError());
     FREE_C_HEAP_ARRAY(char, newACL);
     return false;
   }
@@ -966,8 +964,7 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     // protected prevents that.
     if (!_SetSecurityDescriptorControl(pSD, SE_DACL_PROTECTED,
                                             SE_DACL_PROTECTED)) {
-      log_debug(perf)("SetSecurityDescriptorControl failure:"
-                      " lasterror = %d", GetLastError());
+      log_debug(perf)("SetSecurityDescriptorControl failure: lasterror = %d", GetLastError());
       FREE_C_HEAP_ARRAY(char, newACL);
       return false;
     }
@@ -996,8 +993,7 @@ static LPSECURITY_ATTRIBUTES make_security_attr(ace_data_t aces[], int count) {
 
   // initialize the security descriptor
   if (!InitializeSecurityDescriptor(pSD, SECURITY_DESCRIPTOR_REVISION)) {
-    log_debug(perf)("InitializeSecurityDescriptor failure: "
-                    "lasterror = %d", GetLastError());
+    log_debug(perf)("InitializeSecurityDescriptor failure: lasterror = %d", GetLastError());
     free_security_desc(pSD);
     return nullptr;
   }
@@ -1050,8 +1046,7 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
            SECURITY_BUILTIN_DOMAIN_RID,
            DOMAIN_ALIAS_RID_ADMINS,
            0, 0, 0, 0, 0, 0, &administratorsSid)) {
-    log_debug(perf)("AllocateAndInitializeSid failure: "
-                    "lasterror = %d", GetLastError());
+    log_debug(perf)("AllocateAndInitializeSid failure: lasterror = %d", GetLastError());
     return nullptr;
   }
 
@@ -1065,8 +1060,7 @@ static LPSECURITY_ATTRIBUTES make_user_everybody_admin_security_attr(
 
   if (!AllocateAndInitializeSid( &SIDAuthEverybody, 1, SECURITY_WORLD_RID,
            0, 0, 0, 0, 0, 0, 0, &everybodySid)) {
-    log_debug(perf)("AllocateAndInitializeSid failure: "
-                    "lasterror = %d", GetLastError());
+    log_debug(perf)("AllocateAndInitializeSid failure: lasterror = %d", GetLastError());
     return nullptr;
   }
 
