@@ -279,21 +279,6 @@ bool ShenandoahConcurrentGC::complete_abbreviated_cycle() {
     heap->update_region_ages(_generation->complete_marking_context());
   }
 
-  if (!heap->is_concurrent_old_mark_in_progress()) {
-    heap->concurrent_final_roots();
-  } else {
-    // Since the cycle was shortened for having enough immediate garbage, this will be
-    // the last phase before concurrent marking of old resumes. We must be sure
-    // that old mark threads don't see any pointers to garbage in the SATB queues. Even
-    // though nothing was evacuated, overwriting unreachable weak roots with null may still
-    // put pointers to regions that become trash in the SATB queues. The following will
-    // piggyback flushing the thread local SATB queues on the same handshake that propagates
-    // the gc state change.
-    ShenandoahSATBMarkQueueSet& satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-    ShenandoahFlushSATBHandshakeClosure complete_thread_local_satb_buffers(satb_queues);
-    heap->concurrent_final_roots(&complete_thread_local_satb_buffers);
-    // heap->old_generation()->concurrent_transfer_pointers_from_satb();
-  }
   return true;
 }
 
@@ -1232,13 +1217,13 @@ bool ShenandoahConcurrentGC::entry_final_roots() {
                               ShenandoahWorkerPolicy::calc_workers_for_conc_evac(),
                               msg);
 
-  if (!heap->mode()->is_generational()) {
-    heap->concurrent_final_roots();
-  } else {
+  if (heap->mode()->is_generational()) {
     if (!complete_abbreviated_cycle()) {
       return false;
     }
   }
+
+  heap->concurrent_final_roots();
   return true;
 }
 
