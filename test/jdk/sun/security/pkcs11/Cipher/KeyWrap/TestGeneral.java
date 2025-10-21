@@ -30,13 +30,20 @@
  * @run main/othervm TestGeneral
  */
 import java.nio.ByteBuffer;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.security.*;
 import java.util.List;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/TestGeneral.java
 public class TestGeneral extends PKCS11Test {
@@ -51,7 +58,7 @@ public class TestGeneral extends PKCS11Test {
     private static final int MAX_KWP_PAD_LEN = 7; // 0-7
 
     public static void testEnc(Cipher c, byte[] in, int startLen, int inc,
-            IvParameterSpec[] ivs, int maxPadLen) throws Exception {
+                               IvParameterSpec[] ivs, int maxPadLen) throws Exception {
 
         System.out.println("testEnc, input len=" + startLen + " w/ inc=" +
                 inc);
@@ -120,7 +127,7 @@ public class TestGeneral extends PKCS11Test {
     }
 
     public static void testWrap(Cipher c, Key[] inKeys, IvParameterSpec[] ivs,
-            int maxPadLen) throws Exception {
+                                int maxPadLen) throws Exception {
 
         for (Key inKey : inKeys) {
             System.out.println("testWrap, key: " + inKey);
