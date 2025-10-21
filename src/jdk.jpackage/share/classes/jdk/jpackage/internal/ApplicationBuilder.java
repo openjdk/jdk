@@ -110,6 +110,11 @@ final class ApplicationBuilder {
         return this;
     }
 
+    ApplicationBuilder externalApplication(ExternalApplication v) {
+        externalApp = v;
+        return this;
+    }
+
     ApplicationBuilder launchers(ApplicationLaunchers v) {
         launchers = v;
         return this;
