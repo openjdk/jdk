@@ -403,21 +403,20 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 
-  return attempt_allocation(min_size, requested_size, actual_size);
+  return attempt_allocation(min_size, requested_size, actual_size, false /* allow_gc */);
 }
 
-HeapWord*
-G1CollectedHeap::mem_allocate(size_t word_size) {
+HeapWord* G1CollectedHeap::mem_allocate(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
 
   if (is_humongous(word_size)) {
     return attempt_allocation_humongous(word_size);
   }
   size_t dummy = 0;
-  return attempt_allocation(word_size, word_size, &dummy);
+  return attempt_allocation(word_size, word_size, &dummy, true /* allow_gc */);
 }
 
-HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_size) {
+HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_size, bool allow_gc) {
   ResourceMark rm; // For retrieving the thread names in log messages.
 
   // Make sure you read the note in attempt_allocation_humongous().
@@ -444,6 +443,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
       result = _allocator->attempt_allocation_locked(node_index, word_size);
       if (result != nullptr) {
         return result;
+      } else if (!allow_gc) {
+        return nullptr;
       }
 
       // Read the GC count while still holding the Heap_lock.
@@ -612,7 +613,8 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
 
 inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
                                                      size_t desired_word_size,
-                                                     size_t* actual_word_size) {
+                                                     size_t* actual_word_size,
+                                                     bool is_tlab) {
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!is_humongous(desired_word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
@@ -624,7 +626,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
 
   if (result == nullptr) {
     *actual_word_size = desired_word_size;
-    result = attempt_allocation_slow(node_index, desired_word_size);
+    result = attempt_allocation_slow(node_index, desired_word_size, is_tlab);
   }
 
   assert_heap_not_locked();
