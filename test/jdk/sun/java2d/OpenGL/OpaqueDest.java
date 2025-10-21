@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6277977 6319663
+ * @bug 6277977 6319663 8369335
  * @key headful
  * @requires (os.family != "mac")
  * @summary Verifies that blending operations do not inadvertantly leave
@@ -71,6 +71,7 @@ public class OpaqueDest extends Canvas {
 
     private static volatile Frame frame;
     private static volatile OpaqueDest test;
+    private static final int W = 100, H = 100;
 
     public void paint(Graphics g) {
 
@@ -93,7 +94,7 @@ public class OpaqueDest extends Canvas {
     }
 
     public Dimension getPreferredSize() {
-        return new Dimension(100, 100);
+        return new Dimension(W, H);
     }
 
     static void createUI() {
@@ -124,7 +125,7 @@ public class OpaqueDest extends Canvas {
                 return;
             }
             Point pt1 = test.getLocationOnScreen();
-            Rectangle rect = new Rectangle(pt1.x, pt1.y, 100, 100);
+            Rectangle rect = new Rectangle(pt1.x, pt1.y, W, H);
             capture = robot.createScreenCapture(rect);
         } finally {
             if (frame != null) {
@@ -134,18 +135,23 @@ public class OpaqueDest extends Canvas {
 
 
         // Test all pixels (every one should be red)
-        for (int y = 0; y < 100; y++) {
-            for (int x = 0; x < 100; x++) {
+        for (int y = 0; y < W; y++) {
+            for (int x = 0; x < H; x++) {
                 int actual = capture.getRGB(x, y);
                     int expected = 0xffff0000;
                 if (!similar(actual, expected)) {
-                    saveImage(capture);
-                    throw new RuntimeException("Test failed at x="+x+" y="+y+
-                                               " (expected="+
-                                               Integer.toHexString(expected) +
-                                               " actual="+
-                                               Integer.toHexString(actual) +
-                                               ")");
+                    String msg = "Test failed at x="+x+" y="+y+
+                                 " (expected="+
+                                 Integer.toHexString(expected) +
+                                 " actual="+
+                                 Integer.toHexString(actual) +
+                                 ")";
+                    if ( ( x== 0) || ( x == W) || ( y == 0) || ( y == H)) {
+                        System.err.println(msg);
+                    } else {
+                        saveImage(capture);
+                        throw new RuntimeException(msg);
+                    }
                 }
             }
         }

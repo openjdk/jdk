@@ -149,6 +149,7 @@ public class VMProps implements Callable<Map<String, String>> {
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
         vmOptFinalFlags(map);
+        vmOptFinalIntxFlags(map);
 
         dump(map.map);
         log("Leaving call()");
@@ -387,6 +388,26 @@ public class VMProps implements Callable<Map<String, String>> {
         vmOptFinalFlag(map, "UseLargePages");
         vmOptFinalFlag(map, "UseTransparentHugePages");
         vmOptFinalFlag(map, "UseVectorizedMismatchIntrinsic");
+    }
+
+    /**
+     * Selected final flag of type intx.
+     *
+     * @param map - property-value pairs
+     * @param flagName - flag name
+     */
+    private void vmOptFinalIntxFlag(SafeMap map, String flagName) {
+        map.put("vm.opt.final." + flagName,
+                () -> String.valueOf(WB.getIntxVMFlag(flagName)));
+    }
+
+    /**
+     * Selected sets of final flags of type intx.
+     *
+     * @param map - property-value pairs
+     */
+    protected void vmOptFinalIntxFlags(SafeMap map) {
+        vmOptFinalIntxFlag(map, "MaxVectorSize");
     }
 
     /**
