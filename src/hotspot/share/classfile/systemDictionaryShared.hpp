@@ -175,6 +175,7 @@ private:
   static void write_dictionary(RunTimeSharedDictionary* dictionary,
                                bool is_builtin);
   static bool is_jfr_event_class(InstanceKlass *k);
+  static void link_all_exclusion_check_candidates(InstanceKlass* ik);
   static bool should_be_excluded_impl(InstanceKlass* k, DumpTimeClassInfo* info);
 
   // exclusion checks

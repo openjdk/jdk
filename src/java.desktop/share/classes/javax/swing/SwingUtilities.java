@@ -49,10 +49,6 @@ import sun.awt.AWTAccessor.MouseEventAccessor;
  */
 public class SwingUtilities implements SwingConstants
 {
-    // These states are system-wide, rather than AppContext wide.
-    private static boolean canAccessEventQueue = false;
-    private static boolean eventQueueTested = false;
-
     /**
      * Indicates if we should change the drop target when a
      * {@code TransferHandler} is set.
