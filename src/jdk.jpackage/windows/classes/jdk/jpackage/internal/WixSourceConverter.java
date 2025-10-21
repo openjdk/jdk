@@ -145,7 +145,7 @@ final class WixSourceConverter {
                     newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                             new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
                                     getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
-            Files.createDirectories(IOUtils.getParent(resourceSaveAsFile));
+            Files.createDirectories(resourceSaveAsFile.getParent());
             Files.copy(new ByteArrayInputStream(outXml.toByteArray()), resourceSaveAsFile,
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (TransformerException | XMLStreamException ex) {
