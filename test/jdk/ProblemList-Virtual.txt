@@ -38,24 +38,3 @@ javax/management/remote/mandatory/connection/DeadLockTest.java 8309069 windows-x
 
 javax/management/remote/mandatory/connection/ConnectionTest.java 8308352 windows-x64
 
-##########
-## Tests incompatible with virtual test thread factory.
-## There is no goal to run all test with virtual test thread factory.
-## So any test might be added as incompatible, the bug id is not required.
-
-# Incorrect stack/threadgroup/exception expectations for main thread
-java/lang/StackWalker/DumpStackTest.java 0000000 generic-all
-java/lang/StackWalker/StackWalkTest.java 0000000 generic-all
-java/lang/StackWalker/CallerFromMain.java 0000000 generic-all
-java/lang/Thread/MainThreadTest.java 0000000 generic-all
-java/lang/Thread/UncaughtExceptionsTest.java 0000000 generic-all
-java/lang/invoke/condy/CondyNestedResolutionTest.java 0000000 generic-all
-java/lang/ref/OOMEInReferenceHandler.java 0000000 generic-all
-java/util/concurrent/locks/Lock/OOMEInAQS.java 0000000 generic-all
-jdk/internal/vm/Continuation/Scoped.java 0000000 generic-all
-
-# The problems with permissions
-jdk/jfr/startupargs/TestDumpOnExit.java 0000000 generic-all
-java/util/Properties/StoreReproducibilityTest.java 0000000 generic-all
-javax/management/ImplementationVersion/ImplVersionTest.java 0000000 generic-all
-javax/management/remote/mandatory/version/ImplVersionTest.java 0000000 generic-all
