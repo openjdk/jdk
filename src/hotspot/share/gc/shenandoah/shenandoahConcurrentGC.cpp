@@ -689,9 +689,11 @@ void ShenandoahConcurrentGC::op_init_mark() {
       heap->old_generation()->cancel_gc();
     } else if (heap->is_concurrent_old_mark_in_progress()) {
       // Purge the SATB buffers, transferring any valid, old pointers to the
-      // old generation mark queue. Any pointers in a young region will be
+      // old generation mark queue. Any pointers not in an old region will be
       // abandoned.
       ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
+      assert(ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
+             "Should be filtering pointers outside of old during old marking");
       heap->old_generation()->transfer_pointers_from_satb();
     }
     {
@@ -714,6 +716,7 @@ void ShenandoahConcurrentGC::op_init_mark() {
   }
 
   _generation->set_concurrent_mark_in_progress(true);
+  ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(false);
 
   start_mark();
 
@@ -812,6 +815,10 @@ void ShenandoahConcurrentGC::op_final_mark() {
         }
       }
     }
+  }
+
+  if (heap->is_concurrent_old_mark_in_progress()) {
+    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(true);
   }
 
   {

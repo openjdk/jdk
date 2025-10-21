@@ -29,11 +29,21 @@
 #include "gc/shared/satbMarkQueue.hpp"
 
 class ShenandoahSATBMarkQueueSet : public SATBMarkQueueSet {
+private:
+  bool _filter_out_young;
+
 public:
   explicit ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator);
 
   SATBMarkQueue& satb_queue_for_thread(Thread* const t) const override;
   void filter(SATBMarkQueue& queue) override;
+  void set_filter_out_young(bool filter_out_young) {
+    _filter_out_young = filter_out_young;
+  }
+
+  bool get_filter_out_young() const {
+    return _filter_out_young;
+  }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSATBMARKQUEUESET_HPP

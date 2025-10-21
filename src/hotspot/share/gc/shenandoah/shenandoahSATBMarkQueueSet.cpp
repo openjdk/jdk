@@ -28,7 +28,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 
 ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator) :
-  SATBMarkQueueSet(allocator)
+  SATBMarkQueueSet(allocator), _filter_out_young(false)
 {}
 
 SATBMarkQueue& ShenandoahSATBMarkQueueSet::satb_queue_for_thread(Thread* const t) const {
@@ -63,7 +63,7 @@ public:
 
 void ShenandoahSATBMarkQueueSet::filter(SATBMarkQueue& queue) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (heap->is_concurrent_old_mark_in_progress() && !heap->is_concurrent_young_mark_in_progress()) {
+  if (_filter_out_young) {
     apply_filter(ShenandoahSATBOldMarkQueueFilterFn(heap), queue);
   } else {
     apply_filter(ShenandoahSATBMarkQueueFilterFn(heap), queue);

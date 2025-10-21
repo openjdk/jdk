@@ -186,6 +186,8 @@ void ShenandoahDegenGC::op_degenerated() {
       op_mark();
 
     case _degenerated_mark:
+      assert(!ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
+             "Should not be filtering out young pointers when concurrent mark degenerates");
       // No fallthrough. Continue mark, handed over from concurrent mark if
       // concurrent mark has yet completed
       if (_degen_point == ShenandoahDegenPoint::_degenerated_mark &&
