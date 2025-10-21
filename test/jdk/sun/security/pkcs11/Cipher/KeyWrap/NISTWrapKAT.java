@@ -46,7 +46,7 @@ import java.util.List;
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/NISTWrapKAT.java
 public class NISTWrapKAT extends PKCS11Test {
 
-    private static List<String> skippedAlgoList = new ArrayList<>();
+    private static final List<String> skippedAlgoList = new ArrayList<>();
 
     private static final String KEK =
         "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
@@ -412,7 +412,7 @@ public class NISTWrapKAT extends PKCS11Test {
         if (skippedAlgoList.isEmpty()) {
             System.out.println("All Tests Passed");
         } else {
-            System.err.println("Some tests were skipped : " + skippedAlgoList);
+            throw new SkippedException("Some tests were skipped : " + skippedAlgoList);
         }
     }
 }

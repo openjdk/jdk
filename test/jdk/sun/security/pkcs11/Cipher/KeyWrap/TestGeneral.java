@@ -29,6 +29,8 @@
  * @library /test/lib ../..
  * @run main/othervm TestGeneral
  */
+import jtreg.SkippedException;
+
 import java.nio.ByteBuffer;
 import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
@@ -344,7 +346,7 @@ public class TestGeneral extends PKCS11Test {
         if (skippedAlgoList.isEmpty()) {
             System.out.println("All Tests Passed");
         } else {
-            System.err.println("Some tests were skipped due to no support : " + skippedAlgoList);
+            throw new SkippedException("Some tests were skipped due to no support : " + skippedAlgoList);
         }
     }
 }
