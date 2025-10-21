@@ -26,10 +26,10 @@
  * @bug 8288109
  * @summary Tests for HttpExchange set/getAttribute
  * @library /test/lib
- * @run junit/othervm ExchangeAttributePerExchangeTest
- * @run junit/othervm -Djdk.httpserver.attributes=context ExchangeAttributePerExchangeTest
- * @run junit/othervm -Djdk.httpserver.attributes=random-string ExchangeAttributePerExchangeTest
- * @run junit/othervm -Djdk.httpserver.attributes ExchangeAttributePerExchangeTest
+ * @run junit/othervm ExchangeAttributeTest
+ * @run junit/othervm -Djdk.httpserver.attributes=context ExchangeAttributeTest
+ * @run junit/othervm -Djdk.httpserver.attributes=random-string ExchangeAttributeTest
+ * @run junit/othervm -Djdk.httpserver.attributes ExchangeAttributeTest
  */
 
 import com.sun.net.httpserver.HttpExchange;
