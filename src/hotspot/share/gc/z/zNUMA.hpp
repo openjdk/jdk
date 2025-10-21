@@ -53,6 +53,8 @@ public:
   static size_t calculate_share(uint32_t numa_id, size_t total, size_t granule = ZGranuleSize, uint32_t ignore_count = 0);
 
   static const char* to_string();
+
+  static int numa_id_to_node(uint32_t numa_id);
 };
 
 #endif // SHARE_GC_Z_ZNUMA_HPP
