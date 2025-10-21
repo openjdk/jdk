@@ -328,12 +328,20 @@ static char*
 get_field_name(jvmtiEnv *jvmti, JNIEnv* jni, jclass field_class, jfieldID field) {
   char* name = nullptr;
   char* signature = nullptr;
-  char* generic = nullptr;
-  jvmtiError err = jvmti->GetFieldName(field_class, field, &name, &signature, &generic);
+  jvmtiError err = jvmti->GetFieldName(field_class, field, &name, &signature, nullptr);
   check_jvmti_status(jni, err, "get_field_name: error in JVMTI GetFieldName call");
-  deallocate(jvmti,jni, signature);
-  deallocate(jvmti,jni, generic);
+  deallocate(jvmti, jni, signature);
   return name;
+}
+
+static char*
+get_object_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jobject object) {
+  char *obj_class_name = nullptr;
+  jclass object_class = jni->GetObjectClass(object);
+  jvmtiError err = jvmti->GetClassSignature(object_class, &obj_class_name, nullptr);
+  check_jvmti_error(err, "GetClassSignature");
+  jni->DeleteLocalRef(object_class);
+  return obj_class_name;
 }
 
 static jclass

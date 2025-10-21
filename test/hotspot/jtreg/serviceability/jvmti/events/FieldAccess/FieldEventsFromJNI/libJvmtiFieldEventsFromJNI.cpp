@@ -32,16 +32,6 @@ jvmtiEnv* jvmti_env;
 static int access_cnt = 0;
 static int modify_cnt = 0;
 
-static char*
-get_object_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jobject object) {
-  char *obj_class_name = nullptr;
-  jclass object_class = jni->GetObjectClass(object);
-  jvmtiError err = jvmti->GetClassSignature(object_class, &obj_class_name, nullptr);
-  check_jvmti_error(err, "GetClassSignature");
-  jni->DeleteLocalRef(object_class);
-  return obj_class_name;
-}
-
 static void JNICALL
 cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
               jlocation location, jclass field_klass, jobject object, jfieldID field) {
@@ -64,7 +54,6 @@ cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
     fatal(jni, "The access field is incorrect.");
   }
   deallocate(jvmti,jni, f_name);
-
 
   char* obj_class_name = get_object_class_name(jvmti, jni, object);
   LOG("The object class '%s'\n", obj_class_name);
@@ -99,7 +88,6 @@ cbFieldModification(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID meth
   }
   deallocate(jvmti,jni, f_name);
 
-
   char* obj_class_name = get_object_class_name(jvmti, jni, object);
   LOG("The object class '%s'\n", obj_class_name);
   if (strcmp(obj_class_name, "LTestFieldsEventsFromJNI;") != 0) {
@@ -133,7 +121,6 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
   jvmti_env = jvmti;
   return JNI_OK;
 }
-
 
 extern "C" {
 JNIEXPORT void JNICALL

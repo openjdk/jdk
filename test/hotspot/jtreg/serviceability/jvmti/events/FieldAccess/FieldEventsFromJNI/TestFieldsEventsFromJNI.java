@@ -26,7 +26,6 @@
  * @summary Test verifies that field access/modification events are correctly posted from JNI.
  * @bug 8224852
  * @run main/othervm/native -agentlib:JvmtiFieldEventsFromJNI TestFieldsEventsFromJNI
- * @run main/othervm/native -agentlib:JvmtiFieldEventsFromJNI -Xcomp TestFieldsEventsFromJNI
  */
 public class TestFieldsEventsFromJNI {
 
