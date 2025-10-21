@@ -249,10 +249,11 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * can be empty, or a series of subtags 3-8 alphanums in length).  A
  * well-formed locale attribute has the form
  * {@code [0-9a-zA-Z]{3,8}} (it is a single subtag with the same
- * form as a locale type subtag). {@code Locale} does not enforce uniqueness of
- * locale keys nor attributes. For methods in {@code Locale} and {@code Locale.Builder}
- * that accept extensions, occurrences of duplicate locale attributes as well
- * as locale keys and their associated type are accepted but ignored.
+ * form as a locale type subtag). Duplicate locale attributes as well
+ * as locale keys do not convey meaning. For methods in {@code Locale} and
+ * {@code Locale.Builder} that accept extensions, occurrences of duplicate
+ * locale attributes as well as locale keys and their associated type are accepted
+ * but ignored.
  *
  * <p>The Unicode locale extension specifies optional behavior in
  * locale-sensitive services.  Although the LDML specification defines
@@ -567,6 +568,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  *      RFC 4647: Matching of Language Tags
  * @spec https://www.rfc-editor.org/info/rfc5646
  *      RFC 5646: Tags for Identifying Languages
+ * @spec https://www.rfc-editor.org/info/rfc6067
+ *      RFC 6067: BCP 47 Extension U
  * @spec https://www.unicode.org/reports/tr35
  *      Unicode Locale Data Markup Language (LDML)
  * @see Builder
