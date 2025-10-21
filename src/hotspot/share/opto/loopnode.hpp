@@ -1158,7 +1158,7 @@ public:
   //   idom. Shorten the path to avoid chasing the forwarding in the
   //   future.
   //   Note: while the "idom" information is stored in the "_idom"
-  //   side-table, the idom forwarding piggy-packs on the ctrl
+  //   side-table, the idom forwarding piggybacks on the ctrl
   //   forwarding on "_loop_or_ctrl".
   // Using "forward_ctrl" allows us to only edit the entry for the old
   // dead node now, and we do not have to update all the nodes that had
@@ -1179,7 +1179,7 @@ public:
   // Replace the old ctrl node with a new ctrl node.
   // - Update the node inputs of all uses.
   // - Lazily update the ctrl and idom info of all uses, via a ctrl/idom forwarding.
-  void replace_node_and_forward_ctrl(Node *old_node, Node *new_node) {
+  void replace_node_and_forward_ctrl(Node* old_node, Node* new_node) {
     _igvn.replace_node(old_node, new_node);
     forward_ctrl(old_node, new_node);
   }
@@ -1266,7 +1266,7 @@ private:
       // forwarding installed, using "forward_ctrl". We now have to jump from
       // the old (dead) idom node to the new (live) idom node, in possibly
       // multiple idom forwarding steps.
-      // Note that we piggy-back on "_loop_or_ctrl" to do the forwarding,
+      // Note that we piggyback on "_loop_or_ctrl" to do the forwarding,
       // since we forward both "get_ctrl" and "idom" from the dead to the
       // new live ctrl/idom nodes.
       n = (Node*)(((intptr_t)_loop_or_ctrl[n->_idx]) & ~1);
