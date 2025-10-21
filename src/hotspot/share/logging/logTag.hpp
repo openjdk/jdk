@@ -137,7 +137,6 @@ class outputStream;
   LOG_TAG(monitortable) \
   LOG_TAG(native) \
   LOG_TAG(nestmates) \
-  LOG_TAG(newcode) \
   LOG_TAG(nmethod) \
   LOG_TAG(nmt) \
   LOG_TAG(normalize) \

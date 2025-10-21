@@ -40,7 +40,6 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
 #include "jvm.h"
-#include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
@@ -3734,9 +3733,6 @@ Address MacroAssembler::spill_address(int size, int offset, Register tmp)
   //   Aligned - 12 bits unsigned offset shifted
   Register base = sp;
   if ((offset & (size-1)) && offset >= (1<<8)) {
-    if ((size == StackAlignmentInBytes) && !is_aligned(offset, StackAlignmentInBytes)) {
-      log_develop_trace(newcode)("spill_address: unaligned vector spill (size:%d sp offset:%d)", size, offset);
-    }
     add(tmp, base, offset & ((1<<12)-1));
     base = tmp;
     offset &= -1u<<12;
@@ -3760,10 +3756,6 @@ Address MacroAssembler::sve_spill_address(int sve_reg_size_in_bytes, int offset,
   // by the current vector or predicate register size in bytes.
   if (offset % sve_reg_size_in_bytes == 0 && offset < ((1<<8)*sve_reg_size_in_bytes)) {
     return Address(base, offset / sve_reg_size_in_bytes);
-  }
-
-  if ((sve_reg_size_in_bytes != StackAlignmentInBytes) || is_aligned(offset, StackAlignmentInBytes)) {
-    log_develop_trace(newcode)("sve_spill_address: unaligned vector spill (size:%d sp offset:%d)", sve_reg_size_in_bytes, offset);
   }
 
   add(tmp, base, offset);
