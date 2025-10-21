@@ -137,7 +137,8 @@ public class PerformChecksHelper {
                 }
             }
         } catch (InvocationTargetException ite) {
-            if (ite.getCause() != null && ite.getCause().getMessage().trim().toLowerCase().contains("Metaspace")) {
+            Throwable cause = ite.getCause();
+            if (cause != null && (cause instanceof OutOfMemoryError) && cause.getMessage().contains("Metaspace")) {
                 // avoid string concatenation, which may create more classes.
                 System.out.println("Got OOME in metaspace in PerformChecksHelper.callMethods(Class clazz). ");
                 System.out.println("This is possible with -triggerUnloadingByFillingMetaspace");
@@ -145,7 +146,7 @@ public class PerformChecksHelper {
                 throw ite;
             }
         } catch (OutOfMemoryError e) {
-            if (e.getMessage().trim().toLowerCase().contains("Metaspace")) {
+            if (e.getMessage().contains("Metaspace")) {
                 // avoid string concatenation, which may create more classes.
                 System.out.println("Got OOME in metaspace in PerformChecksHelper.callMethods(Class clazz). ");
                 System.out.println("This is possible with -triggerUnloadingByFillingMetaspace");
