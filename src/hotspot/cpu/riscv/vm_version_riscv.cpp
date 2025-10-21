@@ -34,6 +34,57 @@
 #include <ctype.h>
 
 uint32_t VM_Version::_initial_vector_length = 0;
+address VM_Version::_misaligned_vector_fault_pc1 = NULL;
+address VM_Version::_misaligned_vector_fault_pc2 = NULL;
+address VM_Version::_misaligned_vector_continuation_pc = NULL;
+short short_array[4] = { 0, 0, 0, 0 };
+
+static BufferBlob* stub_blob;
+static const int stub_size = 256;
+
+extern "C" {
+  typedef int (*detect_misaligned_vector_stub_t)();
+}
+
+static detect_misaligned_vector_stub_t detect_misaligned_vector_stub = NULL;
+
+
+class VM_Version_StubGenerator: public StubCodeGenerator {
+ public:
+
+  VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
+  ~VM_Version_StubGenerator() {}
+
+  address generate_detect_misaligned_vector(address* fault_pc1, address* fault_pc2, address* continuation_pc) {
+    StubCodeMark mark(this, "VM_Version", "detect_misaligned_vector_stub");
+#   define __ _masm->
+    address start = __ pc();
+
+    __ enter();
+    __ mv(x10, zr);
+    __ la(t1, ExternalAddress((address) short_array));
+    __ addi(t1, t1, 1);   // Misaligned address
+    __ vsetivli(x0, 1, Assembler::e16);
+    __ vmv_s_x(v2, zr);
+
+    __ addi(t2, zr, 1);
+    __ vmv_s_x(v1, t2);
+    *fault_pc1 = __ pc();
+    __ vse16_v(v1, t1);   // Misaligned vector store
+
+    *fault_pc2 = __ pc();
+    __ vle16_v(v2, t1);   // Misaligned vector load
+
+    *continuation_pc = __ pc();
+    __ vmv_x_s(x10, v2);
+    __ leave();
+    __ ret();
+
+#   undef __
+
+    return start;
+  }
+};
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -167,13 +218,22 @@ void VM_Version::common_initialize() {
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector,
-      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
-  } else if (AlignVector == false) {
-    if (unaligned_vector.value() != MISALIGNED_VECTOR_FAST) {
-       warning("Misaligned vector accesses are not supported on this CPU");
-       FLAG_SET_DEFAULT(AlignVector, true);
+  if (UseRVV) {
+    if (!unaligned_vector.enabled() && AlignVector == false) {
+      if (!VM_Version::detect_misaligned_vector_support()){
+        warning("Misaligned vector accesses are not supported on this CPU");
+        FLAG_SET_DEFAULT(AlignVector, true);
+      }
+    } else {
+      if (FLAG_IS_DEFAULT(AlignVector)) {
+        FLAG_SET_DEFAULT(AlignVector,
+          unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
+      } else if (AlignVector == false) {
+        if (unaligned_vector.value() != MISALIGNED_VECTOR_FAST) {
+          warning("Misaligned vector accesses are not supported on this CPU");
+          FLAG_SET_DEFAULT(AlignVector, true);
+        }
+      }
     }
   }
 
@@ -485,4 +545,26 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     break;
   }
   return true;
+}
+
+bool VM_Version::detect_misaligned_vector_support() {
+  ResourceMark rm;
+
+  stub_blob = BufferBlob::create("detect_misaligned_vector_stub", stub_size);
+    if (stub_blob == NULL) {
+      vm_exit_during_initialization("Unable to allocate detect_misaligned_vector_stub");
+    }
+
+    CodeBuffer c(stub_blob);
+    VM_Version_StubGenerator g(&c);
+    detect_misaligned_vector_stub = CAST_TO_FN_PTR(detect_misaligned_vector_stub_t,
+                                                  g.generate_detect_misaligned_vector(
+                                                  &VM_Version::_misaligned_vector_fault_pc1,
+                                                  &VM_Version::_misaligned_vector_fault_pc2,
+                                                  &VM_Version::_misaligned_vector_continuation_pc));
+
+  if ((uint32_t)detect_misaligned_vector_stub() == 1) {
+    return true;
+  }
+  return false;
 }
