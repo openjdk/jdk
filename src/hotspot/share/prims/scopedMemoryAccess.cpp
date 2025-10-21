@@ -46,10 +46,11 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
   if (ls.is_enabled()) {
     ls.print_cr("Walking thread: %s", jt->name());
   }
+
+  bool would_have_bailed = false;
 #endif
 
   bool agents_loaded = JvmtiAgentList::has_agents();
-  const int max_critical_stack_depth = 10;
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
 
@@ -61,7 +62,11 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
 
       // If any JVMTI agents are loaded, we also have to keep walking, since
       // agents can add arbitrary Java frames to the stack inside a @Scoped method.
+#ifndef ASSERT
       return;
+#else
+      would_have_bailed = true;
+#endif
     }
 
     bool is_scoped = m->is_scoped();
@@ -74,6 +79,7 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
 #endif
 
     if (is_scoped) {
+      assert(!would_have_bailed, "would have missed scoped method on release build");
       func(stream);
       if (!agents_loaded) {
         // We may also have to keep walking after finding a @Scoped method,
