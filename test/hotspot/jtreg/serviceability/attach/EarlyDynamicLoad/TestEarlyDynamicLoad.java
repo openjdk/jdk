@@ -30,6 +30,8 @@ import org.junit.jupiter.api.AfterAll;
 
 import java.io.File;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.concurrent.TimeUnit;
 import java.util.Objects;
 import jdk.test.lib.dcmd.PidJcmdExecutor;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -56,13 +58,23 @@ public class TestEarlyDynamicLoad {
                 "-version").start();
 
         // Wait until the process enters VMStartCallback
-        child.getInputStream().read();
+        try (InputStream is = child.getInputStream()) {
+            is.read();
+        }
     }
 
     @AfterAll
     static void stopChild() throws Exception {
-        child.destroy();
-        child.waitFor();
+        try (OutputStream os = child.getOutputStream()) {
+            os.write(0);
+        }
+
+        if (!child.waitFor(5, TimeUnit.SECONDS)) {
+            throw new AssertionError("Timed out while waiting child process to complete");
+        }
+        if (child.exitValue() != 0) {
+            throw new AssertionError("Expected child exit code to be 0, but was " + child.exitValue());
+        }
     }
 
     @Test
