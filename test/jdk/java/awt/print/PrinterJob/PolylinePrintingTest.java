@@ -56,7 +56,6 @@ public class PolylinePrintingTest implements Printable {
         new PolylinePrintingTest();
 
         passFailJFrame.awaitAndCheck();
-
     }
 
     public int print(Graphics graphics, PageFormat pageFormat,
