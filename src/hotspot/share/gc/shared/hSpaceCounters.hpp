@@ -33,8 +33,6 @@
 // that track a collections (logical spaces) in a heap;
 
 class HSpaceCounters: public CHeapObj<mtGC> {
-  friend class VMStructs;
-
  private:
   PerfVariable* _capacity;
   PerfVariable* _used;

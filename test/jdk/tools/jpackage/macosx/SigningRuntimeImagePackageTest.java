@@ -25,11 +25,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.MacHelper;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
@@ -94,32 +94,9 @@ public class SigningRuntimeImagePackageTest {
         return cmd;
     }
 
-    private static Path createInputRuntimeImage() throws IOException {
-
-        final Path runtimeImageDir;
-
-        if (JPackageCommand.DEFAULT_RUNTIME_IMAGE != null) {
-            runtimeImageDir = JPackageCommand.DEFAULT_RUNTIME_IMAGE;
-        } else {
-            runtimeImageDir = TKit.createTempDirectory("runtime-image").resolve("data");
-
-            new Executor().setToolProvider(JavaTool.JLINK)
-                    .dumpOutput()
-                    .addArguments(
-                            "--output", runtimeImageDir.toString(),
-                            "--add-modules", "java.desktop",
-                            "--strip-debug",
-                            "--no-header-files",
-                            "--no-man-pages")
-                    .execute();
-        }
-
-        return runtimeImageDir;
-    }
-
     private static Path createInputRuntimeBundle(int certIndex) throws IOException {
 
-        final var runtimeImage = createInputRuntimeImage();
+        final var runtimeImage = JPackageCommand.createInputRuntimeImage();
 
         final var runtimeBundleWorkDir = TKit.createTempDirectory("runtime-bundle");
 
@@ -178,7 +155,7 @@ public class SigningRuntimeImagePackageTest {
                     if (useJDKBundle) {
                         inputRuntime[0] = createInputRuntimeBundle(jdkBundleCert.value());
                     } else {
-                        inputRuntime[0] = createInputRuntimeImage();
+                        inputRuntime[0] = JPackageCommand.createInputRuntimeImage();
                     }
                 })
                 .addInitializer(cmd -> {
