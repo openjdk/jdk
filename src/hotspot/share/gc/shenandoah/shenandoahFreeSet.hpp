@@ -479,8 +479,11 @@ private:
     }
   }
 
+public:
+  // We make this public so that native code can see its value
   // bytes used by global
   size_t _total_global_used;
+private:
   // Prerequisite: _total_young_used and _total_old_used are valid
   template<bool UsedByMutatorChanged, bool UsedByCollectorChanged, bool UsedByOldCollectorChanged>
   inline void recompute_total_global_used() {
