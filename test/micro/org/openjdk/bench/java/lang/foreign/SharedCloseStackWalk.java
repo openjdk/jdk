@@ -74,17 +74,7 @@ public class SharedCloseStackWalk {
     }
 
     @Benchmark
-    public void sharedOpenClose_bounded() {
-        Arena.ofShared().close();
-    }
-
-    @Benchmark
-    @Fork(value = 1, jvmArgs = {
-            "--enable-native-access=ALL-UNNAMED",
-            "-Djava.library.path=micro/native",
-            "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:+UseNewCode" })
-    public void sharedOpenClose_unbounded() {
+    public void sharedOpenClose() {
         Arena.ofShared().close();
     }
 
