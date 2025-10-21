@@ -1709,8 +1709,8 @@ LoopNode* PhaseIdealLoop::create_inner_head(IdealLoopTree* loop, BaseCountedLoop
   set_loop(new_inner_exit, loop);
   set_idom(new_inner_head, idom(head), dom_depth(head));
   set_idom(new_inner_exit, idom(exit_test), dom_depth(exit_test));
-  replace_ctrl_node_and_forward_ctrl_and_idom(head, new_inner_head);
-  replace_ctrl_node_and_forward_ctrl_and_idom(exit_test, new_inner_exit);
+  replace_node_and_forward_ctrl(head, new_inner_head);
+  replace_node_and_forward_ctrl(exit_test, new_inner_exit);
   loop->_head = new_inner_head;
   return new_inner_head;
 }
@@ -2382,7 +2382,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
       return false;
     }
     if (is_deleteable_safept(backedge_sfpt)) {
-      replace_ctrl_node_and_forward_ctrl_and_idom(backedge_sfpt, iftrue);
+      replace_node_and_forward_ctrl(backedge_sfpt, iftrue);
       if (loop->_safepts != nullptr) {
         loop->_safepts->yank(backedge_sfpt);
       }
@@ -2483,8 +2483,8 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
     set_loop(iff2, get_loop(iffalse));
 
     // Lazy update of 'get_ctrl' mechanism.
-    replace_ctrl_node_and_forward_ctrl_and_idom(iffalse, iff2);
-    replace_ctrl_node_and_forward_ctrl_and_idom(iftrue,  ift2);
+    replace_node_and_forward_ctrl(iffalse, iff2);
+    replace_node_and_forward_ctrl(iftrue,  ift2);
 
     // Swap names
     iffalse = iff2;
@@ -2499,7 +2499,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   set_idom(iftrue,  le, dd+1);
   set_idom(iffalse, le, dd+1);
   assert(iff->outcnt() == 0, "should be dead now");
-  replace_ctrl_node_and_forward_ctrl_and_idom(iff, le); // fix 'get_ctrl'
+  replace_node_and_forward_ctrl(iff, le); // fix 'get_ctrl'
 
   Node* entry_control = init_control;
   bool strip_mine_loop = iv_bt == T_INT &&
@@ -2525,7 +2525,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   loop->_head = l;
   // Fix all data nodes placed at the old loop head.
   // Uses the lazy-update mechanism of 'get_ctrl'.
-  replace_ctrl_node_and_forward_ctrl_and_idom(x, l);
+  replace_node_and_forward_ctrl(x, l);
   set_idom(l, entry_control, dom_depth(entry_control) + 1);
 
   if (iv_bt == T_INT && (LoopStripMiningIter == 0 || strip_mine_loop)) {
@@ -2551,7 +2551,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
         register_control(sfpt_clone, outer_ilt, iffalse, body_populated);
         set_idom(outer_le, sfpt_clone, dom_depth(sfpt_clone));
       }
-      replace_ctrl_node_and_forward_ctrl_and_idom(sfpt, sfpt->in(TypeFunc::Control));
+      replace_node_and_forward_ctrl(sfpt, sfpt->in(TypeFunc::Control));
       if (loop->_safepts != nullptr) {
         loop->_safepts->yank(sfpt);
       }
@@ -3516,7 +3516,7 @@ void OuterStripMinedLoopNode::transform_to_counted_loop(PhaseIterGVN* igvn, Phas
   if (iloop == nullptr) {
     igvn->replace_node(outer_le, new_end);
   } else {
-    iloop->replace_ctrl_node_and_forward_ctrl_and_idom(outer_le, new_end);
+    iloop->replace_node_and_forward_ctrl(outer_le, new_end);
   }
   // the backedge of the inner loop must be rewired to the new loop end
   Node* backedge = cle->proj_out(true);
@@ -4487,7 +4487,7 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
       Node* n = sfpts->at(i);
       assert(phase->get_loop(n) == this, "");
       if (n != keep && phase->is_deleteable_safept(n)) {
-        phase->replace_ctrl_node_and_forward_ctrl_and_idom(n, n->in(TypeFunc::Control));
+        phase->replace_node_and_forward_ctrl(n, n->in(TypeFunc::Control));
       }
     }
   }
@@ -6145,7 +6145,7 @@ void PhaseIdealLoop::build_loop_early( VectorSet &visited, Node_List &worklist, 
           if( !_verify_only && !_verify_me && ilt->_has_sfpt && n->Opcode() == Op_SafePoint &&
               is_deleteable_safept(n)) {
             Node *in = n->in(TypeFunc::Control);
-            replace_ctrl_node_and_forward_ctrl_and_idom(n, in); // Pull safepoint now
+            replace_node_and_forward_ctrl(n, in); // Pull safepoint now
             if (ilt->_safepts != nullptr) {
               ilt->_safepts->yank(n);
             }
