@@ -41,6 +41,7 @@ import javax.crypto.KeyAgreementSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
+import java.util.Arrays;
 import java.util.function.Function;
 
 public class XDHKeyAgreement extends KeyAgreementSpi {
@@ -213,7 +214,12 @@ public class XDHKeyAgreement extends KeyAgreementSpi {
             throw new NoSuchAlgorithmException(
                     "Unsupported secret key algorithm: " + algorithm);
         }
-        return new SecretKeySpec(engineGenerateSecret(), algorithm);
+        byte[] bytes = engineGenerateSecret();
+        try {
+            return new SecretKeySpec(bytes, algorithm);
+        } finally {
+            Arrays.fill(bytes, (byte)0);
+        }
     }
 
     static class X25519 extends XDHKeyAgreement {
