@@ -72,7 +72,7 @@ static char* create_standard_memory(size_t size) {
 
   // commit memory
   if (!os::commit_memory(mapAddress, size, !ExecMem)) {
-    log_debug(perf)("Could not commit PerfData memory");
+    log_debug(perf)("could not commit PerfData memory");
     os::release_memory(mapAddress, size);
     return nullptr;
   }
@@ -674,7 +674,7 @@ static void remove_file(const char* path) {
   RESTARTABLE(::unlink(path), result);
   if (log_is_enabled(Debug, perf) && result == OS_ERR) {
     if (errno != ENOENT) {
-      log_debug(perf)("Could not unlink shared memory backing store file %s : %s",
+      log_debug(perf)("could not unlink shared memory backing store file %s : %s",
                       path, os::strerror(errno));
     }
   }
@@ -1039,7 +1039,7 @@ static char* mmap_create_shared(size_t size) {
   assert(result != OS_ERR, "could not close file");
 
   if (mapAddress == MAP_FAILED) {
-    log_debug(perf)("mmap failed -  %s", os::strerror(errno));
+    log_debug(perf)("mmap failed - %s", os::strerror(errno));
     remove_file(filename);
     FREE_C_HEAP_ARRAY(char, filename);
     return nullptr;

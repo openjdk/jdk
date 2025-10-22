@@ -63,7 +63,7 @@ static char* create_standard_memory(size_t size) {
 
   // commit memory
   if (!os::commit_memory(mapAddress, size, !ExecMem)) {
-    log_debug(perf)("Could not commit PerfData memory");
+    log_debug(perf)("could not commit PerfData memory");
     os::release_memory(mapAddress, size);
     return nullptr;
   }
@@ -89,20 +89,20 @@ static void delete_standard_memory(char* addr, size_t size) {
 static void save_memory_to_file(char* addr, size_t size) {
 
   const char* destfile = PerfMemory::get_perfdata_file_path();
-  assert(destfile[0] != '\0', "invalid Perfdata file path");
+  assert(destfile[0] != '\0', "invalid PerfData file path");
 
   int fd = ::_open(destfile, _O_BINARY|_O_CREAT|_O_WRONLY|_O_TRUNC,
                    _S_IREAD|_S_IWRITE);
 
   if (fd == OS_ERR) {
-    log_debug(perf)("Could not create Perfdata save file: %s: %s",
+    log_debug(perf)("could not create PerfData save file: %s: %s",
                     destfile, os::strerror(errno));
   } else {
     for (size_t remaining = size; remaining > 0;) {
 
       int nbytes = ::_write(fd, addr, (unsigned int)remaining);
       if (nbytes == OS_ERR) {
-        log_debug(perf)("Could not write Perfdata save file: %s: %s",
+        log_debug(perf)("could not write PerfData save file: %s: %s",
                         destfile, os::strerror(errno));
         break;
       }
@@ -113,7 +113,7 @@ static void save_memory_to_file(char* addr, size_t size) {
 
     int result = ::_close(fd);
     if (result == OS_ERR) {
-      log_debug(perf)("Could not close %s: %s", destfile, os::strerror(errno));
+      log_debug(perf)("could not close %s: %s", destfile, os::strerror(errno));
     }
   }
 
@@ -242,7 +242,7 @@ static bool is_directory_secure(const char* path) {
     // this is either a regular file or some other type of file,
     // any of which are unexpected and therefore insecure.
     //
-    log_debug(perf)("%s is not a directory, file attributes = "
+    log_debug(perf)("%s is not a directory, file attributes : "
                     INTPTR_FORMAT, path, fa);
     return false;
   }
@@ -480,7 +480,7 @@ static void remove_file(const char* dirname, const char* filename) {
 
   if (::unlink(path) == OS_ERR) {
     if (errno != ENOENT) {
-      log_debug(perf)("Could not unlink shared memory backing store file %s : %s",
+      log_debug(perf)("could not unlink shared memory backing store file %s : %s",
                       path, os::strerror(errno));
     }
   }
@@ -1173,7 +1173,7 @@ static bool make_user_tmp_dir(const char* dirname) {
       SECURITY_INFORMATION secInfo = DACL_SECURITY_INFORMATION;
       if (!SetFileSecurity(dirname, secInfo, pDirSA->lpSecurityDescriptor)) {
         lasterror = GetLastError();
-        log_debug(perf)("SetFileSecurity failed for %s directory. lasterror %d", dirname, lasterror);
+        log_debug(perf)("SetFileSecurity failed for %s directory. lasterror = %d", dirname, lasterror);
       }
     } else {
       log_debug(perf)("CreateDirectory failed: %d", GetLastError());
@@ -1269,7 +1269,7 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
     struct stat statbuf;
     int ret_code = ::stat(filename, &statbuf);
     if (ret_code == OS_ERR) {
-      log_debug(perf)("Could not get status information from file %s: %s",
+      log_debug(perf)("could not get status information from file %s: %s",
                       filename, os::strerror(errno));
       CloseHandle(fmh);
       CloseHandle(fh);
