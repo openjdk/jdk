@@ -1632,7 +1632,6 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
     ContinuationWrapper::SafepointOp so(Thread::current(), cont);
     JvmtiExport::continuation_yield_cleanup(JavaThread::current(), num_frames);
   }
-  invalidate_jvmti_stack(thread);
 }
 
 static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top) {
