@@ -34,9 +34,9 @@
 #include <ctype.h>
 
 uint32_t VM_Version::_initial_vector_length = 0;
-address VM_Version::_misaligned_vector_fault_pc1 = NULL;
-address VM_Version::_misaligned_vector_fault_pc2 = NULL;
-address VM_Version::_misaligned_vector_continuation_pc = NULL;
+address VM_Version::_misaligned_vector_fault_pc1 = nullptr;
+address VM_Version::_misaligned_vector_fault_pc2 = nullptr;
+address VM_Version::_misaligned_vector_continuation_pc = nullptr;
 short short_array[4] = { 0, 0, 0, 0 };
 
 static BufferBlob* stub_blob;
@@ -46,7 +46,7 @@ extern "C" {
   typedef int (*detect_misaligned_vector_stub_t)();
 }
 
-static detect_misaligned_vector_stub_t detect_misaligned_vector_stub = NULL;
+static detect_misaligned_vector_stub_t detect_misaligned_vector_stub = nullptr;
 
 
 class VM_Version_StubGenerator: public StubCodeGenerator {
@@ -551,7 +551,7 @@ bool VM_Version::detect_misaligned_vector_support() {
   ResourceMark rm;
 
   stub_blob = BufferBlob::create("detect_misaligned_vector_stub", stub_size);
-    if (stub_blob == NULL) {
+    if (stub_blob == nullptr) {
       vm_exit_during_initialization("Unable to allocate detect_misaligned_vector_stub");
     }
 

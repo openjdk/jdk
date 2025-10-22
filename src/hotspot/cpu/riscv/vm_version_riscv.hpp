@@ -505,11 +505,11 @@ private:
   static bool supports_misaligned_vector_accesses() { return !AlignVector; }
 
   static bool is_misaligned_vector_fault(address pc) {
-    return pc != NULL && (pc == _misaligned_vector_fault_pc1 || pc == _misaligned_vector_fault_pc2);
+    return pc != nullptr && (pc == _misaligned_vector_fault_pc1 || pc == _misaligned_vector_fault_pc2);
   }
 
   static address continuation_for_misaligned_vector_fault(address pc) {
-    assert(_misaligned_vector_continuation_pc != NULL , "not initialized");
+    assert(_misaligned_vector_continuation_pc != nullptr , "not initialized");
     return _misaligned_vector_continuation_pc;
   }
 
