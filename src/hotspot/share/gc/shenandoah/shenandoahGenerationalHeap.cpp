@@ -757,6 +757,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 template<bool CONCURRENT>
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
+  // For update refs, _generation will be young or global. Mixed collections use the young generation.
   ShenandoahGeneration* _generation;
   ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
@@ -848,7 +849,7 @@ private:
       r = _regions->next();
     }
 
-    if (!_generation->is_global()) {
+    if (_generation->is_young()) {
       // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
       // set processing if not in generational mode or if GLOBAL mode.
 

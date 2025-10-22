@@ -108,10 +108,10 @@ private:
   inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
   template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation,
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
                 StringDedup::Requests* const req);
 
-  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation,
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahGenerationType generation_type,
                  bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
 };
 
