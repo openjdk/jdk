@@ -1746,7 +1746,6 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack, bool is_un
     mask = BoolTest::unsigned_mask(mask);
   }
 
-
   return VTransformBoolTest(mask, is_negated);
 }
 
