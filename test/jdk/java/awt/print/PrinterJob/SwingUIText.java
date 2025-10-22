@@ -51,17 +51,17 @@ import jtreg.SkippedException;
 public class SwingUIText implements Printable {
     private static JFrame frame;
     private static final String INSTRUCTIONS = """
-                This test checks that when a Swing UI is printed,
-                the text in each component aligns with the component’s length as seen on-screen.
-                It also ensures the text spacing is reasonably even, though this is subjective.
-                The comparison should be made with JDK 1.5 GA or JDK 1.6 GA.
+            This test checks that when a Swing UI is printed,
+            the text in each component aligns with the component’s length as seen on-screen.
+            It also ensures the text spacing is reasonably even, though this is subjective.
+            The comparison should be made with JDK 1.5 GA or JDK 1.6 GA.
 
-                Steps:
-                1. Press the "Print" or "OK" button on the Print dialog.
+            Steps:
+            1. Press the "Print" or "OK" button on the Print dialog.
                 This will print the content of the "Swing UI Text Printing Test" JFrame.
-                2. Compare the printout with the content of the JFrame.
-                3. If they match, press Pass; otherwise, press Fail.
-                """;
+            2. Compare the printout with the content of the JFrame.
+            3. If they match, press Pass; otherwise, press Fail.
+            """;
 
     public static void main(String args[])  throws Exception {
         PrinterJob job = PrinterJob.getPrinterJob();
