@@ -108,17 +108,14 @@ public class ExchangeAttributeTest {
                     exchange.setAttribute("attr", "val");
                     assertEquals("val", exchange.getAttribute("attr"));
                     assertEquals("val", exchange.getHttpContext().getAttributes().get("attr"));
-                    exchange.setAttribute("attr", null);
-                    assertNull(exchange.getAttribute("attr"));
                 } else {
                     assertNull(exchange.getAttribute("attr"));
                     assertEquals("context-val", exchange.getHttpContext().getAttributes().get("attr"));
                     exchange.setAttribute("attr", "val");
-                    assertEquals("val", exchange.getAttribute("attr"))
-                    assertEquals("context-val", exchange.getHttpContext().getAttributes().get("attr"));
-                    exchange.setAttribute("attr", null);
-                    assertNull(exchange.getAttribute("attr"));
+                    assertEquals("val", exchange.getAttribute("attr"));
                 }
+                exchange.setAttribute("attr", null);
+                assertNull(exchange.getAttribute("attr"));
                 exchange.sendResponseHeaders(200, -1);
             } catch (Throwable t) {
                 t.printStackTrace();
