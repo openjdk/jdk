@@ -4768,14 +4768,17 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
 #ifdef ASSERT
         // See PhaseIdealLoop::do_unroll
         // This property is desirable, but it maybe not hold after cloning a loop.
-        // In such a case, we bailout unrolling, and rely on IGVN to cleanup stuff.
+        // In such a case, we bail out from unrolling, and rely on IGVN to cleanup stuff.
         // We are here before loop cloning (before iteration_split), so if there is a
         // mess, it must come from the previous round of loop optimizations, which is bad.
         // On the other hand, if this assert passes, bailing out in do_unroll means that
         // this property was broken in the current round of loop optimization, which is
         // acceptable.
-        if (!head->is_pre_loop() && !head->is_post_loop()) {
+        if (head->is_main_loop()) {
           assert(opaque->outcnt() == 1 && opaque->in(1) == head->limit(), "IGVN should have cleaned that up!");
+        }
+        if (head->is_post_loop()) {
+          assert(opaque->outcnt() == 1, "IGVN should have cleaned that up!");
         }
 #endif
       }
