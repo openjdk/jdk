@@ -1542,14 +1542,9 @@ const int ObjectAlignmentInBytes = 8;
           "Size of code heap with non-nmethods (in bytes)")                 \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
                                                                             \
-  /* TODO: create product_pd version */                                     \
   product(size_t, HotCodeHeapSize, 0, EXPERIMENTAL,                         \
           "Size of code heap with predicted hot methods (in bytes)")        \
           constraint(VMPageSizeConstraintFunc, AtParse)                     \
-                                                                            \
-  product(double, HotCodeMinMethodFrequency, 0.001, DIAGNOSTIC,             \
-          "Minimum frequency of a method to be considered actively used")   \
-          range(0.0, 1.0)                                                   \
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
@@ -1573,9 +1568,6 @@ const int ObjectAlignmentInBytes = 8;
   product(uintx, StartAggressiveSweepingAt, 10,                             \
           "Start aggressive sweeping if less than X[%] of the total code cache is free.")\
           range(0, 100)                                                     \
-                                                                            \
-  product(bool, HotCodeGrouper, false, EXPERIMENTAL,                        \
-          "Relocate hot code to HotCodeHeap")                               \
                                                                             \
   product(bool, NMethodRelocation, false, EXPERIMENTAL,                     \
           "Enables use of experimental function nmethod::relocate()")       \

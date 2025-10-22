@@ -327,7 +327,9 @@ void CompilerConfig::set_compilation_policy_flags() {
         FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
       }
     }
-  } else if (HotCodeHeapSize != 0 && FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+  }
+#ifdef COMPILER2
+  else if (HotCodeHeapSize != 0 && FLAG_IS_DEFAULT(SegmentedCodeCache)) {
     FLAG_SET_ERGO(SegmentedCodeCache, true);
   }
 
@@ -339,6 +341,7 @@ void CompilerConfig::set_compilation_policy_flags() {
       vm_exit_during_initialization("HotCodeHeap requires C2 enabled");
     }
   }
+#endif // COMPILER2
 
   if (CompileThresholdScaling < 0) {
     vm_exit_during_initialization("Negative value specified for CompileThresholdScaling");

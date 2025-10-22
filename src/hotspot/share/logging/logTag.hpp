@@ -95,7 +95,7 @@ class outputStream;
   LOG_TAG(heap) \
   LOG_TAG(heapdump) \
   NOT_PRODUCT(LOG_TAG(heapsampling)) \
-  LOG_TAG(hotcodegrouper) \
+  COMPILER2_PRESENT(LOG_TAG(hotcodegrouper)) \
   LOG_TAG(humongous) \
   LOG_TAG(ihop) \
   LOG_TAG(iklass) \

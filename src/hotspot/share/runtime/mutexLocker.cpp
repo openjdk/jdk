@@ -157,7 +157,10 @@ Mutex*   ScratchObjects_lock          = nullptr;
 Mutex*   FinalImageRecipes_lock       = nullptr;
 #endif // INCLUDE_CDS
 Mutex*   Bootclasspath_lock           = nullptr;
+
+#ifdef COMPILER2
 Monitor* HotCodeGrouper_lock          = nullptr;
+#endif // COMPILER2
 
 #if INCLUDE_JVMCI
 Monitor* JVMCI_lock                   = nullptr;
@@ -365,7 +368,9 @@ void mutex_init() {
   MUTEX_DEFL(JvmtiThreadState_lock          , PaddedMutex  , VThreadTransition_lock); // Used by JvmtiThreadState/JvmtiEventController
   MUTEX_DEFL(SharedDecoder_lock             , PaddedMutex  , NmtVirtualMemory_lock);  // Must be lower than NmtVirtualMemory_lock due to MemTracker::print_containing_region
 
+#ifdef COMPILER2
   MUTEX_DEFL(HotCodeGrouper_lock            , PaddedMonitor, CodeCache_lock);
+#endif // COMPILER2
 
   // Allocate RecursiveMutex
   MultiArray_lock = new RecursiveMutex();

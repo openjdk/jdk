@@ -22,6 +22,7 @@
  *
  */
 
+#ifdef COMPILER2
 #include "code/codeCache.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
@@ -414,3 +415,4 @@ void HotCodeGrouper::register_nmethod(nmethod* nm) {
     ml.notify();
   }
 }
+#endif // COMPILER2

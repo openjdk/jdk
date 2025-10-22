@@ -22,6 +22,7 @@
  *
  */
 
+#ifdef COMPILER2
 #ifndef SHARE_RUNTIME_HOTCODEGROUPER_HPP
 #define SHARE_RUNTIME_HOTCODEGROUPER_HPP
 
@@ -51,3 +52,4 @@ class HotCodeGrouper : public AllStatic {
 };
 
 #endif // SHARE_RUNTIME_HOTCODEGROUPER_HPP
+#endif // COMPILER2

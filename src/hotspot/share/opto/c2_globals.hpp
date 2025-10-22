@@ -428,7 +428,7 @@
           "0=print nothing except PhasePrintLevel directives, "             \
           "6=all details printed. "                                         \
           "Level of detail of printouts can be set on a per-method level "  \
-          "as well by using CompileCommand=PhasePrintLevel.")               \
+          "as well by using CompileCommand=PrintPhaseLevel.")               \
           range(-1, 6)                                                      \
                                                                             \
   develop(bool, PrintIdealGraph, false,                                     \
@@ -895,6 +895,13 @@
                                                                             \
   develop(bool, StressLoopPeeling, false,                                   \
           "Randomize loop peeling decision")                                \
+                                                                            \
+  product(bool, HotCodeGrouper, false, EXPERIMENTAL,                        \
+          "Relocate hot code to HotCodeHeap")                               \
+                                                                            \
+  product(double, HotCodeMinMethodFrequency, 0.001, DIAGNOSTIC,             \
+          "Minimum frequency of a method to be considered actively used")   \
+          range(0.0, 1.0)                                                   \
 
 // end of C2_FLAGS
 
