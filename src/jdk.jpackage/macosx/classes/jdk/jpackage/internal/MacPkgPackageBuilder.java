@@ -43,7 +43,9 @@ final class MacPkgPackageBuilder {
     }
 
     MacPkgPackage create() throws ConfigException {
-        return MacPkgPackage.create(pkgBuilder.create(), new MacPkgPackageMixin.Stub(createSigningConfig()));
+        var pkg = MacPkgPackage.create(pkgBuilder.create(), new MacPkgPackageMixin.Stub(createSigningConfig()));
+        validatePredefinedAppImage(pkg);
+        return pkg;
     }
 
     private Optional<PkgSigningConfig> createSigningConfig() throws ConfigException {
@@ -53,6 +55,14 @@ final class MacPkgPackageBuilder {
             });
         } else {
             return Optional.empty();
+        }
+    }
+
+    private static void validatePredefinedAppImage(MacPkgPackage pkg) {
+        if (!pkg.predefinedAppImageSigned().orElse(false) && pkg.sign()) {
+            pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
+                Log.info(I18N.format("warning.unsigned.app.image", "pkg"));
+            });
         }
     }
 
