@@ -92,7 +92,7 @@ class BufferSizePropertyClampTest {
     }
 
     @Test
-    void test() throws Exception {
+    void test() {
         assertEquals(16384, Utils.BUFSIZE);
         assertEquals(
                 1, CLIENT_LOGGER_MESSAGES.size(),
