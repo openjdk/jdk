@@ -460,8 +460,6 @@ final class WinNTFileSystem extends FileSystem {
 
     }
 
-    private static final long HKEY_CURRENT_USER = 0x80000001L;
-
     @Override
     public String canonicalize(String path) throws IOException {
         assert !path.startsWith(LONG_PATH_PREFIX);
@@ -516,12 +514,6 @@ final class WinNTFileSystem extends FileSystem {
 
     private native String getFinalPath0(String path)
             throws IOException;
-
-    private String queryUNCPath(char drive) {
-        return queryUNCPath0(drive);
-    }
-
-    private native String queryUNCPath0(char drive);
 
     /* -- Attribute accessors -- */
 
