@@ -4775,10 +4775,11 @@ void PhaseIdealLoop::eliminate_useless_zero_trip_guard() {
         // this property was broken in the current round of loop optimization, which is
         // acceptable.
         if (head->is_main_loop()) {
-          assert(opaque->outcnt() == 1 && opaque->in(1) == head->limit(), "IGVN should have cleaned that up!");
+          assert(opaque->outcnt() == 1, "opaque node should not be shared");
+          assert(opaque->in(1) == head->limit(), "After IGVN cleanup, input of opaque node must be the limit.");
         }
         if (head->is_post_loop()) {
-          assert(opaque->outcnt() == 1, "IGVN should have cleaned that up!");
+          assert(opaque->outcnt() == 1, "opaque node should not be shared");
         }
 #endif
       }
