@@ -1777,7 +1777,7 @@ void MemoryGraphFixer::collect_memory_nodes() {
           if (u->adr_type() == TypePtr::BOTTOM) {
             fix_memory_uses(u, n, n, c);
           } else if (_phase->C->get_alias_index(u->adr_type()) == _alias) {
-            _phase->replace_node_and_forward_ctrl(u, n);
+            _phase->igvn().replace_node(u, n);
             --i; --imax;
           }
         }
