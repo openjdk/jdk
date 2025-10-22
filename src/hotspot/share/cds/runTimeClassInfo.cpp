@@ -41,7 +41,7 @@ void RunTimeClassInfo::init(DumpTimeClassInfo& info) {
   _num_loader_constraints   = info.num_loader_constraints();
   int i;
 
-  if (CDSConfig::is_preserving_verification_constraints() && CDSConfig::is_dumping_final_static_archive()) {
+  if (CDSConfig::is_preserving_verification_constraints()) {
     // The production run doesn't need the verifier constraints, as we can guarantee that all classes checked by
     // the verifier during AOT training/assembly phases cannot be replaced in the production run.
     _num_verifier_constraints = 0;

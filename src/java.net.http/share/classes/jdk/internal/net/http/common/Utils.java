@@ -174,15 +174,20 @@ public final class Utils {
     public static final int SLICE_THRESHOLD = 32;
 
     /**
-     * Allocated buffer size. Must never be higher than 16K. But can be lower
-     * if smaller allocation units preferred. HTTP/2 mandates that all
-     * implementations support frame payloads of at least 16K.
+     * The capacity of ephemeral {@link ByteBuffer}s allocated to pass data to and from the client.
+     * It is ensured to have a value between 1 and 2^14 (16,384).
      */
-    private static final int DEFAULT_BUFSIZE = 16 * 1024;
-
     public static final int BUFSIZE = getIntegerNetProperty(
-            "jdk.httpclient.bufsize", DEFAULT_BUFSIZE
-    );
+            "jdk.httpclient.bufsize", 1,
+            // We cap at 2^14 (16,384) for two main reasons:
+            // - The initial frame size is 2^14 (RFC 9113)
+            // - SSL record layer fragments data in chunks of 2^14 bytes or less (RFC 5246)
+            1 << 14,
+            // We choose 2^14 (16,384) as the default, because:
+            // 1. It maximizes throughput within the limits described above
+            // 2. It is small enough to not create a GC bottleneck when it is partially filled
+            1 << 14,
+            true);
 
     public static final BiPredicate<String,String> ACCEPT_ALL = (x,y) -> true;
 
