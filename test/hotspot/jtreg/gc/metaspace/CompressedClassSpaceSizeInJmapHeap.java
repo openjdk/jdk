@@ -67,6 +67,8 @@ public class CompressedClassSpaceSizeInJmapHeap {
         File err = new File("CompressedClassSpaceSizeInJmapHeap.stderr.txt");
         pb.redirectError(err);
 
+        // Sleep for 0.5s to make sure theApp is ready for attach from jhsdb
+        Thread.sleep(500);
         run(pb);
 
         OutputAnalyzer output = new OutputAnalyzer(read(out));
