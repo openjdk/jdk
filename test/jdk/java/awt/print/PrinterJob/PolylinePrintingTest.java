@@ -44,7 +44,7 @@ import java.awt.print.PrinterJob;
 public class PolylinePrintingTest implements Printable {
     private static final String INSTRUCTIONS = """
               You must have a printer available to perform this test.
-              OK the print dialog, and collect the printed page.
+              Click OK in the print dialog and collect the printed page.
               Passing test : Output should show two identical chevrons.
               Failing test : The line joins will appear different.
               """;

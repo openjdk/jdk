@@ -42,16 +42,16 @@ import jtreg.SkippedException;
 
 public class PageRanges implements Printable {
     private static final String INSTRUCTIONS = """
-                 This test prints two jobs, and tests that the specified range.
-                 of pages is printed. You must have a printer installed for this test.
-                 In the first dialog, select a page range of 2 to 3, and press OK
+                 This test prints two jobs and tests that the specified range
+                 of pages is printed.
+                 In the first dialog, select a page range of 2 to 3, and press OK.
                  In the second dialog, select ALL, to print all pages (in total 5 pages).
-                 Collect the two print outs and confirm the jobs printed correctly.
+                 Collect the two print outs and confirm the jobs are printed correctly.
                  """;
 
     public static void main(String args[]) throws Exception {
         PrinterJob job = PrinterJob.getPrinterJob();
-        if(job.getPrintService() == null) {
+        if (job.getPrintService() == null) {
             throw new SkippedException("Printer not configured or available.");
         }
 
@@ -74,7 +74,6 @@ public class PageRanges implements Printable {
 
     public int print(Graphics g, PageFormat pf, int pi)
                      throws PrinterException {
-
         if (pi >= 5) {
             return NO_SUCH_PAGE;
         }
