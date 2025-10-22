@@ -58,4 +58,4 @@ micros-javac benchmarks consist of two sets of benchmarks:
 
 Solution to speed up javac benchmarking is to select only `GroupJavacBenchmark` for execution using following command line:
 
-	  $ java -jar target/micros-javac-1.0-SNAPSHOT.jar .*GroupJavacBenchmark.*
+    $ java -jar target/micros-javac-1.0-SNAPSHOT.jar .*GroupJavacBenchmark.*
