@@ -64,7 +64,7 @@ public interface InvocationHandler {
      *
      * @param   args an array of objects containing the values of the
      * arguments passed in the method invocation on the proxy instance,
-     * or {@code null} if the method takes no arguments.
+     * or {@code null} if the invoked method takes no arguments.
      * Arguments of primitive types are wrapped in instances of the
      * appropriate primitive wrapper class, such as
      * {@code java.lang.Integer} or {@code java.lang.Boolean}.
