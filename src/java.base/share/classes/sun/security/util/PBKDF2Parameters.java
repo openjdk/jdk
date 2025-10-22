@@ -136,24 +136,36 @@ public final class PBKDF2Parameters {
 
     public static byte[] encode(byte[] salt, int iterationCount,
             int keyLength, String kdfHmac) {
-        ObjectIdentifier kdfAlgo_OID =
+        ObjectIdentifier prf =
                ObjectIdentifier.of(KnownOIDs.findMatch(kdfHmac));
-        return PBKDF2Parameters.encode(salt, iterationCount, keyLength,
-                kdfAlgo_OID);
+        return PBKDF2Parameters.encode(salt, iterationCount, keyLength, prf);
     }
 
+    /*
+     * Encode PBKDF2 parameters from components.
+     */
     public static byte[] encode(byte[] salt, int iterationCount,
-            int keyLength, ObjectIdentifier kdfAlgo_OID) {
+            int keyLength, ObjectIdentifier prf) {
         assert keyLength != -1;
-        return new DerOutputStream()
-                .putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1))
-                .write(DerValue.tag_Sequence, new DerOutputStream()
-                        .putOctetString(salt)
-                        .putInteger(iterationCount)
-                        .putInteger(keyLength)
-                        .write(DerValue.tag_Sequence, new DerOutputStream()
-                                .putOID(kdfAlgo_OID)
-                                .putNull())).toByteArray();
+
+        DerOutputStream out = new DerOutputStream();
+        DerOutputStream tmp0 = new DerOutputStream();
+        DerOutputStream tmp1 = new DerOutputStream();
+
+        // prf AlgorithmIdentifier {{PBKDF2-PRFs}}
+        tmp1.putOID(prf);
+        tmp1.putNull();
+
+        tmp0.putOctetString(salt);
+        tmp0.putInteger(iterationCount);
+        tmp0.putInteger(keyLength);
+        tmp0.write(DerValue.tag_Sequence, tmp1);
+
+        // id-PBKDF2 OBJECT IDENTIFIER ::= {pkcs-5 12}
+        out.putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1));
+        out.write(DerValue.tag_Sequence, tmp0);
+
+        return out.toByteArray();
     }
 
     /**

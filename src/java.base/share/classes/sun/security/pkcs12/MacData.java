@@ -207,7 +207,6 @@ class MacData {
         String algName;
         String kdfHmac;
         String hmac;
-        Mac m;
 
         macAlgorithm = macAlgorithm.toLowerCase(ENGLISH);
         if (macAlgorithm.startsWith("pbewith")) {
@@ -262,19 +261,30 @@ class MacData {
      */
     static byte[] encode(String algName, byte[] digest, PBEParameterSpec p,
             String kdfHmac, String hmac, int keyLength)
-            throws NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException, IOException {
+        final int iterations = p.getIterationCount();
+        final byte[] macSalt = p.getSalt();
+
         if (algName.equals("PBMAC1")) {
-            return PBMAC1Parameters.encode(p.getSalt(), p.getIterationCount(),
+            return PBMAC1Parameters.encode(macSalt, iterations,
                     keyLength, kdfHmac, hmac, digest);
         } else {
-            byte[] bytes = new DerOutputStream()
-                    .write(DerValue.tag_Sequence, new DerOutputStream()
-                            .write(DerValue.tag_Sequence, new DerOutputStream()
-                                    .write(AlgorithmId.get(algName))
-                                    .putOctetString(digest))
-                            .putOctetString(p.getSalt())
-                            .putInteger(p.getIterationCount())).toByteArray();
-            return bytes;
+            final AlgorithmId digestAlgorithm = AlgorithmId.get(algName);
+            DerOutputStream out = new DerOutputStream();
+            DerOutputStream tmp = new DerOutputStream();
+            DerOutputStream tmp2 = new DerOutputStream();
+
+            tmp2.write(digestAlgorithm);
+            tmp2.putOctetString(digest);
+
+            // wrap into a SEQUENCE
+            tmp.write(DerValue.tag_Sequence, tmp2);
+            tmp.putOctetString(macSalt);
+            tmp.putInteger(iterations);
+
+            // wrap everything into a SEQUENCE
+            out.write(DerValue.tag_Sequence, tmp);
+            return out.toByteArray();
         }
     }
 

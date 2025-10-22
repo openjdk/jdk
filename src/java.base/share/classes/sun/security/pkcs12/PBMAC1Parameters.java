@@ -26,9 +26,7 @@
 package sun.security.pkcs12;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 
-import sun.security.x509.AlgorithmId;
 import sun.security.util.*;
 
 /**
@@ -116,20 +114,44 @@ final class PBMAC1Parameters {
         this.kdfParams = new PBKDF2Parameters(pBKDF2_params);
     }
 
+    /*
+     * Encode PBMAC1 parameters from components.
+     */
     static byte[] encode(byte[] salt, int iterationCount, int keyLength,
-            String kdfHmac, String hmac, byte[] digest) throws NoSuchAlgorithmException {
-        return new DerOutputStream().write(DerValue.tag_Sequence, new DerOutputStream()
-                .write(DerValue.tag_Sequence, new DerOutputStream()
-                        .write(DerValue.tag_Sequence, new DerOutputStream()
-                                .putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1))
-                                .write(DerValue.tag_Sequence, new DerOutputStream()
-                                        .write(DerValue.tag_Sequence, PBKDF2Parameters.encode(salt, iterationCount, keyLength, kdfHmac))
-                                        .write(DerValue.tag_Sequence, new DerOutputStream()
-                                                .putOID(ObjectIdentifier.of(KnownOIDs.findMatch(hmac)))
-                                                .putNull())))
-                        .putOctetString(digest))
-                .putOctetString(new byte[]{ 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' })
-                .putInteger(1)).toByteArray();
+            String kdfHmac, String hmac, byte[] digest) {
+
+        DerOutputStream out = new DerOutputStream();
+        DerOutputStream tmp0 = new DerOutputStream();
+        DerOutputStream tmp1 = new DerOutputStream();
+        DerOutputStream tmp2 = new DerOutputStream();
+        DerOutputStream tmp3 = new DerOutputStream();
+        DerOutputStream tmp4 = new DerOutputStream();
+
+        // messageAuthScheme AlgorithmIdentifier {{PBMAC1-MACs}}
+        tmp4.putOID(ObjectIdentifier.of(KnownOIDs.findMatch(hmac)));
+        tmp4.putNull();
+
+        // keyDerivationFunc AlgorithmIdentifier {{PBMAC1-KDFs}}
+        tmp3.write(DerValue.tag_Sequence, PBKDF2Parameters.encode(salt,
+                iterationCount, keyLength, kdfHmac));
+        tmp3.write(DerValue.tag_Sequence, tmp4);
+
+        // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
+        tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));
+        tmp2.write(DerValue.tag_Sequence, tmp3);
+
+        tmp1.write(DerValue.tag_Sequence, tmp2);
+        tmp1.putOctetString(digest);
+
+        tmp0.write(DerValue.tag_Sequence, tmp1);
+        tmp0.putOctetString(
+                new byte[]{ 'N', 'O', 'T', ' ', 'U', 'S', 'E', 'D' });
+        // Unused, but must have non-zero positive value.
+        tmp0.putInteger(1);
+
+        // wrap everything into a SEQUENCE
+        out.write(DerValue.tag_Sequence, tmp0);
+        return out.toByteArray();
     }
 
     PBKDF2Parameters getKdfParams() {
