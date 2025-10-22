@@ -360,7 +360,7 @@ public final class ObjectMapper {
             Function<? super T, ? extends U> valueMapper) {
         return Collectors.toMap(keyMapper, valueMapper, (x , y) -> {
             throw new UnsupportedOperationException(
-                    String.format("Enries with the same key and different values [%s] and [%s]", x, y));
+                    String.format("Entries with the same key and different values [%s] and [%s]", x, y));
         }, HashMap::new);
     }
 
