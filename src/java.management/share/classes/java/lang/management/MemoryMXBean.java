@@ -274,7 +274,7 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * activity, including any overhead, which means the result
      * may be non-zero even if no GC has occurred.
      *
-     * This method return {@code -1} if the platform does
+     * This method returns {@code -1} if the platform does
      * not support this operation or the information is not
      * available.
      *
