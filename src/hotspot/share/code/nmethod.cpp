@@ -2596,7 +2596,7 @@ void nmethod::metadata_do(MetadataClosure* f) {
 // Main purpose is to reduce code cache pressure and get rid of
 // nmethods that don't seem to be all that relevant any longer.
 bool nmethod::is_cold() {
-  if (!MethodFlushing || (is_native_method() && is_in_use()) || is_not_installed()) {
+  if (!MethodFlushing || is_not_installed()) {
     // No heuristic unloading at all
     return false;
   }
