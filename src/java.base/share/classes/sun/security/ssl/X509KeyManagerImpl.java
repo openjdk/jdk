@@ -256,9 +256,8 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                  IndexOutOfBoundsException e) {
             // ignore and only log exception
             if (SSLLogger.isOn && SSLLogger.isOn("ssl,keymanager")) {
-                SSLLogger.warning(
-                        "Exception thrown while getting an alias" +
-                        " " + alias + ": " + e);
+                SSLLogger.warning("Exception thrown while getting an alias " +
+                                  alias + ": " + e);
             }
             return null;
         }
@@ -297,8 +296,7 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                     for (EntryStatus status : results) {
                         if (status.checkResult == CheckResult.OK) {
                             if (SSLLogger.isOn
-                                    && SSLLogger
-                                        .isOn("ssl,keymanager")) {
+                                    && SSLLogger.isOn("ssl,keymanager")) {
                                 SSLLogger.fine("Choosing key: " + status);
                             }
                             return makeAlias(status);
