@@ -22,13 +22,11 @@
  */
 package jdk.jpackage.test;
 
-import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.LauncherShortcut.LINUX_SHORTCUT;
 import static jdk.jpackage.test.LauncherShortcut.WIN_DESKTOP_SHORTCUT;
 import static jdk.jpackage.test.LauncherShortcut.WIN_START_MENU_SHORTCUT;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
@@ -208,9 +205,7 @@ public final class AdditionalLauncher {
         PropertyFile shell[] = new PropertyFile[1];
         forEachAdditionalLauncher(cmd, (name, propertiesFilePath) -> {
             if (name.equals(launcherName)) {
-                shell[0] = toSupplier(() -> {
-                    return new PropertyFile(propertiesFilePath);
-                }).get();
+                shell[0] = new PropertyFile(propertiesFilePath);
             }
         });
         return Objects.requireNonNull(shell[0]);
@@ -243,32 +238,6 @@ public final class AdditionalLauncher {
         properties.putAll(rawProperties);
 
         createFileHandler.accept(propsFile, properties.entrySet());
-    }
-
-    public static final class PropertyFile {
-
-        PropertyFile(Map<String, String> data) {
-            this.data = new Properties();
-            this.data.putAll(data);
-        }
-
-        PropertyFile(Path path) throws IOException {
-            data = new Properties();
-            try (var reader = Files.newBufferedReader(path)) {
-                data.load(reader);
-            }
-        }
-
-        public Optional<String> findProperty(String name) {
-            Objects.requireNonNull(name);
-            return Optional.ofNullable(data.getProperty(name));
-        }
-
-        public Optional<Boolean> findBooleanProperty(String name) {
-            return findProperty(name).map(Boolean::parseBoolean);
-        }
-
-        private final Properties data;
     }
 
     private List<String> javaOptions;
