@@ -2529,7 +2529,6 @@ public final class Math {
      *
      * @param d the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static double ulp(double d) {
@@ -2576,7 +2575,6 @@ public final class Math {
      *
      * @param f the floating-point value whose ulp is to be returned
      * @return the size of an ulp of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     public static float ulp(float f) {
@@ -2617,7 +2615,6 @@ public final class Math {
      *
      * @param d the floating-point value whose signum is to be returned
      * @return the signum function of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     @IntrinsicCandidate
@@ -2639,7 +2636,6 @@ public final class Math {
      *
      * @param f the floating-point value whose signum is to be returned
      * @return the signum function of the argument
-     * @author Joseph D. Darcy
      * @since 1.5
      */
     @IntrinsicCandidate

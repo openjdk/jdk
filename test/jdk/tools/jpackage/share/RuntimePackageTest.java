@@ -135,11 +135,7 @@ public class RuntimePackageTest {
         })
         .addInstallVerifier(cmd -> {
             var src = TKit.assertDirectoryContentRecursive(inputRuntimeDir(cmd)).items();
-            Path dest = cmd.appRuntimeDirectory();
-            if (TKit.isOSX()) {
-                dest = dest.resolve("Contents/Home");
-            }
-
+            var dest = cmd.appLayout().runtimeHomeDirectory();
             TKit.assertDirectoryContentRecursive(dest).match(src);
         })
         .forTypes(PackageType.LINUX_DEB, test -> {

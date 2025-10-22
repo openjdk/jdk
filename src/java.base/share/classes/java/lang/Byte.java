@@ -55,8 +55,6 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * use instances for synchronization, or unpredictable behavior may
  * occur. For example, in a future release, synchronization may fail.
  *
- * @author  Nakul Saraiya
- * @author  Joseph D. Darcy
  * @see     java.lang.Number
  * @since   1.1
  */

@@ -120,8 +120,7 @@ macDmgFilterScpt() {
   #  - Trim random absolute temp path
   #  - Replace "/dmg-workdir/" (new) with "/images/" (old)
   find "$stash_dir" -name '*.scpt' -type f | xargs -I {} sed $sed_inplace_option \
-      -e 's|"/.*/jdk.jpackage[0-9]\{1,\}/|"/jdk.jpackage/|' \
-      -e 's|"file:///.*/jdk.jpackage[0-9]\{1,\}/|"file:///jdk.jpackage/|' \
+      -e 's|/jdk.jpackage[0-9]\{1,\}/|/jdk.jpackage/|' \
       -e 's|/dmg-workdir/|/images/|' \
       '{}'
 }
