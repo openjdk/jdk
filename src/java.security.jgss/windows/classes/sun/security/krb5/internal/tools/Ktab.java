@@ -83,7 +83,7 @@ public class Ktab {
 
     private static class ExitException extends RuntimeException {
         @java.io.Serial
-        static final long serialVersionUID = 0L;
+        private static final long serialVersionUID = 0L;
         private final int errorCode;
         public ExitException(int errorCode) {
             this.errorCode = errorCode;
