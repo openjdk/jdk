@@ -34,7 +34,6 @@ using NMethodList = LinkedListImpl<nmethod*>;
 using NMethodListIterator = LinkedListIterator<nmethod*>;
 using NMethodPair = Pair<nmethod*, uint64_t>;
 using NMethodPairArray = GrowableArray<NMethodPair>;
-using NMethodMap = ResizeableHashTable<nmethod*, uint64_t, AnyObj::C_HEAP, mtCode>;
 
 class ThreadSampler;
 
@@ -55,8 +54,6 @@ class HotCodeGrouper : public AllStatic {
   static void initialize();
   static void unregister_nmethod(nmethod* nm);
   static void register_nmethod(nmethod* nm);
-
-  static NMethodMap _hot_nmethods;
 };
 
 #endif // SHARE_RUNTIME_HOTCODEGROUPER_HPP

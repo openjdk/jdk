@@ -61,7 +61,6 @@ class HotCodeGrouperThread : public NonJavaThread {
 
 NonJavaThread* HotCodeGrouper::_nmethod_grouper_thread = nullptr;
 NMethodList    HotCodeGrouper::_unregistered_nmethods;
-NMethodMap     HotCodeGrouper::_hot_nmethods(1, 10240);
 bool           HotCodeGrouper::_is_initialized = false;
 
 static volatile int _state = static_cast<int>(State::NotStarted);
@@ -307,11 +306,6 @@ class HotCodeHeapCandidates : public StackObj {
  public:
   void find_hot(const NMethodSamples& samples, int total_samples) {
     auto func = [&](nmethod* nm, uint64_t count) {
-      if (HotCodeGrouper::_hot_nmethods.contains(nm)) {
-        HotCodeGrouper::_hot_nmethods.put(nm, 0); // Reset last seen counter
-        return;
-      }
-
       double frequency = (double) count / total_samples;
       if (frequency < HotCodeMinMethodFrequency) {
         return;
@@ -332,9 +326,7 @@ class HotCodeHeapCandidates : public StackObj {
       log_trace(hotcodegrouper)("\tRelocating nm: <%p> method: <%s>", nm, nm->method()->external_name());
 
       CompiledICLocker ic_locker(nm);
-      if (nm->relocate(CodeBlobType::MethodHot) != nullptr) {
-        HotCodeGrouper::_hot_nmethods.put(nm, 0);
-      }
+      nm->relocate(CodeBlobType::MethodHot);
     }
   }
 };
@@ -401,11 +393,6 @@ void HotCodeGrouper::unregister_nmethod(nmethod* nm) {
 
   // CodeCache_lock is held, so we can safely decrement the count.
   _total_c2_nmethods_count--;
-
-  // TODO: Are we thread-safe here?
-  if (HotCodeGrouper::_hot_nmethods.contains(nm)) {
-    HotCodeGrouper::_hot_nmethods.remove(nm); // nmethod is no longer in hot code heap
-  }
 }
 
 void HotCodeGrouper::register_nmethod(nmethod* nm) {
