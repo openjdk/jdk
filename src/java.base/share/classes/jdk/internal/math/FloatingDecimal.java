@@ -945,7 +945,7 @@ public final class FloatingDecimal {
                 double ul = nl1 | (nl0 != 0 ? 1 : 0);
                 double uh = nh1 | (nh0 != 0 ? 1 : 0);
                 v = Math.scalb(ul, rp);
-                if (ul == uh) {
+                if (ul == uh || v == Double.POSITIVE_INFINITY) {
                     return signed(v);
                 }
             } else {
@@ -1084,7 +1084,7 @@ public final class FloatingDecimal {
                 float ul = nl1 | (nl0 != 0 ? 1 : 0);
                 float uh = nh1 | (nh0 != 0 ? 1 : 0);
                 v = Math.scalb(ul, rp);
-                if (ul == uh) {
+                if (ul == uh || v == Float.POSITIVE_INFINITY) {
                     return signed(v);
                 }
             } else {
