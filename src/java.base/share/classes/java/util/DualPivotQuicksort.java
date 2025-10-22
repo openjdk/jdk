@@ -61,19 +61,19 @@ final class DualPivotQuicksort {
     /* --------------------- Insertion sort --------------------- */
 
     /**
-     * Max size of array to use insertion sort.
+     * Max size of array to use insertion sort (the best for shuffle data).
      */
     private static final int MAX_INSERTION_SORT_SIZE = 51;
 
     /* ---------------------- Merging sort ---------------------- */
 
     /**
-     * Min size of array to use merging sort.
+     * Min size of array to use merging sort (the best for stagger data).
      */
     private static final int MIN_MERGING_SORT_SIZE = 512;
 
     /**
-     * Min size of run to continue scanning.
+     * Min size of run to continue scanning (the best for stagger data).
      */
     private static final int MIN_RUN_SIZE = 64;
 
@@ -85,19 +85,19 @@ final class DualPivotQuicksort {
     /* ---------------------- Digital sort ---------------------- */
 
     /**
-     * Min size of array to use counting sort.
+     * Min size of array to use counting sort (the best for random data).
      */
     private static final int MIN_COUNTING_SORT_SIZE = 640;
 
     /**
-     * Min size of array to use numerical sort.
+     * Min size of array to use numerical sort (the best for repeated data).
      */
     private static final int MIN_NUMERICAL_SORT_SIZE = 9 << 10;
 
     /* --------------------- Parallel sort ---------------------- */
 
     /**
-     * Min size of array to perform sorting in parallel.
+     * Min size of array to perform sorting in parallel (the best for stagger data).
      */
     private static final int MIN_PARALLEL_SORT_SIZE = 3 << 10;
 
@@ -135,6 +135,9 @@ final class DualPivotQuicksort {
 
     /**
      * Sorts the specified range of the array into ascending numerical order.
+     * The signature of this method is in sync with native implementation
+     * based on AVX512 instructions from linux/native/libsimdsort package,
+     * don't change the signature.
      *
      * @param <T> the class of array
      * @param elemType the class of the elements of the array to be sorted
@@ -177,6 +180,9 @@ final class DualPivotQuicksort {
 
     /**
      * Partitions the specified range of the array using the given pivots.
+     * The signature of this method is in sync with native implementation
+     * based on AVX512 instructions from linux/native/libsimdsort package,
+     * don't change the signature.
      *
      * @param <T> the class of array
      * @param elemType the class of the array for partitioning
@@ -4469,6 +4475,7 @@ final class DualPivotQuicksort {
      */
     private static final class Sorter<T> extends CountedCompleter<Void> {
 
+        @java.io.Serial
         private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
@@ -4545,6 +4552,7 @@ final class DualPivotQuicksort {
      */
     private static final class Merger<T> extends CountedCompleter<Void> {
 
+        @java.io.Serial
         private static final long serialVersionUID = 123456789L;
 
         @SuppressWarnings("serial")
