@@ -32,7 +32,7 @@
  */
 
 /**
- * This test contains two distinct kinds of worst-case inputs:
+ * This test contains three distinct kinds of worst-case inputs:
  *
  * 1) Exact numerical results that are nearly half-way between
  * representable numbers or very close to a representable
