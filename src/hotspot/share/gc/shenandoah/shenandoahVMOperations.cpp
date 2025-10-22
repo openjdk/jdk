@@ -76,8 +76,7 @@ void VM_ShenandoahReferenceOperation::doit_epilogue() {
 }
 
 VM_ShenandoahInitMark::VM_ShenandoahInitMark(ShenandoahConcurrentGC* gc)
-  : VM_ShenandoahOperation(gc->generation())
-  , _gc(gc) {
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahInitMark::doit() {
@@ -87,8 +86,7 @@ void VM_ShenandoahInitMark::doit() {
 }
 
 VM_ShenandoahFinalMarkStartEvac::VM_ShenandoahFinalMarkStartEvac(ShenandoahConcurrentGC* gc)
-  : VM_ShenandoahOperation(gc->generation())
-  , _gc(gc) {
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahFinalMarkStartEvac::doit() {
@@ -98,9 +96,7 @@ void VM_ShenandoahFinalMarkStartEvac::doit() {
 }
 
 VM_ShenandoahFullGC::VM_ShenandoahFullGC(GCCause::Cause gc_cause, ShenandoahFullGC* full_gc)
-  : VM_ShenandoahReferenceOperation(full_gc->generation())
-  , _gc_cause(gc_cause)
-  , _full_gc(full_gc) {
+  : VM_ShenandoahReferenceOperation(full_gc->generation()), _gc_cause(gc_cause), _full_gc(full_gc) {
 }
 
 void VM_ShenandoahFullGC::doit() {
@@ -110,8 +106,7 @@ void VM_ShenandoahFullGC::doit() {
 }
 
 VM_ShenandoahDegeneratedGC::VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc)
-  : VM_ShenandoahReferenceOperation(gc->generation())
-  , _gc(gc) {
+  : VM_ShenandoahReferenceOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahDegeneratedGC::doit() {
@@ -121,8 +116,7 @@ void VM_ShenandoahDegeneratedGC::doit() {
 }
 
 VM_ShenandoahInitUpdateRefs::VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc)
-  : VM_ShenandoahOperation(gc->generation())
-  , _gc(gc) {
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahInitUpdateRefs::doit() {
@@ -132,8 +126,7 @@ void VM_ShenandoahInitUpdateRefs::doit() {
 }
 
 VM_ShenandoahFinalUpdateRefs::VM_ShenandoahFinalUpdateRefs(ShenandoahConcurrentGC* gc)
-  : VM_ShenandoahOperation(gc->generation())
-  , _gc(gc) {
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahFinalUpdateRefs::doit() {
@@ -143,8 +136,7 @@ void VM_ShenandoahFinalUpdateRefs::doit() {
 }
 
 VM_ShenandoahFinalRoots::VM_ShenandoahFinalRoots(ShenandoahConcurrentGC* gc)
-  : VM_ShenandoahOperation(gc->generation())
-  , _gc(gc) {
+  : VM_ShenandoahOperation(gc->generation()), _gc(gc) {
 }
 
 void VM_ShenandoahFinalRoots::doit() {
