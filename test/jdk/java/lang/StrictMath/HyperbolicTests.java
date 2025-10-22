@@ -462,6 +462,7 @@ public class HyperbolicTests {
             {0x1.fffffffffffe1p0,       0x1.ed9505e1bc3cfp-1},
             {0x1.ffffffffffed8p1,       0x1.ffa81708a0b4p-1},
             {0x1.fffffffffff92p1,       0x1.ffa81708a0b41p-1},
+            {0x1.0108b83c4bbc8p-1,      0x1.dad53a45da5b0p-2}, // Difference from Julia
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
             {-0x1.c41e527b70f43p-3,    -0x1.bcea047cc736cp-3},
