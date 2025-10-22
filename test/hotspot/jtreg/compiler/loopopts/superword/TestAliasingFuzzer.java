@@ -112,7 +112,10 @@ import compiler.lib.template_framework.library.TestFrameworkClass;
  *     memory and split ranges. But we could alternate between same memory
  *     and split ranges, and then different memory but overlapping ranges.
  *     This would also be never aliasing.
- *
+ * - Generate cases that would catch bugs like JDK-8369902:
+ *   - Large long constants, or scales. Probably only possible for MemorySegment.
+ *   - Large number of invar, and reuse of invar so that they could cancle
+ *     to zero, and need to be filtered out.
  */
 public class TestAliasingFuzzer {
     private static final Random RANDOM = Utils.getRandomInstance();

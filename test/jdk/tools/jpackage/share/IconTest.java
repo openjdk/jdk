@@ -22,9 +22,6 @@
  */
 
 import java.io.IOException;
-import java.util.stream.Stream;
-import java.util.stream.Collectors;
-import java.util.function.Consumer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -34,17 +31,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.LauncherIconVerifier;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.LinuxHelper;
-import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.LauncherIconVerifier;
+import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
 
 /*
  * @test
@@ -92,18 +93,18 @@ public class IconTest {
             IconType additionalLauncherIconType, String[] extraJPackageArgs) {
         this.appImage = (bundleType == BundleType.AppImage);
         this.extraJPackageArgs = extraJPackageArgs;
-        config = Map.of(
+        config = new TreeMap<>(Map.of(
                 Launcher.Main, mainLauncherIconType,
-                Launcher.Additional, additionalLauncherIconType);
+                Launcher.Additional, additionalLauncherIconType));
     }
 
     public IconTest(BundleType bundleType, IconType mainLauncherIconType,
             IconType additionalLauncherIconType) {
         this.appImage = (bundleType == BundleType.AppImage);
         this.extraJPackageArgs = new String[0];
-        config = Map.of(
+        config = new TreeMap<>(Map.of(
                 Launcher.Main, mainLauncherIconType,
-                Launcher.Additional, additionalLauncherIconType);
+                Launcher.Additional, additionalLauncherIconType));
     }
 
     public IconTest(BundleType bundleType, IconType mainLauncherIconType) {

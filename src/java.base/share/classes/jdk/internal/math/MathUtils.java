@@ -26,12 +26,14 @@
 package jdk.internal.math;
 
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * This class exposes package private utilities for other classes.
  * Thus, all methods are assumed to be invoked with correct arguments,
  * so these are not checked at all.
  */
+@AOTSafeClassInitializer
 final class MathUtils {
     /*
      * For full details about this code see the following reference:
