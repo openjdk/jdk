@@ -24,9 +24,14 @@
  *
  */
 
+#include "asm/macroAssembler.hpp"
+#include "asm/macroAssembler.inline.hpp"
 #include "classfile/vmIntrinsics.hpp"
+#include "code/codeBlob.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/stubCodeGenerator.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
