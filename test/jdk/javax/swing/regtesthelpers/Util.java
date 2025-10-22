@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.function.Predicate;
 
 /**
  * <p>This class contains utilities useful for regression testing.
@@ -143,6 +144,26 @@ public class Util {
             }
         }
 
+        return null;
+    }
+
+    /**
+     * Find a component based on predicate.
+     * Always run this method on the EDT thread
+     */
+    public static Component findComponent(final Container container,
+                                           final Predicate<Component> predicate) {
+        for (Component child : container.getComponents()) {
+            if (predicate.test(child)) {
+                return child;
+            }
+            if (child instanceof Container cont && cont.getComponentCount() > 0) {
+                Component result = findComponent(cont, predicate);
+                if (result != null) {
+                    return result;
+                }
+            }
+        }
         return null;
     }
 
