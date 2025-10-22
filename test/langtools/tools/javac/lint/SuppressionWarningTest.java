@@ -777,7 +777,7 @@ public class SuppressionWarningTest extends TestRunner {
                     flags.add("-Xlint:" + lints.stream().collect(Collectors.joining(",")));
 
                 // Test case description
-                String description = String.format("[%s] outer=%s inner=%s flags=\"%s\"",
+                String description = String.format("[%s] outer=%s inner=%s enable=%s flags=\"%s\"",
                   category, outerAnnotation, innerAnnotation, enableCategory, flags.stream().collect(Collectors.joining(" ")));
 
                 // Only print log if test case fails

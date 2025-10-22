@@ -141,13 +141,26 @@ public class Log extends AbstractLog {
             LintCategory category = diag.getLintCategory();
             if (category != null) {                                         // this is a lint warning; find the applicable Lint
                 DiagnosticPosition pos = diag.getDiagnosticPosition();
+                Lint theRootLint = rootLint();
                 if (pos != null && category.annotationSuppression) {        // we should apply the Lint from the warning's position
+
+                    // Optimization: We don't need to go through the trouble of calculating the Lint instance at "pos" if
+                    // (a) "category" is disabled at the root level, and (b) the diagnostic doesn't have the DEFAULT_ENABLED
+                    // flag: @SuppressWarnings can only disable lint categories, so "category" is disabled in the entire file.
+                    // But if tracking SUPPRESSION, skip this optimization because it might cause a validation to be missed.
+                    if (!theRootLint.isEnabled(category, false) &&
+                      !theRootLint.isEnabled(SUPPRESSION, false) &&
+                      !diag.isFlagSet(DEFAULT_ENABLED) &&
+                      !diag.getCode().equals(RequiresTransitiveAutomatic.key()))    // accommodate the "requires" hack below
+                        return;
+
+                    // Wait for the Lint instance at "pos" to be calculated, then proceed
                     if ((lint = lintFor(diag)) == null) {
                         addLintWaiter(currentSourceFile(), diag);           // ...but we don't know it yet, so defer
                         return;
                     }
                 } else                                                      // we should apply the root Lint
-                    lint = rootLint();
+                    lint = theRootLint;
             }
             reportWithLint(diag, lint);
         }
