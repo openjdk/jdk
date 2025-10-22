@@ -1619,15 +1619,14 @@ static int num_java_frames(ContinuationWrapper& cont) {
 }
 
 static void invalidate_jvmti_stack(JavaThread* thread) {
-  if (thread->is_interp_only_mode()) {
-    JvmtiThreadState *state = thread->jvmti_thread_state();
-    if (state != nullptr)
-      state->invalidate_cur_stack_depth();
+  JvmtiThreadState *state = thread->jvmti_thread_state();
+  if (state != nullptr) {
+    state->invalidate_cur_stack_depth();
   }
 }
 
 static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
-  if (JvmtiExport::can_post_frame_pop()) {
+  if (!cont.entry()->is_virtual_thread() && JvmtiExport::has_frame_pops(thread)) {
     int num_frames = num_java_frames(cont);
 
     ContinuationWrapper::SafepointOp so(Thread::current(), cont);
@@ -1737,13 +1736,10 @@ static inline freeze_result freeze_internal(JavaThread* current, intptr_t* const
 
   assert(entry->is_virtual_thread() == (entry->scope(current) == java_lang_VirtualThread::vthread_scope()), "");
 
-  assert((current->held_monitor_count() == 0 && current->jni_monitor_count() == 0),
-         "Held monitor count should not be used for lightweight locking: " INT64_FORMAT " JNI: " INT64_FORMAT, (int64_t)current->held_monitor_count(), (int64_t)current->jni_monitor_count());
-
-  if (entry->is_pinned() || current->held_monitor_count() > 0) {
-    log_develop_debug(continuations)("PINNED due to critical section/hold monitor");
+  if (entry->is_pinned()) {
+    log_develop_debug(continuations)("PINNED due to critical section");
     verify_continuation(cont.continuation());
-    freeze_result res = entry->is_pinned() ? freeze_pinned_cs : freeze_pinned_monitor;
+    const freeze_result res = freeze_pinned_cs;
     if (!preempt) {
       JFR_ONLY(current->set_last_freeze_fail_result(res);)
     }
@@ -1800,8 +1796,6 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
   }
   if (entry->is_pinned()) {
     return freeze_pinned_cs;
-  } else if (thread->held_monitor_count() > 0) {
-    return freeze_pinned_monitor;
   }
 
   RegisterMap map(thread,
@@ -1837,15 +1831,12 @@ static freeze_result is_pinned0(JavaThread* thread, oop cont_scope, bool safepoi
       if (scope == cont_scope) {
         break;
       }
-      intx monitor_count = entry->parent_held_monitor_count();
       entry = entry->parent();
       if (entry == nullptr) {
         break;
       }
       if (entry->is_pinned()) {
         return freeze_pinned_cs;
-      } else if (monitor_count > 0) {
-        return freeze_pinned_monitor;
       }
     }
   }

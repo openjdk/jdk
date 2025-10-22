@@ -24,17 +24,11 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.StandardBundlerParam.ICON;
-import static jdk.jpackage.internal.util.function.ThrowingRunnable.toRunnable;
-
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Map;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.PackagerException;
-import jdk.jpackage.internal.model.WinExePackage;
+import jdk.jpackage.internal.model.WinMsiPackage;
 
 @SuppressWarnings("restricted")
 public class WinExeBundler extends AbstractBundler {
@@ -71,7 +65,7 @@ public class WinExeBundler extends AbstractBundler {
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
-        return msiBundler.validate(params);
+        return msiBundler.validate(params, WinFromParams.EXE_PACKAGE);
     }
 
     @Override
@@ -79,63 +73,23 @@ public class WinExeBundler extends AbstractBundler {
             throws PackagerException {
 
         // Order is important!
-        var pkg = WinFromParams.MSI_PACKAGE.fetchFrom(params);
+        var pkg = WinFromParams.EXE_PACKAGE.fetchFrom(params);
         var env = BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
-        IOUtils.writableOutputDir(outdir);
+        var msiOutputDir = env.buildRoot().resolve("msi");
 
-        Path msiDir = env.buildRoot().resolve("msi");
-        toRunnable(() -> Files.createDirectories(msiDir)).run();
-
-        // Write msi to temporary directory.
-        Path msi = msiBundler.execute(params, msiDir);
-
-        try {
-            new ScriptRunner()
-            .setDirectory(msi.getParent())
-            .setResourceCategoryId("resource.post-msi-script")
-            .setScriptNameSuffix("post-msi")
-            .setEnvironmentVariable("JpMsiFile", msi.toAbsolutePath().toString())
-            .run(env, pkg.packageName());
-
-            var exePkg = new WinExePackageBuilder(pkg).icon(ICON.fetchFrom(params)).create();
-            return buildEXE(env, exePkg, msi, outdir);
-        } catch (IOException|ConfigException ex) {
-            Log.verbose(ex);
-            throw new PackagerException(ex);
-        }
+        return Packager.<WinMsiPackage>build().outputDir(msiOutputDir)
+                .pkg(pkg.msiPackage())
+                .env(env)
+                .pipelineBuilderMutatorFactory((packagingEnv, msiPackage, _) -> {
+                    var msiPackager = new WinMsiPackager(packagingEnv, msiPackage,
+                            msiOutputDir, msiBundler.sysEnv.orElseThrow());
+                    var exePackager = new WinExePackager(packagingEnv, pkg, outdir, msiOutputDir);
+                    return msiPackager.andThen(exePackager);
+                }).execute(WinPackagingPipeline.build());
     }
 
-    private Path buildEXE(BuildEnv env, WinExePackage pkg, Path msi,
-            Path outdir) throws IOException {
-
-        Log.verbose(I18N.format("message.outputting-to-location", outdir.toAbsolutePath()));
-
-        // Copy template msi wrapper next to msi file
-        final Path exePath = msi.getParent().resolve(pkg.packageFileNameWithSuffix());
-
-        env.createResource("msiwrapper.exe")
-                .setCategory(I18N.getString("resource.installer-exe"))
-                .setPublicName("installer.exe")
-                .saveToFile(exePath);
-
-        new ExecutableRebrander(pkg, env::createResource, resourceLock -> {
-            // Embed msi in msi wrapper exe.
-            embedMSI(resourceLock, msi.toAbsolutePath().toString());
-        }).execute(env, exePath, pkg.icon());
-
-        Path dstExePath = outdir.resolve(exePath.getFileName());
-
-        Files.copy(exePath, dstExePath, StandardCopyOption.REPLACE_EXISTING);
-
-        dstExePath.toFile().setExecutable(true);
-
-        Log.verbose(I18N.format("message.output-location", outdir.toAbsolutePath()));
-
-        return dstExePath;
-    }
+    static native int embedMSI(long resourceLock, String msiPath);
 
     private final WinMsiBundler msiBundler = new WinMsiBundler();
-
-    private static native int embedMSI(long resourceLock, String msiPath);
 }
