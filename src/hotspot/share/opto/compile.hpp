@@ -322,7 +322,7 @@ class Compile : public Phase {
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  bool                  _major_progress;        // Count of something big happening
+  bool                  _major_progress;        // Whether something big happened
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
