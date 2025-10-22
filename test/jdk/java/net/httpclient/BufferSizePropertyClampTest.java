@@ -64,7 +64,9 @@ class BufferSizePropertyClampTest {
     @ValueSource(ints = {-1, 0, (2 << 14) + 1})
     void test(int invalidBufferSize) throws Exception {
 
-        // Run the Java file
+        // To obtain the buffer size constant, run the Java file in a separate
+        // process, which is needed to capture the stdout and verify the logged
+        // error message.
         var outputAnalyzer = ProcessTools.executeTestJava(
                 "--add-exports", "java.net.http/jdk.internal.net.http.common=ALL-UNNAMED",
                 "-Djdk.httpclient.HttpClient.log=errors",
