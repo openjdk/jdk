@@ -36,6 +36,7 @@
 #include "runtime/os.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 MutableNUMASpace::MutableNUMASpace(size_t page_size) : MutableSpace(page_size) {
   _lgrp_spaces = new (mtGC) GrowableArray<LGRPSpace*>(0, mtGC);
@@ -129,7 +130,7 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *ignored) const {
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->free_in_bytes();
   }
-  return s / (size_t)lgrp_spaces()->length();
+  return align_down(s / (size_t)lgrp_spaces()->length(), MinObjAlignmentInBytes);
 }
 
 // Bias region towards the first-touching lgrp. Set the right page sizes.
