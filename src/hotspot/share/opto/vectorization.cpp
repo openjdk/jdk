@@ -565,37 +565,34 @@ bool VLoopAnalyzer::has_zero_cost(Node* n) const {
 
 // Compute the cost over all operations in the (scalar) loop.
 float VLoopAnalyzer::cost() const {
-  return 0;
-}
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("\nVLoopAnalyzer::cost:");
+  }
+#endif
 
-// TODO: impl
-//#ifndef PRODUCT
-//  if (_vloop.is_trace_cost()) {
-//    tty->print_cr("\nVLoopAnalyzer::cost:");
-//  }
-//#endif
-//
-//  float sum = 0;
-//  for (int j = 0; j < body().body().length(); j++) {
-//    Node* n = body().body().at(j);
-//    if (!has_zero_cost(n)) {
-//      float c = cost_for_scalar(n->Opcode());
-//      sum += c;
-//#ifndef PRODUCT
-//      if (_vloop.is_trace_cost_verbose()) {
-//        tty->print_cr("  -> cost = %.2f for %d %s", c, n->_idx, n->Name());
-//      }
-//#endif
-//    }
-//  }
-//
-//#ifndef PRODUCT
-//  if (_vloop.is_trace_cost()) {
-//    tty->print_cr("  total_cost = %.2f", sum);
-//  }
-//#endif
-//  return sum;
-//}
+  float sum = 0;
+  // TODO: does this go over the whole loop, or just the basic block?
+  for (int j = 0; j < body().body().length(); j++) {
+    Node* n = body().body().at(j);
+    if (!has_zero_cost(n)) {
+      float c = cost_for_scalar(n->Opcode());
+      sum += c;
+#ifndef PRODUCT
+      if (_vloop.is_trace_cost_verbose()) {
+        tty->print_cr("  -> cost = %.2f for %d %s", c, n->_idx, n->Name());
+      }
+#endif
+    }
+  }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_cost()) {
+    tty->print_cr("  total_cost = %.2f", sum);
+  }
+#endif
+  return sum;
+}
 
 float VLoopAnalyzer::cost_for_scalar(int opcode) const {
   float c = Matcher::cost_for_scalar(opcode);
