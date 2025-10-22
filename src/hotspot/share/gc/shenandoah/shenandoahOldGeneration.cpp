@@ -57,57 +57,10 @@ public:
   }
 };
 
-class ShenandoahProcessOldSATB : public SATBBufferClosure {
-private:
-  ShenandoahObjToScanQueue*       _queue;
-  ShenandoahHeap*                 _heap;
-  ShenandoahMarkingContext* const _mark_context;
-  size_t                          _trashed_oops;
-
-public:
-  explicit ShenandoahProcessOldSATB(ShenandoahObjToScanQueue* q) :
-    _queue(q),
-    _heap(ShenandoahHeap::heap()),
-    _mark_context(_heap->marking_context()),
-    _trashed_oops(0) {}
-
-  void do_buffer(void** buffer, size_t size) override {
-    assert(size == 0 || !_heap->has_forwarded_objects() || _heap->is_concurrent_old_mark_in_progress(), "Forwarded objects are not expected here");
-    for (size_t i = 0; i < size; ++i) {
-      oop *p = (oop *) &buffer[i];
-      ShenandoahHeapRegion* region = _heap->heap_region_containing(*p);
-      if (region->is_old() && region->is_active()) {
-          ShenandoahMark::mark_through_ref<oop, OLD>(p, _queue, nullptr, _mark_context, false);
-      } else {
-        _trashed_oops++;
-      }
-    }
-  }
-
-  size_t trashed_oops() const {
-    return _trashed_oops;
-  }
-};
-
 class ShenandoahPurgeSATBTask : public WorkerTask {
-private:
-  ShenandoahObjToScanQueueSet* _mark_queues;
-  // Keep track of the number of oops that are not transferred to mark queues.
-  // This is volatile because workers update it, but the vm thread reads it.
-  volatile size_t             _trashed_oops;
-
 public:
-  explicit ShenandoahPurgeSATBTask(ShenandoahObjToScanQueueSet* queues) :
-    WorkerTask("Purge SATB"),
-    _mark_queues(queues),
-    _trashed_oops(0) {
+  explicit ShenandoahPurgeSATBTask() : WorkerTask("Purge SATB") {
     Threads::change_thread_claim_token();
-  }
-
-  ~ShenandoahPurgeSATBTask() {
-    if (_trashed_oops > 0) {
-      log_debug(gc)("Purged %zu oops from old generation SATB buffers", _trashed_oops);
-    }
   }
 
   void work(uint worker_id) override {
@@ -115,14 +68,6 @@ public:
     ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
     ShenandoahFlushAllSATB flusher(satb_queues);
     Threads::possibly_parallel_threads_do(true /* is_par */, &flusher);
-
-    // Now that we are filtering _before_ the buffers are complete, we should no
-    // longer need to filter when transferring completed buffers to the mark queues.
-    // Handling completed buffers is a normal part of concurrent mark and should just work (TM).
-    // ShenandoahObjToScanQueue* mark_queue = _mark_queues->queue(worker_id);
-    // ShenandoahProcessOldSATB processor(mark_queue);
-    // while (satb_queues.apply_closure_to_completed_buffer(&processor)) {}
-    // AtomicAccess::add(&_trashed_oops, processor.trashed_oops());
   }
 };
 
@@ -429,7 +374,7 @@ void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
   log_debug(gc)("Transfer SATB buffers");
-  ShenandoahPurgeSATBTask purge_satb_task(task_queues());
+  ShenandoahPurgeSATBTask purge_satb_task;
   heap->workers()->run_task(&purge_satb_task);
 }
 
