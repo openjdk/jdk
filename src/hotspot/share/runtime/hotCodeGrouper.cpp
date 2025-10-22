@@ -101,7 +101,7 @@ void HotCodeGrouper::initialize() {
 static void wait_for_c2_code_size_exceeding_threshold() {
   log_info(hotcodegrouper)("Waiting for C2 code size to exceed threshold for profiling...");
   MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
-  ml.wait(0);  // Wait without timeout until notified
+  ml.wait();  // Wait without timeout until notified
   log_info(hotcodegrouper)("C2 code size threshold exceeded, starting profiling...");
 }
 
@@ -109,7 +109,7 @@ static void wait_for_new_c2_nmethods() {
   set_state(State::Waiting);
   log_info(hotcodegrouper)("Waiting for new C2 nmethods for profiling...");
   MonitorLocker ml(HotCodeGrouper_lock, Mutex::_no_safepoint_check_flag);
-  ml.wait(0);  // Wait without timeout until notified
+  ml.wait();  // Wait without timeout until notified
   log_info(hotcodegrouper)("New C2 nmethods detected, starting profiling...");
 }
 
@@ -147,7 +147,15 @@ static inline int64_t rand_sampling_period_ms() {
   return os::random() % 11 + 5;
 }
 
-static inline int min_samples() {
+static double margin_of_error() {
+  return 0.0005; // 0.05%
+}
+
+static double z_score() {
+  return 1.96; // 95% confidence
+}
+
+static int min_samples() {
   // We identify hot nmethods by calculating their frequency in the collected samples.
   // We want to be confident that the identified hot nmethods are indeed hot.
   // To do that, we need to collect enough samples so that the margin of error
@@ -158,52 +166,28 @@ static inline int min_samples() {
   // The formula is: n = (Z^2 * p * (1 - p)) / E^2
   // where Z is the Z-score (1.96 for 95% confidence), p is the estimated frequency (0.001),
   // and E is the margin of error (0.0005).
-  return 15000; // TODO: Make this configurable.
-}
 
-/*static double margin_of_error() {
-  // Margin of error = Z * sqrt( (p * (1 - p)) / n )
-  // where Z is the Z-score (1.96 for 95% confidence), p is the frequency, and n is the number of samples.
-  constexpr double z_score_95 = 1.96;
-  return z_score_95 * sqrt((min_frequency() * (1.0 - min_frequency())) / min_samples());
-}*/
+  return (z_score() * z_score() * HotCodeMinMethodFrequency * (1 - HotCodeMinMethodFrequency)) / (margin_of_error() * margin_of_error());
+}
 
 static inline int64_t time_ms_for_samples(int samples, int64_t sampling_period_ms) {
   return samples * sampling_period_ms;
 }
 
-/*static void wait_while_cpu_usage_below_threshold(double threshold) {
-  tty->print_cr("Waiting for CPU activity to resume profiling...");
-  constexpr int sleep_duration_sec = 25;
-  while (true) {
-    double cpu_time1 = os::elapsed_process_cpu_time();
-    {
-      MonitorLocker ml(NMethodGrouper_lock, Mutex::_no_safepoint_check_flag);
-      if (!ml.wait(sleep_duration_sec * 1000)) {
-        tty->print_cr("Notified CodeCache being actively used, continuing profiling...");
-        return;
-      }
-    }
-    double cpu_time2 = os::elapsed_process_cpu_time();
-    // Check if the CPU was active during the sleep period
-    if ((cpu_time2 - cpu_time1) / sleep_duration_sec >= threshold) {
-      break;
-    }
-  }
-  tty->print_cr("CPU activity resumed, continuing profiling...");
-}*/
-
-using NMethodSamples = HashTable<nmethod*, int, 1024>;
+using NMethodSamples = ResizeableHashTable<nmethod*, int, AnyObj::C_HEAP, mtCompiler>;
 
 class ThreadSampler : public StackObj {
  private:
+  static const int INITIAL_TABLE_SIZE = 109;
+
   NMethodSamples _samples;
+
   int _total_samples;
   int _total_nmethods_samples;
   int _unregistered_nmethods_samples;
 
  public:
-    ThreadSampler() : _samples(), _total_samples(0), _total_nmethods_samples(0), _unregistered_nmethods_samples(0) {}
+  ThreadSampler() : _samples(INITIAL_TABLE_SIZE, min_samples()), _total_samples(0), _total_nmethods_samples(0), _unregistered_nmethods_samples(0) {}
 
   void run() {
     MutexLocker ml(Threads_lock);
@@ -268,6 +252,7 @@ class ThreadSampler : public StackObj {
   const NMethodSamples& samples() const {
     return _samples;
   }
+
   int total_samples() const {
     return _total_samples;
   }
@@ -301,7 +286,7 @@ void HotCodeGrouper::group_nmethods_loop() {
 
 class HotCodeHeapCandidates : public StackObj {
  private:
-  NMethodPairArray _hot_candidates;
+  NMethodList _hot_candidates;
 
  public:
   void find_hot(const NMethodSamples& samples, int total_samples) {
@@ -313,15 +298,16 @@ class HotCodeHeapCandidates : public StackObj {
 
       if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
         log_trace(hotcodegrouper)("\tFound candidate nm: <%p> method: <%s> count: <" UINT64_FORMAT "> frequency: <%f>", nm, nm->method()->external_name(), count, frequency);
-        _hot_candidates.append(NMethodPair(nm, count));
+        _hot_candidates.add(nm);
       }
     };
     samples.iterate_all(func);
   }
 
   void relocate_hot() {
-    for (int i = 0; i < _hot_candidates.length(); i++) {
-      nmethod* nm = _hot_candidates.at(i).first;
+    NMethodListIterator it(_hot_candidates.head());
+    while (!it.is_empty()) {
+      nmethod* nm = *it.next();
 
       log_trace(hotcodegrouper)("\tRelocating nm: <%p> method: <%s>", nm, nm->method()->external_name());
 

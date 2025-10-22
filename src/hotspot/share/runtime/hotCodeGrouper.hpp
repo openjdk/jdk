@@ -32,22 +32,16 @@
 
 using NMethodList = LinkedListImpl<nmethod*>;
 using NMethodListIterator = LinkedListIterator<nmethod*>;
-using NMethodPair = Pair<nmethod*, uint64_t>;
-using NMethodPairArray = GrowableArray<NMethodPair>;
 
 class ThreadSampler;
 
 class HotCodeGrouper : public AllStatic {
  private:
-  static void group_nmethods(ThreadSampler& sampler);
-  static bool is_code_cache_unstable() {
-    // Placeholder for actual implementation to check if the code cache is unstable.
-    return false; // For now, we assume the code cache is stable.
-  }
-
-  static NonJavaThread *_nmethod_grouper_thread;
+  static NonJavaThread* _nmethod_grouper_thread;
   static NMethodList _unregistered_nmethods;
   static bool _is_initialized;
+
+  static void group_nmethods(ThreadSampler& sampler);
 
  public:
   static void group_nmethods_loop();
