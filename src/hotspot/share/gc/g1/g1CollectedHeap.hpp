@@ -460,7 +460,7 @@ private:
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
                                       size_t* actual_word_size,
-                                      bool is_tlab);
+                                      bool allow_gc);
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
   // pause if allow_gc is set. This should only be used for non-humongous
