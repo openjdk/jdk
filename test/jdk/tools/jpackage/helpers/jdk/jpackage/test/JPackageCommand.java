@@ -203,6 +203,17 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         return addArguments(name, value.toString());
     }
 
+    public JPackageCommand mutate(Consumer<JPackageCommand> mutator) {
+        return mutate(List.of(mutator));
+    }
+
+    public JPackageCommand mutate(Iterable<Consumer<JPackageCommand>> mutators) {
+        for (var mutator : mutators) {
+            mutator.accept(this);
+        }
+        return this;
+    }
+
     public boolean isImagePackageType() {
         return PackageType.IMAGE == getArgumentValue("--type",
                 () -> null, PACKAGE_TYPES::get);
