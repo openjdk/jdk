@@ -197,7 +197,14 @@ VTransformVectorNode* SuperWordVTransformBuilder::make_vector_vtnode_for_pack(co
   } else if (p0->is_Cmp()) {
     vtn = new (_vtransform.arena()) VTransformCmpVectorNode(_vtransform, properties);
   } else if (p0->is_Bool()) {
-    VTransformBoolTest kind = _packset.get_bool_test(pack);
+    bool is_unsigned = false;
+    if (p0->in(1) != nullptr) {
+      is_unsigned = p0->in(1)->Opcode() == Op_CmpU ||
+                    p0->in(1)->Opcode() == Op_CmpUL ||
+                    p0->in(1)->Opcode() == Op_CmpU3 ||
+                    p0->in(1)->Opcode() == Op_CmpUL3;
+    }
+    VTransformBoolTest kind = _packset.get_bool_test(pack, is_unsigned);
     vtn = new (_vtransform.arena()) VTransformBoolVectorNode(_vtransform, properties, kind);
   } else if (p0->is_CMove()) {
     vtn = new (_vtransform.arena()) VTransformElementWiseVectorNode(_vtransform, p0->req(), properties, Op_VectorBlend);

@@ -1675,7 +1675,7 @@ Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int ind
   return p0_in;
 }
 
-VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
+VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack, bool is_unsigned) const {
   BoolNode* bol = bool_pack->at(0)->as_Bool();
   BoolTest::mask mask = bol->_test._test;
   bool is_negated = false;
@@ -1742,7 +1742,10 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       mask = bol->_test.negate();
       is_negated = true;
     }
+  } else if (is_unsigned) {
+    mask = BoolTest::unsigned_mask(mask);
   }
+
 
   return VTransformBoolTest(mask, is_negated);
 }
