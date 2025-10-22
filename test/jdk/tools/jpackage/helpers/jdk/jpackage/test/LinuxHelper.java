@@ -22,6 +22,12 @@
  */
 package jdk.jpackage.test;
 
+import static jdk.jpackage.test.AdditionalLauncher.getAdditionalLauncherProperties;
+import static java.util.Collections.unmodifiableSortedSet;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toSet;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -32,17 +38,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -161,8 +167,7 @@ public final class LinuxHelper {
         switch (packageType) {
             case LINUX_DEB:
                 return Stream.of(getDebBundleProperty(cmd.outputBundle(),
-                        "Depends").split(",")).map(String::strip).collect(
-                        Collectors.toList());
+                        "Depends").split(",")).map(String::strip).toList();
 
             case LINUX_RPM:
                 return Executor.of("rpm", "-qp", "-R")
@@ -323,10 +328,9 @@ public final class LinuxHelper {
         if (cmd.isRuntime()) {
             Path runtimeDir = cmd.appRuntimeDirectory();
             Set<Path> expectedCriticalRuntimePaths = CRITICAL_RUNTIME_FILES.stream().map(
-                    runtimeDir::resolve).collect(Collectors.toSet());
+                    runtimeDir::resolve).collect(toSet());
             Set<Path> actualCriticalRuntimePaths = getPackageFiles(cmd).filter(
-                    expectedCriticalRuntimePaths::contains).collect(
-                            Collectors.toSet());
+                    expectedCriticalRuntimePaths::contains).collect(toSet());
             checkPrerequisites = expectedCriticalRuntimePaths.equals(
                     actualCriticalRuntimePaths);
         } else {
@@ -372,8 +376,7 @@ public final class LinuxHelper {
         Function<List<String>, String> verifier = (lines) -> {
             // Lookup for xdg commands
             return lines.stream().filter(line -> {
-                Set<String> words = Stream.of(line.split("\\s+")).collect(
-                        Collectors.toSet());
+                Set<String> words = Stream.of(line.split("\\s+")).collect(toSet());
                 return words.contains("xdg-desktop-menu") || words.contains(
                         "xdg-mime") || words.contains("xdg-icon-resource");
             }).findFirst().orElse(null);
@@ -389,8 +392,7 @@ public final class LinuxHelper {
 
             Map<Scriptlet, List<String>> scriptlets = getScriptlets(cmd);
             if (integrated) {
-                Set<Scriptlet> requiredScriptlets = Stream.of(Scriptlet.values()).sorted().collect(
-                        Collectors.toSet());
+                var requiredScriptlets = Stream.of(Scriptlet.values()).sorted().toList();
                 TKit.assertTrue(scriptlets.keySet().containsAll(
                         requiredScriptlets), String.format(
                                 "Check all required scriptlets %s found in the package. Package scriptlets: %s",
@@ -452,11 +454,29 @@ public final class LinuxHelper {
     }
 
     private static Collection<Path> getDesktopFiles(JPackageCommand cmd) {
+
         var unpackedDir = cmd.appLayout().desktopIntegrationDirectory();
+
+        return relativePackageFilesInSubdirectory(cmd, ApplicationLayout::desktopIntegrationDirectory)
+                .filter(path -> {
+                    return path.getNameCount() == 1;
+                })
+                .filter(path -> {
+                    return ".desktop".equals(PathUtils.getSuffix(path));
+                })
+                .map(unpackedDir::resolve)
+                .toList();
+    }
+
+    private static Stream<Path> relativePackageFilesInSubdirectory(
+            JPackageCommand cmd, Function<ApplicationLayout, Path> subdirFunc) {
+
+        var unpackedDir = subdirFunc.apply(cmd.appLayout());
         var packageDir = cmd.pathToPackageFile(unpackedDir);
+
         return getPackageFiles(cmd).filter(path -> {
-            return packageDir.equals(path.getParent()) && path.getFileName().toString().endsWith(".desktop");
-        }).map(Path::getFileName).map(unpackedDir::resolve).toList();
+            return path.startsWith(packageDir);
+        }).map(packageDir::relativize);
     }
 
     private static String launcherNameFromDesktopFile(JPackageCommand cmd, Optional<AppImageFile> predefinedAppImage, Path desktopFile) {
@@ -488,13 +508,26 @@ public final class LinuxHelper {
 
         var data = new DesktopFile(desktopFile, true);
 
-        final Set<String> mandatoryKeys = new HashSet<>(Set.of("Name", "Comment",
+        final Set<String> mandatoryKeys = new TreeSet<>(Set.of("Name", "Comment",
                 "Exec", "Icon", "Terminal", "Type", "Categories"));
         mandatoryKeys.removeAll(data.keySet());
         TKit.assertTrue(mandatoryKeys.isEmpty(), String.format(
                 "Check for missing %s keys in the file", mandatoryKeys));
 
-        for (var e : Map.of("Type", "Application", "Terminal", "false").entrySet()) {
+        final String launcherDescription;
+        if (cmd.name().equals(launcherName) || predefinedAppImage.isPresent()) {
+            launcherDescription = Optional.ofNullable(cmd.getArgumentValue("--description")).orElseGet(cmd::name);
+        } else {
+            launcherDescription = getAdditionalLauncherProperties(cmd, launcherName).findProperty("description").or(() -> {
+                return Optional.ofNullable(cmd.getArgumentValue("--description"));
+            }).orElseGet(cmd::name);
+        }
+
+        for (var e : List.of(
+                Map.entry("Type", "Application"),
+                Map.entry("Terminal", "false"),
+                Map.entry("Comment", launcherDescription)
+        )) {
             String key = e.getKey();
             TKit.assertEquals(e.getValue(), data.find(key).orElseThrow(), String.format(
                     "Check value of [%s] key", key));
@@ -710,7 +743,7 @@ public final class LinuxHelper {
 
     private static Map<Scriptlet, List<String>> getDebScriptlets(
             JPackageCommand cmd, Set<Scriptlet> scriptlets) {
-        Map<Scriptlet, List<String>> result = new HashMap<>();
+        Map<Scriptlet, List<String>> result = new TreeMap<>();
         TKit.withTempDirectory("dpkg-control-files", tempDir -> {
             // Extract control Debian package files into temporary directory
             Executor.of("dpkg", "-e")
@@ -732,7 +765,7 @@ public final class LinuxHelper {
         List<String> output = Executor.of("rpm", "-qp", "--scripts",
                 cmd.outputBundle().toString()).executeAndGetOutput();
 
-        Map<Scriptlet, List<String>> result = new HashMap<>();
+        Map<Scriptlet, List<String>> result = new TreeMap<>();
         List<String> curScriptletBody = null;
         for (String str : output) {
             Matcher m = Scriptlet.RPM_HEADER_PATTERN.matcher(str);
@@ -766,10 +799,10 @@ public final class LinuxHelper {
 
         static final Pattern RPM_HEADER_PATTERN = Pattern.compile(String.format(
                 "(%s) scriptlet \\(using /bin/sh\\):", Stream.of(values()).map(
-                        v -> v.rpm).collect(Collectors.joining("|"))));
+                        v -> v.rpm).collect(joining("|"))));
 
         static final Map<String, Scriptlet> RPM_MAP = Stream.of(values()).collect(
-                Collectors.toMap(v -> v.rpm, v -> v));
+                toMap(v -> v.rpm, v -> v));
     }
 
     public static String getDefaultPackageArch(PackageType type) {
@@ -846,7 +879,7 @@ public final class LinuxHelper {
                     } else {
                         return Map.entry(components[0], components[1]);
                     }
-                }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
             } catch (IOException ex) {
                 throw new UncheckedIOException(ex);
             }
@@ -887,7 +920,8 @@ public final class LinuxHelper {
     private static final Pattern XDG_CMD_ICON_SIZE_PATTERN = Pattern.compile("\\s--size\\s+(\\d+)\\b");
 
     // Values grabbed from https://linux.die.net/man/1/xdg-icon-resource
-    private static final Set<Integer> XDG_CMD_VALID_ICON_SIZES = Set.of(16, 22, 32, 48, 64, 128);
+    private static final Set<Integer> XDG_CMD_VALID_ICON_SIZES = unmodifiableSortedSet(
+            new TreeSet<>(List.of(16, 22, 32, 48, 64, 128)));
 
     private static final Method getServiceUnitFileName = initGetServiceUnitFileName();
 }
