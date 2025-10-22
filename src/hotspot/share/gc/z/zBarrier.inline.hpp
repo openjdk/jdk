@@ -87,7 +87,7 @@ inline void ZBarrier::self_heal(ZBarrierFastPath fast_path, volatile zpointer* p
 
   for (;;) {
     if (ptr == zpointer::null) {
-      assert(!ZVerifyOops || !ZHeap::heap()->is_in(uintptr_t(p)) || !ZHeap::heap()->is_old(p), "No raw null in old");
+      assert(allow_null || !ZVerifyOops || !ZHeap::heap()->is_in(uintptr_t(p)) || !ZHeap::heap()->is_old(p), "No raw null in old");
     }
 
     assert_transition_monotonicity(ptr, heal_ptr);
@@ -679,7 +679,7 @@ inline void ZBarrier::promote_barrier_on_young_oop_field(volatile zpointer* p) {
   // This could simply be ensured in the marking above, but promotion rates
   // are typically rather low, and fixing all null pointers strictly, when
   // only a few had to be store good due to promotions, is generally not favourable
-  barrier(is_store_good_fast_path, promote_slow_path, color_store_good, p, o);
+  barrier(is_store_good_fast_path, promote_slow_path, color_store_good, p, o, true /* allow_null */);
 }
 
 inline zaddress ZBarrier::remset_barrier_on_oop_field(volatile zpointer* p) {
