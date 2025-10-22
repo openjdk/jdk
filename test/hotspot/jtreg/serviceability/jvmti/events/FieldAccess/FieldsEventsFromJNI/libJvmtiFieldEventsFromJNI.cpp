@@ -42,7 +42,6 @@ cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
   }
   deallocate(jvmti,jni, m_name);
 
-
   LOG("The location is %" PRId64 "\n", (int64_t)location);
   if (location != 0) {
     fatal(jni, "The method's location should be 0 for jni call.");
@@ -163,7 +162,6 @@ Java_FieldsEventsFromJNI_enableEventsAndAccessField(
   }
   jni->ReleaseStringUTFChars(jname, name_str);
 }
-
 
 JNIEXPORT void JNICALL
 Java_FieldsEventsFromJNI_enableEventsAndModifyField(
