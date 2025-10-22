@@ -1899,7 +1899,8 @@ bool SuperWord::do_vtransform() const {
   return true;
 }
 
-// TODO: move to other file
+// Check Cost-Model, and other heuristics.
+// Can be overridden with AutoVectorizationOverrideProfitability.
 bool VTransform::is_profitable() const {
   assert(_graph.is_scheduled(), "must already be scheduled");
 
