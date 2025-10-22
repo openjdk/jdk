@@ -35,6 +35,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "runtime/synchronizer.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
