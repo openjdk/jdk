@@ -387,8 +387,6 @@ source %{
     return false;
   }
 
-  // Return true if vector mask operation with "opcode" requires the mask to be
-  // saved in a predicate register.
   bool Matcher::vector_mask_requires_predicate(int opcode, const TypeVect* vt) {
     if (vt->isa_vectmask() == nullptr) {
       return false;
@@ -398,8 +396,8 @@ source %{
       case Op_VectorLongToMask:
       case Op_VectorMaskToLong:
         // These ops do not have native predicate instructions on SVE. Instead,
-        // they are implemented with vector instructions. Using the vector layout
-        // for the input/output mask is more efficient in these cases.
+        // they are implemented with vector instructions. Using the packed vector
+        // layout for the input/output mask is more efficient in these cases.
         return false;
       default:
         return true;
