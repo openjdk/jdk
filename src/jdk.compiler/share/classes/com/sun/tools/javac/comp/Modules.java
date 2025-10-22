@@ -120,6 +120,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.MDL;
 import static com.sun.tools.javac.code.Kinds.Kind.MTH;
 
 import static com.sun.tools.javac.code.TypeTag.CLASS;
+import java.util.function.Function;
 
 /**
  *  TODO: fill in
@@ -236,6 +237,7 @@ public class Modules extends JCTree.Visitor {
                 setupAllModules(); //initialize the module graph
                 Assert.checkNonNull(allModules);
                 inInitModules = false;
+                return allModules;
             }, null);
         } finally {
             inInitModules = false;
@@ -249,10 +251,11 @@ public class Modules extends JCTree.Visitor {
             //the next steps may query if the current module participates in preview,
             //and that requires a completed java.base:
             syms.java_base.complete();
+            return modules;
         }, c);
     }
 
-    private boolean enter(List<JCCompilationUnit> trees, Consumer<Set<ModuleSymbol>> init, ClassSymbol c) {
+    private boolean enter(List<JCCompilationUnit> trees, Function<Set<ModuleSymbol>, Set<ModuleSymbol>> init, ClassSymbol c) {
         if (!allowModules) {
             for (JCCompilationUnit tree: trees) {
                 tree.modle = syms.noModule;
@@ -270,9 +273,9 @@ public class Modules extends JCTree.Visitor {
 
             setCompilationUnitModules(trees, roots, c);
 
-            init.accept(roots);
+            Set<ModuleSymbol> initialized = init.apply(roots);
 
-            for (ModuleSymbol msym: roots) {
+            for (ModuleSymbol msym : initialized) {
                 msym.complete();
             }
         } catch (CompletionFailure ex) {
