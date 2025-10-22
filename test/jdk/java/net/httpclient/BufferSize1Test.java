@@ -21,10 +21,12 @@
  * questions.
  */
 
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestEchoHandler;
-import jdk.httpclient.test.lib.common.HttpServerAdapters.HttpTestServer;
+import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.internal.net.http.common.Utils;
 import jdk.test.lib.net.SimpleSSLContext;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
@@ -37,39 +39,47 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static java.net.http.HttpClient.Builder.NO_PROXY;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.net.http.HttpClient.Version.HTTP_3;
 import static java.net.http.HttpOption.H3_DISCOVERY;
 import static java.net.http.HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY;
-import static jdk.httpclient.test.lib.common.HttpServerAdapters.createClientBuilderFor;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
- * @test
+ * @test id
  * @bug 8367976
  * @summary Verifies that setting the `jdk.httpclient.bufsize` system property
  *          to its lowest possible value, 1, does not wedge the client
  * @library /test/jdk/java/net/httpclient/lib
  *          /test/lib
- * @run main/othervm -Djdk.httpclient.bufsize=1 -Dtest.httpVersion=HTTP_1_1 BufferSize1Test
- * @run main/othervm -Djdk.httpclient.bufsize=1 -Dtest.httpVersion=HTTP_1_1 -Dtest.sslEnabled BufferSize1Test
- * @run main/othervm -Djdk.httpclient.bufsize=1 -Dtest.httpVersion=HTTP_2 BufferSize1Test
- * @run main/othervm -Djdk.httpclient.bufsize=1 -Dtest.httpVersion=HTTP_2 -Dtest.sslEnabled BufferSize1Test
- * @run main/othervm -Djdk.httpclient.bufsize=1 -Dtest.httpVersion=HTTP_3 BufferSize1Test
+ * @run junit/othervm -Djdk.httpclient.bufsize=1 BufferSize1Test
  */
 
-public class BufferSize1Test {
+class BufferSize1Test implements HttpServerAdapters {
 
-    public static void main(String[] args) throws Exception {
+    @BeforeAll
+    static void verifyBufferSize() {
+        assertEquals(1, Utils.BUFSIZE);
+    }
 
-        // Verify `Utils.BUFSIZE`
-        if (Utils.BUFSIZE != 1) {
-            throw new AssertionError("Unexpected `Utils.BUFSIZE`: " + Utils.BUFSIZE);
-        }
+    static Object[][] testArgs() {
+        return new Object[][]{
+                {HTTP_1_1, false},
+                {HTTP_1_1, true},
+                {HTTP_2, false},
+                {HTTP_2, true},
+                {HTTP_3, true}
+        };
+    }
+
+    @ParameterizedTest
+    @MethodSource("testArgs")
+    void test(Version version, boolean secure) throws Exception {
 
         // Create the server
-        var version = Version.valueOf(System.getProperty("test.httpVersion"));
-        var sslContext = System.getProperty("test.sslEnabled") != null || HTTP_3.equals(version)
-                ? new SimpleSSLContext().get()
-                : null;
+        var sslContext = secure || HTTP_3.equals(version) ? new SimpleSSLContext().get() : null;
         try (var server = switch (version) {
             case HTTP_1_1, HTTP_2 -> HttpTestServer.create(version, sslContext);
             case HTTP_3 -> HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
@@ -88,7 +98,8 @@ public class BufferSize1Test {
                 byte[] requestBodyBytes = "body".repeat(1000).getBytes(StandardCharsets.US_ASCII);
                 var request = createRequest(sslContext, server, serverHandlerPath, version, requestBodyBytes);
 
-                // Execute and verify the request, twice for certainty.
+                // Execute and verify the request.
+                // Do it twice to cover code paths before and after a protocol upgrade.
                 requestAndVerify(client, request, requestBodyBytes);
                 requestAndVerify(client, request, requestBodyBytes);
 
@@ -98,8 +109,8 @@ public class BufferSize1Test {
 
     }
 
-    private static HttpClient createClient(Version version, SSLContext sslContext) {
-        var clientBuilder = createClientBuilderFor(version)
+    private HttpClient createClient(Version version, SSLContext sslContext) {
+        var clientBuilder = newClientBuilderForH3()
                 .proxy(NO_PROXY)
                 .version(version);
         if (sslContext != null) {
@@ -137,12 +148,11 @@ public class BufferSize1Test {
         }
         byte[] responseBodyBytes = response.body();
         int mismatchIndex = Arrays.mismatch(requestBodyBytes, responseBodyBytes);
-        if (mismatchIndex >= 0) {
-            var message = String.format(
-                    "Response body (%s bytes) mismatches the request body (%s bytes) at index %s!",
-                    responseBodyBytes.length, requestBodyBytes.length, mismatchIndex);
-            throw new AssertionError(message);
-        }
+        assertTrue(
+                mismatchIndex < 0,
+                String.format(
+                        "Response body (%s bytes) mismatches the request body (%s bytes) at index %s!",
+                        responseBodyBytes.length, requestBodyBytes.length, mismatchIndex));
     }
 
 }
