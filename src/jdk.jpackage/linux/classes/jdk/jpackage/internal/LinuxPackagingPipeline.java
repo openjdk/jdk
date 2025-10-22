@@ -24,7 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.ApplicationBuilder.normalizeLauncherProperty;
 import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
 
 import java.io.IOException;
@@ -37,12 +36,8 @@ import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.Application;
-import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ApplicationLayout;
 import jdk.jpackage.internal.model.Launcher;
-import jdk.jpackage.internal.model.LauncherShortcut;
-import jdk.jpackage.internal.model.LinuxLauncher;
-import jdk.jpackage.internal.model.LinuxLauncherMixin;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
@@ -67,17 +62,6 @@ final class LinuxPackagingPipeline {
         });
 
         return builder;
-    }
-
-    static ApplicationLaunchers normalizeShortcuts(ApplicationLaunchers appLaunchers) {
-        return normalizeLauncherProperty(appLaunchers, launcher -> {
-            // Return "true" if shortcut is not configured for the launcher.
-            return launcher.shortcut().isEmpty();
-        }, (LinuxLauncher launcher) -> {
-            return launcher.shortcut().flatMap(LauncherShortcut::startupDirectory);
-        }, (launcher, shortcut) -> {
-            return LinuxLauncher.create(launcher, new LinuxLauncherMixin.Stub(Optional.of(new LauncherShortcut(shortcut))));
-        });
     }
 
     private static void writeLauncherLib(
