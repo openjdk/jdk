@@ -21,74 +21,86 @@
  * questions.
  */
 
-import jdk.test.lib.process.ProcessTools;
-import org.junit.jupiter.api.AfterAll;
+import jdk.internal.net.http.common.Utils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @bug 8367976
  * @summary Verifies that the `jdk.httpclient.bufsize` system property is
  *          clamped correctly
+ *
  * @library /test/lib
- * @run junit BufferSizePropertyClampTest
+ *
+ * @comment `-Djdk.httpclient.HttpClient.log=errors` is needed to enable
+ *          logging and verify that invalid input gets logged
+ * @run junit/othervm
+ *      -Djdk.httpclient.HttpClient.log=errors
+ *      -Djdk.httpclient.bufsize=-1
+ *      BufferSizePropertyClampTest
+ * @run junit/othervm
+ *      -Djdk.httpclient.HttpClient.log=errors
+ *      -Djdk.httpclient.bufsize=0
+ *      BufferSizePropertyClampTest
+ * @run junit/othervm
+ *      -Djdk.httpclient.HttpClient.log=errors
+ *      -Djdk.httpclient.bufsize=16385
+ *      BufferSizePropertyClampTest
  */
 
 class BufferSizePropertyClampTest {
 
-    private static Path scriptPath;
+    /** Anchor to avoid the {@code Logger} instance get GC'ed */
+    private static final Logger CLIENT_LOGGER =
+            Logger.getLogger("jdk.httpclient.HttpClient");
+
+    private static final List<String> CLIENT_LOGGER_MESSAGES =
+            Collections.synchronizedList(new ArrayList<>());
 
     @BeforeAll
-    static void setUp() throws IOException {
-        // Create a Java file that prints the `Utils::BUFSIZE` value
-        scriptPath = Path.of("UtilsBUFSIZE.java");
-        Files.write(scriptPath, List.of("void main() { IO.println(jdk.internal.net.http.common.Utils.BUFSIZE); }"));
+    static void registerLoggerHandler() {
+        CLIENT_LOGGER.addHandler(new Handler() {
+
+            @Override
+            public void publish(LogRecord record) {
+                var message = MessageFormat.format(record.getMessage(), record.getParameters());
+                CLIENT_LOGGER_MESSAGES.add(message);
+            }
+
+            @Override
+            public void flush() {
+                // Do nothing
+            }
+
+            @Override
+            public void close() {
+                // Do nothing
+            }
+
+        });
     }
 
-    @AfterAll
-    static void tearDown() throws IOException {
-        Files.deleteIfExists(scriptPath);
-    }
-
-    @ParameterizedTest
-    @ValueSource(ints = {-1, 0, (2 << 14) + 1})
-    void test(int invalidBufferSize) throws Exception {
-
-        // To obtain the buffer size constant, run the Java file in a separate
-        // process, which is needed to capture the stdout and verify the logged
-        // error message.
-        var outputAnalyzer = ProcessTools.executeTestJava(
-                "--add-exports", "java.net.http/jdk.internal.net.http.common=ALL-UNNAMED",
-                "-Djdk.httpclient.HttpClient.log=errors",
-                "-Djdk.httpclient.bufsize=" + invalidBufferSize,
-                scriptPath.toString());
-        outputAnalyzer.shouldHaveExitValue(0);
-
-        // Verify stderr
-        List<String> stderrLines = outputAnalyzer.stderrAsLines();
-        assertEquals(2, stderrLines.size(), "Expected 2 lines, found: " + stderrLines);
-        assertTrue(
-                stderrLines.get(0).endsWith("jdk.internal.net.http.common.Utils getIntegerNetProperty"),
-                "Unexpected line: " + stderrLines.get(0));
+    @Test
+    void test() throws Exception {
+        assertEquals(16384, Utils.BUFSIZE);
         assertEquals(
-                "INFO: ERROR: Property value for jdk.httpclient.bufsize=" + invalidBufferSize + " not in [1..16384]: using default=16384",
-                stderrLines.get(1).replaceAll(",", ""));
-
-        // Verify stdout
-        var stdoutLines = outputAnalyzer.stdoutAsLines();
-        assertEquals(1, stdoutLines.size(), "Expected one line, found: " + stdoutLines);
-        assertEquals("16384", stdoutLines.get(0));
-
+                1, CLIENT_LOGGER_MESSAGES.size(),
+                "Unexpected number of logger messages: " + CLIENT_LOGGER_MESSAGES);
+        var expectedMessage = "ERROR: Property value for jdk.httpclient.bufsize=" +
+                System.getProperty("jdk.httpclient.bufsize") +
+                " not in [1..16384]: using default=16384";
+        assertEquals(expectedMessage, CLIENT_LOGGER_MESSAGES.getFirst().replaceAll(",", ""));
     }
 
 }
