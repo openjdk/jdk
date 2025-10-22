@@ -25,9 +25,9 @@
 #ifndef SHARE_JFR_SUPPORT_JFRDEPRECATIONEVENTWRITER_HPP
 #define SHARE_JFR_SUPPORT_JFRDEPRECATIONEVENTWRITER_HPP
 
-#include "memory/allocation.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTime.hpp"
+#include "memory/allocation.hpp"
 
 class JfrCheckpointWriter;
 class JfrChunkWriter;

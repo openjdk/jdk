@@ -24,7 +24,6 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public final class LauncherIconVerifier {
@@ -46,6 +45,11 @@ public final class LauncherIconVerifier {
         return this;
     }
 
+    public LauncherIconVerifier verifyFileInAppImageOnly(boolean v) {
+        verifyFileInAppImageOnly = true;
+        return this;
+    }
+
     public void applyTo(JPackageCommand cmd) throws IOException {
         final String curLauncherName;
         final String label;
@@ -62,22 +66,26 @@ public final class LauncherIconVerifier {
 
         if (TKit.isWindows()) {
             TKit.assertPathExists(iconPath, false);
-            WinExecutableIconVerifier.verifyLauncherIcon(cmd, launcherName,
-                    expectedIcon, expectedDefault);
+            if (!verifyFileInAppImageOnly) {
+                WinExecutableIconVerifier.verifyLauncherIcon(cmd, launcherName, expectedIcon, expectedDefault);
+            }
         } else if (expectedDefault) {
             TKit.assertPathExists(iconPath, true);
         } else if (expectedIcon == null) {
             TKit.assertPathExists(iconPath, false);
         } else {
             TKit.assertFileExists(iconPath);
-            TKit.assertTrue(-1 == Files.mismatch(expectedIcon, iconPath),
-                    String.format(
-                    "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
-                    iconPath, label, expectedIcon));
+            if (!verifyFileInAppImageOnly) {
+                TKit.assertSameFileContent(expectedIcon, iconPath,
+                        String.format(
+                        "Check icon file [%s] of %s launcher is a copy of source icon file [%s]",
+                        iconPath, label, expectedIcon));
+            }
         }
     }
 
     private String launcherName;
     private Path expectedIcon;
     private boolean expectedDefault;
+    private boolean verifyFileInAppImageOnly;
 }

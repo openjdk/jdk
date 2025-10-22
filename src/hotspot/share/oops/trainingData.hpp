@@ -26,7 +26,6 @@
 #define SHARE_OOPS_TRAININGDATA_HPP
 
 #include "cds/cdsConfig.hpp"
-#include "classfile/classLoaderData.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.hpp"
@@ -37,7 +36,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 class ciEnv;
 class ciBaseObject;
@@ -96,16 +95,18 @@ public:
 
   // TrainingDataLocker is used to guard read/write operations on non-MT-safe data structures.
   // It supports recursive locking and a read-only mode (in which case no locks are taken).
-  // It is also a part of the TD collection termination protocol (see the "spanshot" field).
+  // It is also a part of the TD collection termination protocol (see the "snapshot" field).
   class TrainingDataLocker {
+#if INCLUDE_CDS
     static volatile bool _snapshot; // If true we're not allocating new training data
+#endif
     static int _lock_mode;
     const bool _recursive;
     static void lock() {
 #if INCLUDE_CDS
       assert(_lock_mode != 0, "Forgot to call TrainingDataLocker::initialize()");
       if (_lock_mode > 0) {
-        TrainingData_lock->lock();
+        TrainingData_lock->lock_without_safepoint_check();
       }
 #endif
     }
@@ -152,6 +153,11 @@ public:
       _lock_mode = need_data() ? +1 : -1;   // if -1, we go lock-free
 #endif
     }
+    static void assert_locked_or_snapshotted() {
+#if INCLUDE_CDS
+      assert(safely_locked() || _snapshot, "use under TrainingDataLocker or after snapshot");
+#endif
+    }
     static void assert_locked() {
       assert(safely_locked(), "use under TrainingDataLocker");
     }
@@ -173,7 +179,7 @@ public:
   // A set of TD objects that we collect during the training run.
   class TrainingDataSet {
     friend TrainingData;
-    ResizeableResourceHashtable<const Key*, TrainingData*,
+    ResizeableHashTable<const Key*, TrainingData*,
                                 AnyObj::C_HEAP, MemTag::mtCompiler,
                                 &TrainingData::Key::hash,
                                 &TrainingData::Key::equals>
@@ -229,7 +235,7 @@ public:
   // A widget to ensure that we visit TD object only once (TD objects can have pointer to
   // other TD object that are sometimes circular).
   class Visitor {
-    ResizeableResourceHashtable<TrainingData*, bool> _visited;
+    ResizeableHashTable<TrainingData*, bool> _visited;
   public:
     Visitor(unsigned size) : _visited(size, 0x3fffffff) { }
     bool is_visited(TrainingData* td) {
@@ -338,20 +344,24 @@ private:
     }
 
     int length() const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
       return (_deps_dyn != nullptr ? _deps_dyn->length()
               : _deps   != nullptr ? _deps->length()
               : 0);
     }
     E* adr_at(int i) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
       return (_deps_dyn != nullptr ? _deps_dyn->adr_at(i)
               : _deps   != nullptr ? _deps->adr_at(i)
               : nullptr);
     }
     E at(int i) const {
+      TrainingDataLocker::assert_locked_or_snapshotted();
       assert(i >= 0 && i < length(), "oob");
       return *adr_at(i);
     }
     bool append_if_missing(E dep) {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn == nullptr) {
         _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(10);
         _deps_dyn->append(dep);
@@ -361,23 +371,27 @@ private:
       }
     }
     bool remove_if_existing(E dep) {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn != nullptr) {
         return _deps_dyn->remove_if_existing(dep);
       }
       return false;
     }
     void clear() {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn != nullptr)  {
         _deps_dyn->clear();
       }
     }
     void append(E dep) {
+      TrainingDataLocker::assert_can_add();
       if (_deps_dyn == nullptr) {
         _deps_dyn = new GrowableArrayCHeap<E, mtCompiler>(10);
       }
       _deps_dyn->append(dep);
     }
     bool contains(E dep) {
+      TrainingDataLocker::assert_locked();
       for (int i = 0; i < length(); i++) {
         if (dep == at(i)) {
           return true; // found
@@ -391,7 +405,7 @@ private:
       _deps_dyn = nullptr;
     }
 #endif
-    void prepare(ClassLoaderData* loader_data);
+    void prepare();
     void metaspace_pointers_do(MetaspaceClosure *iter);
   };
 
@@ -468,10 +482,6 @@ class KlassTrainingData : public TrainingData {
   }
   virtual KlassTrainingData* as_KlassTrainingData() const { return const_cast<KlassTrainingData*>(this); };
 
-  ClassLoaderData* class_loader_data() {
-    assert(has_holder(), "");
-    return holder()->class_loader_data();
-  }
   void notice_fully_initialized() NOT_CDS_RETURN;
 
   void print_on(outputStream* st, bool name_only) const;
@@ -591,6 +601,7 @@ public:
       DepList<Record> _data;
     public:
       OptionalReturnType find(const Args&... args) {
+        TrainingDataLocker l;
         ArgumentsType a(args...);
         for (int i = 0; i < _data.length(); i++) {
           if (_data.at(i).arguments() == a) {
@@ -599,14 +610,17 @@ public:
         }
         return OptionalReturnType(false, ReturnType());
       }
-      bool append_if_missing(const ReturnType& result, const Args&... args) {
-        return _data.append_if_missing(Record(result, ArgumentsType(args...)));
+      void append_if_missing(const ReturnType& result, const Args&... args) {
+        TrainingDataLocker l;
+        if (l.can_add()) {
+          _data.append_if_missing(Record(result, ArgumentsType(args...)));
+        }
       }
 #if INCLUDE_CDS
       void remove_unshareable_info() { _data.remove_unshareable_info(); }
 #endif
-      void prepare(ClassLoaderData* loader_data) {
-        _data.prepare(loader_data);
+      void prepare() {
+        _data.prepare();
       }
       void metaspace_pointers_do(MetaspaceClosure *iter) {
         _data.metaspace_pointers_do(iter);
@@ -624,8 +638,8 @@ public:
       ciMethod__inline_instructions_size.remove_unshareable_info();
     }
 #endif
-    void prepare(ClassLoaderData* loader_data) {
-      ciMethod__inline_instructions_size.prepare(loader_data);
+    void prepare() {
+      ciMethod__inline_instructions_size.prepare();
     }
     void metaspace_pointers_do(MetaspaceClosure *iter) {
       ciMethod__inline_instructions_size.metaspace_pointers_do(iter);
@@ -673,9 +687,9 @@ public:
     }
     _init_deps.clear();
   }
-  void dec_init_deps_left(KlassTrainingData* ktd);
-  int init_deps_left() const {
-    return Atomic::load(&_init_deps_left);
+  void dec_init_deps_left_release(KlassTrainingData* ktd);
+  int init_deps_left_acquire() const {
+    return AtomicAccess::load_acquire(&_init_deps_left);
   }
   uint compute_init_deps_left(bool count_initialized = false);
 
@@ -707,7 +721,7 @@ public:
     return (int)align_metadata_size(align_up(sizeof(CompileTrainingData), BytesPerWord)/BytesPerWord);
   }
 
-  void verify();
+  void verify(bool verify_dep_counter);
 
   static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, int compile_id) {
     return TrainingData::allocate<CompileTrainingData>(mtd, level, compile_id);
@@ -828,7 +842,7 @@ class MethodTrainingData : public TrainingData {
     return "{ method training data }";
   };
 
-  void verify();
+  void verify(bool verify_dep_counter);
 
   static MethodTrainingData* allocate(Method* m, KlassTrainingData* ktd) {
     return TrainingData::allocate<MethodTrainingData>(m, ktd);

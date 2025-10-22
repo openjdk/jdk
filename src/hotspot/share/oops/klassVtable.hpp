@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,7 @@ class klassVtable {
   static void compute_vtable_size_and_num_mirandas(int* vtable_length,
                                                    int* num_new_mirandas,
                                                    GrowableArray<Method*>* all_mirandas,
-                                                   const Klass* super,
+                                                   const InstanceKlass* super,
                                                    Array<Method*>* methods,
                                                    AccessFlags class_flags,
                                                    u2 major_version,
@@ -116,7 +116,7 @@ class klassVtable {
   int  initialize_from_super(Klass* super);
   void put_method_at(Method* m, int index);
   static bool needs_new_vtable_entry(Method* m,
-                                     const Klass* super,
+                                     const InstanceKlass* super,
                                      Handle classloader,
                                      Symbol* classname,
                                      AccessFlags access_flags,
@@ -135,7 +135,7 @@ class klassVtable {
   bool is_miranda_entry_at(int i);
   int fill_in_mirandas(Thread* current, int initialized);
   static bool is_miranda(Method* m, Array<Method*>* class_methods,
-                         Array<Method*>* default_methods, const Klass* super,
+                         Array<Method*>* default_methods, const InstanceKlass* super,
                          bool is_interface);
   static void add_new_mirandas_to_lists(
       GrowableArray<Method*>* new_mirandas,
@@ -143,12 +143,12 @@ class klassVtable {
       Array<Method*>* current_interface_methods,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
-      const Klass* super,
+      const InstanceKlass* super,
       bool is_interface);
   static void get_mirandas(
       GrowableArray<Method*>* new_mirandas,
       GrowableArray<Method*>* all_mirandas,
-      const Klass* super,
+      const InstanceKlass* super,
       Array<Method*>* class_methods,
       Array<Method*>* default_methods,
       Array<InstanceKlass*>* local_interfaces,

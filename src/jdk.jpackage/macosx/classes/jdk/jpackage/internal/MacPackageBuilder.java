@@ -24,8 +24,13 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.MacPackagingPipeline.APPLICATION_LAYOUT;
+import static jdk.jpackage.internal.MacPackagingPipeline.LayoutUtils.packagerLayout;
+
+import java.nio.file.Files;
 import java.util.Objects;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacPackage;
 import jdk.jpackage.internal.model.MacPackageMixin;
 
@@ -45,8 +50,30 @@ final class MacPackageBuilder {
     }
 
     MacPackage create() throws ConfigException {
-        final var pkg = pkgBuilder.create();
-        return MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+
+        final var app = (MacApplication)pkgBuilder.app();
+
+        var pkg = pkgBuilder.create();
+
+        pkgBuilder.app(MacApplicationBuilder.overrideAppImageLayout(app, packagerLayout(pkg)))
+                .installedPackageLayout(pkg.installedPackageLayout());
+
+        pkg = pkgBuilder.create();
+
+        var macPkg = MacPackage.create(pkg, new MacPackageMixin.Stub(pkg.predefinedAppImage().map(v -> predefinedAppImageSigned)));
+        validatePredefinedAppImage(macPkg);
+        return macPkg;
+    }
+
+    private static void validatePredefinedAppImage(MacPackage pkg) {
+        if (pkg.predefinedAppImageSigned().orElse(false)) {
+            pkg.predefinedAppImage().ifPresent(predefinedAppImage -> {
+                var thePackageFile = PackageFile.getPathInAppImage(APPLICATION_LAYOUT);
+                if (!Files.exists(predefinedAppImage.resolve(thePackageFile))) {
+                    Log.info(I18N.format("warning.per.user.app.image.signed", thePackageFile));
+                }
+            });
+        }
     }
 
     private final PackageBuilder pkgBuilder;

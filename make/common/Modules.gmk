@@ -33,7 +33,7 @@ include $(TOPDIR)/make/conf/module-loader-map.conf
 
 # Append platform-specific and upgradeable modules
 PLATFORM_MODULES += $(PLATFORM_MODULES_$(OPENJDK_TARGET_OS)) \
-    $(UPGRADEABLE_PLATFORM_MODULES)
+    $(UPGRADEABLE_PLATFORM_MODULES) $(CUSTOM_UPGRADEABLE_PLATFORM_MODULES)
 
 ################################################################################
 # Setup module sets for docs
@@ -216,7 +216,7 @@ endif
 # Find dependencies ("requires") for a given module.
 # Param 1: Module to find dependencies for.
 FindDepsForModule = \
-  $(DEPS_$(strip $1))
+  $(filter-out $(IMPORT_MODULES), $(DEPS_$(strip $1)))
 
 # Find dependencies ("requires") transitively in 3 levels for a given module.
 # Param 1: Module to find dependencies for.
@@ -254,7 +254,8 @@ FindTransitiveIndirectDepsForModules = \
 # Upgradeable modules are those that are either defined as upgradeable or that
 # require an upradeable module.
 FindAllUpgradeableModules = \
-    $(sort $(filter-out $(MODULES_FILTER), $(UPGRADEABLE_PLATFORM_MODULES)))
+    $(sort $(filter-out $(MODULES_FILTER), \
+    $(UPGRADEABLE_PLATFORM_MODULES) $(CUSTOM_UPGRADEABLE_PLATFORM_MODULES)))
 
 ################################################################################
 
@@ -315,6 +316,19 @@ define ReadImportMetaData
     $$(foreach m, $$(IMPORTED_MODULES), \
       $$(eval $$(call ReadSingleImportMetaData, $$m)))
 endef
+
+################################################################################
+# Get a full snippet path for the current module and a given base name.
+#
+# Param 1 - The base name of the snippet file to include
+GetModuleSnippetName = \
+  $(if $(CUSTOM_MODULE_MAKE_ROOT), \
+    $(if $(wildcard $(CUSTOM_MODULE_MAKE_ROOT)/$(MODULE)/$(strip $1).gmk), \
+      $(CUSTOM_MODULE_MAKE_ROOT)/$(MODULE)/$(strip $1).gmk, \
+      $(wildcard modules/$(MODULE)/$(strip $1).gmk) \
+    ), \
+    $(wildcard modules/$(MODULE)/$(strip $1).gmk) \
+  )
 
 ################################################################################
 

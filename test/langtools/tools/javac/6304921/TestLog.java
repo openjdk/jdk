@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import javax.tools.SimpleJavaFileObject;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
@@ -130,10 +130,11 @@ public class TestLog
             log.error(tree.pos(), Errors.NotStmt);
             log.error(nil, Errors.NotStmt);
 
-            log.warning(LintWarnings.DivZero);
-            log.warning(tree.pos, LintWarnings.DivZero);
-            log.warning(tree.pos(), LintWarnings.DivZero);
-            log.warning(nil, LintWarnings.DivZero);
+            // some warnings that will be emitted during parsing
+            log.warning(Warnings.ExtraneousSemicolon);
+            log.warning(tree.pos, Warnings.ExtraneousSemicolon);
+            log.warning(tree.pos(), Warnings.ExtraneousSemicolon);
+            log.warning(nil, Warnings.ExtraneousSemicolon);
         }
 
         private Log log;

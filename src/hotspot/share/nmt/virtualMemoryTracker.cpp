@@ -24,9 +24,8 @@
 
 #include "logging/log.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/virtualMemoryTracker.hpp"
-#include "nmt/regionsTree.hpp"
 #include "nmt/regionsTree.inline.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/ostream.hpp"
 
@@ -36,7 +35,7 @@ VirtualMemorySnapshot VirtualMemorySummary::_snapshot;
 void VirtualMemory::update_peak(size_t size) {
   size_t peak_sz = peak_size();
   while (peak_sz < size) {
-    size_t old_sz = Atomic::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
+    size_t old_sz = AtomicAccess::cmpxchg(&_peak_size, peak_sz, size, memory_order_relaxed);
     if (old_sz == peak_sz) {
       break;
     } else {
@@ -70,7 +69,8 @@ void VirtualMemoryTracker::Instance::add_reserved_region(address base_addr, size
 
 void VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
   const NativeCallStack& stack, MemTag mem_tag) {
-  VMATree::SummaryDiff diff = tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag));
+  VMATree::SummaryDiff diff;
+  tree()->reserve_mapping((size_t)base_addr, size, tree()->make_region_data(stack, mem_tag), diff);
   apply_summary_diff(diff);
 }
 
@@ -149,7 +149,8 @@ void VirtualMemoryTracker::Instance::add_committed_region(address addr, size_t s
 
 void VirtualMemoryTracker::add_committed_region(address addr, size_t size,
   const NativeCallStack& stack) {
-    VMATree::SummaryDiff diff = tree()->commit_region(addr, size, stack);
+    VMATree::SummaryDiff diff;
+    tree()->commit_region(addr, size, stack, diff);
     apply_summary_diff(diff);
 }
 
@@ -160,7 +161,8 @@ void VirtualMemoryTracker::Instance::remove_uncommitted_region(address addr, siz
 
 void VirtualMemoryTracker::remove_uncommitted_region(address addr, size_t size) {
   MemTracker::assert_locked();
-  VMATree::SummaryDiff diff = tree()->uncommit_region(addr, size);
+  VMATree::SummaryDiff diff;
+  tree()->uncommit_region(addr, size, diff);
   apply_summary_diff(diff);
 }
 
@@ -170,7 +172,8 @@ void VirtualMemoryTracker::Instance::remove_released_region(address addr, size_t
 }
 
 void VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
-  VMATree::SummaryDiff diff = tree()->release_mapping((VMATree::position)addr, size);
+  VMATree::SummaryDiff diff;
+  tree()->release_mapping((VMATree::position)addr, size, diff);
   apply_summary_diff(diff);
 }
 
@@ -209,30 +212,40 @@ bool VirtualMemoryTracker::Instance::walk_virtual_memory(VirtualMemoryWalker* wa
 }
 
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
-  MemTracker::NmtVirtualMemoryLocker nvml;
+  bool ret = true;
   tree()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
     if (!walker->do_allocation_site(&rgn)) {
+      ret = false;
       return false;
     }
     return true;
   });
-  return true;
+  return ret;
 }
 
-size_t ReservedMemoryRegion::committed_size() const {
-  size_t committed = 0;
+size_t VirtualMemoryTracker::committed_size(const ReservedMemoryRegion* rmr) {
   size_t result = 0;
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*this, [&](CommittedMemoryRegion& crgn) {
+  tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
     result += crgn.size();
     return true;
   });
   return result;
 }
 
-address ReservedMemoryRegion::thread_stack_uncommitted_bottom() const {
-  address bottom = base();
-  address top = base() + size();
-  VirtualMemoryTracker::Instance::tree()->visit_committed_regions(*this, [&](CommittedMemoryRegion& crgn) {
+size_t VirtualMemoryTracker::Instance::committed_size(const ReservedMemoryRegion* rmr) {
+  assert(_tracker != nullptr, "Sanity check");
+  return _tracker->committed_size(rmr);
+}
+
+address VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
+  assert(_tracker != nullptr, "Sanity check");
+  return _tracker->thread_stack_uncommitted_bottom(rmr);
+}
+
+address VirtualMemoryTracker::thread_stack_uncommitted_bottom(const ReservedMemoryRegion* rmr) {
+  address bottom = rmr->base();
+  address top = rmr->end();
+    tree()->visit_committed_regions(*rmr, [&](CommittedMemoryRegion& crgn) {
     address committed_top = crgn.base() + crgn.size();
     if (committed_top < top) {
       // committed stack guard pages, skip them
@@ -291,7 +304,7 @@ public:
       assert_lock_strong(NmtVirtualMemory_lock);
     }
     if (rgn->mem_tag() == mtThreadStack) {
-      address stack_bottom = rgn->thread_stack_uncommitted_bottom();
+      address stack_bottom = VirtualMemoryTracker::Instance::thread_stack_uncommitted_bottom(rgn);
       address committed_start;
       size_t  committed_size;
       size_t stack_size = rgn->base() + rgn->size() - stack_bottom;

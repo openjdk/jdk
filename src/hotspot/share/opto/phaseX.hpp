@@ -459,16 +459,12 @@ protected:
 public:
 
   PhaseIterGVN(PhaseIterGVN* igvn); // Used by CCP constructor
-  PhaseIterGVN(PhaseGVN* gvn); // Used after Parser
+  PhaseIterGVN();
 
-  // Reset IGVN from GVN: call deconstructor, and placement new.
-  // Achieves the same as the following (but without move constructors):
-  // igvn = PhaseIterGVN(gvn);
-  void reset_from_gvn(PhaseGVN* gvn) {
-    if (this != gvn) {
-      this->~PhaseIterGVN();
-      ::new (static_cast<void*>(this)) PhaseIterGVN(gvn);
-    }
+  // Reset IGVN: call deconstructor, and placement new.
+  void reset() {
+    this->~PhaseIterGVN();
+    ::new (static_cast<void*>(this)) PhaseIterGVN();
   }
 
   // Reset IGVN with another: call deconstructor, and placement new.

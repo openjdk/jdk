@@ -220,7 +220,7 @@ final class ConfigFilesStasher {
             AdditionalLauncher.forEachAdditionalLauncher(cmd, (launcherName, propertyFilePath) -> {
                 try {
                     final var launcherAsService = new AdditionalLauncher.PropertyFile(propertyFilePath)
-                            .getPropertyBooleanValue("launcher-as-service").orElse(false);
+                            .findBooleanProperty("launcher-as-service").orElse(false);
                     if (launcherAsService) {
                         withServices[0] = true;
                     }
@@ -374,8 +374,14 @@ final class ConfigFilesStasher {
 
     private static Path setupDirectory(JPackageCommand cmd, String argName) {
         if (!cmd.hasArgument(argName)) {
-            // Use absolute path as jpackage can be executed in another directory
-            cmd.setArgumentValue(argName, TKit.createTempDirectory("stash-script-resource-dir").toAbsolutePath());
+            // Use absolute path as jpackage can be executed in another directory.
+            // Some tests expect a specific last argument, don't interfere with them
+            // and insert the argument at the beginning of the command line.
+            List<String> args = new ArrayList<>();
+            args.add(argName);
+            args.add(TKit.createTempDirectory("stash-script-resource-dir").toAbsolutePath().toString());
+            args.addAll(cmd.getAllArguments());
+            cmd.clearArguments().addArguments(args);
         }
 
         return Path.of(cmd.getArgumentValue(argName));

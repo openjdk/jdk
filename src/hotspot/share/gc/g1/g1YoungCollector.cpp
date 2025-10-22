@@ -25,6 +25,7 @@
 
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
@@ -39,7 +40,6 @@
 #include "gc/g1/g1MonitoringSupport.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/g1RedirtyCardsQueue.hpp"
 #include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
@@ -81,19 +81,19 @@ class G1YoungGCTraceTime {
     evacuation_failed_string[0] = '\0';
 
     if (_collector->evacuation_failed()) {
-      snprintf(evacuation_failed_string,
-               ARRAY_SIZE(evacuation_failed_string),
-               " (Evacuation Failure: %s%s%s)",
-               _collector->evacuation_alloc_failed() ? "Allocation" : "",
-               _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
-               _collector->evacuation_pinned() ? "Pinned" : "");
+      os::snprintf_checked(evacuation_failed_string,
+                           ARRAY_SIZE(evacuation_failed_string),
+                           " (Evacuation Failure: %s%s%s)",
+                           _collector->evacuation_alloc_failed() ? "Allocation" : "",
+                           _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
+                           _collector->evacuation_pinned() ? "Pinned" : "");
     }
-    snprintf(_young_gc_name_data,
-             MaxYoungGCNameLength,
-             "Pause Young (%s) (%s)%s",
-             G1GCPauseTypeHelper::to_string(_pause_type),
-             GCCause::to_string(_pause_cause),
-             evacuation_failed_string);
+    os::snprintf_checked(_young_gc_name_data,
+                         MaxYoungGCNameLength,
+                         "Pause Young (%s) (%s)%s",
+                         G1GCPauseTypeHelper::to_string(_pause_type),
+                         GCCause::to_string(_pause_cause),
+                         evacuation_failed_string);
     return _young_gc_name_data;
   }
 
@@ -271,7 +271,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collection_set_regions(collection_set()->region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->initial_region_length() +
                                               collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -341,23 +341,69 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // structures don't support efficiently performing the needed
       // additional tests or scrubbing of the mark stack.
       //
-      // However, we presently only nominate is_typeArray() objects.
-      // A humongous object containing references induces remembered
-      // set entries on other regions.  In order to reclaim such an
-      // object, those remembered sets would need to be cleaned up.
+      // We handle humongous objects specially, because frequent allocation and
+      // dropping of large binary blobs is an important use case for eager reclaim,
+      // and this special handling increases needed headroom.
+      // It also helps with G1 allocating humongous objects as old generation
+      // objects although they might also die quite quickly.
       //
-      // We also treat is_typeArray() objects specially, allowing them
-      // to be reclaimed even if allocated before the start of
-      // concurrent mark.  For this we rely on mark stack insertion to
-      // exclude is_typeArray() objects, preventing reclaiming an object
+      // TypeArray objects are allowed to be reclaimed even if allocated before
+      // the start of concurrent mark.  For this we rely on mark stack insertion
+      // to exclude is_typeArray() objects, preventing reclaiming an object
       // that is in the mark stack.  We also rely on the metadata for
       // such objects to be built-in and so ensured to be kept live.
-      // Frequent allocation and drop of large binary blobs is an
-      // important use case for eager reclaim, and this special handling
-      // may reduce needed headroom.
+      //
+      // Non-typeArrays that were allocated before marking are excluded from
+      // eager reclaim during marking.  One issue is the problem described
+      // above with scrubbing the mark stack, but there is also a problem
+      // causing these humongous objects being collected incorrectly:
+      //
+      // E.g. if the mutator is running, we may have objects o1 and o2 in the same
+      // region, where o1 has already been scanned and o2 is only reachable by
+      // the candidate object h, which is humongous.
+      //
+      // If the mutator read the reference to o2 from h and installed it into o1,
+      // no remembered set entry would be created for keeping alive o2, as o1 and
+      // o2 are in the same region.  Object h might be reclaimed by the next
+      // garbage collection. o1 still has the reference to o2, but since o1 had
+      // already been scanned we do not detect o2 to be still live and reclaim it.
+      //
+      // There is another minor problem with non-typeArray regions being the source
+      // of remembered set entries in other region's remembered sets.  There are
+      // two cases: first, the remembered set entry is in a Free region after reclaim.
+      // We handle this case by ignoring these cards during merging the remembered
+      // sets.
+      //
+      // Second, there may be cases where eagerly reclaimed regions were already
+      // reallocated.  This may cause scanning of these outdated remembered set
+      // entries, containing some objects. But apart from extra work this does
+      // not cause correctness issues.
+      // There is no difference between scanning cards covering an effectively
+      // dead humongous object vs. some other objects in reallocated regions.
+      //
+      // TAMSes are only reset after completing the entire mark cycle, during
+      // bitmap clearing. It is worth to not wait until then, and allow reclamation
+      // outside of actual (concurrent) SATB marking.
+      // This also applies to the concurrent start pause - we only set
+      // mark_in_progress() at the end of that GC: no mutator is running that can
+      // sneakily install a new reference to the potentially reclaimed humongous
+      // object.
+      // During the concurrent start pause the situation described above where we
+      // miss a reference can not happen. No mutator is modifying the object
+      // graph to install such an overlooked reference.
+      //
+      // After the pause, having reclaimed h, obviously the mutator can't fetch
+      // the reference from h any more.
+      if (!obj->is_typeArray()) {
+        // All regions that were allocated before marking have a TAMS != bottom.
+        bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
+        bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
 
-      return obj->is_typeArray() &&
-             _g1h->is_potential_eager_reclaim_candidate(region);
+        if (allocated_before_mark_start && mark_in_progress) {
+          return false;
+        }
+      }
+      return _g1h->is_potential_eager_reclaim_candidate(region);
     }
 
   public:
@@ -393,7 +439,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
         _g1h->register_region_with_region_attr(hr);
       }
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
-                               "marked %d pinned count %zu reclaim candidate %d type array %d",
+                               "marked %d pinned count %zu reclaim candidate %d type %s",
                                index,
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
@@ -402,7 +448,8 @@ class G1PrepareEvacuationTask : public WorkerTask {
                                _g1h->concurrent_mark()->mark_bitmap()->is_marked(hr->bottom()),
                                hr->pinned_count(),
                                _g1h->is_humongous_reclaim_candidate(index),
-                               cast_to_oop(hr->bottom())->is_typeArray()
+                               cast_to_oop(hr->bottom())->is_typeArray() ? "tA"
+                                                                         : (cast_to_oop(hr->bottom())->is_objArray() ? "oA" : "ob")
                               );
       _worker_humongous_total++;
 
@@ -438,11 +485,11 @@ public:
   }
 
   void add_humongous_candidates(uint candidates) {
-    Atomic::add(&_humongous_candidates, candidates);
+    AtomicAccess::add(&_humongous_candidates, candidates);
   }
 
   void add_humongous_total(uint total) {
-    Atomic::add(&_humongous_total, total);
+    AtomicAccess::add(&_humongous_total, total);
   }
 
   uint humongous_candidates() {
@@ -507,7 +554,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Ticks start = Ticks::now();
     rem_set()->prepare_for_scan_heap_roots();
 
-    _g1h->prepare_group_cardsets_for_scan();
+    _g1h->collection_set()->prepare_for_scan();
 
     phase_times()->record_prepare_heap_roots_time_ms((Ticks::now() - start).seconds() * 1000.0);
   }
@@ -517,9 +564,8 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_card_set_memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_cset_group()->card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
-
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 
     phase_times()->record_register_regions(task_time.seconds() * 1000.0);
@@ -680,7 +726,7 @@ public:
       G1ParScanThreadState* pss = _per_thread_states->state_for_worker(worker_id);
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
-      if (!Atomic::cmpxchg(&_pinned_regions_recorded, false, true)) {
+      if (!AtomicAccess::cmpxchg(&_pinned_regions_recorded, false, true)) {
         record_pinned_regions(pss, worker_id);
       }
       scan_roots(pss, worker_id);
@@ -752,7 +798,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
 
   Ticks start_processing = Ticks::now();
   {
-    G1RootProcessor root_processor(_g1h, num_workers);
+    G1RootProcessor root_processor(_g1h, num_workers > 1 /* is_parallel */);
     G1EvacuateRegionsTask g1_par_task(_g1h,
                                       per_thread_states,
                                       task_queues(),
@@ -795,14 +841,11 @@ public:
 };
 
 void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* per_thread_states) {
-  // To access the protected constructor/destructor
-  class G1MarkScope : public MarkScope { };
-
   Tickspan task_time;
 
   Ticks start_processing = Ticks::now();
   {
-    G1MarkScope code_mark_scope;
+    NMethodMarkingScope nmethod_marking_scope;
     G1EvacuateOptionalRegionsTask task(per_thread_states, task_queues(), workers()->active_workers());
     task_time = run_task_timed(&task);
     // See comment in evacuate_initial_collection_set() for the reason of the scope.
@@ -816,13 +859,18 @@ void G1YoungCollector::evacuate_next_optional_regions(G1ParScanThreadStateSet* p
 
 void G1YoungCollector::evacuate_optional_collection_set(G1ParScanThreadStateSet* per_thread_states) {
   const double pause_start_time_ms = policy()->cur_pause_start_sec() * 1000.0;
+  double target_pause_time_ms = MaxGCPauseMillis;
+
+  if (G1ForceOptionalEvacuation) {
+    target_pause_time_ms = DBL_MAX;
+  }
 
   while (!evacuation_alloc_failed() && collection_set()->num_optional_regions() > 0) {
 
     double time_used_ms = os::elapsedTime() * 1000.0 - pause_start_time_ms;
-    double time_left_ms = MaxGCPauseMillis - time_used_ms;
+    double time_left_ms = target_pause_time_ms - time_used_ms;
 
-    if (time_left_ms < 0 ||
+    if (time_left_ms <= 0 ||
         !collection_set()->finalize_optional_for_evacuation(time_left_ms * policy()->optional_evacuation_fraction())) {
       log_trace(gc, ergo, cset)("Skipping evacuation of %u optional regions, no more regions can be evacuated in %.3fms",
                                 collection_set()->num_optional_regions(), time_left_ms);
@@ -910,13 +958,8 @@ class G1STWRefProcProxyTask : public RefProcProxyTask {
   TaskTerminator _terminator;
   G1ScannerTasksQueueSet& _task_queues;
 
-  // Special closure for enqueuing discovered fields: during enqueue the card table
-  // may not be in shape to properly handle normal barrier calls (e.g. card marks
-  // in regions that failed evacuation, scribbling of various values by card table
-  // scan code). Additionally the regular barrier enqueues into the "global"
-  // DCQS, but during GC we need these to-be-refined entries in the GC local queue
-  // so that after clearing the card table, the redirty cards phase will properly
-  // mark all dirty cards to be picked up by refinement.
+  // G1 specific closure for marking discovered fields. Need to mark the card in the
+  // refinement table as the card table is in use by garbage collection.
   class G1EnqueueDiscoveredFieldClosure : public EnqueueDiscoveredFieldClosure {
     G1CollectedHeap* _g1h;
     G1ParScanThreadState* _pss;

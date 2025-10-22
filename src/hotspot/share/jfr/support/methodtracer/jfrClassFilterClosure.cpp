@@ -33,7 +33,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resizeableResourceHash.hpp"
+#include "utilities/resizableHashTable.hpp"
 
 constexpr static unsigned int TABLE_SIZE = 1009;
 constexpr static unsigned int MAX_TABLE_SIZE = 0x3fffffff;

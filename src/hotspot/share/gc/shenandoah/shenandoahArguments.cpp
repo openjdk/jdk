@@ -194,6 +194,13 @@ void ShenandoahArguments::initialize() {
       err_msg("GCCardSizeInBytes ( %u ) must be >= %u\n", GCCardSizeInBytes, (unsigned int) ShenandoahMinCardSizeInBytes));
   }
 
+  // Gen shen does not support any ShenandoahGCHeuristics value except for the default "adaptive"
+  if ((strcmp(ShenandoahGCMode, "generational") == 0)
+      && strcmp(ShenandoahGCHeuristics, "adaptive") != 0) {
+    log_warning(gc)("Ignoring -XX:ShenandoahGCHeuristics input: %s, because generational shenandoah only"
+      " supports adaptive heuristics", ShenandoahGCHeuristics);
+  }
+
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
 
