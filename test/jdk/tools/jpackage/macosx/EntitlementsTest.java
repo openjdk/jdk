@@ -30,6 +30,10 @@ import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.JPackageCommand;
@@ -63,7 +67,7 @@ import jdk.jpackage.test.TKit;
  */
 public class EntitlementsTest {
 
-    void createEntitlementsFile(Path file, boolean microphone) throws IOException {
+    private static void createEntitlementsFile(Path file, boolean microphone) throws IOException {
         createXml(file, xml -> {
             writePList(xml, toXmlConsumer(() -> {
                 writeDict(xml, toXmlConsumer(() -> {
@@ -79,56 +83,71 @@ public class EntitlementsTest {
         });
     }
 
+    public enum EntitlementsSource implements Consumer<JPackageCommand> {
+        CMDLINE(cmd -> {
+            var macEntitlementsFile = TKit.createTempFile("foo.plist");
+            createEntitlementsFile(macEntitlementsFile, true);
+            cmd.addArguments("--mac-entitlements", macEntitlementsFile);
+        }),
+        RESOURCE_DIR(cmd -> {
+            if (!cmd.hasArgument("--resource-dir")) {
+                cmd.setArgumentValue("--resource-dir", TKit.createTempDirectory("resources"));
+            }
+
+            var resourcesDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            createEntitlementsFile(resourcesDir.resolve(cmd.name() + ".entitlements"), false);
+        }),
+        ;
+
+        EntitlementsSource(ThrowingConsumer<JPackageCommand> initializer) {
+            this.initializer = toConsumer(initializer);
+        }
+
+        @Override
+        public void accept(JPackageCommand cmd) {
+            initializer.accept(cmd);
+        }
+
+        private final Consumer<JPackageCommand> initializer;
+    }
+
     @Test
-    // ({"--mac-app-store", doMacEntitlements", "doResources"})
-    @Parameter({"false", "true", "false"})
-    @Parameter({"false", "false", "true"})
-    @Parameter({"false", "true", "true"})
-    @Parameter({"true", "true", "false"})
-    @Parameter({"true", "false", "true"})
-    @Parameter({"true", "true", "true"})
-    public void test(boolean appStore, boolean doMacEntitlements, boolean doResources) throws Exception {
+    @Parameter({"CMDLINE"})
+    @Parameter({"RESOURCE_DIR"})
+    @Parameter({"CMDLINE", "RESOURCE_DIR"})
+    public static void test(EntitlementsSource... entitlementsSources) {
         MacSign.withKeychain(toConsumer(keychain -> {
-            test(keychain, appStore, doMacEntitlements, doResources);
+            test(keychain, Stream.of(entitlementsSources));
         }), SigningBase.StandardKeychain.MAIN.keychain());
     }
 
-    private void test(MacSign.ResolvedKeychain keychain, boolean appStore, boolean doMacEntitlements, boolean doResources) throws Exception {
-        final Path macEntitlementsFile;
-        final Path resourcesDir;
+    @Test
+    @Parameter({"CMDLINE"})
+    @Parameter({"RESOURCE_DIR"})
+    @Parameter({"CMDLINE", "RESOURCE_DIR"})
+    public static void testAppStore(EntitlementsSource... entitlementsSources) {
+        MacSign.withKeychain(toConsumer(keychain -> {
+            test(keychain, Stream.concat(Stream.of(cmd -> {
+                cmd.addArguments("--mac-app-store");
+                // Ignore externally supplied runtime as it may have the "bin"
+                // directory that will cause jpackage to bail out.
+                cmd.ignoreDefaultRuntime(true);
+            }), Stream.of(entitlementsSources)));
+        }), SigningBase.StandardKeychain.MAIN.keychain());
+    }
 
-        if (doMacEntitlements) {
-            macEntitlementsFile = TKit.createTempFile("EntitlementsTest.plist");
-            createEntitlementsFile(macEntitlementsFile, true);
-        } else {
-            macEntitlementsFile = null;
-        }
+    private static void test(MacSign.ResolvedKeychain keychain, Stream<Consumer<JPackageCommand>> mutators) {
 
-        if (doResources) {
-            resourcesDir = TKit.createTempDirectory("resources");
-            createEntitlementsFile(resourcesDir.resolve("EntitlementsTest.entitlements"), false);
-        } else {
-            resourcesDir = null;
-        }
+        var cmd = JPackageCommand.helloAppImage();
 
-        JPackageCommand cmd = JPackageCommand.helloAppImage();
-
-        MacHelper.useKeychain(cmd, keychain);
-
-        new SignKeyOption(
+        cmd.mutate(MacHelper.useKeychain(keychain)).mutate(new SignKeyOption(
                 SignKeyOption.Type.SIGN_KEY_IDENTITY,
                 SigningBase.StandardCertificateRequest.CODESIGN.spec()
-        ).addTo(cmd);
+        )::addTo);
 
-        if (appStore) {
-            cmd.addArguments("--mac-app-store");
-        }
-        if (doMacEntitlements) {
-            cmd.addArguments("--mac-entitlements", macEntitlementsFile);
-        }
-        if (doResources) {
-            cmd.addArguments("--resource-dir", resourcesDir);
-        }
+        cmd.mutate(new AdditionalLauncher("x")::applyTo);
+
+        mutators.forEach(cmd::mutate);
 
         cmd.executeAndAssertHelloAppImageCreated();
     }
