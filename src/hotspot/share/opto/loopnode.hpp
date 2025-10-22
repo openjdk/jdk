@@ -1340,7 +1340,7 @@ public:
     void build();
     bool canonicalize_mask(jlong stride_con);
 
-    bool is_valid_with_bt(BasicType bt) {
+    bool is_valid_with_bt(BasicType bt) const {
       return _is_valid && _cmp != nullptr && _cmp->Opcode() == Op_Cmp(bt);
     }
 
