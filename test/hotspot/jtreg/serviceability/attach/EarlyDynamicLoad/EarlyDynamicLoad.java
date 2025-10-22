@@ -38,13 +38,13 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
 /*
- * @test TestEarlyDynamicLoad
+ * @test EarlyDynamicLoad
  * @summary Test that dynamic attach fails gracefully when the JVM is not in live phase.
  * @requires vm.jvmti
  * @library /test/lib
- * @run junit TestEarlyDynamicLoad
+ * @run junit EarlyDynamicLoad
  */
-public class TestEarlyDynamicLoad {
+public class EarlyDynamicLoad {
     private static final String EXPECTED_MESSAGE = "Dynamic agent loading is only permitted in the live phase";
 
     private static Process child;
