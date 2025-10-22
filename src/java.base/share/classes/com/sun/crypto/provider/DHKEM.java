@@ -88,6 +88,8 @@ public class DHKEM implements KEMSpi {
             } catch (Exception e) {
                 throw new ProviderException("internal error", e);
             } finally {
+                // `key` has been cloned into the `SecretKeySpec` within the
+                // returned `KEM.Encapsulated`, so it can now be cleared.
                 if (key != null) {
                     Arrays.fill(key, (byte)0);
                 }
