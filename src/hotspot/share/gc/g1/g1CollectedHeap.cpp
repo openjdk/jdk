@@ -403,7 +403,7 @@ HeapWord* G1CollectedHeap::allocate_new_tlab(size_t min_size,
   assert_heap_not_locked_and_not_at_safepoint();
   assert(!is_humongous(requested_size), "we do not allow humongous TLABs");
 
-  return attempt_allocation(min_size, requested_size, actual_size, false /* allow_gc */);
+  return attempt_allocation(min_size, requested_size, actual_size, false /* is_tlab */);
 }
 
 HeapWord* G1CollectedHeap::mem_allocate(size_t word_size) {
@@ -413,7 +413,7 @@ HeapWord* G1CollectedHeap::mem_allocate(size_t word_size) {
     return attempt_allocation_humongous(word_size);
   }
   size_t dummy = 0;
-  return attempt_allocation(word_size, word_size, &dummy, true /* allow_gc */);
+  return attempt_allocation(word_size, word_size, &dummy, true /* is_tlab */);
 }
 
 HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_size, bool allow_gc) {
