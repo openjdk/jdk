@@ -426,10 +426,9 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         String cmdstr;
-        final String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true");
-        final boolean allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
+        final String allowAmbiguousCommands = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true");
 
-        if (allowAmbiguousCommands) {
+        if (!"false".equalsIgnoreCase(allowAmbiguousCommands)) {
             // Legacy mode.
 
             // Normalize path if possible.
@@ -472,12 +471,10 @@ final class ProcessImpl extends Process {
             // Quotation protects from interpretation of the [path] argument as
             // start of longer path with spaces. Quotation has no influence to
             // [.exe] extension heuristic.
-            boolean isShell = allowAmbiguousCommands ? isShellFile(executablePath)
-                    : !isExe(executablePath);
+            boolean isShell = !isExe(executablePath);
             cmdstr = createCommandLine(
                     // We need the extended verification procedures
-                    isShell ? VERIFICATION_CMD_BAT
-                            : (allowAmbiguousCommands ? VERIFICATION_WIN32 : VERIFICATION_WIN32_SAFE),
+                    isShell ? VERIFICATION_CMD_BAT : VERIFICATION_WIN32_SAFE,
                     quoteString(executablePath),
                     cmd);
         }
