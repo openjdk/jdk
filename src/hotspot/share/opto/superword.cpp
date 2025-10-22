@@ -1675,7 +1675,7 @@ Node* PackSet::same_inputs_at_index_or_null(const Node_List* pack, const int ind
   return p0_in;
 }
 
-VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack, bool is_unsigned) const {
+VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   BoolNode* bol = bool_pack->at(0)->as_Bool();
   BoolTest::mask mask = bol->_test._test;
   bool is_negated = false;
@@ -1697,6 +1697,11 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack, bool is_un
 
   CmpNode* cmp0 = bol->in(1)->as_Cmp();
   assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
+
+  bool is_unsigned = cmp0->Opcode() == Op_CmpU  ||
+                     cmp0->Opcode() == Op_CmpUL ||
+                     cmp0->Opcode() == Op_CmpU3 ||
+                     cmp0->Opcode() == Op_CmpUL3;
 
   if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
     // If we have a Float or Double comparison, we must be careful with
