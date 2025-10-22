@@ -26,7 +26,7 @@
  * @bug 6488219 6560738 7158350 8017469
  * @key printer
  * @summary Test that text printed in Swing UI measures and looks OK.
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers
  * @library /test/lib
  * @build PassFailJFrame
  * @build jtreg.SkippedException
@@ -86,7 +86,7 @@ public class SwingUIText implements Printable {
     public static JFrame createTestUI() {
         frame = new JFrame();
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(4,1));
+        panel.setLayout(new GridLayout(4, 1));
 
         String text = "marvelous suspicious solving";
         displayText(panel, text);
@@ -123,7 +123,7 @@ public class SwingUIText implements Printable {
 
     static void displayText(JPanel p, String text) {
         JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(2,1));
+        panel.setLayout(new GridLayout(2, 1));
         JPanel row = new JPanel();
         Font font = new Font("Dialog", Font.PLAIN, 12);
 
@@ -131,7 +131,7 @@ public class SwingUIText implements Printable {
         label.setFont(font);
         row.add(label);
 
-        JButton button = new JButton("Print "+text);
+        JButton button = new JButton("Print " + text);
         button.setMnemonic('P');
         button.setFont(font);
         row.add(button);
