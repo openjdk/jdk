@@ -224,8 +224,10 @@ void VM_Version::common_initialize() {
   }
 
   if (UseRVV) {
-    if (!unaligned_vector.enabled() && AlignVector == false) {
-      if (!VM_Version::detect_misaligned_vector_support()){
+    // The hwprobe syscall won't be able to detect support for misaligned vector accesses on old kernels.
+    // Resort to detect_misaligned_vector_support() to see if misaligned vector accesses may trap or not.
+    if (!unaligned_vector.enabled()) {
+      if (AlignVector == false && !VM_Version::detect_misaligned_vector_support()) {
         warning("Misaligned vector accesses are not supported on this CPU");
         FLAG_SET_DEFAULT(AlignVector, true);
       }
@@ -563,13 +565,10 @@ bool VM_Version::detect_misaligned_vector_support() {
     CodeBuffer c(stub_blob);
     VM_Version_StubGenerator g(&c);
     detect_misaligned_vector_stub = CAST_TO_FN_PTR(detect_misaligned_vector_stub_t,
-                                                  g.generate_detect_misaligned_vector(
-                                                  &VM_Version::_misaligned_vector_fault_pc1,
-                                                  &VM_Version::_misaligned_vector_fault_pc2,
-                                                  &VM_Version::_misaligned_vector_continuation_pc));
+                                                   g.generate_detect_misaligned_vector(
+                                                   &VM_Version::_misaligned_vector_fault_pc1,
+                                                   &VM_Version::_misaligned_vector_fault_pc2,
+                                                   &VM_Version::_misaligned_vector_continuation_pc));
 
-  if ((uint32_t)detect_misaligned_vector_stub() == 1) {
-    return true;
-  }
-  return false;
+  return detect_misaligned_vector_stub() == 1;
 }
