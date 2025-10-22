@@ -237,7 +237,7 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * the {@linkplain Module module} of {@code T} is updated to export the
  * package of {@code T} to the dynamic module.
  *
- * <h3>Methods Duplicated in Multiple Proxy Interfaces</h3>
+ * <h2 id="duplicate-methods">Methods Duplicated in Multiple Proxy Interfaces</h2>
  *
  * <p>When two or more proxy interfaces contain a method with
  * the same name and parameter signature, the order of the proxy class's
