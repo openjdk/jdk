@@ -30,7 +30,7 @@
  * @library /test/lib
  * @build PassFailJFrame
  * @build jtreg.SkippedException
- * @run main SwingUIText
+ * @run main/manual SwingUIText
  */
 
 import java.awt.Font;
