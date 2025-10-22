@@ -1075,10 +1075,9 @@ VTransformApplyResult VTransformElementWiseVectorNode::apply(VTransformApplyStat
 }
 
 float VTransformElementWiseLongOpWithCastToIntVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // // TODO: implement, consider cast etc.
-  // return vloop_analyzer.cost_for_vector(_vector_opcode, vector_length(), element_basic_type()) +
-  //        vloop_analyzer.cost_for_vector(Op_VectorCastL2X, vector_length(), XXX);
-  return 2;
+  int vopc = VectorNode::opcode(scalar_opcode(), element_basic_type());
+  return vloop_analyzer.cost_for_vector(vopc, vector_length(), element_basic_type()) +
+         vloop_analyzer.cost_for_vector(Op_VectorCastL2X, vector_length(), T_INT);
 }
 
 VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(VTransformApplyState& apply_state) const {
@@ -1097,9 +1096,7 @@ VTransformApplyResult VTransformElementWiseLongOpWithCastToIntVectorNode::apply(
 }
 
 float VTransformReinterpretVectorNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  // TODO: implement
-  //return vloop_analyzer.cost_for_vector(_vector_opcode, vector_length(), element_basic_type());
-  return 1;
+  return vloop_analyzer.cost_for_vector(Op_VectorReinterpret, vector_length(), element_basic_type());
 }
 
 VTransformApplyResult VTransformReinterpretVectorNode::apply(VTransformApplyState& apply_state) const {
