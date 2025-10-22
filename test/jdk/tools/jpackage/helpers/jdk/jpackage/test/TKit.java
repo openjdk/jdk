@@ -1260,8 +1260,8 @@ public final class TKit {
             this(hashRecursive(path));
         }
 
-        public static void assertEquals(PathSnapshot a, PathSnapshot b, String msg) {
-            assertStringListEquals(a.contentHashes(), b.contentHashes(), msg);
+        public void assertEquals(PathSnapshot other, String msg) {
+            assertStringListEquals(contentHashes(), other.contentHashes(), msg);
         }
 
         private static List<String> hashRecursive(Path path) {
