@@ -351,9 +351,10 @@ public:
     return _empty_regions_pos;
   }
 
-  void do_object(oop p) {
+  void do_object(oop p) override {
     shenandoah_assert_mark_complete(cast_from_oop<HeapWord*>(p));
     assert(_from_region != nullptr, "must set before work");
+    assert(_heap->global_generation()->is_mark_complete(), "marking must be finished");
     assert(_heap->marking_context()->is_marked(p), "must be marked");
     assert(!_heap->marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
@@ -525,12 +526,8 @@ void ShenandoahFullGC::calculate_target_humongous_objects() {
 }
 
 class ShenandoahEnsureHeapActiveClosure: public ShenandoahHeapRegionClosure {
-private:
-  ShenandoahHeap* const _heap;
-
 public:
-  ShenandoahEnsureHeapActiveClosure() : _heap(ShenandoahHeap::heap()) {}
-  void heap_region_do(ShenandoahHeapRegion* r) {
+  void heap_region_do(ShenandoahHeapRegion* r) override {
     if (r->is_trash()) {
       r->try_recycle_under_lock();
     }
@@ -762,7 +759,6 @@ void ShenandoahFullGC::phase2_calculate_target_addresses(ShenandoahHeapRegionSet
 
 class ShenandoahAdjustPointersClosure : public MetadataVisitingOopIterateClosure {
 private:
-  ShenandoahHeap* const _heap;
   ShenandoahMarkingContext* const _ctx;
 
   template <class T>
@@ -780,7 +776,6 @@ private:
 
 public:
   ShenandoahAdjustPointersClosure() :
-    _heap(ShenandoahHeap::heap()),
     _ctx(ShenandoahHeap::heap()->global_generation()->complete_marking_context()) {}
 
   void do_oop(oop* p)       { do_oop_work(p); }
@@ -791,15 +786,12 @@ public:
 
 class ShenandoahAdjustPointersObjectClosure : public ObjectClosure {
 private:
-  ShenandoahHeap* const _heap;
   ShenandoahAdjustPointersClosure _cl;
 
 public:
-  ShenandoahAdjustPointersObjectClosure() :
-    _heap(ShenandoahHeap::heap()) {
-  }
-  void do_object(oop p) {
-    assert(_heap->marking_context()->is_marked(p), "must be marked");
+  void do_object(oop p) override {
+    assert(ShenandoahHeap::heap()->global_generation()->is_mark_complete(), "marking must be complete");
+    assert(ShenandoahHeap::heap()->marking_context()->is_marked(p), "must be marked");
     p->oop_iterate(&_cl);
   }
 };
@@ -815,7 +807,7 @@ public:
     _heap(ShenandoahHeap::heap()) {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahAdjustPointersObjectClosure obj_cl;
     ShenandoahHeapRegion* r = _regions.next();
@@ -841,7 +833,7 @@ public:
     _rp(rp),
     _preserved_marks(preserved_marks) {}
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahAdjustPointersClosure cl;
     _rp->roots_do(worker_id, &cl);
@@ -875,15 +867,15 @@ void ShenandoahFullGC::phase3_update_references() {
 
 class ShenandoahCompactObjectsClosure : public ObjectClosure {
 private:
-  ShenandoahHeap* const _heap;
-  uint            const _worker_id;
+  uint const _worker_id;
 
 public:
-  ShenandoahCompactObjectsClosure(uint worker_id) :
-    _heap(ShenandoahHeap::heap()), _worker_id(worker_id) {}
+  explicit ShenandoahCompactObjectsClosure(uint worker_id) :
+    _worker_id(worker_id) {}
 
-  void do_object(oop p) {
-    assert(_heap->marking_context()->is_marked(p), "must be marked");
+  void do_object(oop p) override {
+    assert(ShenandoahHeap::heap()->global_generation()->is_mark_complete(), "marking must be finished");
+    assert(ShenandoahHeap::heap()->marking_context()->is_marked(p), "must be marked");
     size_t size = p->size();
     if (FullGCForwarding::is_forwarded(p)) {
       HeapWord* compact_from = cast_from_oop<HeapWord*>(p);
@@ -910,7 +902,7 @@ public:
     _worker_slices(worker_slices) {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegionSetIterator slice(_worker_slices[worker_id]);
 
@@ -947,7 +939,7 @@ public:
     _heap->free_set()->clear();
   }
 
-  void heap_region_do(ShenandoahHeapRegion* r) {
+  void heap_region_do(ShenandoahHeapRegion* r) override {
     assert (!r->is_cset(), "cset regions should have been demoted already");
 
     // Need to reset the complete-top-at-mark-start pointer here because
@@ -1093,7 +1085,7 @@ public:
     WorkerTask("Shenandoah Reset Bitmap") {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahHeapRegion* region = _regions.next();
     ShenandoahHeap* heap = ShenandoahHeap::heap();
