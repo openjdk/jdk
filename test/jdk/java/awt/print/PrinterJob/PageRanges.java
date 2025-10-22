@@ -51,7 +51,7 @@ public class PageRanges implements Printable {
 
     public static void main(String args[]) throws Exception {
         PrinterJob job = PrinterJob.getPrinterJob();
-        if(job == null) {
+        if(job.getPrintService() == null) {
             throw new SkippedException("Printer not configured or available.");
         }
 
@@ -61,10 +61,6 @@ public class PageRanges implements Printable {
                 .columns(45)
                 .build();
 
-        if (job.getPrintService() == null) {
-            System.out.println("No printer available");
-            PassFailJFrame.forcePass();
-        }
         job.setPrintable(new PageRanges());
         if (job.printDialog()) {
             job.print();
