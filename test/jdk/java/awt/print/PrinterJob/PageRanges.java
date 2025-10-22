@@ -57,7 +57,6 @@ public class PageRanges implements Printable {
 
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(45)
                 .build();
 

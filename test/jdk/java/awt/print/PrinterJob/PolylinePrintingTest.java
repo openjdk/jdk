@@ -27,7 +27,9 @@
  * @key printer
  * @summary Test printing of wide poly lines.
  * @library /java/awt/regtesthelpers
+ * @library /test/lib
  * @build PassFailJFrame
+ * @build jtreg.SkippedException
  * @run main/manual PolylinePrintingTest
  */
 
@@ -36,34 +38,39 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.geom.Path2D;
 import java.awt.print.PageFormat;
-import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import jtreg.SkippedException;
 
 public class PolylinePrintingTest implements Printable {
     private static final String INSTRUCTIONS = """
-              You must have a printer available to perform this test.
-              Click OK in the print dialog and collect the printed page.
+              Press OK in the print dialog and collect the printed page.
               Passing test : Output should show two identical chevrons.
               Failing test : The line joins will appear different.
               """;
 
     public static void main(String[] args) throws Exception {
+        PrinterJob job = PrinterJob.getPrinterJob();
+        if (job.getPrintService() == null) {
+            throw new SkippedException("Printer not configured or available.");
+        }
+
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(45)
                 .build();
 
-        new PolylinePrintingTest();
+        job.setPrintable(new PolylinePrintingTest());
+        if (job.printDialog()) {
+            job.print();
+        }
 
         passFailJFrame.awaitAndCheck();
     }
 
     public int print(Graphics graphics, PageFormat pageFormat,
                      int pageIndex) throws PrinterException {
-
         if (pageIndex > 0) {
             return NO_SUCH_PAGE;
         }
@@ -84,7 +91,6 @@ public class PolylinePrintingTest implements Printable {
 
     private void drawPolylineGOOD(Graphics2D g2d,
                                   int[] x2Points, int[] y2Points) {
-
         Path2D polyline =
             new Path2D.Float(Path2D.WIND_EVEN_ODD, x2Points.length);
 
@@ -100,17 +106,5 @@ public class PolylinePrintingTest implements Printable {
         int offset = 200;
         g.translate(0, offset);
         g.drawPolyline(xp, yp, xp.length);
-    }
-
-    public PolylinePrintingTest() throws PrinterException {
-        PrinterJob job = PrinterJob.getPrinterJob();
-        PageFormat pf = job.defaultPage();
-        Paper p = pf.getPaper();
-        p.setImageableArea(0,0,p.getWidth(), p.getHeight());
-        pf.setPaper(p);
-        job.setPrintable(this, pf);
-        if (job.printDialog()) {
-            job.print();
-        }
     }
 }
