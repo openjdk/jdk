@@ -1760,18 +1760,17 @@ void StubGenerator::roundDeclast(XMMRegister xmm_reg) {
 }
 
 // Check incoming byte offset against the int[] len. key is the pointer to the int[0].
+// This check happens often, so it is important for it to be very compact.
 void StubGenerator::check_key_offset(Register key, int offset, int load_size) {
 #ifdef ASSERT
-  Register tmp = (key != rscratch1) ? rscratch1 : rscratch2;
+  Address key_length(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT));
+  assert((offset + load_size) % 4 == 0, "Alignment is good: %d + %d", offset, load_size);
+  int end_offset = (offset + load_size) / 4;
   Label L_good;
-  __ push(tmp);
-  __ movl(tmp, Address(key, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT)));
-  __ shll(tmp, 2); // int -> byte length
-  __ cmpl(tmp, offset + load_size);
-  __ jcc(Assembler::greaterEqual, L_good);
-  __ stop("Incorrect offset");
+  __ cmpl(key_length, end_offset);
+  __ jccb(Assembler::greaterEqual, L_good);
+  __ hlt();
   __ bind(L_good);
-  __ pop(tmp);
 #endif
 }
 
