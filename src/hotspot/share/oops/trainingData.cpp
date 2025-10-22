@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/arguments.hpp"
