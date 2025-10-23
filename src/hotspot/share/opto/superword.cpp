@@ -1748,8 +1748,10 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   }
   case Op_CmpU:
   case Op_CmpUL:
-    // Carry unsigned-ness information from CmpUxx to VTransformBoolTest,
-    // which will be passed to e.g. VectorMaskCmp.
+    // When we have CmpU->Bool, the mask of the Bool has no unsigned-ness information,
+    // but the mask is implicitly unsigned only because of the CmpU. Since we will replace
+    // the CmpU->Bool with a single VectorMaskCmp, we need to now make the unsigned-ness
+    // explicit.
     mask = BoolTest::unsigned_mask(mask);
     break;
   case Op_CmpI:
