@@ -199,7 +199,6 @@ final class ProcessImpl extends Process {
     }
 
     private static final int VERIFICATION_CMD_BAT = 0;
-    private static final int VERIFICATION_WIN32 = 1;
     private static final int VERIFICATION_WIN32_SAFE = 2; // inside quotes not allowed
     private static final int VERIFICATION_LEGACY = 3;
     // See Command shell overview for documentation of special characters.
@@ -382,12 +381,6 @@ final class ProcessImpl extends Process {
         File file = new File(executablePath);
         String upName = file.getName().toUpperCase(Locale.ROOT);
         return (upName.endsWith(".EXE") || upName.indexOf('.') < 0);
-    }
-
-    // Old version that can be bypassed
-    private boolean isShellFile(String executablePath) {
-        String upPath = executablePath.toUpperCase(Locale.ROOT);
-        return (upPath.endsWith(".CMD") || upPath.endsWith(".BAT"));
     }
 
     private String quoteString(String arg) {
