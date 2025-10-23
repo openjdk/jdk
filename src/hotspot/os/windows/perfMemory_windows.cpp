@@ -42,11 +42,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <lmcons.h>
-
-typedef BOOL (WINAPI *SetSecurityDescriptorControlFnPtr)(
-   IN PSECURITY_DESCRIPTOR pSecurityDescriptor,
-   IN SECURITY_DESCRIPTOR_CONTROL ControlBitsOfInterest,
-   IN SECURITY_DESCRIPTOR_CONTROL ControlBitsToSet);
+#include <securitybaseapi.h>
 
 // Standard Memory Implementation Details
 
@@ -952,28 +948,18 @@ static bool add_allow_aces(PSECURITY_DESCRIPTOR pSD,
     return false;
   }
 
-  // if running on windows 2000 or later, set the automatic inheritance
-  // control flags.
-  SetSecurityDescriptorControlFnPtr _SetSecurityDescriptorControl;
-  _SetSecurityDescriptorControl = (SetSecurityDescriptorControlFnPtr)
-       GetProcAddress(GetModuleHandle(TEXT("advapi32.dll")),
-                      "SetSecurityDescriptorControl");
-
-  if (_SetSecurityDescriptorControl != nullptr) {
-    // We do not want to further propagate inherited DACLs, so making them
-    // protected prevents that.
-    if (!_SetSecurityDescriptorControl(pSD, SE_DACL_PROTECTED,
-                                            SE_DACL_PROTECTED)) {
-      log_debug(perf)("SetSecurityDescriptorControl failure: lasterror = %d", GetLastError());
-      FREE_C_HEAP_ARRAY(char, newACL);
-      return false;
-    }
+  // We do not want to further propagate inherited DACLs, so making them
+  // protected prevents that.
+  if (!SetSecurityDescriptorControl(pSD, SE_DACL_PROTECTED, SE_DACL_PROTECTED)) {
+    log_debug(perf)("SetSecurityDescriptorControl failure: lasterror = %d", GetLastError());
+    FREE_C_HEAP_ARRAY(char, newACL);
+    return false;
   }
-   // Note, the security descriptor maintains a reference to the newACL, not
-   // a copy of it. Therefore, the newACL is not freed here. It is freed when
-   // the security descriptor containing its reference is freed.
-   //
-   return true;
+
+  // Note, the security descriptor maintains a reference to the newACL, not
+  // a copy of it. Therefore, the newACL is not freed here. It is freed when
+  // the security descriptor containing its reference is freed.
+  return true;
 }
 
 // method to create a security attributes structure, which contains a
