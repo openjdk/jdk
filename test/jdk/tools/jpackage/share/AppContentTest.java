@@ -22,6 +22,7 @@
  */
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
 
@@ -35,13 +36,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
@@ -83,7 +88,17 @@ public class AppContentTest {
         return Stream.of(
                 build().add(TEST_JAVA).add(TEST_DUKE),
                 build().add(TEST_JAVA).add(TEST_BAD),
-                build().startGroup().add(TEST_JAVA).add(TEST_DUKE).endGroup().add(TEST_DIR)
+                build().startGroup().add(TEST_JAVA).add(TEST_DUKE).endGroup().add(TEST_DIR),
+                // Same directory specified multiple times.
+                build().add(TEST_DIR).add(TEST_DIR),
+                // Same file specified multiple times.
+                build().add(TEST_JAVA).add(TEST_JAVA),
+                // Two files with the same name but different content.
+                build().add(createTextFileContent("welcome.txt", "Welcome")).add(createTextFileContent("welcome.txt", "Benvenuti")),
+                // Same name: one is a directory, another is a file.
+                build().add(createTextFileContent("a/b", "Foo")).add(createTextFileContent("a", "Bar")),
+                // Same name: one is a file, another is a directory.
+                build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b", "Foo"))
         ).map(TestSpec.Builder::create).map(v -> {
             return new Object[] {v};
         }).toList();
@@ -103,7 +118,14 @@ public class AppContentTest {
     @ParameterSupplier
     @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
     public void test(TestSpec testSpec) throws Exception {
-        testSpec.test();
+        testSpec.test(new ConfigurationTarget(new PackageTest().configureHelloApp()));
+    }
+
+    @Test
+    @ParameterSupplier("test")
+    @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
+    public void testAppImage(TestSpec testSpec) throws Exception {
+        testSpec.test(new ConfigurationTarget(JPackageCommand.helloAppImage()));
     }
 
     @Test(ifOS = MACOS)
@@ -133,7 +155,7 @@ public class AppContentTest {
             }).collect(joining("; "));
         }
 
-        void test() {
+        void test(ConfigurationTarget target) {
             final int expectedJPackageExitCode;
             if (contentFactories.stream().flatMap(List::stream).anyMatch(TEST_BAD::equals)) {
                 expectedJPackageExitCode = 1;
@@ -143,9 +165,8 @@ public class AppContentTest {
 
             final List<List<Content>> allContent = new ArrayList<>();
 
-            new PackageTest().configureHelloApp()
-            .addInitializer(JPackageCommand::setFakeRuntime)
-            .addRunOnceInitializer(() -> {
+            target.addInitializer(JPackageCommand::setFakeRuntime)
+            .addRunOnceInitializer(_ -> {
                 contentFactories.stream().map(group -> {
                     return group.stream().map(ContentFactory::create).toList();
                 }).forEach(allContent::add);
@@ -157,14 +178,32 @@ public class AppContentTest {
                             .map(Path::toString)
                             .collect(joining(",")));
                     }).flatMap(x -> x).forEachOrdered(cmd::addArgument);
-            }).addInstallVerifier(cmd -> {
-                final var appContentRoot = getAppContentRoot(cmd);
-                allContent.stream().flatMap(List::stream).forEach(content -> {
-                    content.verify(appContentRoot);
-                });
-            })
-            .setExpectedExitCode(expectedJPackageExitCode)
-            .run();
+            });
+
+            target.cmd().ifPresent(cmd -> {
+                if (expectedJPackageExitCode == 0) {
+                    cmd.executeAndAssertImageCreated();
+                } else {
+                    cmd.execute(expectedJPackageExitCode);
+                }
+            });
+
+            target.addInstallVerifier(cmd -> {
+                var appContentRoot = getAppContentRoot(cmd);
+
+                var verifiers = allContent.stream().flatMap(List::stream).flatMap(content -> {
+                    return StreamSupport.stream(content.verifiers(appContentRoot).spliterator(), false);
+                }).collect(toMap(PathVerifier::path, x -> x, (_, second) -> {
+                    // Override
+                    return second;
+                }, TreeMap::new)).values();
+
+                verifiers.forEach(PathVerifier::verify);
+            });
+
+            target.test().ifPresent(test -> {
+                test.setExpectedExitCode(expectedJPackageExitCode).run();
+            });
         }
 
         static final class Builder {
@@ -228,37 +267,120 @@ public class AppContentTest {
 
     private interface Content {
         List<Path> paths();
-        default void verify(Path appContentRoot) {}
+        Iterable<PathVerifier> verifiers(Path appContentRoot);
     }
 
-    private record FileContent(Path path) implements Content {
+    private static abstract class PathVerifier {
+
+        PathVerifier(Path path) {
+            this.path = Objects.requireNonNull(path);
+        }
+
+        final Path path() {
+            return path;
+        }
+
+        abstract void verify();
+
+        private final Path path;
+    }
+
+    private static PathVerifier verifyRegularFile(Path path, Path srcFile) {
+        Objects.requireNonNull(srcFile);
+        return new PathVerifier(path) {
+            @Override
+            void verify() {
+                TKit.assertSameFileContent(srcFile, path());
+            }
+        };
+    }
+
+    private static PathVerifier verifyDirectory(Path path) {
+        return new PathVerifier(path) {
+            @Override
+            void verify() {
+                TKit.assertDirectoryExists(path);
+            }
+        };
+    }
+
+    private record FileContent(Path path, int level) implements Content {
 
         FileContent {
             Objects.requireNonNull(path);
+            if (level < 0) {
+                throw new IllegalArgumentException();
+            }
+            if (path.getNameCount() <= level) {
+                throw new IllegalArgumentException();
+            }
         }
 
         @Override
         public List<Path> paths() {
-            return List.of(path);
+            return List.of(appContentOptionValue());
         }
 
         @Override
-        public void verify(Path appContentRoot) {
-            var appContentPath = appContentRoot.resolve(path.getFileName());
+        public Iterable<PathVerifier> verifiers(Path appContentRoot) {
+            List<PathVerifier> verifiers = new ArrayList<>();
+
+            var appContentPath = appContentRoot.resolve(pathInAppContentRoot());
+
             if (Files.isDirectory(path)) {
-                TKit.assertDirectoryContentRecursive(path).match(TKit.assertDirectoryContentRecursive(appContentPath).items());
-                try (var walk = Files.walk(appContentPath)) {
-                    walk.filter(Files::isRegularFile).forEach(file -> {
-                        var srcFile = path.resolve(appContentPath.relativize(file));
-                        TKit.assertSameFileContent(srcFile, file);
-                    });
+                try (var walk = Files.walk(path)) {
+                    verifiers.addAll(walk.map(srcFile -> {
+                        var dstFile = appContentPath.resolve(path.relativize(srcFile));
+                        if (Files.isRegularFile(srcFile)) {
+                            return verifyRegularFile(dstFile, srcFile);
+                        } else {
+                            return verifyDirectory(dstFile);
+                        }
+                    }).toList());
                 } catch (IOException ex) {
                     throw new UncheckedIOException(ex);
                 }
             } else if (Files.isRegularFile(path)) {
-                TKit.assertSameFileContent(path, appContentPath);
+                verifiers.add(verifyRegularFile(appContentPath, path));
             } else {
-                TKit.assertPathExists(appContentPath, false);
+                verifiers.add(new PathVerifier(appContentPath) {
+                    @Override
+                    public void verify() {
+                        TKit.assertPathExists(path(), false);
+                    }
+                });
+            }
+
+            if (level > 0) {
+                var cur = appContentPath;
+                for (int i = 0; i != level; i++) {
+                    cur = cur.getParent();
+                    verifiers.add(verifyDirectory(cur));
+                }
+            }
+
+            return verifiers;
+        }
+
+        private Path appContentOptionValue() {
+            var cur = path;
+            for (int i = 0; i != level; i++) {
+                cur = cur.getParent();
+            }
+            return cur;
+        }
+
+        private Path pathInAppContentRoot() {
+            return StreamSupport.stream(path.spliterator(), false)
+                    .skip(path.getNameCount() - level - 1)
+                    .reduce(Path::resolve).orElseThrow();
+        }
+
+        private static boolean isDirectoryEmpty(Path path) {
+            try (var files = Files.list(path)) {
+                return files.findAny().isEmpty();
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
             }
         }
     }
@@ -270,7 +392,7 @@ public class AppContentTest {
         @Override
         public Content create() {
             var nonExistant = Path.of("non-existant-" + Integer.toHexString(new Random().ints(100, 200).findFirst().getAsInt()));
-            return new FileContent(nonExistant);
+            return new FileContent(nonExistant, 0);
         }
 
         @Override
@@ -301,7 +423,7 @@ public class AppContentTest {
     /**
      * Creates a content from a text file.
      *
-     * @param path the path where to copy the in app image's content directory
+     * @param path the path where to copy the text file in app image's content directory
      * @param lines the content of the source text file
      */
     private static ContentFactory createTextFileContent(Path path, String ... lines) {
@@ -310,7 +432,7 @@ public class AppContentTest {
         }
 
         return new FileContentFactory(() -> {
-            final var srcPath = TKit.createTempDirectory("content").resolve(path);
+            var srcPath = TKit.createTempDirectory("content").resolve(path);
             Files.createDirectories(srcPath.getParent());
             TKit.createTextFile(srcPath, Stream.of(lines));
             return srcPath;
@@ -377,9 +499,16 @@ public class AppContentTest {
                 }
 
                 @Override
-                public void verify(Path appContentRoot) {
-                    TKit.assertSymbolicLinkTarget(appContentRoot.resolve(symlinkPath()), symlinkTarget());
-                    TKit.assertFileExists(appContentRoot.resolve(symlinkedPath()));
+                public Iterable<PathVerifier> verifiers(Path appContentRoot) {
+                    return List.of(
+                            verifyRegularFile(appContentRoot.resolve(symlinkedPath()), symlinkedPath),
+                            new PathVerifier(appContentRoot.resolve(symlinkPath())) {
+                                @Override
+                                void verify() {
+                                    TKit.assertSymbolicLinkTarget(path(), symlinkTarget());
+                                }
+                            }
+                    );
                 }
             };
         }
@@ -408,24 +537,32 @@ public class AppContentTest {
 
         FileContentFactory(ThrowingSupplier<Path> factory, Path pathInAppContentRoot) {
             this.factory = ThrowingSupplier.toSupplier(factory);
-            this.pathInAppContentRoot = Objects.requireNonNull(pathInAppContentRoot);
+            this.pathInAppContentRoot = pathInAppContentRoot;
+            if (pathInAppContentRoot.isAbsolute()) {
+                throw new IllegalArgumentException();
+            }
         }
 
         @Override
         public Content create() {
-            final var srcPath = factory.get();
+            Path srcPath = factory.get();
+            if (!srcPath.endsWith(pathInAppContentRoot)) {
+                throw new IllegalArgumentException();
+            }
+
+            Path dstPath;
             if (!copyInResources) {
-                return new FileContent(srcPath);
+                dstPath = srcPath;
             } else {
-                final var appContentArg = createAppContentRoot();
-                final var dstPath = appContentArg.resolve(srcPath.getFileName());
+                var contentDir = createAppContentRoot();
+                dstPath = contentDir.resolve(srcPath.getFileName());
                 try {
                     FileUtils.copyRecursive(srcPath, dstPath);
                 } catch (IOException ex) {
                     throw new UncheckedIOException(ex);
                 }
-                return new FileContent(appContentArg);
             }
+            return new FileContent(dstPath, pathInAppContentRoot.getNameCount() - 1);
         }
 
         @Override
