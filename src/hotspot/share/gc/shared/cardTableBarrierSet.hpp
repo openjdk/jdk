@@ -61,10 +61,6 @@ public:
 
   CardTable* card_table() const { return _card_table; }
 
-  void write_region(JavaThread* thread, MemRegion mr) {
-    write_region(mr);
-  }
-
   // Record a reference update. Note that these versions are precise!
   // The scanning code has to handle the fact that the write barrier may be
   // either precise or imprecise. We make non-virtual inline variants of

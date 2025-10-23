@@ -329,25 +329,31 @@ bool ShenandoahReferenceProcessor::should_drop(oop reference, ReferenceType type
     return true;
   }
 
+  shenandoah_assert_mark_complete(raw_referent);
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  // Check if the referent is still alive, in which case we should
-  // drop the reference.
+  // Check if the referent is still alive, in which case we should drop the reference.
   if (type == REF_PHANTOM) {
-    return heap->active_generation()->complete_marking_context()->is_marked(raw_referent);
+    return heap->marking_context()->is_marked(raw_referent);
   } else {
-    return heap->active_generation()->complete_marking_context()->is_marked_strong(raw_referent);
+    return heap->marking_context()->is_marked_strong(raw_referent);
   }
 }
 
 template <typename T>
 void ShenandoahReferenceProcessor::make_inactive(oop reference, ReferenceType type) const {
   if (type == REF_FINAL) {
+#ifdef ASSERT
+    auto referent = reference_referent_raw<T>(reference);
+    auto heap = ShenandoahHeap::heap();
+    shenandoah_assert_mark_complete(referent);
+    assert(reference_next<T>(reference) == nullptr, "Already inactive");
+    assert(heap->marking_context()->is_marked(referent), "only make inactive final refs with alive referents");
+#endif
+
     // Don't clear referent. It is needed by the Finalizer thread to make the call
     // to finalize(). A FinalReference is instead made inactive by self-looping the
     // next field. An application can't call FinalReference.enqueue(), so there is
     // no race to worry about when setting the next field.
-    assert(reference_next<T>(reference) == nullptr, "Already inactive");
-    assert(ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(reference_referent_raw<T>(reference)), "only make inactive final refs with alive referents");
     reference_set_next(reference, reference);
   } else {
     // Clear referent
@@ -437,8 +443,12 @@ oop ShenandoahReferenceProcessor::drop(oop reference, ReferenceType type) {
   HeapWord* raw_referent = reference_referent_raw<T>(reference);
 
 #ifdef ASSERT
-  assert(raw_referent == nullptr || ShenandoahHeap::heap()->active_generation()->complete_marking_context()->is_marked(raw_referent),
-         "only drop references with alive referents");
+  if (raw_referent != nullptr) {
+    ShenandoahHeap* heap = ShenandoahHeap::heap();
+    ShenandoahHeapRegion* region  = heap->heap_region_containing(raw_referent);
+    ShenandoahMarkingContext* ctx = heap->generation_for(region->affiliation())->complete_marking_context();
+    assert(ctx->is_marked(raw_referent), "only drop references with alive referents");
+  }
 #endif
 
   // Unlink and return next in list

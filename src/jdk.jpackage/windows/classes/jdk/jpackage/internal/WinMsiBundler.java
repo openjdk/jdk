@@ -30,6 +30,7 @@ import static jdk.jpackage.internal.model.ConfigException.rethrowConfigException
 import java.nio.file.Path;
 import java.util.Map;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.model.PackagerException;
 import jdk.jpackage.internal.model.WinMsiPackage;
 import jdk.jpackage.internal.util.Result;
@@ -80,11 +81,15 @@ public class WinMsiBundler  extends AbstractBundler {
     }
 
     @Override
-    public boolean validate(Map<String, ? super Object> params)
+    public boolean validate(Map<String, ? super Object> params) throws ConfigException {
+        return validate(params, WinFromParams.MSI_PACKAGE);
+    }
+
+    boolean validate(Map<String, ? super Object> params, BundlerParamInfo<? extends Package> pkgParam)
             throws ConfigException {
         try {
             // Order is important!
-            WinFromParams.APPLICATION.fetchFrom(params);
+            pkgParam.fetchFrom(params);
             BuildEnvFromParams.BUILD_ENV.fetchFrom(params);
 
             final var wixToolset = sysEnv.orElseThrow().wixToolset();

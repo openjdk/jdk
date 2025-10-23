@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -348,7 +348,7 @@ public class SquareRootTests {
 
             for (int scale = 0; scale <= 4; scale++) {
                 BigDecimal scaledSquare = square.setScale(scale, RoundingMode.UNNECESSARY);
-                int expectedScale = scale/2;
+                int expectedScale = Math.ceilDiv(scale, 2);
                 for (int precision = 0; precision <= 5; precision++) {
                     for (RoundingMode rm : RoundingMode.values()) {
                         MathContext mc = new MathContext(precision, rm);
@@ -582,7 +582,8 @@ public class SquareRootTests {
                 // The code below favors relative simplicity over checking
                 // for special cases that could run faster.
 
-                int preferredScale = bd.scale()/2;
+                int preferredScale = Math.ceilDiv(bd.scale(), 2);
+
                 BigDecimal zeroWithFinalPreferredScale =
                     BigDecimal.valueOf(0L, preferredScale);
 

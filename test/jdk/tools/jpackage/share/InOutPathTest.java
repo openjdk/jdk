@@ -38,7 +38,7 @@ import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.JPackageCommand.AppLayoutAssert;
+import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
 import static jdk.jpackage.test.RunnablePackageTest.Action.CREATE_AND_UNPACK;
@@ -177,7 +177,7 @@ public final class InOutPathTest {
             if (!isAppImageValid(cmd)) {
                 // Standard asserts for .jpackage.xml fail in messed up app image. Disable them.
                 // Other standard asserts for app image contents should pass.
-                cmd.excludeAppLayoutAsserts(AppLayoutAssert.APP_IMAGE_FILE);
+                cmd.excludeStandardAsserts(StandardAssert.APP_IMAGE_FILE);
             }
         };
 

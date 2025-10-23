@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
@@ -144,7 +145,7 @@ final class WixSourceConverter {
                     newProxyInstance(XMLStreamWriter.class.getClassLoader(),
                             new Class<?>[]{XMLStreamWriter.class}, new NamespaceCleaner(nc.
                                     getPrefixToUri(), outputFactory.createXMLStreamWriter(outXml)))));
-            Files.createDirectories(IOUtils.getParent(resourceSaveAsFile));
+            Files.createDirectories(resourceSaveAsFile.getParent());
             Files.copy(new ByteArrayInputStream(outXml.toByteArray()), resourceSaveAsFile,
                     StandardCopyOption.REPLACE_EXISTING);
         } catch (TransformerException | XMLStreamException ex) {
@@ -193,7 +194,7 @@ final class WixSourceConverter {
             }
         }
 
-        private final Map<Path, OverridableResource> resources = new HashMap<>();
+        private final Map<Path, OverridableResource> resources = new TreeMap<>();
         private final WixToolsetType wixToolsetType;
     }
 

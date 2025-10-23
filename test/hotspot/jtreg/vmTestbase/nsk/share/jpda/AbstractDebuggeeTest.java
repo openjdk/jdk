@@ -175,13 +175,6 @@ public class AbstractDebuggeeTest {
         }
     }
 
-    static public void sleep1sec() {
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-        }
-    }
-
     private StateTestThread stateTestThread;
 
     public static final String COMMAND_QUIT = "quit";
@@ -352,9 +345,6 @@ public class AbstractDebuggeeTest {
 
     public void forceGC() {
         eatMemory();
-    }
-
-    public void voidValueMethod() {
     }
 
     public void unexpectedException(Throwable t) {

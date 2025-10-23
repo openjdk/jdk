@@ -26,6 +26,8 @@
 #define SHARE_SANITIZERS_ADDRESS_HPP
 
 #ifdef ADDRESS_SANITIZER
+#include "memory/allStatic.hpp"
+
 #include <sanitizer/asan_interface.h>
 #endif
 
@@ -72,6 +74,16 @@
       ((void) (size));                          \
     }                                           \
   } while (false)
+#endif
+
+class outputStream;
+
+#ifdef ADDRESS_SANITIZER
+struct Asan : public AllStatic {
+  static void initialize();
+  static bool had_error();
+  static void report(outputStream* st);
+};
 #endif
 
 #endif // SHARE_SANITIZERS_ADDRESS_HPP

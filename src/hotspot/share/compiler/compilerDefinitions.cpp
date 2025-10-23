@@ -215,11 +215,6 @@ void CompilerConfig::set_client_emulation_mode_flags() {
   if (FLAG_IS_DEFAULT(CodeCacheExpansionSize)) {
     FLAG_SET_ERGO(CodeCacheExpansionSize, 32*K);
   }
-  if (FLAG_IS_DEFAULT(MaxRAM)) {
-    // Do not use FLAG_SET_ERGO to update MaxRAM, as this will impact
-    // heap setting done based on available phys_mem (see Arguments::set_heap_size).
-    FLAG_SET_DEFAULT(MaxRAM, 1ULL*G);
-  }
   if (FLAG_IS_DEFAULT(CICompilerCount)) {
     FLAG_SET_ERGO(CICompilerCount, 1);
   }
@@ -553,19 +548,34 @@ bool CompilerConfig::check_args_consistency(bool status) {
   return status;
 }
 
-void CompilerConfig::ergo_initialize() {
+bool CompilerConfig::should_set_client_emulation_mode_flags() {
 #if !COMPILER1_OR_COMPILER2
-  return;
+  return false;
 #endif
 
   if (has_c1()) {
     if (!is_compilation_mode_selected()) {
       if (NeverActAsServerClassMachine) {
-        set_client_emulation_mode_flags();
+        return true;
       }
     } else if (!has_c2() && !is_jvmci_compiler()) {
-      set_client_emulation_mode_flags();
+      return true;
     }
+  }
+
+  return false;
+}
+
+void CompilerConfig::ergo_initialize() {
+#if !COMPILER1_OR_COMPILER2
+  return;
+#endif
+
+  // This property is also checked when selecting the heap size. Since client
+  // emulation mode influences Java heap memory usage, part of the logic must
+  // occur before choosing the heap size.
+  if (should_set_client_emulation_mode_flags()) {
+    set_client_emulation_mode_flags();
   }
 
   set_legacy_emulation_flags();

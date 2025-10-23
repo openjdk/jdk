@@ -23,6 +23,14 @@ const linkIcon = "##REPLACE:doclet.Link_icon##";
 const linkToSection = "##REPLACE:doclet.Link_to_section##";
 const toggleMemberListing = "##REPLACE:doclet.Toggle_member_listing##";
 
+const sortLexicalLabel = "##REPLACE:doclet.Sort_lexicographically##";
+const sortSourceLabel  = "##REPLACE:doclet.Sort_by_source_order##";
+const TOC_ALPHA  = "alpha";
+const TOC_SOURCE = "source";
+var origOlOrder = new Map();
+var origContainerOrder = new Map();
+var snapshotted = false;
+
 if (typeof hljs !== "undefined") {
     try {
         hljs.highlightAll();
@@ -409,6 +417,9 @@ document.addEventListener("DOMContentLoaded", function(e) {
         makeFilterWidget(tocMenu, updateToc);
         var menuInput = tocMenu.querySelector("input.filter-input");
     }
+
+    snapshotAllOnce();
+
     document.addEventListener("keydown", (e) => {
         if (e.ctrlKey || e.altKey || e.metaKey) {
             return;
@@ -640,6 +651,168 @@ document.addEventListener("DOMContentLoaded", function(e) {
         }
         window.addEventListener("scroll", handleScroll);
     }
+
+    function allTocNavs() {
+        return Array.from(document.querySelectorAll("nav.toc"));
+    }
+
+    function nestedTocLists(scope) {
+        const listsToSort = [];
+        const sectionLinks = scope.querySelectorAll("ol.toc-list > li > a");
+
+        sectionLinks.forEach(function(link) {
+            const href = link.getAttribute("href");
+            if (href === "#constructor-detail" || href === "#method-detail"
+                || href === "#field-detail" || href === "#annotation-interface-element-detail"
+                || href === "#enum-constant-detail" || href === "#property-detail") {
+                const memberList = link.nextElementSibling;
+                if (memberList && memberList.tagName === 'OL') {
+                    listsToSort.push(memberList);
+                }
+            }
+        });
+
+        return listsToSort;
+    }
+
+    function textForLi(li) {
+        return li.querySelector(":scope > a").textContent.trim();
+    }
+
+    function alphaCompare(a, b) {
+        return textForLi(a).localeCompare(textForLi(b), undefined, {
+            numeric: true,
+            sensitivity: "base"
+        });
+    }
+
+    function snapshotTocOnce(nav){
+        nestedTocLists(nav).forEach(function(ol){
+            if (!origOlOrder.has(ol)) origOlOrder.set(ol, Array.from(ol.children));
+        });
+    }
+    function restoreToc(nav){
+        nestedTocLists(nav).forEach(function(ol){
+            var orig = origOlOrder.get(ol);
+            if (orig) orig.forEach(function(li){ ol.appendChild(li); });
+        });
+    }
+    function sortTocAlpha(nav){
+        nestedTocLists(nav).forEach(function(ol){
+            var lis = Array.from(ol.children);
+            if (lis.length < 2) return;
+            lis.slice().sort(alphaCompare).forEach(function(li){ ol.appendChild(li); });
+        });
+    }
+
+    function snapshotAllOnce() {
+        if (snapshotted) return;
+        allTocNavs().forEach(snapshotTocOnce);
+        snapshotted = true;
+    }
+
+    function restoreAllMemberContainers(){
+        origContainerOrder.forEach(function(kids, container){
+            kids.forEach(function(ch){ container.appendChild(ch); });
+        });
+    }
+
+    function reorderMemberDetailsAlpha() {
+        var sidebarNav = document.querySelector(".main-grid nav.toc");
+        var mainRoot = document.querySelector(".main-grid main");
+        if (!sidebarNav || !mainRoot) return;
+
+        var containers = Array.from(
+            mainRoot.querySelectorAll("ul.member-list")
+        );
+
+        containers.forEach(function(container) {
+            var links = Array.from(sidebarNav.querySelectorAll("a[href^='#']")).filter(function(a) {
+                var id = a.getAttribute("href").slice(1);
+                if (!id) return false;
+                var target = document.getElementById(decodeURI(id));
+                return target && container.contains(target);
+            });
+            if (links.length < 2) return;
+
+            var items = links.map(function(a) {
+                var id = a.getAttribute("href").slice(1);
+                var target = document.getElementById(decodeURI(id));
+                if (!target) return null;
+                var block = target.closest("section.detail, div.detail") || target;
+                var li = block.closest("li");
+                if (li.parentElement !== container) return null;
+                return {
+                    node: li,
+                    text: (a.textContent || "").trim()
+                };
+            }).filter(Boolean);
+
+            if (items.length < 2) return;
+
+            if (!origContainerOrder.has(container)) {
+                origContainerOrder.set(container, Array.from(container.children));
+            }
+
+            items.slice()
+                .sort(function(x, y) {
+                    return x.text.localeCompare(y.text, undefined, {
+                        numeric: true,
+                        sensitivity: "base"
+                    });
+                })
+                .forEach(function(it) {
+                    container.appendChild(it.node);
+                });
+        });
+    }
+
+    function updateToggleButtons(order){
+        const next = (order === TOC_ALPHA) ? sortSourceLabel : sortLexicalLabel;
+        document.querySelectorAll(".toc-sort-toggle").forEach(function(btn){
+            btn.setAttribute("aria-label", next);
+            btn.setAttribute("title", next);
+            btn.setAttribute("aria-pressed", order === TOC_ALPHA);
+
+            if (order === TOC_ALPHA) {
+                btn.classList.add("toc-sort-is-active");
+            } else {
+                btn.classList.remove("toc-sort-is-active");
+            }
+
+            var img = btn.querySelector("img");
+            if (img) img.alt = next;
+        });
+    }
+
+    var tocOrder = TOC_SOURCE;
+    updateToggleButtons(tocOrder);
+
+    function applyAlpha(){
+        snapshotAllOnce();
+        reorderMemberDetailsAlpha();
+        allTocNavs().forEach(sortTocAlpha);
+        initSectionData(); handleScroll();
+        updateToggleButtons(TOC_ALPHA);
+        tocOrder = TOC_ALPHA;
+    }
+
+    function applySource(){
+        snapshotAllOnce();
+        restoreAllMemberContainers();
+        allTocNavs().forEach(restoreToc);
+        initSectionData(); handleScroll();
+        updateToggleButtons(TOC_SOURCE);
+        tocOrder = TOC_SOURCE;
+    }
+
+    document.querySelectorAll(".toc-sort-toggle").forEach(function(btn) {
+      btn.addEventListener("click", function() {
+          if (tocOrder === TOC_SOURCE) applyAlpha(); else applySource();
+          if (typeof btn.blur === "function") btn.blur();
+      });
+    });
+
     // Resize handler
     new ResizeObserver((entries) => {
         if (expanded) {

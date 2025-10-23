@@ -47,9 +47,9 @@ void OptoReg::dump(int r, outputStream *st) {
 
 
 //=============================================================================
-const RegMask RegMask::Empty;
+const RegMask RegMask::EMPTY;
 
-const RegMask RegMask::All(
+const RegMask RegMask::ALL(
 # define BODY(I) -1,
     FORALL_BODY
 # undef BODY
@@ -126,7 +126,7 @@ void RegMask::clear_to_pairs() {
 }
 
 bool RegMask::is_misaligned_pair() const {
-  return Size() == 2 && !is_aligned_pairs();
+  return size() == 2 && !is_aligned_pairs();
 }
 
 bool RegMask::is_aligned_pairs() const {
@@ -227,7 +227,7 @@ bool RegMask::is_bound(uint ireg) const {
 // for current regmask, where reg is the highest number.
 bool RegMask::is_valid_reg(OptoReg::Name reg, const int size) const {
   for (int i = 0; i < size; i++) {
-    if (!Member(reg - i)) {
+    if (!member(reg - i)) {
       return false;
     }
   }

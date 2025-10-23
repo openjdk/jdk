@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.time.temporal.ChronoUnit.WEEKS;
 import static java.time.temporal.ChronoUnit.YEARS;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertThrows;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -113,6 +115,44 @@ public class TCKDuration extends AbstractTCKTest {
     public void test_zero() {
         assertEquals(Duration.ZERO.getSeconds(), 0L);
         assertEquals(Duration.ZERO.getNano(), 0);
+    }
+
+    @Test
+    public void test_min() {
+        assertEquals(Duration.MIN.getSeconds(), Long.MIN_VALUE);
+        assertEquals(Duration.MIN.getNano(), 0);
+        // no duration minimally less than MIN
+        assertThrows(ArithmeticException.class, () -> Duration.MIN.minusNanos(1));
+    }
+
+    @Test
+    public void test_max() {
+        assertEquals(Duration.MAX.getSeconds(), Long.MAX_VALUE);
+        assertEquals(Duration.MAX.getNano(), 999_999_999);
+        // no duration minimally greater than MAX
+        assertThrows(ArithmeticException.class, () -> Duration.MAX.plusNanos(1));
+    }
+
+    @Test
+    public void test_constant_properties() {
+        assertTrue(Duration.MIN.compareTo(Duration.MIN) == 0);
+        assertEquals(Duration.MIN, Duration.MIN);
+        assertTrue(Duration.ZERO.compareTo(Duration.ZERO) == 0);
+        assertEquals(Duration.ZERO, Duration.ZERO);
+        assertTrue(Duration.MAX.compareTo(Duration.MAX) == 0);
+        assertEquals(Duration.MAX, Duration.MAX);
+
+        assertTrue(Duration.MIN.compareTo(Duration.ZERO) < 0);
+        assertTrue(Duration.ZERO.compareTo(Duration.MIN) > 0);
+        assertNotEquals(Duration.ZERO, Duration.MIN);
+
+        assertTrue(Duration.ZERO.compareTo(Duration.MAX) < 0);
+        assertTrue(Duration.MAX.compareTo(Duration.ZERO) > 0);
+        assertNotEquals(Duration.ZERO, Duration.MAX);
+
+        assertTrue(Duration.MIN.compareTo(Duration.MAX) < 0);
+        assertTrue(Duration.MAX.compareTo(Duration.MIN) > 0);
+        assertNotEquals(Duration.MIN, Duration.MAX);
     }
 
     //-----------------------------------------------------------------------

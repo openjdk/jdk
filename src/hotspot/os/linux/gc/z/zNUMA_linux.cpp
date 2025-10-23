@@ -32,12 +32,35 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
+static uint* z_numa_id_to_node = nullptr;
+static uint32_t* z_node_to_numa_id = nullptr;
+
 void ZNUMA::pd_initialize() {
   _enabled = UseNUMA;
 
+  size_t configured_nodes = 0;
+
+  if (UseNUMA) {
+    const size_t max_nodes = os::Linux::numa_num_configured_nodes();
+    z_numa_id_to_node = NEW_C_HEAP_ARRAY(uint, max_nodes, mtGC);
+    configured_nodes = os::numa_get_leaf_groups(z_numa_id_to_node, 0);
+
+    z_node_to_numa_id = NEW_C_HEAP_ARRAY(uint32_t, max_nodes, mtGC);
+
+    // Fill the array with invalid NUMA ids
+    for (uint32_t i = 0; i < max_nodes; i++) {
+      z_node_to_numa_id[i] = (uint32_t)-1;
+    }
+
+    // Fill the reverse mappings
+    for (uint32_t i = 0; i < configured_nodes; i++) {
+      z_node_to_numa_id[z_numa_id_to_node[i]] = i;
+    }
+  }
+
   // UseNUMA and is_faked() are mutually excluded in zArguments.cpp.
   _count = UseNUMA
-      ? os::Linux::numa_max_node() + 1
+      ? configured_nodes
       : !FLAG_IS_DEFAULT(ZFakeNUMA)
             ? ZFakeNUMA
             : 1;  // No NUMA nodes
@@ -54,7 +77,7 @@ uint32_t ZNUMA::id() {
     return 0;
   }
 
-  return os::Linux::get_node_by_cpu(ZCPU::id());
+  return z_node_to_numa_id[os::Linux::get_node_by_cpu(ZCPU::id())];
 }
 
 uint32_t ZNUMA::memory_id(uintptr_t addr) {
@@ -63,14 +86,21 @@ uint32_t ZNUMA::memory_id(uintptr_t addr) {
     return 0;
   }
 
-  uint32_t id = (uint32_t)-1;
+  int node = -1;
 
-  if (ZSyscall::get_mempolicy((int*)&id, nullptr, 0, (void*)addr, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
+  if (ZSyscall::get_mempolicy(&node, nullptr, 0, (void*)addr, MPOL_F_NODE | MPOL_F_ADDR) == -1) {
     ZErrno err;
     fatal("Failed to get NUMA id for memory at " PTR_FORMAT " (%s)", addr, err.to_string());
   }
 
-  assert(id < _count, "Invalid NUMA id");
+  DEBUG_ONLY(const int max_nodes = os::Linux::numa_num_configured_nodes();)
+  assert(node < max_nodes, "NUMA node is out of bounds node=%d, max=%d", node, max_nodes);
 
-  return id;
+  return z_node_to_numa_id[node];
+}
+
+int ZNUMA::numa_id_to_node(uint32_t numa_id) {
+  assert(numa_id < _count, "NUMA id out of range 0 <= %ud <= %ud", numa_id, _count);
+
+  return (int)z_numa_id_to_node[numa_id];
 }

@@ -118,6 +118,12 @@ public class AddLShortcutTest {
             HelloApp.createBundle(JavaAppDesc.parse(addLauncherApp + "*another.jar:Welcome"), cmd.inputDir());
         });
 
+        if (RunnablePackageTest.hasAction(RunnablePackageTest.Action.INSTALL)) {
+            // Ensure launchers are executable because the output bundle will be installed
+            // and launchers will be attempted to be executed through their shortcuts.
+            packageTest.addInitializer(JPackageCommand::ignoreFakeRuntime);
+        }
+
         new FileAssociations(packageName).applyTo(packageTest);
 
         new AdditionalLauncher("Foo")

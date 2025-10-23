@@ -41,11 +41,11 @@ import java.util.stream.Stream;
 
 public final class Main {
 
-    public static void main(String args[]) throws Throwable {
+    public static void main(String... args) throws Throwable {
         main(TestBuilder.build(), args);
     }
 
-    public static void main(TestBuilder.Builder builder, String args[]) throws Throwable {
+    public static void main(TestBuilder.Builder builder, String... args) throws Throwable {
         boolean listTests = false;
         List<TestInstance> tests = new ArrayList<>();
         try (TestBuilder testBuilder = builder.testConsumer(tests::add).create()) {

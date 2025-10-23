@@ -173,13 +173,12 @@
   // lowest-numbered elements of dst. Any remaining elements of dst will
   // be filled with zero.
   void sve_compress_byte(FloatRegister dst, FloatRegister src, PRegister mask,
-                         FloatRegister vtmp1, FloatRegister vtmp2,
-                         FloatRegister vtmp3, FloatRegister vtmp4,
-                         PRegister ptmp, PRegister pgtmp);
+                         FloatRegister vtmp1, FloatRegister vtmp2, FloatRegister vtmp3,
+                         PRegister ptmp, PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void sve_compress_short(FloatRegister dst, FloatRegister src, PRegister mask,
-                          FloatRegister vtmp1, FloatRegister vtmp2,
-                          PRegister pgtmp);
+                          FloatRegister vzr, FloatRegister vtmp,
+                          PRegister pgtmp, unsigned vector_length_in_bytes);
 
   void neon_reverse_bits(FloatRegister dst, FloatRegister src, BasicType bt, bool isQ);
 

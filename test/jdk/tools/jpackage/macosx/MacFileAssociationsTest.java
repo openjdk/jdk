@@ -32,6 +32,7 @@ import static jdk.jpackage.test.MacHelper.writeFaPListFragment;
 
 import java.nio.file.Path;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -61,7 +62,7 @@ public class MacFileAssociationsTest {
     @Test
     public static void test() throws Exception {
         final Path propFile = TKit.createTempFile("fa.properties");
-        Map<String, String> map = Map.ofEntries(
+        final var props = List.of(
                 entry("mime-type", "application/x-jpackage-foo"),
                 entry("extension", "foo"),
                 entry("description", "bar"),
@@ -73,7 +74,7 @@ public class MacFileAssociationsTest {
                 entry("mac.UISupportsDocumentBrowser", "false"),
                 entry("mac.NSExportableTypes", "public.png, public.jpg"),
                 entry("mac.UTTypeConformsTo", "public.image, public.data"));
-        TKit.createPropertiesFile(propFile, map);
+        TKit.createPropertiesFile(propFile, props);
 
         final var cmd = JPackageCommand.helloAppImage().setFakeRuntime();
         cmd.addArguments("--file-associations", propFile);

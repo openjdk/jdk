@@ -125,7 +125,7 @@ public class Arguments {
         for (String arg : args) {
             argList.add(arg);
         }
-        Log.verbose ("\njpackage argument list: \n" + argList + "\n");
+
         pos = 0;
 
         deployParams = new DeployParams();

@@ -65,7 +65,7 @@ public class WinExeBundler extends AbstractBundler {
     @Override
     public boolean validate(Map<String, ? super Object> params)
             throws ConfigException {
-        return msiBundler.validate(params);
+        return msiBundler.validate(params, WinFromParams.EXE_PACKAGE);
     }
 
     @Override

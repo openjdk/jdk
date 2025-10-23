@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,22 @@
  * questions.
  */
 
-import javax.net.ssl.*;
-import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
-import java.nio.*;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManagerFactory;
+import java.nio.ByteBuffer;
 import java.security.KeyStore;
+import java.security.PEMDecoder;
+import java.security.PEMRecord;
 import java.security.PrivateKey;
-import java.security.KeyFactory;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.spec.*;
-import java.util.Base64;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 
 public abstract class ClientHelloInterOp {
 
@@ -138,13 +143,16 @@ public abstract class ClientHelloInterOp {
         //
         // EC private key related to cert endEntityCertStrs[0].
         //
+        "-----BEGIN PRIVATE KEY-----\n" +
         "MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgA3pmS+OrIjGyUv2F\n" +
         "K/PkyayJIePM2RTFYxNoQqmJGnihRANCAASHi9c1QnNQurh7t8A68XRaJZTpyWU4\n" +
-        "Ay6zUapMW9ydE84KGXyy5my+Sw7QKlmoveGNeZVf12nUVX+tQEYujVob",
+        "Ay6zUapMW9ydE84KGXyy5my+Sw7QKlmoveGNeZVf12nUVX+tQEYujVob\n" +
+        "-----END PRIVATE KEY-----",
 
         //
         // RSA private key related to cert endEntityCertStrs[1].
         //
+        "-----BEGIN PRIVATE KEY-----\n" +
         "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDfq0lpd8nYH8AW\n" +
         "8RL62e57JA9I0AFW72d8x1T40Q9qYn4UftwQXxnVKmvW+VCA3MKkNRWt+eZPvmsJ\n" +
         "qmDPmV0D37L7eF19TIeNkHPN/H7oYdcsHi7p5TY0BNru+pIs1twtx9nv9CaQWqDg\n" +
@@ -170,14 +178,17 @@ public abstract class ClientHelloInterOp {
         "sZ2JRtyK3OV9RtL/MYmYzPLqm1Ah02+GXLVNnvKWmwKBgE8Ble8CzrXYuuPdGxXz\n" +
         "BZU6HnXQrmTUcgeze0tj8SDHzCfsGsaG6pHrVNkT7CKsRuCHTZLM0kXmUijLFKuP\n" +
         "5xyE257z4IbbEbs+tcbB3p28n4/47MzZkSR3kt8+FrsEMZq5oOHbFTGzgp9dhZCC\n" +
-        "dKUqlw5BPHdbxoWB/JpSHGCV"
-        };
+        "dKUqlw5BPHdbxoWB/JpSHGCV\n" +
+        "-----END PRIVATE KEY-----"
+    };
 
     // Private key names of endEntityPrivateKeys.
     private final static String[] endEntityPrivateKeyNames = {
         "EC",
         "RSA"
         };
+
+    private static final PEMDecoder pemDecoder = PEMDecoder.of();
 
     /*
      * Run the test case.
@@ -251,13 +262,9 @@ public abstract class ClientHelloInterOp {
 
         KeyStore ts = null;     // trust store
         KeyStore ks = null;     // key store
-        char passphrase[] = "passphrase".toCharArray();
-
-        // Generate certificate from cert string.
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        char[] passphrase = "passphrase".toCharArray();
 
         // Import the trused certs.
-        ByteArrayInputStream is;
         if (trustedMaterials != null && trustedMaterials.length != 0) {
             ts = KeyStore.getInstance("JKS");
             ts.load(null, null);
@@ -266,13 +273,8 @@ public abstract class ClientHelloInterOp {
                     new Certificate[trustedMaterials.length];
             for (int i = 0; i < trustedMaterials.length; i++) {
                 String trustedCertStr = trustedMaterials[i];
-
-                is = new ByteArrayInputStream(trustedCertStr.getBytes());
-                try {
-                    trustedCert[i] = cf.generateCertificate(is);
-                } finally {
-                    is.close();
-                }
+                // Generate certificate from cert string.
+                trustedCert[i] = pemDecoder.decode(trustedCertStr, X509Certificate.class);
 
                 ts.setCertificateEntry("trusted-cert-" + i, trustedCert[i]);
             }
@@ -295,21 +297,14 @@ public abstract class ClientHelloInterOp {
                 String keyCertStr = keyMaterialCerts[i];
 
                 // generate the private key.
-                PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                    Base64.getMimeDecoder().decode(keyMaterialKeys[i]));
-                KeyFactory kf =
-                    KeyFactory.getInstance(keyMaterialKeyAlgs[i]);
-                PrivateKey priKey = kf.generatePrivate(priKeySpec);
+                PrivateKey priKey = switch (keyMaterialKeyAlgs[i]) {
+                    case "RSA" -> pemDecoder.decode(keyMaterialKeys[i], RSAPrivateKey.class);
+                    case "EC" -> pemDecoder.decode(keyMaterialKeys[i], ECPrivateKey.class);
+                    default -> pemDecoder.decode(keyMaterialKeys[i], PrivateKey.class);
+                };
 
                 // generate certificate chain
-                is = new ByteArrayInputStream(keyCertStr.getBytes());
-                Certificate keyCert = null;
-                try {
-                    keyCert = cf.generateCertificate(is);
-                } finally {
-                    is.close();
-                }
-
+                Certificate keyCert  = pemDecoder.decode(keyCertStr, X509Certificate.class);
                 Certificate[] chain = new Certificate[] { keyCert };
 
                 // import the key entry.

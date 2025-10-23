@@ -99,8 +99,7 @@ class G1BarrierSet: public CardTableBarrierSet {
   template <DecoratorSet decorators, typename T>
   void write_ref_field_pre(T* field);
 
-  inline void write_region(MemRegion mr);
-  void write_region(JavaThread* thread, MemRegion mr);
+  virtual void write_region(MemRegion mr);
 
   template <DecoratorSet decorators = DECORATORS_NONE, typename T>
   void write_ref_field_post(T* field);

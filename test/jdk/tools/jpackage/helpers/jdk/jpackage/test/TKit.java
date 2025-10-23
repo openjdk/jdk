@@ -25,10 +25,10 @@ package jdk.jpackage.test;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.stream.Collectors.toSet;
+import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.Closeable;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
@@ -38,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -109,7 +110,7 @@ public final class TKit {
     }).get();
 
     static void withExtraLogStream(ThrowingRunnable action) {
-        if (extraLogStream != null) {
+        if (state().extraLogStream != null) {
             ThrowingRunnable.toRunnable(action).run();
         } else {
             try (PrintStream logStream = openLogStream()) {
@@ -119,12 +120,44 @@ public final class TKit {
     }
 
     static void withExtraLogStream(ThrowingRunnable action, PrintStream logStream) {
-        var oldExtraLogStream = extraLogStream;
+        withNewState(action, stateBuilder -> {
+            stateBuilder.extraLogStream(logStream);
+        });
+    }
+
+    public static void withMainLogStream(ThrowingRunnable action, PrintStream logStream) {
+        withNewState(action, stateBuilder -> {
+            stateBuilder.mainLogStream(logStream);
+        });
+    }
+
+    public static void withStackTraceStream(ThrowingRunnable action, PrintStream logStream) {
+        withNewState(action, stateBuilder -> {
+            stateBuilder.stackTraceStream(logStream);
+        });
+    }
+
+    public static State state() {
+        return STATE.get();
+    }
+
+    public static void state(State v) {
+        STATE.set(Objects.requireNonNull(v));
+    }
+
+    private static void withNewState(ThrowingRunnable action, Consumer<State.Builder> stateBuilderMutator) {
+        Objects.requireNonNull(action);
+        Objects.requireNonNull(stateBuilderMutator);
+
+        var oldState = state();
+        var builder = oldState.buildCopy();
+        stateBuilderMutator.accept(builder);
+        var newState = builder.create();
         try {
-            extraLogStream = logStream;
+            state(newState);
             ThrowingRunnable.toRunnable(action).run();
         } finally {
-            extraLogStream = oldExtraLogStream;
+            state(oldState);
         }
     }
 
@@ -141,26 +174,25 @@ public final class TKit {
     static void runTests(List<TestInstance> tests, Set<RunTestMode> modes) {
         Objects.requireNonNull(tests);
         Objects.requireNonNull(modes);
-        if (currentTest != null) {
-            throw new IllegalStateException(
-                    "Unexpected nested or concurrent Test.run() call");
+        if (currentTest() != null) {
+            throw new IllegalStateException("Unexpected nested Test.run() call");
         }
 
         withExtraLogStream(() -> {
             tests.stream().forEach(test -> {
-                currentTest = test;
-                try {
-                    if (modes.contains(RunTestMode.FAIL_FAST)) {
-                        ThrowingRunnable.toRunnable(test::run).run();
-                    } else {
-                        ignoreExceptions(test).run();
+                withNewState(() -> {
+                    try {
+                        if (modes.contains(RunTestMode.FAIL_FAST)) {
+                            test.run();
+                        } else {
+                            ignoreExceptions(test).run();
+                        }
+                    } finally {
+                        Optional.ofNullable(state().extraLogStream).ifPresent(PrintStream::flush);
                     }
-                } finally {
-                    currentTest = null;
-                    if (extraLogStream != null) {
-                        extraLogStream.flush();
-                    }
-                }
+                }, stateBuilder -> {
+                    stateBuilder.currentTest(test);
+                });
             });
         });
     }
@@ -217,18 +249,18 @@ public final class TKit {
     }
 
     public static Path workDir() {
-        return currentTest.workDir();
+        return currentTest().workDir();
     }
 
     static String getCurrentDefaultAppName() {
         // Construct app name from swapping and joining test base name
         // and test function name.
         // Say the test name is `FooTest.testBasic`. Then app name would be `BasicFooTest`.
-        String appNamePrefix = currentTest.functionName();
+        String appNamePrefix = currentTest().functionName();
         if (appNamePrefix != null && appNamePrefix.startsWith("test")) {
             appNamePrefix = appNamePrefix.substring("test".length());
         }
-        return Stream.of(appNamePrefix, currentTest.baseName()).filter(
+        return Stream.of(appNamePrefix, currentTest().baseName()).filter(
                 v -> v != null && !v.isEmpty()).collect(Collectors.joining());
     }
 
@@ -256,9 +288,10 @@ public final class TKit {
 
     static void log(String v) {
         v = addTimestamp(v);
-        System.out.println(v);
-        if (extraLogStream != null) {
-            extraLogStream.println(v);
+        var state = state();
+        state.mainLogStream.println(v);
+        if (state.extraLogStream != null) {
+            state.extraLogStream.println(v);
         }
     }
 
@@ -308,13 +341,13 @@ public final class TKit {
     }
 
     public static void trace(String v) {
-        if (TRACE) {
+        if (state().trace) {
             log("TRACE: " + v);
         }
     }
 
     private static void traceAssert(String v) {
-        if (TRACE_ASSERTS) {
+        if (state().traceAsserts) {
             log("TRACE: " + v);
         }
     }
@@ -575,8 +608,12 @@ public final class TKit {
 
     public static RuntimeException throwSkippedException(RuntimeException ex) {
         trace("Skip the test: " + ex.getMessage());
-        currentTest.notifySkipped(ex);
+        currentTest().notifySkipped(ex);
         throw ex;
+    }
+
+    public static boolean isSkippedException(Throwable t) {
+        return JtregSkippedExceptionClass.INSTANCE.isInstance(t);
     }
 
     public static Path createRelativePathCopy(final Path file) {
@@ -653,10 +690,9 @@ public final class TKit {
     }
 
     static void printStackTrace(Throwable throwable) {
-        if (extraLogStream != null) {
-            throwable.printStackTrace(extraLogStream);
-        }
-        throwable.printStackTrace();
+        var state = state();
+        Optional.ofNullable(state.extraLogStream).ifPresent(throwable::printStackTrace);
+        throwable.printStackTrace(state.stackTraceStream);
     }
 
     private static String concatMessages(String msg, String msg2) {
@@ -667,7 +703,7 @@ public final class TKit {
     }
 
     public static void assertEquals(long expected, long actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (expected != actual) {
             error(concatMessages(String.format(
                     "Expected [%d]. Actual [%d]", expected, actual),
@@ -678,7 +714,7 @@ public final class TKit {
     }
 
     public static void assertNotEquals(long expected, long actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (expected == actual) {
             error(concatMessages(String.format("Unexpected [%d] value", actual),
                     msg));
@@ -689,7 +725,7 @@ public final class TKit {
     }
 
     public static void assertEquals(boolean expected, boolean actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (expected != actual) {
             error(concatMessages(String.format(
                     "Expected [%s]. Actual [%s]", expected, actual),
@@ -700,7 +736,7 @@ public final class TKit {
     }
 
     public static void assertNotEquals(boolean expected, boolean actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (expected == actual) {
             error(concatMessages(String.format("Unexpected [%s] value", actual),
                     msg));
@@ -712,7 +748,7 @@ public final class TKit {
 
 
     public static void assertEquals(Object expected, Object actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
             error(concatMessages(String.format(
@@ -724,7 +760,7 @@ public final class TKit {
     }
 
     public static void assertNotEquals(Object expected, Object actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if ((actual != null && !actual.equals(expected))
                 || (expected != null && !expected.equals(actual))) {
 
@@ -737,7 +773,7 @@ public final class TKit {
     }
 
     public static void assertNull(Object value, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (value != null) {
             error(concatMessages(String.format("Unexpected not null value [%s]",
                     value), msg));
@@ -747,7 +783,7 @@ public final class TKit {
     }
 
     public static void assertNotNull(Object value, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (value == null) {
             error(concatMessages("Unexpected null value", msg));
         }
@@ -764,7 +800,7 @@ public final class TKit {
     }
 
     public static void assertTrue(boolean actual, String msg, Runnable onFail) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (!actual) {
             if (onFail != null) {
                 onFail.run();
@@ -776,7 +812,7 @@ public final class TKit {
     }
 
     public static void assertFalse(boolean actual, String msg, Runnable onFail) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         if (actual) {
             if (onFail != null) {
                 onFail.run();
@@ -794,6 +830,35 @@ public final class TKit {
         } else {
             assertTrue(!path.toFile().exists(), String.format(
                     "Check [%s] path doesn't exist", path));
+        }
+    }
+
+    public static void assertMismatchFileContent(Path a, Path b) {
+        assertFilesMismatch(a, b, true, Optional.empty());
+    }
+
+    public static void assertMismatchFileContent(Path a, Path b, String msg) {
+        assertFilesMismatch(a, b, true, Optional.of(msg));
+    }
+
+    public static void assertSameFileContent(Path a, Path b) {
+        assertFilesMismatch(a, b, false, Optional.empty());
+    }
+
+    public static void assertSameFileContent(Path a, Path b, String msg) {
+        assertFilesMismatch(a, b, false, Optional.of(msg));
+    }
+
+    public static void assertFilesMismatch(Path a, Path b, boolean expectMismatch, Optional<String> msg) {
+        var mismatch = toBiFunction(Files::mismatch).apply(a, b) != -1;
+        if (expectMismatch) {
+            assertTrue(mismatch, msg.orElseGet(() -> {
+                return String.format("Check the content of [%s] and [%s] files mismatch", a, b);
+            }));
+        } else {
+            assertTrue(!mismatch, msg.orElseGet(() -> {
+                return String.format("Check the content of [%s] and [%s] files is the same", a, b);
+            }));
         }
     }
 
@@ -853,7 +918,7 @@ public final class TKit {
     }
 
     public static void assertUnexpected(String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
         error(concatMessages("Unexpected", msg));
     }
 
@@ -879,7 +944,7 @@ public final class TKit {
         }
 
         public void match(Set<Path> expected) {
-            currentTest.notifyAssert();
+            currentTest().notifyAssert();
 
             var comm = Comm.compare(content, expected);
             if (!comm.unique1().isEmpty() && !comm.unique2().isEmpty()) {
@@ -906,7 +971,7 @@ public final class TKit {
         }
 
         public void contains(Set<Path> expected) {
-            currentTest.notifyAssert();
+            currentTest().notifyAssert();
 
             var comm = Comm.compare(content, expected);
             if (!comm.unique2().isEmpty()) {
@@ -951,7 +1016,7 @@ public final class TKit {
 
     public static void assertStringListEquals(List<String> expected,
             List<String> actual, String msg) {
-        currentTest.notifyAssert();
+        currentTest().notifyAssert();
 
         traceAssert(concatMessages("assertStringListEquals()", msg));
 
@@ -1177,12 +1242,13 @@ public final class TKit {
     }
 
     private static PrintStream openLogStream() {
-        if (LOG_FILE == null) {
-            return null;
-        }
-
-        return ThrowingSupplier.toSupplier(() -> new PrintStream(
-                new FileOutputStream(LOG_FILE.toFile(), true))).get();
+        return state().logFile.map(logfile -> {
+            try {
+                return Files.newOutputStream(logfile, StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
+        }).map(PrintStream::new).orElse(null);
     }
 
     public record PathSnapshot(List<String> contentHashes) {
@@ -1194,8 +1260,8 @@ public final class TKit {
             this(hashRecursive(path));
         }
 
-        public static void assertEquals(PathSnapshot a, PathSnapshot b, String msg) {
-            assertStringListEquals(a.contentHashes(), b.contentHashes(), msg);
+        public void assertEquals(PathSnapshot other, String msg) {
+            assertStringListEquals(contentHashes(), other.contentHashes(), msg);
         }
 
         private static List<String> hashRecursive(Path path) {
@@ -1226,15 +1292,6 @@ public final class TKit {
         }
     }
 
-    private static TestInstance currentTest;
-    private static PrintStream extraLogStream;
-
-    private static final boolean TRACE;
-    private static final boolean TRACE_ASSERTS;
-
-    static final boolean VERBOSE_JPACKAGE;
-    static final boolean VERBOSE_TEST_SETUP;
-
     static String getConfigProperty(String propertyName) {
         return System.getProperty(getConfigPropertyName(propertyName));
     }
@@ -1262,37 +1319,18 @@ public final class TKit {
         return tokens.stream().collect(Collectors.toSet());
     }
 
-    static final Path LOG_FILE = Functional.identity(() -> {
-        String val = getConfigProperty("logfile");
-        if (val == null) {
-            return null;
-        }
-        return Path.of(val);
-    }).get();
-
-    static {
-        Set<String> logOptions = tokenizeConfigProperty("suppress-logging");
-        if (logOptions == null) {
-            TRACE = true;
-            TRACE_ASSERTS = true;
-            VERBOSE_JPACKAGE = true;
-            VERBOSE_TEST_SETUP = true;
-        } else if (logOptions.contains("all")) {
-            TRACE = false;
-            TRACE_ASSERTS = false;
-            VERBOSE_JPACKAGE = false;
-            VERBOSE_TEST_SETUP = false;
-        } else {
-            Predicate<Set<String>> isNonOf = options -> {
-                return Collections.disjoint(logOptions, options);
-            };
-
-            TRACE = isNonOf.test(Set.of("trace", "t"));
-            TRACE_ASSERTS = isNonOf.test(Set.of("assert", "a"));
-            VERBOSE_JPACKAGE = isNonOf.test(Set.of("jpackage", "jp"));
-            VERBOSE_TEST_SETUP = isNonOf.test(Set.of("init", "i"));
-        }
+    private static TestInstance currentTest() {
+        return state().currentTest;
     }
+
+    static boolean verboseJPackage() {
+        return state().verboseJPackage;
+    }
+
+    static boolean verboseTestSetup() {
+        return state().verboseTestSetup;
+    }
+
 
     private static final class JtregSkippedExceptionClass extends ClassLoader {
         @SuppressWarnings("unchecked")
@@ -1319,4 +1357,159 @@ public final class TKit {
         static final Class<RuntimeException> INSTANCE = new JtregSkippedExceptionClass().clazz;
 
     }
+
+
+    public static final class State {
+
+        private State(
+                Optional<Path> logFile,
+                TestInstance currentTest,
+                PrintStream mainLogStream,
+                PrintStream stackTraceStream,
+                PrintStream extraLogStream,
+                boolean trace,
+                boolean traceAsserts,
+                boolean verboseJPackage,
+                boolean verboseTestSetup) {
+
+            Objects.requireNonNull(logFile);
+            Objects.requireNonNull(mainLogStream);
+            Objects.requireNonNull(stackTraceStream);
+
+            this.logFile = logFile;
+            this.currentTest = currentTest;
+            this.mainLogStream = mainLogStream;
+            this.stackTraceStream = stackTraceStream;
+            this.extraLogStream = extraLogStream;
+
+            this.trace = trace;
+            this.traceAsserts = traceAsserts;
+
+            this.verboseJPackage = verboseJPackage;
+            this.verboseTestSetup = verboseTestSetup;
+        }
+
+
+        Builder buildCopy() {
+            return build().initFrom(this);
+        }
+
+        static Builder build() {
+            return new Builder();
+        }
+
+
+        static final class Builder {
+
+            Builder initDefaults() {
+                logFile = Optional.ofNullable(getConfigProperty("logfile")).map(Path::of);
+                currentTest = null;
+                mainLogStream = System.out;
+                stackTraceStream = System.err;
+                extraLogStream = null;
+
+                var logOptions = tokenizeConfigProperty("suppress-logging");
+                if (logOptions == null) {
+                    trace = true;
+                    traceAsserts = true;
+                    verboseJPackage = true;
+                    verboseTestSetup = true;
+                } else if (logOptions.contains("all")) {
+                    trace = false;
+                    traceAsserts = false;
+                    verboseJPackage = false;
+                    verboseTestSetup = false;
+                } else {
+                    Predicate<Set<String>> isNonOf = options -> {
+                        return Collections.disjoint(logOptions, options);
+                    };
+
+                    trace = isNonOf.test(Set.of("trace", "t"));
+                    traceAsserts = isNonOf.test(Set.of("assert", "a"));
+                    verboseJPackage = isNonOf.test(Set.of("jpackage", "jp"));
+                    verboseTestSetup = isNonOf.test(Set.of("init", "i"));
+                }
+
+                return this;
+            }
+
+            Builder initFrom(State state) {
+                logFile = state.logFile;
+                currentTest = state.currentTest;
+                mainLogStream = state.mainLogStream;
+                stackTraceStream = state.stackTraceStream;
+                extraLogStream = state.extraLogStream;
+
+                trace = state.trace;
+                traceAsserts = state.traceAsserts;
+
+                verboseJPackage = state.verboseJPackage;
+                verboseTestSetup = state.verboseTestSetup;
+
+                return this;
+            }
+
+            Builder logFile(Optional<Path> v) {
+                logFile = v;
+                return this;
+            }
+
+            Builder currentTest(TestInstance v) {
+                currentTest = v;
+                return this;
+            }
+
+            Builder mainLogStream(PrintStream v) {
+                mainLogStream = v;
+                return this;
+            }
+
+            Builder stackTraceStream(PrintStream v) {
+                stackTraceStream = v;
+                return this;
+            }
+
+            Builder extraLogStream(PrintStream v) {
+                extraLogStream = v;
+                return this;
+            }
+
+            State create() {
+                return new State(logFile, currentTest, mainLogStream, stackTraceStream, extraLogStream, trace, traceAsserts, verboseJPackage, verboseTestSetup);
+            }
+
+            private Optional<Path> logFile;
+            private TestInstance currentTest;
+            private PrintStream mainLogStream;
+            private PrintStream stackTraceStream;
+            private PrintStream extraLogStream;
+
+            private boolean trace;
+            private boolean traceAsserts;
+
+            private boolean verboseJPackage;
+            private boolean verboseTestSetup;
+        }
+
+
+        private final Optional<Path> logFile;
+        private final TestInstance currentTest;
+        private final PrintStream mainLogStream;
+        private final PrintStream stackTraceStream;
+        private final PrintStream extraLogStream;
+
+        private final boolean trace;
+        private final boolean traceAsserts;
+
+        private final boolean verboseJPackage;
+        private final boolean verboseTestSetup;
+    }
+
+
+    private static final InheritableThreadLocal<State> STATE = new InheritableThreadLocal<>() {
+        @Override
+        protected State initialValue() {
+            return State.build().initDefaults().create();
+        }
+    };
 }

@@ -341,7 +341,7 @@ public class PackageTestTest extends JUnitAdapter {
                     }
 
                     @Override
-                    JPackageCommand assertAppLayout() {
+                    JPackageCommand runStandardAsserts() {
                         return this;
                     }
 

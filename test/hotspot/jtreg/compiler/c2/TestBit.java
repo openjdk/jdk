@@ -33,7 +33,7 @@ import jdk.test.lib.process.ProcessTools;
  * @library /test/lib /
  *
  * @requires vm.flagless
- * @requires os.arch=="aarch64" | os.arch=="amd64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64"
+ * @requires os.arch == "aarch64" | os.arch == "amd64" | os.arch == "x86_64" | os.arch == "ppc64" | os.arch == "ppc64le" | os.arch == "riscv64"
  * @requires vm.debug == true & vm.compiler2.enabled
  *
  * @run driver compiler.c2.TestBit

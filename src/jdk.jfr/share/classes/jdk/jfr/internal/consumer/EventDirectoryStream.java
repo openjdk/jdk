@@ -257,6 +257,11 @@ public final class EventDirectoryStream extends AbstractEventStream {
         }
         for (int i = 0; i < index; i++) {
             c.dispatch(sortedCache[i]);
+            sortedCache[i] = null;
+        }
+        // Shrink array
+        if (index > 100_000 && 4 * index < sortedCache.length) {
+            sortedCache = new RecordedEvent[2 * index];
         }
         onFlush();
         return;

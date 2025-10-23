@@ -41,6 +41,7 @@ class outputStream;
   LOG_TAG(aot) \
   LOG_TAG(arguments) \
   LOG_TAG(array) \
+  LOG_TAG(asan) \
   LOG_TAG(attach) \
   LOG_TAG(barrier) \
   LOG_TAG(blocks) \
