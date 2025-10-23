@@ -268,6 +268,11 @@ void ShenandoahAssertNotForwardedClosure::do_oop_work(T* p) {
   }
 }
 
+inline void ShenandoahFlushAllSATB::do_thread(Thread* thread) {
+  // Transfer any partial buffer to the qset for completed buffer processing.
+  _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
+}
+
 void ShenandoahAssertNotForwardedClosure::do_oop(narrowOop* p) { do_oop_work(p); }
 void ShenandoahAssertNotForwardedClosure::do_oop(oop* p)       { do_oop_work(p); }
 #endif

@@ -1113,7 +1113,7 @@ private:
   ShenandoahNonConcUpdateRefsClosure _cl;
 public:
   ShenandoahUpdateThreadHandshakeClosure();
-  void do_thread(Thread* thread);
+  void do_thread(Thread* thread) override;
 };
 
 ShenandoahUpdateThreadHandshakeClosure::ShenandoahUpdateThreadHandshakeClosure() :
@@ -1128,9 +1128,31 @@ void ShenandoahUpdateThreadHandshakeClosure::do_thread(Thread* thread) {
   }
 }
 
+class ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers final : public HandshakeClosure {
+  ShenandoahUpdateThreadHandshakeClosure _update_roots;
+  ShenandoahFlushAllSATB _flush_all_satb;
+
+public:
+  ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers() :
+    HandshakeClosure("Shenandoah Update Thread Roots and Flush SATB"),
+    _flush_all_satb(ShenandoahBarrierSet::satb_mark_queue_set()) {
+  }
+
+  void do_thread(Thread* thread) override {
+    _update_roots.do_thread(thread);
+    _flush_all_satb.do_thread(thread);
+  }
+};
+
 void ShenandoahConcurrentGC::op_update_thread_roots() {
-  ShenandoahUpdateThreadHandshakeClosure cl;
-  Handshake::execute(&cl);
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+  if (heap->is_concurrent_old_mark_in_progress()) {
+    ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers cl;
+    Handshake::execute(&cl);
+  } else {
+    ShenandoahUpdateThreadHandshakeClosure cl;
+    Handshake::execute(&cl);
+  }
 }
 
 void ShenandoahConcurrentGC::op_final_update_refs() {
@@ -1175,8 +1197,8 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     // buffers.
     //
     // After update refs, it is no longer possible for a mutator to overwrite a pointer into the collection set
-    ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
-    heap->old_generation()->transfer_pointers_from_satb();
+    // ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
+    // heap->old_generation()->transfer_pointers_from_satb();
 
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
     // entire regions.  Both of these relevant operations occur before final update refs.

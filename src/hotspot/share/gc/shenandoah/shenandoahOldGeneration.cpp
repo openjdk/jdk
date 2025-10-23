@@ -43,20 +43,6 @@
 #include "runtime/threads.hpp"
 #include "utilities/events.hpp"
 
-class ShenandoahFlushAllSATB : public ThreadClosure {
-private:
-  SATBMarkQueueSet& _satb_qset;
-
-public:
-  explicit ShenandoahFlushAllSATB(SATBMarkQueueSet& satb_qset) :
-    _satb_qset(satb_qset) {}
-
-  void do_thread(Thread* thread) override {
-    // Transfer any partial buffer to the qset for completed buffer processing.
-    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-  }
-};
-
 class ShenandoahPurgeSATBTask : public WorkerTask {
 public:
   explicit ShenandoahPurgeSATBTask() : WorkerTask("Purge SATB") {
