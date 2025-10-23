@@ -451,7 +451,9 @@ class DwarfFile : public ElfFile {
 
   class DebugAranges;
 
-  // Cache for .debug_aranges to enable binary search for address lookup
+  // Cache for .debug_aranges to enable binary search for address lookup.
+  // DebugAranges uses this cache to resolve the compilation_unit_offset, rather than doing a linear scan on the files
+  // in each invocation of DebugAranges::find_compilation_unit_offset
   struct ArangesCache {
     friend DebugAranges;
 
