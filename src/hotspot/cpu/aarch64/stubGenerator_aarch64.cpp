@@ -7217,13 +7217,13 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(low_01, Assembler::D, 0, mul_tmp);
       __ umulh(mul_tmp, a_i, b_j);
       __ mov(high_01, Assembler::D, 0, mul_tmp);
-      //mul64ToVec(a_i, b_j, low_01, high_01, 0);
+
       __ ldr(b_j, Address(b, 8));
       __ mul(mul_tmp, a_i, b_j);
       __ mov(low_01, Assembler::D, 1, mul_tmp);
       __ umulh(mul_tmp, a_i, b_j);
       __ mov(high_01, Assembler::D, 1, mul_tmp);
-      //mul64ToVec(a_i, b_j, low_01, high_01, 1);
+      
       __ shl(high_01, __ T2D, high_01, shift1);
       __ ushr(tmp, __ T2D, low_01, shift2);
       __ orr(high_01, __ T2D, high_01, tmp);
@@ -7234,13 +7234,13 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(low_23, Assembler::D, 0, mul_tmp);
       __ umulh(mul_tmp, a_i, b_j);
       __ mov(high_23, Assembler::D, 0, mul_tmp);
-      //mul64ToVec(a_i, b_j, low_23, high_23, 0);
+
       __ ldr(b_j, Address(b, 24));
       __ mul(mul_tmp, a_i, b_j);
       __ mov(low_23, Assembler::D, 1, mul_tmp);
       __ umulh(mul_tmp, a_i, b_j);
       __ mov(high_23, Assembler::D, 1, mul_tmp);
-      //mul64ToVec(a_i, b_j, low_23, high_23, 1);
+
       __ shl(high_23, __ T2D, high_23, shift1);
       __ ushr(tmp, __ T2D, low_23, shift2);
       __ orr(high_23, __ T2D, high_23, tmp);
@@ -7251,7 +7251,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(low_4x, Assembler::D, 0, mul_tmp);
       __ umulh(mul_tmp, a_i, b_j);
       __ mov(high_4x, Assembler::D, 0, mul_tmp);
-      //mul64ToVec(a_i, b_j, low_4x, high_4x, 0);
+
       __ shl(high_4x, __ T2D, high_4x, shift1);
       __ ushr(tmp, __ T2D, low_4x, shift2);
       __ orr(high_4x, __ T2D, high_4x, tmp);
@@ -7275,13 +7275,13 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(modmul_low, Assembler::D, 0, mul_tmp);
       __ umulh(mul_tmp, n, mod_j);
       __ mov(modmul_high, Assembler::D, 0, mul_tmp);
-      //mul64ToVec(n, mod_j, modmul_low, modmul_high, 0);
+
       __ ldr(mod_j, Address(mod_ptr, 8)); 
       __ mul(mul_tmp, n, mod_j);
       __ mov(modmul_low, Assembler::D, 1, mul_tmp);
       __ umulh(mul_tmp, n, mod_j);
       __ mov(modmul_high, Assembler::D, 1, mul_tmp);
-      //mul64ToVec(n, mod_j, modmul_low, modmul_high, 1);
+
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
       __ orr(modmul_high, __ T2D, modmul_high, tmp);
@@ -7294,13 +7294,13 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(modmul_low, Assembler::D, 0, mul_tmp);
       __ umulh(mul_tmp, n, mod_j);
       __ mov(modmul_high, Assembler::D, 0, mul_tmp);
-      //mul64ToVec(n, mod_j, modmul_low, modmul_high, 0);
+
       __ ldr(mod_j, Address(mod_ptr, 24));
       __ mul(mul_tmp, n, mod_j);
       __ mov(modmul_low, Assembler::D, 1, mul_tmp);
       __ umulh(mul_tmp, n, mod_j);
       __ mov(modmul_high, Assembler::D, 1, mul_tmp);
-      //mul64ToVec(n, mod_j, modmul_low, modmul_high, 1);
+
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
       __ orr(modmul_high, __ T2D, modmul_high, tmp);
@@ -7313,7 +7313,7 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(modmul_low, Assembler::D, 0, mul_tmp);
       __ umulh(mul_tmp, n, mod_j);
       __ mov(modmul_high, Assembler::D, 0, mul_tmp);
-      //mul64ToVec(n, mod_j, modmul_low, modmul_high, 0);
+
       __ shl(modmul_high, __ T2D, modmul_high, shift1);
       __ ushr(tmp, __ T2D, modmul_low, shift2);
       __ orr(modmul_high, __ T2D, modmul_high, tmp);
@@ -7483,17 +7483,6 @@ class StubGenerator: public StubCodeGenerator {
     __ ret(lr);
 
     return start;
-  }
-
-  // Multiply both 64 bit lanes in b
-  void mul64ToVec(Register a, Register b, FloatRegister low, FloatRegister high, int lane) {
-
-    Register tmp = r14;
-
-    __ mul(tmp, a, b);
-    __ mov(low, Assembler::D, lane, tmp);
-    __ umulh(tmp, a, b);
-    __ mov(high, Assembler::D, lane, tmp);
   }
 
   void bcax5(Register a0, Register a1, Register a2, Register a3, Register a4,
@@ -12234,6 +12223,10 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseChaCha20Intrinsics) {
       StubRoutines::_chacha20Block = generate_chacha20Block_blockpar();
+    }
+
+    if (UseIntPolyIntrinsics) {
+      StubRoutines::_intpoly_montgomeryMult_P256 = generate_intpoly_montgomeryMult_P256();
     }
 
     if (UseKyberIntrinsics) {
