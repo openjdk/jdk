@@ -117,14 +117,13 @@ public class AbsPathsInImage {
 
         expandPatterns(buildWorkspaceRoot);
         expandPatterns(buildOutputRoot);
+        createPrefixTables();
 
         System.out.println("Looking for:");
         for (byte[] searchPattern : searchPatterns) {
             System.out.println(new String(searchPattern));
         }
         System.out.println();
-
-        createPrefixTables();
 
         AbsPathsInImage absPathsInImage = new AbsPathsInImage();
         absPathsInImage.scanFiles(dirToScan);
@@ -160,7 +159,11 @@ public class AbsPathsInImage {
         }
     }
 
-    // KMP failure function
+    /**
+     * The failure function for KMP. Returns the correct index in the pattern to jump
+     * back to when encountering a mismatched character. Used in both
+     * createPrefixTables (pre-processing) and scanBytes (matching).
+     */
     private static int getPrefixIndex(int patternIdx, int state, byte match) {
         if (state == 0) {
             return 0;
@@ -174,7 +177,12 @@ public class AbsPathsInImage {
         return searchPattern[i] == match ? i + 1 : i;
     }
 
-    // precompute KMP prefixes
+    /**
+     * Pre-processing string patterns for Knuth–Morris–Pratt (KMP) search algorithm.
+     * Lookup tables of longest prefixes at each given index are created for each
+     * search pattern string. These tables are later used in scanBytes during matching
+     * as lookups for failure state transitions.
+     */
     private static void createPrefixTables() {
         for (int patternIdx = 0; patternIdx < searchPatterns.size(); patternIdx++) {
             int patternLen = searchPatterns.get(patternIdx).length;
@@ -248,6 +256,7 @@ public class AbsPathsInImage {
         if (!found) {
             return;
         }
+        // test fails
         try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
             int i = 0;
             while ((zipEntry = zipInputStream.getNextEntry()) != null) {
@@ -260,6 +269,12 @@ public class AbsPathsInImage {
         }
     }
 
+    /**
+     * Scans each byte until encounters a match with one of searchPatterns. Uses KMP to
+     * perform matches. Keep track of current matched index (states) for each search
+     * pattern. At each given byte, update states accordingly (increment if match or
+     * failure function transition if mismatch). Returns a list of Match objects.
+     */
     private List<Match> scanBytes(InputStream input) throws IOException {
         List<Match> matches = new ArrayList<>();
         byte[] buf = new byte[DEFAULT_BUFFER_SIZE];
@@ -274,6 +289,8 @@ public class AbsPathsInImage {
                     if (datum != searchPatterns.get(i)[states[i]]) {
                         states[i] = getPrefixIndex(i, states[i], datum);
                     } else if (++states[i] == patternLen) {
+                        // technically at last match, state should reset according to failure function
+                        // but in original test, matching didn't search same string for multiple matches
                         states[i] = 0;
                         matches.add(new Match(fileIdx - patternLen + 1, fileIdx));
                         break;
@@ -284,6 +301,13 @@ public class AbsPathsInImage {
         return matches;
     }
 
+    /**
+     * In original test, failed test output would backtrack to last non-ascii byte on
+     * matched pattern. This is incompatible with the new buffered approach (and a
+     * proper solution requires a 2nd dynamic buffer). Instead, on failed test case,
+     * files are scanned a 2nd time to print debug output. Failed runs will pay
+     * additional performance/space penalty, but passing runs are faster.
+     */
     private void printDebugOutput(InputStream input, List<Match> matches, final String HEADER) throws IOException{
         matchFound = true;
         System.out.println(HEADER);
@@ -303,6 +327,8 @@ public class AbsPathsInImage {
                 } else if (fileIdx > matches.get(matchIdx).end()) {
                     System.out.println(output.toString());
                     output.reset();
+                    // This imperfect as incorrect in edge cases with patterns containing non-ascii?
+                    // but high-accuracy not priority + output still legible and useful
                     for (; matchIdx < matches.size() && matches.get(matchIdx).end() < fileIdx; matchIdx++);
                 } else {
                     output.write(datum);
