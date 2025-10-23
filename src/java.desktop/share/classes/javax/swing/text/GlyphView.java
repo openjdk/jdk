@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -391,7 +391,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
         }
         if (bg != null) {
             g.setColor(bg);
-            g.fillRect(alloc.x, alloc.y, alloc.width, alloc.height);
+            g.fillRect(alloc.x, alloc.y, alloc.width, (int)painter.getHeight(this));
         }
         if (c instanceof JTextComponent) {
             JTextComponent tc = (JTextComponent) c;
