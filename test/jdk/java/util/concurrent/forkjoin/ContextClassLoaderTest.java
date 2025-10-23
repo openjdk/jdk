@@ -29,7 +29,7 @@
  */
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.ForkJoinPool;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,20 +38,38 @@ class ContextClassLoaderTest {
 
     @Test
     void testContextClassLoaderIsSetAndRestored() throws InterruptedException {
-        CountDownLatch latch = new CountDownLatch(1);
-
-        ForkJoinPool.commonPool().execute(() -> {
+        Future<?> future = ForkJoinPool.commonPool().submit(() -> {
             Thread thread = Thread.currentThread();
             ClassLoader originalCCL = thread.getContextClassLoader();
             ClassLoader customCCL = new URLClassLoader(new URL[0], originalCCL);
             // Set custom context classloader and verify it
             thread.setContextClassLoader(customCCL);
             assertSame(customCCL, thread.getContextClassLoader(), "Custom context class loader not set");
+
             // Reset to original and verify restoration
             thread.setContextClassLoader(originalCCL);
             assertSame(originalCCL, thread.getContextClassLoader(), "Original context class loader not restored");
-            latch.countDown();
         });
-        latch.await();
+
+        try {
+            future.get();
+        } catch (Exception e) {
+            // If the task threw an exception, unwrap it
+            if (e instanceof java.util.concurrent.ExecutionException) {
+                // Unwrap the ExecutionException to get the underlying cause
+                Throwable cause = e.getCause();
+                if (cause instanceof AssertionError) {
+                    // If the cause is an AssertionError, rethrow the error
+                    throw (AssertionError) cause;
+                } else {
+                    // Rethrow other exceptions as RuntimeException
+                    throw new RuntimeException("Unexpected exception during test execution", cause);
+                }
+            } else {
+                // Rethrow if the exception isn't wrapped in ExecutionException
+                throw new RuntimeException("Unexpected exception", e);
+            }
+        }
     }
 }
+
