@@ -228,6 +228,22 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
     }
   }
 
+  // We have to yank the old node and its old phis we pushed through.
+  // Note: we may split through multiple phis.
+  IdealLoopTree* region_loop = get_loop(region);
+  if (region_loop->_child == nullptr) {
+    region_loop->_body.yank(n);
+    for (uint j = 1; j < n->req(); j++) {
+      Node* in = n->in(j);
+      // check that in is a phi, and n was is only use.
+      if (in->is_Phi() && in->in(0) == region &&
+          in->outcnt() == 1 && in->unique_out() == n) {
+        assert(get_ctrl(in) == region, "sanity");
+        assert(get_ctrl(n) == region, "sanity");
+        region_loop->_body.yank(in);
+      }
+    }
+  }
   _igvn.replace_node(n, phi);
 
 #ifndef PRODUCT
