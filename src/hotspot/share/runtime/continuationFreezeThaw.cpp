@@ -2058,7 +2058,7 @@ protected:
   DEBUG_ONLY(intptr_t* _top_stack_address);
 
   // Only used for preemption on ObjectLocker
-  ObjectMonitor* _monitor;
+  ObjectMonitor* _init_lock;
 
   StackChunkFrameStream<ChunkFrames::Mixed> _stream;
 
@@ -2383,11 +2383,12 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
   _process_args_at_top = false;
   _preempted_case = chunk->preempted();
   if (_preempted_case) {
+    ObjectMonitor* mon = nullptr;
     ObjectWaiter* waiter = java_lang_VirtualThread::objectWaiter(_thread->vthread());
     if (waiter != nullptr) {
       // Mounted again after preemption. Resume the pending monitor operation,
       // which will be either a monitorenter or Object.wait() call.
-      ObjectMonitor* mon = waiter->monitor();
+      mon = waiter->monitor();
       preempt_kind = waiter->is_wait() ? Continuation::object_wait : Continuation::monitorenter;
 
       bool mon_acquired = mon->resume_operation(_thread, waiter, _cont);
@@ -2397,17 +2398,15 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
         log_develop_trace(continuations, preempt)("Failed to acquire monitor, unmounting again");
         return push_cleanup_continuation();
       }
-      _monitor = mon;        // remember monitor since we might need it on handle_preempted_continuation()
       chunk = _cont.tail();  // reload oop in case of safepoint in resume_operation (if posting JVMTI events).
-      JVMTI_ONLY(assert(_thread->contended_entered_monitor() == nullptr || _thread->contended_entered_monitor() == _monitor, ""));
+      JVMTI_ONLY(assert(_thread->contended_entered_monitor() == nullptr || _thread->contended_entered_monitor() == mon, ""));
     } else {
       // Preemption cancelled on moniterenter or ObjectLocker case. We
       // actually acquired the monitor after freezing all frames so no
       // need to call resume_operation. If this is the ObjectLocker case
-      // we released the monitor already at ~ObjectLocker, so here we set
-      // _monitor to nullptr to indicate there is no need to release it later.
+      // we released the monitor already at ~ObjectLocker, so _init_lock
+      // will be set to nullptr below since there is no monitor to release.
       preempt_kind = Continuation::monitorenter;
-      _monitor = nullptr;
     }
 
     // Call this first to avoid racing with GC threads later when modifying the chunk flags.
@@ -2421,6 +2420,8 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_slow(stackChunkOop chunk, Continuation::t
         // Only needed for the top frame which will be thawed.
         chunk->set_has_args_at_top(false);
       }
+      assert(waiter == nullptr || mon != nullptr, "should have a monitor");
+      _init_lock = mon;  // remember monitor since we will need it on handle_preempted_continuation()
     }
     chunk->set_preempted(false);
     retry_fast_path = true;
@@ -2671,7 +2672,7 @@ intptr_t* ThawBase::handle_preempted_continuation(intptr_t* sp, Continuation::pr
     // to exit the monitor we just acquired (except on preemption cancelled
     // case where it was already released).
     assert(preempt_kind == Continuation::object_locker, "");
-    if (_monitor != nullptr) _monitor->exit(_thread);
+    if (_init_lock != nullptr) _init_lock->exit(_thread);
     sp = redo_vmcall(_thread, top);
   }
   return sp;
