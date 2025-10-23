@@ -287,7 +287,7 @@ void VLoopVPointers::compute_and_cache_vpointers() {
   int pointers_idx = 0;
   _body.for_each_mem([&] (MemNode* const mem, int bb_idx) {
     // Placement new: construct directly into the array.
-    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop);
+    ::new (&_vpointers[pointers_idx]) VPointer(mem, _vloop, _pointer_expression_nodes);
     _bb_idx_to_vpointer.at_put(bb_idx, pointers_idx);
     pointers_idx++;
   });
@@ -548,8 +548,7 @@ bool VLoopAnalyzer::has_zero_cost(Node* n) const {
 
   // Internal nodes of pointer expressions are most likely folded into
   // the load / store and have no additional cost.
-  // TODO: implement
-  // if (vpointers().is_in_pointer_expression(n)) { return true; }
+  if (vpointers().is_in_pointer_expression(n)) { return true; }
 
   if (n->is_AddP() || // Pointer expression
       n->is_CFG() ||  // CFG

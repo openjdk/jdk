@@ -38,7 +38,7 @@
   flags(MEMORY_SLICES,              "Trace VLoopMemorySlices") \
   flags(BODY,                       "Trace VLoopBody") \
   flags(TYPES,                      "Trace VLoopTypes") \
-  flags(POINTERS,                   "Trace VLoopPointers") \
+  flags(POINTERS,                   "Trace VLoopVPointers") \
   flags(DEPENDENCY_GRAPH,           "Trace VLoopDependencyGraph") \
   flags(SW_ADJACENT_MEMOPS,         "Trace SuperWord::find_adjacent_memop_pairs") \
   flags(SW_REJECTIONS,              "Trace SuperWord rejections (non vectorizations)") \

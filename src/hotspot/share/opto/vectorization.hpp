@@ -592,6 +592,32 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Mark all nodes from the loop that are part of any VPointer expression.
+class PointerExpressionNodes : public MemPointerParserCallback {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+  VectorSet        _in_pointer_expression;
+
+public:
+  PointerExpressionNodes(Arena* arena,
+                         const VLoop& vloop,
+                         const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _in_pointer_expression(arena) {}
+
+  virtual void callback(Node* n) override {
+    if (!_vloop.in_bb(n)) { return; }
+    _in_pointer_expression.set(_body.bb_idx(n));
+  }
+
+  bool contains(const Node* n) const {
+    if (!_vloop.in_bb(n)) { return false; }
+    return _in_pointer_expression.test(_body.bb_idx(n));
+  }
+};
+
 // Submodule of VLoopAnalyzer.
 // We compute and cache the VPointer for every load and store.
 class VLoopVPointers : public StackObj {
@@ -607,6 +633,9 @@ private:
   // Map bb_idx -> index in _vpointers. -1 if not mapped.
   GrowableArray<int> _bb_idx_to_vpointer;
 
+  // Mark all nodes that are part of any pointers expression.
+  PointerExpressionNodes _pointer_expression_nodes;
+
 public:
   VLoopVPointers(Arena* arena,
                  const VLoop& vloop,
@@ -618,12 +647,17 @@ public:
     _bb_idx_to_vpointer(arena,
                         vloop.estimated_body_length(),
                         vloop.estimated_body_length(),
-                        -1) {}
+                        -1),
+    _pointer_expression_nodes(arena, _vloop, _body) {}
   NONCOPYABLE(VLoopVPointers);
 
   void compute_vpointers();
   const VPointer& vpointer(const MemNode* mem) const;
   NOT_PRODUCT( void print() const; )
+
+  bool is_in_pointer_expression(const Node* n) const {
+    return _pointer_expression_nodes.contains(n);
+  }
 
 private:
   void count_vpointers();
