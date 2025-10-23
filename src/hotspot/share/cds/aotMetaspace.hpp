@@ -59,6 +59,8 @@ class AOTMetaspace : AllStatic {
   static char* _requested_base_address;
   static bool _use_optimized_module_handling;
   static Array<Method*>* _archived_method_handle_intrinsics;
+  static int volatile _preimage_static_archive_dumped;
+  static jlong _preimage_static_archive_recording_duration;
 
  public:
   enum {
@@ -112,6 +114,9 @@ public:
 
   // inside the metaspace of the dynamic static CDS archive
   static bool in_aot_cache_dynamic_region(void* p) NOT_CDS_RETURN_(false);
+
+  static bool is_recording_preimage_static_archive() NOT_CDS_RETURN_(false);
+  static jlong get_preimage_static_archive_recording_duration() NOT_CDS_RETURN_(0);
 
   static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
