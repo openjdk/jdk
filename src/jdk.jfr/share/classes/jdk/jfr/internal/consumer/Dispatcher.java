@@ -90,11 +90,6 @@ final class Dispatcher {
         this.endTime = c.endTime;
         this.startNanos = c.startNanos;
         this.endNanos = c.endNanos;
-        EventDispatcher[] ed = new EventDispatcher[1];
-        ed[0] = new EventDispatcher(null, e -> {
-                runFlushActions();
-        });
-        dispatcherLookup.put(1L, ed);
     }
 
     public void runMetadataActions(MetadataEvent event) {

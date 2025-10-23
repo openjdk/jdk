@@ -50,7 +50,7 @@
 #include "prims/jvmtiAgent.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -827,7 +827,7 @@ int os::random() {
   while (true) {
     unsigned int seed = _rand_seed;
     unsigned int rand = next_random(seed);
-    if (Atomic::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
+    if (AtomicAccess::cmpxchg(&_rand_seed, seed, rand, memory_order_relaxed) == seed) {
       return static_cast<int>(rand);
     }
   }
@@ -1184,13 +1184,13 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
 #endif // PRODUCT
   get_summary_cpu_info(buf, buflen);
   st->print("%s, ", buf);
-  size_t phys_mem = physical_memory();
-  size_t mem = phys_mem/G;
+  physical_memory_size_type phys_mem = physical_memory();
+  physical_memory_size_type mem = phys_mem/G;
   if (mem == 0) {  // for low memory systems
     mem = phys_mem/M;
-    st->print("%d cores, %zuM, ", processor_count(), mem);
+    st->print("%d cores, " PHYS_MEM_TYPE_FORMAT "M, ", processor_count(), mem);
   } else {
-    st->print("%d cores, %zuG, ", processor_count(), mem);
+    st->print("%d cores, " PHYS_MEM_TYPE_FORMAT "G, ", processor_count(), mem);
   }
   get_summary_os_info(buf, buflen);
   st->print_raw(buf);
@@ -1576,12 +1576,12 @@ void os::read_image_release_file() {
       tmp[i] = ' ';
     }
   }
-  Atomic::release_store(&_image_release_file_content, tmp);
+  AtomicAccess::release_store(&_image_release_file_content, tmp);
   fclose(file);
 }
 
 void os::print_image_release_file(outputStream* st) {
-  char* ifrc = Atomic::load_acquire(&_image_release_file_content);
+  char* ifrc = AtomicAccess::load_acquire(&_image_release_file_content);
   if (ifrc != nullptr) {
     st->print_cr("%s", ifrc);
   } else {
@@ -1935,17 +1935,17 @@ bool os::is_server_class_machine() {
     return true;
   }
   // Then actually look at the machine
-  bool         result            = false;
-  const unsigned int    server_processors = 2;
-  const julong server_memory     = 2UL * G;
+  bool  result                                    = false;
+  const unsigned int server_processors            = 2;
+  const physical_memory_size_type server_memory   = 2UL * G;
   // We seem not to get our full complement of memory.
   //     We allow some part (1/8?) of the memory to be "missing",
   //     based on the sizes of DIMMs, and maybe graphics cards.
-  const julong missing_memory   = 256UL * M;
-  size_t phys_mem = os::physical_memory();
+  const physical_memory_size_type missing_memory  = 256UL * M;
+  physical_memory_size_type phys_mem              = os::physical_memory();
   /* Is this a server class machine? */
   if ((os::active_processor_count() >= (int)server_processors) &&
-      (phys_mem >= (server_memory - missing_memory))) {
+      (phys_mem >= server_memory - missing_memory)) {
     const unsigned int logical_processors =
       VM_Version::logical_processors_per_package();
     if (logical_processors > 1) {
@@ -2204,22 +2204,22 @@ static void assert_nonempty_range(const char* addr, size_t bytes) {
          p2i(addr), p2i(addr) + bytes);
 }
 
-bool os::used_memory(size_t& value) {
+bool os::used_memory(physical_memory_size_type& value) {
 #ifdef LINUX
   if (OSContainer::is_containerized()) {
     jlong mem_usage = OSContainer::memory_usage_in_bytes();
     if (mem_usage > 0) {
-      value = static_cast<size_t>(mem_usage);
+      value = static_cast<physical_memory_size_type>(mem_usage);
       return true;
     } else {
       return false;
     }
   }
 #endif
-  size_t avail_mem = 0;
+  physical_memory_size_type avail_mem = 0;
   // Return value ignored - defaulting to 0 on failure.
   (void)os::available_memory(avail_mem);
-  size_t phys_mem = os::physical_memory();
+  physical_memory_size_type phys_mem = os::physical_memory();
   value = phys_mem - avail_mem;
   return true;
 }
@@ -2346,7 +2346,7 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
       // avoid overflow if the last page abuts the end of the address range.
       last = align_down(static_cast<char*>(end) - 1, pd_page_size);
       for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
-        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        AtomicAccess::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
         if (cur >= last) break;
       }
     }

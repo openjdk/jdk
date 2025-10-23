@@ -32,6 +32,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
@@ -51,10 +52,10 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   uint64_t  _notifier_tid;
   int         _recursions;
   volatile TStates TState;
-  volatile bool _notified;
   bool           _is_wait;
   bool        _at_reenter;
   bool       _interrupted;
+  bool     _do_timed_park;
   bool            _active;    // Contention monitoring is enabled
  public:
   ObjectWaiter(JavaThread* current);
@@ -65,27 +66,25 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   uint8_t state()           const { return TState; }
   ObjectMonitor* monitor()  const { return _monitor; }
   bool is_wait()            const { return _is_wait; }
-  bool notified()           const { return _notified; }
   bool at_reenter()         const { return _at_reenter; }
-  bool at_monitorenter()    const { return !_is_wait || _at_reenter || _notified; }
+  bool at_monitorenter()    const { return !_is_wait || TState != TS_WAIT; }
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 
-  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
   void set_bad_pointers() {
 #ifdef ASSERT
-    this->_prev  = badObjectWaiterPtr;
-    this->_next  = badObjectWaiterPtr;
+    this->_prev  = (ObjectWaiter*) badAddressVal;
+    this->_next  = (ObjectWaiter*) badAddressVal;
     this->TState = ObjectWaiter::TS_RUN;
 #endif
   }
   ObjectWaiter* next() {
-    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    assert (_next != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _next;
   }
   ObjectWaiter* prev() {
-    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    assert (_prev != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _prev;
   }
 };
@@ -199,6 +198,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
+  int64_t _unmounted_vthreads;      // Number of nodes in the _entry_list associated with unmounted vthreads.
+                                    // It might be temporarily more than the actual number but never less.
 
   ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
@@ -281,7 +282,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // Same as above but uses owner_id of current as new value.
   void      set_owner_from(int64_t old_value, JavaThread* current);
   // Try to set _owner field to new_value if the current value matches
-  // old_value, using Atomic::cmpxchg(). Otherwise, does not change the
+  // old_value, using AtomicAccess::cmpxchg(). Otherwise, does not change the
   // _owner field. Returns the prior value of the _owner field.
   int64_t   try_set_owner_from_raw(int64_t old_value, int64_t new_value);
   // Same as above but uses owner_id of current as new_value.
@@ -325,6 +326,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
   void      increment_recursions(JavaThread* current);
+  void      inc_unmounted_vthreads();
+  void      dec_unmounted_vthreads();
+  bool      has_unmounted_vthreads() const;
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;
