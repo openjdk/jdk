@@ -1116,7 +1116,6 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
 
     {
       OSThreadContendState osts(current->osthread());
-      assert(current->thread_state() == _thread_in_vm, "invariant");
       if (do_timed_parked) {
         current->_ParkEvent->park(recheck_interval);
         // Increase the recheck_interval, but clamp the value.
@@ -1127,7 +1126,6 @@ void ObjectMonitor::reenter_internal(JavaThread* current, ObjectWaiter* currentN
       } else {
         current->_ParkEvent->park();
       }
-
     }
 
     // Try again, but just so we distinguish between futile wakeups and
