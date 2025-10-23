@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ public class UUIDTest {
                 throw new AssertionError("Generated UUID should not be null for timestamp: " + timestamp);
             }
         } catch (Exception e) {
-            throw new AssertionError("Unexpected exception with timestamp " + timestamp + ": " + e);
+            throw new AssertionError("Unexpected exception with timestamp " + timestamp, e);
         }
 
         // Should not throw for the 48-bit long
@@ -167,7 +167,7 @@ public class UUIDTest {
                 throw new AssertionError("Generated UUID should not be null for 48-bit long: " + value);
             }
         } catch (Exception e) {
-            throw new AssertionError("Unexpected exception with 48-bit long " + value + ": " + e);
+            throw new AssertionError("Unexpected exception with 48-bit long " + value, e);
         }
 
         // Should throw for negative timestamp

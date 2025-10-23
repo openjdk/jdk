@@ -395,16 +395,13 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * The variant number has the following meaning:
      * <ul>
      * <li>0    Reserved for NCS backward compatibility
-     * <li>2    <a href="http://www.ietf.org/rfc/rfc4122.txt">IETF&nbsp;RFC&nbsp;4122</a>
+     * <li>2    <a href="https://www.ietf.org/rfc/rfc9562.txt">IETF&nbsp;RFC&nbsp;9562</a>
      * (Leach-Salz), used by this class
      * <li>6    Reserved, Microsoft Corporation backward compatibility
      * <li>7    Reserved for future definition
      * </ul>
      *
      * @return  The variant number of this {@code UUID}
-     *
-     * @spec https://www.rfc-editor.org/info/rfc4122
-     *      RFC 4122: A Universally Unique IDentifier (UUID) URN Namespace
      */
     public int variant() {
         // This field is composed of a varying number of bits.
