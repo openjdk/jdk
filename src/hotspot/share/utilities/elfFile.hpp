@@ -539,6 +539,17 @@ class DwarfFile : public ElfFile {
       uintptr_t range_length = 0;
     };
 
+    enum class CacheHint {
+      // Do not retry as linear scan won't be able to read this either.
+      FAILED,
+
+      // Cache is usable, no need to fallback to linear scan.
+      VALID,
+
+      // Cache is unusable, fallback to linear scan.
+      TRY_LINEAR_SCAN,
+    };
+
     DwarfFile* _dwarf_file;
     ArangesCache _cache;
     MarkedDwarfFileReader _reader;
@@ -555,19 +566,13 @@ class DwarfFile : public ElfFile {
     static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
     bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
                               const AddressDescriptor& descriptor);
-    void build_cache();
    public:
     DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _cache(), _reader(dwarf_file->fd()),
                                           _section_start_address(0), _entry_end(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
 
     // Build cache of all address ranges for binary search in a single pass
-    void ensure_cached() {
-      if (_cache._initialized || _cache._failed) {
-        return;
-      }
-      build_cache();
-    }
+    CacheHint ensure_cached();
   };
 
   // (3a-c,e) The compilation unit is read from the .debug_info section. The structure of .debug_info is shown in the
