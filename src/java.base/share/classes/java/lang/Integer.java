@@ -389,26 +389,6 @@ public final class Integer extends Number
     }
 
     /**
-     * Format an {@code int} (treated as unsigned) into a byte buffer (UTF16 version). If
-     * {@code len} exceeds the formatted ASCII representation of {@code val},
-     * {@code buf} will be padded with leading zeroes.
-     *
-     * @param val the unsigned int to format
-     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
-     * @param buf the byte buffer to write to
-     * @param len the number of characters to write
-     */
-    private static void formatUnsignedIntUTF16(int val, int shift, byte[] buf, int len) {
-        int charPos = len;
-        int radix = 1 << shift;
-        int mask = radix - 1;
-        do {
-            StringUTF16.putChar(buf, --charPos, Integer.digits[val & mask]);
-            val >>>= shift;
-        } while (charPos > 0);
-    }
-
-    /**
      * Returns a {@code String} object representing the
      * specified integer. The argument is converted to signed decimal
      * representation and returned as a string, exactly as if the
