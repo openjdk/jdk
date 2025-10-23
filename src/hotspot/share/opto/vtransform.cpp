@@ -206,7 +206,6 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
     VTransformNode* vtn = _schedule.at(i);
     // Is vtn a loop-phi?
     if (vtn->isa_LoopPhi() != nullptr ||
-        // TODO: what about VTransformCountedLoopNode?
         vtn->is_load_or_store_in_loop()) {
       is_not_before_loop.set(vtn->_idx);
       continue;
@@ -239,7 +238,6 @@ void VTransformGraph::mark_vtnodes_in_loop(VectorSet& in_loop) const {
         break;
       }
     }
-    // TODO: what about CFG nodes?
   }
 }
 
