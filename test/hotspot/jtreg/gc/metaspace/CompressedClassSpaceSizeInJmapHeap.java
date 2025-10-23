@@ -46,7 +46,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 public class CompressedClassSpaceSizeInJmapHeap {
-    static final KELVIN_DEBUG = true;
+    static final boolean KELVIN_DEBUG = true;
 
     // Note that on some platforms it may require root privileges to run this test.
     public static void main(String[] args) throws Exception {
@@ -73,6 +73,7 @@ public class CompressedClassSpaceSizeInJmapHeap {
         Thread.sleep(1000);
         int exitValue = run(pb);
 
+        OutputAnalyzer output;
 	if (KELVIN_DEBUG) {
             String stdout = read(out);
             String stderr = read(err);
@@ -87,9 +88,9 @@ public class CompressedClassSpaceSizeInJmapHeap {
                 throw new Exception("jmap -heap exited with error code: " + exitValue);
             }
 
-            OutputAnalyzer output = new OutputAnalyzer(stdout);
+            output = new OutputAnalyzer(stdout);
 	} else {
-            OutputAnalyzer output = new OutputAnalyzer(read(out));
+            output = new OutputAnalyzer(read(out));
         }
         output.shouldContain("CompressedClassSpaceSize = 50331648 (48.0MB)");
         out.delete();
