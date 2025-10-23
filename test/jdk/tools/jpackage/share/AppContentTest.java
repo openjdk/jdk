@@ -21,6 +21,7 @@
  * questions.
  */
 
+import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.MACOS;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -43,6 +45,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.FileUtils;
+import jdk.jpackage.internal.util.IdentityWrapper;
 import jdk.jpackage.internal.util.function.ThrowingSupplier;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
@@ -333,7 +336,7 @@ public class AppContentTest {
         }
     }
 
-    private record DirectoryVerifier(Path path) implements PathVerifier {
+    private record DirectoryVerifier(Path path, IdentityWrapper<Content> origin) implements PathVerifier {
         DirectoryVerifier {
             Objects.requireNonNull(path);
         }
@@ -394,7 +397,7 @@ public class AppContentTest {
                         if (Files.isRegularFile(srcFile)) {
                             return new RegularFileVerifier(dstFile, srcFile);
                         } else {
-                            return new DirectoryVerifier(dstFile);
+                            return new DirectoryVerifier(dstFile, new IdentityWrapper<>(this));
                         }
                     }).toList());
                 } catch (IOException ex) {
@@ -410,7 +413,7 @@ public class AppContentTest {
                 var cur = appContentPath;
                 for (int i = 0; i != level; i++) {
                     cur = cur.getParent();
-                    verifiers.add(new DirectoryVerifier(cur));
+                    verifiers.add(new DirectoryVerifier(cur, new IdentityWrapper<>(this)));
                 }
             }
 
@@ -454,22 +457,38 @@ public class AppContentTest {
     }
 
     /**
-     * Creates a content from {@link TKit#TEST_SRC_ROOT} directory.
+     * Creates a content from a directory tree.
      *
-     * @param path source path relative to {@link TKit#TEST_SRC_ROOT} directory
+     * @param path name of directory where to create a directory tree
      */
-    private static ContentFactory createTestSrcContent(Path path) {
+    private static ContentFactory createDirTreeContent(Path path) {
         if (path.isAbsolute()) {
             throw new IllegalArgumentException();
         }
 
         return new FileContentFactory(() -> {
-            return TKit.TEST_SRC_ROOT.resolve(path);
+            var basedir = TKit.createTempDirectory("content").resolve(path);
+
+            for (var textFile : Map.ofEntries(
+                    entry("woods/moose", "The moose"),
+                    entry("woods/bear", "The bear"),
+                    entry("woods/trees/jay", "The gray jay")
+            ).entrySet()) {
+                var src = basedir.resolve(textFile.getKey());
+                Files.createDirectories(src.getParent());
+                TKit.createTextFile(src, Stream.of(textFile.getValue()));
+            }
+
+            for (var emptyDir : List.of("sky")) {
+                Files.createDirectories(basedir.resolve(emptyDir));
+            }
+
+            return basedir;
         }, path);
     }
 
-    private static ContentFactory createTestSrcContent(String path) {
-        return createTestSrcContent(Path.of(path));
+    private static ContentFactory createDirTreeContent(String path) {
+        return createDirTreeContent(Path.of(path));
     }
 
     /**
@@ -621,9 +640,9 @@ public class AppContentTest {
         private final Path pathInAppContentRoot;
     }
 
-    private static final ContentFactory TEST_JAVA = createTestSrcContent("apps/PrintEnv.java");
+    private static final ContentFactory TEST_JAVA = createTextFileContent("apps/PrintEnv.java", "Not what someone would expect");
     private static final ContentFactory TEST_DUKE = createTextFileContent("duke.txt", "Hi Duke!");
-    private static final ContentFactory TEST_DIR = createTestSrcContent("apps");
+    private static final ContentFactory TEST_DIR = createDirTreeContent("apps");
     private static final ContentFactory TEST_BAD = new NonExistantPath();
 
     // On OSX `--app-content` paths will be copied into the "Contents" folder
