@@ -196,7 +196,8 @@ public:
   };
 
 private:
-  void verify_at_safepoint(const char* label,
+  void verify_at_safepoint(ShenandoahGeneration* generation,
+                           const char* label,
                            VerifyRememberedSet remembered,
                            VerifyForwarded forwarded,
                            VerifyMarked marked,
@@ -210,20 +211,20 @@ public:
   ShenandoahVerifier(ShenandoahHeap* heap, MarkBitMap* verification_bitmap) :
           _heap(heap), _verification_bit_map(verification_bitmap) {};
 
-  void verify_before_concmark();
-  void verify_after_concmark();
-  void verify_after_concmark_with_promotions();
-  void verify_before_evacuation();
-  void verify_before_update_refs();
-  void verify_after_update_refs();
-  void verify_before_fullgc();
-  void verify_after_fullgc();
-  void verify_after_degenerated();
-  void verify_generic(VerifyOption option);
+  void verify_before_concmark(ShenandoahGeneration* generation);
+  void verify_after_concmark(ShenandoahGeneration* generation);
+  void verify_after_concmark_with_promotions(ShenandoahGeneration* generation);
+  void verify_before_evacuation(ShenandoahGeneration* generation);
+  void verify_before_update_refs(ShenandoahGeneration* generation);
+  void verify_after_update_refs(ShenandoahGeneration* generation);
+  void verify_before_fullgc(ShenandoahGeneration* generation);
+  void verify_after_fullgc(ShenandoahGeneration* generation);
+  void verify_after_degenerated(ShenandoahGeneration* generation);
+  void verify_generic(ShenandoahGeneration* generation, VerifyOption option);
 
   // Roots should only contain to-space oops
-  void verify_roots_in_to_space();
-  void verify_roots_no_forwarded();
+  void verify_roots_in_to_space(ShenandoahGeneration* generation);
+  void verify_roots_no_forwarded(ShenandoahGeneration* generation);
 
   // Check that generation usages are accurate before rebuilding free set
   void verify_before_rebuilding_free_set();
