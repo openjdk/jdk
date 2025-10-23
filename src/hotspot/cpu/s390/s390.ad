@@ -4758,20 +4758,28 @@ instruct prefetchAlloc(memory mem) %{
 
 //----------Memory init instructions------------------------------------------
 
+/*
+// Move Immediate to 1-byte memory.
+instruct memInitB(memoryRSY mem, immI8 src) %{
+  match(Set mem (StoreB mem src));
+  ins_cost(MEMORY_REF_COST);
+  predicate(Immediate::is_uimm12((long)mem.disp));
+  // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP2_SIZE);
+  format %{ "MVI     $mem,$src\t # direct mem init 1" %}
+  ins_encode %{ __ z_mvi($mem$$Address, $src$$constant); %}
+  ins_pipe(pipe_class_dummy);
+%}
+*/
+
 // Move Immediate to 1-byte memory.
 instruct memInitB(memoryRSY mem, immI8 src) %{
   match(Set mem (StoreB mem src));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   size(Z_DISP3_SIZE);
-  format %{ "MVI     $mem,$src\t # direct mem init 1" %}
-  ins_encode %{
-    if (Immediate::is_uimm12((long)$mem$$disp)) {
-      __ z_mvi($mem$$Address, $src$$constant);
-    } else {
-      __ z_mviy($mem$$Address, $src$$constant);
-    }
-  %}
+  format %{ "MVIY     $mem,$src\t # direct mem init 1" %}
+  ins_encode %{__ z_mviy($mem$$Address, $src$$constant); %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -5061,6 +5069,7 @@ instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
             CompressedOops::base() != nullptr && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE + 5 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
@@ -5081,6 +5090,7 @@ instruct encodeP(iRegN dst, iRegP src, flagsReg cr) %{
              !ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(4 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
   format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, true, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
@@ -5104,6 +5114,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
              !ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
   format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
@@ -5116,6 +5127,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
     // TODO: s390 port size(VARIABLE_SIZE);
+    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
     format %{ "encodeP  $dst = ($src>>3) +$base + pow2_offset\t # (encode cOop)" %}
     ins_encode %{
       jlong offset = -(jlong)MacroAssembler::get_oop_base_pow2_offset
@@ -5132,6 +5144,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
     // TODO: s390 port size(VARIABLE_SIZE);
+    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
     format %{ "encodeP  $dst = ($src>>3) +$base + $pow2_offset\t # (encode cOop)" %}
     ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, $base$$Register, $pow2_offset$$constant); %}
     ins_pipe(pipe_class_dummy);
@@ -5145,6 +5158,7 @@ instruct encodeP_Ex(iRegN dst, iRegP src, flagsReg cr) %{
             (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(6 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
   expand %{
     immL baseImm %{ ((jlong)(intptr_t)CompressedOops::base()) >> CompressedOops::shift() %}
     immL_0 zero %{ (0) %}
@@ -5165,6 +5179,7 @@ instruct encodeP_NN_Ex(iRegN dst, iRegP src, flagsReg cr) %{
             (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(6 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     immL pow2_offset %{ -(jlong)MacroAssembler::get_oop_base_pow2_offset(((uint64_t)(intptr_t)CompressedOops::base())) %}
@@ -6741,6 +6756,7 @@ instruct udivI_reg_reg(roddRegI r5_rodd_dst, iRegI src2, revenRegI r4_reven_tmp,
   match(Set r5_rodd_dst (UDivI r5_rodd_dst src2));
   effect(TEMP r4_reven_tmp, KILL cr);
   // TODO: size(4);
+  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
   format %{ "UDIV $r5_rodd_dst,$r5_rodd_dst,$src2" %}
   ins_encode %{
     Register b = $src2$$Register;
@@ -6821,6 +6837,7 @@ instruct udivL_reg_reg(roddRegL r5_rodd_dst, iRegL src, revenRegL r4_reven_tmp, 
   effect(TEMP r4_reven_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: size(4);
+  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
   format %{ "UDIVG $r5_rodd_dst,$r5_rodd_dst,$src" %}
   ins_encode %{
     Register b            = $src$$Register;
@@ -7298,6 +7315,7 @@ instruct overflowAddI_reg_imm(flagsReg cr, iRegI op1, immI op2) %{
   match(Set cr (OverflowAddI op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE * 2 + Z_DISP1_SIZE);
   format %{ "AR      $op1,$op2\t # overflow check int" %}
   ins_encode %{
     __ load_const_optimized(Z_R0_scratch, $op2$$constant);
@@ -7323,6 +7341,7 @@ instruct overflowAddL_reg_imm(flagsReg cr, iRegL op1, immL op2) %{
   match(Set cr (OverflowAddL op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(Z_DISP3_SIZE * 2 + Z_DISP2_SIZE);
   format %{ "AGR     $op1,$op2\t # overflow check long" %}
   ins_encode %{
     __ load_const_optimized(Z_R0_scratch, $op2$$constant);
@@ -7348,6 +7367,7 @@ instruct overflowSubI_reg_imm(flagsReg cr, iRegI op1, immI op2) %{
   match(Set cr (OverflowSubI op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(2 * (Z_DISP3_SIZE + Z_DISP1_SIZE));
   format %{ "SR      $op1,$op2\t # overflow check int" %}
   ins_encode %{
     __ load_const_optimized(Z_R1_scratch, $op2$$constant);
@@ -7374,6 +7394,7 @@ instruct overflowSubL_reg_imm(flagsReg cr, iRegL op1, immL op2) %{
   match(Set cr (OverflowSubL op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(2 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
   format %{ "SGR     $op1,$op2\t # overflow check long" %}
   ins_encode %{
     __ load_const_optimized(Z_R1_scratch, $op2$$constant);
@@ -8974,6 +8995,7 @@ instruct z196_minI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(3 * Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "MinI $dst $src1,$src2\t MinI const32 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9019,6 +9041,7 @@ instruct z196_minI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(2  * ( Z_DISP2_SIZE + Z_DISP3_SIZE));
   format %{ "MinI $dst $src1,$src2\t MinI const16 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9191,6 +9214,7 @@ instruct z196_maxI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(3 * Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "MaxI $dst $src1,$src2\t MaxI const32 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9236,6 +9260,7 @@ instruct z196_maxI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(2 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
   format %{ "MaxI $dst $src1,$src2\t MaxI const16 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -10036,6 +10061,7 @@ instruct safePoint_poll(iRegP poll, flagsReg cr) %{
   match(SafePoint poll);
   effect(USE poll, KILL cr); // R0 is killed, too.
   // TODO: s390 port size(FIXED_SIZE);
+  size(6);
   format %{ "TM      #0[,$poll],#111\t # Safepoint: poll for GC" %}
   ins_encode %{
     // Mark the code position where the load from the safepoint
@@ -10056,6 +10082,7 @@ instruct CallStaticJavaDirect_dynTOC(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(6 + 2);
   format %{ "CALL,static dynTOC $meth; ==> " %}
   ins_encode( z_enc_java_static_call(meth) );
   ins_pipe(pipe_class_dummy);
@@ -10068,6 +10095,7 @@ instruct CallDynamicJavaDirect_dynTOC(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(7 * Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "CALL,dynamic dynTOC $meth; ==> " %}
   ins_encode(z_enc_java_dynamic_call(meth));
   ins_pipe(pipe_class_dummy);
@@ -10080,6 +10108,7 @@ instruct CallRuntimeDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(3 * Z_DISP3_SIZE + Z_DISP1_SIZE);
   ins_num_consts(1);
   ins_alignment(2);
   format %{ "CALL,runtime" %}
@@ -10093,6 +10122,7 @@ instruct CallLeafDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(3 * Z_DISP3_SIZE + Z_DISP1_SIZE);
   ins_num_consts(1);
   ins_alignment(2);
   format %{ "CALL,runtime leaf $meth" %}
@@ -10106,6 +10136,7 @@ instruct CallLeafNoFPDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(3 * Z_DISP3_SIZE + Z_DISP1_SIZE);
   ins_num_consts(1);
   format %{ "CALL,runtime leaf nofp $meth" %}
   ins_encode( z_enc_java_to_runtime_call(meth) );
@@ -10185,6 +10216,7 @@ instruct RethrowException() %{
   match(Rethrow);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(2 * Z_DISP3_SIZE + Z_DISP2_SIZE);
   format %{ "Jmp    rethrow_stub" %}
   ins_encode %{
     __ set_inst_mark();
@@ -10221,6 +10253,7 @@ instruct partialSubtypeCheck(rarg1RegP index, rarg2RegP sub, rarg3RegP super, fl
   effect(KILL pcc, KILL scratch1, KILL scratch2);
   ins_cost(20 * DEFAULT_COST); // slightly larger than the next version
   // TODO: s390 port size(FIXED_SIZE);
+  size(2 * Z_DISP3_SIZE + Z_DISP1_SIZE);
   format %{ "  CALL   PartialSubtypeCheck\n" %}
   ins_encode %{
     AddressLiteral stub_address(StubRoutines::zarch::partial_subtype_check());
@@ -10288,6 +10321,7 @@ instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iReg
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE);
+  size(22 * Z_DISP3_SIZE + 29 * Z_DISP2_SIZE + 42);
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
     __ fast_lock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
@@ -10303,6 +10337,7 @@ instruct cmpFastUnlockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iR
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(FIXED_SIZE);
+  size(20 * Z_DISP3_SIZE + 30 * Z_DISP2_SIZE + Z_DISP1_SIZE + 382);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
     __ fast_unlock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
@@ -10328,6 +10363,7 @@ instruct inlineCallClearArrayConstBig(immL cnt, iRegP_N2P base, Universe dummy, 
   effect(TEMP tmpL, KILL cr); // R0, R1 are killed, too.
   ins_cost(200);
   // TODO: s390 port size(VARIABLE_SIZE);       // Variable in size due to optimized constant loader.
+  size(4 * 6 + 5 * 4);
   format %{ "ClearArrayConstBig $cnt,$base" %}
   ins_encode %{ __ Clear_Array_Const_Big($cnt$$constant, $base$$Register, $tmpL$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -10338,6 +10374,7 @@ instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, Universe dummy, allRodd
   effect(TEMP tmpL, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
   // TODO: s390 port size(FIXED_SIZE);  // z/Architecture: emitted code depends on PreferLAoverADD being on/off.
+  size(7 * 6 + 12 * 4);
   format %{ "ClearArrayVar $cnt,$base" %}
   ins_encode %{ __ Clear_Array($cnt$$Register, $base$$Register, $tmpL$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -11870,6 +11907,7 @@ instruct countTrailingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
+  size(3 * Z_DISP3_SIZE + 7 * Z_DISP2_SIZE + Z_DISP1_SIZE);
   format %{ "LLGFR   $dst,$src  \t # clear upper 32 bits (we are dealing with int)\n\t"
             "LCGFR   $tmp,$src  \t # load 2's complement (32->64 bit)\n\t"
             "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
