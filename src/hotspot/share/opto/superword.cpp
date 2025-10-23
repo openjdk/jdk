@@ -1750,8 +1750,20 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   case Op_CmpUL:
   case Op_CmpU3:
   case Op_CmpUL3:
+    // Carry unsigned-ness information from CmpUxx to VTransformBoolTest,
+    // which will be passed to e.g. VectorMaskCmp.
     mask = BoolTest::unsigned_mask(mask);
     break;
+  case Op_CmpN:
+  case Op_CmpP:
+  case Op_CmpD3:
+  case Op_CmpF3:
+  case Op_CmpI:
+  case Op_CmpL:
+  case Op_CmpL3:
+    break;
+  default:
+    ShouldNotReachHere();
   } // switch
 
   return VTransformBoolTest(mask, is_negated);
