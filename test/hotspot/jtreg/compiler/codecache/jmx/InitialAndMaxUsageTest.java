@@ -40,6 +40,18 @@
  *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages
  *     -XX:-SegmentedCodeCache
  *     compiler.codecache.jmx.InitialAndMaxUsageTest
+ */
+
+/*
+ * @test InitialAndMaxUsageTest
+ * @requires vm.compiler2.enabled
+ * @summary testing of initial and max usage
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /test/lib /
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:-UseCodeCacheFlushing
  *     -XX:-MethodFlushing -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *     -XX:CompileCommand=compileonly,null::* -XX:-UseLargePages

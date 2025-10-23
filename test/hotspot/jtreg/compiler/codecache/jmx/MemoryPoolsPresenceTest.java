@@ -38,11 +38,23 @@
  *     -XX:+WhiteBoxAPI
  *     -XX:-SegmentedCodeCache
  *     compiler.codecache.jmx.MemoryPoolsPresenceTest
+ */
+
+/**
+ * @test MemoryPoolsPresenceTest
+ * @requires vm.compiler2.enabled
+ * @summary verify that MemoryManagerMXBean exists for every code cache segment
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @library /test/lib
+ *
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI
  *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M -XX:+TieredCompilation -XX:TieredStopAtLevel=4
  *     compiler.codecache.jmx.MemoryPoolsPresenceTest
-* @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI
  *     -XX:+UnlockExperimentalVMOptions -XX:+HotCodeGrouper -XX:HotCodeHeapSize=8M -XX:-TieredCompilation -XX:TieredStopAtLevel=4
  *     compiler.codecache.jmx.MemoryPoolsPresenceTest

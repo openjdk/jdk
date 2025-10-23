@@ -28,6 +28,7 @@
  * @requires vm.compMode == "Xmixed"
  * @requires vm.opt.TieredCompilation == null | vm.opt.TieredCompilation == true
  * @requires vm.opt.TieredStopAtLevel == null | vm.opt.TieredStopAtLevel == 4
+ * @requires vm.compiler2.enabled
  * @summary test allocation failure of method handle intrinsic in profiled/non-profiled space
  * @library /test/lib
  * @modules java.base/jdk.internal.misc

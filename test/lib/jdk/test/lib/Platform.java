@@ -82,6 +82,14 @@ public class Platform {
         return (compiler != null) && compiler.contains("Tiered Compilers");
     }
 
+    public static boolean isClientCompiler() {
+        return (compiler != null) && compiler.contains("Client Compiler");
+    }
+
+    public static boolean isServerCompiler() {
+        return (compiler != null) && compiler.contains("Server Compiler");
+    }
+
     public static boolean isInt() {
         return vmInfo.contains("interpreted");
     }

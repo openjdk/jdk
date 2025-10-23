@@ -40,6 +40,18 @@
  *     -XX:CompileCommand=compileonly,null::*
  *     -XX:+SegmentedCodeCache
  *     compiler.codecache.jmx.UsageThresholdIncreasedTest
+ */
+
+/*
+ * @test UsageThresholdIncreasedTest
+ * @requires vm.compiler2.enabled
+ * @summary verifying that threshold hasn't been hit after allocation smaller
+ *     than threshold value and that threshold value can be changed
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *          java.management
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:-UseCodeCacheFlushing  -XX:-MethodFlushing
  *     -XX:CompileCommand=compileonly,null::*

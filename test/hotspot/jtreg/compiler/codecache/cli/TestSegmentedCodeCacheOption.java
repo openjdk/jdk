@@ -171,6 +171,11 @@ public class TestSegmentedCodeCacheOption {
         },
         OPTION_VALUES_HOT {
             @Override
+            public boolean isApplicable() {
+                return Platform.isServerCompiler();
+            }
+
+            @Override
             public void run() throws Throwable {
                 // SCC is enabled w hot code heap w/o TieredCompilation
                 String errorMessage = SEGMENTED_CODE_CACHE
