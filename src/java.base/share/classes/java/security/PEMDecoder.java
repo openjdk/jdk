@@ -51,36 +51,22 @@ import java.util.Objects;
  * Base64-encoded binary encoding enclosed by a type-identifying header
  * and footer.
  *
- * <p> The {@link #decode(String)} and {@link #decode(InputStream)}
- * methods return an instance of a class that matches the PEM type and
- * implements {@link DEREncodable}.
- *
- * <p> The following lists the supported PEM types and the {@code DEREncodable}
- * they decode as:
+ * <p>The {@link #decode(String)} and {@link #decode(InputStream)} methods
+ * return an instance of a class that matches the PEM type and implements
+ * {@link DEREncodable}, as follows:
  * <ul>
- *  <li>CERTIFICATE : {@code X509Certificate}</li>
- *  <li>X509 CRL : {@code X509CRL}</li>
- *  <li>PUBLIC KEY : {@code PublicKey}</li>
- *  <li>PUBLIC KEY : {@code X509EncodedKeySpec} (when passed as a {@code Class}
- *  parameter)</li>
- *  <li>PRIVATE KEY : {@code PrivateKey}</li>
- *  <li>PRIVATE KEY : {@code PKCS8EncodedKeySpec} (when passed as a {@code Class}
- *  parameter)</li>
- *  <li>PRIVATE KEY : {@code PublicKey} (if the encoding contains a public key
- *  and is passed as a {@code Class} parameter)</li>
- *  <li>PRIVATE KEY : {@code KeyPair} (if the encoding contains a public key)
- *  </li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code EncryptedPrivateKeyInfo} </li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PrivateKey} (if configured with
- *  decryption)</li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code KeyPair} (if configured with decryption)
- *  </li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PKCS8EncodedKeySpec} (if configured with
- *  decryption)</li>
- *  <li>ENCRYPTED PRIVATE KEY : {@code PublicKey} (if configured with
- *  decryption, the encoding contains a public key, and is passed as a
- *  {@code Class} parameter)</li>
- *  <li>Other types : {@code PEM} </li>
+ *   <li>CERTIFICATE : {@link X509Certificate}</li>
+ *   <li>X509 CRL : {@link X509CRL}</li>
+ *   <li>PUBLIC KEY : {@link PublicKey}</li>
+ *   <li>PRIVATE KEY : {@link PrivateKey} or {@link KeyPair}
+ *   (if the encoding contains a public key)</li>
+ *   <li>ENCRYPTED PRIVATE KEY : {@link EncryptedPrivateKeyInfo}</li>
+ *   <li>Other types : {@link PEM}</li>
+ * </ul>
+ * When used with a {@code PEMDecoder} instance configured for decryption:
+ * <ul>
+ *   <li>ENCRYPTED PRIVATE KEY : {@link PrivateKey} or {@link KeyPair}
+ *   (if the encoding contains a public key)</li>
  * </ul>
  *
  * <p> For {@code PublicKey} and {@code PrivateKey} types, an algorithm-specific
@@ -89,21 +75,35 @@ import java.util.Objects;
  *
  * <p> If the PEM type does not have a corresponding class,
  * {@code decode(String)} and {@code decode(InputStream)} will return a
- * {@link PEM} object.
+ * {@code PEM} object.
  *
- * <p> The {@link #decode(String, Class)} and
- * {@link #decode(InputStream, Class)} methods take a class parameter, which
- * specifies the type of {@code DEREncodable} that is returned. These methods
- * are useful to avoid casting the return type when the PEM type is known, or
- * when extracting a specific type when there is more than one choice.
+ * <p> The {@link #decode(String, Class)} and {@link #decode(InputStream, Class)}
+ * methods take a class parameter that specifies the type of {@code DEREncodable}
+ * to return. These methods are useful for avoiding casts when the PEM type is
+ * known, or when extracting a specific type if there is more than one option.
  * For example, if the PEM contains both a public and private key, specifying
  * {@code PrivateKey.class} returns only the private key.
  * If the class parameter specifies {@code X509EncodedKeySpec.class}, the
- * public key encoding is returned in an instance of the
- * {@code X509EncodedKeySpec} class.  Any type of PEM data can be decoded into
- * a {@code PEM} object by specifying {@code PEM.class}. If the class parameter
- * doesn't match the PEM content, a {@linkplain ClassCastException} will be
- * thrown.
+ * public key encoding is returned as an instance of {@code X509EncodedKeySpec}
+ * class. Any type of PEM data can be decoded into a {@code PEM} object by
+ * specifying {@code PEM.class}. If the class parameter does not match the PEM
+ * content, a {@link ClassCastException} is thrown.
+ *
+ * <p> In addition to the types listed above, these methods support the
+ * following PEM types and {@code DEREncodable} classes when specified as
+ * parameters:
+ *  <ul>
+ *   <li>PUBLIC KEY : {@link X509EncodedKeySpec}</li>
+ *   <li>PRIVATE KEY : {@link PKCS8EncodedKeySpec}</li>
+ *   <li>PRIVATE KEY : {@link PublicKey} (if the encoding contains a public key)</li>
+ *   <li>PRIVATE KEY : {@link X509EncodedKeySpec} (if the encoding contains a public key)</li>
+ * </ul>
+ * When used with a {@code PEMDecoder} instance configured for decryption:
+ * <ul>
+ *   <li>ENCRYPTED PRIVATE KEY : {@link PKCS8EncodedKeySpec}</li>
+ *   <li>ENCRYPTED PRIVATE KEY : {@link PublicKey} (if the encoding contains a public key)</li>
+ *   <li>ENCRYPTED PRIVATE KEY : {@link X509EncodedKeySpec} (if the encoding contains a public key)</li>
+ * </ul>
  *
  * <p> A new {@code PEMDecoder} instance is created when configured
  * with {@link #withFactory(Provider)} or {@link #withDecryption(char[])}.

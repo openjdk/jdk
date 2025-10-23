@@ -62,10 +62,11 @@ import java.util.Objects;
  * CMS, PRIVATE KEY, ENCRYPTED PRIVATE KEY, and PUBLIC KEY.
  *
  * <p> {@code leadingData} is {@code null} if there is no data preceding the PEM
- * header during decoding.  {@code leadingData} can be useful for reading
- * metadata that accompanies the PEM data. This value is not defensively
- * copied by the constructor, and the {@link #leadingData()} method does not
- * return a clone.
+ * header during decoding. {@code leadingData} can be useful for reading
+ * metadata that accompanies the PEM data. Because the value may represent a large
+ * amount of data, it is not defensively copied by the constructor, and the
+ * {@link #leadingData()} method does not return a clone. Modification of the
+ * passed-in or returned array changes the value stored in this record.
  *
  * @param type the type identifier from the PEM header, without PEM syntax
  *             labels; for example, for a public key, {@code type} would be
@@ -129,7 +130,7 @@ public record PEM(String type, String content, byte[] leadingData)
      * @return the PEM text representation
      */
     @Override
-    public String toString() {
+    final public String toString() {
         return Pem.pemEncoded(this);
     }
 
@@ -140,7 +141,7 @@ public record PEM(String type, String content, byte[] leadingData)
      * @return a decoded byte array
      * @throws IllegalArgumentException if decoding fails
      */
-    public byte[] decode() {
+    final public byte[] decode() {
         return Base64.getMimeDecoder().decode(content);
     }
 }

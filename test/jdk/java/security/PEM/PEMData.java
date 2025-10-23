@@ -48,6 +48,7 @@ class PEMData {
         -----END PRIVATE KEY-----
         """, KeyPair.class, "SunEC");
 
+    // EC 256 with a domain parameter & public key
     public static final Entry ecsecp256dom0 = new Entry("ecsecp256dom0",
         """
         -----BEGIN PRIVATE KEY-----

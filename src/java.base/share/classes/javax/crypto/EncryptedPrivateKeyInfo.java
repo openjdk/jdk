@@ -391,8 +391,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
     }
     /**
      * Creates an {@code EncryptedPrivateKeyInfo} by encrypting the specified
-     * {@code DEREncodable} with the default password-based encryption (PBE)
-     * algorithm and provider defaults.
+     * {@code DEREncodable}. A valid password must be specified. A default
+     * password-based encryption (PBE) algorithm and provider are used.
      *
      * @param de the {@code DEREncodable} to encrypt. Supported types include
      *           {@link PrivateKey}, {@link KeyPair}, and {@link PKCS8EncodedKeySpec}.
@@ -401,8 +401,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de} or {@code password} is {@code null}
      * @throws IllegalArgumentException if {@code de} is an unsupported
-     *         {@code DEREncodable}, if key generation fails, or if the
-     *         default algorithm is misconfigured
+     *         {@code DEREncodable}, if an error occurs while generating the
+     *         PBE key, or if the default algorithm is misconfigured
      * @throws RuntimeException if encryption of the encoding fails
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
@@ -420,7 +420,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates an {@code EncryptedPrivateKeyInfo} by encrypting the specified
-     * {@link DEREncodable} using the provided encryption key, and parameters.
+     * {@link DEREncodable}. A valid encryption algorithm and {@code Key} must
+     * be specified.
+     *
+     * <p>The format of the algorithm string is described in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#cipher-algorithms">
+     * Cipher Algorithms</a> section of the Java Security Standard Algorithm Names
+     * Specification.
      *
      * @param de the {@code DEREncodable} to encrypt. Supported types include
      *           {@link PrivateKey}, {@link KeyPair}, and {@link PKCS8EncodedKeySpec}.
@@ -428,11 +434,11 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @param algorithm the encryption algorithm, such as a password-based
      *                  encryption (PBE) algorithm.
      * @param params the {@code AlgorithmParameterSpec} used for encryption. If
-     *               {@code null}, the provider’s default parameters are used
+     *               {@code null}, the provider’s default parameters are applied.
      * @param random the {@code SecureRandom} instance used during encryption.
      *               If {@code null}, the default is used
-     * @param provider the {@code Provider} used for {@link Cipher} operations.
-     *                 If {@code null}, the default provider list is used
+     * @param provider the {@code Provider} for {@link Cipher} operations.
+     *                 If {@code null}, the default provider list is used.
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de}, {@code encryptKey}, or
      *         {@code algorithm} is {@code null}
@@ -440,10 +446,6 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *         {@code DEREncodable}, if {@code encryptKey} is invalid, or if
      *         {@code algorithm} or {@code params} are not supported by any provider
      * @throws RuntimeException if encryption of the encoding fails
-     *
-     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
-     * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
-     * defaults are determined by the provider.
      *
      * @since 25
      */
@@ -507,14 +509,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Extracts and returns the enclosed {@code PrivateKey} using the
      * specified password.
      *
-     * @param password the password for PBE decryption. The array is cloned
-     *                before use.
+     * @param password the password used for PBE decryption. The array is cloned
+     *                 before use.
      * @return the decrypted {@code PrivateKey}
      * @throws NullPointerException if {@code password} is {@code null}
      * @throws NoSuchAlgorithmException if the decryption algorithm is unsupported
-     * @throws InvalidKeyException if the encoded data does not contain both a
-     * public and private key, or if an error occurs during parsing, decryption,
-     * or key generation
+     * @throws InvalidKeyException if an error occurs during parsing,
+     *         decryption, or key generation
+     *
+     * @since 25
      */
     @PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
     public PrivateKey getKey(char[] password)
@@ -532,16 +535,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Extracts and returns the enclosed {@code PrivateKey} using the specified
      * decryption key and provider.
      *
-     * @param decryptKey the decryption key. Must not be {@code null}
-     * @param provider the {@code Provider} used for {@link Cipher} decryption
-     *                and {@link PrivateKey} generation. If {@code null}, the
-     *                default provider configuration is used
+     * @param decryptKey the decryption key. Must not be {@code null}.
+     * @param provider the {@code Provider} for {@link Cipher} decryption
+     *                 and {@link PrivateKey} generation. If {@code null}, the
+     *                 default provider configuration is used.
      * @return the decrypted {@code PrivateKey}
      * @throws NullPointerException if {@code decryptKey} is {@code null}
      * @throws NoSuchAlgorithmException if the decryption algorithm is unsupported
-     * @throws InvalidKeyException if the encoded data does not contain both a
-     * public and private key, or if an error occurs while parsing, decryption,
-     * or key generation
+     * @throws InvalidKeyException if an error occurs during parsing,
+     *         decryption, or key generation
      *
      * @since 25
      */
@@ -563,13 +565,13 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * password. If the encoded data does not contain both a public and private
      * key, an {@code InvalidKeyException} is thrown.
      *
-     * @param password the password used for PBE encryption.  This array
-     *                 will be cloned before being used.
+     * @param password the password used for PBE decryption. The array is cloned
+     *                 before use.
      * @return a decrypted {@code KeyPair}
      * @throws NullPointerException if {@code password} is {@code null}
      * @throws NoSuchAlgorithmException if the decryption algorithm is unsupported
-     * @throws InvalidKeyException if the encoded data lacks a public key or an
-     *         error occurs during parsing, decryption, or key generation
+     * @throws InvalidKeyException if the encoded data lacks a public key, or if
+     *         an error occurs during parsing, decryption, or key generation
      *
      * @since 26
      */
@@ -599,15 +601,15 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * decryption key and provider. If the encoded data does not contain both a
      * public and private key, an {@code InvalidKeyException} is thrown.
      *
-     * @param decryptKey the decryption key; must not be {@code null}
-     * @param provider the {@code Provider} used for {@link Cipher} decryption
-     *                 and key generation. If {@code null} the default provider
-     *                 configuration is used
+     * @param decryptKey the decryption key. Must not be {@code null}.
+     * @param provider the {@code Provider} for {@link Cipher} decryption
+     *                 and key generation. If {@code null}, the default provider
+     *                 configuration is used.
      * @return a decrypted {@code KeyPair}
      * @throws NullPointerException if {@code decryptKey} is {@code null}
      * @throws NoSuchAlgorithmException if the decryption algorithm is unsupported
-     * @throws InvalidKeyException if the encoded data lacks a public key or an
-     *         error occurs during parsing, decryption, or key generation
+     * @throws InvalidKeyException if the encoded data lacks a public key, or if
+     *         an error occurs during parsing, decryption, or key generation
      *
      * @since 26
      */

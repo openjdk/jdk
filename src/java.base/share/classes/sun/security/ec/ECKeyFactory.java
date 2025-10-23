@@ -26,6 +26,7 @@
 package sun.security.ec;
 
 import sun.security.pkcs.PKCS8Key;
+import sun.security.util.KeyUtil;
 
 import java.security.*;
 import java.security.interfaces.*;
@@ -213,11 +214,17 @@ public final class ECKeyFactory extends KeyFactorySpi {
             case ECPublicKeySpec e ->
                 new ECPublicKeyImpl(e.getW(), e.getParams());
             case PKCS8EncodedKeySpec p8 -> {
-                PKCS8Key p8key = new ECPrivateKeyImpl(p8.getEncoded());
-                if (!p8key.hasPublicKey()) {
-                    throw new InvalidKeySpecException("No public key found.");
+                byte[] encoded = p8.getEncoded();
+                PKCS8Key p8key = null;
+                try {
+                    p8key = new ECPrivateKeyImpl(encoded);
+                    if (!p8key.hasPublicKey()) {
+                        throw new InvalidKeySpecException("No public key found.");
+                    }
+                    yield new ECPublicKeyImpl(p8key.getPubKeyEncoded());
+                } finally {
+                    KeyUtil.clear(encoded, p8key);
                 }
-                yield new ECPublicKeyImpl(p8key.getPubKeyEncoded());
             }
             case null -> throw new InvalidKeySpecException(
                 "keySpec must not be null");

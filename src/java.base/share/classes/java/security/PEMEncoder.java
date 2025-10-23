@@ -75,22 +75,22 @@ import java.util.Objects;
  * <p> The following lists the supported {@code DEREncodable} classes and
  * the PEM types they encode as:
  * <ul>
- *  <li>{@code X509Certificate} : CERTIFICATE</li>
- *  <li>{@code X509CRL} : X509 CRL</li>
- *  <li>{@code PublicKey} : PUBLIC KEY</li>
- *  <li>{@code PrivateKey} : PRIVATE KEY</li>
- *  <li>{@code PrivateKey} :
- *  ENCRYPTED PRIVATE KEY  (if configured with encryption)</li>
- *  <li>{@code EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
- *  <li>{@code KeyPair} : PRIVATE KEY</li>
- *  <li>{@code KeyPair} :
- *  ENCRYPTED PRIVATE KEY (if configured with encryption)</li>
- *  <li>{@code X509EncodedKeySpec} : PUBLIC KEY</li>
- *  <li>{@code PKCS8EncodedKeySpec} : PRIVATE KEY</li>
- *  <li>{@code PKCS8EncodedKeySpec} :
- *  ENCRYPTED PRIVATE KEY (if configured with encryption)</li>
- *  <li>{@code PEM} : {@code PEM.type()}</li>
- *  </ul>
+ *   <li>{@link X509Certificate} : CERTIFICATE</li>
+ *   <li>{@link X509CRL} : X509 CRL</li>
+ *   <li>{@link PublicKey} : PUBLIC KEY</li>
+ *   <li>{@link PrivateKey} : PRIVATE KEY</li>
+ *   <li>{@link EncryptedPrivateKeyInfo} : ENCRYPTED PRIVATE KEY</li>
+ *   <li>{@link KeyPair} : PRIVATE KEY</li>
+ *   <li>{@link X509EncodedKeySpec} : PUBLIC KEY</li>
+ *   <li>{@link PKCS8EncodedKeySpec} : PRIVATE KEY</li>
+ *   <li>{@link PEM} : {@code PEM.type()}</li>
+ * </ul>
+ * <p> When used with a {@code PEMEncoder} instance configured for encryption:
+ * <ul>
+ *   <li>{@link PrivateKey} : ENCRYPTED PRIVATE KEY</li>
+ *   <li>{@link KeyPair} : ENCRYPTED PRIVATE KEY</li>
+ *   <li>{@link PKCS8EncodedKeySpec} : ENCRYPTED PRIVATE KEY</li>
+ * </ul>
  *
  * <p> This class is immutable and thread-safe.
  *
@@ -281,8 +281,8 @@ public final class PEMEncoder {
      * @param password the encryption password.  The array is cloned and
      *                 stored in the new instance.
      * @return a new {@code PEMEncoder} instance configured for encryption
-     * @throws NullPointerException when password is {@code null}
-     * @throws ProviderException if generating the encryption key fails.
+     * @throws NullPointerException if password is {@code null}
+     * @throws IllegalArgumentException if generating the encryption key fails
      */
     public PEMEncoder withEncryption(char[] password) {
         Objects.requireNonNull(password, "password cannot be null.");

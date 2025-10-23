@@ -311,9 +311,11 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
         } catch (InvalidKeyException e) {
             throw new IOException(e);
         }
-        byte[] result = pkcs8Key.generateEncoding().clone();
-        pkcs8Key.clear();
-        return result;
+        try {
+            return pkcs8Key.generateEncoding().clone();
+        } finally {
+            pkcs8Key.clear();
+        }
     }
 
     /**
@@ -325,7 +327,7 @@ public class PKCS8Key implements PrivateKey, InternalPrivateKey {
     private synchronized byte[] getEncodedInternal() {
         if (encodedKey == null) {
             try {
-                encodedKey = generateEncoding();
+                generateEncoding();
             } catch (IOException e) {
                return null;
             }
