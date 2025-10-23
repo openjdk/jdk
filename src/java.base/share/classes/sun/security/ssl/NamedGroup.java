@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -769,7 +769,9 @@ enum NamedGroup {
                     if (!group.isEmpty()) {
                         NamedGroup namedGroup = nameOf(group);
                         if (namedGroup != null) {
-                            if (namedGroup.isAvailable) {
+                            if (namedGroup.isAvailable
+                                    && namedGroup.isPermitted(
+                                    SSLAlgorithmConstraints.DEFAULT)) {
                                 groupList.add(namedGroup.name);
                             }
                         }   // ignore unknown groups
@@ -805,7 +807,8 @@ enum NamedGroup {
 
                 groupList = new ArrayList<>(groups.length);
                 for (NamedGroup group : groups) {
-                    if (group.isAvailable) {
+                    if (group.isAvailable && group.isPermitted(
+                            SSLAlgorithmConstraints.DEFAULT)) {
                         groupList.add(group.name);
                     }
                 }

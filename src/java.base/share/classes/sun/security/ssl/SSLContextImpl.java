@@ -297,7 +297,7 @@ public abstract class SSLContextImpl extends SSLContextSpi {
      * Return whether a protocol list is the original default enabled
      * protocols.  See: SSLSocket/SSLEngine.setEnabledProtocols()
      */
-    boolean isDefaultProtocolVesions(List<ProtocolVersion> protocols) {
+    boolean isDefaultProtocolVersions(List<ProtocolVersion> protocols) {
         return (protocols == getServerDefaultProtocolVersions()) ||
                (protocols == getClientDefaultProtocolVersions());
     }

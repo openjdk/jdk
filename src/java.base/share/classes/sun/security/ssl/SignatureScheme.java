@@ -34,10 +34,10 @@ import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import sun.security.ssl.NamedGroup.NamedGroupSpec;
 import sun.security.ssl.X509Authentication.X509Possession;
@@ -415,9 +415,14 @@ enum SignatureScheme {
         List<SignatureScheme> supported = new LinkedList<>();
 
         List<SignatureScheme> schemesToCheck =
-                config.signatureSchemes == null ?
+                // No need to lookup default signature schemes.
+                config.signatureSchemes == SupportedSigSchemes.DEFAULT
+                        || config.signatureSchemes == null ?
                     Arrays.asList(SignatureScheme.values()) :
-                    namesOfAvailable(config.signatureSchemes);
+                        Arrays.stream(config.signatureSchemes)
+                                .map(SignatureScheme::nameOf)
+                                .filter(Objects::nonNull)
+                                .toList();
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
@@ -471,7 +476,8 @@ enum SignatureScheme {
                             SignatureScheme.nameOf(ssid));
                 }
             } else if ((config.signatureSchemes == null
-                        || Utilities.contains(config.signatureSchemes, ss.name))
+                    || config.signatureSchemes == SupportedSigSchemes.DEFAULT
+                    || Utilities.contains(config.signatureSchemes, ss.name))
                     && ss.isAllowed(constraints, protocolVersion, scopes)) {
                 supported.add(ss);
             } else {
@@ -614,33 +620,6 @@ enum SignatureScheme {
         return new String[0];
     }
 
-    private static List<SignatureScheme> namesOfAvailable(
-                String[] signatureSchemes) {
-
-        if (signatureSchemes == null || signatureSchemes.length == 0) {
-            return Collections.emptyList();
-        }
-
-        List<SignatureScheme> sss = new ArrayList<>(signatureSchemes.length);
-        for (String ss : signatureSchemes) {
-            SignatureScheme scheme = SignatureScheme.nameOf(ss);
-            if (scheme == null || !scheme.isAvailable) {
-                if (SSLLogger.isOn &&
-                        SSLLogger.isOn("ssl,handshake,verbose")) {
-                    SSLLogger.finest(
-                            "Ignore the signature algorithm (" + ss
-                          + "), unsupported or unavailable");
-                }
-
-                continue;
-            }
-
-            sss.add(scheme);
-        }
-
-        return sss;
-    }
-
     // This method is used to get the signature instance of this signature
     // scheme for the specific public key.  Unlike getSigner(), the exception
     // is bubbled up.  If the public key does not support this signature
@@ -685,5 +664,16 @@ enum SignatureScheme {
         }
 
         return null;
+    }
+
+    // Default signature schemes for SSLConfiguration.
+    static final class SupportedSigSchemes {
+
+        static final String[] DEFAULT = Arrays.stream(
+                        SignatureScheme.values())
+                .filter(ss -> ss.isAvailable
+                        && ss.isPermitted(
+                        SSLAlgorithmConstraints.DEFAULT, null))
+                .map(ss -> ss.name).toArray(String[]::new);
     }
 }
