@@ -27,7 +27,7 @@ import javax.swing.UIManager;
 
 /*
  * @test
- * @bug 4150591 8068293
+ * @bug 4150591
  * @summary MotifInternalFrameTitlePane is public now and can be
  * instantiated by other classes within the desktop module without using Reflection.
  * This does not mean that this class will ever become part
