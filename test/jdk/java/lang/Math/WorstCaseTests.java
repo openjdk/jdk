@@ -195,9 +195,9 @@ public class WorstCaseTests {
             {+0x1.DE7CD6751029Ap16,     +0x1.76E7E5D7B6EABp+3},
 
             // Worst-case observed error for OpenLibm
-            {+0x1.48ae5a67204f5p+0,     0x1.ffd10abffc3fep-3},
+            {+0x1.48ae5a67204f5p+0,     +0x1.ffd10abffc3fep-3},
             // Julia worst-case observed error
-            {+0x1.14fad2c09e275p0,      0x1.42a13ec2691dbp-4}, // use ..b, instead of c for ref value
+            {+0x1.14fad2c09e275p0,      +0x1.42a13ec2691dbp-4},
             // Other worst-case observed errors
             {+0x1.1211bef8f68e9p+0,     +0x1.175caeca67f84p-4},
             {+0x1.008000db2e8bep+0,     +0x1.ff83959f5cc1fp-10},
@@ -247,6 +247,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm
             {+0x1.4d84db080b9fdp+21,    +0x1.6e21c4ff6aec3p-1},
+            // Worst-case observed error for Julia
+            {+0x1.5a8e729e7934p102,     +0x1.6deadddde6752p-1},
             // Other worst-case observed errors
             {-0x1.f8b791cafcdefp+4,     -0x1.073ca87470df9p-3 },
             {-0x1.0e16eb809a35dp+944,   +0x1.b5e361ed01dacp-2},
@@ -296,7 +298,7 @@ public class WorstCaseTests {
             // Worst-case observed error for OpenLibm
             {-0x1.004d1c5a9400bp-1,     -0x1.0c6e322e8a28bp-1},
             // Julia worst-case observed error
-            {-0x1.012d405d9408ep-1,     -0x1.0d7142df4969p-1},
+            {-0x1.012d405d9408ep-1,     -0x1.0d7142df4968fp-1},
 
             // Other worst-case observed errors
             {-0x1.0000045b2c904p-3,     -0x1.00abe5252746cp-3},
@@ -388,6 +390,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm
             {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
+            // Julia worst-case observed error
+            {-0x1.0b7c63033d6cp-1,      +0x1.0f6c7f5db3b93p1},
             // Other worst-case observed errors
             {+0x1.dffffb3488a4p-1,      0x1.6bf3a4a4f4dcbp-2},
             {+0x1.6c05eb219ec46p-1,     0x1.8f4f472807261p-1},
