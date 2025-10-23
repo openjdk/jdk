@@ -36,7 +36,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Predicate;
@@ -71,51 +70,6 @@ import jdk.jpackage.test.TKit;
  */
 public class AppContentTest {
 
-    private static final ContentFactory TEST_JAVA = createTestSrcContent("apps/PrintEnv.java");
-    private static final ContentFactory TEST_DUKE = createTextFileContent("duke.txt", "Hi Duke!");
-    private static final ContentFactory TEST_DIR = createTestSrcContent("apps");
-    private static final ContentFactory TEST_BAD = new NonExistantPath();
-
-    // On OSX `--app-content` paths will be copied into the "Contents" folder
-    // of the output app image.
-    // "codesign" imposes restrictions on the directory structure of "Contents" folder.
-    // In particular, random files should be placed in "Contents/Resources" folder
-    // otherwise "codesign" will fail to sign.
-    // Need to prepare arguments for `--app-content` accordingly.
-    private static final boolean copyInResources = TKit.isOSX();
-
-    private static final String RESOURCES_DIR = "Resources";
-
-    public static Collection<Object[]> test() {
-        return Stream.of(
-                build().add(TEST_JAVA).add(TEST_DUKE),
-                build().add(TEST_JAVA).add(TEST_BAD),
-                build().startGroup().add(TEST_JAVA).add(TEST_DUKE).endGroup().add(TEST_DIR),
-                // Same directory specified multiple times.
-                build().add(TEST_DIR).add(TEST_DIR),
-                // Same file specified multiple times.
-                build().add(TEST_JAVA).add(TEST_JAVA),
-                // Two files with the same name but different content.
-                build().add(createTextFileContent("welcome.txt", "Welcome")).add(createTextFileContent("welcome.txt", "Benvenuti")),
-                // Same name: one is a directory, another is a file.
-                build().add(createTextFileContent("a/b/c/d", "Foo")).add(createTextFileContent("a", "Bar")),
-                // Same name: one is a file, another is a directory.
-                build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b/c/d", "Foo"))
-        ).map(TestSpec.Builder::create).map(v -> {
-            return new Object[] {v};
-        }).toList();
-    }
-
-    public static Collection<Object[]> testSymlink() {
-        return Stream.of(
-                build().add(TEST_JAVA)
-                        .add(new SymlinkContentFactory("Links", "duke-link", "duke-target"))
-                        .add(new SymlinkContentFactory("", "a/b/foo-link", "c/bar-target"))
-        ).map(TestSpec.Builder::create).map(v -> {
-            return new Object[] {v};
-        }).toList();
-    }
-
     @Test
     @ParameterSupplier
     @ParameterSupplier(value="testSymlink", ifNotOS = WINDOWS)
@@ -143,6 +97,38 @@ public class AppContentTest {
             .setFakeRuntime()
             .validateOutput(expectedWarning)
             .executeIgnoreExitCode();
+    }
+
+    public static Collection<Object[]> test() {
+        return Stream.of(
+                build().add(TEST_JAVA).add(TEST_DUKE),
+                build().add(TEST_JAVA).add(TEST_BAD),
+                build().startGroup().add(TEST_JAVA).add(TEST_DUKE).endGroup().add(TEST_DIR),
+                // Same directory specified multiple times.
+                build().add(TEST_DIR).add(TEST_DIR),
+                // Same file specified multiple times.
+                build().add(TEST_JAVA).add(TEST_JAVA),
+                // Two files with the same name but different content.
+                build()
+                        .add(createTextFileContent("welcome.txt", "Welcome"))
+                        .add(createTextFileContent("welcome.txt", "Benvenuti")),
+                // Same name: one is a directory, another is a file.
+                build().add(createTextFileContent("a/b/c/d", "Foo")).add(createTextFileContent("a", "Bar")),
+                // Same name: one is a file, another is a directory.
+                build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b/c/d", "Foo"))
+        ).map(TestSpec.Builder::create).map(v -> {
+            return new Object[] {v};
+        }).toList();
+    }
+
+    public static Collection<Object[]> testSymlink() {
+        return Stream.of(
+                build().add(TEST_JAVA)
+                        .add(new SymlinkContentFactory("Links", "duke-link", "duke-target"))
+                        .add(new SymlinkContentFactory("", "a/b/foo-link", "c/bar-target"))
+        ).map(TestSpec.Builder::create).map(v -> {
+            return new Object[] {v};
+        }).toList();
     }
 
     public record TestSpec(List<List<ContentFactory>> contentFactories) {
@@ -177,6 +163,16 @@ public class AppContentTest {
                     return Stream.of("--app-content", group.stream()
                             .map(Content::paths)
                             .flatMap(List::stream)
+                            .map(appContentArg -> {
+                                if (COPY_IN_RESOURCES && Optional.ofNullable(appContentArg.getParent())
+                                        .map(Path::getFileName)
+                                        .map(RESOURCES_DIR::equals)
+                                        .orElse(false)) {
+                                    return appContentArg.getParent();
+                                } else {
+                                    return appContentArg;
+                                }
+                            })
                             .map(Path::toString)
                             .collect(joining(",")));
                     }).flatMap(x -> x).forEachOrdered(cmd::addArgument);
@@ -290,7 +286,7 @@ public class AppContentTest {
 
     private static Path getAppContentRoot(JPackageCommand cmd) {
         final Path contentDir = cmd.appLayout().contentDirectory();
-        if (copyInResources) {
+        if (COPY_IN_RESOURCES) {
             return contentDir.resolve(RESOURCES_DIR);
         } else {
             return contentDir;
@@ -298,7 +294,7 @@ public class AppContentTest {
     }
 
     private static Path createAppContentRoot() {
-        if (copyInResources) {
+        if (COPY_IN_RESOURCES) {
             return TKit.createTempDirectory("app-content").resolve(RESOURCES_DIR);
         } else {
             return TKit.createTempDirectory("app-content");
@@ -375,10 +371,7 @@ public class AppContentTest {
 
         FileContent {
             Objects.requireNonNull(path);
-            if (level < 0) {
-                throw new IllegalArgumentException();
-            }
-            if (path.getNameCount() <= level) {
+            if ((level < 0) || (path.getNameCount() <= level)) {
                 throw new IllegalArgumentException();
             }
         }
@@ -445,7 +438,12 @@ public class AppContentTest {
     private static final class NonExistantPath implements ContentFactory {
         @Override
         public Content create() {
-            var nonExistant = Path.of("non-existant-" + Integer.toHexString(new Random().ints(100, 200).findFirst().getAsInt()));
+            var nonExistant = TKit.createTempFile("non-existant");
+            try {
+                TKit.deleteIfExists(nonExistant);
+            } catch (IOException ex) {
+                throw new UncheckedIOException(ex);
+            }
             return new FileContent(nonExistant, 0);
         }
 
@@ -536,7 +534,7 @@ public class AppContentTest {
             }
 
             List<Path> contentPaths;
-            if (copyInResources) {
+            if (COPY_IN_RESOURCES) {
                 contentPaths = List.of(appContentRoot);
             } else if (basedir.equals(Path.of(""))) {
                 contentPaths = Stream.of(symlinkPath(), symlinkedPath()).map(path -> {
@@ -600,11 +598,11 @@ public class AppContentTest {
             }
 
             Path dstPath;
-            if (!copyInResources) {
+            if (!COPY_IN_RESOURCES) {
                 dstPath = srcPath;
             } else {
                 var contentDir = createAppContentRoot();
-                dstPath = contentDir.resolve(srcPath.getFileName());
+                dstPath = contentDir.resolve(pathInAppContentRoot);
                 try {
                     FileUtils.copyRecursive(srcPath, dstPath);
                 } catch (IOException ex) {
@@ -623,4 +621,18 @@ public class AppContentTest {
         private final Path pathInAppContentRoot;
     }
 
+    private static final ContentFactory TEST_JAVA = createTestSrcContent("apps/PrintEnv.java");
+    private static final ContentFactory TEST_DUKE = createTextFileContent("duke.txt", "Hi Duke!");
+    private static final ContentFactory TEST_DIR = createTestSrcContent("apps");
+    private static final ContentFactory TEST_BAD = new NonExistantPath();
+
+    // On OSX `--app-content` paths will be copied into the "Contents" folder
+    // of the output app image.
+    // "codesign" imposes restrictions on the directory structure of "Contents" folder.
+    // In particular, random files should be placed in "Contents/Resources" folder
+    // otherwise "codesign" will fail to sign.
+    // Need to prepare arguments for `--app-content` accordingly.
+    private static final boolean COPY_IN_RESOURCES = TKit.isOSX();
+
+    private static final Path RESOURCES_DIR = Path.of("Resources");
 }
