@@ -26,7 +26,8 @@
  *
  * @bug 8316694
  * @summary Verify that nmethod relocation posts the correct JVMTI events
- * @requires vm.jvmti & vm.gc.Serial
+ * @requires vm.jvmti
+ * @requires vm.gc == "null" | vm.gc == "Serial"
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
