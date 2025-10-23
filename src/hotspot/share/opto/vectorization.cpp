@@ -541,6 +541,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
+// TODO: Description
 bool VLoopAnalyzer::has_zero_cost(Node* n) const {
   // Outside body?
   if (!_vloop.in_bb(n)) { return true; }

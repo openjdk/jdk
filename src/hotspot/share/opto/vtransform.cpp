@@ -923,6 +923,8 @@ void VTransformNode::apply_vtn_inputs_to_node(Node* n, VTransformApplyState& app
 }
 
 float VTransformMemopScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
+  // This is an identity transform, but loads and stores must be counted.
+  assert(!vloop_analyzer.has_zero_cost(_node), "memop nodes must be counted");
   return vloop_analyzer.cost_for_scalar(_node->Opcode());
 }
 
@@ -939,7 +941,13 @@ VTransformApplyResult VTransformMemopScalarNode::apply(VTransformApplyState& app
 }
 
 float VTransformDataScalarNode::cost(const VLoopAnalyzer& vloop_analyzer) const {
-  return vloop_analyzer.cost_for_scalar(_node->Opcode());
+  // Since this is an identity transform, we may have nodes that also
+  // VLoopAnalyzer::cost does not count for the scalar loop.
+  if (vloop_analyzer.has_zero_cost(_node)) {
+    return 0;
+  } else {
+    return vloop_analyzer.cost_for_scalar(_node->Opcode());
+  }
 }
 
 VTransformApplyResult VTransformDataScalarNode::apply(VTransformApplyState& apply_state) const {
