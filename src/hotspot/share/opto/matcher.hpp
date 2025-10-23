@@ -408,14 +408,14 @@ public:
   static int            inline_cache_reg_encode();
 
   // Register for DIVI projection of divmodI
-  static RegMask divI_proj_mask();
+  static const RegMask& divI_proj_mask();
   // Register for MODI projection of divmodI
-  static RegMask modI_proj_mask();
+  static const RegMask& modI_proj_mask();
 
   // Register for DIVL projection of divmodL
-  static RegMask divL_proj_mask();
+  static const RegMask& divL_proj_mask();
   // Register for MODL projection of divmodL
-  static RegMask modL_proj_mask();
+  static const RegMask& modL_proj_mask();
 
   // Use hardware DIV instruction when it is faster than
   // a code which use multiply for division by constant.

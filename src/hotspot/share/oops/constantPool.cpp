@@ -538,18 +538,23 @@ void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
   assert(ArchiveBuilder::current()->is_in_buffer_space(this), "must be");
   assert(tag_at(cp_index).is_klass(), "must be resolved");
 
-  Klass* k = resolved_klass_at(cp_index);
   bool can_archive;
+  Klass* k = nullptr;
 
-  if (k == nullptr) {
-    // We'd come here if the referenced class has been excluded via
-    // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
-    // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
-    // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
+  if (CDSConfig::is_dumping_preimage_static_archive()) {
     can_archive = false;
   } else {
-    ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
-    can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
+    k = resolved_klass_at(cp_index);
+    if (k == nullptr) {
+      // We'd come here if the referenced class has been excluded via
+      // SystemDictionaryShared::is_excluded_class(). As a result, ArchiveBuilder
+      // has cleared the resolved_klasses()->at(...) pointer to null. Thus, we
+      // need to revert the tag to JVM_CONSTANT_UnresolvedClass.
+      can_archive = false;
+    } else {
+      ConstantPool* src_cp = ArchiveBuilder::current()->get_source_addr(this);
+      can_archive = AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index);
+    }
   }
 
   if (!can_archive) {

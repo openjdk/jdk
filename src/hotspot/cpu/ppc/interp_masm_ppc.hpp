@@ -133,8 +133,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size);
 
   void load_resolved_indy_entry(Register cache, Register index);
-  void load_field_entry(Register cache, Register index, int bcp_offset = 1);
-  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_field_or_method_entry(bool is_method, Register cache, Register index, int bcp_offset, bool for_fast_bytecode);
+  void load_field_entry(Register cache, Register index, int bcp_offset = 1, bool for_fast_bytecode = false) {
+    load_field_or_method_entry(false, cache, index, bcp_offset, for_fast_bytecode);
+  }
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1, bool for_fast_bytecode = false) {
+    load_field_or_method_entry(true, cache, index, bcp_offset, for_fast_bytecode);
+  }
 
   void get_u4(Register Rdst, Register Rsrc, int offset, signedOrNot is_signed);
 
