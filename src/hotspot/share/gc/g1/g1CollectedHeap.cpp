@@ -1000,11 +1000,14 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
                                                             bool do_gc,
                                                             bool maximal_compaction,
                                                             bool expect_null_mutator_alloc_region) {
-  // Skip allocation limit if GC overhead has been exceeded to let the mutator run
+  // Skip allocation if GC overhead limit has been exceeded to let the mutator run
   // into an OOME. It can either exit "gracefully" or try to free up memory asap.
   // For the latter situation, keep running GCs. If the mutator frees up enough
   // memory quickly enough, the overhead(s) will go below the threshold(s) again
   // and the VM may continue running.
+  // If we did not continue garbage collections, the (gc overhead) limit may decrease
+  // enough by itself to not count as exceeding the limit any more, in the worst
+  // case bouncing back-and-forth all the time.
   if (!gc_overhead_limit_exceeded()) {
     // Let's attempt the allocation first.
     HeapWord* result =
