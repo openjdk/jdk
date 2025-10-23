@@ -34,6 +34,7 @@ import jtreg.SkippedException;
  * @summary Test the 'type' command of jhsdb clhsdb.
  * @bug 8190307
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run main/othervm TestType
  */

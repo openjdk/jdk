@@ -68,7 +68,7 @@ import sun.swing.SwingUtilities2;
  * that allows them to paint their own backgrounds
  */
 
-public class AquaMenuPainter {
+public final class AquaMenuPainter {
     // Glyph statics:
     // ASCII character codes
     static final byte
@@ -151,9 +151,10 @@ public class AquaMenuPainter {
     static final int defaultMenuItemGap = 2;
     static final int kAcceleratorArrowSpace = 16; // Accel space doesn't overlap arrow space, even though items can't have both
 
-    static class RecyclableBorder extends RecyclableSingleton<Border> {
+    static final class RecyclableBorder extends RecyclableSingleton<Border> {
         final String borderName;
         RecyclableBorder(final String borderName) { this.borderName = borderName; }
+        @Override
         protected Border getInstance() { return UIManager.getBorder(borderName); }
     }
 

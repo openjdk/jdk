@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Test JFR jdk.VirtualThreadPinned event recorded for contended monitor enter
  *     and Object.wait when pinned
- * @requires vm.continuations
+ * @requires vm.continuations & vm.hasJFR
  * @modules jdk.jfr jdk.management
  * @library /test/lib
  * @run junit/othervm --enable-native-access=ALL-UNNAMED MonitorPinnedEvents

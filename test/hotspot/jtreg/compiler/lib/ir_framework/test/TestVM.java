@@ -75,6 +75,7 @@ public class TestVM {
      */
     public static final int WARMUP_ITERATIONS = Integer.parseInt(System.getProperty("Warmup", "2000"));
 
+    private static final boolean ALLOW_METHOD_NOT_COMPILABLE = Boolean.getBoolean("AllowNotCompilable");
     private static final boolean TIERED_COMPILATION = (Boolean)WHITE_BOX.getVMFlag("TieredCompilation");
     private static final CompLevel TIERED_COMPILATION_STOP_AT_LEVEL;
     private static final boolean CLIENT_VM = Platform.isClient();
@@ -579,8 +580,9 @@ public class TestVM {
         if (EXCLUDE_RANDOM) {
             compLevel = compLevel.excludeCompilationRandomly(m);
         }
+        boolean allowNotCompilable = testAnno.allowNotCompilable() || ALLOW_METHOD_NOT_COMPILABLE;
         ArgumentsProvider argumentsProvider = ArgumentsProviderBuilder.build(m, setupMethodMap);
-        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations);
+        DeclaredTest test = new DeclaredTest(m, argumentsProvider, compLevel, warmupIterations, allowNotCompilable);
         declaredTests.put(m, test);
         testMethodMap.put(m.getName(), m);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,13 +41,14 @@ import jdk.internal.net.http.websocket.RawChannel;
 /**
  * The implementation class for HttpResponse
  */
-class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
+final class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     final int responseCode;
+    private final String connectionLabel;
     final HttpRequest initialRequest;
-    final Optional<HttpResponse<T>> previousResponse;
+    final HttpResponse<T> previousResponse; // may be null;
     final HttpHeaders headers;
-    final Optional<SSLSession> sslSession;
+    final SSLSession sslSession; // may be null
     final URI uri;
     final HttpClient.Version version;
     final RawChannelProvider rawChannelProvider;
@@ -59,20 +60,33 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
                             T body,
                             Exchange<T> exch) {
         this.responseCode = response.statusCode();
+        this.connectionLabel = connectionLabel(exch).orElse(null);
         this.initialRequest = initialRequest;
-        this.previousResponse = Optional.ofNullable(previousResponse);
+        this.previousResponse = previousResponse;
         this.headers = response.headers();
         //this.trailers = trailers;
-        this.sslSession = Optional.ofNullable(response.getSSLSession());
+        this.sslSession = response.getSSLSession();
         this.uri = response.request().uri();
         this.version = response.version();
         this.rawChannelProvider = RawChannelProvider.create(response, exch);
         this.body = body;
     }
 
+    private static Optional<String> connectionLabel(Exchange<?> exchange) {
+        return Optional.ofNullable(exchange)
+                .map(e -> e.exchImpl)
+                .map(ExchangeImpl::connection)
+                .map(HttpConnection::label);
+    }
+
     @Override
     public int statusCode() {
         return responseCode;
+    }
+
+    @Override
+    public Optional<String> connectionLabel() {
+        return Optional.ofNullable(connectionLabel);
     }
 
     @Override
@@ -82,7 +96,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     @Override
     public Optional<HttpResponse<T>> previousResponse() {
-        return previousResponse;
+        return Optional.ofNullable(previousResponse);
     }
 
     @Override
@@ -97,7 +111,7 @@ class HttpResponseImpl<T> implements HttpResponse<T>, RawChannel.Provider {
 
     @Override
     public Optional<SSLSession> sslSession() {
-        return sslSession;
+        return Optional.ofNullable(sslSession);
     }
 
     @Override

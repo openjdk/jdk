@@ -45,13 +45,13 @@ public class TestVectorConditionalMove {
     public static void main(String[] args) {
         // Cross-product: +-AlignVector and +-UseCompactObjectHeaders
         TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
+                                   "-XX:-UseCompactObjectHeaders", "-XX:-AlignVector");
         TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
+                                   "-XX:-UseCompactObjectHeaders", "-XX:+AlignVector");
         TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
+                                   "-XX:+UseCompactObjectHeaders", "-XX:-AlignVector");
         TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov",
-                                   "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
+                                   "-XX:+UseCompactObjectHeaders", "-XX:+AlignVector");
     }
 
     // Compare 2 values, and pick one of them

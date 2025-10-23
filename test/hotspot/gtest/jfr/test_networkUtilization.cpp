@@ -39,12 +39,13 @@
 #include "logging/log.hpp"
 #include "runtime/os_perf.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
 
 #include "utilities/vmassert_uninstall.hpp"
-#include <vector>
+BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
 #include <list>
-#include <map>
+#include <string>
+#include <vector>
+END_ALLOW_FORBIDDEN_FUNCTIONS
 #include "utilities/vmassert_reinstall.hpp"
 
 #include "unittest.hpp"
@@ -68,7 +69,6 @@ namespace {
   class MockJfrCheckpointWriter {
    public:
     traceid current;
-    std::map<traceid, std::string> ids;
 
     const JfrCheckpointContext context() const {
       return JfrCheckpointContext();

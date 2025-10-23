@@ -33,6 +33,7 @@ import java.awt.Toolkit;
 import java.awt.geom.Area;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
@@ -42,7 +43,7 @@ import javax.imageio.ImageIO;
  * @key headful
  * @bug 6988428
  * @summary Tests whether shape is always set
- * @run main/othervm -Dsun.java2d.uiScale=1 ShapeNotSetSometimes
+ * @run main/othervm/timeout=300 -Dsun.java2d.uiScale=1 ShapeNotSetSometimes
  */
 
 public class ShapeNotSetSometimes {
@@ -147,15 +148,20 @@ public class ShapeNotSetSometimes {
         robot.waitForIdle();
         robot.delay(500);
 
+        Rectangle screenBounds = window.getGraphicsConfiguration().getBounds();
+        BufferedImage screenCapture = robot.createScreenCapture(screenBounds);
         try {
-            colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR, true);
+            colorCheck(innerPoint.x, innerPoint.y, SHAPE_COLOR,
+                    true, screenCapture);
 
             for (Point point : pointsOutsideToCheck) {
-                colorCheck(point.x, point.y, BACKGROUND_COLOR, true);
+                colorCheck(point.x, point.y, BACKGROUND_COLOR,
+                        true, screenCapture);
             }
 
             for (Point point : shadedPointsToCheck) {
-                colorCheck(point.x, point.y, SHAPE_COLOR, false);
+                colorCheck(point.x, point.y, SHAPE_COLOR,
+                        false, screenCapture);
             }
         } finally {
             EventQueue.invokeAndWait(() -> {
@@ -169,15 +175,12 @@ public class ShapeNotSetSometimes {
         }
     }
 
-    private void colorCheck(int x, int y, Color expectedColor, boolean mustBeExpectedColor) {
+    private void colorCheck(int x, int y, Color expectedColor,
+                            boolean mustBeExpectedColor, BufferedImage screenCapture) {
         int screenX = window.getX() + x;
         int screenY = window.getY() + y;
 
-        robot.mouseMove(screenX, screenY);
-        robot.waitForIdle();
-        robot.delay(50);
-
-        Color actualColor = robot.getPixelColor(screenX, screenY);
+        Color actualColor = new Color(screenCapture.getRGB(screenX, screenY));
 
         System.out.printf(
                 "Checking %3d, %3d, %35s should %sbe %35s\n",

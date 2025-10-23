@@ -57,7 +57,7 @@ TEST_VM(InstanceKlass, class_loader_printer) {
   // See if mirror injected fields are printed.
   oop mirror = vmClasses::ClassLoader_klass()->java_mirror();
   mirror->print_on(&st);
-  ASSERT_THAT(st.base(), HasSubstr("injected 'protection_domain'")) << "Must contain injected fields";
+  ASSERT_THAT(st.base(), HasSubstr("injected 'array_klass'")) << "Must contain injected fields";
   // We should test other printing functions too.
 #ifndef PRODUCT
   st.reset();

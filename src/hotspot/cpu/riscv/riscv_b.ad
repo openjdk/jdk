@@ -25,7 +25,8 @@
 
 // RISCV Bit-Manipulation Extension Architecture Description File
 
-instruct rorI_imm_b(iRegINoSp dst, iRegI src, immI shift) %{
+// Rotate Right Word Immediate
+instruct rorI_imm_b(iRegINoSp dst, iRegIorL2I src, immI shift) %{
   predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
@@ -39,6 +40,7 @@ instruct rorI_imm_b(iRegINoSp dst, iRegI src, immI shift) %{
   ins_pipe(ialu_reg_shift);
 %}
 
+// Rotate Right Immediate
 instruct rorL_imm_b(iRegLNoSp dst, iRegL src, immI shift) %{
   predicate(UseZbb);
   match(Set dst (RotateRight src shift));
@@ -53,7 +55,9 @@ instruct rorL_imm_b(iRegLNoSp dst, iRegL src, immI shift) %{
   ins_pipe(ialu_reg_shift);
 %}
 
-instruct rorI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
+// Rotate Right Word Register
+// Only the low 5 bits of shift value are used, all other bits are ignored.
+instruct rorI_reg_b(iRegINoSp dst, iRegIorL2I src, iRegIorL2I shift) %{
   predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
@@ -65,7 +69,9 @@ instruct rorI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct rorL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
+// Rotate Right Register
+// Only the low 6 bits of shift value are used, all other bits are ignored.
+instruct rorL_reg_b(iRegLNoSp dst, iRegL src, iRegIorL2I shift) %{
   predicate(UseZbb);
   match(Set dst (RotateRight src shift));
 
@@ -77,7 +83,9 @@ instruct rorL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct rolI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
+// Rotate Left Word Register
+// Only the low 5 bits of shift value are used, all other bits are ignored.
+instruct rolI_reg_b(iRegINoSp dst, iRegIorL2I src, iRegIorL2I shift) %{
   predicate(UseZbb);
   match(Set dst (RotateLeft src shift));
 
@@ -89,7 +97,9 @@ instruct rolI_reg_b(iRegINoSp dst, iRegI src, iRegI shift) %{
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct rolL_reg_b(iRegLNoSp dst, iRegL src, iRegI shift) %{
+// Rotate Left Register
+// Only the low 6 bits of shift value are used, all other bits are ignored.
+instruct rolL_reg_b(iRegLNoSp dst, iRegL src, iRegIorL2I shift) %{
   predicate(UseZbb);
   match(Set dst (RotateLeft src shift));
 
@@ -244,6 +254,33 @@ instruct bytes_reverse_short_b(iRegINoSp dst, iRegIorL2I src) %{
 
   ins_pipe(ialu_reg);
 %}
+
+// Reverse bits instruction
+instruct bits_reverse_I(iRegINoSp dst, iRegIorL2I src)
+%{
+  match(Set dst (ReverseI src));
+  ins_cost(ALU_COST * 3);
+  format %{ "bits_reverse_I  $dst, $src" %}
+  ins_encode %{
+    __ rev8($dst$$Register, $src$$Register);
+    __ brev8($dst$$Register, $dst$$Register);
+    __ srai($dst$$Register, $dst$$Register, 32);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
+instruct bits_reverse_L(iRegLNoSp dst, iRegL src)
+%{
+  match(Set dst (ReverseL src));
+  ins_cost(ALU_COST * 2);
+  format %{ "bits_reverse_L  $dst, $src" %}
+  ins_encode %{
+    __ rev8($dst$$Register, $src$$Register);
+    __ brev8($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(ialu_reg);
+%}
+
 
 // Shift Add Pointer
 instruct shaddP_reg_reg_b(iRegPNoSp dst, iRegP src1, iRegL src2, immIScale imm) %{

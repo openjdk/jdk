@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@
 #ifndef SHARE_CDS_RUNTIMECLASSINFO_HPP
 #define SHARE_CDS_RUNTIMECLASSINFO_HPP
 
+#include "cds/aotMetaspace.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cds_globals.hpp"
-#include "cds/metaspaceShared.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceClosure.hpp"
@@ -41,7 +41,13 @@ class Method;
 class Symbol;
 
 class RunTimeClassInfo {
-public:
+ public:
+ enum : char {
+    FROM_FIELD_IS_PROTECTED = 1 << 0,
+    FROM_IS_ARRAY           = 1 << 1,
+    FROM_IS_OBJECT          = 1 << 2
+  };
+
   struct CrcInfo {
     int _clsfile_size;
     int _clsfile_crc32;
@@ -53,7 +59,9 @@ public:
     u4 _name;
     u4 _from_name;
     Symbol* name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_name); }
-    Symbol* from_name() { return ArchiveUtils::offset_to_archived_address<Symbol*>(_from_name); }
+    Symbol* from_name() {
+      return (_from_name == 0) ? nullptr : ArchiveUtils::offset_to_archived_address<Symbol*>(_from_name);
+    }
   };
 
   struct RTLoaderConstraint {
@@ -202,6 +210,17 @@ public:
     return verifier_constraint_flags()[i];
   }
 
+  bool from_field_is_protected(int i) {
+    return (verifier_constraint_flag(i) & FROM_FIELD_IS_PROTECTED) != 0;
+  }
+
+  bool from_is_array(int i) {
+    return (verifier_constraint_flag(i) & FROM_IS_ARRAY) != 0;
+  }
+  bool from_is_object(int i) {
+    return (verifier_constraint_flag(i) & FROM_IS_OBJECT) != 0;
+  }
+
   int num_enum_klass_static_fields(int i) const {
     return enum_klass_static_fields_addr()->_num;
   }
@@ -234,7 +253,7 @@ private:
 
 public:
   static RunTimeClassInfo* get_for(InstanceKlass* klass) {
-    assert(klass->is_shared(), "don't call for non-shared class");
+    assert(klass->in_aot_cache(), "don't call for non-shared class");
     return *info_pointer_addr(klass);
   }
   static void set_for(InstanceKlass* klass, RunTimeClassInfo* record) {
@@ -247,7 +266,11 @@ public:
   // Used by RunTimeSharedDictionary to implement OffsetCompactHashtable::EQUALS
   static inline bool EQUALS(
        const RunTimeClassInfo* value, Symbol* key, int len_unused) {
+#if INCLUDE_CDS
     return (value->klass()->name() == key);
+#else
+    return false;
+#endif
   }
 };
 

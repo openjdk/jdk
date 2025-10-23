@@ -36,7 +36,7 @@ import java.util.List;
  * The input method itself is only loaded when it is actually used.
  */
 
-public class CInputMethodDescriptor implements InputMethodDescriptor {
+public final class CInputMethodDescriptor implements InputMethodDescriptor {
 
     static {
         nativeInit();
@@ -48,6 +48,7 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     /**
      * @see java.awt.im.spi.InputMethodDescriptor#getAvailableLocales
      */
+    @Override
     public Locale[] getAvailableLocales() {
         // returns a copy of internal list for public API
         Object[] locales = getAvailableLocalesInternal();
@@ -75,6 +76,7 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     /**
         * @see java.awt.im.spi.InputMethodDescriptor#hasDynamicLocaleList
      */
+    @Override
     public boolean hasDynamicLocaleList() {
         return false;
     }
@@ -82,6 +84,7 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     /**
         * @see java.awt.im.spi.InputMethodDescriptor#getInputMethodDisplayName
      */
+    @Override
     public synchronized String getInputMethodDisplayName(Locale inputLocale, Locale displayLanguage) {
         String name = "System Input Methods";
         if (Locale.getDefault().equals(displayLanguage)) {
@@ -93,6 +96,7 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     /**
         * @see java.awt.im.spi.InputMethodDescriptor#getInputMethodIcon
      */
+    @Override
     public Image getInputMethodIcon(Locale inputLocale) {
         // This should return the flag icon corresponding to the input Locale.
         return null;
@@ -101,10 +105,12 @@ public class CInputMethodDescriptor implements InputMethodDescriptor {
     /**
         * @see java.awt.im.spi.InputMethodDescriptor#createInputMethod
      */
+    @Override
     public InputMethod createInputMethod() throws Exception {
         return new CInputMethod();
     }
 
+    @Override
     public String toString() {
         Locale[] loc = getAvailableLocales();
         String locnames = null;

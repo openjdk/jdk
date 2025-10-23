@@ -939,7 +939,7 @@ _unwind___jsvml_expm1f16_ha_z0_B1_B9:
 
         ALIGN 004H
 _unwind___jsvml_expm1f16_ha_z0_B11_B15:
-        DD      3472641
+        DD      2948353
         DD      9131261
         DD      8942834
         DD      9004264
@@ -960,10 +960,6 @@ _unwind___jsvml_expm1f16_ha_z0_B11_B15:
         DD      3573831
         DD      3831868
         DD      4089905
-        DD      8682278
-        DD      8743709
-        DD      8805140
-        DD      8866571
         DD      10867712
         DD      10944768
 
@@ -1731,7 +1727,7 @@ _unwind___jsvml_sexpm1_ha_cout_rare_internal_B1_B22:
 _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
-_RDATA  SEGMENT     READ PAGE   'DATA'
+_RDATA  SEGMENT     READONLY PAGE   'DATA'
         ALIGN  32
         PUBLIC __jsvml_sexpm1_ha_data_internal_avx512
 __jsvml_sexpm1_ha_data_internal_avx512  DD      1065353216

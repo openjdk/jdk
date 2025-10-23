@@ -25,14 +25,14 @@
 
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 #ifdef ASSERT
 void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation) {
@@ -89,6 +89,11 @@ void ShenandoahGenerationalFullGC::handle_completion(ShenandoahHeap* heap) {
 
 void ShenandoahGenerationalFullGC::rebuild_remembered_set(ShenandoahHeap* heap) {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_reconstruct_remembered_set);
+
+  ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
+  scanner->mark_read_table_as_clean();
+  scanner->swap_card_tables();
+
   ShenandoahRegionIterator regions;
   ShenandoahReconstructRememberedSetTask task(&regions);
   heap->workers()->run_task(&task);
@@ -123,13 +128,8 @@ void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* 
                PROPERFMTARGS(old_gen->used()));
 }
 
-void ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
-  auto result = ShenandoahGenerationalHeap::heap()->balance_generations();
-  LogTarget(Info, gc, ergo) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    result.print_on("Full GC", &ls);
-  }
+ShenandoahGenerationalHeap::TransferResult ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
+  return ShenandoahGenerationalHeap::heap()->balance_generations();
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
@@ -193,7 +193,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
                                                           ShenandoahHeapRegion* from_region, uint worker_id) :
         _preserved_marks(preserved_marks),
         _heap(ShenandoahGenerationalHeap::heap()),
-        _tenuring_threshold(0),
         _empty_regions(empty_regions),
         _empty_regions_pos(0),
         _old_to_region(nullptr),
@@ -212,8 +211,6 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
     _young_to_region = from_region;
     _young_compact_point = from_region->bottom();
   }
-
-  _tenuring_threshold = _heap->age_census()->tenuring_threshold();
 }
 
 void ShenandoahPrepareForGenerationalCompactionObjectClosure::set_from_region(ShenandoahHeapRegion* from_region) {
@@ -270,8 +267,8 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
   assert(_from_region != nullptr, "must set before work");
   assert((_from_region->bottom() <= cast_from_oop<HeapWord*>(p)) && (cast_from_oop<HeapWord*>(p) < _from_region->top()),
          "Object must reside in _from_region");
-  assert(_heap->complete_marking_context()->is_marked(p), "must be marked");
-  assert(!_heap->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
+  assert(_heap->global_generation()->complete_marking_context()->is_marked(p), "must be marked");
+  assert(!_heap->global_generation()->complete_marking_context()->allocated_after_mark_start(p), "must be truly marked");
 
   size_t obj_size = p->size();
   uint from_region_age = _from_region->age();
@@ -279,7 +276,7 @@ void ShenandoahPrepareForGenerationalCompactionObjectClosure::do_object(oop p) {
 
   bool promote_object = false;
   if ((_from_affiliation == ShenandoahAffiliation::YOUNG_GENERATION) &&
-      (from_region_age + object_age >= _tenuring_threshold)) {
+      _heap->age_census()->is_tenurable(from_region_age + object_age)) {
     if ((_old_to_region != nullptr) && (_old_compact_point + obj_size > _old_to_region->end())) {
       finish_old_region();
       _old_to_region = nullptr;

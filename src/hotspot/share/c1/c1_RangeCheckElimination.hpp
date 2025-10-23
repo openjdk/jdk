@@ -154,7 +154,6 @@ public:
     void do_Base           (Base*            x) { /* nothing to do */ };
     void do_OsrEntry       (OsrEntry*        x) { /* nothing to do */ };
     void do_ExceptionObject(ExceptionObject* x) { /* nothing to do */ };
-    void do_RoundFP        (RoundFP*         x) { /* nothing to do */ };
     void do_UnsafePut      (UnsafePut*       x) { /* nothing to do */ };
     void do_UnsafeGet      (UnsafeGet*       x) { /* nothing to do */ };
     void do_UnsafeGetAndSet(UnsafeGetAndSet* x) { /* nothing to do */ };

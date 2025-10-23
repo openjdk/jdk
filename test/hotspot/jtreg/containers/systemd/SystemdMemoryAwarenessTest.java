@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2024, 2025, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,14 +68,14 @@ public class SystemdMemoryAwarenessTest {
 
         OutputAnalyzer out = SystemdTestUtils.buildAndRunSystemdJava(opts);
         out.shouldHaveExitValue(0)
-           .shouldContain("Hello Systemd")
-           .shouldContain(String.format("Memory Limit is: %d", (expectedMemLimit * MB)));
+           .shouldContain("Hello Systemd");
         try {
+            out.shouldContain(String.format("Memory Limit is: %d", (expectedMemLimit * MB)));
             out.shouldContain("OSContainer::active_processor_count: " + coreLimit);
         } catch (RuntimeException e) {
-            // CPU delegation needs to be enabled when run as user on cg v2
+            // CPU/memory delegation needs to be enabled when run as user on cg v2
             if (SystemdTestUtils.RUN_AS_USER) {
-                String hint = "When run as user on cg v2 cpu delegation needs to be configured!";
+                String hint = "When run as user on cg v2 cpu/memory delegation needs to be configured!";
                 throw new SkippedException(hint);
             }
             throw e;

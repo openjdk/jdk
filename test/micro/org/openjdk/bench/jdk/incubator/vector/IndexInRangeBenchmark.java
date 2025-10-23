@@ -48,7 +48,7 @@ public class IndexInRangeBenchmark {
 
     @Setup(Level.Trial)
     public void Setup() {
-        mask = new boolean[512];
+        mask = new boolean[size + 64];
     }
 
     @Benchmark

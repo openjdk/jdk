@@ -143,7 +143,7 @@ static void test_find_nearest_fit_with_tree(const size_t sizes[], size_t request
     EXPECT_0(real_size);
   }
 
-  LOG(SIZE_FORMAT ": %zu.", request_size, real_size);
+  LOG("%zu: %zu.", request_size, real_size);
 
 }
 

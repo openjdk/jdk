@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614 8273244 8200337
+ * @bug 7021614 8273244 8200337 8352249
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -39,15 +39,15 @@ class LinkTest {
       */
     void simple_name() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, String]
+        Reference[REFERENCE, pos:11, String]
       body: empty
     ]
-    Text[TEXT, pos:19, _def]
+    Text[TEXT, pos:18, _def]
   body: empty
   block tags: empty
 ]
@@ -58,16 +58,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void simple_name_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, String]
+        Reference[REFERENCE, pos:11, String]
       body: 1
-        Text[TEXT, pos:19, desc]
+        Text[TEXT, pos:18, desc]
     ]
-    Text[TEXT, pos:24, _def]
+    Text[TEXT, pos:23, _def]
   body: empty
   block tags: empty
 ]
@@ -78,16 +78,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void pkg_name_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String]
+        Reference[REFERENCE, pos:11, java.lang.String]
       body: 1
-        Text[TEXT, pos:29, desc]
+        Text[TEXT, pos:28, desc]
     ]
-    Text[TEXT, pos:34, _def]
+    Text[TEXT, pos:33, _def]
   body: empty
   block tags: empty
 ]
@@ -98,16 +98,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void method_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String#isEmpty]
+        Reference[REFERENCE, pos:11, java.lang.String#isEmpty]
       body: 1
-        Text[TEXT, pos:37, desc]
+        Text[TEXT, pos:36, desc]
     ]
-    Text[TEXT, pos:42, _def]
+    Text[TEXT, pos:41, _def]
   body: empty
   block tags: empty
 ]
@@ -118,16 +118,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void method_0_args_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String#isEmpty()]
+        Reference[REFERENCE, pos:11, java.lang.String#isEmpty()]
       body: 1
-        Text[TEXT, pos:39, desc]
+        Text[TEXT, pos:38, desc]
     ]
-    Text[TEXT, pos:44, _def]
+    Text[TEXT, pos:43, _def]
   body: empty
   block tags: empty
 ]
@@ -138,16 +138,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void method_1_args_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String#substring(int)]
+        Reference[REFERENCE, pos:11, java.lang.String#substring(int)]
       body: 1
-        Text[TEXT, pos:44, desc]
+        Text[TEXT, pos:43, desc]
     ]
-    Text[TEXT, pos:49, _def]
+    Text[TEXT, pos:48, _def]
   body: empty
   block tags: empty
 ]
@@ -158,16 +158,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void method_2_args_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String#substring(int,_int)]
+        Reference[REFERENCE, pos:11, java.lang.String#substring(int,_int)]
       body: 1
-        Text[TEXT, pos:49, desc]
+        Text[TEXT, pos:48, desc]
     ]
-    Text[TEXT, pos:54, _def]
+    Text[TEXT, pos:53, _def]
   body: empty
   block tags: empty
 ]
@@ -178,16 +178,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void pkg_name_typarams_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.util.List<T>]
+        Reference[REFERENCE, pos:11, java.util.List<T>]
       body: 1
-        Text[TEXT, pos:30, desc]
+        Text[TEXT, pos:29, desc]
     ]
-    Text[TEXT, pos:35, _def]
+    Text[TEXT, pos:34, _def]
   body: empty
   block tags: empty
 ]
@@ -198,16 +198,16 @@ DocComment[DOC_COMMENT, pos:1
      */
     void fragment_desc() { }
 /*
-DocComment[DOC_COMMENT, pos:1
+DocComment[DOC_COMMENT, pos:0
   firstSentence: 3
-    Text[TEXT, pos:1, abc_]
-    Link[LINK, pos:5
+    Text[TEXT, pos:0, abc_]
+    Link[LINK, pos:4
       reference:
-        Reference[REFERENCE, pos:12, java.lang.String##fragment]
+        Reference[REFERENCE, pos:11, java.lang.String##fragment]
       body: 1
-        Text[TEXT, pos:39, desc]
+        Text[TEXT, pos:38, desc]
     ]
-    Text[TEXT, pos:44, _def]
+    Text[TEXT, pos:43, _def]
   body: empty
   block tags: empty
 ]

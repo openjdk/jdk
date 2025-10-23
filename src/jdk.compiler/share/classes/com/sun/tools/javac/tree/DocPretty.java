@@ -345,7 +345,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             print('{');
             printTagName(node);
             String body = node.getBody().getBody();
-            if (!body.isEmpty() && !Character.isWhitespace(body.charAt(0))) {
+            if (!body.isEmpty() && body.charAt(0) != '\n') {
                 print(' ');
             }
             print(node.getBody());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import java.io.*;
 import java.util.*;
 
 /**
- * This class provides launching of <code>jdb</code> and debuggee in local
- * or remote mode according to test command line options.
+ * This class provides launching of <code>jdb</code> and debuggee
+ * according to test command line options.
  */
 
 public class Launcher extends DebugeeBinder {
@@ -94,27 +94,27 @@ public class Launcher extends DebugeeBinder {
     }
 
     /**
-     * Defines mode (local or remote) and type of connector (default, launching,
+     * Defines type of connector (default, launching,
      * raw launching, attaching or listening) according to options
      * parsed by <code>JdbArgumentHandler</code>. And then launches <code>jdb</code>
-     * and debuggee in defined mode.
+     * and debuggee.
      */
     public void launchJdbAndDebuggee (String classToExecute) throws IOException {
 
         String[] jdbCmdArgs = makeJdbCmdLine(classToExecute);
 
         if (argumentHandler.isDefaultConnector()) {
-            localDefaultLaunch(jdbCmdArgs, classToExecute);
+            defaultLaunch(jdbCmdArgs, classToExecute);
         } else if (argumentHandler.isRawLaunchingConnector()) {
-            localRawLaunch(jdbCmdArgs, classToExecute);
+            rawLaunch(jdbCmdArgs, classToExecute);
         } else if (argumentHandler.isLaunchingConnector()) {
-            localLaunch(jdbCmdArgs, classToExecute);
+            launchFromJdb(jdbCmdArgs, classToExecute);
         } else if (argumentHandler.isAttachingConnector()) {
-            localLaunchAndAttach(jdbCmdArgs, classToExecute);
+            launchAndAttach(jdbCmdArgs, classToExecute);
         } else if (argumentHandler.isListeningConnector()) {
-            localLaunchAndListen(jdbCmdArgs, classToExecute);
+            launchAndListen(jdbCmdArgs, classToExecute);
         } else {
-            throw new TestBug("Unexpected connector type for local launch mode"
+            throw new TestBug("Unexpected connector type: "
                               + argumentHandler.getConnectorType());
         }
 
@@ -255,29 +255,29 @@ public class Launcher extends DebugeeBinder {
     // ---------------------------------------------- //
 
     /**
-     * Run test in local mode using default connector.
+     * Run test using default connector.
      */
-    private void localDefaultLaunch
+    private void defaultLaunch
        (String[] jdbCmdArgs, String classToExecute) throws IOException {
-        localLaunch(jdbCmdArgs, classToExecute);
+        launchFromJdb(jdbCmdArgs, classToExecute);
     }
 
     /**
-     * Run test in local mode using raw launching connector.
+     * Run test using raw launching connector.
      */
-    private void localRawLaunch
+    private void rawLaunch
        (String[] jdbCmdArgs, String classToExecute) throws IOException {
-        localLaunch(jdbCmdArgs, classToExecute);
+        launchFromJdb(jdbCmdArgs, classToExecute);
     }
 
     /**
-     * Run test in local mode using launching connector.
+     * Run test using launching connector.
      */
-    private void localLaunch
+    private void launchFromJdb
        (String[] jdbCmdArgs, String classToExecute) throws IOException {
 
         jdb = new Jdb(this);
-        display("Starting jdb launching local debuggee");
+        display("Starting jdb launching debuggee");
         jdb.launch(jdbCmdArgs);
 
         if (classToExecute != null)
@@ -287,9 +287,9 @@ public class Launcher extends DebugeeBinder {
     }
 
     /**
-     * Run test in local mode using attaching connector.
+     * Run test using attaching connector.
      */
-    private void localLaunchAndAttach
+    private void launchAndAttach
        (String[] jdbCmdArgs, String classToExecute) throws IOException {
 
         debuggee = new Debuggee(this);
@@ -297,19 +297,19 @@ public class Launcher extends DebugeeBinder {
         String[] javaCmdArgs = makeCommandLineArgs(classToExecute, address);
         debuggee.launch(javaCmdArgs);
 
-        display("Start jdb attaching to local debuggee");
+        display("Starting jdb attaching to debuggee");
         jdb = Jdb.startAttachingJdb (this, jdbCmdArgs, JDB_STARTED);
 //        jdb.waitForPrompt(0, false);
     }
 
     /**
-     * Run test in local mode using listening connector.
+     * Run test using listening connector.
      */
-    private void localLaunchAndListen
+    private void launchAndListen
        (String[] jdbCmdArgs, String classToExecute) throws IOException {
 
         jdb = new Jdb(this);
-        display("Starting jdb listening to local debuggee");
+        display("Starting jdb listening to debuggee");
         jdb.launch(jdbCmdArgs);
         String address = jdb.waitForListeningJdb();
         display("Listening address found: " + address);

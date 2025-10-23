@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ class IfNode;
 class MergeMemNode;
 class Node;
 class PhaseGVN;
+class Compile;
+class ciMethod;
 
 //------------------------------Phase------------------------------------------
 // Most optimizations are done in Phases.  Creating a phase does any long
@@ -65,6 +67,7 @@ public:
   };
 
 #define ALL_PHASE_TRACE_IDS(f)                                   \
+    f(   _t_none,                    "none")                     \
     f(   _t_parser,                  "parse")                    \
     f(   _t_optimizer,               "optimizer")                \
     f(     _t_escapeAnalysis,        "escapeAnalysis")           \
@@ -118,7 +121,9 @@ public:
     f(     _t_fillBuffer,            "fill buffer")              \
     f(     _t_registerMethod,        "install_code")             \
     f(   _t_temporaryTimer1,         "tempTimer1")               \
-    f(   _t_temporaryTimer2,         "tempTimer2")
+    f(   _t_temporaryTimer2,         "tempTimer2")               \
+    f(   _t_testPhase1,              "testPhase1")               \
+    f(   _t_testPhase2,              "testPhase2")
 
   enum PhaseTraceId {
 #define DEFID(name, text) name,

@@ -45,7 +45,7 @@ import javax.swing.JWindow;
  * @author Amy Fowler
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class WindowsPopupWindow extends JWindow {
+final class WindowsPopupWindow extends JWindow {
 
     static final int UNDEFINED_WINDOW_TYPE      = 0;
     static final int TOOLTIP_WINDOW_TYPE        = 1;
@@ -69,10 +69,12 @@ class WindowsPopupWindow extends JWindow {
         return windowType;
     }
 
+    @Override
     public void update(Graphics g) {
         paint(g);
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void hide() {
         super.hide();
@@ -85,6 +87,7 @@ class WindowsPopupWindow extends JWindow {
         removeNotify();
     }
 
+    @Override
     @SuppressWarnings("deprecation")
     public void show() {
         super.show();

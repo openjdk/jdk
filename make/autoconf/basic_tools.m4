@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   UTIL_LOOKUP_PROGS(LOCALE, locale)
   UTIL_LOOKUP_PROGS(PATHTOOL, cygpath wslpath)
   UTIL_LOOKUP_PROGS(CMD, cmd.exe, $PATH:/cygdrive/c/windows/system32:/mnt/c/windows/system32:/c/windows/system32)
+  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 ])
 
 ################################################################################
@@ -105,9 +106,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_TOOLS],
   UTIL_LOOKUP_PROGS(NICE, nice)
   UTIL_LOOKUP_PROGS(READLINK, greadlink readlink)
   UTIL_LOOKUP_PROGS(WHOAMI, whoami)
-
-  # Tools only needed on some platforms
-  UTIL_LOOKUP_PROGS(LSB_RELEASE, lsb_release)
 
   # For compare.sh only
   UTIL_LOOKUP_PROGS(CMP, cmp)
@@ -209,27 +207,12 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
   UTIL_SETUP_TOOL(MAKE,
   [
     # Try our hardest to locate a correct version of GNU make
-    UTIL_LOOKUP_PROGS(CHECK_GMAKE, gmake)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
 
     if test "x$FOUND_MAKE" = x; then
-      UTIL_LOOKUP_PROGS(CHECK_MAKE, make)
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(CHECK_MAKE, make)
       BASIC_CHECK_MAKE_VERSION("$CHECK_MAKE", [make in PATH])
-    fi
-
-    if test "x$FOUND_MAKE" = x; then
-      if test "x$TOOLCHAIN_PATH" != x; then
-        # We have a toolchain path, check that as well before giving up.
-        OLD_PATH=$PATH
-        PATH=$TOOLCHAIN_PATH:$PATH
-        UTIL_LOOKUP_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
-        BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_GMAKE", [gmake in tools-dir])
-        if test "x$FOUND_MAKE" = x; then
-          UTIL_LOOKUP_PROGS(CHECK_TOOLSDIR_MAKE, make)
-          BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_MAKE", [make in tools-dir])
-        fi
-        PATH=$OLD_PATH
-      fi
     fi
 
     if test "x$FOUND_MAKE" = x; then
@@ -380,7 +363,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Check if it's a GNU date compatible version
   AC_MSG_CHECKING([if date is a GNU compatible version])
-  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox"`
+  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox\|uutils"`
   if test "x$check_date" != x; then
     AC_MSG_RESULT([yes])
     IS_GNU_DATE=yes
@@ -470,7 +453,15 @@ AC_DEFUN_ONCE([BASIC_SETUP_PANDOC],
     AC_MSG_CHECKING([if the pandoc smart extension needs to be disabled for markdown])
     if $PANDOC --list-extensions | $GREP -q '+smart'; then
       AC_MSG_RESULT([yes])
-      PANDOC_MARKDOWN_FLAG="markdown-smart"
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-smart"
+    else
+      AC_MSG_RESULT([no])
+    fi
+
+    AC_MSG_CHECKING([if the pandoc tex_math_dollars extension needs to be disabled for markdown])
+    if $PANDOC --list-extensions | $GREP -q '+tex_math_dollars'; then
+      AC_MSG_RESULT([yes])
+      PANDOC_MARKDOWN_FLAG="$PANDOC_MARKDOWN_FLAG-tex_math_dollars"
     else
       AC_MSG_RESULT([no])
     fi

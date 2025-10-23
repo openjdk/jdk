@@ -24,8 +24,8 @@
 
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcLogPrecious.hpp"
 #include "gc/shared/space.hpp"
 #include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
@@ -34,9 +34,6 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#if INCLUDE_PARALLELGC
-#include "gc/parallel/objectStartArray.hpp"
-#endif
 
 uint CardTable::_card_shift = 0;
 uint CardTable::_card_size = 0;
@@ -80,14 +77,14 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   HeapWord* high_bound = _whole_heap.end();
 
   const size_t rs_align = MAX2(_page_size, os::vm_allocation_granularity());
-  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size);
+  ReservedSpace rs = MemoryReserver::reserve(_byte_map_size, rs_align, _page_size, mtGC);
 
   if (!rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
                                   "card marking array");
   }
 
-  MemTracker::record_virtual_memory_tag((address)rs.base(), mtGC);
+  MemTracker::record_virtual_memory_tag(rs, mtGC);
 
   os::trace_page_sizes("Card Table", num_bytes, num_bytes,
                        rs.base(), rs.size(), _page_size);
@@ -228,6 +225,9 @@ uintx CardTable::ct_max_alignment_constraint() {
 
 #ifndef PRODUCT
 void CardTable::verify_region(MemRegion mr, CardValue val, bool val_equals) {
+  if (mr.is_empty()) {
+    return;
+  }
   CardValue* start    = byte_for(mr.start());
   CardValue* end      = byte_for(mr.last());
   bool failures = false;
@@ -258,7 +258,8 @@ void CardTable::verify_dirty_region(MemRegion mr) {
 }
 #endif
 
-void CardTable::print_on(outputStream* st) const {
-  st->print_cr("Card table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
+void CardTable::print_on(outputStream* st, const char* description) const {
+  st->print_cr("%s table byte_map: [" PTR_FORMAT "," PTR_FORMAT "] _byte_map_base: " PTR_FORMAT,
+               description,
                p2i(_byte_map), p2i(_byte_map + _byte_map_size), p2i(_byte_map_base));
 }

@@ -44,6 +44,7 @@ class ciInstanceKlass : public ciKlass {
   friend class ciMethod;
   friend class ciField;
   friend class ciReplay;
+  friend class CompileTrainingData;
 
 private:
   enum SubklassValue { subklass_unknown, subklass_false, subklass_true };
@@ -67,7 +68,7 @@ private:
   ciInstance*            _java_mirror;
 
   ciConstantPoolCache*   _field_cache;  // cached map index->field
-  GrowableArray<ciField*>* _nonstatic_fields;
+  GrowableArray<ciField*>* _nonstatic_fields;  // ordered by JavaFieldStream
   int                    _has_injected_fields; // any non static injected fields? lazily initialized.
 
   // The possible values of the _implementor fall into following three cases:
@@ -229,6 +230,8 @@ public:
 
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();
+
+  bool has_class_initializer();
 
   bool contains_field_offset(int offset);
 

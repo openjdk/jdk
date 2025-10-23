@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ class G1CollectedHeap;
 class G1CMBitMap;
 class G1CSetCandidateGroup;
 class G1Predictions;
-class G1HeapRegion;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
 class nmethod;
@@ -237,6 +236,10 @@ private:
   // Amount of dead data in the region.
   size_t _garbage_bytes;
 
+  // Approximate number of references to this regions at the end of concurrent
+  // marking. We we do not mark through all objects, so this is an estimate.
+  size_t _incoming_refs;
+
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
@@ -312,6 +315,7 @@ public:
   }
 
   static size_t max_region_size();
+  static size_t max_ergonomics_size();
   static size_t min_region_size_in_words();
 
   // It sets up the heap region size (GrainBytes / GrainWords), as well as
@@ -339,6 +343,8 @@ public:
     return capacity() - known_live_bytes;
   }
 
+  size_t incoming_refs() { return _incoming_refs; }
+
   inline bool is_collection_set_candidate() const;
 
   // Retrieve parsable bottom; since it may be modified concurrently, outside a
@@ -351,9 +357,9 @@ public:
   // that the collector is about to start or has finished (concurrently)
   // marking the heap.
 
-  // Notify the region that concurrent marking has finished. Passes TAMS and the number of
-  // bytes marked between bottom and TAMS.
-  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes);
+  // Notify the region that concurrent marking has finished. Passes TAMS, the number of
+  // bytes marked between bottom and TAMS, and the estimate for incoming references.
+  inline void note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes, size_t incoming_refs);
 
   // Notify the region that scrubbing has completed.
   inline void note_end_of_scrubbing();
@@ -387,7 +393,7 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
-  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  size_t pinned_count() const { return AtomicAccess::load(&_pinned_object_count); }
   bool has_pinned_objects() const { return pinned_count() > 0; }
 
   void set_free();
@@ -471,7 +477,10 @@ public:
   // Callers must ensure this is not called by multiple threads at the same time.
   void hr_clear(bool clear_space);
   // Clear the card table corresponding to this region.
-  void clear_cardtable();
+  void clear_card_table();
+  void clear_refinement_table();
+
+  void clear_both_card_tables();
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
@@ -489,10 +498,10 @@ public:
   void set_index_in_opt_cset(uint index) { _index_in_opt_cset = index; }
   void clear_index_in_opt_cset() { _index_in_opt_cset = InvalidCSetIndex; }
 
-  uint  young_index_in_cset() const { return _young_index_in_cset; }
+  uint young_index_in_cset() const { return _young_index_in_cset; }
   void clear_young_index_in_cset() { _young_index_in_cset = 0; }
   void set_young_index_in_cset(uint index) {
-    assert(index != UINT_MAX, "just checking");
+    assert(index != InvalidCSetIndex, "just checking");
     assert(index != 0, "just checking");
     assert(is_young(), "pre-condition");
     _young_index_in_cset = index;

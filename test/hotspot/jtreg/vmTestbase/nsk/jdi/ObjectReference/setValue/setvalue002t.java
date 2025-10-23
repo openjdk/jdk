@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import nsk.share.jdi.*;
  * This is a debuggee class.
  */
 public class setvalue002t {
+    static Thread testThread = null;
+
     // tested static fields
     static byte    sByteFld = 127;
     static short   sShortFld = -32768;
@@ -53,7 +55,6 @@ public class setvalue002t {
     boolean booleanFld = false;
     String  strFld = "instance field";
 
-
     public static void main(String args[]) {
         System.exit(run(args) + Consts.JCK_STATUS_BASE);
     }
@@ -67,7 +68,8 @@ public class setvalue002t {
         IOPipe pipe = argHandler.createDebugeeIOPipe();
         setvalue002tDummyClass dummyCls = new setvalue002tDummyClass();
 
-        Thread.currentThread().setName(setvalue002.DEBUGGEE_THRNAME);
+        testThread = Thread.currentThread();
+        testThread.setName(setvalue002.DEBUGGEE_THRNAME);
 
         pipe.println(setvalue002.COMMAND_READY);
         String cmd = pipe.readln();

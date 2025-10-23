@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -208,8 +208,10 @@ public class InMemoryJavaCompiler {
     }
 
     /**
-     * Compiles the list of classes with the given map of name and source code.
-     * This overloaded version of compile is useful for batch compile use cases.
+     * Compiles the list of classes with the given map of binary name and source code.
+     * This overloaded version of compile is useful for batch compile use cases, or
+     * if a compilation unit produces multiple class files. Returns a map from
+     * class binary names to class file content.
      *
      * @param inputMap The map containing the name of the class and corresponding source code
      * @throws RuntimeException if the compilation did not succeed

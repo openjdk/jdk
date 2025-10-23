@@ -39,6 +39,7 @@ enum spa_param_type {
     SPA_PARAM_Control,        /**< Control parameter, a SPA_TYPE_Sequence */
     SPA_PARAM_Latency,        /**< latency reporting, a SPA_TYPE_OBJECT_ParamLatency */
     SPA_PARAM_ProcessLatency,    /**< processing latency, a SPA_TYPE_OBJECT_ParamProcessLatency */
+    SPA_PARAM_Tag,            /**< tag reporting, a SPA_TYPE_OBJECT_ParamTag. Since 0.3.79 */
 };
 
 /** information about a parameter */

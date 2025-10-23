@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,20 @@
 package common.jdkcatalog;
 
 import java.io.StringReader;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
 import javax.xml.XMLConstants;
+import javax.xml.catalog.Catalog;
 import javax.xml.catalog.CatalogFeatures;
+import javax.xml.catalog.CatalogManager;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import jaxp.library.JAXPTestUtilities;
 import org.testng.Assert;
 import org.testng.Assert.ThrowingRunnable;
 import org.testng.annotations.DataProvider;
@@ -44,25 +48,42 @@ import org.xml.sax.helpers.DefaultHandler;
 
 /*
  * @test
- * @bug 8344800 8345353
+ * @bug 8344800 8345353 8351969
+ * @library /javax/xml/jaxp/libs
  * @run testng/othervm common.jdkcatalog.JDKCatalogTest
  * @summary Verifies the W3C DTDs and XSDs in the JDK built-in catalog.
  */
 public class JDKCatalogTest {
-    static String CLS_DIR = System.getProperty("test.classes");
-    static String SRC_DIR = System.getProperty("test.src");
-    public static boolean isWindows = false;
-    static {
-        if (System.getProperty("os.name").contains("Windows")) {
-            isWindows = true;
-        }
-    };
-    public static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
-    static final String PUBLIC_ID = "{{publicId}}";
-    static final String SYSTEM_ID = "{{systemId}}";
-    static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
-    static final String TARGET_NAMESPACE = "{{targetNamespace}}";
-    static final String ROOT_ELEMENT = "{{rootElement}}";
+    private static final String JDKCATALOG_RESOLVE = "jdk.xml.jdkcatalog.resolve";
+    private static final String PUBLIC_ID = "{{publicId}}";
+    private static final String SYSTEM_ID = "{{systemId}}";
+    private static final String XSD_LOCATION = "{{SCHEMA_LOCATION}}";
+    private static final String TARGET_NAMESPACE = "{{targetNamespace}}";
+    private static final String ROOT_ELEMENT = "{{rootElement}}";
+    private static final String JDKCATALOG_URL = "jrt:/java.xml/jdk/xml/internal/jdkcatalog/JDKCatalog.xml";
+
+    private Catalog catalog = CatalogManager.catalog(CatalogFeatures.defaults(), URI.create(JDKCATALOG_URL));
+
+    /*
+     * DataProvider: DTDs in the JDK built-in Catalog
+     * Data provided: public and system Ids, see test testDTDsInJDKCatalog
+     */
+    @DataProvider(name = "DTDsInJDKCatalog")
+    public Object[][] getDTDsInJDKCatalog() {
+        return new Object[][]{
+            // Schema 1.0
+            {"-//W3C//DTD XMLSCHEMA 200102//EN", "http://www.w3.org/2001/XMLSchema.dtd"},
+            {"datatypes", "http://www.w3.org/2001/datatypes.dtd"},
+            // XHTML 1.0
+            {"-//W3C//DTD XHTML 1.0 Frameset//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd"},
+            {"-//W3C//DTD XHTML 1.0 Strict//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"},
+            {"-//W3C//DTD XHTML 1.0 Transitional//EN", "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"},
+            // XHTML 1.1
+            {"-//W3C//DTD XHTML 1.1//EN", "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"},
+            // DTD for W3C specifications
+            {"-//W3C//DTD Specification V2.10//EN", "http://www.w3.org/2002/xmlspec/dtd/2.10/xmlspec.dtd"},
+        };
+    }
 
     /*
      * DataProvider: for verifying DTDs in the JDKCatalog
@@ -107,6 +128,19 @@ public class JDKCatalogTest {
     }
 
     /**
+     * Verifies that the JDK built-in Catalog supports both the Public and System
+     * identifiers for DTDs.
+     * @param publicId the public Id
+     * @param systemId the system Id
+     */
+    @Test(dataProvider = "DTDsInJDKCatalog")
+    public void testDTDsInJDKCatalog(String publicId, String systemId) {
+        String matchingPubId = catalog.matchPublic(publicId);
+        String matchingSysId = catalog.matchSystem(systemId);
+        Assert.assertEquals(matchingPubId, matchingSysId);
+    }
+
+    /**
      * Verifies that references to the W3C DTDs are resolved by the JDK built-in
      * catalog.
      * @param publicId the PUBLIC identifier
@@ -146,10 +180,10 @@ public class JDKCatalogTest {
     public void testXSD(String xmlTemplate, String xsdLocation, String targetNS, String rootElement, String catalog,
             Class<Throwable> expectedThrow)
             throws Exception {
-        String xmlSrcPath = SRC_DIR + "/" + xmlTemplate;
+        String xmlSrcPath = JAXPTestUtilities.SRC_DIR + "/" + xmlTemplate;
         final String xmlSrcId = getSysId(xmlSrcPath);
 
-        final String customCatalog = getSysId((catalog != null) ? SRC_DIR + "/" + catalog : null);
+        final String customCatalog = getSysId((catalog != null) ? JAXPTestUtilities.SRC_DIR + "/" + catalog : null);
 
         final String xmlString = generateXMLWithXSDRef(xmlSrcPath, xsdLocation,
                 targetNS, rootElement);
@@ -207,7 +241,7 @@ public class JDKCatalogTest {
      */
     private String generateXMLWithDTDRef(String publicId, String systemId)
             throws Exception {
-        Path path = Paths.get(SRC_DIR + "/dtdtest.xml");
+        Path path = Paths.get(JAXPTestUtilities.SRC_DIR + "/dtdtest.xml");
         String xmlString = Files.lines(path).map(line -> {
             line = line.replace(PUBLIC_ID, publicId);
             line = line.replace(SYSTEM_ID, systemId);
@@ -249,7 +283,7 @@ public class JDKCatalogTest {
     private String getSysId(String path) {
         if (path == null) return null;
         String xmlSysId = "file://" + path;
-        if (isWindows) {
+        if (JAXPTestUtilities.isWindows) {
             path = path.replace('\\', '/');
             xmlSysId = "file:///" + path;
         }

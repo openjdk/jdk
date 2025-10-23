@@ -23,27 +23,37 @@
 
 /*
  * @test
- * @bug 8342550
+ * @bug 8342550 8349873
  * @summary Three-letter time zone IDs should output a deprecated warning
  *          message.
  * @library /test/lib
  * @build jdk.test.lib.process.ProcessTools
- * @run main ThreeLetterZoneID
+ * @run junit ThreeLetterZoneID
  */
 import java.util.TimeZone;
 import jdk.test.lib.process.ProcessTools;
 
+import org.junit.jupiter.api.Test;
+
 public class ThreeLetterZoneID {
-    public static void main(String... args) throws Exception {
+    private static final String WARNING =
+        "WARNING: Use of the three-letter time zone ID \"PST\" is deprecated and it will be removed in a future release";
+
+    public static void main(String... args) {
         if (args.length > 0) {
             TimeZone.getTimeZone("PST");
         } else {
-            checkWarningMessage();
+            TimeZone.getDefault();
         }
     }
 
-    public static void checkWarningMessage() throws Exception {
-        ProcessTools.executeTestJava("ThreeLetterZoneID", "dummy")
-            .shouldContain("Use of the three-letter time zone ID \"PST\" is deprecated and it will be removed in a future release");
+    @Test
+    public void testExplicitGetTimeZone() throws Exception {
+        ProcessTools.executeTestJava("ThreeLetterZoneID", "dummy").stderrShouldMatch(WARNING);
+    }
+
+    @Test
+    public void testSysProp() throws Exception {
+        ProcessTools.executeTestJava("-Duser.timezone=PST", "ThreeLetterZoneID").stderrShouldMatch(WARNING);
     }
 }

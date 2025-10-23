@@ -31,7 +31,6 @@
 #include "gc/z/zInitialize.hpp"
 #include "gc/z/zJNICritical.hpp"
 #include "gc/z/zLargePages.hpp"
-#include "gc/z/zMarkStackAllocator.hpp"
 #include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.hpp"
 #include "gc/z/zStat.hpp"
@@ -58,8 +57,8 @@ void ZInitialize::initialize(ZBarrierSet* barrier_set) {
 
   // Early initialization
   ZNMT::initialize();
-  ZGlobalsPointers::initialize();
   ZNUMA::initialize();
+  ZGlobalsPointers::initialize();
   ZCPU::initialize();
   ZStatValue::initialize();
   ZThreadLocalAllocBuffer::initialize();

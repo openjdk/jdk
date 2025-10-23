@@ -73,7 +73,7 @@ class Label;
  */
 class Label {
  private:
-  enum { PatchCacheSize = 4 debug_only( +4 ) };
+  enum { PatchCacheSize = 4 DEBUG_ONLY( +4 ) };
 
   // _loc encodes both the binding state (via its sign)
   // and the binding locator (via its value) of a label.

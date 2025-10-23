@@ -25,7 +25,6 @@
 #define SHARE_GC_Z_ZMARKCONTEXT_HPP
 
 #include "gc/z/zMarkCache.hpp"
-#include "gc/shared/stringdedup/stringDedup.hpp"
 #include "memory/allocation.hpp"
 
 class ZMarkStripe;
@@ -37,7 +36,6 @@ private:
   ZMarkStripe*                  _stripe;
   ZMarkThreadLocalStacks* const _stacks;
   size_t                        _nstripes;
-  StringDedup::Requests         _string_dedup_requests;
 
 public:
   ZMarkContext(size_t nstripes,
@@ -48,7 +46,6 @@ public:
   ZMarkStripe* stripe();
   void set_stripe(ZMarkStripe* stripe);
   ZMarkThreadLocalStacks* stacks();
-  StringDedup::Requests* string_dedup_requests();
 
   size_t nstripes();
   void set_nstripes(size_t nstripes);

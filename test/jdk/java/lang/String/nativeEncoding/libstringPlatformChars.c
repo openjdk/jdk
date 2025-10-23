@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,11 +58,13 @@ Java_StringPlatformChars_newString(JNIEnv *env, jclass unused, jbyteArray bytes)
     char* str;
     int len = (*env)->GetArrayLength(env, bytes);
     int i;
-    jbyte* jbytes;
-
-    str = (char*)malloc(len + 1);
-    jbytes = (*env)->GetPrimitiveArrayCritical(env, bytes, NULL);
+    jbyte* jbytes = (*env)->GetPrimitiveArrayCritical(env, bytes, NULL);
     if (jbytes == NULL) {
+        return NULL;
+    }
+    str = (char*)malloc(len + 1);
+    if (str == NULL) {
+        (*env)->ReleasePrimitiveArrayCritical(env, bytes, (void*)jbytes, 0);
         return NULL;
     }
     for (i = 0; i < len; i++) {
@@ -71,6 +73,8 @@ Java_StringPlatformChars_newString(JNIEnv *env, jclass unused, jbyteArray bytes)
     str[len] = '\0';
     (*env)->ReleasePrimitiveArrayCritical(env, bytes, (void*)jbytes, 0);
 
-    return JNU_NewStringPlatform(env, str);
+    jstring res = JNU_NewStringPlatform(env, str);
+    free(str);
+    return res;
 }
 

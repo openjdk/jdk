@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class EventQueueDisconnectTest {
     public static void main(String args[]) throws Exception {
         VMConnection connection = new VMConnection(
                                        "com.sun.jdi.CommandLineLaunch:",
-                                       VirtualMachine.TRACE_NONE);
+                                       VirtualMachine.TRACE_NONE, false);
         connection.setConnectorArg("main", "EventQueueDisconnectTarg");
         String debuggeeVMOptions = VMConnection.getDebuggeeVMOptions();
         if (!debuggeeVMOptions.equals("")) {

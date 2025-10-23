@@ -27,7 +27,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/nativeCallStack.hpp"
@@ -39,7 +39,7 @@ static jlong atomic_add_jlong(jlong value, jlong volatile* const dest) {
   do {
     compare_value = *dest;
     exchange_value = compare_value + value;
-  } while (Atomic::cmpxchg(dest, compare_value, exchange_value) != compare_value);
+  } while (AtomicAccess::cmpxchg(dest, compare_value, exchange_value) != compare_value);
   return exchange_value;
 }
 
@@ -83,7 +83,7 @@ static void hook_memory_allocation(const char* allocation, size_t alloc_size) {
       vm_exit_out_of_memory(alloc_size, OOM_MALLOC_ERROR, "AllocateHeap");
     }
   }
-  debug_only(add(alloc_size));
+  DEBUG_ONLY(add(alloc_size));
 }
 
 void JfrCHeapObj::on_memory_allocation(const void* allocation, size_t size) {
@@ -111,12 +111,12 @@ void* JfrCHeapObj::operator new [](size_t size, const std::nothrow_t&  nothrow_c
 }
 
 void JfrCHeapObj::operator delete(void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   CHeapObj<mtTracing>::operator delete(p);
 }
 
 void JfrCHeapObj::operator delete[](void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   CHeapObj<mtTracing>::operator delete[](p);
 }
 
@@ -127,7 +127,7 @@ char* JfrCHeapObj::realloc_array(char* old, size_t size) {
 }
 
 void JfrCHeapObj::free(void* p, size_t size) {
-  debug_only(hook_memory_deallocation(size);)
+  DEBUG_ONLY(hook_memory_deallocation(size);)
   FreeHeap(p);
 }
 

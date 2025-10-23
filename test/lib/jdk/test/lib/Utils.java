@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 package jdk.test.lib;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -37,7 +38,6 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.CopyOption;
 import java.nio.file.Files;
@@ -49,8 +49,6 @@ import java.nio.file.attribute.AclFileAttributeView;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.channels.SocketChannel;
 import java.nio.file.attribute.PosixFilePermissions;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -70,7 +68,9 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.CRC32C;
 
+import static java.lang.System.lineSeparator;
 import static jdk.test.lib.Asserts.assertTrue;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
@@ -168,16 +168,11 @@ public final class Utils {
            var v = Runtime.version();
            // promotable builds have build number, and it's greater than 0
            if (v.build().orElse(0) > 0) {
-               // promotable build -> use 1st 8 bytes of md5($version)
-               try {
-                   var md = MessageDigest.getInstance("MD5");
-                   var bytes = v.toString()
-                                .getBytes(StandardCharsets.UTF_8);
-                   bytes = md.digest(bytes);
-                   SEED = ByteBuffer.wrap(bytes).getLong();
-               } catch (NoSuchAlgorithmException e) {
-                   throw new Error(e);
-               }
+               // promotable build -> generate a seed based on the version string
+               var bytes = v.toString().getBytes(StandardCharsets.UTF_8);
+               var crc = new CRC32C();
+               crc.update(bytes);
+               SEED = crc.getValue();
            } else {
                // "personal" build -> use random seed
                SEED = new Random().nextLong();
@@ -813,6 +808,62 @@ public final class Utils {
     public static Path createTempFile(String prefix, String suffix, FileAttribute<?>... attrs) throws IOException {
         Path dir = Paths.get(System.getProperty("user.dir", "."));
         return Files.createTempFile(dir, prefix, suffix, attrs);
+    }
+
+    /**
+     * Creates a file in {@code user.dir} and populates it with random ASCII
+     * characters of given length.
+     * <p>
+     * If the {@code user.dir} property is not set, {@code .} will be used.
+     * This choice of parent directory, compared to
+     * {@link Files#createTempFile(String, String, FileAttribute[])} using the
+     * {@code java.io.tmpdir} property, doesn't leave files behind in the
+     * {@code /tmp} directory of the test machine.
+     * </p>
+     *
+     * @param prefix the prefix string to be used in generating the file's name;
+     *               may be null
+     * @param suffix the suffix string to be used in generating the file's name;
+     *               may be null, in which case ".tmp" is used
+     * @param size the size in bytes of the temporary file to be populated
+     * @param attrs an optional list of file attributes to set atomically when creating the file
+     * @return the path to the newly created file that did not exist before this
+     *         method was invoked
+     * @throws IOException if an I/O error occurs or dir does not exist
+     * @throws IllegalArgumentException if size is negative
+     *
+     * @see #createTempFile(String, String, FileAttribute...)
+     */
+    public static Path createTempFileOfSize(String prefix, String suffix, long size, FileAttribute<?>... attrs) throws IOException {
+
+        // Check arguments
+        if (size < 0) {
+            throw new IllegalArgumentException("file size cannot be negative: " + size);
+        }
+
+        // Entropy ingredients
+        int prime1 = 2_147_483_647;
+        int prime2 = 1_047_483_649;
+        int seed = Long.hashCode(SEED);
+
+        // Create & populate the file
+        Path path = createTempFile(prefix, suffix, attrs);
+        try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.US_ASCII)) {
+            long remainingSize = size;
+            for (int rowIndex = 0; remainingSize > 0; rowIndex++) {
+                for (int colIndex = 0; remainingSize > 0 && colIndex < 80; remainingSize--, colIndex++) {
+                    int r = ((rowIndex ^ seed) * prime1) ^ ((colIndex ^ seed) * prime2);
+                    char c = (char) (0x21 + Math.abs(r) % (0x7e - 0x21));
+                    writer.append(c);
+                }
+                if (remainingSize > lineSeparator().length()) {
+                    writer.write(lineSeparator());
+                    remainingSize -= lineSeparator().length();
+                }
+            }
+        }
+        return path;
+
     }
 
     /**

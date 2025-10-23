@@ -31,6 +31,7 @@ import jdk.test.lib.Utils;
  * @test
  * @bug 8185796 8335743
  * @requires vm.hasSA
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackLock
  */

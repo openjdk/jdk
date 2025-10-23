@@ -26,14 +26,13 @@
 #include "classfile/stringTable.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
-#include "gc/shared/strongRootsScope.hpp"
-#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/leakprofiler/checkpoint/rootResolver.hpp"
+#include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
 #include "memory/iterator.hpp"
-#include "prims/jvmtiDeferredUpdates.hpp"
 #include "oops/klass.hpp"
 #include "oops/oop.hpp"
+#include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -277,7 +276,7 @@ bool ReferenceToThreadRootClosure::do_thread_stack_detailed(JavaThread* jt) {
   // around using this function
   /*
   * // can't reach these oop* from the outside
-  f->do_oop((oop*) &_vm_result);
+  f->do_oop((oop*) &_vm_result_oop);
   f->do_oop((oop*) &_exception_oop);
   f->do_oop((oop*) &_pending_async_exception);
   */
@@ -325,12 +324,7 @@ bool ReferenceToThreadRootClosure::do_thread_roots(JavaThread* jt) {
   return false;
 }
 
-class RootResolverMarkScope : public MarkScope {
-};
-
 void RootResolver::resolve(RootCallback& callback) {
-  RootResolverMarkScope mark_scope;
-
   // thread local roots
   ReferenceToThreadRootClosure rtrc(callback);
   if (rtrc.complete()) {

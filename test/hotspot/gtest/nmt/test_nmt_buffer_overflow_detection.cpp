@@ -35,7 +35,7 @@
 
 // This prefix shows up on any c heap corruption NMT detects. If unsure which assert will
 // come, just use this one.
-#define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT corruption"
+#define COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX "NMT has detected a memory corruption bug."
 
 #define DEFINE_TEST(test_function, expected_assertion_message)                            \
   TEST_VM_FATAL_ERROR_MSG(NMT, test_function, ".*" expected_assertion_message ".*") {     \
@@ -162,6 +162,16 @@ TEST_VM(NMT, test_realloc) {
       os::free(p2);                         // <- if NMT headers/footers got corrupted this asserts
     }
   }
+}
+
+TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") {
+  if (MemTracker::tracking_level() != NMT_detail) {
+    guarantee(false, "fake message ignore this - header canary");
+  }
+  const size_t SIZE = 1024;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  *(p - 1) = 0;
+  os::free(p);
 }
 
 #endif // !INCLUDE_ASAN

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
-import jdk.javadoc.internal.html.Entity;
 import jdk.javadoc.internal.html.HtmlTree;
-import jdk.javadoc.internal.html.RawHtml;
 import jdk.javadoc.internal.html.Text;
-import jdk.javadoc.internal.html.TextBuilder;
 
 /**
  * A taglet that represents the {@code @spec} tag.
@@ -123,35 +120,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = htmlWriter.commentTagsToContent(holder, specTreeLabel, tagletWriter.context.isFirstSentence);
         return getExternalSpecContent(holder, specTree, specTreeURL,
-                textOf(label).replaceAll("\\s+", " "), label);
-    }
-
-    // this is here, for now, but might be a useful addition elsewhere,
-    // perhaps as a method on Content
-    private String textOf(Content c) {
-        return appendText(new StringBuilder(), c).toString();
-    }
-
-    private StringBuilder appendText(StringBuilder sb, Content c) {
-        if (c instanceof ContentBuilder cb) {
-            appendText(sb, cb.getContents());
-        } else if (c instanceof HtmlTree ht) {
-            appendText(sb, ht.getContents());
-        } else if (c instanceof RawHtml rh) {
-            sb.append(rh.toString().replaceAll("<[^>]*>", ""));
-        } else if (c instanceof TextBuilder tb) {
-            sb.append(tb.toString());
-        } else if (c instanceof Text t) {
-            sb.append(t.toString());
-        } else if (c instanceof Entity e) {
-            sb.append(e.toString());
-        }
-        return sb;
-    }
-
-    private StringBuilder appendText(StringBuilder sb, List<? extends Content> contents) {
-        contents.forEach(c -> appendText(sb, c));
-        return sb;
+                utils.normalizeWhitespace(label.stripTags().toString()), label);
     }
 
     Content getExternalSpecContent(Element holder,
@@ -173,7 +142,7 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         Content titleWithAnchor = tagletWriter.createAnchorAndSearchIndex(holder,
                 searchText,
                 title,
-                resources.getText("doclet.External_Specification"),
+                "",
                 docTree);
 
         if (specURI == null) {

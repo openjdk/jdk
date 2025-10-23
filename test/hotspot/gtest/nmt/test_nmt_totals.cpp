@@ -65,7 +65,7 @@ static totals_t get_totals() {
   EXPECT_LE(t_real.s, t_expected.s + leeway_s);                               \
   EXPECT_GE(t_real.ovrh, t_expected.ovrh - (leeway_n * sizeof(MallocHeader)));   \
   EXPECT_LE(t_real.ovrh, t_expected.ovrh + (leeway_n * sizeof(MallocHeader)));   \
-  LOG("Deviation: n=" SSIZE_FORMAT ", s=" SSIZE_FORMAT ", ovrh=" SSIZE_FORMAT,   \
+  LOG("Deviation: n=%zd, s=%zd, ovrh=%zd",   \
       (ssize_t)t_real.n - (ssize_t)t_expected.n,                                 \
       (ssize_t)t_real.s - (ssize_t)t_expected.s,                                 \
       (ssize_t)t_real.ovrh - (ssize_t)t_expected.ovrh);                          \
@@ -88,8 +88,8 @@ TEST_VM(NMTNumbers, totals) {
   void* p[NUM_ALLOCS];
   for (int i = 0; i < NUM_ALLOCS; i ++) {
     // spread over categories
-    int category = i % (mt_number_of_tags - 1);
-    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemTag)category);
+    int mtag = i % (mt_number_of_tags - 1);
+    p[i] = NEW_C_HEAP_ARRAY(char, ALLOC_SIZE, (MemTag)mtag);
   }
 
   const totals_t t2 = get_totals();

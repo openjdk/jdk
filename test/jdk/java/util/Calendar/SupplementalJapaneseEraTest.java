@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,22 @@ public class SupplementalJapaneseEraTest {
     }
 
     private static void testProperty() {
+        // JDK-8350646: Ensure that IAE is thrown for out of range era, when
+        // additional era is defined
+        try {
+            new Calendar.Builder()
+                    .setCalendarType("japanese")
+                    .setFields(ERA, JapaneseEra.values().length + 2)
+                    .build();
+            System.err.println("Out of range era should have thrown IAE");
+            errors++;
+        } catch (Exception e) {
+            if (!(e instanceof IllegalArgumentException)) {
+                System.err.printf("Out of range era threw \"%s\" instead of IAE\n", e);
+                errors++;
+            }
+        }
+
         Calendar jcal = new Calendar.Builder()
             .setCalendarType("japanese")
             .setFields(ERA, 6, YEAR, 1, DAY_OF_YEAR, 1)

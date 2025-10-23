@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,9 +184,9 @@ public class TestModulePackages extends JavadocTester {
                      {"p":"p","m":"m","l":"C"},{"p":"p","m":"o","l":"C"}""");
         checkOutput("member-search-index.js", true,
                 """
-                     {"m":"m","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()"}""",
+                     {"m":"m","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()","k":"3"}""",
                 """
-                     {"m":"o","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()"}""");
+                     {"m":"o","p":"p","c":"C","l":"C()","u":"%3Cinit%3E()","k":"3"}""");
     }
 
     @Test

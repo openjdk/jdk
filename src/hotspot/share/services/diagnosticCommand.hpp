@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "oops/method.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/vmThread.hpp"
@@ -37,7 +38,6 @@
 #include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
-#include "oops/method.hpp"
 
 class HelpDCmd : public DCmdWithParser {
 protected:
@@ -356,7 +356,9 @@ public:
   ThreadDumpDCmd(outputStream* output, bool heap);
   static const char* name() { return "Thread.print"; }
   static const char* description() {
-    return "Print all threads with stacktraces.";
+    return "Print all platform threads, and mounted virtual threads, "
+           "with stack traces. The Thread.dump_to_file command will "
+           "print all threads to a file.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
@@ -768,7 +770,8 @@ public:
     return "Thread.dump_to_file";
   }
   static const char *description() {
-    return "Dump threads, with stack traces, to a file in plain text or JSON format.";
+    return "Dump all threads, with stack traces, "
+           "to a file in plain text or JSON format.";
   }
   static const char* impact() {
     return "Medium: Depends on the number of threads.";
@@ -805,10 +808,11 @@ public:
 
 class CompilationMemoryStatisticDCmd: public DCmdWithParser {
 protected:
-  DCmdArgument<bool> _human_readable;
+  DCmdArgument<bool> _verbose;
+  DCmdArgument<bool> _legend;
   DCmdArgument<MemorySizeArgument> _minsize;
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 3; }
   CompilationMemoryStatisticDCmd(outputStream* output, bool heap);
   static const char* name() {
     return "Compiler.memory";

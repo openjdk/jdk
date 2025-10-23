@@ -40,7 +40,7 @@ import jdk.internal.misc.Unsafe;
  *
  * @since 1.5
  */
-class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
+final class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
     private static final Unsafe unsafe = XlibWrapper.unsafe;
 
     private long sourceWindow = 0;
@@ -68,22 +68,26 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         return new MotifDnDDropTargetProtocol(listener);
     }
 
+    @Override
     public String getProtocolName() {
         return XDragAndDropProtocols.MotifDnD;
     }
 
+    @Override
     public void registerDropTarget(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
         MotifDnDConstants.writeDragReceiverInfoStruct(window);
     }
 
+    @Override
     public void unregisterDropTarget(long window) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
         MotifDnDConstants.XA_MOTIF_ATOM_0.DeleteProperty(window);
     }
 
+    @Override
     public void registerEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -185,6 +189,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         putEmbedderRegistryEntry(embedder, overridden, version, proxy);
     }
 
+    @Override
     public void unregisterEmbedderDropSite(long embedder) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -261,6 +266,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
      * Gets and stores in the registry the embedder's Motif DnD drop site info
      * from the embedded.
      */
+    @Override
     public void registerEmbeddedDropSite(long embedded) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
@@ -317,6 +323,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         putEmbedderRegistryEntry(embedded, overridden, version, proxy);
     }
 
+    @Override
     public boolean isProtocolSupported(long window) {
         WindowPropertyGetter wpg =
             new WindowPropertyGetter(window,
@@ -677,6 +684,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public int getMessageType(XClientMessageEvent xclient) {
         if (xclient.get_message_type() !=
             MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom()) {
@@ -703,6 +711,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         }
     }
 
+    @Override
     protected boolean processClientMessageImpl(XClientMessageEvent xclient) {
         if (xclient.get_message_type() !=
             MotifDnDConstants.XA_MOTIF_DRAG_AND_DROP_MESSAGE.getAtom()) {
@@ -751,26 +760,31 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
      * Currently we don't synthesize enter/leave messages for Motif DnD
      * protocol. See comments in XDropTargetProtocol.postProcessClientMessage.
      */
+    @Override
     protected void sendEnterMessageToToplevel(long win,
                                               XClientMessageEvent xclient) {
         throw new Error("UNIMPLEMENTED");
     }
 
+    @Override
     protected void sendLeaveMessageToToplevel(long win,
                                               XClientMessageEvent xclient) {
         throw new Error("UNIMPLEMENTED");
     }
 
+    @Override
     public boolean forwardEventToEmbedded(long embedded, long ctxt,
                                           int eventID) {
         // UNIMPLEMENTED.
         return false;
     }
 
+    @Override
     public boolean isXEmbedSupported() {
         return false;
     }
 
+    @Override
     public boolean sendResponse(long ctxt, int eventID, int action) {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
         if (xclient.get_message_type() !=
@@ -890,6 +904,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public Object getData(long ctxt, long format)
       throws IllegalArgumentException, IOException {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
@@ -941,6 +956,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         return selection.getData(format, time_stamp);
     }
 
+    @Override
     public boolean sendDropDone(long ctxt, boolean success, int dropAction) {
         XClientMessageEvent xclient = new XClientMessageEvent(ctxt);
 
@@ -1004,6 +1020,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         return true;
     }
 
+    @Override
     public final long getSourceWindow() {
         return sourceWindow;
     }
@@ -1011,6 +1028,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
     /**
      * Reset the state of the object.
      */
+    @Override
     public void cleanup() {
         // Clear the reference to this protocol.
         XDropTargetEventProcessor.reset();
@@ -1046,6 +1064,7 @@ class MotifDnDDropTargetProtocol extends XDropTargetProtocol {
         topLevelLeavePostponed = false;
     }
 
+    @Override
     public boolean isDragOverComponent() {
         return targetXWindow != null;
     }

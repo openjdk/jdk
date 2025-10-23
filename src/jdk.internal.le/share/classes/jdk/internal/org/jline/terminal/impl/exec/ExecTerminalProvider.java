@@ -46,6 +46,9 @@ public class ExecTerminalProvider implements TerminalProvider {
     }
 
     public Pty current(SystemStream systemStream) throws IOException {
+        if (!isSystemStream(systemStream)) {
+            throw new IOException("Not a system stream: " + systemStream);
+        }
         return ExecPty.current(this, systemStream);
     }
 

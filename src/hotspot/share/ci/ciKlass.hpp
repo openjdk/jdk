@@ -107,7 +107,7 @@ public:
   bool is_in_encoding_range() {
     Klass* k = get_Klass();
     bool is_in_encoding_range = CompressedKlassPointers::is_encodable(k);
-    assert(is_in_encoding_range || k->is_interface() || k->is_abstract(), "sanity");
+    assert(is_in_encoding_range, "sanity");
     return is_in_encoding_range;
   }
 
@@ -119,7 +119,7 @@ public:
   // Get the instance of java.lang.Class corresponding to this klass.
   ciInstance*            java_mirror();
 
-  // Fetch Klass::modifier_flags.
+  // Fetch modifier flags.
   jint                   modifier_flags();
 
   // Fetch Klass::access_flags.

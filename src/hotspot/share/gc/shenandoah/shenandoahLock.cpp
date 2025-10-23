@@ -23,12 +23,11 @@
  */
 
 
-#include "runtime/os.hpp"
-
 #include "gc/shenandoah/shenandoahLock.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
@@ -45,9 +44,10 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   assert(!ALLOW_BLOCK || java_thread != nullptr, "Must have a Java thread when allowing block.");
   // Spin this much, but only on multi-processor systems.
   int ctr = os::is_MP() ? 0xFF : 0;
+  int yields = 0;
   // Apply TTAS to avoid more expensive CAS calls if the lock is still held by other thread.
-  while (Atomic::load(&_state) == locked ||
-         Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+  while (AtomicAccess::load(&_state) == locked ||
+         AtomicAccess::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if (ctr > 0 && !SafepointSynchronize::is_synchronizing()) {
       // Lightly contended, spin a little if no safepoint is pending.
       SpinPause();
@@ -67,14 +67,26 @@ void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
         // VM thread to arm the poll sooner.
         while (SafepointSynchronize::is_synchronizing() &&
                !SafepointMechanism::local_poll_armed(java_thread)) {
-          os::naked_yield();
+          yield_or_sleep(yields);
         }
       } else {
-        os::naked_yield();
+        yield_or_sleep(yields);
       }
     } else {
-      os::naked_yield();
+      yield_or_sleep(yields);
     }
+  }
+}
+
+void ShenandoahLock::yield_or_sleep(int &yields) {
+  // Simple yield-sleep policy: do one 100us sleep after every N yields.
+  // Tested with different values of N, and chose 3 for best performance.
+  if (yields < 3) {
+    os::naked_yield();
+    yields++;
+  } else {
+    os::naked_short_nanosleep(100000);
+    yields = 0;
   }
 }
 
@@ -101,11 +113,11 @@ ShenandoahReentrantLock::~ShenandoahReentrantLock() {
 
 void ShenandoahReentrantLock::lock() {
   Thread* const thread = Thread::current();
-  Thread* const owner = Atomic::load(&_owner);
+  Thread* const owner = AtomicAccess::load(&_owner);
 
   if (owner != thread) {
     ShenandoahSimpleLock::lock();
-    Atomic::store(&_owner, thread);
+    AtomicAccess::store(&_owner, thread);
   }
 
   _count++;
@@ -118,13 +130,13 @@ void ShenandoahReentrantLock::unlock() {
   _count--;
 
   if (_count == 0) {
-    Atomic::store(&_owner, (Thread*)nullptr);
+    AtomicAccess::store(&_owner, (Thread*)nullptr);
     ShenandoahSimpleLock::unlock();
   }
 }
 
 bool ShenandoahReentrantLock::owned_by_self() const {
   Thread* const thread = Thread::current();
-  Thread* const owner = Atomic::load(&_owner);
+  Thread* const owner = AtomicAccess::load(&_owner);
   return owner == thread;
 }

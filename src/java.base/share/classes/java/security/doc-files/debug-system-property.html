@@ -1,0 +1,179 @@
+<!doctype html>
+<!--
+ Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.  Oracle designates this
+ particular file as subject to the "Classpath" exception as provided
+ by Oracle in the LICENSE file that accompanied this code.
+
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>The java.security.debug system property</title>
+    <style>
+        #debug {
+         border: 1px solid black;
+         border-collapse: collapse;
+         margin: 0 auto;
+        }
+        #debug caption {
+          font-weight: bold;
+          font-size: smaller;
+        }
+        #debug, #debug th, #debug td {
+         border: 1px solid black;
+         padding: 2px .5em;
+        }
+        #debug tbody th {
+         font-weight: normal;
+         text-align:left;
+        }
+    </style>
+</head>
+<body LANG="en-US" DIR="LTR">
+<h1><B>{@systemProperty java.security.debug}</B></h1>
+<p> To monitor security access, you can set the <code>java.security.debug</code>
+    system property, which determines what trace messages are printed during
+    execution. The value of the property is one or more options separated by a
+    comma. Each trace message includes the thread id, caller information, and
+    timestamp.
+</p>
+
+<p>The following table lists the <code>java.security.debug</code> options:</p>
+
+<table id="debug">
+    <caption><b>Security Debug Options</b></caption>
+    <thead>
+    <tr>
+        <th scope="col">Option</th>
+        <th scope="col">Description</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <th scope="row"><code>all</code></th>
+        <td>Turn on all the debugging options</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>certpath</code></th>
+        <td>Turns on debugging for the PKIX <code>CertPathValidator</code> and
+            <code>CertPathBuilder</code> implementations. The following sub-options
+            can be used with the <code>certpath</code> option:
+            <ul>
+                <li><code><b>ocsp</b></code>: Dump OCSP protocol exchanges</li>
+                <li><code><b>verbose</b></code>: A hexadecimal dump of the OCSP
+                    request and response bytes is displayed.</li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row"><code>configfile</code></th>
+        <td>JAAS (Java Authentication and Authorization Service) configuration file loading</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>configparser</code></th>
+        <td>JAAS configuration file parsing</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>gssloginconfig</code></th>
+        <td>Java GSS (Generic Security Services) login configuration file debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>jar</code></th>
+        <td>JAR file verification</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>jca</code></th>
+        <td>JCA engine class debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>KeyStore</code></th>
+        <td><code>KeyStore</code> debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>logincontext</code></th>
+        <td><code>LoginContext</code> results</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pcsc</code></th>
+        <td>Java Smart Card I/O and SunPCSC provider debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pkcs11</code></th>
+        <td>PKCS11 session manager debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pkcs11keystore</code></th>
+        <td>PKCS11 <code>KeyStore</code> debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>pkcs12</code></th>
+        <td>PKCS12 <code>KeyStore</code> debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>properties</code></th>
+        <td><code>java.security</code> configuration file debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>provider</code></th>
+        <td>Security provider debugging. The following sub-option can be used
+            with the <code>provider</code> option: <code>engine=(engines)</code>
+            : The output is displayed only for a specified list of one or more JCA
+            engines, separated by a comma. The supported values for (engines) are:
+            <ul>
+                <li><code>Cipher</code></li>
+                <li><code>KDF</code></li>
+                <li><code>KeyAgreement</code></li>
+                <li><code>KeyGenerator</code></li>
+                <li><code>KeyPairGenerator</code></li>
+                <li><code>KeyStore</code></li>
+                <li><code>Mac</code></li>
+                <li><code>MessageDigest</code></li>
+                <li><code>SecureRandom</code></li>
+                <li><code>Signature</code></li>
+            </ul>
+        </td>
+    </tr>
+    <tr>
+        <th scope="row"><code>securerandom</code></th>
+        <td><code>SecureRandom</code> debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>sunpkcs11</code></th>
+        <td>SunPKCS11 provider debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>ts</code></th>
+        <td>Timestamping debugging</td>
+    </tr>
+    <tr>
+        <th scope="row"><code>x509</code></th>
+        <td>X.509 certificate debugging. The following sub-option can be used
+            with the <code>X.509</code> option.
+            <ul>
+                <li><code><b>ava</b></code>: Embed non-printable/non-escaped
+                    characters in AVA components as hex strings</li>
+            </ul>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

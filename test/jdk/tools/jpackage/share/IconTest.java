@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,6 @@
  */
 
 import java.io.IOException;
-import java.util.stream.Stream;
-import java.util.stream.Collectors;
-import java.util.function.Consumer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -34,25 +31,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import jdk.jpackage.test.TKit;
-import jdk.jpackage.test.JPackageCommand;
-import jdk.jpackage.test.LauncherIconVerifier;
-import jdk.jpackage.test.PackageTest;
-import jdk.jpackage.test.Executor;
-import jdk.jpackage.test.LinuxHelper;
-import jdk.jpackage.test.AdditionalLauncher;
-import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jdk.jpackage.internal.util.function.ThrowingBiConsumer;
+import jdk.jpackage.internal.util.function.ThrowingConsumer;
+import jdk.jpackage.test.AdditionalLauncher;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.Executor;
+import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.LauncherIconVerifier;
+import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.TKit;
 
 /*
  * @test
  * @summary jpackage create image and package with custom icons for the main and additional launcher
  * @library /test/jdk/tools/jpackage/helpers
  * @build jdk.jpackage.test.*
- * @compile IconTest.java
- * @run main/othervm/timeout=540 -Xmx512m
+ * @compile -Xlint:all -Werror IconTest.java
+ * @run main/othervm/timeout=2880 -Xmx512m
  *  jdk.jpackage.test.Main
  *  --jpt-run=IconTest
  */
@@ -92,18 +93,18 @@ public class IconTest {
             IconType additionalLauncherIconType, String[] extraJPackageArgs) {
         this.appImage = (bundleType == BundleType.AppImage);
         this.extraJPackageArgs = extraJPackageArgs;
-        config = Map.of(
+        config = new TreeMap<>(Map.of(
                 Launcher.Main, mainLauncherIconType,
-                Launcher.Additional, additionalLauncherIconType);
+                Launcher.Additional, additionalLauncherIconType));
     }
 
     public IconTest(BundleType bundleType, IconType mainLauncherIconType,
             IconType additionalLauncherIconType) {
         this.appImage = (bundleType == BundleType.AppImage);
         this.extraJPackageArgs = new String[0];
-        config = Map.of(
+        config = new TreeMap<>(Map.of(
                 Launcher.Main, mainLauncherIconType,
-                Launcher.Additional, additionalLauncherIconType);
+                Launcher.Additional, additionalLauncherIconType));
     }
 
     public IconTest(BundleType bundleType, IconType mainLauncherIconType) {
@@ -113,7 +114,7 @@ public class IconTest {
     }
 
     @Parameters
-    public static Collection data() {
+    public static Collection<?> data() {
         List<Object[]> data = new ArrayList<>();
 
         var withLinuxShortcut = Set.of(IconType.DefaultIcon, IconType.NoIcon);
@@ -191,7 +192,7 @@ public class IconTest {
             var verifier = createConsoleOutputVerifier(cmd.name(), config.get(
                     Launcher.Main), null);
             if (verifier != null) {
-                verifier.apply(result.getOutput().stream());
+                verifier.apply(result.getOutput());
             }
 
             if (config.containsKey(Launcher.Additional)) {
@@ -199,7 +200,7 @@ public class IconTest {
                         Launcher.Additional.launcherName, config.get(
                                 Launcher.Additional), config.get(Launcher.Main));
                 if (verifier != null) {
-                    verifier.apply(result.getOutput().stream());
+                    verifier.apply(result.getOutput());
                 }
             }
         };

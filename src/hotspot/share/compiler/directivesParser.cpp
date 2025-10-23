@@ -30,6 +30,7 @@
 #include "opto/traceAutoVectorizationTag.hpp"
 #include "opto/traceMergeStoresTag.hpp"
 #include "runtime/os.hpp"
+
 #include <string.h>
 
 void DirectivesParser::push_tmp(CompilerDirectives* dir) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,17 +145,12 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
      }
 
      DwarfParser nextDwarf = null;
-
-     if ((dwarf != null) && dwarf.isIn(nextPC)) {
-       nextDwarf = dwarf;
-     } else {
-       Address libptr = dbg.findLibPtrByAddress(nextPC);
-       if (libptr != null) {
-         try {
-           nextDwarf = new DwarfParser(libptr);
-         } catch (DebuggerException e) {
-           // Bail out to Java frame
-         }
+     Address libptr = dbg.findLibPtrByAddress(nextPC);
+     if (libptr != null) {
+       try {
+         nextDwarf = new DwarfParser(libptr);
+       } catch (DebuggerException e) {
+         // Bail out to Java frame
        }
      }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.jfr.internal.RemoveFields;
+import jdk.jfr.internal.util.Bytecode.FieldDesc;
 /**
  * Class that describes fields that was not directly named
  * in the event definition.
@@ -37,6 +38,8 @@ public final class ImplicitFields {
     public static final String DURATION = "duration";
     public static final String EVENT_THREAD = "eventThread";
     public static final String STACK_TRACE = "stackTrace";
+    public static final FieldDesc FIELD_DURATION = FieldDesc.of(long.class, DURATION);
+    public static final FieldDesc FIELD_START_TIME = FieldDesc.of(long.class, START_TIME);
 
     private final List<String> fields = new ArrayList<>(4);
 

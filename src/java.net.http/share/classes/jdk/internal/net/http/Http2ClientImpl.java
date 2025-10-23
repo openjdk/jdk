@@ -76,7 +76,7 @@ class Http2ClientImpl {
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
-     * calling code. In all cases, the HTTP2 connection cache
+     * calling code. In all cases, the HTTP/2 connection cache
      * is checked first for a suitable connection and that is returned if available.
      * If not, a new connection is opened, except in https case when a previous negotiate failed.
      * In that case, we want to continue using http/1.1. When a connection is to be opened and
@@ -144,6 +144,7 @@ class Http2ClientImpl {
                         if (conn != null) {
                             try {
                                 conn.reserveStream(true, exchange.pushEnabled());
+                                exchange.connectionAborter.clear(conn.connection);
                             } catch (IOException e) {
                                 throw new UncheckedIOException(e); // shouldn't happen
                             }

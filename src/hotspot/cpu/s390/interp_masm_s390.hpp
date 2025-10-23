@@ -169,7 +169,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void restore_bcp();
 
-  void save_esp();
+  void save_esp(Register fp = noreg);
 
   void restore_esp();
 
@@ -313,7 +313,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // Only if +VerifyOops && state == atos.
   void verify_oop_or_return_address(Register reg, Register rtmp); // for astore
-  void verify_FPU(int stack_depth, TosState state = ftos);
 
   // JVMTI helpers
   void skip_if_jvmti_mode(Label &Lskip, Register Rscratch = Z_R0);

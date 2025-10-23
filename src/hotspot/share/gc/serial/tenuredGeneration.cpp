@@ -100,9 +100,6 @@ bool TenuredGeneration::expand(size_t bytes, size_t expand_bytes) {
   if (!success) {
     success = grow_to_reserved();
   }
-  if (success && GCLocker::is_active_and_needs_gc()) {
-    log_trace(gc, heap)("Garbage collection disabled, expanded heap instead");
-  }
 
   return success;
 }
@@ -280,8 +277,8 @@ HeapWord* TenuredGeneration::block_start(const void* addr) const {
   }
 }
 
-void TenuredGeneration::scan_old_to_young_refs(HeapWord* saved_top_in_old_gen) {
-  _rs->scan_old_to_young_refs(this, saved_top_in_old_gen);
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(this, space()->top());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -317,7 +314,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   HeapWord* bottom = (HeapWord*) _virtual_space.low();
   HeapWord* end    = (HeapWord*) _virtual_space.high();
   _the_space  = new ContiguousSpace();
-  _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear, SpaceDecorator::Mangle);
+  _the_space->initialize(MemRegion(bottom, end), SpaceDecorator::Clear);
   // If we don't shrink the heap in steps, '_shrink_factor' is always 100%.
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
@@ -329,7 +326,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   const char* gen_name = "old";
   // Generation Counters -- generation 1, 1 subspace
   _gen_counters = new GenerationCounters(gen_name, 1, 1,
-      min_byte_size, max_byte_size, &_virtual_space);
+      min_byte_size, max_byte_size, _virtual_space.committed_size());
 
   _gc_counters = new CollectorCounters("Serial full collection pauses", 1);
 
@@ -371,7 +368,7 @@ void TenuredGeneration::update_promote_stats() {
 void TenuredGeneration::update_counters() {
   if (UsePerfData) {
     _space_counters->update_all();
-    _gen_counters->update_all();
+    _gen_counters->update_capacity(_virtual_space.committed_size());
   }
 }
 
@@ -442,15 +439,12 @@ void TenuredGeneration::verify() {
 }
 
 void TenuredGeneration::print_on(outputStream* st)  const {
-  st->print(" %-10s", name());
+  st->print("%-10s", name());
 
-  st->print(" total %zuK, used %zuK",
+  st->print(" total %zuK, used %zuK ",
             capacity()/K, used()/K);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-               p2i(_virtual_space.low_boundary()),
-               p2i(_virtual_space.high()),
-               p2i(_virtual_space.high_boundary()));
+  _virtual_space.print_space_boundaries_on(st);
 
-  st->print("   the");
-  _the_space->print_on(st);
+  StreamIndentor si(st, 1);
+  _the_space->print_on(st, "the  ");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,6 +129,10 @@ jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
 jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
 
+void JNICALL jfr_set_cpu_rate(JNIEnv* env, jclass jvm, jdouble rate);
+
+void JNICALL jfr_set_cpu_period(JNIEnv* env, jclass jvm, jlong period_nanos);
+
 void JNICALL jfr_set_miscellaneous(JNIEnv* env, jclass jvm, jlong id, jlong value);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean, jboolean);
@@ -166,6 +170,12 @@ jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jclass jvm, jobjectArray cl
 void JNICALL jfr_unregister_stack_filter(JNIEnv* env, jclass jvm, jlong id);
 
 jlong JNICALL jfr_nanos_now(JNIEnv* env, jclass jvm);
+
+jboolean JNICALL jfr_is_product(JNIEnv* env, jclass jvm);
+
+jlongArray JNICALL jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobjectArray classes, jobjectArray methods, jobjectArray annotations, jintArray modifications);
+
+jlongArray JNICALL jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass);
 
 #ifdef __cplusplus
 }

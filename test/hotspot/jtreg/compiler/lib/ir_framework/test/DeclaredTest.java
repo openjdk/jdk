@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,15 @@ public class DeclaredTest {
     private final ArgumentsProvider argumentsProvider;
     private final int warmupIterations;
     private final CompLevel compLevel;
+    private final boolean allowNotCompilable;
     private Method attachedMethod;
 
-    public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations) {
+    public DeclaredTest(Method testMethod, ArgumentsProvider argumentsProvider, CompLevel compLevel, int warmupIterations, boolean allowNotCompilable) {
         // Make sure we can also call non-public or public methods in package private classes
         testMethod.setAccessible(true);
         this.testMethod = testMethod;
         this.compLevel = compLevel;
+        this.allowNotCompilable = allowNotCompilable;
         this.argumentsProvider = argumentsProvider;
         this.warmupIterations = warmupIterations;
         this.attachedMethod = null;
@@ -58,6 +60,10 @@ public class DeclaredTest {
 
     public int getWarmupIterations() {
         return warmupIterations;
+    }
+
+    public boolean isAllowNotCompilable() {
+        return allowNotCompilable;
     }
 
     public Object[] getArguments(Object invocationTarget, int invocationCounter) {

@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -922,8 +922,17 @@ hasExpiringCert
 hasExpiringTsaCert
 :   The timestamp will expire within one year on `YYYY-MM-DD`.
 
+hasMultipleManifests
+:   This JAR contained multiple manifest files. During signing, one of the files
+was selected, and the others were discarded.
+
 hasNonexistentEntries
 :   This JAR contains signed entries for files that do not exist.
+
+internalInconsistenciesDetected
+:   This JAR contains internal inconsistencies detected during verification
+    that may result in different contents when reading via JarFile
+    and JarInputStream.
 
 legacyAlg
 :   An algorithm used is considered a security risk but not disabled.

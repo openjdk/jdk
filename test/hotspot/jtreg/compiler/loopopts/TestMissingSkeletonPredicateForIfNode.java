@@ -28,7 +28,7 @@
  *          predicate is created in loop predication.
  * @requires vm.debug == true & vm.compiler2.enabled
  * @run main/othervm -XX:-TieredCompilation -Xbatch -XX:-RangeCheckElimination -XX:+BailoutToInterpreterForThrows
-                     compiler.loopopts.TestMissingSkeletonPredicateForIfNode
+ *                   compiler.loopopts.TestMissingSkeletonPredicateForIfNode
  */
 package compiler.loopopts;
 

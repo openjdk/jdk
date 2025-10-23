@@ -6531,7 +6531,7 @@ public final class AccessBridge {
          *
          * @return This component's locale. If this component does not have
          * a locale, the locale of its parent is returned.
-         * @exception IllegalComponentStateException
+         * @throws IllegalComponentStateException
          * If the Component does not have its own locale and has not yet
          * been added to a containment hierarchy such that the locale can be
          * determined from the containing parent.

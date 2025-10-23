@@ -222,7 +222,7 @@ public class MBeanPermission extends Permission {
         UnregisterMBean;
 
     /**
-     * The actions string.
+     * @serial The actions string.
      */
     private String actions;
 

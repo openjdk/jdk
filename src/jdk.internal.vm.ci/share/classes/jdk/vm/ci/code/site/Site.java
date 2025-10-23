@@ -39,8 +39,8 @@ public abstract class Site {
     }
 
     @Override
-    public final int hashCode() {
-        throw new UnsupportedOperationException("hashCode");
+    public int hashCode() {
+        return 41 * pcOffset;
     }
 
     @Override

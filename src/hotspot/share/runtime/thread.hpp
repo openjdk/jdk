@@ -30,7 +30,7 @@
 #include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "jni.h"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepointMechanism.hpp"
@@ -78,6 +78,7 @@ class JavaThread;
 //       - WorkerThread
 //     - WatcherThread
 //     - JfrThreadSampler
+//     - JfrCPUSamplerThread
 //     - LogAsyncWriter
 //
 // All Thread subclasses must be either JavaThread or NonJavaThread.
@@ -113,10 +114,8 @@ class Thread: public ThreadShadow {
   friend class JavaThread;
  private:
 
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   // Current thread is maintained as a thread-local variable
   static THREAD_LOCAL Thread* _thr_current;
-#endif
 
   // On AArch64, the high order 32 bits are used by a "patching epoch" number
   // which reflects if this thread has executed the required fences, after
@@ -311,6 +310,7 @@ class Thread: public ThreadShadow {
   virtual bool is_Named_thread() const               { return false; }
   virtual bool is_Worker_thread() const              { return false; }
   virtual bool is_JfrSampler_thread() const          { return false; }
+  virtual bool is_JfrRecorder_thread() const         { return false; }
   virtual bool is_AttachListener_thread() const      { return false; }
   virtual bool is_monitor_deflation_thread() const   { return false; }
 
@@ -404,6 +404,8 @@ class Thread: public ThreadShadow {
   // Thread-Local Allocation Buffer (TLAB) support
   ThreadLocalAllocBuffer& tlab()                 { return _tlab; }
   void initialize_tlab();
+  void retire_tlab(ThreadLocalAllocStats* stats = nullptr);
+  void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
   jlong allocated_bytes()               { return _allocated_bytes; }
   void set_allocated_bytes(jlong value) { _allocated_bytes = value; }
@@ -535,8 +537,8 @@ protected:
   void    register_thread_stack_with_NMT();
   void    unregister_thread_stack_with_NMT();
 
-  int     lgrp_id() const        { return _lgrp_id; }
-  void    set_lgrp_id(int value) { _lgrp_id = value; }
+  int     lgrp_id() const  { return _lgrp_id; }
+  void    update_lgrp_id() { _lgrp_id = os::numa_get_group_id(); }
 
   // Printing
   void print_on(outputStream* st, bool print_extended_info) const;
@@ -596,7 +598,7 @@ protected:
   // Termination indicator used by the signal handler.
   // _ParkEvent is just a convenient field we can null out after setting the JavaThread termination state
   // (which can't itself be read from the signal handler if a signal hits during the Thread destructor).
-  bool has_terminated()                       { return Atomic::load(&_ParkEvent) == nullptr; };
+  bool has_terminated()                       { return AtomicAccess::load(&_ParkEvent) == nullptr; };
 
   jint _hashStateW;                           // Marsaglia Shift-XOR thread-local RNG
   jint _hashStateX;                           // thread-specific hashCode generator state
@@ -605,7 +607,7 @@ protected:
 
   // Low-level leaf-lock primitives used to implement synchronization.
   // Not for general synchronization use.
-  static void SpinAcquire(volatile int * Lock, const char * Name);
+  static void SpinAcquire(volatile int * Lock);
   static void SpinRelease(volatile int * Lock);
 
 #if defined(__APPLE__) && defined(AARCH64)
@@ -660,14 +662,7 @@ inline Thread* Thread::current() {
 }
 
 inline Thread* Thread::current_or_null() {
-#ifndef USE_LIBRARY_BASED_TLS_ONLY
   return _thr_current;
-#else
-  if (ThreadLocalStorage::is_initialized()) {
-    return ThreadLocalStorage::thread();
-  }
-  return nullptr;
-#endif
 }
 
 inline Thread* Thread::current_or_null_safe() {

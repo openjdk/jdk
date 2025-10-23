@@ -31,11 +31,13 @@ public class JvmciShutdownEventListener extends JVMCIServiceLocator implements H
     public static final String MESSAGE = "Shutdown notified";
     public static final String GOT_INTERNAL_ERROR = "Got internal error";
 
-    public static void main(String args[]) {
-        try {
-            HotSpotJVMCIRuntime.runtime(); // let's trigger that lazy jvmci init
-        } catch (Error e) {
-            System.out.println(GOT_INTERNAL_ERROR);
+    public static class Main {
+        public static void main(String args[]) {
+            try {
+                HotSpotJVMCIRuntime.runtime(); // let's trigger that lazy jvmci init
+            } catch (Error e) {
+                System.out.println(GOT_INTERNAL_ERROR);
+            }
         }
     }
 

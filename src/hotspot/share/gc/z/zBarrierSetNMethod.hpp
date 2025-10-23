@@ -34,8 +34,15 @@ protected:
   virtual bool nmethod_entry_barrier(nmethod* nm);
 
 public:
+  uintptr_t color(nmethod* nm);
+
   virtual ByteSize thread_disarmed_guard_value_offset() const;
   virtual int* disarmed_guard_value_address() const;
+
+  virtual oop oop_load_no_keepalive(const nmethod* nm, int index);
+  virtual oop oop_load_phantom(const nmethod* nm, int index);
+
+  virtual void arm_all_nmethods() { ShouldNotCallThis(); }
 };
 
 #endif // SHARE_GC_Z_ZBARRIERSETNMETHOD_HPP

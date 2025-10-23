@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -554,7 +554,7 @@ public class TestDateTimeFormatterBuilder {
     Object[][] data_dayPeriodFormat() {
         return new Object[][] {
             {0, 0, TextStyle.FULL, Locale.US, "midnight"},
-            {0, 1, TextStyle.FULL, Locale.US, "at night"},
+            {0, 1, TextStyle.FULL, Locale.US, "in the morning"},
             {6, 0, TextStyle.FULL, Locale.US, "in the morning"},
             {12, 0, TextStyle.FULL, Locale.US, "noon"},
             {12, 1, TextStyle.FULL, Locale.US, "in the afternoon"},
@@ -571,7 +571,7 @@ public class TestDateTimeFormatterBuilder {
             {23, 0, TextStyle.FULL, Locale.JAPAN, "\u591c\u4e2d"},
 
             {0, 0, TextStyle.NARROW, Locale.US, "mi"},
-            {0, 1, TextStyle.NARROW, Locale.US, "at night"},
+            {0, 1, TextStyle.NARROW, Locale.US, "in the morning"},
             {6, 0, TextStyle.NARROW, Locale.US, "in the morning"},
             {12, 0, TextStyle.NARROW, Locale.US, "n"},
             {12, 1, TextStyle.NARROW, Locale.US, "in the afternoon"},
@@ -600,13 +600,13 @@ public class TestDateTimeFormatterBuilder {
     Object[][] data_dayPeriodParse() {
         return new Object[][] {
                 {TextStyle.FULL, Locale.US, 0, 0, "midnight"},
-                {TextStyle.FULL, Locale.US, 1, 30, "at night"},
                 {TextStyle.FULL, Locale.US, 6, 0, "AM"},
-                {TextStyle.FULL, Locale.US, 9, 0, "in the morning"},
+                {TextStyle.FULL, Locale.US, 6, 0, "in the morning"},
                 {TextStyle.FULL, Locale.US, 12, 0, "noon"},
                 {TextStyle.FULL, Locale.US, 15, 0, "in the afternoon"},
                 {TextStyle.FULL, Locale.US, 18, 0, "PM"},
                 {TextStyle.FULL, Locale.US, 19, 30, "in the evening"},
+                {TextStyle.FULL, Locale.US, 22, 30, "at night"},
 
                 {TextStyle.FULL, Locale.JAPAN, 0, 0, "\u771f\u591c\u4e2d"},
                 {TextStyle.FULL, Locale.JAPAN, 1, 30, "\u591c\u4e2d"},
@@ -619,13 +619,13 @@ public class TestDateTimeFormatterBuilder {
                 {TextStyle.FULL, Locale.JAPAN, 21, 0, "\u591c"},
 
                 {TextStyle.NARROW, Locale.US, 0, 0, "mi"},
-                {TextStyle.NARROW, Locale.US, 1, 30, "at night"},
                 {TextStyle.NARROW, Locale.US, 6, 0, "a"},
-                {TextStyle.NARROW, Locale.US, 9, 0, "in the morning"},
+                {TextStyle.NARROW, Locale.US, 6, 0, "in the morning"},
                 {TextStyle.NARROW, Locale.US, 12, 0, "n"},
                 {TextStyle.NARROW, Locale.US, 15, 0, "in the afternoon"},
                 {TextStyle.NARROW, Locale.US, 18, 0, "p"},
                 {TextStyle.NARROW, Locale.US, 19, 30, "in the evening"},
+                {TextStyle.NARROW, Locale.US, 22, 30, "at night"},
 
                 {TextStyle.NARROW, Locale.JAPAN, 0, 0, "\u771f\u591c\u4e2d"},
                 {TextStyle.NARROW, Locale.JAPAN, 1, 30, "\u591c\u4e2d"},
@@ -651,12 +651,12 @@ public class TestDateTimeFormatterBuilder {
     Object[][] data_dayPeriodParsePattern() {
         return new Object[][] {
             {"H B", "23 at night", 23},
-            {"H B", "3 at night", 3},
+            {"H B", "3 in the morning", 3},
             {"K B", "11 at night", 23},
-            {"K B", "3 at night", 3},
+            {"K B", "3 in the morning", 3},
             {"K B", "11 in the morning", 11},
             {"h B", "11 at night", 23},
-            {"h B", "3 at night", 3},
+            {"h B", "3 in the morning", 3},
             {"h B", "11 in the morning", 11},
             {"a", "AM", 6},
             {"a", "PM", 18},
@@ -692,14 +692,14 @@ public class TestDateTimeFormatterBuilder {
     Object[][] data_dayPeriodParseInvalid() {
         return new Object[][] {
                 {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "00:01 midnight", "00:00"},
-                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "06:01 at night", "21:00-06:00"},
-                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "00:01 at night", "21:00-24:00"},
+                {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "12:01 in the morning", "00:00-12:00"},
                 {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "11:59 noon", "12:00"},
                 {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
                 {TextStyle.FULL, ResolverStyle.SMART, Locale.US, "17:59 in the evening", "18:00-21:00"},
                 {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "00:01 mi", "00:00"},
-                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "06:01 at night", "21:00-06:00"},
-                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "00:01 at night", "21:00-24:00"},
+                {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "12:01 in the morning", "00:00-12:00"},
                 {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "11:59 n", "12:00"},
                 {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
                 {TextStyle.NARROW, ResolverStyle.SMART, Locale.US, "17:59 in the evening", "18:00-21:00"},
@@ -720,14 +720,14 @@ public class TestDateTimeFormatterBuilder {
                 {TextStyle.NARROW, ResolverStyle.SMART, Locale.JAPAN, "23:00 \u591c", "19:00-23:00"},
 
                 {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "00:01 midnight", "00:00"},
-                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "06:01 at night", "21:00-06:00"},
-                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "00:01 at night", "21:00-24:00"},
+                {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "12:01 in the morning", "00:00-12:00"},
                 {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "11:59 noon", "12:00"},
                 {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
                 {TextStyle.FULL, ResolverStyle.LENIENT, Locale.US, "17:59 in the evening", "18:00-21:00"},
                 {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "00:01 mi", "00:00"},
-                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "06:01 at night", "21:00-06:00"},
-                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "05:59 in the morning", "06:00-12:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "00:01 at night", "21:00-24:00"},
+                {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "12:01 in the morning", "00:00-12:00"},
                 {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "11:59 n", "12:00"},
                 {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "18:00 in the afternoon", "12:00-18:00"},
                 {TextStyle.NARROW, ResolverStyle.LENIENT, Locale.US, "17:59 in the evening", "18:00-21:00"},

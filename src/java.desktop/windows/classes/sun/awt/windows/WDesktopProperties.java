@@ -198,7 +198,7 @@ final class WDesktopProperties {
      */
     private native void playWindowsSound(String winEventName);
 
-    class WinPlaySound implements Runnable {
+    final class WinPlaySound implements Runnable {
         String  winEventName;
 
         WinPlaySound(String winEventName) {
@@ -210,10 +210,12 @@ final class WDesktopProperties {
             WDesktopProperties.this.playWindowsSound(winEventName);
         }
 
+        @Override
         public String toString() {
             return "WinPlaySound("+winEventName+")";
         }
 
+        @Override
         public boolean equals(Object o) {
             if (o == this) {
                 return true;
@@ -225,6 +227,7 @@ final class WDesktopProperties {
             }
         }
 
+        @Override
         public int hashCode() {
             return winEventName.hashCode();
         }

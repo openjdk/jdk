@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package java.lang.invoke;
 
 import java.lang.classfile.TypeKind;
 import jdk.internal.perf.PerfCounter;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
@@ -122,6 +123,7 @@ import static java.lang.invoke.MethodHandleStatics.*;
  * <p>
  * @author John Rose, JSR 292 EG
  */
+@AOTSafeClassInitializer
 class LambdaForm {
     final int arity;
     final int result;
@@ -137,13 +139,16 @@ class LambdaForm {
 
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
+    /// Represents the "basic" types that exist in the JVM linkage and stack/locals.
+    /// All objects are erased to a reference.
+    /// All subwords (boolean, byte, char, short) are promoted to int.
     enum BasicType {
-        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE), // all reference types
+        L_TYPE('L', Object.class, Wrapper.OBJECT, TypeKind.REFERENCE),
         I_TYPE('I', int.class,    Wrapper.INT,    TypeKind.INT),
         J_TYPE('J', long.class,   Wrapper.LONG,   TypeKind.LONG),
         F_TYPE('F', float.class,  Wrapper.FLOAT,  TypeKind.FLOAT),
-        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // all primitive types
-        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // not valid in all contexts
+        D_TYPE('D', double.class, Wrapper.DOUBLE, TypeKind.DOUBLE),  // end arg types
+        V_TYPE('V', void.class,   Wrapper.VOID,   TypeKind.VOID);    // only valid in method return
 
         static final @Stable BasicType[] ALL_TYPES = BasicType.values();
         static final @Stable BasicType[] ARG_TYPES = Arrays.copyOf(ALL_TYPES, ALL_TYPES.length-1);
@@ -245,8 +250,8 @@ class LambdaForm {
 
     enum Kind {
         GENERIC("invoke"),
-        ZERO("zero"),
         IDENTITY("identity"),
+        CONSTANT("constant"),
         BOUND_REINVOKER("BMH.reinvoke", "reinvoke"),
         REINVOKER("MH.reinvoke", "reinvoke"),
         DELEGATE("MH.delegate", "delegate"),
@@ -263,42 +268,30 @@ class LambdaForm {
         DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
         DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
         DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
-        GET_REFERENCE("getReference"),
-        PUT_REFERENCE("putReference"),
-        GET_REFERENCE_VOLATILE("getReferenceVolatile"),
-        PUT_REFERENCE_VOLATILE("putReferenceVolatile"),
-        GET_INT("getInt"),
-        PUT_INT("putInt"),
-        GET_INT_VOLATILE("getIntVolatile"),
-        PUT_INT_VOLATILE("putIntVolatile"),
-        GET_BOOLEAN("getBoolean"),
-        PUT_BOOLEAN("putBoolean"),
-        GET_BOOLEAN_VOLATILE("getBooleanVolatile"),
-        PUT_BOOLEAN_VOLATILE("putBooleanVolatile"),
-        GET_BYTE("getByte"),
-        PUT_BYTE("putByte"),
-        GET_BYTE_VOLATILE("getByteVolatile"),
-        PUT_BYTE_VOLATILE("putByteVolatile"),
-        GET_CHAR("getChar"),
-        PUT_CHAR("putChar"),
-        GET_CHAR_VOLATILE("getCharVolatile"),
-        PUT_CHAR_VOLATILE("putCharVolatile"),
-        GET_SHORT("getShort"),
-        PUT_SHORT("putShort"),
-        GET_SHORT_VOLATILE("getShortVolatile"),
-        PUT_SHORT_VOLATILE("putShortVolatile"),
-        GET_LONG("getLong"),
-        PUT_LONG("putLong"),
-        GET_LONG_VOLATILE("getLongVolatile"),
-        PUT_LONG_VOLATILE("putLongVolatile"),
-        GET_FLOAT("getFloat"),
-        PUT_FLOAT("putFloat"),
-        GET_FLOAT_VOLATILE("getFloatVolatile"),
-        PUT_FLOAT_VOLATILE("putFloatVolatile"),
-        GET_DOUBLE("getDouble"),
-        PUT_DOUBLE("putDouble"),
-        GET_DOUBLE_VOLATILE("getDoubleVolatile"),
-        PUT_DOUBLE_VOLATILE("putDoubleVolatile"),
+        FIELD_ACCESS("fieldAccess"),
+        FIELD_ACCESS_INIT("fieldAccessInit"),
+        VOLATILE_FIELD_ACCESS("volatileFieldAccess"),
+        VOLATILE_FIELD_ACCESS_INIT("volatileFieldAccessInit"),
+        FIELD_ACCESS_B("fieldAccessB"),
+        FIELD_ACCESS_INIT_B("fieldAccessInitB"),
+        VOLATILE_FIELD_ACCESS_B("volatileFieldAccessB"),
+        VOLATILE_FIELD_ACCESS_INIT_B("volatileFieldAccessInitB"),
+        FIELD_ACCESS_C("fieldAccessC"),
+        FIELD_ACCESS_INIT_C("fieldAccessInitC"),
+        VOLATILE_FIELD_ACCESS_C("volatileFieldAccessC"),
+        VOLATILE_FIELD_ACCESS_INIT_C("volatileFieldAccessInitC"),
+        FIELD_ACCESS_S("fieldAccessS"),
+        FIELD_ACCESS_INIT_S("fieldAccessInitS"),
+        VOLATILE_FIELD_ACCESS_S("volatileFieldAccessS"),
+        VOLATILE_FIELD_ACCESS_INIT_S("volatileFieldAccessInitS"),
+        FIELD_ACCESS_Z("fieldAccessZ"),
+        FIELD_ACCESS_INIT_Z("fieldAccessInitZ"),
+        VOLATILE_FIELD_ACCESS_Z("volatileFieldAccessZ"),
+        VOLATILE_FIELD_ACCESS_INIT_Z("volatileFieldAccessInitZ"),
+        FIELD_ACCESS_CAST("fieldAccessCast"),
+        FIELD_ACCESS_INIT_CAST("fieldAccessInitCast"),
+        VOLATILE_FIELD_ACCESS_CAST("volatileFieldAccessCast"),
+        VOLATILE_FIELD_ACCESS_INIT_CAST("volatileFieldAccessInitCast"),
         TRY_FINALLY("tryFinally"),
         TABLE_SWITCH("tableSwitch"),
         COLLECTOR("collector"),
@@ -369,32 +362,6 @@ class LambdaForm {
     }
     static LambdaForm create(int arity, Name[] names, boolean forceInline, Kind kind) {
         return create(arity, names, DEFAULT_RESULT, forceInline, DEFAULT_CUSTOMIZED, kind);
-    }
-
-    private static LambdaForm createBlankForType(MethodType mt) {
-        // Make a blank lambda form, which returns a constant zero or null.
-        // It is used as a template for managing the invocation of similar forms that are non-empty.
-        // Called only from getPreparedForm.
-        int arity = mt.parameterCount();
-        int result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? VOID_RESULT : arity;
-        Name[] names = buildEmptyNames(arity, mt, result == VOID_RESULT);
-        boolean canInterpret = normalizeNames(arity, names);
-        LambdaForm form = new LambdaForm(arity, result, DEFAULT_FORCE_INLINE, DEFAULT_CUSTOMIZED, names, Kind.ZERO);
-        assert(form.nameRefsAreLegal() && form.isEmpty() && isValidSignature(form.basicTypeSignature()));
-        if (!canInterpret) {
-            form.compileToBytecode();
-        }
-        return form;
-    }
-
-    private static Name[] buildEmptyNames(int arity, MethodType mt, boolean isVoid) {
-        Name[] names = arguments(isVoid ? 0 : 1, mt);
-        if (!isVoid) {
-            Name zero = new Name(constantZero(basicType(mt.returnType())));
-            names[arity] = zero.withIndex(arity);
-        }
-        assert(namesOK(arity, names));
-        return names;
     }
 
     private static int fixResult(int result, Name[] names) {
@@ -803,14 +770,15 @@ class LambdaForm {
             return;
         }
         MethodType mtype = methodType();
-        LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
-        if (prep == null) {
+        MethodTypeForm form = mtype.form();
+
+        MemberName entry = form.cachedInterpretEntry();
+        if (entry == null) {
             assert (isValidSignature(basicTypeSignature()));
-            prep = LambdaForm.createBlankForType(mtype);
-            prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
-            prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+            entry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
+            entry = form.setCachedInterpretEntry(entry);
         }
-        this.vmentry = prep.vmentry;
+        this.vmentry = entry;
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
 
@@ -1011,15 +979,6 @@ class LambdaForm {
         return true;
     }
 
-    private boolean isEmpty() {
-        if (result < 0)
-            return (names.length == arity);
-        else if (result == arity && names.length == arity + 1)
-            return names[arity].isConstantZero();
-        else
-            return false;
-    }
-
     public String toString() {
         return debugString(-1);
     }
@@ -1078,6 +1037,7 @@ class LambdaForm {
         return false;
     }
 
+    @AOTSafeClassInitializer
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
@@ -1249,10 +1209,6 @@ class LambdaForm {
 
         public boolean isIdentity() {
             return this.equals(identity(returnType()));
-        }
-
-        public boolean isConstantZero() {
-            return this.equals(constantZero(returnType()));
         }
 
         public MethodHandleImpl.Intrinsic intrinsicName() {
@@ -1452,9 +1408,6 @@ class LambdaForm {
         }
         boolean isParam() {
             return function == null;
-        }
-        boolean isConstantZero() {
-            return !isParam() && arguments.length == 0 && function.isConstantZero();
         }
 
         boolean refersTo(Class<?> declaringClass, String methodName) {
@@ -1662,18 +1615,8 @@ class LambdaForm {
         if (form != null) {
             return form;
         }
-        createFormsFor(type);
+        createIdentityForm(type);
         return LF_identity[ord];
-    }
-
-    static LambdaForm zeroForm(BasicType type) {
-        int ord = type.ordinal();
-        LambdaForm form = LF_zero[ord];
-        if (form != null) {
-            return form;
-        }
-        createFormsFor(type);
-        return LF_zero[ord];
     }
 
     static NamedFunction identity(BasicType type) {
@@ -1682,30 +1625,35 @@ class LambdaForm {
         if (function != null) {
             return function;
         }
-        createFormsFor(type);
+        createIdentityForm(type);
         return NF_identity[ord];
     }
 
-    static NamedFunction constantZero(BasicType type) {
-        int ord = type.ordinal();
-        NamedFunction function = NF_zero[ord];
-        if (function != null) {
-            return function;
-        }
-        createFormsFor(type);
-        return NF_zero[ord];
+    static LambdaForm constantForm(BasicType type) {
+        assert type != null && type != V_TYPE : type;
+        var cached = LF_constant[type.ordinal()];
+        if (cached != null)
+            return cached;
+        return createConstantForm(type);
+    }
+
+    private static LambdaForm createConstantForm(BasicType type) {
+        UNSAFE.ensureClassInitialized(BoundMethodHandle.class); // defend access to SimpleMethodHandle
+        var species = SimpleMethodHandle.BMH_SPECIES.extendWith(type);
+        var carrier = argument(0, L_TYPE).withConstraint(species); // BMH bound with data
+        Name[] constNames = new Name[] { carrier, new Name(species.getterFunction(0), carrier) };
+        return LF_constant[type.ordinal()] = create(1, constNames, Kind.CONSTANT);
     }
 
     private static final @Stable LambdaForm[] LF_identity = new LambdaForm[TYPE_LIMIT];
-    private static final @Stable LambdaForm[] LF_zero = new LambdaForm[TYPE_LIMIT];
     private static final @Stable NamedFunction[] NF_identity = new NamedFunction[TYPE_LIMIT];
-    private static final @Stable NamedFunction[] NF_zero = new NamedFunction[TYPE_LIMIT];
+    private static final @Stable LambdaForm[] LF_constant = new LambdaForm[ARG_TYPE_LIMIT]; // no void
 
-    private static final Object createFormsLock = new Object();
-    private static void createFormsFor(BasicType type) {
+    private static final Object createIdentityFormLock = new Object();
+    private static void createIdentityForm(BasicType type) {
         // Avoid racy initialization during bootstrap
         UNSAFE.ensureClassInitialized(BoundMethodHandle.class);
-        synchronized (createFormsLock) {
+        synchronized (createIdentityFormLock) {
             final int ord = type.ordinal();
             LambdaForm idForm = LF_identity[ord];
             if (idForm != null) {
@@ -1714,27 +1662,18 @@ class LambdaForm {
             char btChar = type.basicTypeChar();
             boolean isVoid = (type == V_TYPE);
             Class<?> btClass = type.btClass;
-            MethodType zeType = MethodType.methodType(btClass);
-            MethodType idType = (isVoid) ? zeType : MethodType.methodType(btClass, btClass);
+            MethodType idType = (isVoid) ? MethodType.methodType(btClass) : MethodType.methodType(btClass, btClass);
 
             // Look up symbolic names.  It might not be necessary to have these,
             // but if we need to emit direct references to bytecodes, it helps.
-            // Zero is built from a call to an identity function with a constant zero input.
             MemberName idMem = new MemberName(LambdaForm.class, "identity_"+btChar, idType, REF_invokeStatic);
-            MemberName zeMem = null;
             try {
                 idMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, idMem, null, LM_TRUSTED, NoSuchMethodException.class);
-                if (!isVoid) {
-                    zeMem = new MemberName(LambdaForm.class, "zero_"+btChar, zeType, REF_invokeStatic);
-                    zeMem = IMPL_NAMES.resolveOrFail(REF_invokeStatic, zeMem, null, LM_TRUSTED, NoSuchMethodException.class);
-                }
             } catch (IllegalAccessException|NoSuchMethodException ex) {
                 throw newInternalError(ex);
             }
 
             NamedFunction idFun;
-            LambdaForm zeForm;
-            NamedFunction zeFun;
 
             // Create the LFs and NamedFunctions. Precompiling LFs to byte code is needed to break circular
             // bootstrap dependency on this method in case we're interpreting LFs
@@ -1743,32 +1682,18 @@ class LambdaForm {
                 idForm = LambdaForm.create(1, idNames, VOID_RESULT, Kind.IDENTITY);
                 idForm.compileToBytecode();
                 idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
-
-                zeForm = idForm;
-                zeFun = idFun;
             } else {
                 Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
                 idForm = LambdaForm.create(2, idNames, 1, Kind.IDENTITY);
                 idForm.compileToBytecode();
-                idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(idMem.getInvocationType(), idForm),
+                idFun = new NamedFunction(idMem, MethodHandleImpl.makeIntrinsic(idMem.getInvocationType(), idForm,
                             MethodHandleImpl.Intrinsic.IDENTITY));
-
-                Object zeValue = Wrapper.forBasicType(btChar).zero();
-                Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
-                zeForm = LambdaForm.create(1, zeNames, 1, Kind.ZERO);
-                zeForm.compileToBytecode();
-                zeFun = new NamedFunction(zeMem, MethodHandleImpl.makeIntrinsic(SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm),
-                        MethodHandleImpl.Intrinsic.ZERO));
             }
 
-            LF_zero[ord] = zeForm;
-            NF_zero[ord] = zeFun;
             LF_identity[ord] = idForm;
             NF_identity[ord] = idFun;
 
             assert(idFun.isIdentity());
-            assert(zeFun.isConstantZero());
-            assert(new Name(zeFun).isConstantZero());
         }
     }
 
@@ -1779,12 +1704,6 @@ class LambdaForm {
     private static double identity_D(double x) { return x; }
     private static Object identity_L(Object x) { return x; }
     private static void identity_V() { return; }
-    private static int zero_I() { return 0; }
-    private static long zero_J() { return 0; }
-    private static float zero_F() { return 0; }
-    private static double zero_D() { return 0; }
-    private static Object zero_L() { return null; }
-
     /**
      * Internal marker for byte-compiled LambdaForms.
      */
@@ -1814,7 +1733,14 @@ class LambdaForm {
         UNSAFE.ensureClassInitialized(Holder.class);
     }
 
-    /* Placeholder class for zero and identity forms generated ahead of time */
+    /// Holds pre-generated bytecode for common lambda forms.
+    ///
+    /// This class may be substituted in the JDK's modules image, or in an AOT
+    /// cache, by a version generated by [GenerateJLIClassesHelper].
+    ///
+    /// The method names of this class are internal tokens recognized by
+    /// [InvokerBytecodeGenerator#lookupPregenerated] and are subject to change.
+    @AOTSafeClassInitializer
     final class Holder {}
 
     // The following hack is necessary in order to suppress TRACE_INTERPRETER

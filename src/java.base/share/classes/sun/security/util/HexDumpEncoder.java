@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ public class HexDumpEncoder {
 
     protected void encodeBufferPrefix(OutputStream o) throws IOException {
         offset = 0;
-        pStream = new PrintStream(o);
+        pStream = new PrintStream(o, false, ISO_8859_1);
     }
 
     protected void encodeLinePrefix(OutputStream o, int len) {
@@ -303,6 +303,8 @@ public class HexDumpEncoder {
     /**
      * A 'streamless' version of encode that simply takes a buffer of
      * bytes and returns a string containing the encoded buffer.
+     * <P>
+     * Returned string is encoded with the ISO-8859-1, also known as ISO-LATIN-1.
      */
     public String encodeBuffer(byte[] aBuffer) {
         ByteArrayOutputStream   outStream = new ByteArrayOutputStream();
@@ -313,7 +315,7 @@ public class HexDumpEncoder {
             // This should never happen.
             throw new Error("CharacterEncoder.encodeBuffer internal error");
         }
-        return (outStream.toString());
+        return (outStream.toString(ISO_8859_1));
     }
 
     /**

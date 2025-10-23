@@ -62,6 +62,9 @@ public class XPathException extends RuntimeException {
        super(message);
        this.code = code;
     }
+    /**
+     * @serial
+     */
     public short   code;
     // XPathExceptionCode
     /**

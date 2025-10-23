@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.tools.JavaFileObject;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Directive.ExportsDirective;
 import com.sun.tools.javac.code.Directive.RequiresDirective;
-import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Scope.ImportFilter;
 import com.sun.tools.javac.code.Scope.NamedImportScope;
 import com.sun.tools.javac.code.Scope.StarImportScope;
@@ -108,8 +107,6 @@ public class TypeEnter implements Completer {
     private final Annotate annotate;
     private final TypeAnnotations typeAnnotations;
     private final Types types;
-    private final DeferredLintHandler deferredLintHandler;
-    private final Lint lint;
     private final TypeEnvs typeEnvs;
     private final Dependencies dependencies;
 
@@ -135,8 +132,6 @@ public class TypeEnter implements Completer {
         annotate = Annotate.instance(context);
         typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
-        deferredLintHandler = DeferredLintHandler.instance(context);
-        lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
         Source source = Source.instance(context);
@@ -274,7 +269,6 @@ public class TypeEnter implements Completer {
                 queue.add(env);
 
                 JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
                 try {
                     dependencies.push(env.enclClass.sym, phaseName);
                     runPhase(env);
@@ -282,7 +276,6 @@ public class TypeEnter implements Completer {
                     chk.completionError(tree.pos(), ex);
                 } finally {
                     dependencies.pop();
-                    deferredLintHandler.setPos(prevLintPos);
                     log.useSource(prev);
                 }
             }
@@ -340,20 +333,6 @@ public class TypeEnter implements Completer {
                     (cls.mods.flags & IMPLICIT_CLASS) != 0;
             if (isImplicitClass) {
                 doModuleImport(make.ModuleImport(make.QualIdent(syms.java_base)));
-                if (peekTypeExists(syms.ioType.tsym)) {
-                    doImport(make.Import(make.Select(make.QualIdent(syms.ioType.tsym),
-                            names.asterisk), true), false);
-                }
-            }
-        }
-
-        private boolean peekTypeExists(TypeSymbol type) {
-            try {
-                type.complete();
-                return !type.type.isErroneous();
-            } catch (CompletionFailure cf) {
-                //does not exist
-                return false;
             }
         }
 
@@ -365,8 +344,6 @@ public class TypeEnter implements Completer {
 
             ImportFilter prevStaticImportFilter = staticImportFilter;
             ImportFilter prevTypeImportFilter = typeImportFilter;
-            DiagnosticPosition prevLintPos = deferredLintHandler.immediate(lint);
-            Lint prevLint = chk.setLint(lint);
             Env<AttrContext> prevEnv = this.env;
             try {
                 this.env = env;
@@ -390,20 +367,13 @@ public class TypeEnter implements Completer {
                 handleImports(tree.getImports());
 
                 if (decl != null) {
-                    DiagnosticPosition prevCheckDeprecatedLintPos = deferredLintHandler.setPos(decl.pos());
-                    try {
-                        //check @Deprecated:
-                        markDeprecated(decl.sym, decl.mods.annotations, env);
-                    } finally {
-                        deferredLintHandler.setPos(prevCheckDeprecatedLintPos);
-                    }
+                    //check for @Deprecated annotations
+                    markDeprecated(decl.sym, decl.mods.annotations, env);
                     // process module annotations
-                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle, decl.pos());
+                    annotate.annotateLater(decl.mods.annotations, env, env.toplevel.modle);
                 }
             } finally {
                 this.env = prevEnv;
-                chk.setLint(prevLint);
-                deferredLintHandler.setPos(prevLintPos);
                 this.staticImportFilter = prevStaticImportFilter;
                 this.typeImportFilter = prevTypeImportFilter;
             }
@@ -436,7 +406,7 @@ public class TypeEnter implements Completer {
                 }
             }
             // process package annotations
-            annotate.annotateLater(tree.annotations, env, env.toplevel.packge, tree.pos());
+            annotate.annotateLater(tree.annotations, env, env.toplevel.packge);
         }
 
         private void doImport(JCImport tree, boolean fromModuleImport) {
@@ -527,8 +497,7 @@ public class TypeEnter implements Completer {
 
         Type attribImportType(JCTree tree, Env<AttrContext> env) {
             Assert.check(completionEnabled);
-            Lint prevLint = chk.setLint(allowDeprecationOnImport ?
-                    lint : lint.suppress(LintCategory.DEPRECATION, LintCategory.REMOVAL, LintCategory.PREVIEW));
+            boolean prevImportSuppression = chk.setImportSuppression(!allowDeprecationOnImport);
             try {
                 // To prevent deep recursion, suppress completion of some
                 // types.
@@ -536,7 +505,7 @@ public class TypeEnter implements Completer {
                 return attr.attribType(tree, env);
             } finally {
                 completionEnabled = true;
-                chk.setLint(prevLint);
+                chk.setImportSuppression(prevImportSuppression);
             }
         }
 
@@ -929,9 +898,9 @@ public class TypeEnter implements Completer {
             Env<AttrContext> baseEnv = baseEnv(tree, env);
 
             if (tree.extending != null)
-                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tree.extending, baseEnv, sym);
             for (JCExpression impl : tree.implementing)
-                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(impl, baseEnv, sym);
             annotate.flush();
 
             attribSuperTypes(env, baseEnv);
@@ -946,12 +915,11 @@ public class TypeEnter implements Completer {
                     chk.checkNotRepeated(iface.pos(), types.erasure(it), interfaceSet);
             }
 
-            annotate.annotateLater(tree.mods.annotations, baseEnv,
-                        sym, tree.pos());
+            annotate.annotateLater(tree.mods.annotations, baseEnv, sym);
             attr.attribTypeVariables(tree.typarams, baseEnv, false);
 
             for (JCTypeParameter tp : tree.typarams)
-                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym, tree.pos());
+                annotate.queueScanTreeAndTypeAnnotate(tp, baseEnv, sym);
 
             // check that no package exists with same fully qualified name,
             // but admit classes in the unnamed package which have the same

@@ -27,6 +27,7 @@
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @requires os.family == "linux"
+ * @requires !jdk.static
  * @compile DoOverflow.java
  * @run main/native TestStackGuardPages
  */
