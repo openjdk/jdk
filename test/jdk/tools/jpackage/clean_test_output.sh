@@ -56,6 +56,9 @@ filterFile () {
       # Strip variable part of temporary directory name `jdk.jpackage5060841750457404688`
       -e 's|\([\/]\)jdk\.jpackage[0-9]\{1,\}\b|\1jdk.jpackage|g'
 
+      # Strip variable part of temporary directory name `jdk.jpackage.test217379316521032539`
+      -e 's|\([\/]\)jdk\.jpackage\.test[0-9]\{1,\}\b|\1jdk.jpackage.test|g'
+
       # Convert PID value `[PID: 131561]`
       -e 's/\[PID: [0-9]\{1,\}\]/[PID: <pid>]/'
 
@@ -76,6 +79,41 @@ filterFile () {
 
       # Convert variable part of stack trace entry `at jdk.jpackage.test.JPackageCommand.execute(JPackageCommand.java:863)`
       -e 's/^\(.*\b\.java:\)[0-9]\{1,\}\()\r\{0,1\}\)$/\1N\2/'
+
+      # Whipe out entire output of /usr/bin/hdiutil command.
+      # It is of little to no interest and contains too many variable parts to deal with individually.
+      -e '/^Running \/usr\/bin\/hdiutil/,/^Returned:/{
+            //,/^Output:/!d
+          }'
+
+      # Zip stack traces.
+      -e $'/^\tat /{
+            :a
+            g
+            N
+            s/.*\\n//
+            /^\tat /ba
+            s/\\(^\t... \\)[0-9]\\{1,\\}\\( more\\)/\\1N\\2/
+            s/\(.*\)/\tat <stacktrace>\\n\\1/
+            P
+            D
+          }'
+
+      # Convert PID value in `taskkill /F /PID 5640`
+      -e 's|taskkill /F /PID [0-9]\{1,\}|taskkill /F /PID <pid>|'
+
+      # Convert PID value in `The process with PID 5640 has been terminated`
+      -e 's|\(The process with PID \)[0-9]\{1,\}\( has been terminated\)|\1<pid>\2|'
+
+      # Convert timeout value in `Check timeout value 57182ms is positive`
+      -e 's|\(Check timeout value \)[0-9]\{1,\}\(ms is positive\)|\1<timeout>\2|'
+
+      # Convert variable part of /usr/bin/osascript output `jdk.jpackage/config/SigningRuntimeImagePackageTest-dmg-setup.scpt:455:497: execution error: Finder got an error: Can’t set 1 to icon view. (-10006)`
+      -e 's|\(-dmg-setup.scpt:\)[0-9]\{1,\}:[0-9]\{1,\}\(: execution error: \)|\1<N:M>\2|'
+
+      # Use the same name for all exceptions.
+      -e 's|[^ ]\{1,\}\.[^ ]\{1,\}\Exception:|<Exception>:|g'
+      -e 's|[^ ]\{1,\}\.[^ ]\{1,\}\ExceptionBox:|<Exception>:|g'
   )
 
   sed $sed_inplace_option "$1" "${expressions[@]}"

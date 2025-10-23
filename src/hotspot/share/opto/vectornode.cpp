@@ -292,121 +292,6 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   }
 }
 
-// Return the scalar opcode for the specified vector opcode
-// and basic type.
-int VectorNode::scalar_opcode(int sopc, BasicType bt) {
-  switch (sopc) {
-    case Op_AddReductionVI:
-    case Op_AddVI:
-      return Op_AddI;
-    case Op_AddReductionVL:
-    case Op_AddVL:
-      return Op_AddL;
-    case Op_MulReductionVI:
-    case Op_MulVI:
-      return Op_MulI;
-    case Op_MulReductionVL:
-    case Op_MulVL:
-      return Op_MulL;
-    case Op_AndReductionV:
-    case Op_AndV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_AndI;
-        case T_LONG:
-          return Op_AndL;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_OrReductionV:
-    case Op_OrV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_OrI;
-        case T_LONG:
-          return Op_OrL;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_XorReductionV:
-    case Op_XorV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_XorI;
-        case T_LONG:
-          return Op_XorL;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_MinReductionV:
-    case Op_MinV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-          assert(false, "boolean and char are signed, not implemented for Min");
-          return 0;
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_MinI;
-        case T_LONG:
-          return Op_MinL;
-        case T_FLOAT:
-          return Op_MinF;
-        case T_DOUBLE:
-          return Op_MinD;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_MaxReductionV:
-    case Op_MaxV:
-      switch (bt) {
-        case T_BOOLEAN:
-        case T_CHAR:
-          assert(false, "boolean and char are signed, not implemented for Max");
-          return 0;
-        case T_BYTE:
-        case T_SHORT:
-        case T_INT:
-          return Op_MaxI;
-        case T_LONG:
-          return Op_MaxL;
-        case T_FLOAT:
-          return Op_MaxF;
-        case T_DOUBLE:
-          return Op_MaxD;
-        default:
-          assert(false, "basic type not handled");
-          return 0;
-      }
-    case Op_MinVHF:
-      return Op_MinHF;
-    case Op_MaxVHF:
-      return Op_MaxHF;
-    default:
-      assert(false,
-             "Vector node %s is not handled in VectorNode::scalar_opcode",
-             NodeClassNames[sopc]);
-      return 0; // Unimplemented
-  }
-}
-
 // Limits on vector size (number of elements) for auto-vectorization.
 bool VectorNode::vector_size_supported_auto_vectorization(const BasicType bt, int size) {
   return Matcher::max_vector_size_auto_vectorization(bt) >= size &&
@@ -439,8 +324,8 @@ bool VectorNode::is_maskall_type(const TypeLong* type, int vlen) {
   if (!type->is_con()) {
     return false;
   }
-  long mask = (-1ULL >> (64 - vlen));
-  long bit  = type->get_con() & mask;
+  jlong mask = (-1ULL >> (64 - vlen));
+  jlong bit = type->get_con() & mask;
   return bit == 0 || bit == mask;
 }
 
@@ -1725,6 +1610,34 @@ bool ReductionNode::implemented(int opc, uint vlen, BasicType bt) {
     return vopc != opc && Matcher::match_rule_supported_auto_vectorization(vopc, vlen, bt);
   }
   return false;
+}
+
+bool ReductionNode::auto_vectorization_requires_strict_order(int vopc) {
+  switch (vopc) {
+    case Op_AddReductionVI:
+    case Op_AddReductionVL:
+    case Op_MulReductionVI:
+    case Op_MulReductionVL:
+    case Op_MinReductionV:
+    case Op_MaxReductionV:
+    case Op_AndReductionV:
+    case Op_OrReductionV:
+    case Op_XorReductionV:
+      // These are cases that all have associative operations, which can
+      // thus be reordered, allowing non-strict order reductions.
+      return false;
+    case Op_AddReductionVF:
+    case Op_MulReductionVF:
+    case Op_AddReductionVD:
+    case Op_MulReductionVD:
+      // Floating-point addition and multiplication are non-associative,
+      // so AddReductionVF/D and MulReductionVF/D require strict ordering
+      // in auto-vectorization.
+      return true;
+    default:
+      assert(false, "not handled: %s", NodeClassNames[vopc]);
+      return true;
+  }
 }
 
 MacroLogicVNode* MacroLogicVNode::make(PhaseGVN& gvn, Node* in1, Node* in2, Node* in3,

@@ -439,18 +439,14 @@ private:
   //
   // * If either call cannot satisfy the allocation request using the
   //   current allocating region, they will try to get a new one. If
-  //   this fails, they will attempt to do an evacuation pause and
-  //   retry the allocation.
-  //
-  // * If all allocation attempts fail, even after trying to schedule
-  //   an evacuation pause, allocate_new_tlab() will return null,
-  //   whereas mem_allocate() will attempt a heap expansion and/or
-  //   schedule a Full GC.
+  //   this fails, (only) mem_allocate() will attempt to do an evacuation
+  //   pause and retry the allocation. Allocate_new_tlab() will return null,
+  //   deferring to the following mem_allocate().
   //
   // * We do not allow humongous-sized TLABs. So, allocate_new_tlab
   //   should never be called with word_size being humongous. All
   //   humongous allocation requests should go to mem_allocate() which
-  //   will satisfy them with a special path.
+  //   will satisfy them in a special path.
 
   HeapWord* allocate_new_tlab(size_t min_size,
                               size_t requested_size,
@@ -463,12 +459,13 @@ private:
   // should only be used for non-humongous allocations.
   inline HeapWord* attempt_allocation(size_t min_word_size,
                                       size_t desired_word_size,
-                                      size_t* actual_word_size);
-
+                                      size_t* actual_word_size,
+                                      bool allow_gc);
   // Second-level mutator allocation attempt: take the Heap_lock and
   // retry the allocation attempt, potentially scheduling a GC
-  // pause. This should only be used for non-humongous allocations.
-  HeapWord* attempt_allocation_slow(uint node_index, size_t word_size);
+  // pause if allow_gc is set. This should only be used for non-humongous
+  // allocations.
+  HeapWord* attempt_allocation_slow(uint node_index, size_t word_size, bool allow_gc);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
@@ -769,10 +766,6 @@ private:
   // precondition: !is_stw_gc_active()
   void do_collection_pause_at_safepoint(size_t allocation_word_size = 0);
 
-  // Helper for do_collection_pause_at_safepoint, containing the guts
-  // of the incremental collection pause, executed by the vm thread.
-  void do_collection_pause_at_safepoint_helper(size_t allocation_word_size);
-
   void verify_before_young_collection(G1HeapVerifier::G1VerifyType type);
   void verify_after_young_collection(G1HeapVerifier::G1VerifyType type);
 
@@ -805,11 +798,6 @@ public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
   G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
-  G1CardSet* young_regions_cardset() { return _young_regions_cset_group.card_set(); };
-
-  G1MonotonicArenaMemoryStats young_regions_card_set_memory_stats() { return _young_regions_cset_group.card_set_memory_stats(); }
-
-  void prepare_group_cardsets_for_scan();
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();

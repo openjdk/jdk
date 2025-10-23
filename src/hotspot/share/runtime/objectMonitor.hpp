@@ -32,6 +32,7 @@
 #include "oops/weakHandle.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ObjectMonitor;
 class ObjectMonitorContentionMark;
@@ -55,6 +56,7 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   bool           _is_wait;
   bool        _at_reenter;
   bool       _interrupted;
+  bool     _do_timed_park;
   bool            _active;    // Contention monitoring is enabled
  public:
   ObjectWaiter(JavaThread* current);
@@ -72,20 +74,19 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);
 
-  ObjectWaiter* const badObjectWaiterPtr = (ObjectWaiter*) 0xBAD;
   void set_bad_pointers() {
 #ifdef ASSERT
-    this->_prev  = badObjectWaiterPtr;
-    this->_next  = badObjectWaiterPtr;
+    this->_prev  = (ObjectWaiter*) badAddressVal;
+    this->_next  = (ObjectWaiter*) badAddressVal;
     this->TState = ObjectWaiter::TS_RUN;
 #endif
   }
   ObjectWaiter* next() {
-    assert (_next != badObjectWaiterPtr, "corrupted list!");
+    assert (_next != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _next;
   }
   ObjectWaiter* prev() {
-    assert (_prev != badObjectWaiterPtr, "corrupted list!");
+    assert (_prev != (ObjectWaiter*) badAddressVal, "corrupted list!");
     return _prev;
   }
 };
@@ -199,6 +200,8 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
                                     // along with other fields to determine if an ObjectMonitor can be
                                     // deflated. It is also used by the async deflation protocol. See
                                     // ObjectMonitor::deflate_monitor().
+  int64_t _unmounted_vthreads;      // Number of nodes in the _entry_list associated with unmounted vthreads.
+                                    // It might be temporarily more than the actual number but never less.
 
   ObjectWaiter* volatile _wait_set; // LL of threads waiting on the monitor - wait()
   volatile int  _waiters;           // number of waiting threads
@@ -325,6 +328,9 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   intx      recursions() const                                         { return _recursions; }
   void      set_recursions(size_t recursions);
   void      increment_recursions(JavaThread* current);
+  void      inc_unmounted_vthreads();
+  void      dec_unmounted_vthreads();
+  bool      has_unmounted_vthreads() const;
 
   // JVM/TI GetObjectMonitorUsage() needs this:
   int waiters() const;

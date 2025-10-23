@@ -219,7 +219,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
           // The card table contains "dirty" card marks. Clear unconditionally.
           //
           // Humongous reclaim candidates are not in the dirty set. This is fine because
-          // their card and refinement table should always be clear as they are typeArrays.
+          // we clean their card and refinement tables when we reclaim separately.
           r->clear_card_table();
           // There is no need to clear the refinement table here: at the start of the collection
           // we had to clear the refinement card table for collection set regions already, and any
@@ -1165,10 +1165,6 @@ public:
       {
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
-
-        if (_initial_evacuation) {
-          G1HeapRegionRemSet::iterate_for_merge(g1h->young_regions_cardset(), merge);
-        }
 
         g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
 
