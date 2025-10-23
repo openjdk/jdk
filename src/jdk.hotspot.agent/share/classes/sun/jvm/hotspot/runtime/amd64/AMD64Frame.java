@@ -36,7 +36,7 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 /** Specialization of and implementation of abstract methods of the
-    Frame class for the x86-64 family of CPUs. */
+    Frame class for the x86_64 family of CPUs. */
 
 public class AMD64Frame extends Frame {
   private static final boolean DEBUG;
