@@ -5411,7 +5411,7 @@ void os::print_open_file_descriptors(outputStream* st) {
       }
     }
     closedir(dirp);
-    st->print_cr("OpenFileDescriptorCount = %d", fds - 1); // matches management code
+    st->print_cr("OpenFileDescriptorCount = %d", fds - 1);
   } else {
     st->print_cr("OpenFileDescriptorCount = unknown");
   }

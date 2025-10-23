@@ -2507,39 +2507,32 @@ bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
 
 #ifdef __APPLE__
 void os::print_open_file_descriptors(outputStream* st) {
-  pid_t my_pid;
+  const int MAX_SAFE_FDS = 1024;
+  struct proc_fdinfo fds[MAX_SAFE_FDS];
   struct proc_bsdinfo bsdinfo;
-  struct proc_fdinfo* fds;
   int nfiles;
   kern_return_t kres;
   int res;
   size_t fds_size;
+  pid_t my_pid;
 
   kres = pid_for_task(mach_task_self(), &my_pid);
   if (kres != KERN_SUCCESS) {
     st->print_cr("OpenFileDescriptorCount = unknown");
+    return;
   }
 
-  res = proc_pidinfo(my_pid, PROC_PIDTBSDINFO, 0, &bsdinfo, PROC_PIDTBSDINFO_SIZE);
+  res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, MAX_SAFE_FDS * sizeof(struct proc_fdinfo));
   if (res <= 0) {
     st->print_cr("OpenFileDescriptorCount = unknown");
-  }
-
-  // Allocate memory to hold the fd info
-  fds_size = bsdinfo.pbi_nfiles * sizeof(struct proc_fdinfo);
-  fds = (struct proc_fdinfo*)os::malloc(fds_size, mtInternal);
-  if (fds == nullptr) {
-    st->print_cr("OpenFileDescriptorCount = unknown");
-  }
-
-  res = proc_pidinfo(my_pid, PROC_PIDLISTFDS, 0, fds, fds_size);
-  if (res <= 0) {
-    free(fds);
-    st->print_cr("OpenFileDescriptorCount = unknown");
+    return;
   }
 
   nfiles = res / sizeof(struct proc_fdinfo);
-  free(fds);
+  if (nfiles >= MAX_SAFE_FDS) {
+    st->print_cr("OpenFileDescriptorCount = unknown");
+    return;
+  }
 
   st->print_cr("OpenFileDescriptorCount = %d", nfiles);
 }

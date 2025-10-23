@@ -1471,6 +1471,11 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
+  // STEP("printing number of open file descriptors")
+
+  os::print_open_file_descriptors(st);
+  st->cr();
+
   // STEP("printing ring buffers")
 
   Events::print_all(st);
@@ -1554,12 +1559,6 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("printing memory info")
 
   os::print_memory_info(st);
-  st->cr();
-
-  // STEP("printing file descriptor info")
-
-  os::print_open_file_descriptors(st);
-  os::print_max_file_descriptor_count(st);
   st->cr();
 
   // STEP("printing internal vm info")
