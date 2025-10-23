@@ -463,12 +463,6 @@ class DwarfFile : public ElfFile {
 
    public:
     ArangesCache() : _entries(nullptr), _count(0), _capacity(0), _initialized(false), _failed(false) {}
-    ArangesCache(ArangesCache&& other) : _entries(other._entries), _count(other._count), _capacity(other._capacity),
-                                          _initialized(other._initialized), _failed(other._failed) {
-      other._entries = nullptr;
-      other._count = 0;
-      other._capacity = 0;
-    }
     ~ArangesCache() {
       this->free();
     }
