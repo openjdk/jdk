@@ -44,7 +44,6 @@ package gc;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
-import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -79,15 +78,15 @@ public class TestUseGCOverheadLimit {
 
     System.out.println(output.getStdout());
 
-    Asserts.assertTrue(output.getStdout().indexOf("GC Overhead Limit exceeded too often (5).") != -1,
-                       "Could not find indication that we failed because of GC overhead limit.");
+    output.stdoutShouldContain("GC Overhead Limit exceeded too often (5).");
   }
 
   static class Allocating {
     public static void main(String[] args) {
       Object[] cache = new Object[1024 * 1024 * 2];
 
-      // Allocate random objects, keeping around most of the data.
+      // Allocate random objects, keeping around data, causing garbage
+      // collections.
       for (int i = 0; i < 1024* 1024 * 30; i++) {
         Object[] obj = new Object[10];
         cache[i % cache.length] = obj;

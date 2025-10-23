@@ -473,8 +473,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
       return nullptr;
     }
 
-    // Was the gc-overhead reached inside the safepoint? If so, this mutator
-    // should return null even when unsuccessfully scheduling a collection as well
+    // Has the gc overhead limit been reached in the meantime? If so, this mutator
+    // should receive null even when unsuccessfully scheduling a collection as well
     // for global consistency.
     if (gc_overhead_limit_exceeded()) {
       return nullptr;
@@ -727,8 +727,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
       return nullptr;
     }
 
-    // Was the gc-overhead reached inside the safepoint? If so, this mutator
-    // should return null as well for global consistency.
+    // Has the gc overhead limit been reached in the meantime? If so, this mutator
+    // should receive null even when unsuccessfully scheduling a collection as well
+    // for global consistency.
     if (gc_overhead_limit_exceeded()) {
       return nullptr;
     }
@@ -973,16 +974,16 @@ void G1CollectedHeap::update_gc_overhead_limit_exceeded() {
   assert(SafepointSynchronize::is_at_safepoint(), "precondition");
 
   if (UseGCOverheadLimit) {
-    bool little_mutator_time = (_policy->analytics()->long_term_gc_time_ratio() * 100) >= GCTimeLimit;
+    bool gc_time_over_limit = (_policy->analytics()->long_term_gc_time_ratio() * 100) >= GCTimeLimit;
     double free_space_percent = percent_of(num_available_regions() * G1HeapRegion::GrainBytes, max_capacity());
-    bool little_free_space = free_space_percent < GCHeapFreeLimit;
+    bool free_space_below_limit = free_space_percent < GCHeapFreeLimit;
 
     log_debug(gc)("GC Overhead Limit: GC Time %f Free Space %f Counter %zu",
                   (_policy->analytics()->long_term_gc_time_ratio() * 100),
                   free_space_percent,
                   _gc_overhead_counter);
 
-    if (little_mutator_time && little_free_space) {
+    if (gc_time_over_limit && free_space_below_limit) {
       _gc_overhead_counter++;
       return;
     } else {
@@ -999,8 +1000,8 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
                                                             bool do_gc,
                                                             bool maximal_compaction,
                                                             bool expect_null_mutator_alloc_region) {
-  // Skip allocation if GC overhead has been exceeded to let the mutator run into
-  // an OOME. It can either exit "gracefully" or try to free up memory asap.
+  // Skip allocation limit if GC overhead has been exceeded to let the mutator run
+  // into an OOME. It can either exit "gracefully" or try to free up memory asap.
   // For the latter situation, keep running GCs. If the mutator frees up enough
   // memory quickly enough, the overhead(s) will go below the threshold(s) again
   // and the VM may continue running.
