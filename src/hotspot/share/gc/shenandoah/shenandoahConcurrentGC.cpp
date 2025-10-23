@@ -676,10 +676,8 @@ void ShenandoahConcurrentGC::op_init_mark() {
       // Purge the SATB buffers, transferring any valid, old pointers to the
       // old generation mark queue. Any pointers not in an old region will be
       // abandoned.
-      ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
-      assert(ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
-             "Should be filtering pointers outside of old during old marking");
-      heap->old_generation()->transfer_pointers_from_satb();
+      // ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
+      // heap->old_generation()->transfer_pointers_from_satb();
     }
     {
       // After we swap card table below, the write-table is all clean, and the read table holds
@@ -1175,8 +1173,10 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
     // We are not concerned about skipping this step in abbreviated cycles because regions
     // with no live objects cannot have been written to and so cannot have entries in the SATB
     // buffers.
+    //
+    // After update refs, it is no longer possible for a mutator to overwrite a pointer into the collection set
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
-    // heap->old_generation()->transfer_pointers_from_satb();
+    heap->old_generation()->transfer_pointers_from_satb();
 
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
     // entire regions.  Both of these relevant operations occur before final update refs.

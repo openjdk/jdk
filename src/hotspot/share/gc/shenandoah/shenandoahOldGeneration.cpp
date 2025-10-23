@@ -373,6 +373,8 @@ bool ShenandoahOldGeneration::coalesce_and_fill() {
 void ShenandoahOldGeneration::transfer_pointers_from_satb() const {
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->is_concurrent_old_mark_in_progress(), "Only necessary during old marking.");
+  assert(ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
+         "Should be filtering pointers outside of old during old marking");
   log_debug(gc)("Transfer SATB buffers");
   ShenandoahPurgeSATBTask purge_satb_task;
   heap->workers()->run_task(&purge_satb_task);
