@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -789,6 +789,7 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 -field name BUTTON1_MASK descriptor I
 -field name BUTTON2_MASK descriptor I
 -field name BUTTON3_MASK descriptor I
+-method name getModifiers descriptor ()I
 field name SHIFT_MASK descriptor I constantValue 1 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name CTRL_MASK descriptor I constantValue 2 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name META_MASK descriptor I constantValue 4 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
@@ -797,7 +798,6 @@ field name ALT_GRAPH_MASK descriptor I constantValue 32 flags 19 deprecated true
 field name BUTTON1_MASK descriptor I constantValue 16 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name BUTTON2_MASK descriptor I constantValue 8 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 field name BUTTON3_MASK descriptor I constantValue 4 flags 19 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
--method name getModifiers descriptor ()I
 method name getModifiers descriptor ()I flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 
 class name java/awt/event/InputMethodEvent
@@ -1354,10 +1354,10 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 
 class name java/beans/beancontext/BeanContextServiceAvailableEvent
 -field name serviceClass descriptor Ljava/lang/Class;
-field name serviceClass descriptor Ljava/lang/Class; flags 4 signature Ljava/lang/Class<*>;
 -method name <init> descriptor (Ljava/beans/beancontext/BeanContextServices;Ljava/lang/Class;)V
 -method name getServiceClass descriptor ()Ljava/lang/Class;
 -method name getCurrentServiceSelectors descriptor ()Ljava/util/Iterator;
+field name serviceClass descriptor Ljava/lang/Class; flags 4 signature Ljava/lang/Class<*>;
 method name <init> descriptor (Ljava/beans/beancontext/BeanContextServices;Ljava/lang/Class;)V flags 1 signature (Ljava/beans/beancontext/BeanContextServices;Ljava/lang/Class<*>;)V
 method name getServiceClass descriptor ()Ljava/lang/Class; flags 1 signature ()Ljava/lang/Class<*>;
 method name getCurrentServiceSelectors descriptor ()Ljava/util/Iterator; flags 1 signature ()Ljava/util/Iterator<*>;
@@ -1370,10 +1370,10 @@ method name getCurrentServiceSelectors descriptor (Ljava/beans/beancontext/BeanC
 
 class name java/beans/beancontext/BeanContextServiceRevokedEvent
 -field name serviceClass descriptor Ljava/lang/Class;
-field name serviceClass descriptor Ljava/lang/Class; flags 4 signature Ljava/lang/Class<*>;
 -method name <init> descriptor (Ljava/beans/beancontext/BeanContextServices;Ljava/lang/Class;Z)V
 -method name getServiceClass descriptor ()Ljava/lang/Class;
 -method name isServiceClass descriptor (Ljava/lang/Class;)Z
+field name serviceClass descriptor Ljava/lang/Class; flags 4 signature Ljava/lang/Class<*>;
 method name <init> descriptor (Ljava/beans/beancontext/BeanContextServices;Ljava/lang/Class;Z)V flags 1 signature (Ljava/beans/beancontext/BeanContextServices;Ljava/lang/Class<*>;Z)V
 method name getServiceClass descriptor ()Ljava/lang/Class; flags 1 signature ()Ljava/lang/Class<*>;
 method name isServiceClass descriptor (Ljava/lang/Class;)Z flags 1 signature (Ljava/lang/Class<*>;)Z
@@ -1402,8 +1402,6 @@ innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassNam
 innerclass innerClass java/beans/beancontext/BeanContextSupport$BCSIterator outerClass java/beans/beancontext/BeanContextSupport innerClassName BCSIterator flags 1c
 -field name services descriptor Ljava/util/HashMap;
 -field name bcsListeners descriptor Ljava/util/ArrayList;
-field name services descriptor Ljava/util/HashMap; flags 84 signature Ljava/util/HashMap<Ljava/lang/Object;Ljava/beans/beancontext/BeanContextServicesSupport$BCSSServiceProvider;>;
-field name bcsListeners descriptor Ljava/util/ArrayList; flags 84 signature Ljava/util/ArrayList<Ljava/beans/beancontext/BeanContextServicesListener;>;
 -method name createBCSSServiceProvider descriptor (Ljava/lang/Class;Ljava/beans/beancontext/BeanContextServiceProvider;)Ljava/beans/beancontext/BeanContextServicesSupport$BCSSServiceProvider;
 -method name addService descriptor (Ljava/lang/Class;Ljava/beans/beancontext/BeanContextServiceProvider;)Z
 -method name addService descriptor (Ljava/lang/Class;Ljava/beans/beancontext/BeanContextServiceProvider;Z)Z
@@ -1414,6 +1412,8 @@ field name bcsListeners descriptor Ljava/util/ArrayList; flags 84 signature Ljav
 -method name getCurrentServiceSelectors descriptor (Ljava/lang/Class;)Ljava/util/Iterator;
 -method name fireServiceAdded descriptor (Ljava/lang/Class;)V
 -method name fireServiceRevoked descriptor (Ljava/lang/Class;Z)V
+field name services descriptor Ljava/util/HashMap; flags 84 signature Ljava/util/HashMap<Ljava/lang/Object;Ljava/beans/beancontext/BeanContextServicesSupport$BCSSServiceProvider;>;
+field name bcsListeners descriptor Ljava/util/ArrayList; flags 84 signature Ljava/util/ArrayList<Ljava/beans/beancontext/BeanContextServicesListener;>;
 method name createBCSSServiceProvider descriptor (Ljava/lang/Class;Ljava/beans/beancontext/BeanContextServiceProvider;)Ljava/beans/beancontext/BeanContextServicesSupport$BCSSServiceProvider; flags 4 signature (Ljava/lang/Class<*>;Ljava/beans/beancontext/BeanContextServiceProvider;)Ljava/beans/beancontext/BeanContextServicesSupport$BCSSServiceProvider;
 method name addService descriptor (Ljava/lang/Class;Ljava/beans/beancontext/BeanContextServiceProvider;)Z flags 1 signature (Ljava/lang/Class<*>;Ljava/beans/beancontext/BeanContextServiceProvider;)Z
 method name addService descriptor (Ljava/lang/Class;Ljava/beans/beancontext/BeanContextServiceProvider;Z)Z flags 4 signature (Ljava/lang/Class<*>;Ljava/beans/beancontext/BeanContextServiceProvider;Z)Z
@@ -1448,12 +1448,12 @@ innerclass innerClass java/beans/beancontext/BeanContextSupport$BCSIterator oute
 innerclass innerClass java/util/Map$Entry outerClass java/util/Map innerClassName Entry flags 609
 -field name children descriptor Ljava/util/HashMap;
 -field name bcmListeners descriptor Ljava/util/ArrayList;
-field name children descriptor Ljava/util/HashMap; flags 84 signature Ljava/util/HashMap<Ljava/lang/Object;Ljava/beans/beancontext/BeanContextSupport$BCSChild;>;
-field name bcmListeners descriptor Ljava/util/ArrayList; flags 84 signature Ljava/util/ArrayList<Ljava/beans/beancontext/BeanContextMembershipListener;>;
 -method name iterator descriptor ()Ljava/util/Iterator;
 -method name bcsChildren descriptor ()Ljava/util/Iterator;
 -method name serialize descriptor (Ljava/io/ObjectOutputStream;Ljava/util/Collection;)V
 -method name classEquals descriptor (Ljava/lang/Class;Ljava/lang/Class;)Z
+field name children descriptor Ljava/util/HashMap; flags 84 signature Ljava/util/HashMap<Ljava/lang/Object;Ljava/beans/beancontext/BeanContextSupport$BCSChild;>;
+field name bcmListeners descriptor Ljava/util/ArrayList; flags 84 signature Ljava/util/ArrayList<Ljava/beans/beancontext/BeanContextMembershipListener;>;
 method name iterator descriptor ()Ljava/util/Iterator; flags 1 signature ()Ljava/util/Iterator<Ljava/lang/Object;>;
 method name bcsChildren descriptor ()Ljava/util/Iterator; flags 4 signature ()Ljava/util/Iterator<Ljava/beans/beancontext/BeanContextSupport$BCSChild;>;
 method name serialize descriptor (Ljava/io/ObjectOutputStream;Ljava/util/Collection;)V thrownTypes java/io/IOException flags 14 signature (Ljava/io/ObjectOutputStream;Ljava/util/Collection<*>;)V
@@ -2028,10 +2028,10 @@ method name getTagNames descriptor ()Ljava/util/SortedSet; flags 1 signature ()L
 class name javax/imageio/spi/ImageReaderSpi
 -field name STANDARD_INPUT_TYPE descriptor [Ljava/lang/Class;
 -field name inputTypes descriptor [Ljava/lang/Class;
-field name STANDARD_INPUT_TYPE descriptor [Ljava/lang/Class; flags 19 deprecated true signature [Ljava/lang/Class<*>; runtimeAnnotations @Ljava/lang/Deprecated;
-field name inputTypes descriptor [Ljava/lang/Class; flags 4 signature [Ljava/lang/Class<*>;
 -method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Class;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
 -method name getInputTypes descriptor ()[Ljava/lang/Class;
+field name STANDARD_INPUT_TYPE descriptor [Ljava/lang/Class; flags 19 deprecated true signature [Ljava/lang/Class<*>; runtimeAnnotations @Ljava/lang/Deprecated;
+field name inputTypes descriptor [Ljava/lang/Class; flags 4 signature [Ljava/lang/Class<*>;
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Class;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V flags 1 signature (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Class<*>;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
 method name getInputTypes descriptor ()[Ljava/lang/Class; flags 1 signature ()[Ljava/lang/Class<*>;
 
@@ -2042,10 +2042,10 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name javax/imageio/spi/ImageWriterSpi
 -field name STANDARD_OUTPUT_TYPE descriptor [Ljava/lang/Class;
 -field name outputTypes descriptor [Ljava/lang/Class;
-field name STANDARD_OUTPUT_TYPE descriptor [Ljava/lang/Class; flags 19 deprecated true signature [Ljava/lang/Class<*>; runtimeAnnotations @Ljava/lang/Deprecated;
-field name outputTypes descriptor [Ljava/lang/Class; flags 4 signature [Ljava/lang/Class<*>;
 -method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Class;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
 -method name getOutputTypes descriptor ()[Ljava/lang/Class;
+field name STANDARD_OUTPUT_TYPE descriptor [Ljava/lang/Class; flags 19 deprecated true signature [Ljava/lang/Class<*>; runtimeAnnotations @Ljava/lang/Deprecated;
+field name outputTypes descriptor [Ljava/lang/Class; flags 4 signature [Ljava/lang/Class<*>;
 method name <init> descriptor (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Class;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V flags 1 signature (Ljava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;Ljava/lang/String;[Ljava/lang/Class<*>;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/String;[Ljava/lang/String;)V
 method name getOutputTypes descriptor ()[Ljava/lang/Class; flags 1 signature ()[Ljava/lang/Class<*>;
 
@@ -3485,7 +3485,6 @@ innerclass innerClass javax/swing/JSpinner$NumberEditor outerClass javax/swing/J
 innerclass innerClass javax/swing/JSpinner$DefaultEditor outerClass javax/swing/JSpinner innerClassName DefaultEditor flags 9
 innerclass innerClass javax/swing/JFormattedTextField$AbstractFormatter outerClass javax/swing/JFormattedTextField innerClassName AbstractFormatter flags 409
 innerclass innerClass javax/swing/JFormattedTextField$AbstractFormatterFactory outerClass javax/swing/JFormattedTextField innerClassName AbstractFormatterFactory flags 409
-method name setComponentOrientation descriptor (Ljava/awt/ComponentOrientation;)V flags 1
 
 class name javax/swing/JSplitPane
 header extends javax/swing/JComponent implements javax/accessibility/Accessible flags 21 runtimeAnnotations @Ljava/beans/JavaBean;(defaultProperty="UI")
@@ -3592,8 +3591,6 @@ innerclass innerClass javax/swing/UIDefaults$LazyValue outerClass javax/swing/UI
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -field name defaultRenderersByColumnClass descriptor Ljava/util/Hashtable;
 -field name defaultEditorsByColumnClass descriptor Ljava/util/Hashtable;
-field name defaultRenderersByColumnClass descriptor Ljava/util/Hashtable; flags 84 signature Ljava/util/Hashtable<Ljava/lang/Object;Ljava/lang/Object;>;
-field name defaultEditorsByColumnClass descriptor Ljava/util/Hashtable; flags 84 signature Ljava/util/Hashtable<Ljava/lang/Object;Ljava/lang/Object;>;
 -method name <init> descriptor (Ljava/util/Vector;Ljava/util/Vector;)V
 -method name setTableHeader descriptor (Ljavax/swing/table/JTableHeader;)V
 -method name setRowHeight descriptor (I)V
@@ -3638,6 +3635,8 @@ field name defaultEditorsByColumnClass descriptor Ljava/util/Hashtable; flags 84
 -method name setFillsViewportHeight descriptor (Z)V
 -method name setCellEditor descriptor (Ljavax/swing/table/TableCellEditor;)V
 -method name getAccessibleContext descriptor ()Ljavax/accessibility/AccessibleContext;
+field name defaultRenderersByColumnClass descriptor Ljava/util/Hashtable; flags 84 signature Ljava/util/Hashtable<Ljava/lang/Object;Ljava/lang/Object;>;
+field name defaultEditorsByColumnClass descriptor Ljava/util/Hashtable; flags 84 signature Ljava/util/Hashtable<Ljava/lang/Object;Ljava/lang/Object;>;
 method name <init> descriptor (Ljava/util/Vector;Ljava/util/Vector;)V flags 1 signature (Ljava/util/Vector<+Ljava/util/Vector;>;Ljava/util/Vector<*>;)V
 method name setTableHeader descriptor (Ljavax/swing/table/JTableHeader;)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(description="The\u005C;u0020;JTableHeader\u005C;u0020;instance\u005C;u0020;which\u005C;u0020;renders\u005C;u0020;the\u005C;u0020;column\u005C;u0020;headers.")
 method name setRowHeight descriptor (I)V flags 1 runtimeAnnotations @Ljava/beans/BeanProperty;(description="The\u005C;u0020;height\u005C;u0020;of\u005C;u0020;the\u005C;u0020;specified\u005C;u0020;row.")
@@ -4230,12 +4229,12 @@ innerclass innerClass javax/swing/plaf/basic/BasicComboBoxRenderer$UIResource ou
 innerclass innerClass javax/swing/plaf/basic/BasicComboBoxEditor$UIResource outerClass javax/swing/plaf/basic/BasicComboBoxEditor innerClassName UIResource flags 9
 -field name comboBox descriptor Ljavax/swing/JComboBox;
 -field name listBox descriptor Ljavax/swing/JList;
-field name comboBox descriptor Ljavax/swing/JComboBox; flags 4 signature Ljavax/swing/JComboBox<Ljava/lang/Object;>;
-field name listBox descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 -method name createRenderer descriptor ()Ljavax/swing/ListCellRenderer;
 -method name isPopupVisible descriptor (Ljavax/swing/JComboBox;)Z
 -method name setPopupVisible descriptor (Ljavax/swing/JComboBox;Z)V
 -method name isFocusTraversable descriptor (Ljavax/swing/JComboBox;)Z
+field name comboBox descriptor Ljavax/swing/JComboBox; flags 4 signature Ljavax/swing/JComboBox<Ljava/lang/Object;>;
+field name listBox descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 method name createRenderer descriptor ()Ljavax/swing/ListCellRenderer; flags 4 signature ()Ljavax/swing/ListCellRenderer<Ljava/lang/Object;>;
 method name isPopupVisible descriptor (Ljavax/swing/JComboBox;)Z flags 1 signature (Ljavax/swing/JComboBox<*>;)Z
 method name setPopupVisible descriptor (Ljavax/swing/JComboBox;Z)V flags 1 signature (Ljavax/swing/JComboBox<*>;Z)V
@@ -4254,13 +4253,13 @@ innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$InvocationMouseMoti
 innerclass innerClass javax/swing/plaf/basic/BasicComboPopup$InvocationMouseHandler outerClass javax/swing/plaf/basic/BasicComboPopup innerClassName InvocationMouseHandler flags 4
 -field name comboBox descriptor Ljavax/swing/JComboBox;
 -field name list descriptor Ljavax/swing/JList;
-field name comboBox descriptor Ljavax/swing/JComboBox; flags 4 signature Ljavax/swing/JComboBox<Ljava/lang/Object;>;
-field name list descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 -method name getList descriptor ()Ljavax/swing/JList;
 -method name uninstallComboBoxModelListeners descriptor (Ljavax/swing/ComboBoxModel;)V
 -method name <init> descriptor (Ljavax/swing/JComboBox;)V
 -method name createList descriptor ()Ljavax/swing/JList;
 -method name installComboBoxModelListeners descriptor (Ljavax/swing/ComboBoxModel;)V
+field name comboBox descriptor Ljavax/swing/JComboBox; flags 4 signature Ljavax/swing/JComboBox<Ljava/lang/Object;>;
+field name list descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 method name getList descriptor ()Ljavax/swing/JList; flags 1 signature ()Ljavax/swing/JList<Ljava/lang/Object;>;
 method name uninstallComboBoxModelListeners descriptor (Ljavax/swing/ComboBoxModel;)V flags 4 signature (Ljavax/swing/ComboBoxModel<*>;)V
 method name <init> descriptor (Ljavax/swing/JComboBox;)V flags 1 signature (Ljavax/swing/JComboBox<Ljava/lang/Object;>;)V
@@ -4357,11 +4356,11 @@ innerclass innerClass javax/swing/plaf/basic/BasicListUI$MouseInputHandler outer
 innerclass innerClass javax/swing/JList$DropLocation outerClass javax/swing/JList innerClassName DropLocation flags 19
 innerclass innerClass java/awt/Component$BaselineResizeBehavior outerClass java/awt/Component innerClassName BaselineResizeBehavior flags 4019
 -field name list descriptor Ljavax/swing/JList;
-field name list descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 -method name paintCell descriptor (Ljava/awt/Graphics;ILjava/awt/Rectangle;Ljavax/swing/ListCellRenderer;Ljavax/swing/ListModel;Ljavax/swing/ListSelectionModel;I)V
 -method name locationToIndex descriptor (Ljavax/swing/JList;Ljava/awt/Point;)I
 -method name indexToLocation descriptor (Ljavax/swing/JList;I)Ljava/awt/Point;
 -method name getCellBounds descriptor (Ljavax/swing/JList;II)Ljava/awt/Rectangle;
+field name list descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 method name paintCell descriptor (Ljava/awt/Graphics;ILjava/awt/Rectangle;Ljavax/swing/ListCellRenderer;Ljavax/swing/ListModel;Ljavax/swing/ListSelectionModel;I)V flags 4 signature (Ljava/awt/Graphics;ILjava/awt/Rectangle;Ljavax/swing/ListCellRenderer<Ljava/lang/Object;>;Ljavax/swing/ListModel<Ljava/lang/Object;>;Ljavax/swing/ListSelectionModel;I)V
 method name locationToIndex descriptor (Ljavax/swing/JList;Ljava/awt/Point;)I flags 1 signature (Ljavax/swing/JList<*>;Ljava/awt/Point;)I
 method name indexToLocation descriptor (Ljavax/swing/JList;I)Ljava/awt/Point; flags 1 signature (Ljavax/swing/JList<*>;I)Ljava/awt/Point;
@@ -4615,12 +4614,12 @@ innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang
 class name javax/swing/plaf/metal/MetalComboBoxButton
 -field name comboBox descriptor Ljavax/swing/JComboBox;
 -field name listBox descriptor Ljavax/swing/JList;
-field name comboBox descriptor Ljavax/swing/JComboBox; flags 4 signature Ljavax/swing/JComboBox<Ljava/lang/Object;>;
-field name listBox descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 -method name getComboBox descriptor ()Ljavax/swing/JComboBox;
 -method name setComboBox descriptor (Ljavax/swing/JComboBox;)V
 -method name <init> descriptor (Ljavax/swing/JComboBox;Ljavax/swing/Icon;Ljavax/swing/CellRendererPane;Ljavax/swing/JList;)V
 -method name <init> descriptor (Ljavax/swing/JComboBox;Ljavax/swing/Icon;ZLjavax/swing/CellRendererPane;Ljavax/swing/JList;)V
+field name comboBox descriptor Ljavax/swing/JComboBox; flags 4 signature Ljavax/swing/JComboBox<Ljava/lang/Object;>;
+field name listBox descriptor Ljavax/swing/JList; flags 4 signature Ljavax/swing/JList<Ljava/lang/Object;>;
 method name getComboBox descriptor ()Ljavax/swing/JComboBox; flags 11 signature ()Ljavax/swing/JComboBox<Ljava/lang/Object;>;
 method name setComboBox descriptor (Ljavax/swing/JComboBox;)V flags 11 signature (Ljavax/swing/JComboBox<Ljava/lang/Object;>;)V
 method name <init> descriptor (Ljavax/swing/JComboBox;Ljavax/swing/Icon;Ljavax/swing/CellRendererPane;Ljavax/swing/JList;)V flags 1 signature (Ljavax/swing/JComboBox<Ljava/lang/Object;>;Ljavax/swing/Icon;Ljavax/swing/CellRendererPane;Ljavax/swing/JList<Ljava/lang/Object;>;)V
@@ -4740,10 +4739,10 @@ field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector
 
 class name javax/swing/plaf/multi/MultiComboBoxUI
 -field name uis descriptor Ljava/util/Vector;
-field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/plaf/ComponentUI;>;
 -method name isFocusTraversable descriptor (Ljavax/swing/JComboBox;)Z
 -method name setPopupVisible descriptor (Ljavax/swing/JComboBox;Z)V
 -method name isPopupVisible descriptor (Ljavax/swing/JComboBox;)Z
+field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/plaf/ComponentUI;>;
 method name isFocusTraversable descriptor (Ljavax/swing/JComboBox;)Z flags 1 signature (Ljavax/swing/JComboBox<*>;)Z
 method name setPopupVisible descriptor (Ljavax/swing/JComboBox;Z)V flags 1 signature (Ljavax/swing/JComboBox<*>;Z)V
 method name isPopupVisible descriptor (Ljavax/swing/JComboBox;)Z flags 1 signature (Ljavax/swing/JComboBox<*>;)Z
@@ -4770,10 +4769,10 @@ field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector
 
 class name javax/swing/plaf/multi/MultiListUI
 -field name uis descriptor Ljava/util/Vector;
-field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/plaf/ComponentUI;>;
 -method name locationToIndex descriptor (Ljavax/swing/JList;Ljava/awt/Point;)I
 -method name indexToLocation descriptor (Ljavax/swing/JList;I)Ljava/awt/Point;
 -method name getCellBounds descriptor (Ljavax/swing/JList;II)Ljava/awt/Rectangle;
+field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/plaf/ComponentUI;>;
 method name locationToIndex descriptor (Ljavax/swing/JList;Ljava/awt/Point;)I flags 1 signature (Ljavax/swing/JList<*>;Ljava/awt/Point;)I
 method name indexToLocation descriptor (Ljavax/swing/JList;I)Ljava/awt/Point; flags 1 signature (Ljavax/swing/JList<*>;I)Ljava/awt/Point;
 method name getCellBounds descriptor (Ljavax/swing/JList;II)Ljava/awt/Rectangle; flags 1 signature (Ljavax/swing/JList<*>;II)Ljava/awt/Rectangle;
@@ -4852,11 +4851,11 @@ field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector
 
 class name javax/swing/plaf/multi/MultiTextUI
 -field name uis descriptor Ljava/util/Vector;
-field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/plaf/ComponentUI;>;
 -method name modelToView descriptor (Ljavax/swing/text/JTextComponent;I)Ljava/awt/Rectangle;
 -method name modelToView descriptor (Ljavax/swing/text/JTextComponent;ILjavax/swing/text/Position$Bias;)Ljava/awt/Rectangle;
 -method name viewToModel descriptor (Ljavax/swing/text/JTextComponent;Ljava/awt/Point;)I
 -method name viewToModel descriptor (Ljavax/swing/text/JTextComponent;Ljava/awt/Point;[Ljavax/swing/text/Position$Bias;)I
+field name uis descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/plaf/ComponentUI;>;
 method name modelToView descriptor (Ljavax/swing/text/JTextComponent;I)Ljava/awt/Rectangle; thrownTypes javax/swing/text/BadLocationException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 method name modelToView descriptor (Ljavax/swing/text/JTextComponent;ILjavax/swing/text/Position$Bias;)Ljava/awt/Rectangle; thrownTypes javax/swing/text/BadLocationException flags 1 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
 method name modelToView2D descriptor (Ljavax/swing/text/JTextComponent;ILjavax/swing/text/Position$Bias;)Ljava/awt/geom/Rectangle2D; thrownTypes javax/swing/text/BadLocationException flags 1
@@ -4982,7 +4981,6 @@ innerclass innerClass javax/swing/JTable$DropLocation outerClass javax/swing/JTa
 
 class name javax/swing/table/DefaultTableModel
 -field name dataVector descriptor Ljava/util/Vector;
-field name dataVector descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljava/util/Vector;>;
 -method name <init> descriptor (Ljava/util/Vector;I)V
 -method name <init> descriptor (Ljava/util/Vector;Ljava/util/Vector;)V
 -method name getDataVector descriptor ()Ljava/util/Vector;
@@ -4993,6 +4991,7 @@ field name dataVector descriptor Ljava/util/Vector; flags 4 signature Ljava/util
 -method name addColumn descriptor (Ljava/lang/Object;Ljava/util/Vector;)V
 -method name convertToVector descriptor ([Ljava/lang/Object;)Ljava/util/Vector;
 -method name convertToVector descriptor ([[Ljava/lang/Object;)Ljava/util/Vector;
+field name dataVector descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljava/util/Vector;>;
 method name <init> descriptor (Ljava/util/Vector;I)V flags 1 signature (Ljava/util/Vector<*>;I)V
 method name <init> descriptor (Ljava/util/Vector;Ljava/util/Vector;)V flags 1 signature (Ljava/util/Vector<+Ljava/util/Vector;>;Ljava/util/Vector<*>;)V
 method name getDataVector descriptor ()Ljava/util/Vector; flags 1 signature ()Ljava/util/Vector<Ljava/util/Vector;>;
@@ -5832,13 +5831,13 @@ class name javax/swing/tree/DefaultMutableTreeNode
 header extends java/lang/Object implements java/lang/Cloneable,javax/swing/tree/MutableTreeNode,java/io/Serializable flags 21
 innerclass innerClass java/io/ObjectInputStream$GetField outerClass java/io/ObjectInputStream innerClassName GetField flags 409
 -field name children descriptor Ljava/util/Vector;
-field name children descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/tree/TreeNode;>;
 -method name children descriptor ()Ljava/util/Enumeration;
 -method name preorderEnumeration descriptor ()Ljava/util/Enumeration;
 -method name postorderEnumeration descriptor ()Ljava/util/Enumeration;
 -method name breadthFirstEnumeration descriptor ()Ljava/util/Enumeration;
 -method name depthFirstEnumeration descriptor ()Ljava/util/Enumeration;
 -method name pathFromAncestorEnumeration descriptor (Ljavax/swing/tree/TreeNode;)Ljava/util/Enumeration;
+field name children descriptor Ljava/util/Vector; flags 4 signature Ljava/util/Vector<Ljavax/swing/tree/TreeNode;>;
 method name children descriptor ()Ljava/util/Enumeration; flags 1 signature ()Ljava/util/Enumeration<Ljavax/swing/tree/TreeNode;>;
 method name preorderEnumeration descriptor ()Ljava/util/Enumeration; flags 1 signature ()Ljava/util/Enumeration<Ljavax/swing/tree/TreeNode;>;
 method name postorderEnumeration descriptor ()Ljava/util/Enumeration; flags 1 signature ()Ljava/util/Enumeration<Ljavax/swing/tree/TreeNode;>;

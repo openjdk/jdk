@@ -146,8 +146,9 @@ inline void G1ConcurrentRefineOopClosure::do_oop_work(T* p) {
     // reload the values things may have changed.
     // Also this check lets slip through references from a humongous continues region
     // to its humongous start region, as they are in different regions, and adds a
-    // remembered set entry. This is benign (apart from memory usage), as we never
-    // try to either evacuate or eager reclaim humonguous arrays of j.l.O.
+    // remembered set entry.
+    // This does not affect correctness, but can prevent eager reclaim of humongous
+    // j.l.O. arrays.
     return;
   }
 

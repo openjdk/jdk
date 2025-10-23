@@ -737,7 +737,7 @@ public:
   virtual const class Type *bottom_type() const { return TypeTuple::IFBOTH; }
   virtual uint ideal_reg() const { return NotAMachineReg; }
   virtual const RegMask &in_RegMask(uint) const;
-  virtual const RegMask &out_RegMask() const { return RegMask::Empty; }
+  virtual const RegMask& out_RegMask() const { return RegMask::EMPTY; }
 #ifndef PRODUCT
   virtual const char *Name() const { return "NullCheck"; }
   virtual void format( PhaseRegAlloc *, outputStream *st ) const;
@@ -769,7 +769,7 @@ public:
   virtual int   Opcode() const;
   virtual const Type *bottom_type() const;
   virtual const TypePtr *adr_type() const;
-  virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
+  virtual const RegMask& in_RegMask(uint) const { return RegMask::EMPTY; }
   virtual const RegMask &out_RegMask() const { return _rout; }
   virtual uint  ideal_reg() const { return _ideal_reg; }
   // Need size_of() for virtual ProjNode::clone()
@@ -960,7 +960,6 @@ public:
   ciMethod* _method;                 // Method being direct called
   bool      _override_symbolic_info; // Override symbolic call site info from bytecode
   bool      _optimized_virtual;      // Tells if node is a static call or an optimized virtual
-  bool      _method_handle_invoke;   // Tells if the call has to preserve SP
   bool      _arg_escape;             // ArgEscape in parameter list
   MachCallJavaNode() : MachCallNode(), _override_symbolic_info(false) {
     init_class_id(Class_MachCallJava);

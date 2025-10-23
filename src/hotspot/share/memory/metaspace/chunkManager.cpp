@@ -117,10 +117,6 @@ Metachunk* ChunkManager::get_chunk(chunklevel_t preferred_level, chunklevel_t ma
     c = get_chunk_locked(preferred_level, max_level, min_committed_words);
   }
 
-  if (c != nullptr) {
-    ASAN_UNPOISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
-  }
-
   return c;
 }
 
@@ -244,9 +240,6 @@ Metachunk* ChunkManager::get_chunk_locked(chunklevel_t preferred_level, chunklev
 //    this function returns !!
 void ChunkManager::return_chunk(Metachunk* c) {
   DEBUG_ONLY(c->zap();)
-  // It is valid to poison the chunk payload area at this point since its physically separated from
-  // the chunk meta info.
-  ASAN_POISON_MEMORY_REGION(c->base(), c->word_size() * BytesPerWord);
   MutexLocker fcl(Metaspace_lock, Mutex::_no_safepoint_check_flag);
   return_chunk_locked(c);
 }
@@ -304,9 +297,6 @@ bool ChunkManager::attempt_enlarge_chunk(Metachunk* c) {
     enlarged = c->vsnode()->attempt_enlarge_chunk(c, &_chunks);
   }
 
-  if (enlarged) {
-    ASAN_UNPOISON_MEMORY_REGION(c->base() + old_word_size, (c->word_size() - old_word_size) * BytesPerWord);
-  }
 
   return enlarged;
 }
