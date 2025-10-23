@@ -144,6 +144,8 @@ public class BorderFactory
      * edge of the highlighted area uses a brighter shade of
      * the highlight color. The inner edge of the shadow area
      * uses a brighter shade of the shadow color.
+     * If highlight and shadow color are null, then it will
+     * fallback to create beveled border of the specified type.
      *
      * @param type  an integer specifying either
      *                  <code>BevelBorder.LOWERED</code> or
@@ -264,6 +266,8 @@ public class BorderFactory
      * a brighter shade of the {@code highlight} color.
      * The inner edge of the shadow area uses
      * a brighter shade of the {@code shadow} color.
+     * If highlight and shadow color are null, then it will
+     * fallback to create beveled border of the specified type with softened corners.
      *
      * @param type       a type of a bevel
      * @param highlight  a basic color of the highlight area
@@ -274,7 +278,10 @@ public class BorderFactory
      * @since 1.7
      */
     public static Border createSoftBevelBorder(int type, Color highlight, Color shadow) {
-        return new SoftBevelBorder(type, highlight, shadow);
+        if (highlight != null && shadow != null) {
+            return new SoftBevelBorder(type, highlight, shadow);
+        }
+        return new SoftBevelBorder(type);
     }
 
     /**
