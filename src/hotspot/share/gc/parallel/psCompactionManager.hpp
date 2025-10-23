@@ -188,7 +188,6 @@ public:
   ParMarkBitMap* mark_bitmap() { return _mark_bitmap; }
 
   // Save for later processing.  Must not fail.
-  inline void push(oop obj);
   inline void push_region(size_t index);
 
   // Check mark and maybe push on marking stack.
