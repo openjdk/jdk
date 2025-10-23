@@ -1698,12 +1698,9 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
   CmpNode* cmp0 = bol->in(1)->as_Cmp();
   assert(get_pack(cmp0) != nullptr, "Bool must have matching Cmp pack");
 
-  bool is_unsigned = cmp0->Opcode() == Op_CmpU  ||
-                     cmp0->Opcode() == Op_CmpUL ||
-                     cmp0->Opcode() == Op_CmpU3 ||
-                     cmp0->Opcode() == Op_CmpUL3;
-
-  if (cmp0->Opcode() == Op_CmpF || cmp0->Opcode() == Op_CmpD) {
+  switch (cmp0->Opcode()) {
+  case Op_CmpF:
+  case Op_CmpD: {
     // If we have a Float or Double comparison, we must be careful with
     // handling NaN's correctly. CmpF and CmpD have a return code, as
     // they are based on the java bytecodes fcmpl/dcmpl:
@@ -1747,9 +1744,15 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
       mask = bol->_test.negate();
       is_negated = true;
     }
-  } else if (is_unsigned) {
-    mask = BoolTest::unsigned_mask(mask);
+    break;
   }
+  case Op_CmpU:
+  case Op_CmpUL:
+  case Op_CmpU3:
+  case Op_CmpUL3:
+    mask = BoolTest::unsigned_mask(mask);
+    break;
+  } // switch
 
   return VTransformBoolTest(mask, is_negated);
 }
