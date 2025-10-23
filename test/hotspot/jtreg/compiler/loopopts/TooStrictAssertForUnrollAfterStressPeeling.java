@@ -24,28 +24,81 @@
 /*
  * @test
  * @bug 8361608
- * @summary assert in do_unroll does not hold in some cases when peeling comes
- *          just before unrolling. It seems to happen only with stress peeling
+ * @summary crash during unrolling in some rare cases where loop cloning
+ *          (typically from peeling) breaks an invariant in do_unroll
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+StressLoopPeeling
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test1
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -XX:PerMethodTrapLimit=0
  *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test2
+ *                   -XX:-TieredCompilation
+ *                   -Xbatch
+ *                   -XX:PerMethodTrapLimit=0
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo2
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test2
+ *                   -XX:-TieredCompilation
+ *                   -Xbatch
+ *                   -XX:PerMethodTrapLimit=0
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-LoopMultiversioning
+ *                   -XX:-RangeCheckElimination
+ *                   -XX:-SplitIfBlocks
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:LoopMaxUnroll=2
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo2
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test3
+ *                   -XX:-TieredCompilation
+ *                   -Xbatch
+ *                   -XX:PerMethodTrapLimit=0
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo3
+ *                   -XX:-RangeCheckElimination
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test3
+ *                   -XX:-TieredCompilation
+ *                   -Xbatch
+ *                   -XX:PerMethodTrapLimit=0
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-LoopMultiversioning
+ *                   -XX:-RangeCheckElimination
+ *                   -XX:-SplitIfBlocks
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:LoopMaxUnroll=2
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo3
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *
  * @run main compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
  */
 package compiler.loopopts;
 
 public class TooStrictAssertForUnrollAfterStressPeeling {
+    static int iArr[] = new int[400];
+    static boolean flag;
+
     public static void main(String[] args) {
+        run1();
+        run2();
+        run3();
+    }
+
+    // Case 1
+
+    public static void run1() {
         for (int i = 1; i < 1000; i++) {
-            test();
+            test1();
         }
     }
 
-    static long test() {
+    static long test1() {
         int s = 0;
         int iArr[] = new int[400];
         for (int i = 0; i < 70; i++) {}
@@ -54,16 +107,102 @@ public class TooStrictAssertForUnrollAfterStressPeeling {
             for (int j = 0; j < 3; j++) {
                 s += iArr[0] = 7;
                 if (s != 0) {
-                    return s + foo(iArr);
+                    return s + foo1(iArr);
                 }
             }
         }
         return 0;
     }
 
-    public static long foo(int[] a) {
+    public static long foo1(int[] a) {
         long sum = 0;
         for (int i = 0; i < a.length; i++) {
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    // Case 2
+
+    public static void run2() {
+        for (int i = 1; i < 10000; i++) {
+            test2();
+        }
+    }
+
+    // Lx: Optimized in loop opts round x.
+
+    static int test2() {
+        int x = 5;
+        for (int i = 1; i < 37; i++) { // L3: Peeled
+            for (int a = 0; a < 2; a++) { // L2: Max unrolled
+                for (int b = 0; b < 300; b++) {
+                } // L1: Empty -> removed
+            }
+            int j = 1;
+            x *= 12;
+            while (++j < 5) { // L1: Max unrolled: peel + unroll
+                iArr[0] += 2;
+                if (iArr[0] > 0) {
+                    // foo(): everything outside loop.
+                    return foo2(iArr);
+                }
+            }
+        }
+        return 3;
+    }
+
+    public static int foo2(int[] a) {
+        int sum = 0;
+        for (int i = 0; i < a.length; i++) { // L2: Pre/main/post, L3: Unrolled -> hit assert!
+            for (int j = 0; j < 34; j++) {
+            } // L1: Empty -> removed
+            if (flag) {
+                // Ensure not directly unrolled in L2 but only in L3.
+                return 3;
+            }
+            sum += a[i];
+        }
+        return sum;
+    }
+
+    public static void run3() {
+        for (int i = 1; i < 10000; i++) {
+            test3();
+        }
+    }
+
+    // Case 3
+
+    static int test3() {
+        int x = 5;
+        for (int i = 1; i < 37; i++) { // L3: Peeled
+            for (int a = 0; a < 2; a++) { // L2: Max unrolled
+                for (int b = 0; b < 300; b++) {
+                } // L1: Empty -> removed
+            }
+            int j = 1;
+            x *= 12;
+            while (++j < 5) { // L1: Max unrolled: peel + unroll
+                iArr[0] += 2;
+                if (iArr[0] > 0) {
+                    // foo(): everything outside loop.
+                    return foo3(iArr, x);
+                }
+            }
+        }
+        return 3;
+    }
+
+    public static int foo3(int[] a, int limit) {
+        int sum = 0;
+        for (int i = 0; i < limit; i++) { // L2: Pre/main/post, L3: Unrolled -> hit assert!
+            for (int j = 0; j < 34; j++) {
+            } // L1: Empty -> removed
+            if (flag) {
+                // Ensure not directly unrolled in L2 but only in L3.
+                return 3;
+            }
             sum += a[i];
         }
         return sum;
