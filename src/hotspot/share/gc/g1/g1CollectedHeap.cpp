@@ -970,25 +970,26 @@ void G1CollectedHeap::resize_heap_after_young_collection(size_t allocation_word_
   phase_times()->record_resize_heap_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
-void G1CollectedHeap::update_gc_overhead_limit_exceeded() {
+void G1CollectedHeap::update_gc_overhead_counter() {
   assert(SafepointSynchronize::is_at_safepoint(), "precondition");
 
-  if (UseGCOverheadLimit) {
-    bool gc_time_over_limit = (_policy->analytics()->long_term_gc_time_ratio() * 100) >= GCTimeLimit;
-    double free_space_percent = percent_of(num_available_regions() * G1HeapRegion::GrainBytes, max_capacity());
-    bool free_space_below_limit = free_space_percent < GCHeapFreeLimit;
+  if (!UseGCOverheadLimit) {
+    return;
+  }
 
-    log_debug(gc)("GC Overhead Limit: GC Time %f Free Space %f Counter %zu",
-                  (_policy->analytics()->long_term_gc_time_ratio() * 100),
-                  free_space_percent,
-                  _gc_overhead_counter);
+  bool gc_time_over_limit = (_policy->analytics()->long_term_gc_time_ratio() * 100) >= GCTimeLimit;
+  double free_space_percent = percent_of(num_available_regions() * G1HeapRegion::GrainBytes, max_capacity());
+  bool free_space_below_limit = free_space_percent < GCHeapFreeLimit;
 
-    if (gc_time_over_limit && free_space_below_limit) {
-      _gc_overhead_counter++;
-      return;
-    } else {
-      _gc_overhead_counter = 0;
-    }
+  log_debug(gc)("GC Overhead Limit: GC Time %f Free Space %f Counter %zu",
+                (_policy->analytics()->long_term_gc_time_ratio() * 100),
+                free_space_percent,
+                _gc_overhead_counter);
+
+  if (gc_time_over_limit && free_space_below_limit) {
+    _gc_overhead_counter++;
+  } else {
+    _gc_overhead_counter = 0;
   }
 }
 
@@ -1050,7 +1051,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size) {
 
   // Update GC overhead limits after the initial garbage collection leading to this
   // allocation attempt.
-  update_gc_overhead_limit_exceeded();
+  update_gc_overhead_counter();
 
   // Attempts to allocate followed by Full GC.
   HeapWord* result =
