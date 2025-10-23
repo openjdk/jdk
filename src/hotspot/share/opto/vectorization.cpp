@@ -546,7 +546,6 @@ void VLoopDependencyGraph::PredsIterator::next() {
 bool VLoopAnalyzer::has_zero_cost(Node* n) const {
   // Outside body?
   if (!_vloop.in_bb(n)) { return true; }
-  // TODO: can we widen this to the loop, not just bb?
 
   // Internal nodes of pointer expressions are most likely folded into
   // the load / store and have no additional cost.
@@ -578,7 +577,6 @@ float VLoopAnalyzer::cost() const {
 #endif
 
   float sum = 0;
-  // TODO: does this go over the whole loop, or just the basic block?
   for (int j = 0; j < body().body().length(); j++) {
     Node* n = body().body().at(j);
     if (!has_zero_cost(n)) {
