@@ -32,13 +32,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.jpackage.internal.util.FileUtils;
@@ -96,9 +98,9 @@ public class AppContentTest {
                 // Two files with the same name but different content.
                 build().add(createTextFileContent("welcome.txt", "Welcome")).add(createTextFileContent("welcome.txt", "Benvenuti")),
                 // Same name: one is a directory, another is a file.
-                build().add(createTextFileContent("a/b", "Foo")).add(createTextFileContent("a", "Bar")),
+                build().add(createTextFileContent("a/b/c/d", "Foo")).add(createTextFileContent("a", "Bar")),
                 // Same name: one is a file, another is a directory.
-                build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b", "Foo"))
+                build().add(createTextFileContent("a", "Bar")).add(createTextFileContent("a/b/c/d", "Foo"))
         ).map(TestSpec.Builder::create).map(v -> {
             return new Object[] {v};
         }).toList();
@@ -191,12 +193,34 @@ public class AppContentTest {
             target.addInstallVerifier(cmd -> {
                 var appContentRoot = getAppContentRoot(cmd);
 
+                Set<PathVerifier> disabledVerifiers = new HashSet<>();
+
                 var verifiers = allContent.stream().flatMap(List::stream).flatMap(content -> {
-                    return StreamSupport.stream(content.verifiers(appContentRoot).spliterator(), false);
-                }).collect(toMap(PathVerifier::path, x -> x, (_, second) -> {
-                    // Override
+                    return StreamSupport.stream(content.verifiers(appContentRoot).spliterator(), false).map(verifier -> {
+                        return new PathVerifierWithOrigin(verifier, content);
+                    });
+                }).collect(toMap(PathVerifierWithOrigin::path, x -> x, (first, second) -> {
+                    // The same file in the content directory is sourced from multiple origins.
+                    // jpackage will handle this case such that the following origins overwrite preceding origins.
+                    // Scratch all path verifiers affected by overrides.
+                    first.getNestedVerifiers(appContentRoot, first.path()).forEach(disabledVerifiers::add);
                     return second;
-                }, TreeMap::new)).values();
+                }, TreeMap::new)).values().stream()
+                        .map(PathVerifierWithOrigin::verifier)
+                        .filter(Predicate.not(disabledVerifiers::contains))
+                        .filter(verifier -> {
+                            if (!(verifier instanceof DirectoryVerifier)) {
+                                return true;
+                            } else {
+                                try (var files = Files.list(verifier.path())) {
+                                    // Run the directory verifier if the directory is empty. Otherwise, it just pollutes the test log.
+                                    return files.findAny().isEmpty();
+                                } catch (IOException ex) {
+                                    throw new UncheckedIOException(ex);
+                                }
+                            }
+                        })
+                        .toList();
 
                 verifiers.forEach(PathVerifier::verify);
             });
@@ -237,6 +261,27 @@ public class AppContentTest {
 
             private final List<List<ContentFactory>> groups = new ArrayList<>();
         }
+
+        private record PathVerifierWithOrigin(PathVerifier verifier, Content origin) {
+            PathVerifierWithOrigin {
+                Objects.requireNonNull(verifier);
+                Objects.requireNonNull(origin);
+            }
+
+            Path path() {
+                return verifier.path();
+            }
+
+            Stream<PathVerifier> getNestedVerifiers(Path appContentRoot, Path path) {
+                if (!path.startsWith(appContentRoot)) {
+                    throw new IllegalArgumentException();
+                }
+
+                return StreamSupport.stream(origin.verifiers(appContentRoot).spliterator(), false).filter(v -> {
+                    return v.path().getNameCount() > path.getNameCount() && v.path().startsWith(path);
+                });
+            }
+        }
     }
 
     private static TestSpec.Builder build() {
@@ -270,38 +315,60 @@ public class AppContentTest {
         Iterable<PathVerifier> verifiers(Path appContentRoot);
     }
 
-    private static abstract class PathVerifier {
+    private sealed interface PathVerifier permits
+            RegularFileVerifier,
+            DirectoryVerifier,
+            SymlinkTargetVerifier,
+            NoPathVerifier {
 
-        PathVerifier(Path path) {
-            this.path = Objects.requireNonNull(path);
-        }
-
-        final Path path() {
-            return path;
-        }
-
-        abstract void verify();
-
-        private final Path path;
+        Path path();
+        void verify();
     }
 
-    private static PathVerifier verifyRegularFile(Path path, Path srcFile) {
-        Objects.requireNonNull(srcFile);
-        return new PathVerifier(path) {
-            @Override
-            void verify() {
-                TKit.assertSameFileContent(srcFile, path());
-            }
-        };
+    private record RegularFileVerifier(Path path, Path srcFile) implements PathVerifier {
+        RegularFileVerifier {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(srcFile);
+        }
+
+        @Override
+        public void verify() {
+            TKit.assertSameFileContent(srcFile, path);
+        }
     }
 
-    private static PathVerifier verifyDirectory(Path path) {
-        return new PathVerifier(path) {
-            @Override
-            void verify() {
-                TKit.assertDirectoryExists(path);
-            }
-        };
+    private record DirectoryVerifier(Path path) implements PathVerifier {
+        DirectoryVerifier {
+            Objects.requireNonNull(path);
+        }
+
+        @Override
+        public void verify() {
+            TKit.assertDirectoryExists(path);
+        }
+    }
+
+    private record SymlinkTargetVerifier(Path path, Path targetPath) implements PathVerifier {
+        SymlinkTargetVerifier {
+            Objects.requireNonNull(path);
+            Objects.requireNonNull(targetPath);
+        }
+
+        @Override
+        public void verify() {
+            TKit.assertSymbolicLinkTarget(path, targetPath);
+        }
+    }
+
+    private record NoPathVerifier(Path path) implements PathVerifier {
+        NoPathVerifier {
+            Objects.requireNonNull(path);
+        }
+
+        @Override
+        public void verify() {
+            TKit.assertPathExists(path, false);
+        }
     }
 
     private record FileContent(Path path, int level) implements Content {
@@ -332,30 +399,25 @@ public class AppContentTest {
                     verifiers.addAll(walk.map(srcFile -> {
                         var dstFile = appContentPath.resolve(path.relativize(srcFile));
                         if (Files.isRegularFile(srcFile)) {
-                            return verifyRegularFile(dstFile, srcFile);
+                            return new RegularFileVerifier(dstFile, srcFile);
                         } else {
-                            return verifyDirectory(dstFile);
+                            return new DirectoryVerifier(dstFile);
                         }
                     }).toList());
                 } catch (IOException ex) {
                     throw new UncheckedIOException(ex);
                 }
             } else if (Files.isRegularFile(path)) {
-                verifiers.add(verifyRegularFile(appContentPath, path));
+                verifiers.add(new RegularFileVerifier(appContentPath, path));
             } else {
-                verifiers.add(new PathVerifier(appContentPath) {
-                    @Override
-                    public void verify() {
-                        TKit.assertPathExists(path(), false);
-                    }
-                });
+                verifiers.add(new NoPathVerifier(appContentPath));
             }
 
             if (level > 0) {
                 var cur = appContentPath;
                 for (int i = 0; i != level; i++) {
                     cur = cur.getParent();
-                    verifiers.add(verifyDirectory(cur));
+                    verifiers.add(new DirectoryVerifier(cur));
                 }
             }
 
@@ -374,14 +436,6 @@ public class AppContentTest {
             return StreamSupport.stream(path.spliterator(), false)
                     .skip(path.getNameCount() - level - 1)
                     .reduce(Path::resolve).orElseThrow();
-        }
-
-        private static boolean isDirectoryEmpty(Path path) {
-            try (var files = Files.list(path)) {
-                return files.findAny().isEmpty();
-            } catch (IOException ex) {
-                throw new UncheckedIOException(ex);
-            }
         }
     }
 
@@ -501,13 +555,8 @@ public class AppContentTest {
                 @Override
                 public Iterable<PathVerifier> verifiers(Path appContentRoot) {
                     return List.of(
-                            verifyRegularFile(appContentRoot.resolve(symlinkedPath()), symlinkedPath),
-                            new PathVerifier(appContentRoot.resolve(symlinkPath())) {
-                                @Override
-                                void verify() {
-                                    TKit.assertSymbolicLinkTarget(path(), symlinkTarget());
-                                }
-                            }
+                            new RegularFileVerifier(appContentRoot.resolve(symlinkedPath()), symlinkedPath),
+                            new SymlinkTargetVerifier(appContentRoot.resolve(symlinkPath()), symlinkTarget())
                     );
                 }
             };
