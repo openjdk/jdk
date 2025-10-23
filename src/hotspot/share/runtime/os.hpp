@@ -884,7 +884,7 @@ class os: AllStatic {
   // does not require a lookup in the unwind table, which is part of the binary
   // file but may be unsafe to read after a fatal error. So on x86, we can
   // only walk stack if %ebp is used as frame pointer.
-  static bool is_first_C_frame(frame *fr);
+  static bool is_first_C_frame(const frame *fr);
   static frame get_sender_for_C_frame(frame *fr);
 
   // return current frame. pc() and sp() are set to null on failure.
@@ -1100,6 +1100,25 @@ class os: AllStatic {
   static bool set_boot_path(char fileSep, char pathSep);
 
   static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
+
+ public:
+  class FirstNativeFrameMark {
+   private:
+    static THREAD_LOCAL address _first_frame_stack_pointer;
+    address _saved_stack_pointer;
+
+   public:
+    FirstNativeFrameMark(address sp = os::current_stack_pointer()) {
+      _saved_stack_pointer = _first_frame_stack_pointer;
+      _first_frame_stack_pointer = sp;
+    }
+
+    ~FirstNativeFrameMark() {
+      _first_frame_stack_pointer = _saved_stack_pointer;
+    }
+
+    static inline bool is_first_native_frame(const frame& fr);
+  };
 };
 
 // Note that "PAUSE" is almost always used with synchronization
@@ -1108,5 +1127,7 @@ class os: AllStatic {
 // It'd also be eligible for inlining on many platforms.
 
 extern "C" int SpinPause();
+
+
 
 #endif // SHARE_RUNTIME_OS_HPP

@@ -59,4 +59,9 @@ inline void* os::resolve_function_descriptor(void* p) {
 }
 #endif
 
+inline bool os::FirstNativeFrameMark::is_first_native_frame(const frame& fr) {
+  address ff_sp = _first_frame_stack_pointer;
+  return ff_sp != nullptr && (address)fr.sp() >= ff_sp;
+}
+
 #endif // SHARE_RUNTIME_OS_INLINE_HPP
