@@ -97,7 +97,7 @@ private:
   // regions, which are marked in the preselected_regions() indicator
   // array of the heap's collection set, which should be initialized
   // to false.
-  size_t select_aged_regions(size_t old_available);
+  size_t select_aged_regions(size_t old_promotion_reserve);
 
   size_t available(size_t capacity) const;
 
