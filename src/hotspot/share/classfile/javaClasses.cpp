@@ -79,7 +79,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1013,11 +1013,24 @@ void java_lang_Class::initialize_mirror_fields(InstanceKlass* ik,
 
 // Set the java.lang.Module module field in the java_lang_Class mirror
 void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Handle mirror, Handle module) {
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    oop archived_module = java_lang_Class::module(mirror());
+    if (archived_module != nullptr) {
+      precond(module() == nullptr || module() == archived_module);
+      precond(AOTMetaspace::in_aot_cache_static_region((void*)k));
+      return;
+    }
+  }
+
   if (module.is_null()) {
     // During startup, the module may be null only if java.base has not been defined yet.
     // Put the class on the fixup_module_list to patch later when the java.lang.Module
     // for java.base is known. But note that since we captured the null module another
     // thread may have completed that initialization.
+
+    // With AOT-linked classes, java.base should have been defined before the
+    // VM loads any classes.
+    precond(!CDSConfig::is_using_aot_linked_classes());
 
     bool javabase_was_defined = false;
     {
@@ -1052,13 +1065,19 @@ void java_lang_Class::set_mirror_module_field(JavaThread* current, Klass* k, Han
 
 // Statically allocate fixup lists because they always get created.
 void java_lang_Class::allocate_fixup_lists() {
-  GrowableArray<Klass*>* mirror_list =
-    new (mtClass) GrowableArray<Klass*>(40, mtClass);
-  set_fixup_mirror_list(mirror_list);
+  if (!CDSConfig::is_using_aot_linked_classes()) {
+    // fixup_mirror_list() is not used when we have preloaded classes. See
+    // Universe::fixup_mirrors().
+    GrowableArray<Klass*>* mirror_list =
+      new (mtClass) GrowableArray<Klass*>(40, mtClass);
+    set_fixup_mirror_list(mirror_list);
 
-  GrowableArray<Klass*>* module_list =
-    new (mtModule) GrowableArray<Klass*>(500, mtModule);
-  set_fixup_module_field_list(module_list);
+    // With AOT-linked classes, java.base module is defined before any class
+    // is loaded, so there's no need for fixup_module_field_list().
+    GrowableArray<Klass*>* module_list =
+      new (mtModule) GrowableArray<Klass*>(500, mtModule);
+    set_fixup_module_field_list(module_list);
+  }
 }
 
 void java_lang_Class::allocate_mirror(Klass* k, bool is_scratch, Handle protection_domain, Handle classData,
@@ -1131,7 +1150,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
 
   // Class_klass has to be loaded because it is used to allocate
   // the mirror.
-  if (vmClasses::Class_klass_loaded()) {
+  if (vmClasses::Class_klass_is_loaded()) {
     Handle mirror;
     Handle comp_mirror;
 
@@ -1158,6 +1177,7 @@ void java_lang_Class::create_mirror(Klass* k, Handle class_loader,
       create_scratch_mirror(k, CHECK);
     }
   } else {
+    assert(!CDSConfig::is_using_aot_linked_classes(), "should not come here");
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
   }
@@ -1203,7 +1223,7 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
                                               Handle protection_domain, TRAPS) {
   // Postpone restoring archived mirror until java.lang.Class is loaded. Please
   // see more details in vmClasses::resolve_all().
-  if (!vmClasses::Class_klass_loaded()) {
+  if (!vmClasses::Class_klass_is_loaded() && !CDSConfig::is_using_aot_linked_classes()) {
     assert(fixup_mirror_list() != nullptr, "fixup_mirror_list not initialized");
     fixup_mirror_list()->push(k);
     return true;
@@ -3741,20 +3761,17 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   return element();
 }
 
-int reflect_ConstantPool::_oop_offset;
-
-#define CONSTANTPOOL_FIELDS_DO(macro) \
-  macro(_oop_offset, k, "constantPoolOop", object_signature, false)
+int reflect_ConstantPool::_vmholder_offset;
 
 void reflect_ConstantPool::compute_offsets() {
   InstanceKlass* k = vmClasses::reflect_ConstantPool_klass();
-  // The field is called ConstantPool* in the sun.reflect.ConstantPool class.
-  CONSTANTPOOL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
+  // The field is injected and called Object vmholder in the jdk.internal.reflect.ConstantPool class.
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
 
 #if INCLUDE_CDS
 void reflect_ConstantPool::serialize_offsets(SerializeClosure* f) {
-  CONSTANTPOOL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
+  CONSTANTPOOL_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
 
@@ -3907,13 +3924,15 @@ Handle reflect_ConstantPool::create(TRAPS) {
 
 
 void reflect_ConstantPool::set_cp(oop reflect, ConstantPool* value) {
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
   oop mirror = value->pool_holder()->java_mirror();
   // Save the mirror to get back the constant pool.
-  reflect->obj_field_put(_oop_offset, mirror);
+  reflect->obj_field_put(_vmholder_offset, mirror);
 }
 
 ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
-  oop mirror = reflect->obj_field(_oop_offset);
+  assert(_vmholder_offset != 0, "Uninitialized vmholder");
+  oop mirror = reflect->obj_field(_vmholder_offset);
   InstanceKlass* ik = java_lang_Class::as_InstanceKlass(mirror);
 
   // Get the constant pool back from the klass.  Since class redefinition
@@ -5554,5 +5573,4 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }
