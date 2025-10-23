@@ -439,7 +439,58 @@ class DwarfFile : public ElfFile {
     bool read_non_null_char(char* result);
   };
 
-  struct ArangesCache;
+  struct ArangesEntry {
+    uintptr_t beginning_address;
+    uintptr_t end_address;
+    uint32_t debug_info_offset;
+
+    ArangesEntry() : beginning_address(0), end_address(0), debug_info_offset(0) {}
+    ArangesEntry(uintptr_t begin, uintptr_t end, uint32_t offset)
+    : beginning_address(begin), end_address(end), debug_info_offset(offset) {}
+  };
+
+  class DebugAranges;
+
+  // Cache for .debug_aranges to enable binary search for address lookup
+  struct ArangesCache {
+    friend DebugAranges;
+
+    ArangesEntry* _entries;
+    size_t _count;
+    size_t _capacity;
+    bool _initialized;
+    bool _failed;
+
+   public:
+    ArangesCache() : _entries(nullptr), _count(0), _capacity(0), _initialized(false), _failed(false) {}
+    ArangesCache(ArangesCache&& other) : _entries(other._entries), _count(other._count), _capacity(other._capacity),
+                                          _initialized(other._initialized), _failed(other._failed) {
+      other._entries = nullptr;
+      other._count = 0;
+      other._capacity = 0;
+    }
+    ~ArangesCache() {
+      this->free();
+    }
+
+    void destroy(bool failed) {
+      this->free();
+      _count = 0;
+      _capacity = 0;
+      _failed = failed;
+    }
+    bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
+    bool valid() { return _initialized && !_failed; }
+
+   private:
+    static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
+    void free() {
+      if (_entries != nullptr) {
+        FREE_C_HEAP_ARRAY(ArangesEntry, _entries);
+        _entries = nullptr;
+      }
+    }
+  };
 
   // (2) Processing the .debug_aranges section to find the compilation unit which covers offset_in_library.
   // This is specified in section 6.1.2 of the DWARF 4 spec.
@@ -489,6 +540,7 @@ class DwarfFile : public ElfFile {
     };
 
     DwarfFile* _dwarf_file;
+    ArangesCache _cache;
     MarkedDwarfFileReader _reader;
     uintptr_t _section_start_address;
 
@@ -503,59 +555,18 @@ class DwarfFile : public ElfFile {
     static bool does_match_offset(uint32_t offset_in_library, const AddressDescriptor& descriptor) ;
     bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
                               const AddressDescriptor& descriptor);
+    void build_cache();
    public:
-    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()),
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _cache(), _reader(dwarf_file->fd()),
                                           _section_start_address(0), _entry_end(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
-    void build_cache(ArangesCache& cache);
-  };
 
-  struct ArangesEntry {
-    uintptr_t beginning_address;
-    uintptr_t end_address;
-    uint32_t debug_info_offset;
-
-    ArangesEntry() : beginning_address(0), end_address(0), debug_info_offset(0) {}
-    ArangesEntry(uintptr_t begin, uintptr_t end, uint32_t offset)
-      : beginning_address(begin), end_address(end), debug_info_offset(offset) {}
-  };
-
-  // Cache for .debug_aranges to enable binary search for address lookup
-  struct ArangesCache {
-    friend DebugAranges;
-
-    ArangesEntry* _entries;
-    size_t _count;
-    size_t _capacity;
-    bool _initialized;
-    bool _failed;
-
-    ArangesCache() : _entries(nullptr), _count(0), _capacity(0), _initialized(false), _failed(false) {}
-    ArangesCache(ArangesCache&& other) : _entries(other._entries), _count(other._count), _capacity(other._capacity),
-                                          _initialized(other._initialized), _failed(other._failed) {
-      other._entries = nullptr;
-      other._count = 0;
-      other._capacity = 0;
-    }
-    ~ArangesCache() {
-      this->free();
-    }
-
-    void destroy(bool failed) {
-      this->free();
-      _count = 0;
-      _capacity = 0;
-      _failed = failed;
-    }
-    bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
-
-   private:
-    static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
-    void free() {
-      if (_entries != nullptr) {
-        FREE_C_HEAP_ARRAY(ArangesEntry, _entries);
-        _entries = nullptr;
+    // Build cache of all address ranges for binary search in a single pass
+    void ensure_cached() {
+      if (_cache._initialized || _cache._failed) {
+        return;
       }
+      build_cache();
     }
   };
 
@@ -939,7 +950,8 @@ class DwarfFile : public ElfFile {
   };
 
  public:
-  DwarfFile(const char* filepath) : ElfFile(filepath) {}
+  DwarfFile(const char* filepath) : ElfFile(filepath), _debug_aranges(this) {
+  }
 
   /*
    * Starting point of reading line number and filename information from the DWARF file.
@@ -954,16 +966,7 @@ class DwarfFile : public ElfFile {
   bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 
  private:
-  ArangesCache _aranges_cache;
-
-  // Build cache of all address ranges for binary search in a single pass
-  void ensure_aranges_cache() {
-    if (_aranges_cache._initialized || _aranges_cache._failed) {
-      return;
-    }
-    DebugAranges debug_aranges(const_cast<DwarfFile*>(this));
-    debug_aranges.build_cache(_aranges_cache);
-  }
+  DebugAranges _debug_aranges;
 };
 
 #endif // !_WINDOWS && !__APPLE__

@@ -684,17 +684,9 @@ bool ElfFile::create_new_dwarf_file(const char* filepath) {
 // Starting point of reading line number and filename information from the DWARF file.
 bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, char* filename, const size_t filename_len,
                                              int* line, const bool is_pc_after_call) {
-  // Use cached aranges for binary search if available
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
-  ensure_aranges_cache();
   bool found = false;
-  if (_aranges_cache._initialized) {
-    found = _aranges_cache.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset);
-  } else {
-    DWARF_LOG_INFO("Falling back to linear scan of .debug_aranges for '%s'", filepath());
-    DebugAranges debug_aranges(this);
-    found = debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset);
-  }
+  found = _debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset);
   if (!found) {
     DWARF_LOG_ERROR("Failed to find .debug_info offset for the compilation unit.");
     return false;
@@ -734,23 +726,23 @@ int DwarfFile::ArangesCache::compare_aranges_entries(const ArangesEntry& a, cons
   return 0;
 }
 
-void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
-  assert(cache._capacity == 0, "need fresh cache");
-  assert(cache._count == 0, "need fresh cache");
-  assert(!cache._initialized && !cache._failed, "need fresh cache");
+void DwarfFile::DebugAranges::build_cache() {
+  assert(_cache._capacity == 0, "need fresh cache");
+  assert(_cache._count == 0, "need fresh cache");
+  assert(!_cache._initialized && !_cache._failed, "need fresh cache");
   if (!read_section_header()) {
-    cache._failed = true;
+    _cache._failed = true;
     return;
   }
   // Start with reasonable initial capacity
   size_t initial_capacity = 128;
-  cache._entries = NEW_C_HEAP_ARRAY(ArangesEntry, initial_capacity, mtInternal);
-  if (cache._entries == nullptr) {
-    cache._failed = true;
+  _cache._entries = NEW_C_HEAP_ARRAY(ArangesEntry, initial_capacity, mtInternal);
+  if (_cache._entries == nullptr) {
+    _cache._failed = true;
     return;
   }
-  cache._capacity = initial_capacity;
-  cache._count = 0;
+  _cache._capacity = initial_capacity;
+  _cache._count = 0;
 
   // Read all sets and their descriptors
   while (_reader.has_bytes_left()) {
@@ -763,43 +755,43 @@ void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
     AddressDescriptor descriptor;
     do {
       if (!read_address_descriptor(descriptor)) {
-        cache.destroy(true);
+        _cache.destroy(true);
         return;
       }
       if (!is_terminating_entry(set_header, descriptor) && descriptor.range_length > 0) {
-        if (cache._count >= cache._capacity) {
-          size_t new_capacity = cache._capacity * 1.5;
-          ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY(ArangesEntry, cache._entries, new_capacity, mtInternal);
+        if (_cache._count >= _cache._capacity) {
+          size_t new_capacity = _cache._capacity * 1.5;
+          ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY(ArangesEntry, _cache._entries, new_capacity, mtInternal);
           if (new_entries == nullptr) {
-            cache.destroy(true);
+            _cache.destroy(true);
             return;
           }
-          cache._entries = new_entries;
-          cache._capacity = new_capacity;
+          _cache._entries = new_entries;
+          _cache._capacity = new_capacity;
         }
-        cache._entries[cache._count] = ArangesEntry(
+        _cache._entries[_cache._count] = ArangesEntry(
           descriptor.beginning_address,
           descriptor.beginning_address + descriptor.range_length,
           set_header._debug_info_offset
         );
-        cache._count++;
+        _cache._count++;
       }
     } while (!is_terminating_entry(set_header, descriptor) && _reader.has_bytes_left());
   }
-  if (cache._count == 0) {
-    cache.destroy(true);
+  if (_cache._count == 0) {
+    _cache.destroy(true);
     return;
   }
-  QuickSort::sort(cache._entries, cache._count, DwarfFile::ArangesCache::compare_aranges_entries);
-  if (cache._count < cache._capacity) {
-    ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY(ArangesEntry, cache._entries, cache._count, mtInternal);
+  QuickSort::sort(_cache._entries, _cache._count, DwarfFile::ArangesCache::compare_aranges_entries);
+  if (_cache._count < _cache._capacity) {
+    ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY(ArangesEntry, _cache._entries, _cache._count, mtInternal);
     if (new_entries != nullptr) {
-      cache._entries = new_entries;
-      cache._capacity = cache._count;
+      _cache._entries = new_entries;
+      _cache._capacity = _cache._count;
     }
   }
-  cache._initialized = true;
-  DWARF_LOG_INFO("Built aranges cache for '%s' with %zu entries", this->_dwarf_file->filepath(), cache._count);
+  _cache._initialized = true;
+  DWARF_LOG_INFO("Built aranges cache for '%s' with %zu entries", this->_dwarf_file->filepath(), _cache._count);
   return;
 }
 
@@ -808,6 +800,15 @@ void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
 // 'offset_in_library'. Read the debug_info_offset field from the header of this set which defines the offset for the compilation unit.
 // This process is described in section 6.1.2 of the DWARF 4 spec.
 bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset_in_library, uint32_t* compilation_unit_offset) {
+  ensure_cached();
+  if (_cache.valid()) {
+    bool found = _cache.find_compilation_unit_offset(offset_in_library, compilation_unit_offset);
+    if (found) {
+      return true;
+    }
+  }
+
+  DWARF_LOG_INFO("Falling back to linear scan of .debug_aranges for '%s'", filepath());
   if (!read_section_header()) {
     DWARF_LOG_ERROR("Failed to read a .debug_aranges header.");
     return false;
