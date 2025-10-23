@@ -208,7 +208,7 @@ public class LicenseTest {
     private static void verifyLicenseFileInLinuxPackage(JPackageCommand cmd,
             Path expectedLicensePath) {
         TKit.assertTrue(LinuxHelper.getPackageFiles(cmd).filter(path -> path.equals(
-                expectedLicensePath)).findFirst().orElse(null) != null,
+                expectedLicensePath)).findFirst().isPresent(),
                 String.format("Check license file [%s] is in %s package",
                         expectedLicensePath, LinuxHelper.getPackageName(cmd)));
     }
