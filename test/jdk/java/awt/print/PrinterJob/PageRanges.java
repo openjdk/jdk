@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,58 +21,63 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6575331
  * @key printer
  * @summary The specified pages should be printed.
- * @run main/manual=yesno PageRanges
+ * @library /java/awt/regtesthelpers
+ * @library /test/lib
+ * @build PassFailJFrame
+ * @build jtreg.SkippedException
+ * @run main/manual PageRanges
  */
 
-import java.awt.*;
-import java.awt.print.*;
+import java.awt.Graphics;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
+import jtreg.SkippedException;
 
 public class PageRanges implements Printable {
-
-    static String[] instr = {
-     "This test prints two jobs, and tests that the specified range",
-     "of pages is printed. You must have a printer installed for this test.",
-     "In the first dialog, select a page range of 2 to 3, and press OK",
-     "In the second dialog, select ALL, to print all pages (in total 5 pages).",
-     "Collect the two print outs and confirm the jobs printed correctly",
-    };
+    private static final String INSTRUCTIONS = """
+                 This test prints two jobs and tests that the specified range
+                 of pages is printed.
+                 In the first dialog, select a page range of 2 to 3, and press OK.
+                 In the second dialog, select ALL, to print all pages (in total 5 pages).
+                 Collect the two print outs and confirm the jobs are printed correctly.
+                 """;
 
     public static void main(String args[]) throws Exception {
-        for (int i=0;i<instr.length;i++) {
-            System.out.println(instr[i]);
-        }
         PrinterJob job = PrinterJob.getPrinterJob();
         if (job.getPrintService() == null) {
-           System.out.println("No printers. Test cannot continue.");
-           return;
+            throw new SkippedException("Printer not configured or available.");
         }
-        job.setPrintable(new PageRanges());
-        if (!job.printDialog()) {
-           return;
-        }
-        job.print();
-        if (!job.printDialog()) {
-           return;
-        }
-        job.print();
 
-        return;
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .instructions(INSTRUCTIONS)
+                .columns(45)
+                .build();
+
+        job.setPrintable(new PageRanges());
+        if (job.printDialog()) {
+            job.print();
+        }
+        if (job.printDialog()) {
+            job.print();
+        }
+
+        passFailJFrame.awaitAndCheck();
     }
 
     public int print(Graphics g, PageFormat pf, int pi)
-                     throws PrinterException  {
-
+                     throws PrinterException {
         if (pi >= 5) {
             return NO_SUCH_PAGE;
         }
 
         g.drawString("Page : " + (pi+1), 200, 200);
-
         return PAGE_EXISTS;
     }
 }
