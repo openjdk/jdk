@@ -24,14 +24,14 @@
 package gc.NativeWrapperCollection;
 
 /*
- * @test TestNativeWrapperCollection
+ * @test NativeWrapperCollection
  * @summary Test that native wrappers are collected after becoming not entrant
  * @requires vm.compiler1.enabled
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/native -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                          gc.NativeWrapperCollection.TestNativeWrapperCollection
+ *                          gc.NativeWrapperCollection.NativeWrapperCollection
  */
 
 import java.lang.reflect.Method;
@@ -41,7 +41,7 @@ import jdk.test.lib.dcmd.JMXExecutor;
 import jdk.test.lib.dcmd.CommandExecutor;
 import jdk.test.whitebox.WhiteBox;
 
-public class TestNativeWrapperCollection {
+public class NativeWrapperCollection {
 
     static {
         System.loadLibrary("nativeWrapperCollection");
@@ -53,7 +53,7 @@ public class TestNativeWrapperCollection {
     static native void callRegisterNatives(int index);
 
     public static void main(String[] args) throws Exception {
-        Method method = TestNativeWrapperCollection.class.getDeclaredMethod("method");
+        Method method = NativeWrapperCollection.class.getDeclaredMethod("method");
 
         callRegisterNatives(0);
 
@@ -78,22 +78,22 @@ public class TestNativeWrapperCollection {
         boolean foundOne = false;
         while (lines.hasNext()) {
             String line = lines.next();
-            if (!line.contains("TestNativeWrapperCollection.method")) {
+            if (!line.contains("NativeWrapperCollection.method")) {
                 continue;
             }
             if (foundOne) {
                 throw new AssertionError("Expected one CodeCache entry for " +
-                        "'TestNativeWrapperCollection.method', found at least 2");
+                        "'NativeWrapperCollection.method', found at least 2");
             }
 
             String[] parts = line.split(" ");
             int codeState = Integer.parseInt(parts[2]);
             if (codeState == 1 /* not_entrant */) {
                 throw new AssertionError("Unexpected not-entrant entry for " +
-                        "'TestNativeWrapperCollection.method'");
+                        "'NativeWrapperCollection.method'");
             }
 
-            // Found one TestNativeWrapperCollection.method, exactly one is
+            // Found one NativeWrapperCollection.method, exactly one is
             // expected
             foundOne = true;
         }

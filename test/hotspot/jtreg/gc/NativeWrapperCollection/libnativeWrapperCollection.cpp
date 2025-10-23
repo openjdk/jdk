@@ -26,8 +26,10 @@
 static void method0(JNIEnv* env, jclass cls) {}
 static void method1(JNIEnv* env, jclass cls) {}
 
+extern "C" {
+
 JNIEXPORT void JNICALL
-Java_gc_NativeWrapperCollection_TestNativeWrapperCollection_callRegisterNatives
+Java_gc_NativeWrapperCollection_NativeWrapperCollection_callRegisterNatives
 (JNIEnv *env, jclass cls, jint index) {
   JNINativeMethod nativeMethods[] = {
     {
@@ -36,5 +38,7 @@ Java_gc_NativeWrapperCollection_TestNativeWrapperCollection_callRegisterNatives
       (void*) (index == 0 ? method0 : method1) // native method ptr
     }
   };
-  (*env)->RegisterNatives(env, cls, nativeMethods, 1);
+  env->RegisterNatives(cls, nativeMethods, 1);
+}
+
 }
