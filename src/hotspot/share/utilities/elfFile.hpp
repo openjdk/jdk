@@ -551,9 +551,6 @@ class DwarfFile : public ElfFile {
 
    private:
     static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
-    void sort() {
-      QuickSort::sort(_entries, _count, DwarfFile::ArangesCache::compare_aranges_entries);
-    }
     void free() {
       if (_entries != nullptr) {
         FREE_C_HEAP_ARRAY(ArangesEntry, _entries);

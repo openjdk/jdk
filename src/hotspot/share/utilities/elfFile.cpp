@@ -790,7 +790,7 @@ void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
     cache.destroy(true);
     return;
   }
-  cache.sort();
+  QuickSort::sort(cache._entries, cache._count, DwarfFile::ArangesCache::compare_aranges_entries);
   if (cache._count < cache._capacity) {
     ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY(ArangesEntry, cache._entries, cache._count, mtInternal);
     if (new_entries != nullptr) {
