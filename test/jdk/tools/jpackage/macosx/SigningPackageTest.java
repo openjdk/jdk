@@ -21,14 +21,17 @@
  * questions.
  */
 
+import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
+
 import java.nio.file.Path;
+import jdk.jpackage.test.Annotations.Parameter;
+import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.MacHelper;
+import jdk.jpackage.test.MacSign;
 import jdk.jpackage.test.PackageTest;
 import jdk.jpackage.test.PackageType;
-import jdk.jpackage.test.MacHelper;
-import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.Annotations.Parameter;
 
 /**
  * Tests generation of dmg and pkg with --mac-sign and related arguments.
@@ -144,6 +147,12 @@ public class SigningPackageTest {
     // Signing-indentity, but sign pkg only and UNICODE certificate
     @Parameter({"false", "false", "true", "UNICODE_INDEX"})
     public static void test(boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
+        MacSign.withKeychain(toConsumer(keychain -> {
+            test(keychain, signingKey, signAppImage, signPKG, certEnum);
+        }), SigningBase.StandardKeychain.MAIN.keychain());
+    }
+
+    private static void test(MacSign.ResolvedKeychain keychain, boolean signingKey, boolean signAppImage, boolean signPKG, SigningBase.CertIndex certEnum) throws Exception {
         final var certIndex = certEnum.value();
 
         new PackageTest()
@@ -151,7 +160,7 @@ public class SigningPackageTest {
                 .forTypes(PackageType.MAC)
                 .addInitializer(cmd -> {
                     cmd.addArguments("--mac-sign",
-                            "--mac-signing-keychain", SigningBase.getKeyChain());
+                            "--mac-signing-keychain", keychain.name());
                     if (signingKey) {
                         cmd.addArguments("--mac-signing-key-user-name",
                                          SigningBase.getDevName(certIndex));

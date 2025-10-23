@@ -1961,22 +1961,22 @@ bool Matcher::use_asm_for_ldiv_by_con(jlong divisor) {
 }
 
 // Register for DIVI projection of divmodI
-RegMask Matcher::divI_proj_mask() {
+const RegMask& Matcher::divI_proj_mask() {
   return _Z_RARG4_INT_REG_mask;
 }
 
 // Register for MODI projection of divmodI
-RegMask Matcher::modI_proj_mask() {
+const RegMask& Matcher::modI_proj_mask() {
   return _Z_RARG3_INT_REG_mask;
 }
 
 // Register for DIVL projection of divmodL
-RegMask Matcher::divL_proj_mask() {
+const RegMask& Matcher::divL_proj_mask() {
   return _Z_RARG4_LONG_REG_mask;
 }
 
 // Register for MODL projection of divmodL
-RegMask Matcher::modL_proj_mask() {
+const RegMask& Matcher::modL_proj_mask() {
   return _Z_RARG3_LONG_REG_mask;
 }
 
