@@ -745,9 +745,11 @@ public final class FloatingDecimal {
 
              /* Filter out extremely small or extremely large x. */
             if (e <= DoubleToDecimal.E_THR_Z) {
+                /* Test cases: "0.9e-324", "3e-500" */
                 return signed(0.0);
             }
             if (e >= DoubleToDecimal.E_THR_I) {
+                /* Test cases: "0.1e310", "4e500" */
                 return signed(Double.POSITIVE_INFINITY);
             }
 
@@ -775,6 +777,15 @@ public final class FloatingDecimal {
                  * In both cases, correct rounding is achieved as below.
                  * All integer x < 10^19 are covered here.
                  */
+
+                /*
+                 * Test cases:
+                 *      for fl < 2^63: "1", "2.34000e2", "9.223e18";
+                 *      for fl ≥ 2^63: "9.876e18", "9223372036854776833" (this
+                 *          is 2^63 + 2^10 + 1, rounding up due to sticky bit),
+                 *          "9223372036854776832" (this is 2^63 + 2^10, halfway
+                 *          value rounding down to even);
+                 */
                 fl *= MathUtils.pow10(ep);  // 0 ≤ ep < 19
                 v = fl >= 0 ? fl : 2.0 * (fl >>> 1 | fl & 0b1);
                 return signed(v);
@@ -794,6 +805,13 @@ public final class FloatingDecimal {
                      * Here, -22 ≤ ep ≤ 22, so 10^|ep| is an exact double.
                      * The product or quotient below operate on exact doubles,
                      * so the result is correctly rounded.
+                     */
+
+                    /*
+                     * Test cases:
+                     *      for ep < 0: "1.23", "0.000234";
+                     *      for ep > 0: "3.45e23", "576460752303423616e20" (the
+                     *          significand is 2^59 + 2^7, an exact double);
                      */
                     v = ep >= 0 ? v * SMALL_10_POW[ep] : v / SMALL_10_POW[-ep];
                     return signed(v);
@@ -822,6 +840,12 @@ public final class FloatingDecimal {
                      */
                     int ef = (d[0] < '9' ? MAX_DEC_DIGITS + 1 : MAX_DEC_DIGITS) - n;
                     if (ef >= 0 && ep - ef <= MAX_SMALL_TEN) {
+                        /*
+                         * Test cases:
+                         *      f does not start with 9: "1e37", "8999e34";
+                         *      f starts with 9: "0.9999e36", "0.9876e37";
+                         */
+
                         /* Rely on left-to-right evaluation. */
                         v = v * SMALL_10_POW[ef] * SMALL_10_POW[ep - ef];
                         return signed(v);
@@ -946,6 +970,14 @@ public final class FloatingDecimal {
                 double uh = nh1 | (nh0 != 0 ? 1 : 0);
                 v = Math.scalb(ul, rp);
                 if (ul == uh || v == Double.POSITIVE_INFINITY) {
+                    /*
+                     * Test cases:
+                     *      for ll = lh ∧ ul = uh: "1.2e-200", "2.3e100";
+                     *      for ll ≠ lh ∧ ul = uh: "1.2000000000000000003e-200",
+                     *          "2.3000000000000000004e100";
+                     *      for ll = lh ∧ v = ∞: "5.249320425370670463e308";
+                     *      for ll ≠ lh ∧ v = ∞: "5.2493204253706704633e308";
+                     */
                     return signed(v);
                 }
             } else {
@@ -974,6 +1006,11 @@ public final class FloatingDecimal {
                     double uh = nh1p + corr;
                     v = Math.scalb(ul, rp + sh);
                     if (ul == uh) {
+                        /*
+                         * Test cases:
+                         *      for ll = lh: "1.2e-320";
+                         *      for ll ≠ lh: "1.2000000000000000003e-320";
+                         */
                         return signed(v);
                     }
                 } else {
@@ -985,6 +1022,12 @@ public final class FloatingDecimal {
                      * the most significant P + 2 bits in nl1 are all "1" bits,
                      * so wl = r_e(nl) = r_e(nh) = wh = 2^(bl+64), and
                      * thus v = vh = 2^(bl+127) = 2^MIN_EXPONENT = MIN_NORMAL.
+                     */
+
+                    /*
+                     * Test cases:
+                     *      for ll = lh: "2.225073858507201383e-308"
+                     *      for ll ≠ lh: "2.2250738585072013831e-308"
                      */
                     return signed(Double.MIN_NORMAL);
                 }
