@@ -1136,6 +1136,8 @@ public:
   ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers() :
     HandshakeClosure("Shenandoah Update Thread Roots and Flush SATB"),
     _flush_all_satb(ShenandoahBarrierSet::satb_mark_queue_set()) {
+    assert(ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young(),
+           "Should be filtering pointers outside of old during old marking");
   }
 
   void do_thread(Thread* thread) override {
