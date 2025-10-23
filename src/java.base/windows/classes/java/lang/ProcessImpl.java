@@ -426,9 +426,10 @@ final class ProcessImpl extends Process {
         throws IOException
     {
         String cmdstr;
-        final String allowAmbiguousCommands = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true");
+        final String value = System.getProperty("jdk.lang.Process.allowAmbiguousCommands", "true");
+        final boolean allowAmbiguousCommands = !"false".equalsIgnoreCase(value);
 
-        if (!"false".equalsIgnoreCase(allowAmbiguousCommands)) {
+        if (allowAmbiguousCommands) {
             // Legacy mode.
 
             // Normalize path if possible.
