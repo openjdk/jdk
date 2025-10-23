@@ -66,23 +66,18 @@ public class TestJhsdbJstackMixedWithXComp {
 
         List<String> targetStackTrace = new ArrayList<>();
         boolean inStack = false;
-        System.out.println("DEBUG: before loop");
         for (String line : stdout.split("\n")) {
             if (line.contains("<nep_invoker_blob>")) {
                 inStack = true;
-                System.out.println("DEBUG: IN");
             } else if (inStack && line.contains("-----------------")) {
                 inStack = false;
-                System.out.println("DEBUG: OUT");
                 break;
             }
 
             if (inStack) {
-                System.out.println("DEBUG: " + line);
                 targetStackTrace.add(line);
             }
         }
-        System.out.println("DEBUG: after loop");
 
         boolean found = targetStackTrace.stream()
                                         .anyMatch(l -> l.contains("thread_native_entry"));
