@@ -52,10 +52,10 @@ import jdk.test.whitebox.code.BlobType;
  *     -XX:-SegmentedCodeCache jdk.jfr.event.compiler.TestCodeCacheFull
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:+TieredCompilation -XX:HotCodeHeapSize=8M jdk.jfr.event.compiler.TestCodeCacheFull
+ *     -XX:+TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:HotCodeHeapSize=8M jdk.jfr.event.compiler.TestCodeCacheFull
  * @run main/othervm -Xbootclasspath/a:.
  *     -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *     -XX:-TieredCompilation -XX:HotCodeHeapSize=8M jdk.jfr.event.compiler.TestCodeCacheFull
+ *     -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:HotCodeHeapSize=8M jdk.jfr.event.compiler.TestCodeCacheFull
  */
 public class TestCodeCacheFull {
 

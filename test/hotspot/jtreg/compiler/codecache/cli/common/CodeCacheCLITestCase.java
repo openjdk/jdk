@@ -55,6 +55,8 @@ public class CodeCacheCLITestCase {
     private static final String SEGMENTED_CODE_CACHE = "SegmentedCodeCache";
     private static final String TIERED_COMPILATION = "TieredCompilation";
     private static final String TIERED_STOP_AT = "TieredStopAtLevel";
+    private static final String UNLOCK_EXPERIMENTAL_VM_OPTIONS = "UnlockExperimentalVMOptions";
+    private static final String HOT_CODE_GROUPER = "HotCodeGrouper";
 
     private final Description description;
     private final Runner runner;
@@ -130,6 +132,8 @@ public class CodeCacheCLITestCase {
          */
         NON_TIERED_W_HOT(SEGMENTED_W_HOT_WO_PROFILED,
                 EnumSet.of(BlobType.NonNMethod, BlobType.MethodNonProfiled, BlobType.MethodHot),
+                CommandLineOptionTest.prepareBooleanFlag(UNLOCK_EXPERIMENTAL_VM_OPTIONS, true),
+                CommandLineOptionTest.prepareBooleanFlag(HOT_CODE_GROUPER, true),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION,
                         false)),
 
@@ -140,6 +144,8 @@ public class CodeCacheCLITestCase {
          */
         TIERED_LEVEL_4_W_HOT(SEGMENTED_W_HOT,
                 EnumSet.complementOf(EnumSet.of(BlobType.All)),
+                CommandLineOptionTest.prepareBooleanFlag(UNLOCK_EXPERIMENTAL_VM_OPTIONS, true),
+                CommandLineOptionTest.prepareBooleanFlag(HOT_CODE_GROUPER, true),
                 CommandLineOptionTest.prepareBooleanFlag(TIERED_COMPILATION, true),
                 CommandLineOptionTest.prepareNumericFlag(TIERED_STOP_AT, 4));
 

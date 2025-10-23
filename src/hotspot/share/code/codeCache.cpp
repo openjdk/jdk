@@ -232,7 +232,7 @@ void CodeCache::initialize_heaps() {
   CodeHeapInfo non_nmethod = {NonNMethodCodeHeapSize, FLAG_IS_CMDLINE(NonNMethodCodeHeapSize), true};
   CodeHeapInfo profiled = {ProfiledCodeHeapSize, FLAG_IS_CMDLINE(ProfiledCodeHeapSize), true};
   CodeHeapInfo non_profiled = {NonProfiledCodeHeapSize, FLAG_IS_CMDLINE(NonProfiledCodeHeapSize), true};
-  CodeHeapInfo hot = {HotCodeHeapSize, FLAG_IS_CMDLINE(HotCodeHeapSize), HotCodeHeapSize != 0};
+  CodeHeapInfo hot = {HotCodeHeapSize, FLAG_IS_CMDLINE(HotCodeHeapSize), true};
 
   const bool cache_size_set   = FLAG_IS_CMDLINE(ReservedCodeCacheSize);
   const size_t ps             = page_size(false, 8);
@@ -249,6 +249,12 @@ void CodeCache::initialize_heaps() {
     profiled.size = 0;
     profiled.set = true;
     profiled.enabled = false;
+  }
+
+  if (!heap_available(CodeBlobType::MethodHot)) {
+    hot.size = 0;
+    hot.set = true;
+    hot.enabled = false;
   }
 
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
@@ -275,27 +281,26 @@ void CodeCache::initialize_heaps() {
     set_size_of_unset_code_heap(&non_profiled, cache_size, non_nmethod.size + profiled.size, min_size);
   }
 
-  if (!profiled.set && non_profiled.set) {
-    set_size_of_unset_code_heap(&profiled, cache_size, non_nmethod.size + non_profiled.size, min_size);
+  if (!profiled.set && non_profiled.set && hot.set) {
+    set_size_of_unset_code_heap(&profiled, cache_size, non_nmethod.size + non_profiled.size + hot.size, min_size);
   }
 
   if (hot.enabled) {
-    if (!non_profiled.set) {
-      // If the non-profiled code heap is not set, then the hot code heap is
-      // taken from it.
+    if (!hot.set) {
+      assert(hot.size == 0, "must be calculated during heaps initialization");
+      // An application usually has ~20% hot code which is mostly non-profiled code.
+      // We set the hot code heap size to 20% of the non-profiled code heap.
+      hot.size = MAX2((2 * non_profiled.size) / 10, min_size);
+    }
+    if (!(non_profiled.set && hot.set)) {
       check_space_available_for_heap(CodeBlobType::MethodHot, hot.size, non_profiled.size);
       non_profiled.size -= hot.size;
-    } else if (profiled.enabled && !profiled.set) {
-      // If the profiled code heap is not set, then the hot code heap is taken
-      // from it.
-      check_space_available_for_heap(CodeBlobType::MethodHot, hot.size, profiled.size);
-      profiled.size -= hot.size;
     }
   }
 
   // Compatibility.
   size_t non_nmethod_min_size = min_cache_size + compiler_buffer_size;
-  if (!non_nmethod.set && profiled.set && non_profiled.set) {
+  if (!non_nmethod.set && profiled.set && non_profiled.set && hot.set) {
     set_size_of_unset_code_heap(&non_nmethod, cache_size, profiled.size + non_profiled.size + hot.size, non_nmethod_min_size);
   }
 
@@ -366,8 +371,8 @@ void CodeCache::initialize_heaps() {
   non_profiled.size = align_down(non_profiled.size, min_size);
 
   if (hot.enabled) {
-      hot.size = align_down(hot.size, min_size);
-      FLAG_SET_ERGO(HotCodeHeapSize, hot.size);
+    hot.size = align_down(hot.size, min_size);
+    FLAG_SET_ERGO(HotCodeHeapSize, hot.size);
   }
 
   FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod.size);
@@ -439,7 +444,9 @@ bool CodeCache::heap_available(CodeBlobType code_blob_type) {
     return (code_blob_type == CodeBlobType::NonNMethod);
   } else if (CompilerConfig::is_c1_profiling()) {
     // Tiered compilation: use all code heaps
-    if (HotCodeHeapSize == 0 && (code_blob_type == CodeBlobType::MethodHot)) {
+    // except the hot code heap unless it is requested.
+
+    if (COMPILER2_PRESENT(!HotCodeGrouper &&) (code_blob_type == CodeBlobType::MethodHot)) {
       return false;
     }
 
@@ -448,8 +455,8 @@ bool CodeCache::heap_available(CodeBlobType code_blob_type) {
     // No TieredCompilation: we only need the non-nmethod and non-profiled code heap
     // and the hot code heap if it is requested.
     return (code_blob_type == CodeBlobType::NonNMethod) ||
-           (code_blob_type == CodeBlobType::MethodNonProfiled) ||
-           ((code_blob_type == CodeBlobType::MethodHot) && (HotCodeHeapSize != 0));
+           (code_blob_type == CodeBlobType::MethodNonProfiled)
+           COMPILER2_PRESENT(|| ((code_blob_type == CodeBlobType::MethodHot) && HotCodeGrouper));
   }
 }
 
