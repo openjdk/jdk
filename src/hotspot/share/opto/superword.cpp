@@ -1754,6 +1754,8 @@ VTransformBoolTest PackSet::get_bool_test(const Node_List* bool_pack) const {
     break;
   case Op_CmpI:
   case Op_CmpL:
+    // The mask of signed int/long scalar comparisons has the same semantics
+    // as the mask for vector elementwise int/long comparison with VectorMaskCmp.
     break;
   default:
     // Other Cmp ops are not expected to get here.
