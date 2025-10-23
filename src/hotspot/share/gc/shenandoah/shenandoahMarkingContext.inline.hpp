@@ -119,6 +119,10 @@ inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(const ShenandoahHea
   return _top_at_mark_starts_base[r->index()];
 }
 
+inline HeapWord* ShenandoahMarkingContext::top_at_mark_start(const size_t index) const {
+  return _top_at_mark_starts_base[index];
+}
+
 inline void ShenandoahMarkingContext::reset_top_bitmap(ShenandoahHeapRegion* r) {
   assert(is_bitmap_range_within_region_clear(r->bottom(), r->end()),
          "Region %zu should have no marks in bitmap", r->index());

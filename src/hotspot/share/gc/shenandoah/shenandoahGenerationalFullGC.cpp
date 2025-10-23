@@ -136,10 +136,11 @@ void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
   LogTarget(Debug, gc) lt;
   if (lt.is_enabled()) {
     size_t live_bytes_in_old = 0;
+    ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
     for (size_t i = 0; i < heap->num_regions(); i++) {
       ShenandoahHeapRegion* r = heap->get_region(i);
       if (r->is_old()) {
-        live_bytes_in_old += r->get_live_data_bytes();
+        live_bytes_in_old += r->get_live_data_bytes(context, i);
       }
     }
     log_debug(gc)("Live bytes in old after STW mark: " PROPERFMT, PROPERFMTARGS(live_bytes_in_old));
@@ -201,7 +202,8 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
         _from_affiliation(ShenandoahAffiliation::FREE),
         _old_compact_point(nullptr),
         _young_compact_point(nullptr),
-        _worker_id(worker_id) {
+        _worker_id(worker_id),
+        _ctx(_heap->marking_context()) {
   assert(from_region != nullptr, "Worker needs from_region");
   // assert from_region has live?
   if (from_region->is_old()) {
@@ -216,11 +218,12 @@ ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGen
 void ShenandoahPrepareForGenerationalCompactionObjectClosure::set_from_region(ShenandoahHeapRegion* from_region) {
   log_debug(gc)("Worker %u compacting %s Region %zu which had used %zu and %s live",
                 _worker_id, from_region->affiliation_name(),
-                from_region->index(), from_region->used(), from_region->has_live()? "has": "does not have");
+                from_region->index(), from_region->used(),
+                from_region->has_live(_ctx, from_region->index())? "has": "does not have");
 
   _from_region = from_region;
   _from_affiliation = from_region->affiliation();
-  if (_from_region->has_live()) {
+  if (_from_region->has_live(_ctx, _from_region->index())) {
     if (_from_affiliation == ShenandoahAffiliation::OLD_GENERATION) {
       if (_old_to_region == nullptr) {
         _old_to_region = from_region;

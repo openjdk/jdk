@@ -96,17 +96,18 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free = 0;
   size_t free_regions = 0;
 
+  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* region = heap->get_region(i);
 
-    size_t garbage = region->garbage();
+    size_t garbage = region->garbage(context, i);
     total_garbage += garbage;
 
     if (region->is_empty()) {
       free_regions++;
       free += ShenandoahHeapRegion::region_size_bytes();
     } else if (region->is_regular()) {
-      if (!region->has_live()) {
+      if (!region->has_live(context, i)) {
         // We can recycle it right away and put it in the free set.
         immediate_regions++;
         immediate_garbage += garbage;
@@ -119,13 +120,13 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     } else if (region->is_humongous_start()) {
       // Reclaim humongous regions here, and count them as the immediate garbage
 #ifdef ASSERT
-      bool reg_live = region->has_live();
+      bool reg_live = region->has_live(context, i);
       bool bm_live = heap->gc_generation()->complete_marking_context()->is_marked(cast_to_oop(region->bottom()));
       assert(reg_live == bm_live,
              "Humongous liveness and marks should agree. Region live: %s; Bitmap live: %s; Region Live Words: %zu",
-             BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words());
+             BOOL_TO_STR(reg_live), BOOL_TO_STR(bm_live), region->get_live_data_words(context, i));
 #endif
-      if (!region->has_live()) {
+      if (!region->has_live(context, i)) {
         heap->trash_humongous_region_at(region);
 
         // Count only the start. Continuations would be counted on "trash" path
