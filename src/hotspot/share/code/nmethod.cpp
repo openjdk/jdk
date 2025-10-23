@@ -4006,6 +4006,7 @@ void nmethod::print_code_snippet(outputStream* st, address addr) const {
     } else {
       start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
     }
+    address start_for_hex_dump = start; // We can choose a different starting point for hex dump, below.
     address end = code_end();
 
     // Try using relocations to find closer instruction start and end points.
@@ -4018,6 +4019,8 @@ void nmethod::print_code_snippet(outputStream* st, address addr) const {
       // We could detect and skip it, but hex dump is still usable when
       // disassembler produces garbage in such a very rare case.
       start = iter.addr();
+      // We want at least 64 Bytes ahead in hex dump.
+      if (iter.addr() <= (addr - 64)) start_for_hex_dump = iter.addr();
     }
     if (iter.has_current()) {
       if (iter.addr() == addr) iter.next(); // find relocation after addr
@@ -4025,7 +4028,7 @@ void nmethod::print_code_snippet(outputStream* st, address addr) const {
     }
 
     // Always print hex. Disassembler may still have problems when hitting an incorrect instruction start.
-    os::print_hex_dump(st, start, end, 1, /* print_ascii=*/false);
+    os::print_hex_dump(st, start_for_hex_dump, end, 1, /* print_ascii=*/false);
     if (!Disassembler::is_abstract()) {
       Disassembler::decode(start, end, st);
     }
