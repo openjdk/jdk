@@ -72,6 +72,7 @@ typedef Elf32_Sym       Elf_Sym;
 #include "memory/allocation.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
+#include "utilities/quickSort.hpp"
 
 #ifdef ASSERT
 // Helper macros to print different log levels during DWARF parsing
@@ -545,9 +546,9 @@ class DwarfFile : public ElfFile {
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
 
    private:
-    static int compare_aranges_entries(const void* a, const void* b);
+    static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
     void sort() {
-      qsort(_entries, _count, sizeof(ArangesEntry), DwarfFile::ArangesCache::compare_aranges_entries);
+      QuickSort::sort(_entries, _count, DwarfFile::ArangesCache::compare_aranges_entries);
     }
   };
 

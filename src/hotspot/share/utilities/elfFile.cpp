@@ -717,18 +717,15 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
   return true;
 }
 
-int DwarfFile::ArangesCache::compare_aranges_entries(const void* a, const void* b) {
-  const ArangesEntry* entry_a = static_cast<const ArangesEntry*>(a);
-  const ArangesEntry* entry_b = static_cast<const ArangesEntry*>(b);
-
-  if (entry_a->beginning_address < entry_b->beginning_address) {
+int DwarfFile::ArangesCache::compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b) {
+  if (a.beginning_address < b.beginning_address) {
     return -1;
-  } else if (entry_a->beginning_address > entry_b->beginning_address) {
+  } else if (a.beginning_address > b.beginning_address) {
     return 1;
   }
 
-  uintptr_t len_a = entry_a->end_address - entry_a->beginning_address;
-  uintptr_t len_b = entry_b->end_address - entry_b->beginning_address;
+  uintptr_t len_a = a.end_address - a.beginning_address;
+  uintptr_t len_b = b.end_address - b.beginning_address;
   if (len_a < len_b) {
     return -1;
   } else if (len_a > len_b) {
