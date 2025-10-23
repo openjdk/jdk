@@ -541,7 +541,8 @@ void VLoopDependencyGraph::PredsIterator::next() {
   }
 }
 
-// TODO: Description
+// Cost-model heuristic for nodes that do not contribute to computatinal
+// cost inside the loop.
 bool VLoopAnalyzer::has_zero_cost(Node* n) const {
   // Outside body?
   if (!_vloop.in_bb(n)) { return true; }
@@ -551,6 +552,11 @@ bool VLoopAnalyzer::has_zero_cost(Node* n) const {
   // the load / store and have no additional cost.
   if (vpointers().is_in_pointer_expression(n)) { return true; }
 
+  // Not all AddP nodes can be detected in VPointer parsing, so
+  // we filter them out here.
+  // We don't want to explicitly model the cost of control flow,
+  // since we have the same CFG structure before and after
+  // vectorization: A loop head, a loop exit, with a backedge.
   if (n->is_AddP() || // Pointer expression
       n->is_CFG() ||  // CFG
       n->is_Phi() ||  // CFG
