@@ -938,6 +938,8 @@ public:
 
   static bool is_intel_cascade_lake();
 
+  static bool is_intel_darkmont();
+
   static int avx3_threshold();
 
   static bool is_intel_tsc_synched_at_init();
@@ -1091,7 +1093,6 @@ public:
 
   static bool supports_tscinv_ext(void);
 
-  static void initialize_tsc();
   static void initialize_cpu_information(void);
 };
 

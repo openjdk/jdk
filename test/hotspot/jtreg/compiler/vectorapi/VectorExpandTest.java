@@ -88,7 +88,7 @@ public class VectorExpandTest {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_VB, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.EXPAND_VB, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
     public static void testVectorExpandByte(ByteVector av, VectorMask<Byte> m) {
         av.expand(m).intoArray(bb, 0);
     }
@@ -105,7 +105,7 @@ public class VectorExpandTest {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_VS, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.EXPAND_VS, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
     public static void testVectorExpandShort(ShortVector av, VectorMask<Short> m) {
         av.expand(m).intoArray(sb, 0);
     }
@@ -122,7 +122,7 @@ public class VectorExpandTest {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_VI, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.EXPAND_VI, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
     public static void testVectorExpandInt(IntVector av, VectorMask<Integer> m) {
         av.expand(m).intoArray(ib, 0);
     }
@@ -139,7 +139,7 @@ public class VectorExpandTest {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_VL, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.EXPAND_VL, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
     public static void testVectorExpandLong(LongVector av, VectorMask<Long> m) {
         av.expand(m).intoArray(lb, 0);
     }
@@ -156,7 +156,7 @@ public class VectorExpandTest {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_VF, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.EXPAND_VF, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
     public static void testVectorExpandFloat(FloatVector av, VectorMask<Float> m) {
         av.expand(m).intoArray(fb, 0);
     }
@@ -173,7 +173,7 @@ public class VectorExpandTest {
     }
 
     @Test
-    @IR(counts = { IRNode.EXPAND_VD, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
+    @IR(counts = { IRNode.EXPAND_VD, "= 1" }, applyIfCPUFeatureOr = { "asimd", "true", "rvv", "true" })
     public static void testVectorExpandDouble(DoubleVector av, VectorMask<Double> m) {
         av.expand(m).intoArray(db, 0);
     }

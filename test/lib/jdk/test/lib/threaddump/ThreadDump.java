@@ -297,6 +297,16 @@ public final class ThreadDump {
         }
 
         /**
+         * Returns the owner of the parkBlocker if the parkBlocker is an AbstractOwnableSynchronizer.
+         */
+        public OptionalLong parkBlockerOwner() {
+            String owner = getStringProperty("parkBlocker", "owner");
+            return (owner != null)
+                    ? OptionalLong.of(Long.parseLong(owner))
+                    : OptionalLong.empty();
+        }
+
+        /**
          * Returns the object that the thread is blocked entering its monitor.
          */
         public String blockedOn() {

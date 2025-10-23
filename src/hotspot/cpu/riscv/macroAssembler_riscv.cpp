@@ -225,36 +225,6 @@ void MacroAssembler::pop_cont_fastpath(Register java_thread) {
   bind(done);
 }
 
-void MacroAssembler::inc_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  addi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count overflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
-void MacroAssembler::dec_held_monitor_count(Register tmp) {
-  Address dst(xthread, JavaThread::held_monitor_count_offset());
-  ld(tmp, dst);
-  subi(tmp, tmp, 1);
-  sd(tmp, dst);
-#ifdef ASSERT
-  Label ok;
-  test_bit(tmp, tmp, 63);
-  beqz(tmp, ok);
-  STOP("assert(held monitor count underflow)");
-  should_not_reach_here();
-  bind(ok);
-#endif
-}
-
 int MacroAssembler::align(int modulus, int extra_offset) {
   CompressibleScope scope(this);
   intptr_t before = offset();
@@ -355,14 +325,15 @@ void MacroAssembler::call_VM(Register oop_result,
 }
 
 void MacroAssembler::post_call_nop() {
+  assert(!in_compressible_scope(), "Must be");
+  assert_alignment(pc());
   if (!Continuations::enabled()) {
     return;
   }
-  relocate(post_call_nop_Relocation::spec(), [&] {
-    InlineSkippedInstructionsCounter skipCounter(this);
-    nop();
-    li32(zr, 0);
-  });
+  relocate(post_call_nop_Relocation::spec());
+  InlineSkippedInstructionsCounter skipCounter(this);
+  nop();
+  li32(zr, 0);
 }
 
 // these are no-ops overridden by InterpreterMacroAssembler
@@ -389,12 +360,14 @@ void MacroAssembler::set_last_Java_frame(Register last_java_sp,
     last_java_sp = esp;
   }
 
-  sd(last_java_sp, Address(xthread, JavaThread::last_Java_sp_offset()));
-
   // last_java_fp is optional
   if (last_java_fp->is_valid()) {
     sd(last_java_fp, Address(xthread, JavaThread::last_Java_fp_offset()));
   }
+
+  // We must set sp last.
+  sd(last_java_sp, Address(xthread, JavaThread::last_Java_sp_offset()));
+
 }
 
 void MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -5013,7 +4986,7 @@ address MacroAssembler::reloc_call(Address entry, Register tmp) {
 
 address MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
-  IncompressibleScope scope(this); // relocations
+  assert(!in_compressible_scope(), "Must be");
   movptr(t0, (address)Universe::non_oop_word(), t1);
   assert_cond(entry != nullptr);
   return reloc_call(Address(entry, rh));

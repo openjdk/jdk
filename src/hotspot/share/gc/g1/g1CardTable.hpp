@@ -45,7 +45,6 @@ class G1CardTableChangedListener : public G1MappingChangedListener {
 };
 
 class G1CardTable : public CardTable {
-  friend class VMStructs;
   friend class G1CardTableChangedListener;
 
   G1CardTableChangedListener _listener;

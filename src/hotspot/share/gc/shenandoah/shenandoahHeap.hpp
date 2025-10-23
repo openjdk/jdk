@@ -206,8 +206,11 @@ public:
   void initialize_serviceability() override;
 
   void print_heap_on(outputStream* st)         const override;
-  void print_gc_on(outputStream *st)           const override;
+  void print_gc_on(outputStream* st)           const override;
   void print_heap_regions_on(outputStream* st) const;
+
+  // Flushes cycle timings to global timings and prints the phase timings for the last completed cycle.
+  void process_gc_stats() const;
 
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
@@ -453,9 +456,12 @@ public:
   // This indicates the reason the last GC cycle was cancelled.
   inline GCCause::Cause cancelled_cause() const;
 
-  // Clears the cancellation cause and optionally resets the oom handler (cancelling an
-  // old mark does _not_ touch the oom handler).
-  inline void clear_cancelled_gc(bool clear_oom_handler = true);
+  // Clears the cancellation cause and resets the oom handler
+  inline void clear_cancelled_gc();
+
+  // Clears the cancellation cause iff the current cancellation reason equals the given
+  // expected cancellation cause. Does not reset the oom handler.
+  inline GCCause::Cause clear_cancellation(GCCause::Cause expected);
 
   void cancel_concurrent_mark();
 
@@ -472,6 +478,8 @@ protected:
   ShenandoahRegionIterator _update_refs_iterator;
 
 private:
+  inline void reset_cancellation_time();
+
   // GC support
   // Evacuation
   virtual void evacuate_collection_set(bool concurrent);

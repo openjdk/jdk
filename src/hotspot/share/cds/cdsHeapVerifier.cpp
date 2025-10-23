@@ -100,7 +100,7 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
   // you might need to fix the core library code, or fix the ADD_EXCL entries below.
   //
   //       class                                         field                     type
-  ADD_EXCL("java/lang/ClassLoader",                      "scl");                   // A
+  ADD_EXCL("java/lang/ClassLoader$Holder",               "scl");                   // A
   ADD_EXCL("java/lang/Module",                           "ALL_UNNAMED_MODULE",     // A
                                                          "ALL_UNNAMED_MODULE_SET", // A
                                                          "EVERYONE_MODULE",        // A
@@ -145,6 +145,10 @@ CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
                                                           "FALSE",                 // D
                                                           "TRUE",                  // D
                                                           "ZERO");                 // D
+  }
+
+  if (CDSConfig::is_dumping_aot_linked_classes()) {
+    ADD_EXCL("java/lang/Package$VersionInfo",             "NULL_VERSION_INFO");    // D
   }
 
 # undef ADD_EXCL
@@ -228,10 +232,16 @@ public:
           return;
         }
 
-        if (field_ik == vmClasses::internal_Unsafe_klass() && ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
-          // There's only a single instance of jdk/internal/misc/Unsafe, so all references will
-          // be pointing to this singleton, which has been archived.
-          return;
+        if (ArchiveUtils::has_aot_initialized_mirror(field_ik)) {
+          if (field_ik == vmClasses::internal_Unsafe_klass()) {
+            // There's only a single instance of jdk/internal/misc/Unsafe, so all references will
+            // be pointing to this singleton, which has been archived.
+            return;
+          }
+          if (field_ik == vmClasses::Boolean_klass()) {
+            // TODO: check if is TRUE or FALSE
+            return;
+          }
         }
       }
 
