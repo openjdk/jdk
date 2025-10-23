@@ -54,11 +54,15 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
   for (vframeStream stream(jt); !stream.at_end(); stream.next()) {
     Method* m = stream.method();
 
-    if (m->method_holder()->module()->name() != vmSymbols::java_base() && !agents_loaded) {
+    Symbol* module_name = m->method_holder()->module()->name();
+    if (!agents_loaded &&
+      (module_name != vmSymbols::java_base()
+       // whitelist jdk.jfr as well, because Throwable's constructor can call into it
+       && module_name != vmSymbols::jdk_jfr())) {
       // Stop walking if we see a frame outside of java.base.
       // Note that there is exactly 1 handshake that calls into Java (see HandshakeState::handle_unsafe_access_error)
       // This may add extra Java frames to the stack during a @Scoped method.
-      // These are all on java.base though, so we just keep walking.
+      // These are all in java.base though, so we just keep walking.
 
       // If any JVMTI agents are loaded, we also have to keep walking, since
       // agents can add arbitrary Java frames to the stack inside a @Scoped method.
@@ -85,7 +89,7 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
         // We may also have to keep walking after finding a @Scoped method,
         // since there may be multiple @Scoped methods active on the stack
         // if a JVMTI agent callback runs during a scoped access and calls
-        // back into Java code, that then itself does a scoped access.
+        // back into Java code that then itself does a scoped access.
         return;
       }
     }
