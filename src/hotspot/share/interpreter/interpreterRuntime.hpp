@@ -103,12 +103,12 @@ class InterpreterRuntime: AllStatic {
                                         constantPoolHandle& pool, TRAPS);
 private:
   // Statics & fields
-  static void resolve_get_put(JavaThread* current, Bytecodes::Code bytecode);
+  static void resolve_get_put(Bytecodes::Code bytecode, TRAPS);
 
   // Calls
-  static void resolve_invoke(JavaThread* current, Bytecodes::Code bytecode);
-  static void resolve_invokehandle (JavaThread* current);
-  static void resolve_invokedynamic(JavaThread* current);
+  static void resolve_invoke(Bytecodes::Code bytecode, TRAPS);
+  static void resolve_invokehandle (TRAPS);
+  static void resolve_invokedynamic(TRAPS);
 
   static void update_invoke_cp_cache_entry(CallInfo& info, Bytecodes::Code bytecode,
                                            methodHandle& resolved_method,

@@ -646,13 +646,13 @@ JRT_END
 // Fields
 //
 
-void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code bytecode) {
-  JavaThread* THREAD = current;
+void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, TRAPS) {
+  JavaThread* current = THREAD;
   LastFrameAccessor last_frame(current);
   constantPoolHandle pool(current, last_frame.method()->constants());
   methodHandle m(current, last_frame.method());
 
-  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, ClassInitMode::init_preemptable, CHECK_AND_CLEAR_PREEMPTED);
+  resolve_get_put(bytecode, last_frame.get_index_u2(bytecode), m, pool, ClassInitMode::init_preemptable, THREAD);
 }
 
 void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_index,
@@ -794,7 +794,8 @@ JRT_ENTRY(void, InterpreterRuntime::_breakpoint(JavaThread* current, Method* met
   JvmtiExport::post_raw_breakpoint(current, method, bcp);
 JRT_END
 
-void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code bytecode) {
+void InterpreterRuntime::resolve_invoke(Bytecodes::Code bytecode, TRAPS) {
+  JavaThread* current = THREAD;
   LastFrameAccessor last_frame(current);
   // extract receiver from the outgoing argument list if necessary
   Handle receiver(current, nullptr);
@@ -822,7 +823,6 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   int method_index = last_frame.get_index_u2(bytecode);
   {
     JvmtiHideSingleStepping jhss(current);
-    JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
                                  method_index, bytecode,
                                  ClassInitMode::init_preemptable, THREAD);
@@ -834,7 +834,6 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
         // Recording the trap will help the compiler to potentially recognize this exception as "hot"
         note_trap(current, Deoptimization::Reason_null_check);
       }
-      CLEAR_PENDING_PREEMPTED_EXCEPTION;
       return;
     }
 
@@ -933,7 +932,8 @@ void InterpreterRuntime::cds_resolve_invoke(Bytecodes::Code bytecode, int method
 }
 
 // First time execution:  Resolve symbols, create a permanent MethodType object.
-void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
+void InterpreterRuntime::resolve_invokehandle(TRAPS) {
+  JavaThread* current = THREAD;
   const Bytecodes::Code bytecode = Bytecodes::_invokehandle;
   LastFrameAccessor last_frame(current);
 
@@ -962,7 +962,8 @@ void InterpreterRuntime::cds_resolve_invokehandle(int raw_index,
 }
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
-void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
+void InterpreterRuntime::resolve_invokedynamic(TRAPS) {
+  JavaThread* current = THREAD;
   LastFrameAccessor last_frame(current);
   const Bytecodes::Code bytecode = Bytecodes::_invokedynamic;
 
@@ -997,19 +998,19 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* current, Byte
   case Bytecodes::_putstatic:
   case Bytecodes::_getfield:
   case Bytecodes::_putfield:
-    resolve_get_put(current, bytecode);
+    resolve_get_put(bytecode, CHECK_AND_CLEAR_PREEMPTED);
     break;
   case Bytecodes::_invokevirtual:
   case Bytecodes::_invokespecial:
   case Bytecodes::_invokestatic:
   case Bytecodes::_invokeinterface:
-    resolve_invoke(current, bytecode);
+    resolve_invoke(bytecode, CHECK_AND_CLEAR_PREEMPTED);
     break;
   case Bytecodes::_invokehandle:
-    resolve_invokehandle(current);
+    resolve_invokehandle(THREAD);
     break;
   case Bytecodes::_invokedynamic:
-    resolve_invokedynamic(current);
+    resolve_invokedynamic(THREAD);
     break;
   default:
     fatal("unexpected bytecode: %s", Bytecodes::name(bytecode));
