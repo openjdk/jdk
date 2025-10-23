@@ -114,7 +114,7 @@ public class KRBError implements java.io.Serializable {
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-    @java.io.Serial
+    @Serial
     private void readObject(ObjectInputStream is)
             throws IOException, ClassNotFoundException {
         try {
