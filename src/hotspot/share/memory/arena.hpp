@@ -38,8 +38,11 @@
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
 class ChunkPoolLocker : public StackObj {
+  bool _locked;
  public:
-  ChunkPoolLocker();
+  enum class LockStrategy { Lock, Try };
+
+  ChunkPoolLocker(LockStrategy ls = LockStrategy::Lock);
   ~ChunkPoolLocker();
 };
 
@@ -104,6 +107,7 @@ public:
   FN(states,      C2 Matcher States Arena) \
   FN(reglive,     C2 Register Allocation Live Arenas) \
   FN(regsplit,    C2 Register Allocation Split Arena) \
+  FN(regmask,     C2 Short-Lived Register Mask Arena) \
   FN(superword,   C2 SuperWord Arenas) \
   FN(cienv,       CI Env Arena) \
   FN(ha,          Handle area) \

@@ -44,6 +44,8 @@
  *                         Full GC --------> (finish)
  */
 
+class ShenandoahGeneration;
+
 class ShenandoahGC : public StackObj {
 public:
   // Fail point from concurrent GC
@@ -57,12 +59,17 @@ public:
     _DEGENERATED_LIMIT
   };
 
+  explicit ShenandoahGC(ShenandoahGeneration* generation) : _generation(generation) {}
+
   // Returns false if the collection was cancelled, true otherwise.
   virtual bool collect(GCCause::Cause cause) = 0;
   static const char* degen_point_to_string(ShenandoahDegenPoint point);
 
+  ShenandoahGeneration* generation() const { return _generation; }
 protected:
   static void update_roots(bool full_gc);
+
+  ShenandoahGeneration* _generation;
 };
 
 #endif  // SHARE_GC_SHENANDOAH_SHENANDOAHGC_HPP

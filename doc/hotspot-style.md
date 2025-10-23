@@ -642,6 +642,7 @@ use can make code much harder to understand.
 parameter. The type is deduced from the value provided in a template
 instantiation.
 
+<a name="function-return-type-deduction"></a>
 * Function return type deduction
 ([n3638](https://isocpp.org/files/papers/N3638.html))<br>
 Only use if the function body has a very small number of `return`
@@ -690,6 +691,42 @@ pushing to extremes.
 Here are a few closely related example bugs:<br>
 <https://gcc.gnu.org/bugzilla/show_bug.cgi?id=95468><br>
 <https://developercommunity.visualstudio.com/content/problem/396562/sizeof-deduced-type-is-sometimes-not-a-constant-ex.html>
+
+### Trailing return type syntax for functions
+
+A function's return type may be specified after the parameters and qualifiers
+([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm)).
+In such a declaration the normal return type is `auto` and the return type is
+indicated by `->` followed by the type.  Although both use `auto` in the
+"normal" leading return type position, this differs from
+[function return type deduction](#function-return-type-deduction),
+in that the return type is explicit rather than deduced, but specified in a
+trailing position.
+
+Use of trailing return types is permitted.  However, the normal, leading
+position for the return type is preferred. A trailing return type should only
+be used where it provides some benefit. Such benefits usually arise because a
+trailing return type is in a different scope than a leading return type.
+
+* If the function identifier is a nested name specifier, then the trailing
+return type occurs in the nested scope. This may permit simpler naming in the
+return type because of the different name lookup context.
+
+* The trailing return type is in the scope of the parameters, making their
+types accessible via `decltype`. For example
+```
+template<typename T, typename U> auto add(T t, U u) -> decltype(t + u);
+```
+rather than
+```
+template<typename T, typename U> decltype((*(T*)0) + (*(U*)0)) add(T t, U u);
+```
+
+* Complex calculated leading return types may obscure the normal syntactic
+boundaries, making it more difficult for a reader to find the function name and
+parameters. This is particularly common in cases where the return type is
+being used for [SFINAE]. A trailing return type may be preferable in such
+situations.
 
 ### Non-type template parameter values
 
@@ -819,14 +856,19 @@ ordering, which may differ from (may be stronger than) sequentially
 consistent.  There are algorithms in HotSpot that are believed to rely
 on that ordering.
 
-### Inline Variables
+### Variable Templates and Inline Variables
 
-Variables with static storage duration may be declared `inline`
-([p0386r2](https://wg21.link/p0386r2)). This has similar effects as for
-declaring a function inline: it can be defined, identically, in multiple
-translation units, must be defined in every translation unit in which it is
-[ODR used][ODR], and the behavior of the program is as if there is exactly one
-variable.
+The use of variable templates (including static data member templates)
+([N3651](https://wg21.link/N3651)) is permitted. They provide parameterized
+variables and constants in a simple and direct form, instead of requiring the
+use of various workarounds.
+
+Variables with static storage duration and variable templates may be declared
+`inline` ([p0386r2](https://wg21.link/p0386r2)), and this usage is
+permitted. This has similar effects as for declaring a function inline: it can
+be defined, identically, in multiple translation units, must be defined in
+every translation unit in which it is [ODR used][ODR], and the behavior of the
+program is as if there is exactly one variable.
 
 Declaring a variable inline allows the complete definition to be in a header
 file, rather than having a declaration in a header and the definition in a
@@ -837,13 +879,15 @@ make initialization order problems worse. The few ordering constraints
 that exist for non-inline variables don't apply, as there isn't a single
 program-designated translation unit containing the definition.
 
-A `constexpr` static data member is implicitly `inline`. As a consequence, an
-[ODR use][ODR] of such a variable doesn't require a definition in some .cpp
+A `constexpr` static data member or static data member template
+is implicitly `inline`. As a consequence, an
+[ODR use][ODR] of such a member doesn't require a definition in some .cpp
 file. (This is a change from pre-C++17. Beginning with C++17, such a
 definition is considered a duplicate definition, and is deprecated.)
 
-Declaring a `thread_local` variable `inline` is forbidden for HotSpot code.
-[The use of `thread_local`](#thread_local) is already heavily restricted.
+Declaring a `thread_local` variable template or `inline` variable is forbidden
+in HotSpot code.  [The use of `thread_local`](#thread_local) is already
+heavily restricted.
 
 ### Initializing variables with static storage duration
 
@@ -1808,13 +1852,6 @@ implementations of prior versions take advantage of the difference.
 See Object Lifetime: C++17 6.8/8, C++20 6.7.3/8
 
 ### Additional Undecided Features
-
-* Trailing return type syntax for functions
-([n2541](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2008/n2541.htm))
-
-* Variable templates
-([n3651](https://isocpp.org/files/papers/N3651.pdf),
-[p0127r2](http://wg21.link/p0127r2))
 
 * Member initializers and aggregates
 ([n3653](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2013/n3653.html))

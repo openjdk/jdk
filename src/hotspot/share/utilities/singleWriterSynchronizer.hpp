@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 #define SHARE_UTILITIES_SINGLEWRITERSYNCHRONIZER_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/semaphore.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -87,11 +87,11 @@ public:
 };
 
 inline uint SingleWriterSynchronizer::enter() {
-  return Atomic::add(&_enter, 2u);
+  return AtomicAccess::add(&_enter, 2u);
 }
 
 inline void SingleWriterSynchronizer::exit(uint enter_value) {
-  uint exit_value = Atomic::add(&_exit[enter_value & 1], 2u);
+  uint exit_value = AtomicAccess::add(&_exit[enter_value & 1], 2u);
   // If this exit completes a synchronize request, wakeup possibly
   // waiting synchronizer.  Read of _waiting_for must follow the _exit
   // update.

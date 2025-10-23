@@ -26,7 +26,7 @@
 #include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -114,9 +114,7 @@ void PerfMemory::initialize() {
     // the warning is issued only in debug mode in order to avoid
     // additional output to the stdout or stderr output streams.
     //
-    if (PrintMiscellaneous && Verbose) {
-      warning("Could not create PerfData Memory region, reverting to malloc");
-    }
+    log_debug(perf)("could not create PerfData Memory region, reverting to malloc");
 
     _prologue = NEW_C_HEAP_OBJ(PerfDataPrologue, mtInternal);
   }
@@ -154,7 +152,7 @@ void PerfMemory::initialize() {
   _prologue->overflow = 0;
   _prologue->mod_time_stamp = 0;
 
-  Atomic::release_store(&_initialized, 1);
+  AtomicAccess::release_store(&_initialized, 1);
 }
 
 void PerfMemory::destroy() {
@@ -250,10 +248,7 @@ char* PerfMemory::get_perfdata_file_path() {
     if(!Arguments::copy_expand_pid(PerfDataSaveFile, strlen(PerfDataSaveFile),
                                    dest_file, JVM_MAXPATHLEN)) {
       FREE_C_HEAP_ARRAY(char, dest_file);
-      if (PrintMiscellaneous && Verbose) {
-        warning("Invalid performance data file path name specified, "\
-                "fall back to a default name");
-      }
+      log_debug(perf)("invalid performance data file path name specified, fall back to a default name");
     } else {
       return dest_file;
     }
@@ -267,5 +262,5 @@ char* PerfMemory::get_perfdata_file_path() {
 }
 
 bool PerfMemory::is_initialized() {
-  return Atomic::load_acquire(&_initialized) != 0;
+  return AtomicAccess::load_acquire(&_initialized) != 0;
 }

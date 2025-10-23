@@ -115,15 +115,15 @@ class CgroupV2MemoryController final: public CgroupMemoryController {
     }
 
     jlong read_memory_limit_in_bytes(julong upper_bound) override;
-    jlong memory_and_swap_limit_in_bytes(julong host_mem, julong host_swp) override;
-    jlong memory_and_swap_usage_in_bytes(julong host_mem, julong host_swp) override;
+    jlong memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) override;
+    jlong memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) override;
     jlong memory_soft_limit_in_bytes(julong upper_bound) override;
     jlong memory_throttle_limit_in_bytes() override;
     jlong memory_usage_in_bytes() override;
     jlong memory_max_usage_in_bytes() override;
     jlong rss_usage_in_bytes() override;
     jlong cache_usage_in_bytes() override;
-    void print_version_specific_info(outputStream* st, julong host_mem) override;
+    void print_version_specific_info(outputStream* st, julong upper_mem_bound) override;
     bool is_read_only() override {
       return reader()->is_read_only();
     }

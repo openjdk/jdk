@@ -43,7 +43,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -315,9 +315,9 @@ void ShenandoahHeapRegion::make_trash_immediate() {
 
   // On this path, we know there are no marked objects in the region,
   // tell marking context about it to bypass bitmap resets.
-  assert(ShenandoahHeap::heap()->gc_generation()->is_mark_complete(), "Marking should be complete here.");
-  shenandoah_assert_generations_reconciled();
-  ShenandoahHeap::heap()->marking_context()->reset_top_bitmap(this);
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  assert(heap->generation_for(affiliation())->is_mark_complete(), "Marking should be complete here.");
+  heap->marking_context()->reset_top_bitmap(this);
 }
 
 void ShenandoahHeapRegion::make_empty() {
@@ -461,9 +461,9 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable) {
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahMarkingContext* marking_context = heap->marking_context();
 
-  // Expect marking to be completed before these threads invoke this service.
-  assert(heap->gc_generation()->is_mark_complete(), "sanity");
-  shenandoah_assert_generations_reconciled();
+  // Expect marking to be completed for the old generation before we fill in unmarked objects
+  assert(heap->old_generation()->is_mark_complete(), "sanity");
+  assert(is_old(), "Only need to coalesce and fill old regions");
 
   // All objects above TAMS are considered live even though their mark bits will not be set.  Note that young-
   // gen evacuations that interrupt a long-running old-gen concurrent mark may promote objects into old-gen
@@ -834,20 +834,20 @@ void ShenandoahHeapRegion::set_state(RegionState to) {
     evt.set_to(to);
     evt.commit();
   }
-  Atomic::store(&_state, to);
+  AtomicAccess::store(&_state, to);
 }
 
 void ShenandoahHeapRegion::record_pin() {
-  Atomic::add(&_critical_pins, (size_t)1);
+  AtomicAccess::add(&_critical_pins, (size_t)1);
 }
 
 void ShenandoahHeapRegion::record_unpin() {
   assert(pin_count() > 0, "Region %zu should have non-zero pins", index());
-  Atomic::sub(&_critical_pins, (size_t)1);
+  AtomicAccess::sub(&_critical_pins, (size_t)1);
 }
 
 size_t ShenandoahHeapRegion::pin_count() const {
-  return Atomic::load(&_critical_pins);
+  return AtomicAccess::load(&_critical_pins);
 }
 
 void ShenandoahHeapRegion::set_affiliation(ShenandoahAffiliation new_affiliation) {

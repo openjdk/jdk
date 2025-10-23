@@ -33,7 +33,10 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
+#include "oops/methodCounters.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/trainingData.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/growableArray.hpp"
@@ -132,12 +135,14 @@ public:
 
   virtual bool do_unique_ref(Ref* ref, bool read_only) {
     ArchivedObjInfo info;
-    info._src_addr = ref->obj();
-    info._buffered_addr = ref->obj();
-    info._requested_addr = ref->obj();
-    info._bytes = ref->size() * BytesPerWord;
-    info._type = ref->msotype();
-    _objs.append(info);
+    if (AOTMetaspace::in_aot_cache(ref->obj())) {
+      info._src_addr = ref->obj();
+      info._buffered_addr = ref->obj();
+      info._requested_addr = ref->obj();
+      info._bytes = ref->size() * BytesPerWord;
+      info._type = ref->msotype();
+      _objs.append(info);
+    }
 
     return true; // keep iterating
   }
@@ -348,8 +353,23 @@ void AOTMapLogger::log_metaspace_objects_impl(address region_base, address regio
     case MetaspaceObj::MethodType:
       log_method((Method*)src, requested_addr, type_name, bytes, current);
       break;
+    case MetaspaceObj::MethodCountersType:
+      log_method_counters((MethodCounters*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::MethodDataType:
+      log_method_data((MethodData*)src, requested_addr, type_name, bytes, current);
+      break;
     case MetaspaceObj::SymbolType:
       log_symbol((Symbol*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::KlassTrainingDataType:
+      log_klass_training_data((KlassTrainingData*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::MethodTrainingDataType:
+      log_method_training_data((MethodTrainingData*)src, requested_addr, type_name, bytes, current);
+      break;
+    case MetaspaceObj::CompileTrainingDataType:
+      log_compile_training_data((CompileTrainingData*)src, requested_addr, type_name, bytes, current);
       break;
     default:
       log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
@@ -389,6 +409,18 @@ void AOTMapLogger::log_const_method(ConstMethod* cm, address requested_addr, con
   log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  cm->method()->external_name());
 }
 
+void AOTMapLogger::log_method_counters(MethodCounters* mc, address requested_addr, const char* type_name,
+                                      int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  mc->method()->external_name());
+}
+
+void AOTMapLogger::log_method_data(MethodData* md, address requested_addr, const char* type_name,
+                                   int bytes, Thread* current) {
+  ResourceMark rm(current);
+  log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,  md->method()->external_name());
+}
+
 void AOTMapLogger::log_klass(Klass* k, address requested_addr, const char* type_name,
                              int bytes, Thread* current) {
   ResourceMark rm(current);
@@ -408,6 +440,38 @@ void AOTMapLogger::log_symbol(Symbol* s, address requested_addr, const char* typ
                       s->as_quoted_ascii());
 }
 
+void AOTMapLogger::log_klass_training_data(KlassTrainingData* ktd, address requested_addr, const char* type_name,
+                                           int bytes, Thread* current) {
+  ResourceMark rm(current);
+  if (ktd->has_holder()) {
+    log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
+                        ktd->name()->as_klass_external_name());
+  } else {
+    log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
+  }
+}
+
+void AOTMapLogger::log_method_training_data(MethodTrainingData* mtd, address requested_addr, const char* type_name,
+                                            int bytes, Thread* current) {
+  ResourceMark rm(current);
+  if (mtd->has_holder()) {
+    log_debug(aot, map)(_LOG_PREFIX " %s", p2i(requested_addr), type_name, bytes,
+                        mtd->holder()->external_name());
+  } else {
+    log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
+  }
+}
+
+void AOTMapLogger::log_compile_training_data(CompileTrainingData* ctd, address requested_addr, const char* type_name,
+                                             int bytes, Thread* current) {
+  ResourceMark rm(current);
+  if (ctd->method() != nullptr && ctd->method()->has_holder()) {
+    log_debug(aot, map)(_LOG_PREFIX " %d %s", p2i(requested_addr), type_name, bytes,
+                         ctd->level(), ctd->method()->holder()->external_name());
+  } else {
+    log_debug(aot, map)(_LOG_PREFIX, p2i(requested_addr), type_name, bytes);
+  }
+}
 #undef _LOG_PREFIX
 
 // Log all the data [base...top). Pretend that the base address
