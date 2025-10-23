@@ -175,10 +175,10 @@ private:
   // OOME) in case both GC CPU usage (>= GCTimeLimit) and not much available free
   // memory (<= GCHeapFreeLimit) so that applications can exit gracefully or try
   // to keep running by easing off memory.
-  static uintx _gc_overhead_counter;        // The amount of successive times we were over the limits.
+  uintx _gc_overhead_counter;        // The number of consecutive garbage collections we were over the limits.
 
   void update_gc_overhead_counter();
-  static bool gc_overhead_limit_exceeded();
+  bool gc_overhead_limit_exceeded();
 
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
