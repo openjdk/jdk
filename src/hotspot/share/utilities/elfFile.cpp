@@ -709,6 +709,7 @@ bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, c
   return true;
 }
 
+// Sort entries by beginning_address, when same then sort longest range first.
 int DwarfFile::ArangesCache::compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b) {
   if (a.beginning_address < b.beginning_address) {
     return -1;
@@ -719,9 +720,9 @@ int DwarfFile::ArangesCache::compare_aranges_entries(const ArangesEntry& a, cons
   uintptr_t len_a = a.end_address - a.beginning_address;
   uintptr_t len_b = b.end_address - b.beginning_address;
   if (len_a < len_b) {
-    return -1;
-  } else if (len_a > len_b) {
     return 1;
+  } else if (len_a > len_b) {
+    return -1;
   }
   return 0;
 }
