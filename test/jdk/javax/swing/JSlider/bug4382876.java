@@ -70,23 +70,30 @@ public class bug4382876 {
             r.delay(1000);
 
             r.keyPress(KeyEvent.VK_PAGE_UP);
+            r.keyRelease(KeyEvent.VK_PAGE_UP);
+
             SwingUtilities.invokeAndWait(() -> {
                 if (slider.getValue() < -1000) {
                     System.out.println("PAGE_UP VAL: " + slider.getValue());
                     upFail = true;
                 }
             });
+
             if (upFail) {
                 writeFailImage();
                 throw new RuntimeException("Slider value did NOT change with PAGE_UP");
             }
+
             r.keyPress(KeyEvent.VK_PAGE_DOWN);
+            r.keyRelease(KeyEvent.VK_PAGE_DOWN);
+
             SwingUtilities.invokeAndWait(() -> {
                 if (slider.getValue() > -1000) {
                     System.out.println("PAGE_DOWN VAL: " + slider.getValue());
                     downFail = true;
                 }
             });
+
             if (downFail) {
                 writeFailImage();
                 throw new RuntimeException("Slider value did NOT change with PAGE_DOWN");
