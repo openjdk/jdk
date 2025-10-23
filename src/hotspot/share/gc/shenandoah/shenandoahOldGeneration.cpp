@@ -204,6 +204,8 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
     _promoted_expended(0),
     _promotion_potential(0),
     _pad_for_promote_in_place(0),
+    _promotion_failure_count(0),
+    _promotion_failure_words(0),
     _promotable_humongous_regions(0),
     _promotable_regular_regions(0),
     _is_parsable(true),
@@ -240,7 +242,9 @@ void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
 
 void ShenandoahOldGeneration::reset_promoted_expended() {
   shenandoah_assert_heaplocked_or_safepoint();
-  AtomicAccess::store(&_promoted_expended, (size_t) 0);
+  AtomicAccess::store(&_promoted_expended, static_cast<size_t>(0));
+  AtomicAccess::store(&_promotion_failure_count, static_cast<size_t>(0));
+  AtomicAccess::store(&_promotion_failure_words, static_cast<size_t>(0));
 }
 
 size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
@@ -675,12 +679,14 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
   static size_t epoch_report_count = 0;
   auto heap = ShenandoahGenerationalHeap::heap();
 
-  size_t promotion_reserve;
-  size_t promotion_expended;
-
   const size_t gc_id = heap->control_thread()->get_gc_id();
 
+  AtomicAccess::inc(&_promotion_failure_count);
+  AtomicAccess::add(&_promotion_failure_words, size);
+
   if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
+    size_t promotion_expended;
+    size_t promotion_reserve;
     {
       // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
       ShenandoahHeapLocker locker(heap->lock());
