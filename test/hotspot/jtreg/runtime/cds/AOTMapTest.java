@@ -27,7 +27,7 @@
  * @summary Test the contents of -Xlog:aot+map
  * @requires vm.cds
  * @library /test/lib
- * @run driver/timeout=240 CDSMapTest
+ * @run driver/timeout=240 AOTMapTest
  */
 
 import jdk.test.lib.cds.CDSOptions;
@@ -37,7 +37,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import java.util.ArrayList;
 
-public class CDSMapTest {
+public class AOTMapTest {
     public static void main(String[] args) throws Exception {
         doTest(false);
 
@@ -79,8 +79,8 @@ public class CDSMapTest {
             .addSuffix(args);
         CDSTestUtils.createArchiveAndCheck(opts);
 
-        CDSMapReader.MapFile mapFile = CDSMapReader.read(mapName);
-        CDSMapReader.validate(mapFile);
+        AOTMapReader.MapFile mapFile = AOTMapReader.read(mapName);
+        AOTMapReader.validate(mapFile, null);
 
         return archiveName;
     }
@@ -98,7 +98,7 @@ public class CDSMapTest {
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "exec");
         out.shouldHaveExitValue(0);
 
-        CDSMapReader.MapFile mapFile = CDSMapReader.read(mapName);
-        CDSMapReader.validate(mapFile);
+        AOTMapReader.MapFile mapFile = AOTMapReader.read(mapName);
+        AOTMapReader.validate(mapFile, null);
     }
 }
