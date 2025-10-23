@@ -26,10 +26,12 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -54,6 +56,7 @@ import jdk.jpackage.test.ConfigurationTarget;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.PackageTest;
+import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
 
 
@@ -208,12 +211,23 @@ public class AppContentTest {
                         .map(PathVerifierWithOrigin::verifier)
                         .filter(Predicate.not(disabledVerifiers::contains))
                         .filter(verifier -> {
-                            if (!(verifier instanceof DirectoryVerifier)) {
+                            if (!(verifier instanceof DirectoryVerifier dirVerifier)) {
                                 return true;
                             } else {
-                                try (var files = Files.list(verifier.path())) {
-                                    // Run the directory verifier if the directory is empty. Otherwise, it just pollutes the test log.
-                                    return files.findAny().isEmpty();
+                                try {
+                                    // Run the directory verifier if the directory is empty.
+                                    // Otherwise, it just pollutes the test log.
+                                    return isDirectoryEmpty(verifier.path());
+                                } catch (NoSuchFileException ex) {
+                                    // If an MSI contains an empty directory, it will be installed but not created when the MSI is unpacked.
+                                    // In the latter the control flow will reach this point.
+                                    if (dirVerifier.isEmpty()
+                                            && PackageType.WINDOWS.contains(cmd.packageType())
+                                            && cmd.isPackageUnpacked(String.format(
+                                                    "Expected empty directory [%s] is missing", verifier.path()))) {
+                                        return false;
+                                    }
+                                    throw new UncheckedIOException(ex);
                                 } catch (IOException ex) {
                                     throw new UncheckedIOException(ex);
                                 }
@@ -304,6 +318,16 @@ public class AppContentTest {
         }
     }
 
+    private static boolean isDirectoryEmpty(Path path) throws IOException {
+        if (Files.exists(path) && !Files.isDirectory(path)) {
+            throw new IllegalArgumentException();
+        }
+
+        try (var files = Files.list(path)) {
+            return files.findAny().isEmpty();
+        }
+    }
+
     @FunctionalInterface
     private interface ContentFactory {
         Content create();
@@ -336,14 +360,18 @@ public class AppContentTest {
         }
     }
 
-    private record DirectoryVerifier(Path path, IdentityWrapper<Content> origin) implements PathVerifier {
+    private record DirectoryVerifier(Path path, boolean isEmpty, IdentityWrapper<Content> origin) implements PathVerifier {
         DirectoryVerifier {
             Objects.requireNonNull(path);
         }
 
         @Override
         public void verify() {
-            TKit.assertDirectoryExists(path);
+            if (isEmpty) {
+                TKit.assertDirectoryEmpty(path);
+            } else {
+                TKit.assertDirectoryExists(path);
+            }
         }
     }
 
@@ -397,7 +425,9 @@ public class AppContentTest {
                         if (Files.isRegularFile(srcFile)) {
                             return new RegularFileVerifier(dstFile, srcFile);
                         } else {
-                            return new DirectoryVerifier(dstFile, new IdentityWrapper<>(this));
+                            return new DirectoryVerifier(dstFile,
+                                    toFunction(AppContentTest::isDirectoryEmpty).apply(srcFile),
+                                    new IdentityWrapper<>(this));
                         }
                     }).toList());
                 } catch (IOException ex) {
@@ -413,7 +443,7 @@ public class AppContentTest {
                 var cur = appContentPath;
                 for (int i = 0; i != level; i++) {
                     cur = cur.getParent();
-                    verifiers.add(new DirectoryVerifier(cur, new IdentityWrapper<>(this)));
+                    verifiers.add(new DirectoryVerifier(cur, false, new IdentityWrapper<>(this)));
                 }
             }
 
