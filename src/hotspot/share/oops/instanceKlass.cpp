@@ -805,9 +805,26 @@ void InstanceKlass::fence_and_clear_init_lock() {
   assert(!is_not_initialized(), "class must be initialized now");
 }
 
+class PreemptableInitCall {
+  JavaThread* _thread;
+  bool _previous;
+  DEBUG_ONLY(InstanceKlass* _previous_klass;)
+ public:
+  PreemptableInitCall(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
+    _previous = thread->at_preemptable_init();
+    _thread->set_at_preemptable_init(true);
+    DEBUG_ONLY(_previous_klass = _thread->preempt_init_klass();)
+    DEBUG_ONLY(_thread->set_preempt_init_klass(ik));
+  }
+  ~PreemptableInitCall() {
+    _thread->set_at_preemptable_init(_previous);
+    DEBUG_ONLY(_thread->set_preempt_init_klass(_previous_klass));
+  }
+};
+
 void InstanceKlass::initialize_preemptable(TRAPS) {
   if (this->should_be_initialized()) {
-    PREEMPT_ON_INIT_SUPPORTED_ONLY(PreemptableInitCall pic(THREAD, this);)
+    PreemptableInitCall pic(THREAD, this);
     initialize_impl(THREAD);
   } else {
     assert(is_initialized(), "sanity check");
@@ -1187,6 +1204,17 @@ void InstanceKlass::clean_initialization_error_table() {
     _initialization_error_table->unlink(&cleaner);
   }
 }
+
+class ThreadWaitingForClassInit : public StackObj {
+  JavaThread* _thread;
+ public:
+  ThreadWaitingForClassInit(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
+    _thread->set_class_to_be_initialized(ik);
+  }
+  ~ThreadWaitingForClassInit() {
+    _thread->set_class_to_be_initialized(nullptr);
+  }
+};
 
 void InstanceKlass::initialize_impl(TRAPS) {
   HandleMark hm(THREAD);

@@ -189,7 +189,7 @@ class LinkInfo : public StackObj {
   void         print()  PRODUCT_RETURN;
 };
 
-enum class ClassInitMode : uint8_t {
+enum class ClassInitMode {
   dont_init,
   init,
   init_preemptable

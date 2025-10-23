@@ -537,7 +537,7 @@ class JavaThread: public Thread {
              _thread->_interp_at_preemptable_vmcall_cnt);
     }
   };
-#endif
+#endif // ASSERT
 
 private:
   friend class VMThread;
@@ -1369,23 +1369,6 @@ class JNIHandleMark : public StackObj {
   ~JNIHandleMark() { _thread->pop_jni_handle_block(); }
 };
 
-class PreemptableInitCall {
-  JavaThread* _thread;
-  bool _previous;
-  DEBUG_ONLY(InstanceKlass* _previous_klass;)
- public:
-  PreemptableInitCall(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
-    _previous = thread->at_preemptable_init();
-    _thread->set_at_preemptable_init(true);
-    DEBUG_ONLY(_previous_klass = _thread->preempt_init_klass();)
-    DEBUG_ONLY(_thread->set_preempt_init_klass(ik));
-  }
-  ~PreemptableInitCall() {
-    _thread->set_at_preemptable_init(_previous);
-    DEBUG_ONLY(_thread->set_preempt_init_klass(_previous_klass));
-  }
-};
-
 class NoPreemptMark {
   ContinuationEntry* _ce;
   bool _unpin;
@@ -1415,17 +1398,6 @@ class ThreadInClassInitializer : public StackObj {
   }
   ~ThreadInClassInitializer() {
     _thread->set_class_being_initialized(_previous);
-  }
-};
-
-class ThreadWaitingForClassInit : public StackObj {
-  JavaThread* _thread;
- public:
-  ThreadWaitingForClassInit(JavaThread* thread, InstanceKlass* ik) : _thread(thread) {
-    _thread->set_class_to_be_initialized(ik);
-  }
-  ~ThreadWaitingForClassInit() {
-    _thread->set_class_to_be_initialized(nullptr);
   }
 };
 
