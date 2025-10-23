@@ -127,6 +127,14 @@ void FinalImageRecipes::record_recipes_for_constantpool() {
     }
 
     if (cp_indices.length() > 0) {
+      LogStreamHandle(Trace, aot, resolve) log;
+      if (log.is_enabled()) {
+        log.print("ConstantPool entries for %s to be pre-resolved:", k->external_name());
+        for (int i = 0; i < cp_indices.length(); i++) {
+          log.print(" %d", cp_indices.at(i));
+        }
+        log.print("\n");
+      }
       tmp_cp_recipes.append(ArchiveUtils::archive_array(&cp_indices));
     } else {
       tmp_cp_recipes.append(nullptr);
