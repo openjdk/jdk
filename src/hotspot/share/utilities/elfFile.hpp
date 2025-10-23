@@ -538,17 +538,27 @@ class DwarfFile : public ElfFile {
       other._capacity = 0;
     }
     ~ArangesCache() {
-      if (_entries != nullptr) {
-        FREE_C_HEAP_ARRAY(ArangesEntry, _entries);
-      }
+      this->free();
     }
 
+    void destroy(bool failed) {
+      this->free();
+      _count = 0;
+      _capacity = 0;
+      _failed = failed;
+    }
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
 
    private:
     static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
     void sort() {
       QuickSort::sort(_entries, _count, DwarfFile::ArangesCache::compare_aranges_entries);
+    }
+    void free() {
+      if (_entries != nullptr) {
+        FREE_C_HEAP_ARRAY(ArangesEntry, _entries);
+        _entries = nullptr;
+      }
     }
   };
 

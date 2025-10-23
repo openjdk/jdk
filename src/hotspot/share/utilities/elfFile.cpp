@@ -737,8 +737,7 @@ int DwarfFile::ArangesCache::compare_aranges_entries(const ArangesEntry& a, cons
 void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
   assert(cache._capacity == 0, "need fresh cache");
   assert(cache._count == 0, "need fresh cache");
-  assert(!cache._initialized, "need fresh cache");
-  assert(!cache._failed, "need fresh cache");
+  assert(!cache._initialized && !cache._failed, "need fresh cache");
   if (!read_section_header()) {
     cache._failed = true;
     return;
@@ -764,14 +763,16 @@ void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
     AddressDescriptor descriptor;
     do {
       if (!read_address_descriptor(descriptor)) {
-        goto cleanup_and_fail;
+        cache.destroy(true);
+        return;
       }
       if (!is_terminating_entry(set_header, descriptor) && descriptor.range_length > 0) {
         if (cache._count >= cache._capacity) {
           size_t new_capacity = cache._capacity * 1.5;
           ArangesEntry* new_entries = REALLOC_C_HEAP_ARRAY(ArangesEntry, cache._entries, new_capacity, mtInternal);
           if (new_entries == nullptr) {
-            goto cleanup_and_fail;
+            cache.destroy(true);
+            return;
           }
           cache._entries = new_entries;
           cache._capacity = new_capacity;
@@ -786,7 +787,8 @@ void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
     } while (!is_terminating_entry(set_header, descriptor) && _reader.has_bytes_left());
   }
   if (cache._count == 0) {
-    goto cleanup_and_fail;
+    cache.destroy(true);
+    return;
   }
   cache.sort();
   if (cache._count < cache._capacity) {
@@ -799,15 +801,6 @@ void DwarfFile::DebugAranges::build_cache(ArangesCache& cache) {
   cache._initialized = true;
   DWARF_LOG_INFO("Built aranges cache for '%s' with %zu entries", this->_dwarf_file->filepath(), cache._count);
   return;
-
-cleanup_and_fail:
-  if (cache._entries != nullptr) {
-    FREE_C_HEAP_ARRAY(ArangesEntry, cache._entries);
-    cache._entries = nullptr;
-  }
-  cache._count = 0;
-  cache._capacity = 0;
-  cache._failed = true;
 }
 
 // (2) The .debug_aranges section contains a number of entries/sets. Each set contains one or multiple address range descriptors of the
