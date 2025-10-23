@@ -2151,7 +2151,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * with rounding according to the context settings.
      *
      * <p>The preferred scale of the returned result is equal to
-     * {@code this.scale()/n}. The value of the returned result is
+     * {@code Math.ceilDiv(this.scale(), n)}. The value of the returned result is
      * always within 1.1 ulps of the exact decimal value for the
      * precision in question, and if {@code n > 0}, the result is within
      * one ulp of the exact decimal value.  If the rounding mode is {@link
@@ -2165,7 +2165,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * <li> The {@code n}<sup>th</sup> root of a number numerically equal to {@code
      * ZERO} is numerically equal to {@code ZERO} with a preferred
      * scale according to the general rule above. In particular, for
-     * {@code ZERO}, {@code ZERO.nthRoot(n, mc).equals(ZERO)} is true with
+     * {@code ZERO}, {@code ZERO.rootn(n, mc).equals(ZERO)} is true with
      * any {@code MathContext} as an argument.
      * </ul>
      *
@@ -2184,9 +2184,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @see #sqrt(MathContext)
      * @see BigInteger#nthRoot(int)
      * @since 26
-     * @apiNote Note that calling {@code nthRoot(2, mc)} is equivalent to calling {@code sqrt(mc)}.
+     * @apiNote Note that calling {@code rootn(2, mc)} is equivalent to calling {@code sqrt(mc)}.
      */
-    public BigDecimal nthRoot(int n, MathContext mc) {
+    public BigDecimal rootn(int n, MathContext mc) {
         // Special cases
         if (n == 0)
             throw new ArithmeticException("Zero root degree");
@@ -2195,7 +2195,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (signum < 0 && (n & 1) == 0)
             throw new ArithmeticException("Negative radicand with even root degree");
 
-        final int preferredScale = saturateLong((long) this.scale / n);
+        final int preferredScale = saturateLong(Math.ceilDiv((long) this.scale, n));
         if (signum == 0) {
             if (n < 0)
                 throw new ArithmeticException("Zero radicand with negative root degree");
