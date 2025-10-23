@@ -208,7 +208,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      * @since 26
      */
-    public static UUID epochMillis(long timestamp) {
+    public static UUID ofEpochMillis(long timestamp) {
         if ((timestamp >> 48) != 0) {
             throw new IllegalArgumentException("Supplied timestamp: " + timestamp + "does not fit within 48 bits");
         }
