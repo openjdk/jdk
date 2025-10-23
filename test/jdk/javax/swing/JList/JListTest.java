@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 8364146
- * @key headful
  * @summary Verifies JList getScrollableUnitIncrement return non-negative number
  * @run main JListTest
  */
@@ -77,7 +76,9 @@ public class JListTest {
                     throw new RuntimeException("JList scrollable unit increment should be greater than 0.");
                 }
             } finally {
-                f.dispose();
+                if (f != null) {
+                    f.dispose();
+                }
             }
         });
     }
