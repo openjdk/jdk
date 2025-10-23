@@ -54,13 +54,7 @@ public interface InvocationHandler {
      * @param   proxy the proxy instance that the method was invoked on
      *
      * @param   method the {@code Method} instance corresponding to
-     * the method invoked on the proxy instance.  The invoked method may be
-     * one of the {@link Object#hashCode() hashCode}, {@link
-     * Object#equals(Object) equals}, and {@link Object#toString() toString}
-     * methods declared in {@link Object}, or any public non-static method
-     * declared in one of the proxy interfaces or a superinterface of them.
-     * See also the {@linkplain Proxy##duplicate-methods "Methods Duplicated in
-     * Multiple Proxy Interfaces"} section in {@code Proxy}.
+     * the method invoked on the proxy instance; may be a duplicate method
      *
      * @param   args an array of objects containing the values of the
      * arguments passed in the method invocation on the proxy instance,

@@ -69,23 +69,9 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * }</pre>
  *
  * <p>
- * A <em>proxy class</em> is a class created at runtime that implements a specified
- * list of interfaces, known as <em>proxy interfaces</em>. A <em>proxy instance</em>
- * is an instance of a proxy class.
- *
- * Each proxy instance has an associated <i>invocation handler</i>
- * object, which implements the interface {@link InvocationHandler}.
- * A method invocation on a proxy instance through one of its proxy
- * interfaces will be dispatched to the {@link InvocationHandler#invoke
- * invoke} method of the instance's invocation handler, passing the proxy
- * instance, a {@code java.lang.reflect.Method} object identifying
- * the method that was invoked, and an array of type {@code Object}
- * containing the arguments.  The invocation handler processes the
- * encoded method invocation as appropriate and the result that it
- * returns will be returned as the result of the method invocation on
- * the proxy instance.
- *
- * <p>A proxy class has the following properties:
+ * A <em>proxy class</em> is a class created at runtime that implements a
+ * specified list of interfaces, known as <em>proxy interfaces</em>. It has
+ * the following properties:
  *
  * <ul>
  * <li>The unqualified name of a proxy class is unspecified.  The space
@@ -97,16 +83,20 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *
  * <li>A proxy class is <em>final and non-abstract</em>.
  *
- * <li>A proxy class extends {@code java.lang.reflect.Proxy}.
+ * <li>A proxy class extends {@code java.lang.reflect.Proxy}.  Note that
+ * {@code Proxy} itself is not a proxy class.
  *
  * <li>A proxy class implements exactly the interfaces specified at its
- * creation, in the same order. Invoking {@link Class#getInterfaces() getInterfaces}
- * on its {@code Class} object will return an array containing the same
- * list of interfaces (in the order specified at its creation), invoking
- * {@link Class#getMethods getMethods} on its {@code Class} object will return
- * an array of {@code Method} objects that include all of the
- * methods in those interfaces, and invoking {@code getMethod} will
- * find methods in the proxy interfaces as would be expected.
+ * creation, in the same order. This order is reflected by {@link
+ * Class#getInterfaces() getInterfaces} on its {@code Class} object.
+ *
+ * <li>A proxy class contains all public non-static methods from {@link Object}
+ * and its proxy interfaces, discoverable by {@link Class#getMethods()
+ * getMethods} on its {@code Class} object. The {@code Object} class and the
+ * proxy interfaces may contain public non-static methods with the same name and
+ * parameter types, known as <em>duplicate methods</em>; they are {@linkplain
+ * ##restrictions restricted} in that one of them has a return type assignable
+ * to the return types of all of them.
  *
  * <li>The {@link java.security.ProtectionDomain} of a proxy class
  * is the same as that of system classes loaded by the bootstrap class
@@ -116,49 +106,77 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * to determine if a given class is a proxy class.
  * </ul>
  *
- * <p>A proxy instance has the following properties:
- *
+ * <p>A <em>proxy instance</em> is an instance of a proxy class.
+ * Each proxy instance has an associated <i>invocation handler</i>
+ * object, which implements the interface {@link InvocationHandler}.
+ * {@link #newProxyInstance Proxy::newProxyInstance} associates an invocation
+ * handler to a newly created proxy instance.  The static {@link
+ * Proxy#getInvocationHandler Proxy::getInvocationHandler} method returns the
+ * invocation handler associated with a proxy instance.
+ * <p>
+ * For a proxy instance, invocation of a public non-final method declared in
+ * {@link Object} or one of the proxy interfaces will be dispatched to
+ * the {@link InvocationHandler#invoke invoke} method of the instance's
+ * invocation handler, passing the proxy instance, a {@link Method} object
+ * identifying the method that was invoked, and an array of type {@code Object}
+ * representing the arguments.
+ * <p>
+ * Details of the invocation dispatching are as follows:
  * <ul>
- * <li>Given a proxy instance {@code proxy} and one of the
- * interfaces, {@code Foo}, implemented by its proxy class, the
- * following expression will return true:
- * <pre>
- *     {@code proxy instanceof Foo}
- * </pre>
- * and the following cast operation will succeed (rather than throwing
- * a {@code ClassCastException}):
- * <pre>
- *     {@code (Foo) proxy}
- * </pre>
- *
- * <li>Each proxy instance has an associated invocation handler, the one
- * that was passed to its constructor.  The static
- * {@link Proxy#getInvocationHandler Proxy.getInvocationHandler} method
- * will return the invocation handler associated with the proxy instance
- * passed as its argument.
- *
- * <li>An interface method invocation on a proxy instance will be
- * encoded and dispatched to the invocation handler's {@link
- * InvocationHandler#invoke invoke} method as described in the
- * documentation for that method.
- *
- * <li>A proxy interface may define a default method or inherit
- * a default method from its superinterface directly or indirectly.
- * An invocation handler can invoke a default method of a proxy interface
- * by calling {@link InvocationHandler#invokeDefault(Object, Method, Object...)
- * InvocationHandler::invokeDefault}.
- *
- * <li>An invocation of the {@code hashCode},
- * {@code equals}, or {@code toString} methods declared in
- * {@code java.lang.Object} on a proxy instance will be encoded and
- * dispatched to the invocation handler's {@code invoke} method in
- * the same manner as interface method invocations are encoded and
- * dispatched, as described above.  The declaring class of the
- * {@code Method} object passed to {@code invoke} will be
- * {@code java.lang.Object}.  Other public methods of a proxy
- * instance inherited from {@code java.lang.Object} are not
- * overridden by a proxy class, so invocations of those methods behave
- * like they do for instances of {@code java.lang.Object}.
+ * <li>The public non-final methods declared in {@code Object} include
+ *     {@link Object#hashCode() hashCode}, {@link Object#equals(Object) equals},
+ *     and {@link Object#toString() toString}. Other public methods of a proxy
+ *     instance inherited from {@code Object} are final, so invocations of those
+ *     methods are not dispatched to the invocation handler.
+ * <li>Invocations to default methods in proxy interfaces are also dispatched
+ *     to the invocation handler. An invocation handler can invoke a default
+ *     method of a proxy interface by calling {@link
+ *     InvocationHandler#invokeDefault InvocationHandler::invokeDefault}.
+ * <li>One {@code Method} object is shared for all duplicate methods of each
+ *     name and parameter types pair.  It represents the method from the
+ *     foremost class or interface, in the sequence of the {@code Object} class
+ *     followed by the proxy interfaces in their specified order, that contains
+ *     one of these duplicate methods.
+ * <li>The array representing the arguments may be null if the invoked method
+ *     takes no argument. Primitive arguments to the invoked method are
+ *     converted to references by boxing conversion (JLS {@jls 5.1.7}) before
+ *     storing into the array.
+ * <li>If the dispatch to invocation handler via the {@code invoke} method
+ *     throws an exception:
+ *     <ul>
+ *     <li>If the exception is unchecked, that it is an instance of a subclass
+ *         of {@link Error} or {@link RuntimeException}, it is thrown by the
+ *         invoked method.
+ *     <li>Otherwise, the exception is checked. If the invoked method is not
+ *         a duplicate method, and the checked exception is allowed by the
+ *         {@code throws} clause of the invoked method, it is thrown by the
+ *         invoked method.
+ *     <li>If the invoked method is a duplicate method, and the checked
+ *         exception is allowed by the {@code throws} clause of those duplicate
+ *         methods with the same method descriptor, it is thrown by the invoked
+ *         method.  This may be more restrictive than or be unrelated to the
+ *         declared exceptions on the passed {@code Method} object, which may
+ *         represent a duplicate method with a different method descriptor.
+ *     <li>Otherwise, the invoked method throws an {@link
+ *         UndeclaredThrowableException} caused by the checked exception thrown
+ *         by the {@code invoke} method.
+ *     </ul>
+ * <li>The return value of the {@code invoke} method is converted to the invoked
+ *     method's return type, or the return type assignable to all return types
+ *     (see {@linkplain ##restrictions restrictions}) if this invoked method is
+ *     a duplicate method:
+ *     <ul>
+ *     <li>If the return type is a reference type, the return value is converted
+ *         by a narrowing reference conversion (JLS {@jls 5.1.6}) from {@code
+ *         Object} to the return type, which may throw a {@link
+ *         ClassCastException}.
+ *     <li>If the return type is a primitive type, the return value is converted
+ *         by a narrowing reference conversion from {@code Object} to the
+ *         corresponding wrapper class type, which may throw a {@code
+ *         ClassCastException}, followed by an unboxing conversion (JLS {@jls
+ *         5.1.8}), which may throw a {@link NullPointerException}.
+ *     <li>If the return type is void, the return value is discarded.
+ *     </ul>
  * </ul>
  *
  * <h2><a id="membership">Package and Module Membership of Proxy Class</a></h2>
@@ -237,48 +255,36 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  * the {@linkplain Module module} of {@code T} is updated to export the
  * package of {@code T} to the dynamic module.
  *
- * <h2 id="duplicate-methods">Methods Duplicated in Multiple Proxy Interfaces</h2>
- *
- * <p>When two or more proxy interfaces contain a method with
- * the same name and parameter signature, the order of the proxy class's
- * interfaces becomes significant.  When such a <i>duplicate method</i>
- * is invoked on a proxy instance, the {@code Method} object passed
- * to the invocation handler will not necessarily be the one whose
- * declaring class is assignable from the reference type of the interface
- * that the proxy's method was invoked through.  This limitation exists
- * because the corresponding method implementation in the generated proxy
- * class cannot determine which interface it was invoked through.
- * Therefore, when a duplicate method is invoked on a proxy instance,
- * the {@code Method} object for the method in the foremost interface
- * that contains the method (either directly or inherited through a
- * superinterface) in the proxy class's list of interfaces is passed to
- * the invocation handler's {@code invoke} method, regardless of the
- * reference type through which the method invocation occurred.
- *
- * <p>If a proxy interface contains a method with the same name and
- * parameter signature as the {@code hashCode}, {@code equals},
- * or {@code toString} methods of {@code java.lang.Object},
- * when such a method is invoked on a proxy instance, the
- * {@code Method} object passed to the invocation handler will have
- * {@code java.lang.Object} as its declaring class.  In other words,
- * the public, non-final methods of {@code java.lang.Object}
- * logically precede all of the proxy interfaces for the determination of
- * which {@code Method} object to pass to the invocation handler.
- *
- * <p>Note also that when a duplicate method is dispatched to an
- * invocation handler, the {@code invoke} method may only throw
- * checked exception types that are assignable to one of the exception
- * types in the {@code throws} clause of the method in <i>all</i> of
- * the proxy interfaces that it can be invoked through.  If the
- * {@code invoke} method throws a checked exception that is not
- * assignable to any of the exception types declared by the method in one
- * of the proxy interfaces that it can be invoked through, then an
- * unchecked {@code UndeclaredThrowableException} will be thrown by
- * the invocation on the proxy instance.  This restriction means that not
- * all of the exception types returned by invoking
- * {@code getExceptionTypes} on the {@code Method} object
- * passed to the {@code invoke} method can necessarily be thrown
- * successfully by the {@code invoke} method.
+ * @apiNote
+ * The protected methods declared in {@code java.lang.Object}, such as {@link
+ * Object#clone() clone}, are not dispatched to the invocation handler, and are
+ * not considered for duplicate methods if proxy interfaces contain public
+ * non-static methods of the same name and parameter types.
+ * {@snippet :
+ * interface Baz { int clone(); }
+ * Baz baz = (Baz) Proxy.newProxyInstance(Baz.class.getClassLoader(),
+ *                                        new Class<?>[] { Baz.class },
+ *                                        (_, _, _) -> 42);
+ * baz.clone();  // Returns 42, not a duplicate method with Object::clone
+ * }
+ * <p>
+ * They can still be dispatched to the invocation handler if proxy interfaces
+ * contain methods with the same name and method descriptor, causing method
+ * overriding (JVMS {@jvms 5.4.5}).
+ * <p>
+ * Duplicate methods with the same name and parameter types can have different
+ * behaviors when the invocation handler throws the same exception, because
+ * their method descriptors are different. For example:
+ * {@snippet :
+ * interface Foo extends java.util.concurrent.Callable<String> {
+ *     String call(); // covariant override, descriptor changed to ()Ljava/lang/String;
+ * }
+ * Object foo = Proxy.newProxyInstance(Foo.class.getClassLoader(),
+ *                                     new Class<?>[] { Foo.class },
+ *                                     (_, _, _) -> { throw new Exception(); });
+ * ((Foo) foo).call();  // Throws UndeclaredThrowableException
+ * ((Callable<?>) foo).call();  // Throws Exception - allowed by the bridge method
+ * }
  *
  * @author      Peter Jones
  * @see         InvocationHandler
