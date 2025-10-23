@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ContextClassLoaderTest {
 
     @Test
-    void testContextClassLoaderIsSetAndRestored() throws InterruptedException {
+    void testContextClassLoaderIsSetAndRestored() throws Exception {
         Future<?> future = ForkJoinPool.commonPool().submit(() -> {
             Thread thread = Thread.currentThread();
             ClassLoader originalCCL = thread.getContextClassLoader();
@@ -50,26 +50,7 @@ class ContextClassLoaderTest {
             thread.setContextClassLoader(originalCCL);
             assertSame(originalCCL, thread.getContextClassLoader(), "Original context class loader not restored");
         });
-
-        try {
-            future.get();
-        } catch (Exception e) {
-            // If the task threw an exception, unwrap it
-            if (e instanceof java.util.concurrent.ExecutionException) {
-                // Unwrap the ExecutionException to get the underlying cause
-                Throwable cause = e.getCause();
-                if (cause instanceof AssertionError) {
-                    // If the cause is an AssertionError, rethrow the error
-                    throw (AssertionError) cause;
-                } else {
-                    // Rethrow other exceptions as RuntimeException
-                    throw new RuntimeException("Unexpected exception during test execution", cause);
-                }
-            } else {
-                // Rethrow if the exception isn't wrapped in ExecutionException
-                throw new RuntimeException("Unexpected exception", e);
-            }
-        }
+        future.get();
     }
 }
 
