@@ -133,10 +133,10 @@ import static java.lang.module.ModuleDescriptor.Modifier.SYNTHETIC;
  *     method of a proxy interface by calling {@link
  *     InvocationHandler#invokeDefault InvocationHandler::invokeDefault}.
  * <li>One {@code Method} object is shared for all duplicate methods of each
- *     name and parameter types pair.  It represents the method from the
- *     foremost class or interface, in the sequence of the {@code Object} class
- *     followed by the proxy interfaces in their specified order, that contains
- *     one of these duplicate methods.
+ *     name and parameter types pair.  It represents the method from the first
+ *     class or interface that contains one of these duplicate methods, in the
+ *     sequence of the {@code Object} class followed by the proxy interfaces in
+ *     their specified order.
  * <li>The array representing the arguments may be null if the invoked method
  *     takes no argument. Primitive arguments to the invoked method are
  *     converted to references by boxing conversion (JLS {@jls 5.1.7}) before
