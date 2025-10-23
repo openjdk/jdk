@@ -24,6 +24,7 @@
 /*
  * @test
  * @bug 8364146
+ * @key headful
  * @summary Verifies JList getScrollableUnitIncrement return non-negative number
  * @run main JListTest
  */
