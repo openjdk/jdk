@@ -23,6 +23,7 @@
 
 import com.sun.java.swing.plaf.motif.MotifInternalFrameTitlePane;
 import javax.swing.JInternalFrame;
+import javax.swing.UIManager;
 
 /*
  * @test
@@ -36,7 +37,8 @@ import javax.swing.JInternalFrame;
  */
 
 public class bug4150591 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("com.sun.java.swing.plaf.motif.MotifLookAndFeel");
         MotifInternalFrameTitlePane mtp = new MotifInternalFrameTitlePane(new JInternalFrame());
     }
 }
