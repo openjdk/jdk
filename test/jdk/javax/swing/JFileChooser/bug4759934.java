@@ -74,11 +74,7 @@ public class bug4759934 {
             robot.delay(500);
 
             JButton cancel = Util.invokeOnEDT(() -> findCancelButton(jfc));
-            if (cancel == null) {
-                throw new RuntimeException("Test failed! Cancel button not found");
-            }
-            Point cancelLoc = Util.getCenterPoint(cancel);
-            robot.mouseMove(cancelLoc.x, cancelLoc.y);
+            cancel.doClick();
             robot.delay(500);
 
             SwingUtilities.invokeAndWait(() -> {
@@ -129,8 +125,8 @@ public class bug4759934 {
 
     private static JButton findCancelButton(final Container container) {
         Component result = Util.findComponent(container,
-                                         c -> c instanceof JButton button
-                                              && "Cancel".equals(button.getText()));
+                                              c -> c instanceof JButton button
+                                                   && "Cancel".equals(button.getText()));
         return (JButton) result;
     }
 }

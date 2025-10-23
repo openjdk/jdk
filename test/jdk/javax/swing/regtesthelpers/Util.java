@@ -152,7 +152,7 @@ public class Util {
      * Always run this method on the EDT thread
      */
     public static Component findComponent(final Container container,
-                                           final Predicate<Component> predicate) {
+                                          final Predicate<Component> predicate) {
         for (Component child : container.getComponents()) {
             if (predicate.test(child)) {
                 return child;
