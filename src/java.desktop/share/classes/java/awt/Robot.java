@@ -130,7 +130,7 @@ public class Robot {
      * Default delay in milliseconds for mouse
      * {@link #glide(int, int, int, int) glide},
      * {@link #type(int) type}, and
-     * {@link #click(int) click}
+     * {@link #click(int) click}.
      */
     public static final int DEFAULT_DELAY = 20;
 
@@ -797,10 +797,10 @@ public class Robot {
      * @param   buttons The button mask; a combination of one or more mouse button masks.
      * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
      *          extra mouse button and support for extended mouse buttons is
-     *          {@link Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
+     *          {@linkplain Toolkit#areExtraMouseButtonsEnabled() disabled} by Java
      * @throws  IllegalArgumentException if the {@code buttons} mask contains the mask for
      *          extra mouse button that does not exist on the mouse and support for extended
-     *          mouse buttons is {@link Toolkit#areExtraMouseButtonsEnabled() enabled}
+     *          mouse buttons is {@linkplain Toolkit#areExtraMouseButtonsEnabled() enabled}
      *          by Java
      * @throws  IllegalThreadStateException if called on the AWT event dispatching thread
      * @see     #DEFAULT_DELAY
@@ -985,7 +985,7 @@ public class Robot {
     /**
      * A convenience method that simulates typing a char by calling {@code keyPress}
      * and {@code keyRelease}. Gets the ExtendedKeyCode for the char and calls
-     * type(int keycode).
+     * {@code type(int keycode)}.
      *
      * @param   c   Character to be typed (e.g. {@code 'a'})
      * @throws  IllegalArgumentException if {@code keycode} is not
