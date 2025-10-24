@@ -26,6 +26,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.util.stream.Collectors.toSet;
 import static jdk.jpackage.internal.util.function.ThrowingBiFunction.toBiFunction;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 
 import java.io.Closeable;
@@ -896,7 +897,14 @@ public final class TKit {
     public static void assertSymbolicLinkExists(Path path) {
         assertPathExists(path, true);
         assertTrue(Files.isSymbolicLink(path), String.format
-                ("Check [%s] is a symbolic link", path));
+                ("Check [%s] is a symbolic link", Objects.requireNonNull(path)));
+    }
+
+    public static void assertSymbolicLinkTarget(Path symlinkPath, Path expectedTargetPath) {
+        assertSymbolicLinkExists(symlinkPath);
+        var targetPath = toFunction(Files::readSymbolicLink).apply(symlinkPath);
+        assertEquals(expectedTargetPath, targetPath,
+                String.format("Check the target of the symbolic link [%s]", symlinkPath));
     }
 
     public static void assertFileExists(Path path) {
