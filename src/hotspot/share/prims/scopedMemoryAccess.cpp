@@ -57,7 +57,7 @@ static void for_scoped_methods(JavaThread* jt, const Func& func) {
     Symbol* module_name = m->method_holder()->module()->name();
     if (!agents_loaded &&
       (module_name != vmSymbols::java_base()
-       // whitelist jdk.jfr as well, because Throwable's constructor can call into it
+       // whitelist jdk.jfr as well, because java.base can call into it to report JFR events
        && module_name != vmSymbols::jdk_jfr())) {
       // Stop walking if we see a frame outside of java.base.
       // Note that there is exactly 1 handshake that calls into Java (see HandshakeState::handle_unsafe_access_error)
