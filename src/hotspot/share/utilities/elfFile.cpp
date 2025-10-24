@@ -685,9 +685,7 @@ bool ElfFile::create_new_dwarf_file(const char* filepath) {
 bool DwarfFile::get_filename_and_line_number(const uint32_t offset_in_library, char* filename, const size_t filename_len,
                                              int* line, const bool is_pc_after_call) {
   uint32_t compilation_unit_offset = 0; // 4-bytes for 32-bit DWARF
-  bool found = false;
-  found = _debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset);
-  if (!found) {
+  if (!_debug_aranges.find_compilation_unit_offset(offset_in_library, &compilation_unit_offset)) {
     DWARF_LOG_ERROR("Failed to find .debug_info offset for the compilation unit.");
     return false;
   }
@@ -747,7 +745,6 @@ DwarfFile::DebugAranges::CacheHint DwarfFile::DebugAranges::ensure_cached() {
   _cache._entries = NEW_C_HEAP_ARRAY(ArangesEntry, initial_capacity, mtInternal);
   if (_cache._entries == nullptr) {
     _cache.destroy(true);
-    // TODO Reset pointer of read_section_header.
     _reader.set_position(pos);
     return CacheHint::TRY_LINEAR_SCAN;
   }

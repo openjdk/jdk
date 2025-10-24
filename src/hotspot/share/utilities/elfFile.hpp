@@ -465,6 +465,8 @@ class DwarfFile : public ElfFile {
 
    public:
     ArangesCache() : _entries(nullptr), _count(0), _capacity(0), _initialized(false), _failed(false) {}
+    ArangesCache(const ArangesCache&) = delete;
+    ArangesCache& operator=(const ArangesCache&) = delete;
     ~ArangesCache() {
       this->free();
     }
@@ -476,7 +478,7 @@ class DwarfFile : public ElfFile {
       _failed = failed;
     }
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
-    bool valid() { return _initialized && !_failed; }
+    bool valid() const { return _initialized && !_failed; }
 
    private:
     static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
