@@ -265,13 +265,15 @@ public class Raster {
      *         {@code location.x + w} or
      *         {@code location.y + h} results in integer overflow
      * @throws IllegalArgumentException if {@code scanlineStride}
-     *         is less than 0
-     * @throws IllegalArgumentException if {@code pixelStride} is less than 0
+     *         is less than or equal to 0
+     * @throws IllegalArgumentException if {@code pixelStride} is less than or equal to 0
      * @throws IllegalArgumentException if {@code w * pixelStride} is greater
      *         than {@code scanlineStride}
      * @throws IllegalArgumentException if the data size need to store all
      *          lines of the image is greater than {@code Integer.MAX_VALUE}
      * @throws NullPointerException if {@code bandOffsets} is null
+     * @throws IllegalArgumentException if any element of {@code bandOffsets} is greater
+     *         than {@code pixelStride} or the {@code scanlineStride}
      */
     public static WritableRaster createInterleavedRaster(int dataType,
                                                          int w, int h,
@@ -289,11 +291,11 @@ public class Raster {
             throw new IllegalArgumentException("Dimensions (width="+w+
                                                " height="+h+") are too large");
         }
-        if (pixelStride < 0) {
-            throw new IllegalArgumentException("pixelStride is < 0");
+        if (pixelStride <= 0) {
+            throw new IllegalArgumentException("pixelStride is <= 0");
         }
-        if (scanlineStride < 0) {
-            throw new IllegalArgumentException("scanlineStride is < 0");
+        if (scanlineStride <= 0) {
+            throw new IllegalArgumentException("scanlineStride is <= 0");
         }
         if (bandOffsets == null) {
             throw new NullPointerException("bandOffsets is null");
@@ -430,6 +432,8 @@ public class Raster {
      *         is less than 0
      * @throws ArrayIndexOutOfBoundsException if {@code bankIndices}
      *         is {@code null}
+     * @throws IllegalArgumentException if the lengths of {@code bankIndices}
+     *         and {@code bandOffsets} are different.
      * @throws IllegalArgumentException if the data size need to store all
      *          lines of a bank of the image is greater than {@code Integer.MAX_VALUE}
      * @throws NullPointerException if {@code bandOffsets} is {@code null}
@@ -455,6 +459,10 @@ public class Raster {
         if (bandOffsets == null) {
             throw new
                 NullPointerException("Band offsets array is null");
+        }
+        if (bandOffsets.length != bankIndices.length) {
+            throw new IllegalArgumentException(
+                                   "bankIndices.length != bandOffsets.length");
         }
         if (location != null) {
             if ((w + location.getX() > Integer.MAX_VALUE) ||
@@ -758,6 +766,7 @@ public class Raster {
      *         {@code DataBuffer.TYPE_USHORT}.
      * @throws RasterFormatException if {@code dataBuffer} has more
      *         than one bank.
+     * @throws RasterFormatException if {@code dataBuffer} is too small.
      * @throws IllegalArgumentException if {@code w} and {@code h} are not
      *         both > 0
      * @throws IllegalArgumentException if the product of {@code w}
@@ -769,6 +778,8 @@ public class Raster {
      *         is less than 0
      * @throws IllegalArgumentException if {@code pixelStride} is less than 0
      * @throws NullPointerException if {@code bandOffsets} is null
+     * @throws IllegalArgumentException if any element of {@code bandOffsets} is greater
+     *         than {@code pixelStride} or the {@code scanlineStride}
 
      */
     public static WritableRaster createInterleavedRaster(DataBuffer dataBuffer,
@@ -844,6 +855,10 @@ public class Raster {
      *         bank indices and band offsets.
      * @throws NullPointerException if {@code dataBuffer} is null,
      *         or {@code bankIndices} is null, or {@code bandOffsets} is null
+     * @throws IllegalArgumentException if the lengths of {@code bankIndices}
+     *         and {@code bandOffsets} are different.
+     * @throws ArrayIndexOutOfBoundsException if any element of {@code bankIndices}
+     *         is greater or equal to the number of bands in {@code dataBuffer}
      * @throws IllegalArgumentException if {@code dataType} is not
      *         one of the supported data types, which are
      *         {@code DataBuffer.TYPE_BYTE},

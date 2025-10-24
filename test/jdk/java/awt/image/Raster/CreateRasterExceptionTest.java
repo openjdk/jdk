@@ -45,6 +45,7 @@ public class CreateRasterExceptionTest {
     static int[] bandMasks1 = new int[] { 0x0ff };
     static int[] zeroBandOffsets = new int[] {};
     static DataBuffer dBuffer = new DataBufferByte(15);
+    static DataBuffer dBuffer1 = new DataBufferByte(1);
 
     static void noException() {
          Thread.dumpStack();
@@ -53,7 +54,7 @@ public class CreateRasterExceptionTest {
 
     /**
       * If running on a JDK of the targetVersion or later, throw
-      * a RuntimeException becuase the exception argument
+      * a RuntimeException because the exception argument
       * should not have occured. However it is expected on
       * prior versions because that was the previous behaviour.
       * @param targetVersion to check
@@ -774,6 +775,21 @@ public class CreateRasterExceptionTest {
         }
 
         try {
+            /* @throws IllegalArgumentException if the lengths of {@code bankIndices}
+             *         and {@code bandOffsets} are different.
+             */
+            Raster.createBandedRaster(DataBuffer.TYPE_INT, 1, 1, 1,
+                                      bankIndices, bandOffsets2, null);
+            noException();
+        } catch (ArrayIndexOutOfBoundsException t) {
+          checkIsOldVersion(26, t);
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for different array lengths");
+            System.out.println(t);
+        }
+
+        try {
             /* @throws IllegalArgumentException if {@code dataType} is
              * not one of the supported data types for this sample model
              */
@@ -908,6 +924,21 @@ public class CreateRasterExceptionTest {
         } catch (NullPointerException t) {
             System.out.println(
                    "Got expected exception for null bandoffsets");
+            System.out.println(t);
+        }
+
+        try {
+            /* @throws ArrayIndexOutOfBoundsException if any element of {@code bankIndices}
+             *         is greater or equal to the number of bands in {@code dataBuffer}
+             */
+            int[] indices = new int[] { 0, 1, 2 };
+            int[] offsets = new int[] { 0, 0, 0 };
+            Raster.createBandedRaster(dBuffer, 1, 1, 1,
+                                      indices, offsets, null);
+            noException();
+        } catch (ArrayIndexOutOfBoundsException t) {
+            System.out.println(
+                   "Got expected exception for bad bank index");
             System.out.println(t);
         }
 
@@ -1098,10 +1129,10 @@ public class CreateRasterExceptionTest {
 
         try {
              /* @throws IllegalArgumentException if
-              * {@code scanlineStride} is less than 0
+              * {@code scanlineStride} is less than or equal to 0
               */
             Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
-                                      1, 1, -3, 1, bandOffsets, null);
+                                      1, 1, 0, 1, bandOffsets, null);
             noException();
         } catch (IllegalArgumentException t) {
             System.out.println(
@@ -1111,15 +1142,17 @@ public class CreateRasterExceptionTest {
 
         try {
              /* @throws IllegalArgumentException if {@code pixelStride}
-              * is less than 0
+              * is less than or equal to 0
               */
             Raster.createInterleavedRaster(DataBuffer.TYPE_BYTE,
-                                      1, 1, 3, -1, bandOffsets, null);
+                                      1, 1, 3, 0, bandOffsets, null);
             noException();
         } catch (IllegalArgumentException t) {
             System.out.println(
                    "Got expected exception for pixelStride < 0");
             System.out.println(t);
+        } catch (RasterFormatException t) {
+            checkIsOldVersion(26, t);
         } catch (NegativeArraySizeException t) {
             checkIsOldVersion(t);
             System.out.println(
@@ -1152,7 +1185,7 @@ public class CreateRasterExceptionTest {
                    "Got expected exception for null bandoffsets");
             System.out.println(t);
         }
-
+      
         try {
             /* @throws IllegalArgumentException if {@code dataType} is
              * not one of the supported data types for this sample model
@@ -1237,6 +1270,18 @@ public class CreateRasterExceptionTest {
         }
 
         try {
+             /* @throws RasterFormatException if {@code dataBuffer} is too small.
+              */
+            Raster.createInterleavedRaster(dBuffer1, 5, 1, 15, 1,
+                                      bandOffsets, null);
+            noException();
+        } catch (RasterFormatException t) {
+            System.out.println(
+                "Got expected exception for databuffer too small");
+            System.out.println(t);
+        }
+
+        try {
              /* @throws IllegalArgumentException if {@code pixelStride}
               * is less than 0
               */
@@ -1248,7 +1293,6 @@ public class CreateRasterExceptionTest {
                    "Got expected exception for pixelStride < 0");
             System.out.println(t);
         } catch (NegativeArraySizeException t) {
-if (t != null) throw t;
             checkIsOldVersion(t);
             System.out.println(
                    "Got expected exception for pixelStride < 0");
@@ -1295,6 +1339,21 @@ if (t != null) throw t;
                    "Got expected exception for bad databuffer banks");
             System.out.println(t);
         }
+
+        try {
+             /* @throws IllegalArgumentException if any element of {@code bandOffsets} is greater
+             *  than {@code pixelStride} or the {@code scanlineStride}
+             */
+            int[] offsets = new int[] { 0, 1, 2};
+            Raster.createInterleavedRaster(dBuffer,
+                                  1, 1, 1, 1, offsets, null);
+            noException();
+        } catch (IllegalArgumentException t) {
+            System.out.println(
+                   "Got expected exception for element too large");
+            System.out.println(t);
+        }
+
     }
 
     /*  createPackedRaster(int dataType,
