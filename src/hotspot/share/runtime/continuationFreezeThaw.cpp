@@ -1687,7 +1687,6 @@ static inline freeze_result freeze_epilog(ContinuationWrapper& cont) {
   assert(!cont.is_empty(), "");
 
   log_develop_debug(continuations)("=== End of freeze cont ### #" INTPTR_FORMAT, cont.hash());
-
   return freeze_ok;
 }
 
