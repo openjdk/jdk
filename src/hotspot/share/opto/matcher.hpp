@@ -333,10 +333,9 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
-  // Identify if a vector mask operation requires the input mask to be saved
-  // with a predicate type (i.e. TypeVectMask) or a vector type. Return true
-  // if it requires a predicate type.
-  static bool vector_mask_requires_predicate(int opcode, const TypeVect* vt);
+  // Return true if the input/output mask of the operation must be a packed
+  // boolean vector represented as bytes with 0x00/0x01 as element values.
+  static bool mask_op_uses_packed_vector(int opcode, const TypeVect* vt);
 
   static const RegMask* predicate_reg_mask(void);
 

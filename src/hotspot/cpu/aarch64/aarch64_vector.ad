@@ -387,21 +387,26 @@ source %{
     return false;
   }
 
-  bool Matcher::vector_mask_requires_predicate(int opcode, const TypeVect* vt) {
-    if (vt->isa_vectmask() == nullptr) {
-      return false;
-    }
-
+  // Return true if the input/output mask of the operation must be a packed
+  // boolean vector represented as bytes with 0x00/0x01 as element values.
+  //
+  // By default, all the mask query operations without predicate support
+  // requires the mask to be saved in a boolean vector.
+  bool Matcher::mask_op_uses_packed_vector(int opcode, const TypeVect* vt) {
     switch (opcode) {
-      case Op_VectorLongToMask:
+      case Op_VectorMaskFirstTrue:
+      case Op_VectorMaskLastTrue:
+      case Op_VectorMaskTrueCount:
+        // These ops are implemented with predicate instructions if input
+        // mask is a predciate.
+        return vt->isa_vectmask() == nullptr;
       case Op_VectorMaskToLong:
-        // These ops do not have native predicate instructions on SVE. Instead,
-        // they are implemented with vector instructions. Using the packed vector
-        // layout for the input/output mask is more efficient in these cases.
-        return false;
-      default:
+      case Op_VectorLongToMask:
+        // These two ops are implemented with vector instructions on all
+        // architectures. SVE does not have native predicate instructions.
         return true;
     }
+    return false;
   }
 
   // Assert that the given node is not a variable shift.

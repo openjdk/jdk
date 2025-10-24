@@ -1429,7 +1429,7 @@ void C2_MacroAssembler::sve_vmask_tolong(Register dst, FloatRegister src,
   }
 }
 
-// The function is same as above "sve_vmask_tolong", but it uses SVE2's BDEP
+// The function is same as above "sve_vmask_tolong", but it uses SVE2's BEXT
 // instruction which requires the FEAT_BITPERM feature.
 void C2_MacroAssembler::sve2_vmask_tolong(Register dst, FloatRegister src,
                                           FloatRegister vtmp1, FloatRegister vtmp2,
@@ -1504,7 +1504,6 @@ void C2_MacroAssembler::sve_vmask_fromlong(FloatRegister dst, Register src,
     // Nothing. As only one byte exsits.
   } else if (lane_cnt <= 16) {
     ins(vtmp, B, vtmp, 8, 1);
-    mov(vtmp, B, 1, zr);
   } else {
     sve_vector_extend(vtmp, D, vtmp, B);
   }
