@@ -470,8 +470,8 @@ class methodHandle;
   do_intrinsic(_Reference_reachabilityFence, java_lang_ref_Reference, reachabilityFence_name, object_void_signature, F_S)  \
    do_name(reachabilityFence_name, "reachabilityFence")                                                                 \
                                                                                                                         \
-  /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
-  do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \
+  /* support for com.sun.crypto.provider.AES_Crypt and some of its callers */                                            \
+  do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AES_Crypt")                                   \
   do_intrinsic(_aescrypt_encryptBlock, com_sun_crypto_provider_aescrypt, encryptBlock_name, byteArray_int_byteArray_int_signature, F_R)   \
   do_intrinsic(_aescrypt_decryptBlock, com_sun_crypto_provider_aescrypt, decryptBlock_name, byteArray_int_byteArray_int_signature, F_R)   \
    do_name(     encryptBlock_name,                                 "implEncryptBlock")                                  \
