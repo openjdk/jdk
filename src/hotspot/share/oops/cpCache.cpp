@@ -563,6 +563,9 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
     if (method_entry->method()->is_method_handle_intrinsic() && !CDSConfig::is_dumping_method_handles()) {
       return false;
     }
+    if (method_entry->is_resolved(Bytecodes::_invokestatic) && !VM_Version::supports_fast_class_init_checks()) {
+      return false;
+    }
   }
 
   int cp_index = method_entry->constant_pool_index();
