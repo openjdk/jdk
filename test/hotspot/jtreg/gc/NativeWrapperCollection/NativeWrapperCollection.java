@@ -59,14 +59,14 @@ public class NativeWrapperCollection {
 
         WB.enqueueMethodForCompilation(method, 1 /* compLevel */);
         while (WB.isMethodQueuedForCompilation(method)) {
-            Thread.onSpinWait();
+            Thread.sleep(50 /* ms */);
         }
 
         callRegisterNatives(1);
 
         WB.enqueueMethodForCompilation(method, 1 /* compLevel */);
         while (WB.isMethodQueuedForCompilation(method)) {
-            Thread.onSpinWait();
+            Thread.sleep(50 /* ms */);
         }
 
         WB.fullGC(); // mark the nmethod as not on stack
