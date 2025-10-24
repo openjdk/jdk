@@ -228,41 +228,37 @@ public class ExhaustivenessComputer {
 
                             return instantiated != null && types.isCastable(selectorType, instantiated);
                         });
-                        Set<Symbol> filteredPermitted = new HashSet<>(permitted);
+
+                        //the set of pending permitted subtypes needed to cover clazz:
+                        Set<Symbol> pendingPermitted = new HashSet<>(permitted);
 
                         for (PatternDescription pdOther : patterns) {
                             if (pdOther instanceof BindingPattern bpOther) {
-                                Set<Symbol> currentSubTypes;
+                                //remove all types from pendingPermitted that we can
+                                //cover using bpOther:
+
+                                //all types that are permitted subtypes of bpOther's type:
+                                pendingPermitted.removeIf(pending -> types.isSubtype(types.erasure(pending.type),
+                                                                                     types.erasure(bpOther.type)));
 
                                 if (bpOther.type.tsym.isAbstract()) {
-                                    currentSubTypes =
-                                            permitted.stream()
-                                                     .filter(perm -> types.isSubtype(types.erasure(perm.type),
-                                                                                     types.erasure(bpOther.type)))
-                                                     .collect(Collectors.toSet());
-                                } else {
-                                    currentSubTypes = Set.of();
-                                }
+                                    //all types that are in a diamond hierarchy with bpOther's type
+                                    //i.e. there's a common subtype of the given type and bpOther's type:
+                                    Predicate<Symbol> check =
+                                            pending -> permitted.stream()
+                                                                .filter(perm -> types.isSubtype(types.erasure(perm.type),
+                                                                                                types.erasure(bpOther.type)))
+                                                                .filter(perm -> types.isSubtype(types.erasure(perm.type),
+                                                                                                types.erasure(pending.type)))
+                                                                .findAny()
+                                                                .isPresent();
 
-                                PERMITTED: for (Iterator<Symbol> it = filteredPermitted.iterator(); it.hasNext();) {
-                                    Symbol perm = it.next();
-
-                                    for (Symbol currentPermitted : currentSubTypes) {
-                                        if (types.isSubtype(types.erasure(currentPermitted.type),
-                                                            types.erasure(perm.type))) {
-                                            it.remove();
-                                            continue PERMITTED;
-                                        }
-                                    }
-                                    if (types.isSubtype(types.erasure(perm.type),
-                                                        types.erasure(bpOther.type))) {
-                                        it.remove();
-                                    }
+                                    pendingPermitted.removeIf(check);
                                 }
                             }
                         }
 
-                        if (filteredPermitted.isEmpty()) {
+                        if (pendingPermitted.isEmpty()) {
                             toAdd.add(new BindingPattern(clazz.type));
                         }
                     }

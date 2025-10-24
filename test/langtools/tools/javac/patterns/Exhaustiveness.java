@@ -2209,6 +2209,34 @@ public class Exhaustiveness extends TestRunner {
     }
 
     @Test //JDK-8366968
+    public void testNonSealedDiamond2(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+
+                   sealed interface Base permits Special, Value {}
+
+                   non-sealed interface Value extends Base {}
+
+                   non-sealed interface Special extends Base {}
+
+                   interface SpecialValue extends Value, Special {}
+
+                   static int demo(final Base base) {
+                       return switch (base) {
+                           case Value value -> 0;
+                       };
+
+                   }
+
+               }
+               """,
+               "Demo.java:12:16: compiler.err.not.exhaustive",
+               "1 error");
+    }
+
+    @Test //JDK-8366968
     public void testNonAbstract(Path base) throws Exception {
         doTest(base,
                new String[0],
@@ -2230,6 +2258,56 @@ public class Exhaustiveness extends TestRunner {
                }
                """,
                "Demo.java:9:9: compiler.err.not.exhaustive.statement",
+               "1 error");
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamondGeneric(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+                   class SomeType {}
+                   sealed interface Base<T extends SomeType> permits Special, Value {}
+                   non-sealed interface Value<T extends SomeType> extends Base<T> {}
+                   sealed interface Special<T extends SomeType> extends Base<T> permits SpecialValue {}
+                   non-sealed interface SpecialValue<T extends SomeType> extends Value<T>, Special<T> {}
+
+                   static <T extends SomeType> int demo(final Base<T> base) {
+                       return switch (base) {
+                            case Value<T> value -> 0;
+                       };
+                   }
+               }
+               """);
+    }
+
+    @Test //JDK-8366968
+    public void testNonSealedDiamondMultiple(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Demo {
+
+                   sealed interface Base permits Special, Value {}
+
+                   non-sealed interface Value extends Base {}
+
+                   sealed interface Special extends Base permits SpecialValue, Special2 {}
+
+                   non-sealed interface SpecialValue extends Value, Special {}
+                   non-sealed interface Special2 extends Special {}
+
+                   static int demo(final Base base) {
+                       return switch (base) {
+                           case Value value -> 0;
+                       };
+
+                   }
+
+               }
+               """,
+               "Demo.java:13:16: compiler.err.not.exhaustive",
                "1 error");
     }
 
