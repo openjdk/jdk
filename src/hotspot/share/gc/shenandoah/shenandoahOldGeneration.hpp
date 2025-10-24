@@ -171,8 +171,9 @@ public:
   // This will signal the control thread to run a full GC instead of a futile degenerated gc
   void handle_failed_evacuation();
 
-  // This logs that an evacuation to the old generation has failed
+  // Increment promotion failure counters, optionally log a more detailed message
   void handle_failed_promotion(Thread* thread, size_t size);
+  void log_failed_promotion(LogStream& ls, Thread* thread, size_t size);
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
   void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
