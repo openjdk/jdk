@@ -2143,7 +2143,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  9
      */
     public BigDecimal sqrt(MathContext mc) {
-        return nthRoot(2, mc);
+        return rootn(2, mc);
     }
 
     /**
