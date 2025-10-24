@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @run main TestButtonGroupFocusTraversal
  */
 
-import javax.swing.AbstractAction;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
@@ -45,7 +44,6 @@ import java.awt.FlowLayout;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
 import java.awt.Robot;
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 
 public class TestButtonGroupFocusTraversal {
@@ -84,33 +82,11 @@ public class TestButtonGroupFocusTraversal {
                 checkBox1 = new JCheckBox("1");
                 checkBox2 = new JCheckBox("2");
 
-                toggleButton1.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        toggleButtonActionPerformed = true;
-                    }
-                });
+                toggleButton1.addActionListener((_) -> toggleButtonActionPerformed = true);
+                toggleButton2.addActionListener((_) -> toggleButtonActionPerformed = true);
 
-                toggleButton2.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        toggleButtonActionPerformed = true;
-                    }
-                });
-
-                checkBox1.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        checkboxActionPerformed = true;
-                    }
-                });
-
-                checkBox2.setAction(new AbstractAction() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        checkboxActionPerformed = true;
-                    }
-                });
+                checkBox1.addActionListener((_) -> checkboxActionPerformed = true);
+                checkBox2.addActionListener((_) -> checkboxActionPerformed = true);
 
                 ButtonGroup toggleGroup = new ButtonGroup();
                 toggleGroup.add(toggleButton1);
@@ -178,7 +154,7 @@ public class TestButtonGroupFocusTraversal {
     }
 
     private static void checkCheckboxActionPerformed() {
-        if (toggleButtonActionPerformed) {
+        if (checkboxActionPerformed) {
             throw new RuntimeException("Checkbox Action should not be" +
                     "performed");
         }
