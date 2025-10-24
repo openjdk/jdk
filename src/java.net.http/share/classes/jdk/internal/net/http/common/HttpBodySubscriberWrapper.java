@@ -100,6 +100,9 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
                     subscription.cancel();
                 } finally {
                     if (markCancelled()) {
+                        if (preTerminationCallback != null) {
+                            preTerminationCallback.run();
+                        }
                         onCancel();
                     }
                 }
