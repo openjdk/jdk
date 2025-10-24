@@ -530,7 +530,6 @@ public:
   }
 
   ShenandoahOldGeneration*   old_generation()    const {
-    assert(mode()->is_generational(), "Old generation requires generational mode");
     return _old_generation;
   }
 
@@ -564,6 +563,7 @@ private:
   ConcurrentGCTimer*           _gc_timer;
   // For exporting to SA
   int                          _log_min_obj_alignment_in_bytes;
+  ShenandoahGenerationSizer     _generation_sizer;
 public:
   ShenandoahMonitoringSupport* monitoring_support() const    { return _monitoring_support;    }
   GCMemoryManager* cycle_memory_manager()                    { return &_cycle_memory_manager; }

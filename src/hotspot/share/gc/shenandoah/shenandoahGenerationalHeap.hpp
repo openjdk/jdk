@@ -44,13 +44,11 @@ public:
   void initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    shenandoah_assert_generational();
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    shenandoah_assert_generational();
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
