@@ -55,7 +55,7 @@ public class PipeInterrupt {
                         close();
                         if (interrupted) {
                             if (!this.isInterrupted())
-                               exc = new RuntimeException("interrupt status reset");
+                               exc = new RuntimeException("interrupted status reset");
                             break;
                         }
                     } catch (IOException ioe) {

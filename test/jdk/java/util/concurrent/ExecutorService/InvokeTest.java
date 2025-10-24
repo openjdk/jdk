@@ -284,7 +284,7 @@ class InvokeTest {
     }
 
     /**
-     * Test invokeAny with interrupt status set.
+     * Test invokeAny with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -530,7 +530,7 @@ class InvokeTest {
     }
 
     /**
-     * Test invokeAll with interrupt status set.
+     * Test invokeAll with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -555,7 +555,7 @@ class InvokeTest {
     }
 
     /**
-     * Test timed-invokeAll with interrupt status set.
+     * Test timed-invokeAll with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")

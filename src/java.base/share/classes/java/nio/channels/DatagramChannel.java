@@ -290,7 +290,7 @@ public abstract class DatagramChannel
      *          If another thread interrupts the current thread
      *          while the connect operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  UnresolvedAddressException
      *          If the given remote address is not fully resolved
@@ -389,7 +389,7 @@ public abstract class DatagramChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  IOException
      *          If some other I/O error occurs
@@ -443,7 +443,7 @@ public abstract class DatagramChannel
      *          If another thread interrupts the current thread
      *          while the read operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  UnresolvedAddressException
      *          If the given remote address is not fully resolved

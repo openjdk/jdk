@@ -926,7 +926,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
             parse (source);
             fBusy = false;
             if (abortNow && currentThread.isInterrupted()) {
-                //reset interrupt state
+                //reset interrupted state
                 abortNow = false;
                 Thread.interrupted();
             }
@@ -983,7 +983,7 @@ extends AbstractDOMParser implements LSParser, DOMConfiguration {
             parse (xmlInputSource);
             fBusy = false;
             if (abortNow && currentThread.isInterrupted()) {
-                //reset interrupt state
+                //reset interrupted state
                 abortNow = false;
                 Thread.interrupted();
             }

@@ -45,7 +45,7 @@ public class InterruptibleZip {
         System.out.printf("interrupted=%s n=%d name=%s%n",
                           interrupted, n, ze.getName());
         if (! interrupted) {
-            throw new Error("Wrong interrupt status");
+            throw new Error("Wrong interrupted status");
         }
         if (n != buf.length) {
             throw new Error("Read error");

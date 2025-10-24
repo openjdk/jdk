@@ -120,7 +120,7 @@ public class InterruptCopy {
             } catch (IOException e) {
                 boolean interrupted = Thread.interrupted();
                 if (!interrupted)
-                    throw new RuntimeException("Interrupt status was not set");
+                    throw new RuntimeException("Interrupted status was not set");
                 System.out.println("Copy failed (this is expected).");
             }
             try {

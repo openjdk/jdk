@@ -207,7 +207,7 @@ class CloseTest {
     }
 
     /**
-     * Test invoking close with interrupt status set.
+     * Test invoking close with interrupted status set.
      */
     @ParameterizedTest
     @MethodSource("executors")
@@ -225,7 +225,7 @@ class CloseTest {
             executor.close();
             assertTrue(Thread.currentThread().isInterrupted());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());
@@ -259,7 +259,7 @@ class CloseTest {
             executor.close();
             assertTrue(Thread.currentThread().isInterrupted());
         } finally {
-            Thread.interrupted();  // clear interrupt status
+            Thread.interrupted();  // clear interrupted status
         }
         assertTrue(executor.isShutdown());
         assertTrue(executor.isTerminated());

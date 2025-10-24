@@ -360,7 +360,7 @@ public class SelectWithConsumer {
     }
 
     /**
-     * Test invoking select with interrupt status set
+     * Test invoking select with interrupted status set
      */
     public void testInterruptBeforeSelect() throws Exception {
         // select(Consumer)
@@ -371,7 +371,7 @@ public class SelectWithConsumer {
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
-            Thread.currentThread().interrupted();  // clear interrupt status
+            Thread.currentThread().interrupted();  // clear interrupted status
         }
 
         // select(Consumer, timeout)
@@ -384,7 +384,7 @@ public class SelectWithConsumer {
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
-            Thread.currentThread().interrupted();  // clear interrupt status
+            Thread.currentThread().interrupted();  // clear interrupted status
         }
     }
 
@@ -400,7 +400,7 @@ public class SelectWithConsumer {
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
-            Thread.currentThread().interrupted();  // clear interrupt status
+            Thread.currentThread().interrupted();  // clear interrupted status
         }
 
         // select(Consumer, timeout)
@@ -411,7 +411,7 @@ public class SelectWithConsumer {
             assertTrue(Thread.currentThread().isInterrupted());
             assertTrue(sel.isOpen());
         } finally {
-            Thread.currentThread().interrupted();  // clear interrupt status
+            Thread.currentThread().interrupted();  // clear interrupted status
         }
     }
 

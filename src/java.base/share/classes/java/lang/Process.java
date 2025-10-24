@@ -774,7 +774,7 @@ public abstract class Process {
      * @implSpec
      * This implementation executes {@link #waitFor()} in a separate thread
      * repeatedly until it returns successfully. If the execution of
-     * {@code waitFor} is interrupted, the thread's interrupt status is preserved.
+     * {@code waitFor} is interrupted, the thread's interrupted status is preserved.
      * <p>
      * When {@link #waitFor()} returns successfully the CompletableFuture is
      * {@linkplain java.util.concurrent.CompletableFuture#complete completed} regardless

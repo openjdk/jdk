@@ -41,7 +41,7 @@ public class AllDiag implements Runnable {
 
         public void run() {
                 AllMemoryObject.dumpStatistics();
-                // Ensure that interrupt status is not lost
+                // Ensure that interrupted status is not lost
                 if (Thread.currentThread().isInterrupted())
                         return;
                 try {

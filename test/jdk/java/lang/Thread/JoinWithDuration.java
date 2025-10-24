@@ -100,7 +100,7 @@ class JoinWithDuration {
     }
 
     /**
-     * Test invoking join with interrupt status set.
+     * Test invoking join with interrupted status set.
      */
     @Test
     void testJoinWithInterruptStatusSet() throws Exception {
@@ -141,7 +141,7 @@ class JoinWithDuration {
             thread.join(Duration.ofMinutes(1));
             fail();
         } catch (InterruptedException e) {
-            // interrupt status should be cleared
+            // interrupted status should be cleared
             assertFalse(thread.isInterrupted());
         } finally {
             LockSupport.unpark(thread);

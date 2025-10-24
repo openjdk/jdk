@@ -410,7 +410,7 @@ public class StampedLockTest extends JSR166TestCase {
     }
 
     /**
-     * Non-interruptible operations ignore and preserve interrupt status
+     * Non-interruptible operations ignore and preserve interrupted status
      */
     public void testNonInterruptibleOperationsIgnoreInterrupts() {
         final StampedLock lock = new StampedLock();

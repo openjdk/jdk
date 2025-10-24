@@ -232,7 +232,7 @@ class CloseDuringTransfer {
 
     /**
      * Waits for the interrupt task submitted by scheduleInterrupt, and clears the
-     * current thread's interrupt status.
+     * current thread's interrupted status.
      */
     private void finishInterrupt(Future<?> interrupter) throws Exception {
         boolean done = false;

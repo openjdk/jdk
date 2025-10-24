@@ -106,7 +106,7 @@ public class AdaptorStreams {
     }
 
     /**
-     * Test interrupt status set before read
+     * Test interrupted status set before read
      */
     public void testRead6() throws Exception {
         withConnection((sc, peer) -> {
@@ -203,7 +203,7 @@ public class AdaptorStreams {
     }
 
     /**
-     * Test interrupt status set before timed read
+     * Test interrupted status set before timed read
      */
     public void testTimedRead5() throws Exception {
         withConnection((sc, peer) -> {
@@ -257,7 +257,7 @@ public class AdaptorStreams {
     }
 
     /**
-     * Test interrupt status set before write
+     * Test interrupted status set before write
      */
     public void testWrite2() throws Exception {
         withConnection((sc, peer) -> {

@@ -64,7 +64,7 @@ public class LotsOfInterrupts {
                     phaser.arriveAndAwaitAdvance();
                     sel.select();
 
-                    // clear interrupt status and consume wakeup
+                    // clear interrupted status and consume wakeup
                     Thread.interrupted();
                     sel.selectNow();
                 }
