@@ -124,7 +124,9 @@ public class ServerStopTerminationTest {
 
         // Complete the exchange one second into the future
         final Duration exchangeDuration = Duration.ofSeconds(1);
-        final long startTime = System.nanoTime(); // taking custom start time just in case
+        // taking start time before entering completeExchange to account for possible
+        // delays in reaching server.stop().
+        final long startTime = System.nanoTime();
         completeExchange(exchangeDuration);
         log("Complete Exchange triggered");
 
@@ -152,27 +154,26 @@ public class ServerStopTerminationTest {
      * @throws InterruptedException if an unexpected interruption occurs
      */
     @Test
-    public void shouldCompeteAfterDelay() throws InterruptedException {
+    public void shouldCompleteAfterDelay() throws InterruptedException {
         // Initiate an exchange
         startExchange();
         // Wait for the server to receive the exchange
         start.await();
         log("Exchange started");
 
-        // Complete the exchange 10 second into the future.
-        // Runs in parallel, so won't block the server stop
-        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(10));
-        final long startTime = System.nanoTime(); // taking custom start time just in case
-        completeExchange(exchangeDuration);
-        log("Complete Exchange triggered");
-
-
         // Time the shutdown sequence
         final Duration delayDuration = Duration.ofSeconds(1);
         log("Shutdown triggered with the delay of " + delayDuration.getSeconds());
-        final long elapsed = timeShutdown(delayDuration, startTime);
+        final long elapsed = timeShutdown(delayDuration);
         log("Shutdown complete");
 
+        // Complete the exchange 10 second into the future.
+        // Runs in parallel, so won't block the server stop
+        final Duration exchangeDuration = Duration.ofSeconds(Utils.adjustTimeout(10));
+        // taking start time before entering completeExchange to account for possible
+        // delays in reaching server.stop().
+        completeExchange(exchangeDuration);
+        log("Complete Exchange triggered");
 
         // The shutdown should not await the exchange to complete
         if (elapsed >= exchangeDuration.toNanos()) {
