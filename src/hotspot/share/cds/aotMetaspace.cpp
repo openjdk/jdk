@@ -77,11 +77,13 @@
 #include "memory/universe.hpp"
 #include "nmt/memTracker.hpp"
 #include "oops/compressedKlass.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "oops/trainingData.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
@@ -520,20 +522,131 @@ void AOTMetaspace::serialize(SerializeClosure* soc) {
 }
 
 static void rewrite_nofast_bytecode(const methodHandle& method) {
+  ConstantPool* cp = method->constants();
   BytecodeStream bcs(method);
+  Bytecodes::Code new_code;
+
+  LogStreamHandle(Trace, aot, resolve) lsh;
+  if (lsh.is_enabled()) {
+    lsh.print("Rewriting bytecodes for ");
+    method()->print_external_name(&lsh);
+    lsh.print("\n");
+  }
+
   while (!bcs.is_last_bytecode()) {
     Bytecodes::Code opcode = bcs.next();
-    switch (opcode) {
-    case Bytecodes::_getfield:      *bcs.bcp() = Bytecodes::_nofast_getfield;      break;
-    case Bytecodes::_putfield:      *bcs.bcp() = Bytecodes::_nofast_putfield;      break;
-    case Bytecodes::_aload_0:       *bcs.bcp() = Bytecodes::_nofast_aload_0;       break;
-    case Bytecodes::_iload: {
-      if (!bcs.is_wide()) {
-        *bcs.bcp() = Bytecodes::_nofast_iload;
+    // Use current opcode as the default value of new_code
+    new_code = opcode;
+    switch(opcode) {
+    case Bytecodes::_getfield: {
+      uint rfe_index = bcs.get_index_u2();
+      bool is_resolved = cp->is_resolved(rfe_index, opcode);
+#ifdef ASSERT
+      if (CDSConfig::is_dumping_preimage_static_archive()) {
+        assert(!is_resolved, "preimage should not have resolved field references");
+      }
+#endif // ASSERT
+      if (is_resolved) {
+        ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
+        switch(rfe->tos_state()) {
+        case btos:
+          // fallthrough
+        case ztos:
+          new_code = Bytecodes::_fast_bgetfield;
+          break;
+        case atos:
+          new_code = Bytecodes::_fast_agetfield;
+          break;
+        case itos:
+          new_code = Bytecodes::_fast_igetfield;
+          break;
+        case ctos:
+          new_code = Bytecodes::_fast_cgetfield;
+          break;
+        case stos:
+          new_code = Bytecodes::_fast_sgetfield;
+          break;
+        case ltos:
+          new_code = Bytecodes::_fast_lgetfield;
+          break;
+        case ftos:
+          new_code = Bytecodes::_fast_fgetfield;
+          break;
+        case dtos:
+          new_code = Bytecodes::_fast_dgetfield;
+          break;
+        default:
+          ShouldNotReachHere();
+          break;
+        }
+      } else {
+        new_code = Bytecodes::_nofast_getfield;
       }
       break;
     }
-    default: break;
+    case Bytecodes::_putfield: {
+      uint rfe_index = bcs.get_index_u2();
+      bool is_resolved = cp->is_resolved(rfe_index, opcode);
+#ifdef ASSERT
+      if (CDSConfig::is_dumping_preimage_static_archive()) {
+        assert(!is_resolved, "preimage should not have resolved field references");
+      }
+#endif // ASSERT
+      if (is_resolved) {
+        ResolvedFieldEntry* rfe = cp->resolved_field_entry_at(bcs.get_index_u2());
+        switch(rfe->tos_state()) {
+        case btos:
+          new_code = Bytecodes::_fast_bputfield;
+          break;
+        case ztos:
+          new_code = Bytecodes::_fast_zputfield;
+          break;
+        case atos:
+          new_code = Bytecodes::_fast_aputfield;
+          break;
+        case itos:
+          new_code = Bytecodes::_fast_iputfield;
+          break;
+        case ctos:
+          new_code = Bytecodes::_fast_cputfield;
+          break;
+        case stos:
+          new_code = Bytecodes::_fast_sputfield;
+          break;
+        case ltos:
+          new_code = Bytecodes::_fast_lputfield;
+          break;
+        case ftos:
+          new_code = Bytecodes::_fast_fputfield;
+          break;
+        case dtos:
+          new_code = Bytecodes::_fast_dputfield;
+          break;
+        default:
+          ShouldNotReachHere();
+          break;
+        }
+      } else {
+        new_code = Bytecodes::_nofast_putfield;
+      }
+      break;
+    }
+    case Bytecodes::_aload_0:
+      new_code = Bytecodes::_nofast_aload_0;
+      break;
+    case Bytecodes::_iload:
+      if (!bcs.is_wide()) {
+        new_code = Bytecodes::_nofast_iload;
+      }
+      break;
+    default:
+      break;
+    }
+    if (opcode != new_code) {
+      *bcs.bcp() = new_code;
+      if (lsh.is_enabled()) {
+        lsh.print_cr("%d:%s -> %s", bcs.bci(), Bytecodes::name(opcode), Bytecodes::name(new_code));
+      }
     }
   }
 }
