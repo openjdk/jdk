@@ -669,16 +669,10 @@ void ShenandoahConcurrentGC::op_init_mark() {
   assert(!heap->has_forwarded_objects(), "No forwarded objects on this path");
 
   if (heap->mode()->is_generational()) {
-
     if (_generation->is_global()) {
       heap->old_generation()->cancel_gc();
-    } else if (heap->is_concurrent_old_mark_in_progress()) {
-      // Purge the SATB buffers, transferring any valid, old pointers to the
-      // old generation mark queue. Any pointers not in an old region will be
-      // abandoned.
-      // ShenandoahGCPhase phase(ShenandoahPhaseTimings::init_transfer_satb);
-      // heap->old_generation()->transfer_pointers_from_satb();
     }
+
     {
       // After we swap card table below, the write-table is all clean, and the read table holds
       // cards dirty prior to the start of GC. Young and bootstrap collection will update
@@ -1132,6 +1126,22 @@ void ShenandoahUpdateThreadHandshakeClosure::do_thread(Thread* thread) {
 }
 
 class ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers final : public HandshakeClosure {
+  // When Shenandoah is marking the old generation, it is possible for the SATB barrier
+  // to pick up overwritten pointers that point into a cset region. If these pointers
+  // are accessed by mark threads, they will crash. Once update refs has completed, it is
+  // no longer possible for a mutator thread to overwrite a pointer into a cset region.
+  //
+  // Therefore, at the end of update refs, we use this closure to update the thread roots
+  // and 'complete' all the thread local SATB buffers. Completing these will filter out
+  // anything that has already been marked or anything that points to a region which is
+  // not old. We do not need to worry about ABA situations where a region may become old
+  // after the pointer is enqueued but before it is filtered. There are only two ways a
+  // region may become old:
+  //  1. The region is promoted in place. This is safe because such regions will never
+  //     be in the collection set. If this happens, the pointer will be preserved, essentially
+  //     becoming part of the old snapshot.
+  //  2. The region is allocated during evacuation of old. This is also not a concern because
+  //     we haven't yet finished marking old so no mixed evacuations will happen.
   ShenandoahUpdateThreadHandshakeClosure _update_roots;
   ShenandoahFlushAllSATB _flush_all_satb;
 
@@ -1186,25 +1196,6 @@ void ShenandoahConcurrentGC::op_final_update_refs() {
   heap->set_has_forwarded_objects(false);
 
   if (heap->mode()->is_generational() && heap->is_concurrent_old_mark_in_progress()) {
-    // When the SATB barrier is left on to support concurrent old gen mark, it may pick up writes to
-    // objects in the collection set. After those objects are evacuated, the pointers in the
-    // SATB are no longer safe. Once we have finished update references, we are guaranteed that
-    // no more writes to the collection set are possible.
-    //
-    // This will transfer any old pointers in _active_ regions from the SATB to the old gen
-    // mark queues. All other pointers will be discarded. This would also discard any pointers
-    // in old regions that were included in a mixed evacuation. We aren't using the SATB filter
-    // methods here because we cannot control when they execute. If the SATB filter runs _after_
-    // a region has been recycled, we will not be able to detect the bad pointer.
-    //
-    // We are not concerned about skipping this step in abbreviated cycles because regions
-    // with no live objects cannot have been written to and so cannot have entries in the SATB
-    // buffers.
-    //
-    // After update refs, it is no longer possible for a mutator to overwrite a pointer into the collection set
-    // ShenandoahGCPhase phase(ShenandoahPhaseTimings::final_update_refs_transfer_satb);
-    // heap->old_generation()->transfer_pointers_from_satb();
-
     // Aging_cycle is only relevant during evacuation cycle for individual objects and during final mark for
     // entire regions.  Both of these relevant operations occur before final update refs.
     ShenandoahGenerationalHeap::heap()->set_aging_cycle(false);

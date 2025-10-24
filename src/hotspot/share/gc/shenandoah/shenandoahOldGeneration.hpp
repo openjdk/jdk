@@ -221,17 +221,19 @@ public:
   // also cases where the referent of a weak reference ends up in the SATB
   // and is later collected. In these cases the oop in the SATB buffer becomes
   // invalid and the _next_ cycle will crash during its marking phase. To
-  // avoid this problem, we "purge" the SATB buffers during the final update
-  // references phase if (and only if) an old generation mark is in progress.
+  // avoid this problem, we "purge" the SATB buffers during a handhsake just
+  // before the final update references safepoint references phase if (and only if)
+  // an old generation mark is in progress.
+  //
   // At this stage we can safely determine if any of the oops in the SATB
   // buffer belong to trashed regions (before they are recycled). As it
   // happens, flushing a SATB queue also filters out oops which have already
   // been marked - which is the case for anything that is being evacuated
   // from the collection set.
   //
-  // Alternatively, we could inspect the state of the heap and the age of the
-  // object at the barrier, but we reject this approach because it is likely
-  // the performance impact would be too severe.
+  // This method is here for degenerated cycles. A concurrent cycle may be
+  // cancelled before we have a chance to execute the handshake to flush the
+  // SATB.
   void transfer_pointers_from_satb() const;
 
   // True if there are old regions waiting to be selected for a mixed collection
