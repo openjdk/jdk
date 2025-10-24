@@ -97,6 +97,7 @@
 #include "runtime/trimNativeHeap.hpp"
 #include "runtime/vm_version.hpp"
 #include "runtime/vmOperations.hpp"
+#include "sanitizers/address.hpp"
 #include "services/attachListener.hpp"
 #include "services/management.hpp"
 #include "services/threadIdTable.hpp"
@@ -701,6 +702,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Prepare AOT heap loader for GC.
   HeapShared::enable_gc();
+
+#ifdef ADDRESS_SANITIZER
+  Asan::initialize();
+#endif
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.

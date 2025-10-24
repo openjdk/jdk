@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.awt.image.RenderedImage;
  * ContextualRenderedImageFactory provides an interface for the
  * functionality that may differ between instances of
  * RenderableImageOp.  Thus different operations on RenderableImages
- * may be performed by a single class such as RenderedImageOp through
+ * may be performed by a single class such as RenderableImageOp through
  * the use of multiple instances of ContextualRenderedImageFactory.
  * The name ContextualRenderedImageFactory is commonly shortened to
  * "CRIF."
