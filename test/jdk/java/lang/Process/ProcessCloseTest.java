@@ -63,6 +63,7 @@ import java.util.stream.Stream;
 public class ProcessCloseTest {
 
     private final static boolean OS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
+    private final static String CAT_PROGRAM = OS_WINDOWS ? "type" : "cat";
     private static List<String> JAVA_ARGS;
 
     private static List<String> setupJavaEXE() {
@@ -104,22 +105,22 @@ public class ProcessCloseTest {
                 Arguments.of(List.of("echo", "xyz1"),
                         List.of(ProcessCommand.STDOUT_PRINT_ALL_LINES),
                         List.of(ExitStatus.NORMAL)),
-                Arguments.of(List.of("cat", "-"),
+                Arguments.of(javaArgs(ChildCommand.STDOUT_ECHO),
                         List.of(ProcessCommand.WRITER_WRITE,
                                 ProcessCommand.WRITER_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
                         List.of(ExitStatus.NORMAL)),
-                Arguments.of(List.of("cat", "-"),
+                Arguments.of(javaArgs(ChildCommand.STDOUT_ECHO),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
                                 ProcessCommand.STDOUT_PRINT_ALL_LINES),
                         List.of(ExitStatus.NORMAL)),
-                Arguments.of(List.of("cat", "-"),
+                Arguments.of(javaArgs(ChildCommand.STDOUT_ECHO),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.STDOUT_CLOSE,
                                 ExitStatus.NORMAL),
                         List.of(ExitStatus.NORMAL)),
-                Arguments.of(List.of("cat", "NoSuchFile.txt"),
+                Arguments.of(List.of(CAT_PROGRAM, "NoSuchFile.txt"),
                         List.of(ProcessCommand.STDERR_PRINT_ALL_LINES,
                                 ProcessCommand.STDOUT_EXPECT_EMPTY),
                         List.of(ExitStatus.FAIL)),
@@ -148,14 +149,14 @@ public class ProcessCloseTest {
                 Arguments.of(List.of("echo", "abc"),
                         List.of(ProcessCommand.PROCESS_CLOSE),
                         List.of(ExitStatus.PIPE)),
-                Arguments.of(List.of("cat", "-"),
+                Arguments.of(javaArgs(ChildCommand.STDOUT_ECHO),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.PROCESS_CLOSE),
                         List.of(ExitStatus.PIPE)),
                 Arguments.of(List.of("echo", "def"),
                         List.of(ProcessCommand.PROCESS_DESTROY),
                         List.of(ExitStatus.RACY)), // Racy, not deterministic
-                Arguments.of(List.of("cat", "-"),
+                Arguments.of(javaArgs(ChildCommand.STDOUT_ECHO),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.PROCESS_DESTROY),
                         List.of(ExitStatus.RACY)), // Racy, not deterministic
@@ -710,7 +711,7 @@ public class ProcessCloseTest {
     // Copy of ProcessExamples in java/lang/snippet-files/ProcessExamples.java
     @Test
     void example() {
-        try (Process p = new ProcessBuilder("cat").start();
+        try (Process p = new ProcessBuilder(CAT_PROGRAM).start();
              Writer writer = p.outputWriter();
              Reader reader = p.inputReader()) {
             writer.write(haiku);
