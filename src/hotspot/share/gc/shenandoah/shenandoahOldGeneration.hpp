@@ -125,8 +125,8 @@ public:
   size_t get_promoted_expended() const;
 
   // Return the count and size (in words) of failed promotions since the last reset
-  size_t get_promotion_failed_count() const { return _promotion_failure_count; }
-  size_t get_promotion_failed_words() const { return _promotion_failure_words; }
+  size_t get_promotion_failed_count() const { return AtomicAccess::load(&_promotion_failure_count); }
+  size_t get_promotion_failed_words() const { return AtomicAccess::load(&_promotion_failure_words); }
 
   // Test if there is enough memory reserved for this promotion
   bool can_promote(size_t requested_bytes) const {
