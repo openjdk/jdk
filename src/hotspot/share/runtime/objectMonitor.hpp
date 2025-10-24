@@ -52,7 +52,6 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   uint64_t  _notifier_tid;
   int         _recursions;
   volatile TStates TState;
-  volatile bool _notified;
   bool           _is_wait;
   bool        _at_reenter;
   bool       _interrupted;
@@ -67,9 +66,8 @@ class ObjectWaiter : public CHeapObj<mtThread> {
   uint8_t state()           const { return TState; }
   ObjectMonitor* monitor()  const { return _monitor; }
   bool is_wait()            const { return _is_wait; }
-  bool notified()           const { return _notified; }
   bool at_reenter()         const { return _at_reenter; }
-  bool at_monitorenter()    const { return !_is_wait || _at_reenter || _notified; }
+  bool at_monitorenter()    const { return !_is_wait || TState != TS_WAIT; }
   oop vthread() const;
   void wait_reenter_begin(ObjectMonitor *mon);
   void wait_reenter_end(ObjectMonitor *mon);

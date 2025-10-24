@@ -44,8 +44,7 @@ ContiguousSpace::ContiguousSpace():
   _top(nullptr) {}
 
 void ContiguousSpace::initialize(MemRegion mr,
-                                 bool clear_space,
-                                 bool mangle_space) {
+                                 bool clear_space) {
   HeapWord* bottom = mr.start();
   HeapWord* end    = mr.end();
   assert(Universe::on_page_boundary(bottom) && Universe::on_page_boundary(end),
@@ -53,7 +52,10 @@ void ContiguousSpace::initialize(MemRegion mr,
   set_bottom(bottom);
   set_end(end);
   if (clear_space) {
-    clear(mangle_space);
+    clear(SpaceDecorator::DontMangle);
+  }
+  if (ZapUnusedHeapArea) {
+    mangle_unused_area();
   }
 }
 
