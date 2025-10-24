@@ -1516,6 +1516,13 @@ public class TestReductions {
 
     // ---------long***Simple ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0",
+                  IRNode.AND_VL,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longAndSimple() {
         long acc = 0xFFFFFFFFFFFFFFFFL; // neutral element
         for (int i = 0; i < SIZE; i++) {
