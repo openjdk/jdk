@@ -823,7 +823,7 @@ bool DwarfFile::DebugAranges::find_compilation_unit_offset(const uint32_t offset
 
   // Fall back to linear scan if building of the cache failed, which can happen
   // if there are heap allocation errors.
-  DWARF_LOG_INFO("Falling back to linear scan of .debug_aranges for '%s'", filepath());
+  DWARF_LOG_INFO("Falling back to linear scan of .debug_aranges for '%s'", _dwarf_file->filepath());
   if (!read_section_header()) {
     DWARF_LOG_ERROR("Failed to read a .debug_aranges header.");
     return false;
