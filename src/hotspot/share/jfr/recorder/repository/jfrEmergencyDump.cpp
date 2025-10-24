@@ -458,6 +458,7 @@ const char* JfrEmergencyDump::chunk_path(const char* repository_path) {
 */
 static void release_locks(Thread* thread) {
   assert(thread != nullptr, "invariant");
+  assert(!thread->is_Java_thread() || JavaThread::cast(thread)->thread_state() == _thread_in_vm, "invariant");
 
 #ifdef ASSERT
   Mutex* owned_lock = thread->owned_locks();
@@ -519,13 +520,14 @@ static void release_locks(Thread* thread) {
 
 class JavaThreadInVMAndNative : public StackObj {
  private:
-  JavaThread* const _jt;
+  JavaThread* _jt;
   JavaThreadState _original_state;
  public:
 
-  JavaThreadInVMAndNative(Thread* t) : _jt(t->is_Java_thread() ? JavaThread::cast(t) : nullptr),
+  JavaThreadInVMAndNative(Thread* t) : _jt(nullptr),
                                        _original_state(_thread_max_state) {
-    if (_jt != nullptr) {
+    if (t != nullptr && t->is_Java_thread()) {
+      _jt = JavaThread::cast(t);
       _original_state = _jt->thread_state();
       if (_original_state != _thread_in_vm) {
         _jt->set_thread_state(_thread_in_vm);
@@ -535,6 +537,7 @@ class JavaThreadInVMAndNative : public StackObj {
 
   ~JavaThreadInVMAndNative() {
     if (_original_state != _thread_max_state) {
+      assert(_jt != nullptr, "invariant");
       _jt->set_thread_state(_original_state);
     }
   }
@@ -574,11 +577,13 @@ static bool guard_reentrancy() {
     Thread* const thread = Thread::current_or_null_safe();
     const traceid tid = thread != nullptr ? JFR_JVM_THREAD_ID(thread) : max_julong;
     if (AtomicAccess::cmpxchg(&_jfr_shutdown_tid, shutdown_tid, tid) != shutdown_tid) {
+      JavaThreadInVMAndNative jtivm(thread);
       if (thread != nullptr) {
-        JavaThreadInVMAndNative jtivm(thread);
         release_locks(thread);
       }
       log_info(jfr, system)("A jfr emergency dump is already in progress, waiting for thread id " UINT64_FORMAT_X, AtomicAccess::load(&_jfr_shutdown_tid));
+      // Transition to a safe safepoint state for the infinite sleep. A nop for non-java threads.
+      jtivm.transition_to_native();
       os::infinite_sleep(); // stay here until we exit normally or crash.
       ShouldNotReachHere();
     }

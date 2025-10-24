@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,11 +117,11 @@ class Deoptimization : AllStatic {
     Reason_unstable_if,           // a branch predicted always false was taken
     Reason_unstable_fused_if,     // fused two ifs that had each one untaken branch. One is now taken.
     Reason_receiver_constraint,   // receiver subtype check failed
+    Reason_not_compiled_exception_handler, // missing compiled exception handler
     Reason_short_running_long_loop,    // profile reports loop runs for small number of iterations
 #if INCLUDE_JVMCI
     Reason_aliasing = Reason_short_running_long_loop, // optimistic assumption about aliasing failed
     Reason_transfer_to_interpreter, // explicit transferToInterpreter()
-    Reason_not_compiled_exception_handler,
     Reason_unresolved,
     Reason_jsr_mismatch,
 #endif
@@ -184,8 +184,8 @@ class Deoptimization : AllStatic {
   // Deoptimizes a frame lazily. Deopt happens on return to the frame.
   static void deoptimize(JavaThread* thread, frame fr, DeoptReason reason = Reason_constraint);
 
+  static address deoptimize_for_missing_exception_handler(nmethod* nm, bool make_not_entrant);
 #if INCLUDE_JVMCI
-  static address deoptimize_for_missing_exception_handler(nmethod* nm);
   static oop get_cached_box(AutoBoxObjectValue* bv, frame* fr, RegisterMap* reg_map, bool& cache_init_error, TRAPS);
 #endif
 
