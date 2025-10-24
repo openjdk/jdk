@@ -448,10 +448,13 @@ bool Matcher::should_attempt_register_biasing(int mopc) {
     case andI_rReg_rReg_mem_ndd_rule:
     case andL_rReg_ndd_rule:
     case andL_rReg_rReg_imm_ndd_rule:
+    case addL_rReg_rReg_mem_ndd_rule:
     case decI_rReg_ndd_rule:
     case decL_rReg_ndd_rule:
     case incI_rReg_ndd_rule:
     case incL_rReg_ndd_rule:
+    case maxI_rReg_ndd_rule:
+    case minI_rReg_ndd_rule:
     case mulI_rReg_ndd_rule:
     case mulI_rReg_rReg_mem_ndd_rule:
     case mulL_rReg_ndd_rule:
