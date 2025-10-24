@@ -32,12 +32,23 @@ jvmtiEnv* jvmti_env;
 static int access_cnt = 0;
 static int modify_cnt = 0;
 
+
+static const char* TEST_CLASS_NAME    = "LFieldEventsFromJNI;";
+
+static const char* ACCESS_FIELD_NAME  = "accessField";
+static const char* ACCESS_FIELD_VALUE = "accessFieldValue";
+static const char* ACCESS_METHOD_NAME = "enableEventsAndAccessField";
+static const char* MODIFY_FIELD_NAME  = "modifyField";
+static const char* MODIFY_FIELD_VALUE = "modifyFieldValue";
+static const char* MODIFY_METHOD_NAME = "enableEventsAndModifyField";
+
+
 static void JNICALL
 cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
               jlocation location, jclass field_klass, jobject object, jfieldID field) {
   char* m_name = get_method_name(jvmti, jni, method);
   LOG("The field access triggered from method '%s'\n", m_name);
-  if (strcmp(m_name, "enableEventsAndAccessField") != 0) {
+  if (strcmp(m_name, ACCESS_METHOD_NAME) != 0) {
     fatal(jni, "The method's name is incorrect.");
   }
   deallocate(jvmti,jni, m_name);
@@ -49,14 +60,14 @@ cbFieldAccess(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
 
   char* f_name = get_field_name(jvmti, jni, field_klass, field);
   LOG("The field name '%s'\n", f_name);
-  if (strcmp(f_name, "accessField") != 0) {
+  if (strcmp(f_name, ACCESS_FIELD_NAME) != 0) {
     fatal(jni, "The access field is incorrect.");
   }
   deallocate(jvmti,jni, f_name);
 
   char* obj_class_name = get_object_class_name(jvmti, jni, object);
   LOG("The object class '%s'\n", obj_class_name);
-  if (strcmp(obj_class_name, "LFieldsEventsFromJNI;") != 0) {
+  if (strcmp(obj_class_name, TEST_CLASS_NAME) != 0) {
     fatal(jni, "The fields's class name is incorrect.");
   }
   deallocate(jvmti,jni, obj_class_name);
@@ -70,7 +81,7 @@ cbFieldModification(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID meth
                     char signature_type, jvalue new_value) {
   char* m_name = get_method_name(jvmti, jni, method);
   LOG("The field modification triggered from method '%s'\n", m_name);
-  if (strcmp(m_name, "enableEventsAndModifyField") != 0) {
+  if (strcmp(m_name, MODIFY_METHOD_NAME) != 0) {
     fatal(jni, "The method's name is incorrect.");
   }
   deallocate(jvmti,jni, m_name);
@@ -82,14 +93,14 @@ cbFieldModification(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID meth
 
   char* f_name = get_field_name(jvmti, jni, field_klass, field);
   LOG("The field name '%s'\n", f_name);
-  if (strcmp(f_name, "modifyField") != 0) {
+  if (strcmp(f_name, MODIFY_FIELD_NAME) != 0) {
     fatal(jni, "The access field is incorrect.");
   }
   deallocate(jvmti,jni, f_name);
 
   char* obj_class_name = get_object_class_name(jvmti, jni, object);
   LOG("The object class '%s'\n", obj_class_name);
-  if (strcmp(obj_class_name, "LFieldsEventsFromJNI;") != 0) {
+  if (strcmp(obj_class_name, TEST_CLASS_NAME) != 0) {
     fatal(jni, "The fields's class name is incorrect.");
   }
   deallocate(jvmti,jni, obj_class_name);
@@ -123,7 +134,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 
 extern "C" {
 JNIEXPORT void JNICALL
-Java_FieldsEventsFromJNI_enableEventsAndAccessField(
+Java_FieldEventsFromJNI_enableEventsAndAccessField(
     JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
 
   jvmtiError err = JVMTI_ERROR_NONE;
@@ -132,7 +143,7 @@ Java_FieldsEventsFromJNI_enableEventsAndAccessField(
   if (cls == nullptr) {
     fatal(jni, "No class found");
   }
-  jfieldID fieldToRead = jni->GetFieldID(cls, "accessField", "Ljava/lang/String;");
+  jfieldID fieldToRead = jni->GetFieldID(cls, ACCESS_FIELD_NAME, "Ljava/lang/String;");
   if (fieldToRead == nullptr) {
     fatal(jni, "No field found");
   }
@@ -153,7 +164,7 @@ Java_FieldsEventsFromJNI_enableEventsAndAccessField(
 
   const char* name_str = jni->GetStringUTFChars(jname, nullptr);
   LOG("The field %s\n", name_str);
-  if (strcmp(name_str, "accessFieldValue") != 0) {
+  if (strcmp(name_str, ACCESS_FIELD_VALUE) != 0) {
     fatal(jni, "The field value is incorrect.");
   }
 
@@ -164,14 +175,14 @@ Java_FieldsEventsFromJNI_enableEventsAndAccessField(
 }
 
 JNIEXPORT void JNICALL
-Java_FieldsEventsFromJNI_enableEventsAndModifyField(
+Java_FieldEventsFromJNI_enableEventsAndModifyField(
     JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   jclass cls = jni->GetObjectClass(self);
   if (cls == nullptr) {
     fatal(jni, "No class found");
   }
-  jfieldID fieldToModify = jni->GetFieldID(cls, "modifyField", "Ljava/lang/String;");
+  jfieldID fieldToModify = jni->GetFieldID(cls, MODIFY_FIELD_NAME, "Ljava/lang/String;");
   if (fieldToModify == nullptr) {
     fatal(jni, "No field found");
   }
