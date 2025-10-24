@@ -184,7 +184,7 @@ class HttpClientSendAsyncExceptionTest {
         testCases.add(new ExceptionTestCase(
                 "UncheckedIOException(IOException)",
                 _ -> { throw uncheckedIOException; },
-                exception -> assertThrowableSame(ioException, exception)));
+                exception -> assertThrowableSame(uncheckedIOException, exception.getCause())));
 
         return testCases;
 

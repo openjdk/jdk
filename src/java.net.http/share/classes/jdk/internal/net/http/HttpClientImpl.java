@@ -1148,8 +1148,9 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                         // This is required to comply with the specification of `HttpClient::sendAsync`.
                         var translatedException = unwrappedException instanceof Error
                                 || unwrappedException instanceof CancellationException
+                                || unwrappedException instanceof IOException
                                 ? unwrappedException
-                                : Utils.toIOException(exception);
+                                : new IOException(unwrappedException);
                         return MinimalFuture.<HttpResponse<T>>failedFuture(translatedException);
                     })
                     .thenCompose(Function.identity());
