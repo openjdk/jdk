@@ -830,9 +830,11 @@ public final class CPrinterJob extends RasterPrinterJob {
                     pathGraphics = new GrayscaleProxyGraphics2D(pathGraphics, printerJob);
                 }
                 painter.print(pathGraphics, FlipPageFormat.getOriginal(page), pageIndex);
-                delegate.surfaceData.invalidate();
-                delegate.dispose();
-                delegate = null;
+                synchronized (sd) {
+                    sd.invalidate();
+                    delegate.dispose();
+                    delegate = null;
+                }
         } catch (PrinterException pe) { throw new java.lang.reflect.UndeclaredThrowableException(pe); }
         }};
 

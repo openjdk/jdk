@@ -36,31 +36,76 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.standard.Destination;
+import java.io.File;
+import java.util.concurrent.CountDownLatch;
 
 public class PrintAfterEndTest implements Printable {
 
-    static volatile Graphics peekgraphics;
-    static volatile Graphics pathgraphics;
+    volatile Graphics peekgraphics;
+    volatile Graphics pathgraphics;
 
-    public static void main(String args[]) throws PrinterException {
+    public static void main(String args[]) throws Exception {
 
-        PrinterJob pjob = PrinterJob.getPrinterJob();
-        pjob.setPrintable(new PrintAfterEndTest());
-        pjob.print();
-
-
-        System.out.println("PeekGraphics= " + peekgraphics);
-        System.out.println("PathGraphics= " + pathgraphics);
-
-        if (peekgraphics != null) {
-            peekgraphics.drawString("random string", 200, 200);
-            peekgraphics.drawLine(100, 100, 300, 300);
-            peekgraphics.dispose();
+        for (int i = 0; i < 500; i++) {
+            PrintAfterEndTest paet = new PrintAfterEndTest();
+            paet.print();
         }
-        if (pathgraphics != null) {
-            pathgraphics.drawString("random string", 200, 200);
-            pathgraphics.drawLine(100, 100, 300, 300);
-            pathgraphics.dispose();
+    }
+
+    void print() throws Exception {
+        PrinterJob pjob = PrinterJob.getPrinterJob();
+        if (pjob == null || pjob.getPrintService() == null) {
+            System.out.println("Unable to create a PrintJob");
+            return;
+        }
+
+        CountDownLatch latch = new CountDownLatch(1);
+        HashPrintRequestAttributeSet aset = new HashPrintRequestAttributeSet();
+        File file = new File("out.prn");
+        Destination destination = new Destination(file.toURI());
+        aset.add(destination);
+        pjob.setPrintable(this);
+        pjob.print(aset);
+
+        DrawRunnable tpeek = new DrawRunnable(peekgraphics, latch);
+        DrawRunnable tpath = new DrawRunnable(pathgraphics, latch);
+        tpeek.start();
+        tpath.start();
+        latch.countDown();
+        tpeek.join();
+        tpath.join();
+   }
+
+    static class DrawRunnable extends Thread {
+
+        Graphics g;
+        CountDownLatch latch;
+        DrawRunnable(Graphics g, CountDownLatch latch) {
+            this.g = g;
+            this.latch = latch;
+        }
+
+        public void run() {
+            if (g == null) {
+                return;
+            }
+            try {
+                latch.await();
+                g.clearRect(10, 10, 100, 100);
+                g.drawRect(0, 300, 200, 400);
+                g.fillRect(0, 300, 200, 400);
+                g.drawLine(0, 100, 200, 100);
+                g.drawString("Hello", 200, 200);
+                g.drawOval(200, 200, 200, 200);
+                int[] pts = new int[] { 10, 200, 100 };
+                g.drawPolyline(pts, pts, pts.length);
+                g.drawPolygon(pts, pts, pts.length);
+                g.fillPolygon(pts, pts, pts.length);
+                g.dispose();
+            } catch (Throwable t) {
+            }
         }
     }
 

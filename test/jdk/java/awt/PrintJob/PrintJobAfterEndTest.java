@@ -31,28 +31,74 @@
 */
 
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.JobAttributes;
+import java.awt.JobAttributes.DialogType;
+import java.awt.JobAttributes.DestinationType;
 import java.awt.PageAttributes;
 import java.awt.PrintJob;
-import java.awt.Graphics;
-import java.awt.JobAttributes.DialogType;
+import java.awt.Toolkit;
+import java.util.concurrent.CountDownLatch;
 
 public class PrintJobAfterEndTest {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         JobAttributes jobAttributes = new JobAttributes();
         jobAttributes.setDialog(DialogType.NONE);
+        jobAttributes.setDestination(DestinationType.FILE);
+        jobAttributes.setFileName("out.prn");
+
         PageAttributes pageAttributes = new PageAttributes();
 
         Frame f = new Frame();
-        PrintJob job = f.getToolkit().getPrintJob(f, "Portrait Test", jobAttributes,
-                                          pageAttributes);
-        if (job != null) {
-            Graphics g = job.getGraphics();
-            job.end();
-            g.drawLine(0, 200, 200, 200);
-            g.dispose();
+        Toolkit tk = f.getToolkit();
+
+        for (int i = 0; i < 500; i++) {
+            PrintJob job = tk.getPrintJob(f, "Print Crash Test", jobAttributes, pageAttributes);
+            if (job != null) {
+                Graphics g = job.getGraphics();
+                CountDownLatch latch = new CountDownLatch(1);
+
+                Thread endThread = new Thread(() -> {
+                    try {
+                        latch.await();
+                        job.end();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                });
+
+                Thread drawThread = new Thread(() -> {
+                    try {
+                        latch.await();
+                        g.clearRect(10, 10, 100, 100);
+                        g.drawRect(0, 300, 200, 400);
+                        g.fillRect(0, 300, 200, 400);
+                        g.drawLine(0, 100, 200, 100);
+                        g.drawString("Hello", 200, 200);
+                        g.drawOval(200, 200, 200, 200);
+                        int[] pts = new int[] { 10, 200, 100 };
+                        g.drawPolyline(pts, pts, pts.length);
+                        g.drawPolygon(pts, pts, pts.length);
+                        g.fillPolygon(pts, pts, pts.length);
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                });
+
+                if ( i % 2 == 0) {
+                    drawThread.start();
+                    endThread.start();
+                } else {
+                    endThread.start();
+                    drawThread.start();
+                }
+                latch.countDown();
+
+                endThread.join();
+                drawThread.join();
+            }
         }
     }
 }
