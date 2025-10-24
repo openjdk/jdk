@@ -160,15 +160,6 @@ void ShenandoahDegenGC::op_degenerated() {
           _generation->cancel_marking();
         }
 
-        if (heap->is_concurrent_mark_in_progress()) {
-          // If either old or young marking is in progress, the SATB barrier will be enabled.
-          // The SATB buffer may hold a mix of old and young pointers. The old pointers need to be
-          // transferred to the old generation mark queues and the young pointers are NOT part
-          // of this snapshot, so they must be dropped here. It is safe to drop them here because
-          // we will rescan the roots on this safepoint.
-          heap->old_generation()->transfer_pointers_from_satb();
-        }
-
         if (_degen_point == ShenandoahDegenPoint::_degenerated_roots) {
           // We only need this if the concurrent cycle has already swapped the card tables.
           // Marking will use the 'read' table, but interesting pointers may have been
