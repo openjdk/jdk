@@ -2672,7 +2672,7 @@ address MacroAssembler::emit_trampoline_stub(int destination_toc_offset,
 
 // "The box" is the space on the stack where we copy the object mark.
 void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register obj, Register box,
-                                                           Register tmp1, Register tmp2, Register tmp3) {
+                                               Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(obj, box, tmp1, tmp2, tmp3);
   assert(UseObjectMonitorTable || tmp3 == noreg, "tmp3 not needed");
   assert(flag == CR0, "bad condition register");
@@ -2848,7 +2848,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 }
 
 void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Register obj, Register box,
-                                                             Register tmp1, Register tmp2, Register tmp3) {
+                                                 Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(obj, tmp1, tmp2, tmp3);
   assert(flag == CR0, "bad condition register");
 

@@ -84,6 +84,7 @@
 #include "runtime/stackValue.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
@@ -1671,7 +1672,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
             ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
-                                                              deoptee_thread, thread);
+                                                           deoptee_thread, thread);
         }
         assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");

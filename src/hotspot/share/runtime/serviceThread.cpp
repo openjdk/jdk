@@ -39,6 +39,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/serviceThread.hpp"
+#include "runtime/synchronizer.hpp"
 #include "services/finalizerService.hpp"
 #include "services/gcNotifier.hpp"
 #include "services/lowMemoryDetector.hpp"

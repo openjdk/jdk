@@ -44,7 +44,7 @@
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
 
 void C2_MacroAssembler::fast_lock(Register obj, Register box,
-                                              Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+                                  Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 
@@ -206,7 +206,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
 }
 
 void C2_MacroAssembler::fast_unlock(Register obj, Register box,
-                                                Register tmp1, Register tmp2, Register tmp3) {
+                                    Register tmp1, Register tmp2, Register tmp3) {
   // Flag register, zero for success; non-zero for failure.
   Register flag = t1;
 

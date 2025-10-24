@@ -30,9 +30,9 @@
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(ConditionRegister flag, Register obj, Register box,
-                             Register tmp1, Register tmp2, Register tmp3);
+                 Register tmp1, Register tmp2, Register tmp3);
   void fast_unlock(ConditionRegister flag, Register obj, Register box,
-                               Register tmp1, Register tmp2, Register tmp3);
+                   Register tmp1, Register tmp2, Register tmp3);
 
   void load_narrow_klass_compact_c2(Register dst, Register obj, int disp);
 

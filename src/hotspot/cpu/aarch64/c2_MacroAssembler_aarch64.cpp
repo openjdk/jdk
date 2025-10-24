@@ -148,7 +148,7 @@ address C2_MacroAssembler::arrays_hashcode(Register ary, Register cnt, Register 
 }
 
 void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
-                                              Register t2, Register t3) {
+                                  Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3, rscratch2);
 
   // Handle inflated monitor.
@@ -304,7 +304,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
 }
 
 void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
-                                                Register t2, Register t3) {
+                                    Register t2, Register t3) {
   assert_different_registers(obj, box, t1, t2, t3);
 
   // Handle inflated monitor.

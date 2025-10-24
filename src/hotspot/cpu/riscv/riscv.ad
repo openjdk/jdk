@@ -11045,7 +11045,7 @@ instruct tlsLoadP(javaThread_RegP dst)
 // inlined locking and unlocking
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
-                                iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
+                     iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegPNoSp tmp4)
 %{
   match(Set cr (FastLock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4);
@@ -11055,7 +11055,7 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
 
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
+                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register, $tmp4$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -11063,7 +11063,7 @@ instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box,
 
 // using t1 as the 'flag' register to bridge the BoolNode producers and consumers
 instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box,
-                                  iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
+                       iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
@@ -11073,7 +11073,7 @@ instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box,
 
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register,
-                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
   %}
 
   ins_pipe(pipe_serial);

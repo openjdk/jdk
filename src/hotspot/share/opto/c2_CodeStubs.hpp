@@ -108,7 +108,7 @@ private:
   Label _unlocked_continuation;
 public:
   C2FastUnlockStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
-    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+                   _obj(obj), _mark(mark), _t(t), _thread(thread) {}
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
   Label& slow_path() { return _slow_path; }

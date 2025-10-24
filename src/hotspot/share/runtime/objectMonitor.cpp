@@ -50,6 +50,7 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "services/threadService.hpp"
 #include "utilities/debug.hpp"

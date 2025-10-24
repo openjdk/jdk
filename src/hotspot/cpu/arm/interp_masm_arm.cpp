@@ -946,7 +946,7 @@ void InterpreterMacroAssembler::unlock_object(Register Rlock) {
   b(slow_case, ne);
 
   fast_unlock(Robj /* obj */, Rlock /* t1 */, Rmark /* t2 */, Rtemp /* t3 */,
-                     1 /* savemask (save t1) */, slow_case);
+              1 /* savemask (save t1) */, slow_case);
   b(done);
 
   bind(slow_case);

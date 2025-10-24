@@ -2986,7 +2986,7 @@ static JNINativeMethod methods[] = {
   {CC"isUbsanEnabled", CC"()Z",                       (void*)&WB_IsUbsanEnabled },
   {CC"getInUseMonitorCount", CC"()J", (void*)&WB_getInUseMonitorCount  },
   {CC"getLockStackCapacity", CC"()I",                 (void*)&WB_getLockStackCapacity },
-  {CC"supportsRecursiveFastLocking", CC"()Z",  (void*)&WB_supportsRecursiveFastLocking },
+  {CC"supportsRecursiveFastLocking", CC"()Z",         (void*)&WB_supportsRecursiveFastLocking },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },

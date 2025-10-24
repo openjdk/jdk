@@ -50,6 +50,7 @@
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/synchronizer.hpp"
 #include "runtime/synchronizer.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
