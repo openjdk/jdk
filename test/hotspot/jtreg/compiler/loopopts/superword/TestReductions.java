@@ -31,10 +31,8 @@
 
 package compiler.loopopts.superword;
 
-import jdk.test.lib.Utils;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Random;
 
 import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
@@ -47,33 +45,34 @@ import compiler.lib.generators.Generator;
  */
 public class TestReductions {
     static int SIZE = 1024*8;
-    private static final Random RANDOM = Utils.getRandomInstance();
     public static final Generator<Integer> GEN_I = G.ints();
+    public static final Generator<Long>    GEN_L = G.longs();
     public static final Generator<Float>   GEN_F = G.floats();
+    public static final Generator<Double>  GEN_D = G.doubles();
 
     private static byte[] in1B   = fillRandom(new byte[SIZE]);
     private static byte[] in2B   = fillRandom(new byte[SIZE]);
     private static byte[] in3B   = fillRandom(new byte[SIZE]);
-    //private static char[] in1C   = fillRandom(new char[SIZE]);
-    //private static char[] in2C   = fillRandom(new char[SIZE]);
-    //private static char[] in3C   = fillRandom(new char[SIZE]);
-    //private static short[] in1S  = fillRandom(new short[SIZE]);
-    //private static short[] in2S  = fillRandom(new short[SIZE]);
-    //private static short[] in3S  = fillRandom(new short[SIZE]);
+    private static char[] in1C   = fillRandom(new char[SIZE]);
+    private static char[] in2C   = fillRandom(new char[SIZE]);
+    private static char[] in3C   = fillRandom(new char[SIZE]);
+    private static short[] in1S  = fillRandom(new short[SIZE]);
+    private static short[] in2S  = fillRandom(new short[SIZE]);
+    private static short[] in3S  = fillRandom(new short[SIZE]);
 
     private static int[] in1I    = fillRandom(new int[SIZE]);
     private static int[] in2I    = fillRandom(new int[SIZE]);
     private static int[] in3I    = fillRandom(new int[SIZE]);
-    //private static long[] in1L   = fillRandom(new long[SIZE]);
-    //private static long[] in2L   = fillRandom(new long[SIZE]);
-    //private static long[] in3L   = fillRandom(new long[SIZE]);
+    private static long[] in1L   = fillRandom(new long[SIZE]);
+    private static long[] in2L   = fillRandom(new long[SIZE]);
+    private static long[] in3L   = fillRandom(new long[SIZE]);
 
-    //private static float[] in1F  = fillRandom(new float[SIZE]);
-    //private static float[] in2F  = fillRandom(new float[SIZE]);
-    //private static float[] in3F  = fillRandom(new float[SIZE]);
-    //private static double[] in1D = fillRandom(new doulbe[SIZE]);
-    //private static double[] in2D = fillRandom(new doulbe[SIZE]);
-    //private static double[] in3D = fillRandom(new doulbe[SIZE]);
+    private static float[] in1F  = fillRandom(new float[SIZE]);
+    private static float[] in2F  = fillRandom(new float[SIZE]);
+    private static float[] in3F  = fillRandom(new float[SIZE]);
+    private static double[] in1D = fillRandom(new double[SIZE]);
+    private static double[] in2D = fillRandom(new double[SIZE]);
+    private static double[] in3D = fillRandom(new double[SIZE]);
 
     interface TestFunction {
         Object run();
@@ -135,8 +134,37 @@ public class TestReductions {
         return a;
     }
 
+    static char[] fillRandom(char[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (char)(int)GEN_I.next();
+        }
+        return a;
+    }
+
+    static short[] fillRandom(short[] a) {
+        for (int i = 0; i < a.length; i++) {
+            a[i] = (short)(int)GEN_I.next();
+        }
+        return a;
+    }
+
     static int[] fillRandom(int[] a) {
         G.fill(GEN_I, a);
+        return a;
+    }
+
+    static long[] fillRandom(long[] a) {
+        G.fill(GEN_L, a);
+        return a;
+    }
+
+    static float[] fillRandom(float[] a) {
+        G.fill(GEN_F, a);
+        return a;
+    }
+
+    static double[] fillRandom(double[] a) {
+        G.fill(GEN_D, a);
         return a;
     }
 
