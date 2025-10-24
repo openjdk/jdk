@@ -235,7 +235,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void align_backward_branch_target();
   void align_call(LIR_Code code);
 
-  void maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp);
+  void increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp);
 
   void negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp = LIR_OprFact::illegalOpr);
   void leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = nullptr);

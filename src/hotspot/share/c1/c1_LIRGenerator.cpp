@@ -935,7 +935,7 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
       __ move(data_reg, data_addr);
     } else {
       LIR_Opr tmp = new_register(T_INT);
-      __ maybe_inc_profile_counter(LIR_OprFact::intConst(DataLayout::counter_increment), data_addr, data_reg, tmp);
+      __ increment_profile_ctr(LIR_OprFact::intConst(DataLayout::counter_increment), data_addr, data_reg, tmp);
     }
   }
 }
@@ -2387,7 +2387,7 @@ void LIRGenerator::do_Goto(Goto* x) {
       LIR_Opr tmp = new_register(T_INT);
       LIR_Opr dummy = new_register(T_INT);
       LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
-      __ maybe_inc_profile_counter(inc, counter_addr, tmp, dummy);
+      __ increment_profile_ctr(inc, counter_addr, tmp, dummy);
     }
   }
 
@@ -3193,7 +3193,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     __ add(result, step, result);
     __ store(result, counter);
   } else {
-    __ maybe_inc_profile_counter(step, counter, result, tmp);
+    __ increment_profile_ctr(step, counter, result, tmp);
   }
   if (notify && (!backedge || UseOnStackReplacement)) {
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());

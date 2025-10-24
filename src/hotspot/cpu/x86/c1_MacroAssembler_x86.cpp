@@ -319,7 +319,7 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
   addl(state, 12345);
 }
 
-void C1_MacroAssembler::maybe_skip_profiling(Register state, Register temp, Label &skip) {
+void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &skip) {
   if (ProfileCaptureRatio != 1) {
     step_random(state, temp);
 

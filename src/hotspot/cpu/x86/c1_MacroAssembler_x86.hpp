@@ -130,7 +130,7 @@
 
   // Randomized profile capture
   void step_random(Register state, Register temp);
-  void maybe_skip_profiling(Register state, Register temp, Label &skip);
+  void step_profile_rng(Register state, Register temp, Label &skip);
   void save_profile_rng();
   void restore_profile_rng();
 

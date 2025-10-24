@@ -1335,7 +1335,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
     Label update_done;
 
-    __ maybe_skip_profiling(r_profile_rng, k_RInfo, update_done);
+    __ step_profile_rng(r_profile_rng, k_RInfo, update_done);
 
     Register recv = k_RInfo;
     __ load_klass(recv, obj, tmp_load_klass);
@@ -2765,8 +2765,7 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-// Rename to increment_profile_ctr
-void LIR_Assembler::maybe_inc_profile_counter(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
+void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
   Register temp = temp_op->as_register();
   Address dest_adr = as_Address(addr->as_address_ptr());
 
@@ -2840,7 +2839,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
 
   Register temp = op->tmp1()->as_register_lo();
 
-  __ maybe_skip_profiling(r_profile_rng, temp, dont);
+  __ step_profile_rng(r_profile_rng, temp, dont);
 
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
@@ -2943,7 +2942,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
 #endif
 
   // Subsampling profile capture
-  __ maybe_skip_profiling(r_profile_rng, rscratch1, next);
+  __ step_profile_rng(r_profile_rng, rscratch1, next);
 
   if (do_null) {
     __ testptr(obj, obj);
