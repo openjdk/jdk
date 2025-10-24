@@ -269,11 +269,11 @@ public interface MemoryMXBean extends PlatformManagedObject {
 
     /**
      * Returns the approximate accumulated time, in nanoseconds,
-     * spent in garbage collection.
+     * spent in garbage collection (GC).
      *
-     * <p> This is the CPU time used by all garbage collection
-     * activity, including any overhead, which means the result
-     * may be non-zero even if no GC has occurred.
+     * <p> The time spent in spent in GC is the CPU time used by
+     * all GC activity, including any overhead, which means the
+     * result may be non-zero even if no GC has occurred.
      *
      * This method returns {@code -1} if the platform does
      * not support this operation or the information is not
@@ -283,19 +283,19 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * May be used in conjunction with {@link jdk.management/com.sun.management.OperatingSystemMXBean#getProcessCpuTime()}
      * for calculating the GC's usage of CPU time as a whole.
      *
-     * @implNote  The specifics on what constitutes the time spent
-     * in garbage collection is highly implementation dependent.
-     * In the HotSpot Virtual Machine implementation reported
-     * time will include relevant implementation-specific details such
-     * as driver threads, workers, VM Operations and string
-     * deduplication (if enabled). Driver threads may be created by a GC
-     * to orchestrate its work. The return value can be -1 if
-     * called when measurement is not possible, such as during shutdown.
+     * @implNote The specifics on what constitutes the time spent
+     * in GC is highly implementation dependent. In the HotSpot
+     * Virtual Machine, this time includes relevant
+     * implementation-specific details such as driver threads,
+     * workers, VM Operations and string deduplication (if
+     * enabled). Driver threads may be created by a GC to
+     * orchestrate its work. The return value can be -1 if called
+     * when measurement is not possible, such as during shutdown.
      *
      * @implSpec The default implementation return {@code -1}.
      *
-     * @return the total accumulated CPU time for garbage collection
-     * in nanoseconds, or {@code -1}.
+     * @return the total accumulated CPU time for GC in
+     * nanoseconds, or {@code -1}.
      *
      * @since 26
      */
