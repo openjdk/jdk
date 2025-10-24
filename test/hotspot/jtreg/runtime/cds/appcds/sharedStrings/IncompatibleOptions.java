@@ -186,6 +186,7 @@ public class IncompatibleOptions {
         System.out.println("Testcase: " + testCaseNr);
         OutputAnalyzer output = TestCommon.dump(appJar, TestCommon.list("Hello"),
             TestCommon.concat(vmOptionsPrefix,
+                "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UseCompressedOops",
                 collectorOption,
                 "-XX:SharedArchiveConfigFile=" + TestCommon.getSourceFile("SharedStringsBasic.txt"),
@@ -213,11 +214,13 @@ public class IncompatibleOptions {
         if (!extraOption.isEmpty()) {
             output = TestCommon.exec(appJar,
                 TestCommon.concat(vmOptionsPrefix,
+                    "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UseCompressedOops",
                     collectorOption, "-Xlog:cds", extraOption, "HelloString"));
         } else {
             output = TestCommon.exec(appJar,
                 TestCommon.concat(vmOptionsPrefix,
+                    "-XX:+UnlockDiagnosticVMOptions",
                     "-XX:+UseCompressedOops",
                     collectorOption, "-Xlog:cds", "HelloString"));
         }

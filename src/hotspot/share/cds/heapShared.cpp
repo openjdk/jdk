@@ -1450,7 +1450,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
         log_info(aot, heap)("subgraph %s cannot be used because full module graph is disabled",
                             k->external_name());
       }
-      return nullptr; // This was deleted; why?
+      return nullptr;
     }
 
     if (record->has_non_early_klasses() && JvmtiExport::should_post_class_file_load_hook()) {
