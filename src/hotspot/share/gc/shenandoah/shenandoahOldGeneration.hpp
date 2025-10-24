@@ -221,7 +221,7 @@ public:
   // also cases where the referent of a weak reference ends up in the SATB
   // and is later collected. In these cases the oop in the SATB buffer becomes
   // invalid and the _next_ cycle will crash during its marking phase. To
-  // avoid this problem, we "purge" the SATB buffers during a handhsake just
+  // avoid this problem, we "purge" the SATB buffers during a handshake just
   // before the final update references safepoint references phase if (and only if)
   // an old generation mark is in progress.
   //
