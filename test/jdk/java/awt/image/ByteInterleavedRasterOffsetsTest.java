@@ -45,7 +45,7 @@ public class ByteInterleavedOffsetsTest {
         WritableRaster raster =
             Raster.createInterleavedRaster(databuf, 1, 1, 3, 3, bandOffsets, null);
         int[] pixels = raster.getPixels(0, 0, 1, 1, (int[])null);
-        byte[] elements = (byte[])raster.getDataElements(0, 0,null);
+        byte[] elements = (byte[])raster.getDataElements(0, 0, null);
         ColorModel colorModel = new ComponentColorModel(
                 ColorSpace.getInstance(ColorSpace.CS_sRGB), false, false,
                 ColorModel.OPAQUE, DataBuffer.TYPE_BYTE);
