@@ -429,10 +429,13 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
     ResolvedFieldEntry* rfi = _resolved_field_entries->adr_at(i);
     int cp_index = rfi->constant_pool_index();
     bool archived = false;
-    bool resolved = rfi->is_resolved(Bytecodes::_getstatic) ||
-                    rfi->is_resolved(Bytecodes::_putstatic) ||
-                    rfi->is_resolved(Bytecodes::_getfield)  ||
-                    rfi->is_resolved(Bytecodes::_putfield);
+    bool resolved = false;
+
+    if (rfi->is_resolved(Bytecodes::_getfield) || rfi->is_resolved(Bytecodes::_putfield) ||
+        ((rfi->is_resolved(Bytecodes::_getstatic) || rfi->is_resolved(Bytecodes::_putstatic)) && VM_Version::supports_fast_class_init_checks())) {
+      resolved = true;
+    }
+
     if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
         && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
       rfi->mark_and_relocate();
