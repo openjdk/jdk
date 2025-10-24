@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,9 @@
  * @summary Tests for HttpExchange set/getAttribute
  * @library /test/lib
  * @run junit/othervm ExchangeAttributeTest
+ * @run junit/othervm -Djdk.httpserver.attributes=context ExchangeAttributeTest
+ * @run junit/othervm -Djdk.httpserver.attributes=random-string ExchangeAttributeTest
+ * @run junit/othervm -Djdk.httpserver.attributes ExchangeAttributeTest
  */
 
 import com.sun.net.httpserver.HttpExchange;
@@ -71,7 +74,7 @@ public class ExchangeAttributeTest {
     public void testExchangeAttributes() throws Exception {
         var handler = new AttribHandler();
         var server = HttpServer.create(new InetSocketAddress(LOOPBACK_ADDR,0), 10);
-        server.createContext("/", handler);
+        server.createContext("/", handler).getAttributes().put("attr", "context-val");
         server.start();
         try {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
@@ -101,8 +104,17 @@ public class ExchangeAttributeTest {
         @java.lang.Override
         public void handle(HttpExchange exchange) throws IOException {
             try {
-                exchange.setAttribute("attr", "val");
-                assertEquals("val", exchange.getAttribute("attr"));
+                if ("context".equals(System.getProperty("jdk.httpserver.attributes"))) {
+                    exchange.setAttribute("attr", "val");
+                    assertEquals("val", exchange.getAttribute("attr"));
+                    assertEquals("val", exchange.getHttpContext().getAttributes().get("attr"));
+                } else {
+                    assertNull(exchange.getAttribute("attr"));
+                    assertEquals("context-val", exchange.getHttpContext().getAttributes().get("attr"));
+                    exchange.setAttribute("attr", "val");
+                    assertEquals("val", exchange.getAttribute("attr"));
+                    assertEquals("context-val", exchange.getHttpContext().getAttributes().get("attr"));
+                }
                 exchange.setAttribute("attr", null);
                 assertNull(exchange.getAttribute("attr"));
                 exchange.sendResponseHeaders(200, -1);
