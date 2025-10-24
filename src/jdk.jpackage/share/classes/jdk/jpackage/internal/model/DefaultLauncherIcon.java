@@ -56,6 +56,6 @@ public sealed interface DefaultLauncherIcon extends LauncherIcon {
     public static DefaultLauncherIcon INSTANCE = new Details.Impl();
 
     static final class Details {
-        private final static class Impl implements DefaultLauncherIcon {}
+        private static final class Impl implements DefaultLauncherIcon {}
     }
 }
