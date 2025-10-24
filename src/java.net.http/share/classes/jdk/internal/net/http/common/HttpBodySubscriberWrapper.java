@@ -292,6 +292,9 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
      */
     public final void complete(Throwable t) {
         if (markCompleted()) {
+            if (preTerminationCallback != null) {
+                preTerminationCallback.run();
+            }
             logComplete(t);
             tryUnregister();
             t  = withError = Utils.getCompletionCause(t);
@@ -407,17 +410,11 @@ public class HttpBodySubscriberWrapper<T> implements TrustedSubscriber<T> {
 
     @Override
     public void onError(Throwable throwable) {
-        if (preTerminationCallback != null) {
-            preTerminationCallback.run();
-        }
         complete(throwable);
     }
 
     @Override
     public void onComplete() {
-        if (preTerminationCallback != null) {
-            preTerminationCallback.run();
-        }
         complete(null);
     }
 
