@@ -26,7 +26,23 @@
  * @bug 8340093
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestReductions xxxx
+ * @run driver compiler.loopopts.superword.TestReductions P0
+ */
+
+/*
+ * @test
+ * @bug 8340093
+ * @summary Test vectorization of reduction loops.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestReductions P1
+ */
+
+/*
+ * @test
+ * @bug 8340093
+ * @summary Test vectorization of reduction loops.
+ * @library /test/lib /
+ * @run driver compiler.loopopts.superword.TestReductions P2
  */
 
 package compiler.loopopts.superword;
@@ -87,7 +103,9 @@ public class TestReductions {
     public static void main(String[] args) {
         TestFramework framework = new TestFramework(TestReductions.class);
         switch (args[0]) {
-            case "xxxx" -> { framework.addFlags("-XX:-AlignVector"); }
+            case "P0" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=0"); }
+            case "P1" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=1"); }
+            case "P2" -> { framework.addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:AutoVectorizationOverrideProfitability=2"); }
             default -> { throw new RuntimeException("Test argument not recognized: " + args[0]); }
         };
         framework.start();
@@ -436,6 +454,7 @@ public class TestReductions {
 
     // ---------byte***Simple ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteAndSimple() {
         byte acc = (byte)0xFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -446,6 +465,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteOrSimple() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -456,6 +476,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteXorSimple() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -466,6 +487,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteAddSimple() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -476,6 +498,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMulSimple() {
         byte acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -486,6 +509,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMinSimple() {
         byte acc = Byte.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -496,6 +520,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMaxSimple() {
         byte acc = Byte.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -507,6 +532,7 @@ public class TestReductions {
 
     // ---------byte***DotProduct ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteAndDotProduct() {
         byte acc = (byte)0xFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -517,6 +543,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteOrDotProduct() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -527,6 +554,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteXorDotProduct() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -537,6 +565,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteAddDotProduct() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -547,6 +576,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMulDotProduct() {
         byte acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -557,6 +587,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMinDotProduct() {
         byte acc = Byte.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -567,6 +598,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMaxDotProduct() {
         byte acc = Byte.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -578,6 +610,7 @@ public class TestReductions {
 
     // ---------byte***Big ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteAndBig() {
         byte acc = (byte)0xFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -588,6 +621,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteOrBig() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -598,6 +632,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteXorBig() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -608,6 +643,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteAddBig() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -618,6 +654,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMulBig() {
         byte acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -628,6 +665,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMinBig() {
         byte acc = Byte.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -638,6 +676,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_B) // does not vectorize for now, might in the future.
     private static byte byteMaxBig() {
         byte acc = Byte.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -649,6 +688,7 @@ public class TestReductions {
 
     // ---------char***Simple ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charAndSimple() {
         char acc = (char)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -659,6 +699,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charOrSimple() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -669,6 +710,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charXorSimple() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -679,6 +721,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charAddSimple() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -689,6 +732,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMulSimple() {
         char acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -699,6 +743,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMinSimple() {
         char acc = Character.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -709,6 +754,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMaxSimple() {
         char acc = Character.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -720,6 +766,7 @@ public class TestReductions {
 
     // ---------char***DotProduct ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charAndDotProduct() {
         char acc = (char)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -730,6 +777,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charOrDotProduct() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -740,6 +788,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charXorDotProduct() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -750,6 +799,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charAddDotProduct() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -760,6 +810,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMulDotProduct() {
         char acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -770,6 +821,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMinDotProduct() {
         char acc = Character.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -780,6 +832,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMaxDotProduct() {
         char acc = Character.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -791,6 +844,7 @@ public class TestReductions {
 
     // ---------char***Big ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charAndBig() {
         char acc = (char)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -801,6 +855,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charOrBig() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -811,6 +866,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charXorBig() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -821,6 +877,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charAddBig() {
         char acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -831,6 +888,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMulBig() {
         char acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -841,6 +899,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMinBig() {
         char acc = Character.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -851,6 +910,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_C) // does not vectorize for now, might in the future.
     private static char charMaxBig() {
         char acc = Character.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -862,6 +922,7 @@ public class TestReductions {
 
     // ---------short***Simple ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortAndSimple() {
         short acc = (short)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -872,6 +933,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortOrSimple() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -882,6 +944,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortXorSimple() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -892,6 +955,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortAddSimple() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -902,6 +966,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMulSimple() {
         short acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -912,6 +977,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMinSimple() {
         short acc = Short.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -922,6 +988,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMaxSimple() {
         short acc = Short.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -933,6 +1000,7 @@ public class TestReductions {
 
     // ---------short***DotProduct ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortAndDotProduct() {
         short acc = (short)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -943,6 +1011,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortOrDotProduct() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -953,6 +1022,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortXorDotProduct() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -963,6 +1033,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortAddDotProduct() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -973,6 +1044,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMulDotProduct() {
         short acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -983,6 +1055,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMinDotProduct() {
         short acc = Short.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -993,6 +1066,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMaxDotProduct() {
         short acc = Short.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1004,6 +1078,7 @@ public class TestReductions {
 
     // ---------short***Big ------------------------------------------------------------
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortAndBig() {
         short acc = (short)0xFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1014,6 +1089,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortOrBig() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1024,6 +1100,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortXorBig() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1034,6 +1111,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortAddBig() {
         short acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1044,6 +1122,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMulBig() {
         short acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1054,6 +1133,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMinBig() {
         short acc = Short.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1064,6 +1144,7 @@ public class TestReductions {
     }
 
     @Test
+    @IR(failOn = IRNode.LOAD_VECTOR_S) // does not vectorize for now, might in the future.
     private static short shortMaxBig() {
         short acc = Short.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1075,6 +1156,13 @@ public class TestReductions {
 
     // ---------int***Simple ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0",
+                  IRNode.AND_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intAndSimple() {
         int acc = 0xFFFFFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
