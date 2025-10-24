@@ -467,8 +467,8 @@ class methodHandle;
   do_intrinsic(_Reference_clear0,           java_lang_ref_Reference, clear0_name,    void_method_signature, F_RN)       \
   do_intrinsic(_PhantomReference_clear0,    java_lang_ref_PhantomReference, clear0_name, void_method_signature, F_RN)   \
                                                                                                                         \
-  /* support for com.sun.crypto.provider.AESCrypt and some of its callers */                                            \
-  do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AESCrypt")                                   \
+  /* support for com.sun.crypto.provider.AES_Crypt and some of its callers */                                            \
+  do_class(com_sun_crypto_provider_aescrypt,      "com/sun/crypto/provider/AES_Crypt")                                   \
   do_intrinsic(_aescrypt_encryptBlock, com_sun_crypto_provider_aescrypt, encryptBlock_name, byteArray_int_byteArray_int_signature, F_R)   \
   do_intrinsic(_aescrypt_decryptBlock, com_sun_crypto_provider_aescrypt, decryptBlock_name, byteArray_int_byteArray_int_signature, F_R)   \
    do_name(     encryptBlock_name,                                 "implEncryptBlock")                                  \

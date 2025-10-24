@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 10, time = 1)
 @Measurement(iterations = 5, time = 2)
 @Fork(3)
-public class FloatingDecimal {
+public class Doubles {
 
     private double[] randomArray, twoDecimalsArray, integerArray;
     private static final int TESTSIZE = 1000;
@@ -62,6 +63,14 @@ public class FloatingDecimal {
             randomArray[i] = r.nextDouble() * 10000.0D;
             twoDecimalsArray[i] = ((double) (10000 - r.nextInt(20000))) / 100;
             integerArray[i] = (double) (100 - r.nextInt(200));
+        }
+    }
+
+    @Benchmark
+    @OperationsPerInvocation(TESTSIZE)
+    public void toHexString(Blackhole bh) {
+        for (double d : randomArray) {
+            bh.consume(Double.toHexString(d));
         }
     }
 
