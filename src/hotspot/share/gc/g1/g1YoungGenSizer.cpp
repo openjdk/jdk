@@ -41,6 +41,24 @@ G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults),
     }
   }
 
+  if (FLAG_IS_CMDLINE(NewSize) && NewSize >= InitialHeapSize) {
+      log_warning(gc, ergo)("NewSize (%zuk) is equal to or greater than initial heap size (%zuk).  A new "
+                            "NewSize of %zuk will be used.",
+                            NewSize/K, InitialHeapSize/K, InitialHeapSize/K);
+      FLAG_SET_ERGO(NewSize, InitialHeapSize);
+  }
+
+  if (!FLAG_IS_DEFAULT(MaxNewSize)) {
+    if (MaxNewSize >= MaxHeapSize) {
+      if (FLAG_IS_CMDLINE(MaxNewSize)) {
+        log_warning(gc, ergo)("MaxNewSize (%zuk) is equal to or greater than the entire "
+                              "heap (%zuk).  A new MaxNewSize of %zuk will be used.",
+                              MaxNewSize/K, MaxHeapSize/K, MaxHeapSize/K);
+      }
+      FLAG_SET_ERGO(MaxNewSize, MaxHeapSize);
+    }
+  }
+
   if (NewSize > MaxNewSize) {
     if (FLAG_IS_CMDLINE(MaxNewSize)) {
       log_warning(gc, ergo)("NewSize (%zuk) is greater than the MaxNewSize (%zuk). "
