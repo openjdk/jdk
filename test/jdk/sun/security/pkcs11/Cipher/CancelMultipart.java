@@ -26,7 +26,7 @@
  * @bug 8258833
  * @library /test/lib ..
  * @modules jdk.crypto.cryptoki/sun.security.pkcs11:open
- * @run main/othervm CancelMultipart
+ * @run main/othervm --enable-final-field-mutation=ALL-UNNAMED CancelMultipart
  */
 
 import java.lang.reflect.Field;
