@@ -683,7 +683,7 @@ void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t siz
   }
 }
 
-void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread, size_t size) {
+void ShenandoahOldGeneration::log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const {
   // We squelch excessive reports to reduce noise in logs.
   constexpr size_t MaxReportsPerEpoch = 4;
   static size_t last_report_epoch = 0;

@@ -173,7 +173,7 @@ public:
 
   // Increment promotion failure counters, optionally log a more detailed message
   void handle_failed_promotion(Thread* thread, size_t size);
-  void log_failed_promotion(LogStream& ls, Thread* thread, size_t size);
+  void log_failed_promotion(LogStream& ls, Thread* thread, size_t size) const;
 
   // A successful evacuation re-dirties the cards and registers the object with the remembered set
   void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
