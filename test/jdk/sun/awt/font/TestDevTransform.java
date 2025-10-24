@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,31 @@
  */
 
 /*
- * @test
+ * @test id=dialog_double
  * @bug 4269775 8341535
  * @summary Check that different text rendering APIs agree
+ * @run main/othervm TestDevTransform DIALOG DOUBLE
+ */
+
+/*
+ * @test id=dialog_float
+ * @bug 4269775 8341535
+ * @summary Check that different text rendering APIs agree
+ * @run main/othervm TestDevTransform DIALOG FLOAT
+ */
+
+/*
+ * @test id=monospaced_double
+ * @bug 4269775 8341535
+ * @summary Check that different text rendering APIs agree
+ * @run main/othervm TestDevTransform MONOSPACED DOUBLE
+ */
+
+/*
+ * @test id=monospaced_float
+ * @bug 4269775 8341535
+ * @summary Check that different text rendering APIs agree
+ * @run main/othervm TestDevTransform MONOSPACED FLOAT
  */
 
 /**
@@ -66,6 +88,8 @@ public class TestDevTransform {
     static String test = "This is only a test";
     static double angle = Math.PI / 6.0;  // Rotate 30 degrees
     static final int W = 400, H = 400;
+    static boolean useDialog;
+    static boolean useDouble;
 
     static void draw(Graphics2D g2d, TextLayout layout,
                       float x, float y, float scalex) {
@@ -101,9 +125,19 @@ public class TestDevTransform {
          g2d.setColor(Color.white);
          g2d.fillRect(0, 0, W, H);
          g2d.setColor(Color.black);
-         g2d.scale(1.481f, 1.481);   // Convert to 108 dpi
+         if (useDouble) {
+             g2d.scale(1.481, 1.481);   // Convert to 108 dpi
+         } else {
+             g2d.scale(1.481f, 1.481f);   // Convert to 108 dpi
+         }
          g2d.addRenderingHints(hints);
-         Font font = new Font(Font.DIALOG, Font.PLAIN, 12);
+         String name;
+         if (useDialog) {
+             name = Font.DIALOG;
+         } else {
+             name = Font.MONOSPACED;
+         }
+         Font font = new Font(name, Font.PLAIN, 12);
          g2d.setFont(font);
     }
 
@@ -135,6 +169,12 @@ public class TestDevTransform {
     }
 
     public static void main(String args[]) throws Exception {
+      if (args[0].equals("DIALOG")) {
+          useDialog = true;
+      }
+      if (args[1].equals("DOUBLE")) {
+          useDouble = true;
+      }
 
       BufferedImage tl_Image = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
       {

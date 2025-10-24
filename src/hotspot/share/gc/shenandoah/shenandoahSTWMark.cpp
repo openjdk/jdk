@@ -24,8 +24,7 @@
  */
 
 
-
-#include "gc/shared/strongRootsScope.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -36,10 +35,13 @@
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "runtime/threads.hpp"
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:
   ShenandoahSTWMark* const _mark;
+  NMethodMarkingScope _nmethod_marking_scope;
+  ThreadsClaimTokenScope _threads_claim_token_scope;
 
 public:
   ShenandoahSTWMarkTask(ShenandoahSTWMark* mark);
@@ -48,7 +50,9 @@ public:
 
 ShenandoahSTWMarkTask::ShenandoahSTWMarkTask(ShenandoahSTWMark* mark) :
   WorkerTask("Shenandoah STW mark"),
-  _mark(mark) {
+  _mark(mark),
+  _nmethod_marking_scope(),
+  _threads_claim_token_scope() {
 }
 
 void ShenandoahSTWMarkTask::work(uint worker_id) {
@@ -73,15 +77,13 @@ void ShenandoahSTWMark::mark() {
   ShenandoahCodeRoots::arm_nmethods_for_mark();
 
   // Weak reference processing
-  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-  shenandoah_assert_generations_reconciled();
   rp->reset_thread_locals();
 
   // Init mark, do not expect forwarded pointers in roots
   if (ShenandoahVerify) {
     assert(Thread::current()->is_VM_thread(), "Must be");
-    heap->verifier()->verify_roots_no_forwarded();
+    heap->verifier()->verify_roots_no_forwarded(_generation);
   }
 
   start_mark();
@@ -98,7 +100,6 @@ void ShenandoahSTWMark::mark() {
       _generation->scan_remembered_set(false /* is_concurrent */);
     }
 
-    StrongRootsScope scope(nworkers);
     ShenandoahSTWMarkTask task(this);
     heap->workers()->run_task(&task);
 
@@ -116,7 +117,6 @@ void ShenandoahSTWMark::mark() {
 }
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
-  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
   auto queue = task_queues()->queue(worker_id);
   switch (_generation->type()) {
@@ -145,14 +145,10 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
 }
 
 void ShenandoahSTWMark::finish_mark(uint worker_id) {
-  assert(ShenandoahHeap::heap()->gc_generation() == _generation, "Marking unexpected generation");
   ShenandoahPhaseTimings::Phase phase = _full_gc ? ShenandoahPhaseTimings::full_gc_mark : ShenandoahPhaseTimings::degen_gc_stw_mark;
   ShenandoahWorkerTimingsTracker timer(phase, ShenandoahPhaseTimings::ParallelMark, worker_id);
-  ShenandoahReferenceProcessor* rp = _generation->ref_processor();
-  shenandoah_assert_generations_reconciled();
   StringDedup::Requests requests;
 
-  mark_loop(worker_id, &_terminator, rp,
-            _generation->type(), false /* not cancellable */,
+  mark_loop(worker_id, &_terminator, _generation->type(), false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }

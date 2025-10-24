@@ -82,14 +82,7 @@ JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
-  u4 elementIndex;
-  do {
-    elementIndex = AtomicAccess::load_acquire(&_head);
-    if (elementIndex >= _capacity) {
-      return false;
-    }
-  } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
-  _data[elementIndex] = request;
+  _data[_head++] = request;
   return true;
 }
 
@@ -101,19 +94,19 @@ JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
 static volatile u4 _lost_samples_sum = 0;
 
 u4 JfrCPUTimeTraceQueue::size() const {
-  return AtomicAccess::load_acquire(&_head);
+  return _head;
 }
 
 void JfrCPUTimeTraceQueue::set_size(u4 size) {
-  AtomicAccess::release_store(&_head, size);
+  _head = size;
 }
 
 u4 JfrCPUTimeTraceQueue::capacity() const {
-  return AtomicAccess::load_acquire(&_capacity);
+  return _capacity;
 }
 
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
-  if (capacity == AtomicAccess::load(&_capacity)) {
+  if (capacity == _capacity) {
     return;
   }
   _head = 0;
@@ -126,15 +119,15 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   } else {
     _data = nullptr;
   }
-  AtomicAccess::release_store(&_capacity, capacity);
+  _capacity = capacity;
 }
 
 bool JfrCPUTimeTraceQueue::is_empty() const {
-  return AtomicAccess::load_acquire(&_head) == 0;
+  return _head == 0;
 }
 
 u4 JfrCPUTimeTraceQueue::lost_samples() const {
-  return AtomicAccess::load(&_lost_samples);
+  return _lost_samples;
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples() {
@@ -143,7 +136,7 @@ void JfrCPUTimeTraceQueue::increment_lost_samples() {
 }
 
 void JfrCPUTimeTraceQueue::increment_lost_samples_due_to_queue_full() {
-  AtomicAccess::inc(&_lost_samples_due_to_queue_full);
+  _lost_samples_due_to_queue_full++;
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
@@ -151,7 +144,9 @@ u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples() {
 }
 
 u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples_due_to_queue_full() {
-  return AtomicAccess::xchg(&_lost_samples_due_to_queue_full, (u4)0);
+  u4 lost = _lost_samples_due_to_queue_full;
+  _lost_samples_due_to_queue_full = 0;
+  return lost;
 }
 
 void JfrCPUTimeTraceQueue::init() {
@@ -159,7 +154,7 @@ void JfrCPUTimeTraceQueue::init() {
 }
 
 void JfrCPUTimeTraceQueue::clear() {
-  AtomicAccess::release_store(&_head, (u4)0);
+  _head = 0;
 }
 
 void JfrCPUTimeTraceQueue::resize_if_needed() {
@@ -167,9 +162,8 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
   if (lost_samples_due_to_queue_full == 0) {
     return;
   }
-  u4 capacity = AtomicAccess::load(&_capacity);
-  if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
-    float ratio = (float)lost_samples_due_to_queue_full / (float)capacity;
+  if (_capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
+    float ratio = (float)lost_samples_due_to_queue_full / (float)_capacity;
     int factor = 1;
     if (ratio > 8) { // idea is to quickly scale the queue in the worst case
       factor = ratio;
@@ -181,7 +175,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
       factor = 2;
     }
     if (factor > 1) {
-      u4 new_capacity = MIN2(CPU_TIME_QUEUE_MAX_CAPACITY, capacity * factor);
+      u4 new_capacity = MIN2(CPU_TIME_QUEUE_MAX_CAPACITY, _capacity * factor);
       set_capacity(new_capacity);
     }
   }
@@ -230,8 +224,7 @@ class JfrCPUSamplerThread : public NonJavaThread {
   volatile bool _is_async_processing_of_cpu_time_jfr_requests_triggered;
   volatile bool _warned_about_timer_creation_failure;
   volatile bool _signal_handler_installed;
-  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled;)
-  DEBUG_ONLY(volatile u8 _out_of_stack_walking_iterations;)
+  DEBUG_ONLY(volatile bool _out_of_stack_walking_enabled = true;)
 
   static const u4 STOP_SIGNAL_BIT = 0x80000000;
 
@@ -275,16 +268,13 @@ public:
   void handle_timer_signal(siginfo_t* info, void* context);
   bool init_timers();
   void stop_timer();
+  virtual void print_on(outputStream* st) const;
 
   void trigger_async_processing_of_cpu_time_jfr_requests();
 
   #ifdef ASSERT
   void set_out_of_stack_walking_enabled(bool runnable) {
     AtomicAccess::release_store(&_out_of_stack_walking_enabled, runnable);
-  }
-
-  u8 out_of_stack_walking_iterations() const {
-    return AtomicAccess::load(&_out_of_stack_walking_iterations);
   }
   #endif
 };
@@ -393,7 +383,6 @@ void JfrCPUSamplerThread::run() {
     }
     DEBUG_ONLY(if (AtomicAccess::load_acquire(&_out_of_stack_walking_enabled)) {)
       if (AtomicAccess::cmpxchg(&_is_async_processing_of_cpu_time_jfr_requests_triggered, true, false)) {
-        DEBUG_ONLY(AtomicAccess::inc(&_out_of_stack_walking_iterations);)
         stackwalk_threads_in_native();
       }
     DEBUG_ONLY(})
@@ -587,17 +576,13 @@ void JfrCPUTimeThreadSampling::handle_timer_signal(siginfo_t* info, void* contex
 }
 
 #ifdef ASSERT
-void JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   if (_instance != nullptr && _instance->_sampler != nullptr) {
     _instance->_sampler->set_out_of_stack_walking_enabled(runnable);
+    return true;
+  } else {
+    return false;
   }
-}
-
-u8 JfrCPUTimeThreadSampling::out_of_stack_walking_iterations() {
-  if (_instance != nullptr && _instance->_sampler != nullptr) {
-    return _instance->_sampler->out_of_stack_walking_iterations();
-  }
-  return 0;
 }
 #endif
 
@@ -788,6 +773,12 @@ void JfrCPUSamplerThread::stop_timer() {
   VMThread::execute(&op);
 }
 
+void JfrCPUSamplerThread::print_on(outputStream* st) const {
+  st->print("\"%s\" ", name());
+  Thread::print_on(st);
+  st->cr();
+}
+
 void JfrCPUSamplerThread::recompute_period_if_needed() {
   int64_t current_period = get_sampling_period();
   int64_t period = _throttle.compute_sampling_period();
@@ -865,8 +856,9 @@ void JfrCPUTimeThreadSampling::on_javathread_terminate(JavaThread* thread) {
 }
 
 #ifdef ASSERT
-static void set_out_of_stack_walking_enabled(bool runnable) {
+bool JfrCPUTimeThreadSampling::set_out_of_stack_walking_enabled(bool runnable) {
   warn();
+  return false;
 }
 #endif
 
