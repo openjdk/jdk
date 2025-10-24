@@ -470,9 +470,9 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
     bool archived = false;
     bool resolved = rme->is_resolved(Bytecodes::_invokevirtual)   ||
                     rme->is_resolved(Bytecodes::_invokespecial)   ||
-                    rme->is_resolved(Bytecodes::_invokestatic)    ||
                     rme->is_resolved(Bytecodes::_invokeinterface) ||
-                    rme->is_resolved(Bytecodes::_invokehandle);
+                    rme->is_resolved(Bytecodes::_invokehandle)    ||
+                    (rme->is_resolved(Bytecodes::_invokestatic) && VM_Version::supports_fast_class_init_checks());
 
     if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
         && can_archive_resolved_method(src_cp, rme)) {
@@ -564,9 +564,6 @@ bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, Resolv
       return false;
     }
     if (method_entry->method()->is_method_handle_intrinsic() && !CDSConfig::is_dumping_method_handles()) {
-      return false;
-    }
-    if (method_entry->is_resolved(Bytecodes::_invokestatic) && !VM_Version::supports_fast_class_init_checks()) {
       return false;
     }
   }
