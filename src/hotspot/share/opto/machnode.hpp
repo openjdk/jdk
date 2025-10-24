@@ -99,7 +99,7 @@ public:
     return ::as_FloatRegister(reg(ra_, node, idx));
   }
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   KRegister  as_KRegister(PhaseRegAlloc *ra_, const Node *node)   const {
     return ::as_KRegister(reg(ra_, node));
   }

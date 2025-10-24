@@ -255,7 +255,7 @@ class AbstractInterpreter: AllStatic {
     return stackElementWords * i;
   }
 
-#if !defined(ZERO) && (defined(IA32) || defined(AMD64))
+#if !defined(ZERO) && defined(AMD64)
   static Address::ScaleFactor stackElementScale() {
     return NOT_LP64(Address::times_4) LP64_ONLY(Address::times_8);
   }

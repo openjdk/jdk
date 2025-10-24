@@ -452,7 +452,7 @@
 #define NOT_ZERO_RETURN
 #endif
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
 #define X86
 #define X86_ONLY(code) code
 #define NOT_X86(code)
@@ -460,14 +460,6 @@
 #undef X86
 #define X86_ONLY(code)
 #define NOT_X86(code) code
-#endif
-
-#ifdef IA32
-#define IA32_ONLY(code) code
-#define NOT_IA32(code)
-#else
-#define IA32_ONLY(code)
-#define NOT_IA32(code) code
 #endif
 
 #ifdef AMD64

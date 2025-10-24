@@ -756,7 +756,6 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
   size_t decided_large_page_size = os::win32::large_page_init_decide_size();
   EXPECT_GT(decided_large_page_size, default_page_size) << "Large page size should be greater than the default page size for LargePageSizeInBytes = 4 * min_size";
 
-#if !defined(IA32)
   size_t page_size_count = 0;
   size_t page_size = os::page_sizes().largest();
 
@@ -773,7 +772,6 @@ TEST_VM(os_windows, large_page_init_multiple_sizes) {
     EXPECT_TRUE(page_size % min_size == 0) << "Each page size should be a multiple of the minimum large page size.";
     EXPECT_LE(page_size, large_page_size) << "Page size should not exceed the determined large page size.";
   }
-#endif
 }
 
 TEST_VM(os_windows, large_page_init_decide_size) {
@@ -809,11 +807,11 @@ TEST_VM(os_windows, large_page_init_decide_size) {
     EXPECT_EQ(decided_size, 2 * M) << "Expected decided size to be 2M when large page is 1M and OS reported size is 2M";
   }
 
-#if defined(IA32) || defined(AMD64)
+#if defined(AMD64)
   FLAG_SET_CMDLINE(LargePageSizeInBytes, 5 * M); // Set large page size to 5MB
   if (!EnableAllLargePageSizesForWindows) {
     decided_size = os::win32::large_page_init_decide_size(); // Recalculate decided size
-    EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 for large pages bigger than 4mb on IA32 or AMD64";
+    EXPECT_EQ(decided_size, 0) << "Expected decided size to be 0 for large pages bigger than 4mb on AMD64";
   }
 #endif
 
