@@ -88,8 +88,11 @@ public:
 
   oop evacuate_object(oop p, Thread* thread) override;
   oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
-  void evacuate_collection_set(bool concurrent) override;
-  void promote_regions_in_place(bool concurrent);
+
+  // In the generational mode, we will use these two functions for young, mixed, and global collections.
+  // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
+  void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent) override;
+  void promote_regions_in_place(ShenandoahGeneration* generation, bool concurrent);
 
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
@@ -99,7 +102,9 @@ public:
 
   // ---------- Update References
   //
-  void update_heap_references(bool concurrent) override;
+  // In the generational mode, we will use this function for young, mixed, and global collections.
+  // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
+  void update_heap_references(ShenandoahGeneration* generation, bool concurrent) override;
   void final_update_refs_update_region_states() override;
 
 private:
