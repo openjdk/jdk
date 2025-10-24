@@ -2304,4 +2304,3 @@ const void* os::get_saved_assert_context(const void** sigInfo) {
   *sigInfo = nullptr;
   return nullptr;
 }
-

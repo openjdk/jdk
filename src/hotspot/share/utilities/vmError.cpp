@@ -1432,6 +1432,12 @@ void VMError::print_vm_info(outputStream* st) {
     st->cr();
   }
 
+  // STEP("printing number of open file descriptors")
+  #ifndef _WIN32
+    os::print_open_file_descriptors(st);
+    st->cr();
+  #endif
+
   // Take heap lock over heap, GC and metaspace printing so that information
   // is consistent.
   if (Universe::is_fully_initialized()) {
@@ -1470,11 +1476,6 @@ void VMError::print_vm_info(outputStream* st) {
     CodeCache::print_summary(st);
     st->cr();
   }
-
-  // STEP("printing number of open file descriptors")
-
-  os::print_open_file_descriptors(st);
-  st->cr();
 
   // STEP("printing ring buffers")
 
