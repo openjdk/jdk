@@ -50,7 +50,7 @@ import java.util.Objects;
  *
  * <p> Encoding can be performed on cryptographic objects that
  * implement {@link DEREncodable}. The {@link #encode(DEREncodable)}
- * and {@link #encodeToString(DEREncodable)} methods encode a DEREncodable
+ * and {@link #encodeToString(DEREncodable)} methods encode a {@code DEREncodable}
  * into PEM and return the data in a byte array or {@code String}.
  *
  * <p> Private keys can be encrypted and encoded by configuring a

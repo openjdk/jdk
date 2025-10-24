@@ -361,13 +361,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *         {@code algorithm} is {@code null}
      * @throws IllegalArgumentException if {@code de} is an unsupported
      *         {@code DEREncodable}, if an error occurs while generating the
-     *         PBE key, or if {@code algorithm} or {@code params} are
-     *         not supported by any provider
-     * @throws RuntimeException if encryption of the encoding fails
-     *
-     * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
-     * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
-     * defaults are determined by the provider.
+     *         PBE key, if {@code algorithm} or {@code params} are
+     *         not supported by any provider, or if an error occurs during
+     *         encryption.
      *
      * @since 25
      */
@@ -403,11 +399,10 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @throws IllegalArgumentException if {@code de} is an unsupported
      *         {@code DEREncodable}, if an error occurs while generating the
      *         PBE key, or if the default algorithm is misconfigured
-     * @throws RuntimeException if encryption of the encoding fails
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property
      * defines the default encryption algorithm. The {@code AlgorithmParameterSpec}
-     * defaults are determined by the provider.
+     * defaults are determined by the provider.*
      *
      * @since 25
      */
@@ -443,9 +438,9 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * @throws NullPointerException if {@code de}, {@code encryptKey}, or
      *         {@code algorithm} is {@code null}
      * @throws IllegalArgumentException if {@code de} is an unsupported
-     *         {@code DEREncodable}, if {@code encryptKey} is invalid, or if
-     *         {@code algorithm} or {@code params} are not supported by any provider
-     * @throws RuntimeException if encryption of the encoding fails
+     *         {@code DEREncodable}, if {@code encryptKey} is invalid, if
+     *         {@code algorithm} or {@code params} are not supported by any
+     *         provider, or if an error occurs during encryption.
      *
      * @since 25
      */
@@ -492,11 +487,11 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
             algId.encode(out);
             out.putOctetString(encryptedData);
         } catch (InvalidAlgorithmParameterException | NoSuchAlgorithmException |
-                 IllegalStateException | NoSuchPaddingException e) {
+                 IllegalStateException | NoSuchPaddingException |
+                 IllegalBlockSizeException | InvalidKeyException e) {
             throw new IllegalArgumentException(e);
-        } catch (IllegalBlockSizeException | BadPaddingException |
-                 InvalidKeyException e) {
-            throw new RuntimeException(e);
+        } catch (BadPaddingException e) {
+            throw new AssertionError(e);
         } finally {
             KeyUtil.clear(encoded);
         }
