@@ -1184,6 +1184,8 @@ bool is_CAS(int opcode, bool maybe_volatile)
   }
 }
 
+constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
+
 // predicate controlling translation of CAS
 //
 // returns true if CAS needs to use an acquiring load otherwise false
@@ -1408,6 +1410,11 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
+  if (VerifyStackAtCalls) {
+    __ li(t2, MAJIK_DWORD);
+    __ sd(t2, Address(sp, framesize - 3 * wordSize));
+  }
+
   if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     // Dummy labels for just measuring the code size
@@ -1427,10 +1434,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     }
     // In the C2 code, we move the non-hot part of nmethod entry barriers out-of-line to a stub.
     bs->nmethod_entry_barrier(masm, slow_path, continuation, guard);
-  }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
   }
 
   C->output()->set_frame_complete(__ offset());
@@ -2431,7 +2434,13 @@ encode %{
   enc_class riscv_enc_call_epilog() %{
     if (VerifyStackAtCalls) {
       // Check that stack depth is unchanged: find majik cookie on stack
-      __ call_Unimplemented();
+      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
+      Label CHECK_PASSED;
+      __ ld(t1, Address(sp, framesize));
+      __ li(t2, MAJIK_DWORD);
+      __ beq(t2, t1, CHECK_PASSED);
+      __ stop("MAJIK_DWORD not found");
+      __ bind(CHECK_PASSED);
     }
   %}
 
