@@ -500,11 +500,11 @@ public sealed interface StructuredTaskScope<T, R>
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
      *
-     * @implSpec Implementations of this interface must be thread safe. The {@link
-     * #onComplete(Subtask)} method defined by this interface may be invoked by several
-     * threads concurrently, concurrently with the owner thread invoking the {@link
-     * #onFork(Subtask)} method, or if a timeout is configured, concurrently with the owner
-     * thread invoking the {@link #onTimeout()} method.
+     * @implSpec Implementations of this interface must be thread-safe. The {@link
+     * #onComplete(Subtask)} method may be invoked concurrently, as multiple subtasks can
+     * complete at the same time. Additionally, the {@code onComplete} method may be
+     * called concurrently with the scope owner thread invoking the {@link #onFork(Subtask)}
+     * or {@link #onTimeout()} methods.
      *
      * @apiNote It is very important that a new {@code Joiner} object is created for each
      * {@code StructuredTaskScope}. {@code Joiner} objects should never be shared with
