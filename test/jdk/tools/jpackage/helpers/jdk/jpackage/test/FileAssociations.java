@@ -22,7 +22,6 @@
  */
 package jdk.jpackage.test;
 
-
 import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.Path;
