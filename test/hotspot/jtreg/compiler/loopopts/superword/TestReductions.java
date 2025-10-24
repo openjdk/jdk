@@ -1173,6 +1173,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  "> 0",
+                  IRNode.OR_REDUCTION_V, "> 0",
+                  IRNode.OR_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intOrSimple() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1183,6 +1190,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.XOR_REDUCTION_V, "> 0",
+                  IRNode.XOR_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intXorSimple() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1193,6 +1207,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0",
+                  IRNode.ADD_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intAddSimple() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1203,6 +1224,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.MUL_REDUCTION_VI, "> 0",
+                  IRNode.MUL_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMulSimple() {
         int acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1213,6 +1241,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.MIN_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMinSimple() {
         int acc = Integer.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1223,6 +1258,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.MAX_REDUCTION_V, "> 0",
+                  IRNode.MAX_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMaxSimple() {
         int acc = Integer.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1234,6 +1276,13 @@ public class TestReductions {
 
     // ---------int***DotProduct ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0",
+                  IRNode.AND_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intAndDotProduct() {
         int acc = 0xFFFFFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1244,6 +1293,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  "> 0",
+                  IRNode.OR_REDUCTION_V, "> 0",
+                  IRNode.OR_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intOrDotProduct() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1254,6 +1310,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.XOR_REDUCTION_V, "> 0",
+                  IRNode.XOR_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intXorDotProduct() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1264,6 +1327,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0",
+                  IRNode.ADD_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intAddDotProduct() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1274,6 +1344,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.MUL_REDUCTION_VI, "> 0",
+                  IRNode.MUL_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMulDotProduct() {
         int acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1284,6 +1361,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.MIN_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMinDotProduct() {
         int acc = Integer.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1294,6 +1378,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.MAX_REDUCTION_V, "> 0",
+                  IRNode.MAX_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMaxDotProduct() {
         int acc = Integer.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1305,6 +1396,13 @@ public class TestReductions {
 
     // ---------int***Big ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.AND_REDUCTION_V, "> 0",
+                  IRNode.AND_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intAndBig() {
         int acc = 0xFFFFFFFF; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1315,6 +1413,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  "> 0",
+                  IRNode.OR_REDUCTION_V, "> 0",
+                  IRNode.OR_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intOrBig() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1325,6 +1430,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.XOR_REDUCTION_V, "> 0",
+                  IRNode.XOR_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intXorBig() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1335,6 +1447,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.ADD_REDUCTION_VI, "> 0",
+                  IRNode.ADD_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intAddBig() {
         int acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1345,6 +1464,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,    "> 0",
+                  IRNode.MUL_REDUCTION_VI, "> 0",
+                  IRNode.MUL_VI,           "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMulBig() {
         int acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1355,6 +1481,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.MIN_REDUCTION_V, "> 0",
+                  IRNode.MIN_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMinBig() {
         int acc = Integer.MAX_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1365,6 +1498,13 @@ public class TestReductions {
     }
 
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   "> 0",
+                  IRNode.MAX_REDUCTION_V, "> 0",
+                  IRNode.MAX_VI,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_I,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static int intMaxBig() {
         int acc = Integer.MIN_VALUE; // neutral element
         for (int i = 0; i < SIZE; i++) {
