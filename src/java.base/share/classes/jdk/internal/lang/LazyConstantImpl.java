@@ -41,8 +41,6 @@ import java.util.function.Supplier;
  */
 public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
-    static final String UNSET_LABEL = ".uninitialized";
-
     // Unsafe allows `LazyConstant` instances to be used early in the boot sequence
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
@@ -112,13 +110,27 @@ public final class LazyConstantImpl<T> implements LazyConstant<T> {
 
     @Override
     public String toString() {
-        final T t = getAcquire();
-        return t == this ? "(this LazyConstant)" : renderConstant(t);
+        return super.toString() + "[" + toStringSuffix() + "]";
     }
 
-    public static String renderConstant(Object t) {
-        return (t == null) ? UNSET_LABEL : Objects.toString(t);
+    private String toStringSuffix() {
+        final T t = getAcquire();
+        if (t == this) {
+            return "(this LazyConstant)";
+        } else if (t != null) {
+            return t.toString();
+        }
+        // Volatile read
+        final Supplier<? extends T> cf = computingFunction;
+        // There could be a race here
+        if (cf != null) {
+            return "computing function=" + computingFunction.toString();
+        }
+        // As we know `computingFunction` is `null` via a volatile read, we
+        // can now be sure that this lazy constant is initialized
+        return getAcquire().toString();
     }
+
 
     // Discussion on the memory semantics used.
     // ----------------------------------------

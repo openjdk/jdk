@@ -49,6 +49,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.mapping;
 import static org.junit.jupiter.api.Assertions.*;
 
 final class LazyMapTest {
@@ -141,14 +142,9 @@ final class LazyMapTest {
         assertEquals(1, cif.cnt());
         assertThrows(UnsupportedOperationException.class, () -> lazy.get(KEY));
         assertEquals(2, cif.cnt());
-        var toString = lazy.toString();
-        assertTrue(toString.startsWith("{"));
-        // Key order is unspecified
-        assertTrue(toString.contains(Value.THIRTEEN + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
-        assertTrue(toString.contains(Value.FORTY_TWO + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
-        assertTrue(toString.endsWith("}"));
+        assertThrows(UnsupportedOperationException.class, lazy::toString);
+        assertEquals(3, cif.cnt());
     }
-
 
     @ParameterizedTest
     @MethodSource("allSets")
@@ -198,9 +194,6 @@ final class LazyMapTest {
 
         // Key order is unspecified
         for (Value key : set) {
-            toString = lazy.toString();
-            assertTrue(toString.contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG), toString + " did not contain " + key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG);
-            lazy.get(key);
             toString = lazy.toString();
             assertTrue(toString.contains(key + "=" + MAPPER.apply(key)), toString);
         }
@@ -267,19 +260,10 @@ final class LazyMapTest {
         var lazyEntrySet = lazy.entrySet();
         var toString = lazyEntrySet.toString();
         for (var key : set) {
-            assertTrue(toString.contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
+            assertTrue(toString.contains(key + "=" + MAPPER.apply(key)));
         }
         assertTrue(toString.startsWith("["));
         assertTrue(toString.endsWith("]"));
-
-        lazy.get(KEY);
-        for (var key : set) {
-            if (key.equals(KEY)) {
-                continue;
-            }
-            assertTrue(lazyEntrySet.toString().contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
-        }
-        assertTrue(lazyEntrySet.toString().contains(KEY + "=" + VALUE));
     }
 
     @ParameterizedTest
@@ -289,15 +273,7 @@ final class LazyMapTest {
         var lazyValues = lazy.values();
         // Look at one of the elements
         var val = lazyValues.stream().iterator().next();
-        var toString = lazy.toString();
-        for (var key : set) {
-            var v = MAPPER.apply(key);
-            if (v.equals(val)) {
-                assertTrue(toString.contains(key + "=" + v));
-            } else {
-                assertTrue(toString.contains(key + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG));
-            }
-        }
+        assertEquals(lazy.size() - 1, functionCounter(lazy));
 
         // Mod ops
         assertThrows(UnsupportedOperationException.class, () -> lazyValues.remove(val));
@@ -313,13 +289,14 @@ final class LazyMapTest {
     void valuesToString(Set<Value> set) {
         var lazy = newLazyMap(set);
         var lazyValues = lazy.values();
-        var expected = set.stream()
-                .map(_ -> LazyConstantTestUtil.UNINITIALIZED_TAG)
-                .collect(joining(", ", "[", "]"));
-        assertEquals(expected, lazyValues.toString());
-        lazy.get(KEY);
-        var afterGet = lazyValues.toString();
-        assertEquals(set.contains(KEY), afterGet.contains("" + VALUE), afterGet);
+        var toString = lazyValues.toString();
+
+        // Key order is unspecified
+        for (Value key : set) {
+            assertTrue(toString.contains(MAPPER.apply(key).toString()), toString);
+        }
+        assertTrue(toString.startsWith("["), toString);
+        assertTrue(toString.endsWith("]"), toString);
     }
 
     @ParameterizedTest
@@ -359,13 +336,13 @@ final class LazyMapTest {
                 .findAny()
                 .orElseThrow();
 
-        assertEquals(KEY + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG, entry.toString());
+        assertEquals(lazy.size(), functionCounter(lazy));
         var otherDifferent = Map.entry(Value.ZERO, -1);
         assertNotEquals(entry, otherDifferent);
-        assertEquals(KEY + "=" + LazyConstantTestUtil.UNINITIALIZED_TAG, entry.toString());
+        assertEquals(lazy.size(), functionCounter(lazy));
         var otherEqual = Map.entry(entry.getKey(), entry.getValue());
         assertEquals(entry, otherEqual);
-        assertEquals(KEY + "=" + VALUE, entry.toString());
+        assertEquals(lazy.size() - 1, functionCounter(lazy));
         assertEquals(entry.hashCode(), otherEqual.hashCode());
     }
 
@@ -375,12 +352,10 @@ final class LazyMapTest {
         var lazy = newLazyMap(set);
         // Only touch the key.
         lazy.entrySet().iterator().forEachRemaining(Map.Entry::getKey);
-        lazy.entrySet().iterator()
-                .forEachRemaining(e -> assertTrue(e.toString().contains(LazyConstantTestUtil.UNINITIALIZED_TAG)));
+        assertEquals(lazy.size(), functionCounter(lazy)); // No evaluation
         // Only touch the value.
         lazy.entrySet().iterator().forEachRemaining(Map.Entry::getValue);
-        lazy.entrySet().iterator()
-                .forEachRemaining(e -> assertFalse(e.toString().contains(LazyConstantTestUtil.UNINITIALIZED_TAG)));
+        assertEquals(0, functionCounter(lazy));
     }
 
     // Immutability
@@ -588,6 +563,11 @@ final class LazyMapTest {
     static Set<Value> populate(Set<Value> set, Value... values) {
         set.addAll(Arrays.asList(values));
         return set;
+    }
+
+    private static int functionCounter(Map<?, ?> lazy) {
+        final Object holder = LazyConstantTestUtil.functionHolder(lazy);
+        return LazyConstantTestUtil.functionHolderCounter(holder);
     }
 
 }

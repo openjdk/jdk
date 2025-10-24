@@ -57,12 +57,12 @@ final class LazyConstantTest {
     void basic(Function<Supplier<Integer>, LazyConstant<Integer>> factory) {
         LazyConstantTestUtil.CountingSupplier<Integer> cs = new LazyConstantTestUtil.CountingSupplier<>(SUPPLIER);
         var lazy = factory.apply(cs);
-        assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, lazy.toString());
+        assertFalse(lazy.isInitialized());
         assertEquals(SUPPLIER.get(), lazy.get());
         assertEquals(1, cs.cnt());
         assertEquals(SUPPLIER.get(), lazy.get());
         assertEquals(1, cs.cnt());
-        assertEquals(Objects.toString(SUPPLIER.get()), lazy.toString());
+        assertTrue(lazy.toString().contains(Integer.toString(SUPPLIER.get())));
     }
 
     @ParameterizedTest
@@ -76,7 +76,7 @@ final class LazyConstantTest {
         assertEquals(1, cs.cnt());
         assertThrows(UnsupportedOperationException.class, lazy::get);
         assertEquals(2, cs.cnt());
-        assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, lazy.toString());
+        assertTrue(lazy.toString().contains("computing function"));
     }
 
     @ParameterizedTest
@@ -127,9 +127,14 @@ final class LazyConstantTest {
     @ParameterizedTest
     @MethodSource("lazyConstants")
     void toStringUnset(LazyConstant<Integer> constant) {
-        assertEquals(LazyConstantTestUtil.UNINITIALIZED_TAG, constant.toString());
+        String unInitializedToString = constant.toString();
+        int suffixEnd = unInitializedToString.indexOf("[");
+        String suffix = unInitializedToString.substring(0, suffixEnd);
+        String expectedUninitialized = suffix+"[computing function=";
+        assertTrue(unInitializedToString.startsWith(expectedUninitialized));
         constant.get();
-        assertEquals(Integer.toString(VALUE), constant.toString());
+        String expectedInitialized = suffix + "[" + VALUE + "]";
+        assertEquals(expectedInitialized, constant.toString());
     }
 
     @Test
@@ -139,7 +144,7 @@ final class LazyConstantTest {
         ref.set(constant);
         constant.get();
         String toString = assertDoesNotThrow(constant::toString);
-        assertEquals("(this LazyConstant)", toString);
+        assertTrue(constant.toString().contains("(this LazyConstant)"), toString);
     }
 
     @Test

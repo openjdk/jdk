@@ -25,7 +25,6 @@
 
 package java.util;
 
-import jdk.internal.lang.LazyConstantImpl;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ImmutableBitSetPredicate;
 import jdk.internal.vm.annotation.ForceInline;
@@ -55,8 +54,7 @@ final class LazyCollections {
 
     @jdk.internal.ValueBased
     static final class LazyList<E>
-            extends ImmutableCollections.AbstractImmutableList<E>
-            implements LenientList<E>, ElementBackedList<E> {
+            extends ImmutableCollections.AbstractImmutableList<E> {
 
         @Stable
         private final E[] elements;
@@ -90,13 +88,6 @@ final class LazyCollections {
 
         private E getSlowPath(int i) {
             return orElseComputeSlowPath(elements, i, mutexes.acquireMutex(offsetFor(i)), i, functionHolder);
-        }
-
-        @Override
-        public E getAcquire(int i) {
-            Objects.checkIndex(i, size);
-            final long offset = offsetFor(i);
-            return contentsAcquire(offset);
         }
 
         @Override
@@ -153,22 +144,6 @@ final class LazyCollections {
             return LazySubList.fromLazyList(this, fromIndex, toIndex);
         }
 
-        @Override
-        public String toString() {
-            return renderElements(this);
-        }
-
-        @ForceInline
-        @Override
-        public E[] elements() {
-            return elements;
-        }
-
-        @Override
-        public Mutexes mutexes() {
-            return mutexes;
-        }
-
         @SuppressWarnings("unchecked")
         @ForceInline
         private E contentsAcquire(long offset) {
@@ -176,8 +151,7 @@ final class LazyCollections {
         }
 
         // @ValueBased cannot be used here as ImmutableCollections.SubList declares fields
-        static final class LazySubList<E> extends ImmutableCollections.SubList<E>
-                implements LenientList<E> {
+        static final class LazySubList<E> extends ImmutableCollections.SubList<E> {
 
             private LazySubList(ImmutableCollections.AbstractImmutableList<E> root, int offset, int size) {
                 super(root, offset, size);
@@ -195,20 +169,8 @@ final class LazyCollections {
             }
 
             @Override
-            public String toString() {
-                return renderElements(this);
-            }
-
-            @Override
             boolean allowNulls() {
                 return false;
-            }
-
-            @SuppressWarnings("unchecked")
-            @Override
-            public E getAcquire(int index) {
-                Objects.checkIndex(index, size);
-                return ((LenientList<E>) root).getAcquire(offset + index);
             }
 
             static <E> ImmutableCollections.SubList<E> fromLazyList(LazyList<E> list, int fromIndex, int toIndex) {
@@ -222,17 +184,10 @@ final class LazyCollections {
         }
 
         private static final class ReverseOrderLazyListView<E>
-                extends ReverseOrderListView.Rand<E>
-                implements LenientList<E> {
+                extends ReverseOrderListView.Rand<E> {
 
             private ReverseOrderLazyListView(List<E> base) {
                 super(base, false);
-            }
-
-            // This method does not evaluate the elements
-            @Override
-            public String toString() {
-                return renderElements(this);
             }
 
             @Override
@@ -241,23 +196,7 @@ final class LazyCollections {
                 subListRangeCheck(fromIndex, toIndex, size);
                 return new ReverseOrderLazyListView<>(base.subList(size - toIndex, size - fromIndex));
             }
-
-            @Override
-            public E getAcquire(int i) {
-                final int size = base.size();
-                Objects.checkIndex(i, size);
-                return ((LenientList<E>) base).getAcquire(size - i - 1);
-            }
         }
-
-    }
-
-    interface LenientList<E> extends List<E> {
-        /**
-         * {@return the element at index {@code i} without evaluating it}
-         * @param i index
-         */
-        E getAcquire(int i);
     }
 
     static final class LazyEnumMap<K extends Enum<K>, V>
@@ -434,11 +373,6 @@ final class LazyCollections {
             @Override public int                   size() { return map.size(); }
             @Override public int                   hashCode() { return map.hashCode(); }
 
-            @Override
-            public String toString() {
-                return renderMappings(map, "Collection", false);
-            }
-
             // For @ValueBased
             private static <K, V> LazyMapEntrySet<K, V> of(AbstractLazyMap<K, V> outer) {
                 return new LazyMapEntrySet<>(outer);
@@ -501,7 +435,7 @@ final class LazyCollections {
                         : orElseComputeSlowPath(map.values, index, map.mutexes.acquireMutex(offsetFor(index)), getKey, functionHolder);
             }
             @Override public int    hashCode() { return hash(getKey()) ^ hash(getValue()); }
-            @Override public String toString() { return getKey() + "=" + LazyConstantImpl.renderConstant(map.getAcquire(getKey)); }
+            @Override public String toString() { return getKey() + "=" + getValue(); }
 
             @Override
             public boolean equals(Object o) {
@@ -539,41 +473,12 @@ final class LazyCollections {
             @Override public boolean     isEmpty() { return map.isEmpty(); }
             @Override public boolean     contains(Object v) { return map.containsValue(v); }
 
-            @Override
-            public String toString() {
-                final StringJoiner sj = new StringJoiner(", ", "[", "]");
-                for (var k : map.keySet()) {
-                    final Object value = map.getAcquire(k);
-                    final String valueString;
-                    if (value == map) {
-                        valueString = "(this Collection)";
-                    } else {
-                        valueString = LazyConstantImpl.renderConstant(value);
-                    }
-                    sj.add(valueString);
-                }
-                return sj.toString();
-            }
-
             // For @ValueBased
             private static <K, V> LazyMapValues<K, V> of(AbstractLazyMap<K, V> outer) {
                 return new LazyMapValues<>(outer);
             }
 
         }
-
-        @Override
-        public String toString() {
-            return renderMappings(this, "Map", true);
-        }
-
-    }
-
-    interface ElementBackedList<E> {
-
-        E[] elements();
-
-        Mutexes mutexes();
 
     }
 
@@ -618,7 +523,6 @@ final class LazyCollections {
                 mutexes = null;
             }
         }
-
 
         // Todo: remove this after stabilization
         private Object check(Object mutex, long realOffset) {
@@ -672,19 +576,6 @@ final class LazyCollections {
     @SuppressWarnings("unchecked")
     private static <E> E[] newGenericArray(int length) {
         return (E[]) new Object[length];
-    }
-
-    public static String renderElements(LenientList<?> self) {
-        final StringJoiner sj = new StringJoiner(", ", "[", "]");
-        for (int i = 0; i < self.size(); i++) {
-            final Object e = self.getAcquire(i);
-            if (e == self) {
-                sj.add("(this Collection)");
-            } else {
-                sj.add(LazyConstantImpl.renderConstant(e));
-            }
-        }
-        return sj.toString();
     }
 
     public static <E> List<E> ofLazyList(int size,
@@ -767,23 +658,6 @@ final class LazyCollections {
         if (array[index] == null) {
             UNSAFE.putReferenceRelease(array, Unsafe.ARRAY_OBJECT_BASE_OFFSET + Unsafe.ARRAY_OBJECT_INDEX_SCALE * (long) index, newValue);
         }
-    }
-
-    public static <K, V> String renderMappings(AbstractLazyMap<K, V> self,
-                                               String selfName,
-                                               boolean curly) {
-        final StringJoiner sj = new StringJoiner(", ", curly ? "{" : "[", curly ? "}" : "]");
-        for (var k : self.keySet()) {
-            final Object value = self.getAcquire(k);
-            final String valueString;
-            if (value == self) {
-                valueString = "(this " + selfName + ")";
-            } else {
-                valueString = LazyConstantImpl.renderConstant(value);
-            }
-            sj.add(k + "=" + valueString);
-        }
-        return sj.toString();
     }
 
     /**

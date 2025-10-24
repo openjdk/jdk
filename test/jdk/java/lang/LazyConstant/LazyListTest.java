@@ -76,7 +76,7 @@ final class LazyListTest {
 
     @Test
     void get() {
-        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<>(IDENTITY);
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<Integer>(IDENTITY);
         var lazy = List.ofLazy(SIZE, cif);
         for (int i = 0; i < SIZE; i++) {
             assertEquals(i, lazy.get(i));
@@ -88,7 +88,7 @@ final class LazyListTest {
 
     @Test
     void getException() {
-        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<>(_ -> {
+        LazyConstantTestUtil.CountingIntFunction<Integer> cif = new LazyConstantTestUtil.CountingIntFunction<Integer>(_ -> {
             throw new UnsupportedOperationException();
         });
         var lazy = List.ofLazy(SIZE, cif);
@@ -155,12 +155,7 @@ final class LazyListTest {
     @Test
     void toStringTest() {
         assertEquals("[]", newEmptyLazyList().toString());
-        var lazy = List.ofLazy(2, IDENTITY);
-        assertEquals("[" + LazyConstantTestUtil.UNINITIALIZED_TAG + ", " + LazyConstantTestUtil.UNINITIALIZED_TAG + "]", lazy.toString());
-        lazy.get(0);
-        assertEquals("[0, " + LazyConstantTestUtil.UNINITIALIZED_TAG + "]", lazy.toString());
-        lazy.get(1);
-        assertEquals("[0, 1]", lazy.toString());
+        assertEquals("[0, 1]", List.ofLazy(2, IDENTITY).toString());
     }
 
     @Test
@@ -176,15 +171,6 @@ final class LazyListTest {
         assertTrue(newLazyList().equals(newRegularList()));
         assertTrue(newRegularList().equals(newLazyList()));
         assertFalse(newLazyList().equals("A"));
-    }
-
-    @Test
-    void equalsPartialEvaluationTest() {
-        var lazy = List.ofLazy(2, IDENTITY);
-        assertFalse(lazy.equals(List.of(0)));
-        assertEquals("[0, " + LazyConstantTestUtil.UNINITIALIZED_TAG + "]", lazy.toString());
-        assertTrue(lazy.equals(List.of(0, 1)));
-        assertEquals("[0, 1]", lazy.toString());
     }
 
     @Test
@@ -238,10 +224,6 @@ final class LazyListTest {
         assertEquals(eq.toString(), lazy.toString());
     }
 
-    void assertUnevaluated(List<Integer> subList) {
-        assertEquals(asString(LazyConstantTestUtil.UNINITIALIZED_TAG, subList), subList.toString());
-    }
-
     @Test
     void reversed() {
         var lazy = newLazyList();
@@ -272,7 +254,7 @@ final class LazyListTest {
         actual.getLast();
 
         var actualToString = actual.toString();
-        var expectedToString = expected.toString().replace("2", LazyConstantTestUtil.UNINITIALIZED_TAG);
+        var expectedToString = expected.toString();
         assertEquals(expectedToString, actualToString);
     }
 
@@ -293,10 +275,6 @@ final class LazyListTest {
                             op1 + " -> " + className(view2) + ", " +
                             op2 + " -> " + className3;
                     assertTrue(className3.contains("Lazy"), transitions);
-                    assertUnevaluated(list);
-                    assertUnevaluated(view1);
-                    assertUnevaluated(view2);
-                    assertUnevaluated(view3);
                 });
             });
         });
@@ -365,39 +343,6 @@ final class LazyListTest {
         assertInstanceOf(RandomAccess.class, newLazyList());
         assertInstanceOf(RandomAccess.class, newEmptyLazyList());
         assertInstanceOf(RandomAccess.class, newLazyList().subList(1, INDEX));
-    }
-
-    @Test
-    void childObjectOpsLazy() {
-        viewOperations().forEach(op0 -> {
-            viewOperations().forEach(op1 -> {
-                viewOperations().forEach(op2 -> {
-                    childOperations().forEach(co -> {
-                        var list = newLazyList();
-                        var view1 = op0.apply(list);
-                        var view2 = op1.apply(view1);
-                        var view3 = op2.apply(view2);
-                        var child = co.apply(view3);
-                        var childClassName = className(child);
-                        var transitions = className(list) + ", " +
-                                op0 + " -> " + className(view1) + ", " +
-                                op1 + " -> " + className(view2) + ", " +
-                                op2 + " -> " + className(view3) + ", " +
-                                co + " -> " + childClassName;
-
-                        // None of these operations should trigger evaluation
-                        var childToString = child.toString();
-                        int childHashCode = child.hashCode();
-                        boolean childEqualToNewObj = child.equals(new Object());
-
-                        assertUnevaluated(list);
-                        assertUnevaluated(view1);
-                        assertUnevaluated(view2);
-                        assertUnevaluated(view3);
-                    });
-                });
-            });
-        });
     }
 
     @Test
