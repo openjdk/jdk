@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import jdk.test.lib.RandomFactory;
  * @test
  * @bug 8140450
  * @summary Stack Walk Test (use -Dseed=X to set PRNG seed)
+ * @requires test.thread.factory == null
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @compile StackRecorderUtil.java
