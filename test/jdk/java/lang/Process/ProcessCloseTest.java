@@ -63,7 +63,7 @@ import java.util.stream.Stream;
 public class ProcessCloseTest {
 
     private final static boolean OS_WINDOWS = System.getProperty("os.name").startsWith("Windows");
-    private final static String CAT_PROGRAM = OS_WINDOWS ? "type" : "cat";
+    private final static String CAT_PROGRAM = "cat";
     private static List<String> JAVA_ARGS;
 
     private static List<String> setupJavaEXE() {
