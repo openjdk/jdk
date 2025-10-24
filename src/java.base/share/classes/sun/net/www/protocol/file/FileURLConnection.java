@@ -151,9 +151,9 @@ public class FileURLConnection extends URLConnection {
                 FileNameMap map = java.net.URLConnection.getFileNameMap();
                 String contentType = map.getContentTypeFor(file.getPath());
                 if (contentType != null) {
-                    properties.add(CONTENT_TYPE, contentType);
+                    properties.set(CONTENT_TYPE, contentType);
                 }
-                properties.add(CONTENT_LENGTH, Long.toString(length));
+                properties.set(CONTENT_LENGTH, Long.toString(length));
 
                 /*
                  * Format the last-modified field into the preferred
@@ -165,10 +165,10 @@ public class FileURLConnection extends URLConnection {
                     SimpleDateFormat fo =
                         new SimpleDateFormat ("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US);
                     fo.setTimeZone(TimeZone.getTimeZone("GMT"));
-                    properties.add(LAST_MODIFIED, fo.format(date));
+                    properties.set(LAST_MODIFIED, fo.format(date));
                 }
             } else {
-                properties.add(CONTENT_TYPE, TEXT_PLAIN);
+                properties.set(CONTENT_TYPE, TEXT_PLAIN);
             }
             initializedHeaders = true;
         }
