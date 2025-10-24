@@ -1892,6 +1892,16 @@ public class TestReductions {
 
     // ---------float***Simple ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.ADD_VF,          "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 2"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIf = {"AutoVectorizationOverrideProfitability", "< 2"})
+    // Not considered profitable by cost model, but if forced we can vectorize.
+    // Scalar: n loads + n adds
+    // Vector: n loads + n adds + n extract (sequential order of reduction)
     private static float floatAddSimple() {
         float acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1933,6 +1943,13 @@ public class TestReductions {
 
     // ---------float***DotProduct ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.ADD_VF,          "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static float floatAddDotProduct() {
         float acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1974,6 +1991,13 @@ public class TestReductions {
 
     // ---------float***Big ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.ADD_VF,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static float floatAddBig() {
         float acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -2015,6 +2039,16 @@ public class TestReductions {
 
     // ---------double***Simple ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.ADD_VD,          "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 2"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIf = {"AutoVectorizationOverrideProfitability", "< 2"})
+    // Not considered profitable by cost model, but if forced we can vectorize.
+    // Scalar: n loads + n adds
+    // Vector: n loads + n adds + n extract (sequential order of reduction)
     private static double doubleAddSimple() {
         double acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -2056,6 +2090,13 @@ public class TestReductions {
 
     // ---------double***DotProduct ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.ADD_VD,          "= 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static double doubleAddDotProduct() {
         double acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -2097,6 +2138,13 @@ public class TestReductions {
 
     // ---------double***Big ------------------------------------------------------------
     @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
+                  IRNode.ADD_REDUCTION_V, "> 0",
+                  IRNode.ADD_VD,          "> 0"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static double doubleAddBig() {
         double acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
