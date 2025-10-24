@@ -21,14 +21,14 @@
  * questions.
  */
 
-#include "cds/cdsConfig.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/cdsConfig.hpp"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiEnvBase.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/os.inline.hpp"
 
 JvmtiAgent* JvmtiAgentList::_head = nullptr;
@@ -102,10 +102,10 @@ void JvmtiAgentList::add(JvmtiAgent* agent) {
   // address of the pointer to add new agent (&_head when the list is empty or &agent->_next of the last agent in the list)
   JvmtiAgent** tail_ptr = &_head;
   while (true) {
-    JvmtiAgent* next = Atomic::load(tail_ptr);
+    JvmtiAgent* next = AtomicAccess::load(tail_ptr);
     if (next == nullptr) {
       // *tail_ptr == nullptr here
-      if (Atomic::cmpxchg(tail_ptr, (JvmtiAgent*)nullptr, agent) != nullptr) {
+      if (AtomicAccess::cmpxchg(tail_ptr, (JvmtiAgent*)nullptr, agent) != nullptr) {
         // another thread added an agent, reload next from tail_ptr
         continue;
       }
@@ -135,7 +135,7 @@ static void assert_initialized(JvmtiAgentList::Iterator& it) {
 #endif
 
 JvmtiAgent* JvmtiAgentList::head() {
-  return Atomic::load_acquire(&_head);
+  return AtomicAccess::load_acquire(&_head);
 }
 
 // In case an agent did not enable the VMInit callback, or if it is an -Xrun agent,
@@ -196,6 +196,11 @@ void JvmtiAgentList::load_xrun_agents() {
 // Invokes Agent_OnAttach for agents loaded dynamically during runtime.
 void JvmtiAgentList::load_agent(const char* agent_name, bool is_absolute_path,
                                 const char* options, outputStream* st) {
+  if (JvmtiEnvBase::get_phase() != JVMTI_PHASE_LIVE) {
+    st->print_cr("Dynamic agent loading is only permitted in the live phase");
+    return;
+  }
+
   JvmtiAgent* const agent = new JvmtiAgent(agent_name, options, is_absolute_path, /* dynamic agent */ true);
   if (agent->load(st)) {
     add(agent);

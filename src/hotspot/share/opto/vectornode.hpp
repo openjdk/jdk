@@ -95,7 +95,6 @@ class VectorNode : public TypeNode {
   static bool is_rotate_opcode(int opc);
 
   static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
-  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
 
   static int shift_count_opcode(int opc);
 
@@ -104,6 +103,7 @@ class VectorNode : public TypeNode {
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
+  static bool is_maskall_type(const TypeLong* type, int vlen);
   static bool is_muladds2i(const Node* n);
   static bool is_roundopD(Node* n);
   static bool is_scalar_rotate(Node* n);
@@ -281,6 +281,8 @@ class ReductionNode : public Node {
   virtual bool requires_strict_order() const {
     return false;
   }
+
+  static bool auto_vectorization_requires_strict_order(int vopc);
 
 #ifndef PRODUCT
   void dump_spec(outputStream* st) const {
@@ -1012,6 +1014,7 @@ class XorVNode : public VectorNode {
   XorVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1,in2,vt) {}
   virtual int Opcode() const;
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_XorV_VectorMaskCmp(PhaseGVN* phase, bool can_reshape);
 };
 
 //------------------------------XorReductionVNode--------------------------------------
@@ -1383,6 +1386,8 @@ class VectorMaskToLongNode : public VectorMaskOpNode {
   VectorMaskToLongNode(Node* mask, const Type* ty):
     VectorMaskOpNode(mask, ty, Op_VectorMaskToLong) {}
   virtual int Opcode() const;
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  Node* Ideal_MaskAll(PhaseGVN* phase);
   virtual uint  ideal_reg() const { return Op_RegL; }
   virtual Node* Identity(PhaseGVN* phase);
 };
@@ -1673,6 +1678,7 @@ class VectorMaskCmpNode : public VectorNode {
   virtual bool cmp( const Node &n ) const {
     return VectorNode::cmp(n) && _predicate == ((VectorMaskCmpNode&)n)._predicate;
   }
+  bool predicate_can_be_negated();
   BoolTest::mask get_predicate() { return _predicate; }
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -1776,6 +1782,7 @@ class VectorLoadMaskNode : public VectorNode {
 
   virtual int Opcode() const;
   virtual Node* Identity(PhaseGVN* phase);
+  Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 class VectorStoreMaskNode : public VectorNode {
@@ -1795,6 +1802,7 @@ class VectorMaskCastNode : public VectorNode {
     const TypeVect* in_vt = in->bottom_type()->is_vect();
     assert(in_vt->length() == vt->length(), "vector length must match");
   }
+  Node* Identity(PhaseGVN* phase);
   virtual int Opcode() const;
 };
 

@@ -31,6 +31,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/connode.hpp"
@@ -829,7 +830,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
 #ifndef PRODUCT
   if (bt == T_LONG) {
-    Atomic::inc(&_long_loop_candidates);
+    AtomicAccess::inc(&_long_loop_candidates);
   }
 #endif
 
@@ -1133,11 +1134,13 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
       }
     }
 
-    // We only want to use the auto-vectorization check as a trap once per bci. And
-    // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
-    // we do a custom check here.
-    if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
-      add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+    if (UseAutoVectorizationPredicate) {
+      // We only want to use the auto-vectorization check as a trap once per bci. And
+      // PhaseIdealLoop::add_parse_predicate only checks trap limits per method, so
+      // we do a custom check here.
+      if (!C->too_many_traps(cloned_sfpt->jvms()->method(), cloned_sfpt->jvms()->bci(), Deoptimization::Reason_auto_vectorization_check)) {
+        add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
+      }
     }
 
     add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
@@ -1145,7 +1148,7 @@ bool PhaseIdealLoop::create_loop_nest(IdealLoopTree* loop, Node_List &old_new) {
 
 #ifndef PRODUCT
   if (bt == T_LONG) {
-    Atomic::inc(&_long_loop_nests);
+    AtomicAccess::inc(&_long_loop_nests);
   }
 #endif
 
@@ -2582,7 +2585,7 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
 
 #ifndef PRODUCT
   if (x->as_Loop()->is_loop_nest_inner_loop() && iv_bt == T_LONG) {
-    Atomic::inc(&_long_loop_counted_loops);
+    AtomicAccess::inc(&_long_loop_counted_loops);
   }
 #endif
   if (iv_bt == T_LONG && x->as_Loop()->is_loop_nest_outer_loop()) {
@@ -4642,6 +4645,9 @@ void IdealLoopTree::dump_head() {
       tty->print(" predicated");
     }
   }
+  if (UseAutoVectorizationPredicate && predicates.auto_vectorization_check_block()->is_non_empty()) {
+    tty->print(" auto_vectorization_check_predicate");
+  }
   if (_head->is_CountedLoop()) {
     CountedLoopNode *cl = _head->as_CountedLoop();
     tty->print(" counted");
@@ -5170,21 +5176,20 @@ void PhaseIdealLoop::build_and_optimize() {
         continue;
       }
       Node* head = lpt->_head;
-      if (!head->is_BaseCountedLoop() || !lpt->is_innermost()) continue;
+      if (!lpt->is_innermost()) continue;
 
       // check for vectorized loops, any reassociation of invariants was already done
-      if (head->is_CountedLoop()) {
-        if (head->as_CountedLoop()->is_unroll_only()) {
-          continue;
-        } else {
-          AutoNodeBudget node_budget(this);
-          lpt->reassociate_invariants(this);
-        }
+      if (head->is_CountedLoop() && head->as_CountedLoop()->is_unroll_only()) {
+        continue;
+      } else {
+        AutoNodeBudget node_budget(this);
+        lpt->reassociate_invariants(this);
       }
       // Because RCE opportunities can be masked by split_thru_phi,
       // look for RCE candidates and inhibit split_thru_phi
       // on just their loop-phi's for this pass of loop opts
       if (SplitIfBlocks && do_split_ifs &&
+          head->is_BaseCountedLoop() &&
           head->as_BaseCountedLoop()->is_valid_counted_loop(head->as_BaseCountedLoop()->bt()) &&
           (lpt->policy_range_check(this, true, T_LONG) ||
            (head->is_CountedLoop() && lpt->policy_range_check(this, true, T_INT)))) {
@@ -5277,16 +5282,6 @@ void PhaseIdealLoop::build_and_optimize() {
           cl->set_notpassed_slp();
           cl->mark_do_unroll_only();
         }
-      }
-    }
-  }
-
-  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
-  if (C->has_loops() && !C->major_progress()) {
-    for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
-      IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted() && lpt->is_innermost()) {
-        move_unordered_reduction_out_of_loop(lpt);
       }
     }
   }

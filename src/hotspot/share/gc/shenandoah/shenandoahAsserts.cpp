@@ -29,8 +29,8 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "oops/oop.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 
@@ -425,6 +425,16 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
   }
 }
 
+void ShenandoahAsserts::assert_mark_complete(HeapWord* obj, const char* file, int line) {
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const ShenandoahHeapRegion* region = heap->heap_region_containing(obj);
+  const ShenandoahGeneration* generation = heap->generation_for(region->affiliation());
+  if (!generation->is_mark_complete()) {
+    ShenandoahMessageBuffer msg("Marking should be complete for object " PTR_FORMAT " in the %s generation", p2i(obj), generation->name());
+    report_vm_error(file, line, msg.buffer());
+  }
+}
+
 void ShenandoahAsserts::assert_in_cset(void* interior_loc, oop obj, const char* file, int line) {
   assert_correct(interior_loc, obj, file, line);
 
@@ -542,22 +552,6 @@ void ShenandoahAsserts::assert_control_or_vm_thread_at_safepoint(bool at_safepoi
   report_vm_error(file, line, msg.buffer());
 }
 
-void ShenandoahAsserts::assert_generations_reconciled(const char* file, int line) {
-  if (!SafepointSynchronize::is_at_safepoint()) {
-    return;
-  }
-
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  ShenandoahGeneration* ggen = heap->gc_generation();
-  ShenandoahGeneration* agen = heap->active_generation();
-  if (agen == ggen) {
-    return;
-  }
-
-  ShenandoahMessageBuffer msg("Active(%d) & GC(%d) Generations aren't reconciled", agen->type(), ggen->type());
-  report_vm_error(file, line, msg.buffer());
-}
-
 bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Klass*& k) {
   nk = 0;
   k = nullptr;
@@ -567,11 +561,15 @@ bool ShenandoahAsserts::extract_klass_safely(oop obj, narrowKlass& nk, const Kla
   }
   if (UseCompressedClassPointers) {
     if (UseCompactObjectHeaders) { // look in forwardee
-      oop fwd = ShenandoahForwarding::get_forwardee_raw_unchecked(obj);
-      if (!os::is_readable_pointer(fwd)) {
-        return false;
+      markWord mark = obj->mark();
+      if (mark.is_marked()) {
+        oop fwd = cast_to_oop(mark.clear_lock_bits().to_pointer());
+        if (!os::is_readable_pointer(fwd)) {
+          return false;
+        }
+        mark = fwd->mark();
       }
-      nk = fwd->mark().narrow_klass();
+      nk = mark.narrow_klass();
     } else {
       nk = obj->narrow_klass();
     }

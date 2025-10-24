@@ -42,6 +42,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 
 /**
  * This class consists exclusively of static methods that operate on or return
@@ -82,6 +83,7 @@ import jdk.internal.access.SharedSecrets;
  * @since   1.2
  */
 
+@AOTSafeClassInitializer
 public final class Collections {
     // Suppresses default constructor, ensuring non-instantiability.
     private Collections() {

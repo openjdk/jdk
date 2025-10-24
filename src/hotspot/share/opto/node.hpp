@@ -222,7 +222,7 @@ typedef Node** DUIterator_Fast;
 typedef Node** DUIterator_Last;
 #endif
 
-typedef ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
+typedef ResizeableHashTable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> OrigToNewHashtable;
 
 // Node Sentinel
 #define NodeSentinel (Node*)-1
@@ -2086,6 +2086,7 @@ Op_IL(Sub)
 Op_IL(Mul)
 Op_IL(URShift)
 Op_IL(LShift)
+Op_IL(RShift)
 Op_IL(Xor)
 Op_IL(Cmp)
 Op_IL(Div)

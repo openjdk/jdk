@@ -24,8 +24,8 @@
 #include "jfr/leakprofiler/chains/bfsClosure.hpp"
 #include "jfr/leakprofiler/chains/dfsClosure.hpp"
 #include "jfr/leakprofiler/chains/edge.hpp"
-#include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/edgeQueue.hpp"
+#include "jfr/leakprofiler/chains/edgeStore.hpp"
 #include "jfr/leakprofiler/chains/jfrbitset.hpp"
 #include "jfr/leakprofiler/utilities/granularTimer.hpp"
 #include "jfr/leakprofiler/utilities/unifiedOopRef.inline.hpp"
@@ -189,7 +189,7 @@ bool BFSClosure::is_complete() const {
   if (_edge_queue->bottom() > _next_frontier_idx) {
     // fallback onto DFS as part of processing the frontier
     assert(_dfs_fallback_idx >= _prev_frontier_idx, "invariant");
-    assert(_dfs_fallback_idx < _next_frontier_idx, "invariant");
+    assert(_dfs_fallback_idx <= _next_frontier_idx, "invariant");
     log_dfs_fallback();
     return true;
   }

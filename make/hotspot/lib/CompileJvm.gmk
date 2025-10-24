@@ -97,11 +97,13 @@ CFLAGS_VM_VERSION := \
 
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
     empty-body format-zero-length implicit-fallthrough int-in-bool-context \
+    invalid-offsetof \
     maybe-uninitialized missing-field-initializers \
     shift-negative-value unknown-pragmas unused-but-set-variable \
     unused-local-typedefs unused-variable
 
-DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor missing-braces \
+DISABLED_WARNINGS_clang := delete-non-abstract-non-virtual-dtor \
+    invalid-offsetof missing-braces \
     sometimes-uninitialized unknown-pragmas unused-but-set-variable \
     unused-function unused-local-typedef unused-private-field unused-variable
 
@@ -187,7 +189,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_c1_Runtime1_aarch64.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_cgroupV1Subsystem_linux.cpp := address, \
     DISABLED_WARNINGS_gcc_cgroupV2Subsystem_linux.cpp := address, \
-    DISABLED_WARNINGS_gcc_g1FreeIdSet.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_handshake.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_interp_masm_x86.cpp := uninitialized, \
     DISABLED_WARNINGS_gcc_javaClasses.cpp := unused-const-variable, \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test 8080069 8152925
  * @summary Test of Snippet redefinition and replacement.
  * @build KullaTesting TestingInputStream
- * @run testng ReplaceTest
+ * @run junit ReplaceTest
  */
 
 import java.util.Iterator;
@@ -34,16 +34,16 @@ import jdk.jshell.Snippet;
 import jdk.jshell.MethodSnippet;
 import jdk.jshell.TypeDeclSnippet;
 import jdk.jshell.VarSnippet;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static jdk.jshell.Snippet.Status.*;
 import static jdk.jshell.Snippet.SubKind.*;
-import static org.testng.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class ReplaceTest extends KullaTesting {
 
+    @Test
     public void testRedefine() {
         Snippet vx = varKey(assertEval("int x;"));
         Snippet mu = methodKey(assertEval("int mu() { return x * 4; }"));
@@ -69,6 +69,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testReplaceClassToVar() {
         Snippet oldA = classKey(assertEval("class A { public String toString() { return \"old\"; } }"));
         Snippet v = varKey(assertEval("A a = new A();", "old"));
@@ -92,6 +93,7 @@ public class ReplaceTest extends KullaTesting {
         assertFalse(it.hasNext(), "expected exactly one");
     }
 
+    @Test
     public void testReplaceVarToMethod() {
         Snippet x = varKey(assertEval("int x;"));
         MethodSnippet musn = methodKey(assertEval("double mu() { return x * 4; }"));
@@ -106,6 +108,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testReplaceMethodToMethod() {
         Snippet a = methodKey(assertEval("double a() { return 2; }"));
         Snippet b = methodKey(assertEval("double b() { return a() * 10; }"));
@@ -119,6 +122,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testReplaceClassToMethod() {
         Snippet c = classKey(assertEval("class C { int f() { return 7; } }"));
         Snippet m = methodKey(assertEval("int m() { return new C().f(); }"));
@@ -130,6 +134,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testReplaceVarToClass() {
         Snippet x = varKey(assertEval("int x;"));
         TypeDeclSnippet c = classKey(assertEval("class A { double a = 4 * x; }"));
@@ -144,6 +149,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testReplaceMethodToClass() {
         Snippet x = methodKey(assertEval("int x() { return 0; }"));
         TypeDeclSnippet c = classKey(assertEval("class A { double a = 4 * x(); }"));
@@ -159,6 +165,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testReplaceClassToClass() {
         TypeDeclSnippet a = classKey(assertEval("class A {}"));
         assertTypeDeclSnippet(a, "A", VALID, CLASS_SUBKIND, 0, 0);
@@ -178,6 +185,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testOverwriteReplaceMethod() {
         MethodSnippet k1 = methodKey(assertEval("String m(Integer i) { return i.toString(); }"));
         MethodSnippet k2 = methodKey(assertEval("String m(java.lang.Integer i) { return \"java.lang.\" + i.toString(); }",
@@ -193,6 +201,7 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
+    @Test
     public void testImportDeclare() {
         Snippet singleImport = importKey(assertEval("import java.util.List;", added(VALID)));
         Snippet importOnDemand = importKey(assertEval("import java.util.*;", added(VALID)));
@@ -213,7 +222,8 @@ public class ReplaceTest extends KullaTesting {
         assertActiveKeys();
     }
 
-    @Test(enabled = false) // TODO 8129420
+    @Test // TODO 8129420
+    @Disabled
     public void testLocalClassEvolve() {
         Snippet j = methodKey(assertEval("Object j() { return null; }", added(VALID)));
         assertEval("Object j() { class B {}; return null; }",
@@ -227,6 +237,7 @@ public class ReplaceTest extends KullaTesting {
         assertEval("j();", "Yep");
     }
 
+    @Test
     public void testReplaceCausesMethodReferenceError() {
         Snippet l = classKey(assertEval("interface Logger { public void log(String message); }", added(VALID)));
         Snippet v = varKey(assertEval("Logger l = System.out::println;", added(VALID)));
@@ -238,6 +249,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(v, VALID, RECOVERABLE_NOT_DEFINED, true, MAIN_SNIPPET));
     }
 
+    @Test
     public void testReplaceCausesClassCompilationError() {
         Snippet l = classKey(assertEval("interface L { }", added(VALID)));
         Snippet c = classKey(assertEval("class C implements L { }", added(VALID)));
@@ -249,6 +261,7 @@ public class ReplaceTest extends KullaTesting {
                 ste(c, VALID, RECOVERABLE_NOT_DEFINED, true, MAIN_SNIPPET));
     }
 
+    @Test
     public void testOverwriteNoUpdate() {
         String xsi = "int x = 5;";
         String xsd = "double x = 3.14159;";

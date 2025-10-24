@@ -113,6 +113,8 @@ bool VirtualSpaceNode::commit_range(MetaWord* p, size_t word_size) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to commit metaspace.");
   }
 
+  ASAN_UNPOISON_MEMORY_REGION((char*)p, word_size * BytesPerWord);
+
   if (AlwaysPreTouch) {
     os::pretouch_memory(p, p + word_size);
   }
@@ -193,6 +195,8 @@ void VirtualSpaceNode::uncommit_range(MetaWord* p, size_t word_size) {
     fatal("Failed to uncommit metaspace.");
   }
 
+  ASAN_POISON_MEMORY_REGION((char*)p, word_size * BytesPerWord);
+
   UL2(debug, "... uncommitted %zu words.", committed_words_in_range);
 
   // ... tell commit limiter...
@@ -238,10 +242,6 @@ VirtualSpaceNode::VirtualSpaceNode(ReservedSpace rs, bool owns_rs, CommitLimiter
   assert_is_aligned(_base, chunklevel::MAX_CHUNK_BYTE_SIZE);
   assert_is_aligned(_word_size, chunklevel::MAX_CHUNK_WORD_SIZE);
 
-  // Poison the memory region. It will be unpoisoned later on a per-chunk base for chunks that are
-  // handed to arenas.
-  ASAN_POISON_MEMORY_REGION(rs.base(), rs.size());
-
   // Register memory region related to Metaspace. The Metaspace contains lots of pointers to malloc
   // memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
@@ -260,6 +260,16 @@ VirtualSpaceNode* VirtualSpaceNode::create_node(size_t word_size,
   if (!rs.is_reserved()) {
     vm_exit_out_of_memory(word_size * BytesPerWord, OOM_MMAP_ERROR, "Failed to reserve memory for metaspace");
   }
+
+#ifndef _LP64
+  // On 32-bit, with +UseCompressedClassPointers, the whole address space is the encoding range. We therefore
+  // don't need a class space. However, as a pragmatic workaround for pesty overflow problems on 32-bit, we leave
+  // a small area at the end of the address space out of the encoding range. We just assume no Klass will ever live
+  // there (it won't, for no OS we support on 32-bit has user-addressable memory up there).
+  assert(!UseCompressedClassPointers ||
+         rs.end() <= (char*)CompressedKlassPointers::max_klass_range_size(), "Weirdly high address");
+#endif // _LP64
+
   MemTracker::record_virtual_memory_tag(rs, mtMetaspace);
   assert_is_aligned(rs.base(), chunklevel::MAX_CHUNK_BYTE_SIZE);
   InternalStats::inc_num_vsnodes_births();
@@ -279,10 +289,6 @@ VirtualSpaceNode::~VirtualSpaceNode() {
 
   // Unregister memory region related to Metaspace.
   LSAN_UNREGISTER_ROOT_REGION(_rs.base(), _rs.size());
-
-  // Undo the poisoning before potentially unmapping memory. This ensures that future mappings at
-  // the same address do not unexpectedly fail with use-after-poison.
-  ASAN_UNPOISON_MEMORY_REGION(_rs.base(), _rs.size());
 
   UL(debug, ": dies.");
 

@@ -205,13 +205,17 @@ class APITest {
             "pkg/package-summary.html",
             "pkg/package-tree.html",
             "resource-files/copy.svg",
+            "resource-files/down.svg",
             "resource-files/glass.svg",
             "resource-files/jquery-ui.min.css",
             "resource-files/left.svg",
             "resource-files/link.svg",
+            "resource-files/moon.svg",
             "resource-files/right.svg",
             "resource-files/stylesheet.css",
+            "resource-files/sun.svg",
             "resource-files/x.svg",
+            "resource-files/sort-a-z.svg",
             "resource-files/fonts/dejavu.css",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff",
             "resource-files/fonts/DejaVuLGCSans-Bold.woff2",
@@ -262,4 +266,3 @@ class APITest {
                          && !s.equals("system-properties.html"))
             .collect(Collectors.toSet());
 }
-
