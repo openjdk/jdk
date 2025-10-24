@@ -347,14 +347,14 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Specification.
      *
      * @param de the {@code DEREncodable} to encrypt. Supported types include
-     *           {@link PrivateKey}, {@link KeyPair}, and {@link PKCS8EncodedKeySpec}.
+     *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
      * @param algorithm the PBE encryption algorithm.
      * @param params the {@code AlgorithmParameterSpec} used for encryption. If
      *               {@code null}, the provider’s default parameters are applied.
-     * @param provider the {@code Provider} for {@link SecretKeyFactory} and
-     *                 {@link Cipher} operations. If {@code null}, provider
+     * @param provider the {@code Provider} for {@code SecretKeyFactory} and
+     *                 {@code Cipher} operations. If {@code null}, provider
      *                 defaults are used
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de}, {@code password}, or
@@ -395,7 +395,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * password-based encryption (PBE) algorithm and provider are used.
      *
      * @param de the {@code DEREncodable} to encrypt. Supported types include
-     *           {@link PrivateKey}, {@link KeyPair}, and {@link PKCS8EncodedKeySpec}.
+     *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param password the password used for PBE encryption. This array is cloned
      *                 before use.
      * @return an {@code EncryptedPrivateKeyInfo}
@@ -420,7 +420,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
 
     /**
      * Creates an {@code EncryptedPrivateKeyInfo} by encrypting the specified
-     * {@link DEREncodable}. A valid encryption algorithm and {@code Key} must
+     * {@code DEREncodable}. A valid encryption algorithm and {@code Key} must
      * be specified.
      *
      * <p>The format of the algorithm string is described in the
@@ -429,7 +429,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * Specification.
      *
      * @param de the {@code DEREncodable} to encrypt. Supported types include
-     *           {@link PrivateKey}, {@link KeyPair}, and {@link PKCS8EncodedKeySpec}.
+     *           {@code PrivateKey}, {@code KeyPair}, and {@code PKCS8EncodedKeySpec}.
      * @param encryptKey the key used to encrypt the encoding.
      * @param algorithm the encryption algorithm, such as a password-based
      *                  encryption (PBE) algorithm.
@@ -437,7 +437,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      *               {@code null}, the provider’s default parameters are applied.
      * @param random the {@code SecureRandom} instance used during encryption.
      *               If {@code null}, the default is used
-     * @param provider the {@code Provider} for {@link Cipher} operations.
+     * @param provider the {@code Provider} for {@code Cipher} operations.
      *                 If {@code null}, the default provider list is used.
      * @return an {@code EncryptedPrivateKeyInfo}
      * @throws NullPointerException if {@code de}, {@code encryptKey}, or
@@ -536,8 +536,8 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * decryption key and provider.
      *
      * @param decryptKey the decryption key. Must not be {@code null}.
-     * @param provider the {@code Provider} for {@link Cipher} decryption
-     *                 and {@link PrivateKey} generation. If {@code null}, the
+     * @param provider the {@code Provider} for {@code Cipher} decryption
+     *                 and {@code PrivateKey} generation. If {@code null}, the
      *                 default provider configuration is used.
      * @return the decrypted {@code PrivateKey}
      * @throws NullPointerException if {@code decryptKey} is {@code null}
@@ -602,7 +602,7 @@ public non-sealed class EncryptedPrivateKeyInfo implements DEREncodable {
      * public and private key, an {@code InvalidKeyException} is thrown.
      *
      * @param decryptKey the decryption key. Must not be {@code null}.
-     * @param provider the {@code Provider} for {@link Cipher} decryption
+     * @param provider the {@code Provider} for {@code Cipher} decryption
      *                 and key generation. If {@code null}, the default provider
      *                 configuration is used.
      * @return a decrypted {@code KeyPair}
