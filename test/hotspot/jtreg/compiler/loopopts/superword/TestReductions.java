@@ -44,11 +44,11 @@ import compiler.lib.generators.Generator;
  * test/micro/org/openjdk/bench/vm/compiler/VectorReduction2.java
  */
 public class TestReductions {
-    static int SIZE = 1024*8;
-    public static final Generator<Integer> GEN_I = G.ints();
-    public static final Generator<Long>    GEN_L = G.longs();
-    public static final Generator<Float>   GEN_F = G.floats();
-    public static final Generator<Double>  GEN_D = G.doubles();
+    private static int SIZE = 1024*8;
+    private static final Generator<Integer> GEN_I = G.ints();
+    private static final Generator<Long>    GEN_L = G.longs();
+    private static final Generator<Float>   GEN_F = G.floats();
+    private static final Generator<Double>  GEN_D = G.doubles();
 
     private static byte[] in1B   = fillRandom(new byte[SIZE]);
     private static byte[] in2B   = fillRandom(new byte[SIZE]);
@@ -95,8 +95,141 @@ public class TestReductions {
 
     public TestReductions() {
         // Add all tests to list
-        tests.put("test1", TestReductions::test1);
-        tests.put("test2", TestReductions::test2);
+        tests.put("byteAndSimple",       TestReductions::byteAndSimple);
+        tests.put("byteOrSimple",        TestReductions::byteOrSimple);
+        tests.put("byteXorSimple",       TestReductions::byteXorSimple);
+        tests.put("byteAddSimple",       TestReductions::byteAddSimple);
+        tests.put("byteMulSimple",       TestReductions::byteMulSimple);
+        tests.put("byteMinSimple",       TestReductions::byteMinSimple);
+        tests.put("byteMaxSimple",       TestReductions::byteMaxSimple);
+        tests.put("byteAndDotProduct",   TestReductions::byteAndDotProduct);
+        tests.put("byteOrDotProduct",    TestReductions::byteOrDotProduct);
+        tests.put("byteXorDotProduct",   TestReductions::byteXorDotProduct);
+        tests.put("byteAddDotProduct",   TestReductions::byteAddDotProduct);
+        tests.put("byteMulDotProduct",   TestReductions::byteMulDotProduct);
+        tests.put("byteMinDotProduct",   TestReductions::byteMinDotProduct);
+        tests.put("byteMaxDotProduct",   TestReductions::byteMaxDotProduct);
+        tests.put("byteAndBig",          TestReductions::byteAndBig);
+        tests.put("byteOrBig",           TestReductions::byteOrBig);
+        tests.put("byteXorBig",          TestReductions::byteXorBig);
+        tests.put("byteAddBig",          TestReductions::byteAddBig);
+        tests.put("byteMulBig",          TestReductions::byteMulBig);
+        tests.put("byteMinBig",          TestReductions::byteMinBig);
+        tests.put("byteMaxBig",          TestReductions::byteMaxBig);
+
+        tests.put("charAndSimple",       TestReductions::charAndSimple);
+        tests.put("charOrSimple",        TestReductions::charOrSimple);
+        tests.put("charXorSimple",       TestReductions::charXorSimple);
+        tests.put("charAddSimple",       TestReductions::charAddSimple);
+        tests.put("charMulSimple",       TestReductions::charMulSimple);
+        tests.put("charMinSimple",       TestReductions::charMinSimple);
+        tests.put("charMaxSimple",       TestReductions::charMaxSimple);
+        tests.put("charAndDotProduct",   TestReductions::charAndDotProduct);
+        tests.put("charOrDotProduct",    TestReductions::charOrDotProduct);
+        tests.put("charXorDotProduct",   TestReductions::charXorDotProduct);
+        tests.put("charAddDotProduct",   TestReductions::charAddDotProduct);
+        tests.put("charMulDotProduct",   TestReductions::charMulDotProduct);
+        tests.put("charMinDotProduct",   TestReductions::charMinDotProduct);
+        tests.put("charMaxDotProduct",   TestReductions::charMaxDotProduct);
+        tests.put("charAndBig",          TestReductions::charAndBig);
+        tests.put("charOrBig",           TestReductions::charOrBig);
+        tests.put("charXorBig",          TestReductions::charXorBig);
+        tests.put("charAddBig",          TestReductions::charAddBig);
+        tests.put("charMulBig",          TestReductions::charMulBig);
+        tests.put("charMinBig",          TestReductions::charMinBig);
+        tests.put("charMaxBig",          TestReductions::charMaxBig);
+
+        tests.put("shortAndSimple",      TestReductions::shortAndSimple);
+        tests.put("shortOrSimple",       TestReductions::shortOrSimple);
+        tests.put("shortXorSimple",      TestReductions::shortXorSimple);
+        tests.put("shortAddSimple",      TestReductions::shortAddSimple);
+        tests.put("shortMulSimple",      TestReductions::shortMulSimple);
+        tests.put("shortMinSimple",      TestReductions::shortMinSimple);
+        tests.put("shortMaxSimple",      TestReductions::shortMaxSimple);
+        tests.put("shortAndDotProduct",  TestReductions::shortAndDotProduct);
+        tests.put("shortOrDotProduct",   TestReductions::shortOrDotProduct);
+        tests.put("shortXorDotProduct",  TestReductions::shortXorDotProduct);
+        tests.put("shortAddDotProduct",  TestReductions::shortAddDotProduct);
+        tests.put("shortMulDotProduct",  TestReductions::shortMulDotProduct);
+        tests.put("shortMinDotProduct",  TestReductions::shortMinDotProduct);
+        tests.put("shortMaxDotProduct",  TestReductions::shortMaxDotProduct);
+        tests.put("shortAndBig",         TestReductions::shortAndBig);
+        tests.put("shortOrBig",          TestReductions::shortOrBig);
+        tests.put("shortXorBig",         TestReductions::shortXorBig);
+        tests.put("shortAddBig",         TestReductions::shortAddBig);
+        tests.put("shortMulBig",         TestReductions::shortMulBig);
+        tests.put("shortMinBig",         TestReductions::shortMinBig);
+        tests.put("shortMaxBig",         TestReductions::shortMaxBig);
+
+        tests.put("intAndSimple",        TestReductions::intAndSimple);
+        tests.put("intOrSimple",         TestReductions::intOrSimple);
+        tests.put("intXorSimple",        TestReductions::intXorSimple);
+        tests.put("intAddSimple",        TestReductions::intAddSimple);
+        tests.put("intMulSimple",        TestReductions::intMulSimple);
+        tests.put("intMinSimple",        TestReductions::intMinSimple);
+        tests.put("intMaxSimple",        TestReductions::intMaxSimple);
+        tests.put("intAndDotProduct",    TestReductions::intAndDotProduct);
+        tests.put("intOrDotProduct",     TestReductions::intOrDotProduct);
+        tests.put("intXorDotProduct",    TestReductions::intXorDotProduct);
+        tests.put("intAddDotProduct",    TestReductions::intAddDotProduct);
+        tests.put("intMulDotProduct",    TestReductions::intMulDotProduct);
+        tests.put("intMinDotProduct",    TestReductions::intMinDotProduct);
+        tests.put("intMaxDotProduct",    TestReductions::intMaxDotProduct);
+        tests.put("intAndBig",           TestReductions::intAndBig);
+        tests.put("intOrBig",            TestReductions::intOrBig);
+        tests.put("intXorBig",           TestReductions::intXorBig);
+        tests.put("intAddBig",           TestReductions::intAddBig);
+        tests.put("intMulBig",           TestReductions::intMulBig);
+        tests.put("intMinBig",           TestReductions::intMinBig);
+        tests.put("intMaxBig",           TestReductions::intMaxBig);
+
+        tests.put("longAndSimple",       TestReductions::longAndSimple);
+        tests.put("longOrSimple",        TestReductions::longOrSimple);
+        tests.put("longXorSimple",       TestReductions::longXorSimple);
+        tests.put("longAddSimple",       TestReductions::longAddSimple);
+        tests.put("longMulSimple",       TestReductions::longMulSimple);
+        tests.put("longMinSimple",       TestReductions::longMinSimple);
+        tests.put("longMaxSimple",       TestReductions::longMaxSimple);
+        tests.put("longAndDotProduct",   TestReductions::longAndDotProduct);
+        tests.put("longOrDotProduct",    TestReductions::longOrDotProduct);
+        tests.put("longXorDotProduct",   TestReductions::longXorDotProduct);
+        tests.put("longAddDotProduct",   TestReductions::longAddDotProduct);
+        tests.put("longMulDotProduct",   TestReductions::longMulDotProduct);
+        tests.put("longMinDotProduct",   TestReductions::longMinDotProduct);
+        tests.put("longMaxDotProduct",   TestReductions::longMaxDotProduct);
+        tests.put("longAndBig",          TestReductions::longAndBig);
+        tests.put("longOrBig",           TestReductions::longOrBig);
+        tests.put("longXorBig",          TestReductions::longXorBig);
+        tests.put("longAddBig",          TestReductions::longAddBig);
+        tests.put("longMulBig",          TestReductions::longMulBig);
+        tests.put("longMinBig",          TestReductions::longMinBig);
+        tests.put("longMaxBig",          TestReductions::longMaxBig);
+
+        tests.put("floatAddSimple",      TestReductions::floatAddSimple);
+        tests.put("floatMulSimple",      TestReductions::floatMulSimple);
+        tests.put("floatMinSimple",      TestReductions::floatMinSimple);
+        tests.put("floatMaxSimple",      TestReductions::floatMaxSimple);
+        tests.put("floatAddDotProduct",  TestReductions::floatAddDotProduct);
+        tests.put("floatMulDotProduct",  TestReductions::floatMulDotProduct);
+        tests.put("floatMinDotProduct",  TestReductions::floatMinDotProduct);
+        tests.put("floatMaxDotProduct",  TestReductions::floatMaxDotProduct);
+        tests.put("floatAddBig",         TestReductions::floatAddBig);
+        tests.put("floatMulBig",         TestReductions::floatMulBig);
+        tests.put("floatMinBig",         TestReductions::floatMinBig);
+        tests.put("floatMaxBig",         TestReductions::floatMaxBig);
+
+        tests.put("doubleAddSimple",     TestReductions::doubleAddSimple);
+        tests.put("doubleMulSimple",     TestReductions::doubleMulSimple);
+        tests.put("doubleMinSimple",     TestReductions::doubleMinSimple);
+        tests.put("doubleMaxSimple",     TestReductions::doubleMaxSimple);
+        tests.put("doubleAddDotProduct", TestReductions::doubleAddDotProduct);
+        tests.put("doubleMulDotProduct", TestReductions::doubleMulDotProduct);
+        tests.put("doubleMinDotProduct", TestReductions::doubleMinDotProduct);
+        tests.put("doubleMaxDotProduct", TestReductions::doubleMaxDotProduct);
+        tests.put("doubleAddBig",        TestReductions::doubleAddBig);
+        tests.put("doubleMulBig",        TestReductions::doubleMulBig);
+        tests.put("doubleMinBig",        TestReductions::doubleMinBig);
+        tests.put("doubleMaxBig",        TestReductions::doubleMaxBig);
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -108,8 +241,141 @@ public class TestReductions {
     }
 
     @Warmup(100)
-    @Run(test = {"test1",
-                 "test2"})
+    @Run(test = {"byteAndSimple",
+                 "byteOrSimple",
+                 "byteXorSimple",
+                 "byteAddSimple",
+                 "byteMulSimple",
+                 "byteMinSimple",
+                 "byteMaxSimple",
+                 "byteAndDotProduct",
+                 "byteOrDotProduct",
+                 "byteXorDotProduct",
+                 "byteAddDotProduct",
+                 "byteMulDotProduct",
+                 "byteMinDotProduct",
+                 "byteMaxDotProduct",
+                 "byteAndBig",
+                 "byteOrBig",
+                 "byteXorBig",
+                 "byteAddBig",
+                 "byteMulBig",
+                 "byteMinBig",
+                 "byteMaxBig",
+
+                 "charAndSimple",
+                 "charOrSimple",
+                 "charXorSimple",
+                 "charAddSimple",
+                 "charMulSimple",
+                 "charMinSimple",
+                 "charMaxSimple",
+                 "charAndDotProduct",
+                 "charOrDotProduct",
+                 "charXorDotProduct",
+                 "charAddDotProduct",
+                 "charMulDotProduct",
+                 "charMinDotProduct",
+                 "charMaxDotProduct",
+                 "charAndBig",
+                 "charOrBig",
+                 "charXorBig",
+                 "charAddBig",
+                 "charMulBig",
+                 "charMinBig",
+                 "charMaxBig",
+
+                 "shortAndSimple",
+                 "shortOrSimple",
+                 "shortXorSimple",
+                 "shortAddSimple",
+                 "shortMulSimple",
+                 "shortMinSimple",
+                 "shortMaxSimple",
+                 "shortAndDotProduct",
+                 "shortOrDotProduct",
+                 "shortXorDotProduct",
+                 "shortAddDotProduct",
+                 "shortMulDotProduct",
+                 "shortMinDotProduct",
+                 "shortMaxDotProduct",
+                 "shortAndBig",
+                 "shortOrBig",
+                 "shortXorBig",
+                 "shortAddBig",
+                 "shortMulBig",
+                 "shortMinBig",
+                 "shortMaxBig",
+
+                 "intAndSimple",
+                 "intOrSimple",
+                 "intXorSimple",
+                 "intAddSimple",
+                 "intMulSimple",
+                 "intMinSimple",
+                 "intMaxSimple",
+                 "intAndDotProduct",
+                 "intOrDotProduct",
+                 "intXorDotProduct",
+                 "intAddDotProduct",
+                 "intMulDotProduct",
+                 "intMinDotProduct",
+                 "intMaxDotProduct",
+                 "intAndBig",
+                 "intOrBig",
+                 "intXorBig",
+                 "intAddBig",
+                 "intMulBig",
+                 "intMinBig",
+                 "intMaxBig",
+
+                 "longAndSimple",
+                 "longOrSimple",
+                 "longXorSimple",
+                 "longAddSimple",
+                 "longMulSimple",
+                 "longMinSimple",
+                 "longMaxSimple",
+                 "longAndDotProduct",
+                 "longOrDotProduct",
+                 "longXorDotProduct",
+                 "longAddDotProduct",
+                 "longMulDotProduct",
+                 "longMinDotProduct",
+                 "longMaxDotProduct",
+                 "longAndBig",
+                 "longOrBig",
+                 "longXorBig",
+                 "longAddBig",
+                 "longMulBig",
+                 "longMinBig",
+                 "longMaxBig",
+
+                 "floatAddSimple",
+                 "floatMulSimple",
+                 "floatMinSimple",
+                 "floatMaxSimple",
+                 "floatAddDotProduct",
+                 "floatMulDotProduct",
+                 "floatMinDotProduct",
+                 "floatMaxDotProduct",
+                 "floatAddBig",
+                 "floatMulBig",
+                 "floatMinBig",
+                 "floatMaxBig",
+
+                 "doubleAddSimple",
+                 "doubleMulSimple",
+                 "doubleMinSimple",
+                 "doubleMaxSimple",
+                 "doubleAddDotProduct",
+                 "doubleMulDotProduct",
+                 "doubleMinDotProduct",
+                 "doubleMaxDotProduct",
+                 "doubleAddBig",
+                 "doubleMulBig",
+                 "doubleMinBig",
+                 "doubleMaxBig"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -168,15 +434,39 @@ public class TestReductions {
         return a;
     }
 
+    // ---------byte***Simple ------------------------------------------------------------
     @Test
-    // @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-    //               IRNode.STORE_VECTOR, "> 0",
-    //               ".*multiversion.*", "= 0"},
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // // Should always vectorize, no speculative runtime check required.
-    static byte test1() {
+    private static byte byteAndSimple() {
+        byte acc = (byte)0xFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteOrSimple() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteXorSimple() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteAddSimple() {
         byte acc = 0; // neutral element
         for (int i = 0; i < SIZE; i++) {
             byte val = in1B[i];
@@ -186,19 +476,1274 @@ public class TestReductions {
     }
 
     @Test
-    // @IR(counts = {IRNode.LOAD_VECTOR_B, "> 0",
-    //               IRNode.STORE_VECTOR, "> 0",
-    //               ".*multiversion.*", "= 0"},
-    //     phase = CompilePhase.PRINT_IDEAL,
-    //     applyIfPlatform = {"64-bit", "true"},
-    //     applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // // Should always vectorize, no speculative runtime check required.
-    static byte test2() {
-        byte acc = 0; // neutral element
+    private static byte byteMulSimple() {
+        byte acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
             byte val = in1B[i];
             acc *= val;
         }
         return acc;
     }
+
+    @Test
+    private static byte byteMinSimple() {
+        byte acc = Byte.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc = (byte)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMaxSimple() {
+        byte acc = Byte.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = in1B[i];
+            acc = (byte)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------byte***DotProduct ------------------------------------------------------------
+    @Test
+    private static byte byteAndDotProduct() {
+        byte acc = (byte)0xFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteOrDotProduct() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteXorDotProduct() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteAddDotProduct() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMulDotProduct() {
+        byte acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMinDotProduct() {
+        byte acc = Byte.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc = (byte)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMaxDotProduct() {
+        byte acc = Byte.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)(in1B[i] * in2B[i]);
+            acc = (byte)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------byte***Big ------------------------------------------------------------
+    @Test
+    private static byte byteAndBig() {
+        byte acc = (byte)0xFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteOrBig() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteXorBig() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteAddBig() {
+        byte acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMulBig() {
+        byte acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMinBig() {
+        byte acc = Byte.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc = (byte)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static byte byteMaxBig() {
+        byte acc = Byte.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            byte val = (byte)((in1B[i] * in2B[i]) + (in1B[i] * in3B[i]) + (in2B[i] * in3B[i]));
+            acc = (byte)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------char***Simple ------------------------------------------------------------
+    @Test
+    private static char charAndSimple() {
+        char acc = (char)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charOrSimple() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charXorSimple() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charAddSimple() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMulSimple() {
+        char acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMinSimple() {
+        char acc = Character.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc = (char)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMaxSimple() {
+        char acc = Character.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = in1C[i];
+            acc = (char)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------char***DotProduct ------------------------------------------------------------
+    @Test
+    private static char charAndDotProduct() {
+        char acc = (char)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charOrDotProduct() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charXorDotProduct() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charAddDotProduct() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMulDotProduct() {
+        char acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMinDotProduct() {
+        char acc = Character.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc = (char)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMaxDotProduct() {
+        char acc = Character.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)(in1C[i] * in2C[i]);
+            acc = (char)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------char***Big ------------------------------------------------------------
+    @Test
+    private static char charAndBig() {
+        char acc = (char)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charOrBig() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charXorBig() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charAddBig() {
+        char acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMulBig() {
+        char acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMinBig() {
+        char acc = Character.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc = (char)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static char charMaxBig() {
+        char acc = Character.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            char val = (char)((in1C[i] * in2C[i]) + (in1C[i] * in3C[i]) + (in2C[i] * in3C[i]));
+            acc = (char)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------short***Simple ------------------------------------------------------------
+    @Test
+    private static short shortAndSimple() {
+        short acc = (short)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortOrSimple() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortXorSimple() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortAddSimple() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMulSimple() {
+        short acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMinSimple() {
+        short acc = Short.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc = (short)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMaxSimple() {
+        short acc = Short.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = in1S[i];
+            acc = (short)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------short***DotProduct ------------------------------------------------------------
+    @Test
+    private static short shortAndDotProduct() {
+        short acc = (short)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortOrDotProduct() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortXorDotProduct() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortAddDotProduct() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMulDotProduct() {
+        short acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMinDotProduct() {
+        short acc = Short.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc = (short)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMaxDotProduct() {
+        short acc = Short.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)(in1S[i] * in2S[i]);
+            acc = (short)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------short***Big ------------------------------------------------------------
+    @Test
+    private static short shortAndBig() {
+        short acc = (short)0xFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortOrBig() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortXorBig() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortAddBig() {
+        short acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMulBig() {
+        short acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMinBig() {
+        short acc = Short.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc = (short)Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static short shortMaxBig() {
+        short acc = Short.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            short val = (short)((in1S[i] * in2S[i]) + (in1S[i] * in3S[i]) + (in2S[i] * in3S[i]));
+            acc = (short)Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------int***Simple ------------------------------------------------------------
+    @Test
+    private static int intAndSimple() {
+        int acc = 0xFFFFFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intOrSimple() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intXorSimple() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intAddSimple() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMulSimple() {
+        int acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMinSimple() {
+        int acc = Integer.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMaxSimple() {
+        int acc = Integer.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------int***DotProduct ------------------------------------------------------------
+    @Test
+    private static int intAndDotProduct() {
+        int acc = 0xFFFFFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intOrDotProduct() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intXorDotProduct() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intAddDotProduct() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMulDotProduct() {
+        int acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMinDotProduct() {
+        int acc = Integer.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMaxDotProduct() {
+        int acc = Integer.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = in1I[i] * in2I[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------int***Big ------------------------------------------------------------
+    @Test
+    private static int intAndBig() {
+        int acc = 0xFFFFFFFF; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intOrBig() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intXorBig() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intAddBig() {
+        int acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMulBig() {
+        int acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMinBig() {
+        int acc = Integer.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static int intMaxBig() {
+        int acc = Integer.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            int val = (in1I[i] * in2I[i]) + (in1I[i] * in3I[i]) + (in2I[i] * in3I[i]);
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------long***Simple ------------------------------------------------------------
+    @Test
+    private static long longAndSimple() {
+        long acc = 0xFFFFFFFFFFFFFFFFL; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longOrSimple() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longXorSimple() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longAddSimple() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMulSimple() {
+        long acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMinSimple() {
+        long acc = Long.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMaxSimple() {
+        long acc = Long.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------long***DotProduct ------------------------------------------------------------
+    @Test
+    private static long longAndDotProduct() {
+        long acc = 0xFFFFFFFFFFFFFFFFL; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longOrDotProduct() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longXorDotProduct() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longAddDotProduct() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMulDotProduct() {
+        long acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMinDotProduct() {
+        long acc = Long.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMaxDotProduct() {
+        long acc = Long.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = in1L[i] * in2L[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------long***Big ------------------------------------------------------------
+    @Test
+    private static long longAndBig() {
+        long acc = 0xFFFFFFFFFFFFFFFFL; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc &= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longOrBig() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc |= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longXorBig() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc ^= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longAddBig() {
+        long acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMulBig() {
+        long acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMinBig() {
+        long acc = Long.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static long longMaxBig() {
+        long acc = Long.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            long val = (in1L[i] * in2L[i]) + (in1L[i] * in3L[i]) + (in2L[i] * in3L[i]);
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------float***Simple ------------------------------------------------------------
+    @Test
+    private static float floatAddSimple() {
+        float acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMulSimple() {
+        float acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMinSimple() {
+        float acc = Float.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMaxSimple() {
+        float acc = Float.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------float***DotProduct ------------------------------------------------------------
+    @Test
+    private static float floatAddDotProduct() {
+        float acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i] * in2F[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMulDotProduct() {
+        float acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i] * in2F[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMinDotProduct() {
+        float acc = Float.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i] * in2F[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMaxDotProduct() {
+        float acc = Float.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = in1F[i] * in2F[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------float***Big ------------------------------------------------------------
+    @Test
+    private static float floatAddBig() {
+        float acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = (in1F[i] * in2F[i]) + (in1F[i] * in3F[i]) + (in2F[i] * in3F[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMulBig() {
+        float acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = (in1F[i] * in2F[i]) + (in1F[i] * in3F[i]) + (in2F[i] * in3F[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMinBig() {
+        float acc = Float.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = (in1F[i] * in2F[i]) + (in1F[i] * in3F[i]) + (in2F[i] * in3F[i]);
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static float floatMaxBig() {
+        float acc = Float.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            float val = (in1F[i] * in2F[i]) + (in1F[i] * in3F[i]) + (in2F[i] * in3F[i]);
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------double***Simple ------------------------------------------------------------
+    @Test
+    private static double doubleAddSimple() {
+        double acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMulSimple() {
+        double acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMinSimple() {
+        double acc = Double.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMaxSimple() {
+        double acc = Double.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------double***DotProduct ------------------------------------------------------------
+    @Test
+    private static double doubleAddDotProduct() {
+        double acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i] * in2D[i];
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMulDotProduct() {
+        double acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i] * in2D[i];
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMinDotProduct() {
+        double acc = Double.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i] * in2D[i];
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMaxDotProduct() {
+        double acc = Double.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = in1D[i] * in2D[i];
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+    // ---------double***Big ------------------------------------------------------------
+    @Test
+    private static double doubleAddBig() {
+        double acc = 0; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = (in1D[i] * in2D[i]) + (in1D[i] * in3D[i]) + (in2D[i] * in3D[i]);
+            acc += val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMulBig() {
+        double acc = 1; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = (in1D[i] * in2D[i]) + (in1D[i] * in3D[i]) + (in2D[i] * in3D[i]);
+            acc *= val;
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMinBig() {
+        double acc = Double.MAX_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = (in1D[i] * in2D[i]) + (in1D[i] * in3D[i]) + (in2D[i] * in3D[i]);
+            acc = Math.min(acc, val);
+        }
+        return acc;
+    }
+
+    @Test
+    private static double doubleMaxBig() {
+        double acc = Double.MIN_VALUE; // neutral element
+        for (int i = 0; i < SIZE; i++) {
+            double val = (in1D[i] * in2D[i]) + (in1D[i] * in3D[i]) + (in2D[i] * in3D[i]);
+            acc = Math.max(acc, val);
+        }
+        return acc;
+    }
+
+
 }
