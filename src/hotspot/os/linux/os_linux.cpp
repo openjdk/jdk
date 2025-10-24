@@ -1795,7 +1795,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     {EM_LOONGARCH,   EM_LOONGARCH, ELFCLASS64, ELFDATA2LSB, (char*)"LoongArch"},
   };
 
-#if    (defined AMD64) || (defined X32)
+#if    (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
 #elif  (defined __sparc) && (defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARCV9;
@@ -2715,7 +2715,7 @@ void os::jfr_report_memory_info() {
 
 #endif // INCLUDE_JFR
 
-#if defined(AMD64) || defined(X32)
+#if defined(AMD64)
 const char* search_string = "model name";
 #elif defined(M68K)
 const char* search_string = "CPU";
