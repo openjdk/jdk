@@ -413,16 +413,18 @@ enum SignatureScheme {
             List<ProtocolVersion> activeProtocols,
             Set<SSLScope> scopes) {
         List<SignatureScheme> supported = new LinkedList<>();
+        List<SignatureScheme> schemesToCheck;
 
-        List<SignatureScheme> schemesToCheck =
-                // No need to lookup default signature schemes.
-                config.signatureSchemes == SupportedSigSchemes.DEFAULT
-                        || config.signatureSchemes == null ?
-                    Arrays.asList(SignatureScheme.values()) :
-                        Arrays.stream(config.signatureSchemes)
-                                .map(SignatureScheme::nameOf)
-                                .filter(Objects::nonNull)
-                                .toList();
+        // No need to look up the names of the default signature schemes.
+        if (config.signatureSchemes == SupportedSigSchemes.DEFAULT
+                || config.signatureSchemes == null) {
+            schemesToCheck = Arrays.asList(SignatureScheme.values());
+        } else {
+            schemesToCheck = Arrays.stream(config.signatureSchemes)
+                    .map(SignatureScheme::nameOf)
+                    .filter(Objects::nonNull)
+                    .toList();
+        }
 
         for (SignatureScheme ss: schemesToCheck) {
             if (!ss.isAvailable) {
