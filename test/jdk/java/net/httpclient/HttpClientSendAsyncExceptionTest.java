@@ -66,11 +66,10 @@ class HttpClientSendAsyncExceptionTest {
     void testClosedClient() {
         var client = HttpClient.newHttpClient();
         client.close();
-        var exception = assertThrows(ExecutionException.class, () -> {
-            var request = HttpRequest.newBuilder(URI.create("https://example.com")).GET().build();
-            var responseBodyHandler = HttpResponse.BodyHandlers.discarding();
-            client.sendAsync(request, responseBodyHandler).get();
-        });
+        var request = HttpRequest.newBuilder(URI.create("https://example.com")).GET().build();
+        var responseBodyHandler = HttpResponse.BodyHandlers.discarding();
+        var responseFuture = client.sendAsync(request, responseBodyHandler);
+        var exception = assertThrows(ExecutionException.class, responseFuture::get);
         var cause = assertThrowableInstanceOf(IOException.class, exception.getCause());
         assertContains(cause.getMessage(), "closed");
     }
@@ -82,15 +81,14 @@ class HttpClientSendAsyncExceptionTest {
                 // Provide `SSLParameters` incompatible with QUIC's TLS requirements to disarm the HTTP/3 support
                 .sslParameters(h3IncompatSslParameters)
                 .build()) {
-            var exception = assertThrows(ExecutionException.class, () -> {
-                var h3Request = HttpRequest.newBuilder(URI.create("https://example.com"))
-                        .GET()
-                        .version(HttpClient.Version.HTTP_3)
-                        .setOption(HttpOption.H3_DISCOVERY, HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY)
-                        .build();
-                var responseBodyHandler = HttpResponse.BodyHandlers.discarding();
-                h3IncompatClient.sendAsync(h3Request, responseBodyHandler).get();
-            });
+            var h3Request = HttpRequest.newBuilder(URI.create("https://example.com"))
+                    .GET()
+                    .version(HttpClient.Version.HTTP_3)
+                    .setOption(HttpOption.H3_DISCOVERY, HttpOption.Http3DiscoveryMode.HTTP_3_URI_ONLY)
+                    .build();
+            var responseBodyHandler = HttpResponse.BodyHandlers.discarding();
+            var responseFuture = h3IncompatClient.sendAsync(h3Request, responseBodyHandler);
+            var exception = assertThrows(ExecutionException.class, responseFuture::get);
             var cause = assertThrowableInstanceOf(UnsupportedProtocolVersionException.class, exception.getCause());
             assertEquals("HTTP3 is not supported", cause.getMessage());
         }
@@ -99,50 +97,50 @@ class HttpClientSendAsyncExceptionTest {
     @Test
     void testConnectMethod() {
         try (var client = HttpClient.newHttpClient()) {
-            var exception = assertThrows(IllegalArgumentException.class, () -> {
-                // The default `HttpRequest` builder does not allow `CONNECT`.
-                // Hence, we create our custom `HttpRequest` instance:
-                var connectRequest = new HttpRequest() {
+            // The default `HttpRequest` builder does not allow `CONNECT`.
+            // Hence, we create our custom `HttpRequest` instance:
+            var connectRequest = new HttpRequest() {
 
-                    @Override
-                    public Optional<BodyPublisher> bodyPublisher() {
-                        return Optional.empty();
-                    }
+                @Override
+                public Optional<BodyPublisher> bodyPublisher() {
+                    return Optional.empty();
+                }
 
-                    @Override
-                    public String method() {
-                        return "CONNECT";
-                    }
+                @Override
+                public String method() {
+                    return "CONNECT";
+                }
 
-                    @Override
-                    public Optional<Duration> timeout() {
-                        return Optional.empty();
-                    }
+                @Override
+                public Optional<Duration> timeout() {
+                    return Optional.empty();
+                }
 
-                    @Override
-                    public boolean expectContinue() {
-                        return false;
-                    }
+                @Override
+                public boolean expectContinue() {
+                    return false;
+                }
 
-                    @Override
-                    public URI uri() {
-                        return URI.create("https://example.com");
-                    }
+                @Override
+                public URI uri() {
+                    return URI.create("https://example.com");
+                }
 
-                    @Override
-                    public Optional<HttpClient.Version> version() {
-                        return Optional.empty();
-                    }
+                @Override
+                public Optional<HttpClient.Version> version() {
+                    return Optional.empty();
+                }
 
-                    @Override
-                    public HttpHeaders headers() {
-                        return HttpHeaders.of(Collections.emptyMap(), (_, _) -> true);
-                    }
+                @Override
+                public HttpHeaders headers() {
+                    return HttpHeaders.of(Collections.emptyMap(), (_, _) -> true);
+                }
 
-                };
-                var responseBodyHandler = HttpResponse.BodyHandlers.discarding();
-                client.sendAsync(connectRequest, responseBodyHandler);
-            });
+            };
+            var responseBodyHandler = HttpResponse.BodyHandlers.discarding();
+            var exception = assertThrows(
+                    IllegalArgumentException.class,
+                    () -> client.sendAsync(connectRequest, responseBodyHandler));
             assertContains(exception.getMessage(), "Unsupported method CONNECT");
         }
     }
@@ -247,12 +245,11 @@ class HttpClientSendAsyncExceptionTest {
             // Verify the execution failure
             var requestUri = URI.create("http://" + server.serverAuthority() + serverHandlerPath);
             var request = HttpRequest.newBuilder(requestUri).version(version).build();
-            var exception = assertThrows(
-                    ExecutionException.class,
-                    // We need to make `sendAsync()` execution fail.
-                    // There are several ways to achieve this.
-                    // We choose to use a throwing response handler.
-                    () -> client.sendAsync(request, testCase.throwingResponseBodyHandler).get());
+            // We need to make `sendAsync()` execution fail.
+            // There are several ways to achieve this.
+            // We choose to use a throwing response handler.
+            var responseFuture = client.sendAsync(request, testCase.throwingResponseBodyHandler);
+            var exception = assertThrows(ExecutionException.class, responseFuture::get);
             testCase.exceptionVerifier.accept(exception.getCause());
 
         }
