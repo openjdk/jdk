@@ -51,7 +51,7 @@ import java.util.Objects;
  * <p> Encoding can be performed on cryptographic objects that
  * implement {@link DEREncodable}. The {@link #encode(DEREncodable)}
  * and {@link #encodeToString(DEREncodable)} methods encode a DEREncodable
- * into PEM and return the data in a byte array or String.
+ * into PEM and return the data in a byte array or {@code String}.
  *
  * <p> Private keys can be encrypted and encoded by configuring a
  * {@code PEMEncoder} with the {@link #withEncryption(char[])} method,
@@ -63,7 +63,7 @@ import java.util.Objects;
  *
  * <p> PKCS #8 v2.0 defines the ASN.1 OneAsymmetricKey structure, which may
  * contain both private and public keys.
- * {@link KeyPair} objects passed to the {@code encode} or
+ * {@code KeyPair} objects passed to the {@code encode} or
  * {@code encodeToString} methods are encoded as a
  * OneAsymmetricKey structure using the "PRIVATE KEY" type.
  *
@@ -265,9 +265,9 @@ public final class PEMEncoder {
      * Returns a copy of this PEMEncoder that encrypts and encodes
      * using the specified password and default encryption algorithm.
      *
-     * <p> Only {@link PrivateKey}, {@link KeyPair}, and
-     * {@link PKCS8EncodedKeySpec} objects can be encoded with this newly
-     * configured instance.  Encoding other {@link DEREncodable} objects will
+     * <p> Only {@code PrivateKey}, {@code KeyPair}, and
+     * {@code PKCS8EncodedKeySpec} objects can be encoded with this newly
+     * configured instance.  Encoding other {@code DEREncodable} objects will
      * throw an {@code IllegalArgumentException}.
      *
      * @implNote The {@code jdk.epkcs8.defaultAlgorithm} security property

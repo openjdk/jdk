@@ -87,7 +87,7 @@ import java.util.Objects;
  * public key encoding is returned as an instance of {@code X509EncodedKeySpec}
  * class. Any type of PEM data can be decoded into a {@code PEM} object by
  * specifying {@code PEM.class}. If the class parameter does not match the PEM
- * content, a {@link ClassCastException} is thrown.
+ * content, a {@code ClassCastException} is thrown.
  *
  * <p> In addition to the types listed above, these methods support the
  * following PEM types and {@code DEREncodable} classes when specified as
@@ -114,7 +114,7 @@ import java.util.Objects;
  * password.  If decryption fails, an {@link IllegalArgumentException} is thrown.
  * If an encrypted private key PEM is processed by a decoder not configured
  * for decryption, an {@link EncryptedPrivateKeyInfo} object is returned.
- * A PEMDecoder configured for decryption will decode unencrypted PEM.
+ * A {@code PEMDecoder} configured for decryption will decode unencrypted PEM.
  *
  * <p> This class is immutable and thread-safe.
  *
@@ -131,9 +131,9 @@ import java.util.Objects;
  *     DEREncodable pemData = pd.decode(privKeyPEM);
  * }
  *
- * @implNote This implementation decodes {@code RSA PRIVATE KEY} as {@code PRIVATE KEY},
- * {@code X509 CERTIFICATE} and {@code X.509 CERTIFICATE} as {@code CERTIFICATE},
- * and {@code CRL} as {@code X509 CRL}. Other implementations may recognize
+ * @implNote This implementation decodes RSA PRIVATE KEY as {@code PrivateKey},
+ * X509 CERTIFICATE and X.509 CERTIFICATE as {@code X509Certificate},
+ * and CRL as {@code X509CRL}. Other implementations may recognize
  * additional PEM types.
  *
  * @see PEMEncoder
@@ -277,23 +277,23 @@ public final class PEMDecoder {
     }
 
     /**
-     * Decodes and returns a {@link DEREncodable} from the given {@code String}.
+     * Decodes and returns a {@code DEREncodable} from the given {@code String}.
      *
      * <p> This method reads the {@code String} until PEM data is found
      * or the end of the {@code String} is reached.  If no PEM data is found,
      * an {@code IllegalArgumentException} is thrown.
      *
      * <p> A {@code DEREncodable} will be returned that best represents the
-     * decoded data.  If the PEM type is not supported, a {@link PEM} object is
+     * decoded data.  If the PEM type is not supported, a {@code PEM} object is
      * returned containing the type identifier, Base64-encoded data, and any
      * leading data preceding the PEM header. For {@code DEREncodable} types
      * other than {@code PEM}, leading data is ignored and not returned as part
-     * of the DEREncodable object.
+     * of the {@code DEREncodable} object.
      *
      * <p> Input consumed by this method is read in as
      * {@link java.nio.charset.StandardCharsets#UTF_8 UTF-8}.
      *
-     * @param str a String containing PEM data
+     * @param str a {@code String} containing PEM data
      * @return a {@code DEREncodable}
      * @throws IllegalArgumentException on error in decoding or no PEM data found
      * @throws NullPointerException when {@code str} is {@code null}
@@ -310,7 +310,7 @@ public final class PEMDecoder {
     }
 
     /**
-     * Decodes and returns a {@link DEREncodable} from the given
+     * Decodes and returns a {@code DEREncodable} from the given
      * {@code InputStream}.
      *
      * <p> This method reads from the {@code InputStream} until the end of
@@ -320,7 +320,7 @@ public final class PEMDecoder {
      * on the {@code InputStream}.
      *
      * <p> A {@code DEREncodable} will be returned that best represents the
-     * decoded data.  If the PEM type is not supported, a {@link PEM} object is
+     * decoded data.  If the PEM type is not supported, a {@code PEM} object is
      * returned containing the type identifier, Base64-encoded data, and any
      * leading data preceding the PEM header. For {@code DEREncodable} types
      * other than {@code PEM}, leading data is ignored and not returned as part
@@ -328,7 +328,7 @@ public final class PEMDecoder {
      *
      * <p> If no PEM data is found, an {@code EOFException} is thrown.
      *
-     * @param is InputStream containing PEM data
+     * @param is {@code InputStream} containing PEM data
      * @return a {@code DEREncodable}
      * @throws IOException on IO or PEM syntax error where the
      * {@code InputStream} did not complete decoding.
@@ -352,17 +352,17 @@ public final class PEMDecoder {
      * or the end of the {@code String} is reached.  If no PEM data is found,
      * an {@code IllegalArgumentException} is thrown.
      *
-     * <p> If the class parameter is {@code PEM.class}, a {@link PEM} object is
+     * <p> If the class parameter is {@code PEM.class}, a {@code PEM} object is
      * returned containing the type identifier, Base64-encoded data, and any
      * leading data preceding the PEM header. For {@code DEREncodable} types
      * other than {@code PEM}, leading data is ignored and not returned as part
-     * of the DEREncodable object.
+     * of the {@code DEREncodable} object.
      *
      * <p> Input consumed by this method is read in as
      * {@link java.nio.charset.StandardCharsets#UTF_8 UTF-8}.
      *
-     * @param <S> Class type parameter that extends {@code DEREncodable}
-     * @param str the String containing PEM data
+     * @param <S> class type parameter that extends {@code DEREncodable}
+     * @param str the {@code String} containing PEM data
      * @param tClass the returned object class that extends or implements
      *   {@code DEREncodable}
      * @return a {@code DEREncodable} specified by {@code tClass}
@@ -383,7 +383,7 @@ public final class PEMDecoder {
 
     /**
      * Decodes and returns a {@code DEREncodable} of the specified class for the
-     * given {@link InputStream}. {@code tClass} must be an appropriate class
+     * given {@code InputStream}. {@code tClass} must be an appropriate class
      * for the PEM type.
      *
      * <p> This method reads from the {@code InputStream} until the end of
@@ -392,16 +392,16 @@ public final class PEMDecoder {
      * It is recommended to perform no further decoding operations
      * on the {@code InputStream}.
      *
-     * <p> If the class parameter is {@code PEM.class}, a {@link PEM} object is
+     * <p> If the class parameter is {@code PEM.class}, a {@code PEM} object is
      * returned containing the type identifier, Base64-encoded data, and any
      * leading data preceding the PEM header. For {@code DEREncodable} types
      * other than {@code PEM}, leading data is ignored and not returned as part
-     * of the DEREncodable object.
+     * of the {@code DEREncodable} object.
      *
      * <p> If no PEM data is found, an {@code EOFException} is thrown.
      *
-     * @param <S> Class type parameter that extends {@code DEREncodable}.
-     * @param is an InputStream containing PEM data
+     * @param <S> class type parameter that extends {@code DEREncodable}.
+     * @param is an {@code InputStream} containing PEM data
      * @param tClass the returned object class that extends or implements
      *   {@code DEREncodable}.
      * @return a {@code DEREncodable} typecast to {@code tClass}
@@ -413,7 +413,7 @@ public final class PEMDecoder {
      * @throws ClassCastException if {@code tClass} does not represent the PEM type
      * @throws NullPointerException when any input values are {@code null}
      *
-     * @see #decode(InputStream)
+    * @see #decode(InputStream)
      * @see #decode(String, Class)
      */
     public <S extends DEREncodable> S decode(InputStream is, Class<S> tClass)
@@ -505,12 +505,12 @@ public final class PEMDecoder {
 
     /**
      * Returns a copy of this {@code PEMDecoder} instance that uses
-     * {@link KeyFactory} and {@link CertificateFactory} implementations
-     * from the specified {@link Provider} to produce cryptographic objects.
+     * {@code KeyFactory} and {@code CertificateFactory} implementations
+     * from the specified {@code Provider} to produce cryptographic objects.
      * Any errors using the {@code Provider} will occur during decoding.
      *
      * @param provider the factory provider
-     * @return a new PEMDecoder instance configured with the {@code Provider}
+     * @return a new {@code PEMDecoder} instance configured with the {@code Provider}
      * @throws NullPointerException if {@code provider} is {@code null}
      */
     public PEMDecoder withFactory(Provider provider) {
@@ -525,7 +525,7 @@ public final class PEMDecoder {
      *
      * @param password the password to decrypt the encrypted PEM data. This array
      *                 is cloned and stored in the new instance.
-     * @return a new PEMDecoder instance configured for decryption
+     * @return a new {@code PEMDecoder} instance configured for decryption
      * @throws NullPointerException if {@code password} is {@code null}
      */
     public PEMDecoder withDecryption(char[] password) {
