@@ -1128,6 +1128,4 @@ class os: AllStatic {
 
 extern "C" int SpinPause();
 
-
-
 #endif // SHARE_RUNTIME_OS_HPP
