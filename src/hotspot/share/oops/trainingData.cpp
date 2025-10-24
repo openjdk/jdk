@@ -471,7 +471,6 @@ void TrainingData::init_dumptime_table(TRAPS) {
     _dumptime_training_data_dictionary = new DumptimeTrainingDataDictionary();
     TrainingDataLocker l;
     TrainingDataLocker::snapshot();
-
     ResourceMark rm;
     Visitor visitor(training_data_set()->size());
     training_data_set()->iterate([&](TrainingData* td) {

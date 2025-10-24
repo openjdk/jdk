@@ -39,7 +39,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -318,6 +317,11 @@ public final class PackageTest extends RunnablePackageTest {
         return this;
     }
 
+    public PackageTest mutate(Consumer<PackageTest> mutator) {
+        mutator.accept(this);
+        return this;
+    }
+
     public PackageTest forTypes(Collection<PackageType> types, Runnable action) {
         final var oldTypes = Set.of(currentTypes.toArray(PackageType[]::new));
         try {
@@ -334,7 +338,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest forTypes(PackageType type, Consumer<PackageTest> action) {
-        return forTypes(List.of(type), () -> action.accept(this));
+        return forTypes(List.of(type), action);
+    }
+
+    public PackageTest forTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return forTypes(types, () -> action.accept(this));
     }
 
     public PackageTest notForTypes(Collection<PackageType> types, Runnable action) {
@@ -348,7 +356,11 @@ public final class PackageTest extends RunnablePackageTest {
     }
 
     public PackageTest notForTypes(PackageType type, Consumer<PackageTest> action) {
-        return notForTypes(List.of(type), () -> action.accept(this));
+        return notForTypes(List.of(type), action);
+    }
+
+    public PackageTest notForTypes(Collection<PackageType> types, Consumer<PackageTest> action) {
+        return notForTypes(types, () -> action.accept(this));
     }
 
     public PackageTest configureHelloApp() {
@@ -780,7 +792,7 @@ public final class PackageTest extends RunnablePackageTest {
                 LauncherAsServiceVerifier.verify(cmd);
             }
 
-            cmd.assertAppLayout();
+            cmd.runStandardAsserts();
 
             installVerifiers.forEach(v -> v.accept(cmd));
         }
