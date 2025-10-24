@@ -145,7 +145,9 @@ public class CheckForProperDetailStackTrace {
             throw new RuntimeException("Expected stack trace missing from output");
         }
 
-        if (wb.hasExternalSymbolsStripped()) { expectSourceInformation = false; }
+        if (wb.hasExternalSymbolsStripped()) {
+            expectSourceInformation = false;
+        }
 
         System.out.println("Looking for source information:");
         if (expectSourceInformation) {
