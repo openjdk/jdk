@@ -322,7 +322,16 @@ class Compile : public Phase {
   bool                  _merge_stores_phase;    // Phase for merging stores, after post loop opts phase.
   bool                  _allow_macro_nodes;     // True if we allow creation of macro nodes.
 
-  bool                  _major_progress;        // Whether something big happened
+  /* If major progress is set:
+   *   Marks that the loop tree information (get_ctrl, idom, get_loop, etc.) could be invalid, and we need to rebuild the loop tree.
+   *   It also indicates that the graph was changed in a way that is promising to be able to apply more loop optimization
+   * If major progress is not set:
+   *   Loop tree information is valid.
+   *   If major progress is not set at the end of a loop opts phase, then we can stop loop opts, because we do not expect any further progress if we did more loop ops phases.
+   *
+   * This is not 100% accurate, the semantics of major progress has become less clear over time, but this is the general idea.
+   */
+  bool                  _major_progress;
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
   bool                  _do_cleanup;            // Cleanup is needed before proceeding with incremental inlining
