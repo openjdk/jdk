@@ -25,8 +25,9 @@
 #ifndef SHARE_RUNTIME_OS_INLINE_HPP
 #define SHARE_RUNTIME_OS_INLINE_HPP
 
-#include "runtime/frame.hpp"
 #include "runtime/os.hpp"
+
+#include "runtime/frame.hpp"
 
 #include OS_HEADER_INLINE(os)
 #include OS_CPU_HEADER_INLINE(os)
