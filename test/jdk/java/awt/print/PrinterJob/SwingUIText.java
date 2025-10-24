@@ -115,7 +115,6 @@ public class SwingUIText implements Printable {
         frame = new JFrame("Swing UI Text Printing Test");
         frame.getContentPane().add(panel);
         frame.pack();
-        frame.setVisible(true);
         return frame;
     }
 
