@@ -318,7 +318,7 @@ public abstract class HttpClient implements AutoCloseable {
          *                 established
          * @return this builder
          * @throws IllegalArgumentException if the duration is non-positive
-         * @see HttpRequest.Builder#timeout(Duration) Configuration timeout for
+         * @see HttpRequest.Builder#timeout(Duration) Configuring timeout for
          * request execution
          */
         public Builder connectTimeout(Duration duration);
