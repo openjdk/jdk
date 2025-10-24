@@ -330,8 +330,13 @@ import jdk.internal.javac.PreviewFeature;
  *
  * <p> Actions in the owner thread of a {@code StructuredTaskScope} prior to {@linkplain
  * #fork forking} of a subtask {@linkplain java.util.concurrent##MemoryVisibility
- * <i>happen-before</i>} any actions taken by that subtask, which in turn
- * <i>happen-before</i> the subtask result is {@linkplain Subtask#get() retrieved}.
+ * <i>happen-before</i>} any actions taken by the thread that executes the subtask, which
+ * in turn <i>happen-before</i> actions in any thread that successfully obtains the
+ * subtask outcome with {@link Subtask#get() Subtask.get()} or {@link Subtask#exception()
+ * Subtask.exception()}. If a subtask's outcome contributes to the result or exception
+ * from {@link #join()}, then any actions taken by the thread executing that subtask
+ * <i>happen-before</i> the owner thread returns from {@code join} with a result or
+ * {@link FailedException FailedException}.
  *
  * <h2>General exceptions</h2>
  *
@@ -497,8 +502,9 @@ public sealed interface StructuredTaskScope<T, R>
      *
      * @implSpec Implementations of this interface must be thread safe. The {@link
      * #onComplete(Subtask)} method defined by this interface may be invoked by several
-     * threads concurrently. The {@link #onTimeout()} method may be invoked at around
-     * the same time that subtasks complete.
+     * threads concurrently, concurrently with the owner thread invoking the {@link
+     * #onFork(Subtask)} method, or if a timeout is configured, concurrently with the owner
+     * thread invoking the {@link #onTimeout()} method.
      *
      * @apiNote It is very important that a new {@code Joiner} object is created for each
      * {@code StructuredTaskScope}. {@code Joiner} objects should never be shared with
@@ -594,9 +600,7 @@ public sealed interface StructuredTaskScope<T, R>
          *
          * <p> In normal usage, this method will be called at most once by the {@code join}
          * method to produce the result (or exception). The behavior of this method when
-         * invoked directly, and invoked more than once, is undefined. Where possible, an
-         * implementation should return an equal result (or throw the same exception) on
-         * second or subsequent calls to produce the outcome.
+         * invoked directly is undefined.
          *
          * @apiNote This method is invoked by the {@code join} method. It should not be
          * invoked directly.
@@ -1118,8 +1122,8 @@ public sealed interface StructuredTaskScope<T, R>
      * <p> This method first {@linkplain ##Cancellation cancels} the scope, if not
      * already cancelled. This interrupts the threads executing unfinished subtasks. This
      * method then waits for all threads to finish. If interrupted while waiting then it
-     * will continue to wait until the threads finish, before completing with the interrupt
-     * status set.
+     * will continue to wait until the threads finish, before completing with the
+     * {@linkplain Thread#isInterrupted() interrupted status} set.
      *
      * <p> This method may only be invoked by the scope owner. If the scope
      * is already closed then the scope owner invoking this method has no effect.

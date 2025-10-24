@@ -70,14 +70,17 @@ class Joiners {
         private static final VarHandle FIRST_EXCEPTION =
                 MhUtil.findVarHandle(MethodHandles.lookup(), "firstException", Throwable.class);
 
-        // list of forked subtasks, only accessed by owner thread
-        private final List<Subtask<T>> subtasks = new ArrayList<>();
+        // list of forked subtasks, created lazily, only accessed by owner thread
+        private List<Subtask<T>> subtasks;
 
         private volatile Throwable firstException;
 
         @Override
         public boolean onFork(Subtask<T> subtask) {
             ensureUnavailable(subtask);
+            if (subtasks == null) {
+                subtasks = new ArrayList<>();
+            }
             subtasks.add(subtask);
             return false;
         }
@@ -93,10 +96,15 @@ class Joiners {
         @Override
         public List<T> result() throws Throwable {
             Throwable ex = firstException;
-            if (ex != null) {
-                throw ex;
-            } else {
-                return subtasks.stream().map(Subtask::get).toList();
+            try {
+                if (ex != null) {
+                    throw ex;
+                }
+                return (subtasks != null)
+                        ? subtasks.stream().map(Subtask::get).toList()
+                        : List.of();
+            } finally {
+                subtasks = null;  // allow subtasks to be GC'ed
             }
         }
     }
@@ -187,8 +195,8 @@ class Joiners {
     static final class AllSubtasks<T> implements Joiner<T, List<Subtask<T>>> {
         private final Predicate<Subtask<T>> isDone;
 
-        // list of forked subtasks, only accessed by owner thread
-        private final List<Subtask<T>> subtasks = new ArrayList<>();
+        // list of forked subtasks, created lazily, only accessed by owner thread
+        private List<Subtask<T>> subtasks;
 
         AllSubtasks(Predicate<Subtask<T>> isDone) {
             this.isDone = Objects.requireNonNull(isDone);
@@ -197,6 +205,9 @@ class Joiners {
         @Override
         public boolean onFork(Subtask<T> subtask) {
             ensureUnavailable(subtask);
+            if (subtasks == null) {
+                subtasks = new ArrayList<>();
+            }
             subtasks.add(subtask);
             return false;
         }
@@ -214,7 +225,13 @@ class Joiners {
 
         @Override
         public List<Subtask<T>> result() {
-            return List.copyOf(subtasks);
+            if (subtasks != null) {
+                List<Subtask<T>> result = List.copyOf(subtasks);
+                subtasks = null;  // allow subtasks to be GC'ed
+                return result;
+            } else {
+                return List.of();
+            }
         }
     }
 }
