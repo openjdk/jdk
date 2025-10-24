@@ -48,8 +48,8 @@ public class bug4382876 {
     private static Robot r;
     private static JFrame f;
     private static JSlider slider;
-    private static boolean upFail;
-    private static boolean downFail;
+    private static volatile boolean upFail;
+    private static volatile boolean downFail;
 
     public static void main(String[] args) throws Exception {
         try {
