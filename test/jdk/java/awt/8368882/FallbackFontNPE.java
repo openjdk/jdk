@@ -22,13 +22,13 @@
  * questions.
  */
 
-import java.awt.FontMetrics ;
+import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 public class FallbackFontNPE {
     public static void main(String[] args) throws Exception {
-        BufferedImage bi = new BufferedImage(1,1,1);
+        BufferedImage bi = new BufferedImage(1, 1, 1);
         Graphics2D g2d = bi.createGraphics();
         FontMetrics fm = g2d.getFontMetrics();
         fm.charWidth(0x1200);
