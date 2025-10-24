@@ -1228,11 +1228,10 @@ JvmtiEventController::vm_death() {
   ServiceThread::clear_deferred_events_queue();
 
   const double start = os::elapsedTime();
-  const double max_wait_time = 60 * 60 * 1000;
+  const double max_wait_time = 60;
   while (JvmtiExport::in_callback_count() > 0) {
-    os::naked_short_sleep(1000);
+    os::naked_short_sleep(100);
     if (os::elapsedTime() - start > max_wait_time) {
-      assert(JvmtiExport::in_callback_count()== 0, "The event processing time is too long.");
       break;
     }
   }

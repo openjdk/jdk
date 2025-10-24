@@ -2542,10 +2542,12 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
 
   // Add inlining information
   jvmtiCompiledMethodLoadInlineRecord* inlinerecord = create_inline_record(nm);
-  assert(env->phase() != JVMTI_PHASE_DEAD, "Shouldn't have be in JVMTI_PHASE_DEAD");
   // Pass inlining information through the void pointer
   JvmtiCompiledMethodLoadEventMark jem(thread, nm, inlinerecord);
   JvmtiJavaThreadEventTransition jet(thread);
+  if (!env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_LOAD)) {
+    return;
+  }
   (*callback)(env->jvmti_external(), jem.jni_methodID(),
               jem.code_size(), jem.code_data(), jem.map_length(),
               jem.map(), jem.compile_info());
