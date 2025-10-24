@@ -52,7 +52,7 @@ public:
   void work(uint worker_id) override {
     ShenandoahParallelWorkerSession worker_session(worker_id);
     ShenandoahSATBMarkQueueSet &satb_queues = ShenandoahBarrierSet::satb_mark_queue_set();
-    ShenandoahFlushAllSATB flusher(satb_queues);
+    ShenandoahFlushSATB flusher(satb_queues);
     Threads::possibly_parallel_threads_do(true /* is_par */, &flusher);
   }
 };

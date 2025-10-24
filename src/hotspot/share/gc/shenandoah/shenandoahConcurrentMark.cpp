@@ -66,20 +66,6 @@ public:
   }
 };
 
-class ShenandoahSATBAndRemarkThreadsClosure : public ThreadClosure {
-private:
-  SATBMarkQueueSet& _satb_qset;
-
-public:
-  explicit ShenandoahSATBAndRemarkThreadsClosure(SATBMarkQueueSet& satb_qset) :
-    _satb_qset(satb_qset) {}
-
-  void do_thread(Thread* thread) override {
-    // Transfer any partial buffer to the qset for completed buffer processing.
-    _satb_qset.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(thread));
-  }
-};
-
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahFinalMarkingTask : public WorkerTask {
 private:
@@ -109,7 +95,7 @@ public:
       while (satb_mq_set.apply_closure_to_completed_buffer(&cl)) {}
       assert(!heap->has_forwarded_objects(), "Not expected");
 
-      ShenandoahSATBAndRemarkThreadsClosure tc(satb_mq_set);
+      ShenandoahFlushSATB tc(satb_mq_set);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
     _cm->mark_loop(worker_id, _terminator, GENERATION, false /*not cancellable*/,

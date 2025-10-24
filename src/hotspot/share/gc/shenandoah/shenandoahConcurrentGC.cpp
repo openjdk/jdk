@@ -1143,7 +1143,7 @@ class ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers final : public Handshake
   //  2. The region is allocated during evacuation of old. This is also not a concern because
   //     we haven't yet finished marking old so no mixed evacuations will happen.
   ShenandoahUpdateThreadHandshakeClosure _update_roots;
-  ShenandoahFlushAllSATB _flush_all_satb;
+  ShenandoahFlushSATB _flush_all_satb;
 
 public:
   ShenandoahUpdateThreadRootsAndFlushOldSatbBuffers() :

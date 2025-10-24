@@ -229,12 +229,12 @@ public:
 };
 
 
-class ShenandoahFlushAllSATB : public ThreadClosure {
+class ShenandoahFlushSATB : public ThreadClosure {
 private:
   SATBMarkQueueSet& _satb_qset;
 
 public:
-  explicit ShenandoahFlushAllSATB(SATBMarkQueueSet& satb_qset) : _satb_qset(satb_qset) {}
+  explicit ShenandoahFlushSATB(SATBMarkQueueSet& satb_qset) : _satb_qset(satb_qset) {}
 
   inline void do_thread(Thread* thread) override;
 };
