@@ -268,7 +268,8 @@ public interface MemoryMXBean extends PlatformManagedObject {
     public MemoryUsage getNonHeapMemoryUsage();
 
     /**
-     * Returns the CPU time used by garbage collection.
+     * Returns the approximate accumulated time, in nanoseconds,
+     * spent in garbage collection.
      *
      * <p> This is the CPU time used by all garbage collection
      * activity, including any overhead, which means the result
@@ -278,18 +279,29 @@ public interface MemoryMXBean extends PlatformManagedObject {
      * not support this operation or the information is not
      * available.
      *
-     * @implNote Reported time will include relevant
-     * implementation-specific details such as driver threads,
-     * workers, VM Operations and string deduplication (if enabled).
-     * The return value can be -1 if called when measurement is
-     * not possible, such as during shutdown.
+     * @apiNote
+     * May be used in conjunction with com.sun.management.OperatingSystemMXBean.getProcessCpuTime()
+     * for calculating the GC's usage of CPU time as a whole.
+     *
+     * @implNote  The specifics on what constitutes the time spent
+     * in garbage collection is highly implementation dependent.
+     * In the HotSpot Virtual Machine implementation reported
+     * time will include relevant implementation-specific details such
+     * as driver threads, workers, VM Operations and string
+     * deduplication (if enabled). Driver threads may be created by a GC
+     * to orchestrate its work. The return value can be -1 if
+     * called when measurement is not possible, such as during shutdown.
+     *
+     * @implSpec The default implementation return {@code -1}.
      *
      * @return the total accumulated CPU time for garbage collection
-     * in nanoseconds, or -1
+     * in nanoseconds, or {@code -1}.
      *
      * @since 26
      */
-    public long getTotalGcCpuTime();
+    default public long getTotalGcCpuTime() {
+        return -1;
+    };
 
     /**
      * Tests if verbose output for the memory system is enabled.
