@@ -42,7 +42,7 @@ uint32_t VM_Version::_initial_vector_length = 0;
 address VM_Version::_misaligned_vector_fault_pc1 = nullptr;
 address VM_Version::_misaligned_vector_fault_pc2 = nullptr;
 address VM_Version::_misaligned_vector_continuation_pc = nullptr;
-short short_array[4] = { 0, 0, 0, 0 };
+long array[2] = { 0 };
 
 static BufferBlob* stub_blob;
 static const int stub_size = 256;
@@ -60,25 +60,26 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   VM_Version_StubGenerator(CodeBuffer *c) : StubCodeGenerator(c) {}
   ~VM_Version_StubGenerator() {}
 
-  address generate_detect_misaligned_vector(address* fault_pc1, address* fault_pc2, address* continuation_pc) {
+  address generate_detect_misaligned_vector(address* fault_pc1, address* fault_pc2, address* continuation_pc, int esize) {
     StubCodeMark mark(this, "VM_Version", "detect_misaligned_vector_stub");
 #   define __ _masm->
     address start = __ pc();
+    Assembler::SEW sew = Assembler::elembytes_to_sew(esize);
 
     __ enter();
     __ mv(x10, zr);
-    __ la(t1, ExternalAddress((address) short_array));
-    __ addi(t1, t1, 1);   // Misaligned address
-    __ vsetivli(x0, 1, Assembler::e16);
+    __ la(t1, ExternalAddress((address) array));
+    __ addi(t1, t1, esize - 1);   // Misaligned address
+    __ vsetivli(x0, 1, sew);
     __ vmv_s_x(v2, zr);
 
     __ addi(t2, zr, 1);
     __ vmv_s_x(v1, t2);
     *fault_pc1 = __ pc();
-    __ vse16_v(v1, t1);   // Misaligned vector store
+    __ vsex_v(v1, t1, sew);   // Misaligned vector store
 
     *fault_pc2 = __ pc();
-    __ vle16_v(v2, t1);   // Misaligned vector load
+    __ vlex_v(v2, t1, sew);   // Misaligned vector load
 
     *continuation_pc = __ pc();
     __ vmv_x_s(x10, v2);
@@ -555,20 +556,27 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
 }
 
 bool VM_Version::detect_misaligned_vector_support() {
+  // Detect with element sizes of 2, 4, and 8 bytes
+  return detect_misaligned_vector_support(2) &&
+         detect_misaligned_vector_support(4) &&
+         detect_misaligned_vector_support(8);
+}
+
+bool VM_Version::detect_misaligned_vector_support(int esize) {
   ResourceMark rm;
 
   stub_blob = BufferBlob::create("detect_misaligned_vector_stub", stub_size);
-    if (stub_blob == nullptr) {
-      vm_exit_during_initialization("Unable to allocate detect_misaligned_vector_stub");
-    }
+  if (stub_blob == nullptr) {
+    vm_exit_during_initialization("Unable to allocate detect_misaligned_vector_stub");
+  }
 
-    CodeBuffer c(stub_blob);
-    VM_Version_StubGenerator g(&c);
-    detect_misaligned_vector_stub = CAST_TO_FN_PTR(detect_misaligned_vector_stub_t,
-                                                   g.generate_detect_misaligned_vector(
-                                                   &VM_Version::_misaligned_vector_fault_pc1,
-                                                   &VM_Version::_misaligned_vector_fault_pc2,
-                                                   &VM_Version::_misaligned_vector_continuation_pc));
+  CodeBuffer c(stub_blob);
+  VM_Version_StubGenerator g(&c);
+  detect_misaligned_vector_stub = CAST_TO_FN_PTR(detect_misaligned_vector_stub_t,
+                                                 g.generate_detect_misaligned_vector(
+                                                 &VM_Version::_misaligned_vector_fault_pc1,
+                                                 &VM_Version::_misaligned_vector_fault_pc2,
+                                                 &VM_Version::_misaligned_vector_continuation_pc, esize));
 
   return detect_misaligned_vector_stub() == 1;
 }

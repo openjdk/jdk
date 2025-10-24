@@ -532,6 +532,9 @@ private:
 
   // Detect misaligned vector support
   static bool detect_misaligned_vector_support();
+
+  // Detect misaligned vector support by sew
+  static bool detect_misaligned_vector_support(int esize);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
