@@ -186,17 +186,17 @@ public abstract class Process implements Closeable {
      * are lost, they are discarded or ignored.
      * <p>
      * If the process exit value of the process is of interest, then the caller must
-     * {@linkplain #waitFor() wait} for the process to terminate before calling this method.
+     * {@linkplain #waitFor() wait for} the process to terminate before calling this method.
      * <p>
      * Streams should be closed when no longer needed.
      * Closing an already closed stream usually has no effect but is specific to the stream.
      * If an {@code IOException} occurs when closing a stream it is thrown
-     * after the process has terminated. Additional {@code IOExceptions}
-     * thrown by closing the remaining streams, if any, are added to the first
+     * after the process has terminated. {@linkplain Exception}s
+     * thrown by closing the streams, if any, are added to the first
      * {@code IOException} as {@linkplain IOException#addSuppressed suppressed exceptions}.
      * <p>
      * After the streams are closed this method {@linkplain #waitFor() waits for} the
-     * process to terminate. If interrupted while {@linkplain #waitFor waiting for termination}
+     * process to terminate. If interrupted while {@linkplain #waitFor waiting} for termination
      * the process is {@linkplain #destroyForcibly() forcibly destroyed} and
      * this method continues to wait for the process to terminate.
      * The interrupt status is re-asserted before this method returns and
@@ -210,7 +210,10 @@ public abstract class Process implements Closeable {
      * The {@code outputWriter} and {@code outputStream} to the process are closed.
      * The {@code inputReader} and {@code inputStream} from the process are closed.
      * The {@code errorReader} and {@code errorStream} from the process are closed.
-     * The process is terminated.
+     * This method {@linkplain #waitFor() waits for the process} to terminate.
+     * If {@linkplain #waitFor() waitFor()} is {@linkplain Thread#interrupt() interrupted}
+     * the process is {@linkplain #destroyForcibly() forcibly destroyed}
+     * and {@code close()} waits for the process to terminate.
      * @throws IOException if closing any of the streams throws an exception
      * @since 26
      */
@@ -255,19 +258,22 @@ public abstract class Process implements Closeable {
     }
 
     // Quietly close.
-    // If an IOException occurs and it is the first, return it.
-    // Otherwise, add the exception as a suppressed exception to the first.
+    // If an IOException occurs, and it is the first, return it.
+    // If there is no first IOException, a first IOException is created with the Throwable.
+    // Otherwise, add the Throwable as a suppressed exception to the first.
     private static IOException quietClose(Closeable c, IOException firstIOE) {
         try {
             c.close();
             return firstIOE;
-        } catch (IOException ioe) {
-            if (firstIOE == null || firstIOE == ioe) {
+        } catch (Throwable th) {
+            if (firstIOE == null && th instanceof IOException ioe) {
                 return ioe;
+            } else if (firstIOE == null) {
+                firstIOE = new IOException(th);
             } else {
-                firstIOE.addSuppressed(ioe);
-                return firstIOE;
+                firstIOE.addSuppressed(th);
             }
+            return firstIOE;
         }
     }
 
