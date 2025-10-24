@@ -56,8 +56,6 @@ public class CompressedClassSpaceSizeInJmapHeap {
         LingeredApp.startApp(theApp, "-XX:CompressedClassSpaceSize=48m");
         String pid = Long.toString(theApp.getPid());
 
-        // Sleep to give LingeredApp an opportunity to reach attachable status
-        Thread.sleep(1000);
         JDKToolLauncher jmap = JDKToolLauncher.create("jhsdb")
                                               .addToolArg("jmap")
                                               .addToolArg("--heap")
@@ -71,27 +69,17 @@ public class CompressedClassSpaceSizeInJmapHeap {
         File err = new File("CompressedClassSpaceSizeInJmapHeap.stderr.txt");
         pb.redirectError(err);
 
-        int exitValue = run(pb);
-
         OutputAnalyzer output;
-        if (KELVIN_DEBUG) {
-            String stdout = read(out);
-            String stderr = read(err);
-            System.out.println("");
-            System.out.println("Stdout is: ");
-            System.out.print(stdout);
-            System.out.println("");
-            System.out.println("Stderr is: ");
-            System.out.print(stderr);
-
-            if (exitValue != 0) {
-                throw new Exception("jmap -heap exited with error code: " + exitValue);
-            }
-
-            output = new OutputAnalyzer(stdout);
-        } else {
-            output = new OutputAnalyzer(read(out));
+        // If we attempt to attach to LingeredApp before it has initialized, the heap dump request will fail, so we allow 3 retries
+        int allowed_retries = 3;
+        int exitValue;
+        do {
+            exitValue = run(pb);
+        } while ((exitValue != 0) && (allowed_retries-- > 0));
+        if (exitValue != 0) {
+            throw new Exception("jmap -heap exited with error code: " + exitValue);
         }
+        output = new OutputAnalyzer(read(out));
         output.shouldContain("CompressedClassSpaceSize = 50331648 (48.0MB)");
         out.delete();
 
@@ -100,11 +88,7 @@ public class CompressedClassSpaceSizeInJmapHeap {
 
     private static int run(ProcessBuilder pb) throws Exception {
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
-        int exitValue = output.getExitValue();
-        if (!KELVIN_DEBUG && (exitValue != 0)) {
-            throw new Exception("jmap -heap exited with error code: " + exitValue);
-        }
-        return exitValue;
+        return output.getExitValue();
     }
 
     private static String read(File f) throws Exception {
