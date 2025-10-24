@@ -5069,29 +5069,31 @@ instruct vcompress(vReg dst, vReg src, pRegGov pg) %{
 %}
 
 instruct vcompressB(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2,
-                    vReg tmp3, vReg tmp4, pReg ptmp, pRegGov pgtmp) %{
+                    vReg tmp3, pReg ptmp, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_BYTE);
-  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP ptmp, TEMP pgtmp);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP ptmp, TEMP pgtmp);
   match(Set dst (CompressV src pg));
-  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, tmp4, $ptmp, $pgtmp" %}
+  format %{ "vcompressB $dst, $src, $pg\t# KILL $tmp1, $tmp2, $tmp3, $ptmp, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
     __ sve_compress_byte($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                         $tmp1$$FloatRegister,$tmp2$$FloatRegister,
-                         $tmp3$$FloatRegister,$tmp4$$FloatRegister,
-                         $ptmp$$PRegister, $pgtmp$$PRegister);
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister, $tmp3$$FloatRegister,
+                         $ptmp$$PRegister, $pgtmp$$PRegister, length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vcompressS(vReg dst, vReg src, pReg pg,
-                    vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
+instruct vcompressS(vReg dst, vReg src, pReg pg, vReg tmp1, vReg tmp2, pRegGov pgtmp) %{
   predicate(UseSVE > 0 && Matcher::vector_element_basic_type(n) == T_SHORT);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP pgtmp);
   match(Set dst (CompressV src pg));
   format %{ "vcompressS $dst, $src, $pg\t# KILL $tmp1, $tmp2, $pgtmp" %}
   ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    __ sve_dup($tmp1$$FloatRegister, __ H, 0);
     __ sve_compress_short($dst$$FloatRegister, $src$$FloatRegister, $pg$$PRegister,
-                          $tmp1$$FloatRegister,$tmp2$$FloatRegister, $pgtmp$$PRegister);
+                          $tmp1$$FloatRegister, $tmp2$$FloatRegister, $pgtmp$$PRegister,
+                          length_in_bytes);
   %}
   ins_pipe(pipe_slow);
 %}
