@@ -275,7 +275,10 @@ public class Modules extends JCTree.Visitor {
             Set<ModuleSymbol> initialized = init.apply(roots);
 
             for (ModuleSymbol msym : initialized) {
-                msym.complete();
+                if (msym != syms.unnamedModule ||
+                    roots.contains(syms.unnamedModule)) {
+                    msym.complete();
+                }
             }
         } catch (CompletionFailure ex) {
             chk.completionError(null, ex);
