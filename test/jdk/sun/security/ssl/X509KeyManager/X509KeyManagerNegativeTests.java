@@ -67,7 +67,7 @@ public class X509KeyManagerNegativeTests {
         exceptionThrowingKS.load(null, null);
 
         exceptionThrowingKMF
-                .init((KeyStore) exceptionThrowingKS, null);
+                .init(exceptionThrowingKS, null);
         exceptionThrowingKM =
                 (X509KeyManager) exceptionThrowingKMF.getKeyManagers()[0];
     }
@@ -80,7 +80,6 @@ public class X509KeyManagerNegativeTests {
 
     @Test
     public void ksExceptionTest() {
-        // recording logs to the output stream
         Asserts.assertThrows(ConcurrentModificationException.class,
                 () -> exceptionThrowingKM.getCertificateChain("RSA.0.0"));
         Asserts.assertThrows(ConcurrentModificationException.class,
@@ -100,7 +99,8 @@ public class X509KeyManagerNegativeTests {
 
         @Override
         public KeyStore.Entry engineGetEntry(String alias,
-                                             KeyStore.ProtectionParameter param) {
+                                             KeyStore.ProtectionParameter param)
+        {
             throw new ConcurrentModificationException("getEntry exception");
         }
 

@@ -100,12 +100,32 @@ public class NullCases {
 
         final X509KeyManager km = generateNullKm();
 
-        km.getServerAliases(null, null);
-        km.getClientAliases(null, null);
-        km.getCertificateChain(null);
-        km.getPrivateKey(null);
-        km.chooseServerAlias(null, null, null);
-        km.chooseClientAlias(null, null, null);
+        final String[] serverAliases =
+                km.getServerAliases(null, null);
+        Asserts.assertNull(serverAliases,
+                "Should return null if server alias not found");
+        final String[] clientAliases =
+                km.getClientAliases(null, null);
+        Asserts.assertNull(clientAliases,
+                "Should return null if client alias not found");
+
+        final X509Certificate[] certs =
+                km.getCertificateChain(null);
+        final PrivateKey priv =
+                km.getPrivateKey(null);
+        Asserts.assertNull(certs,
+                "Should return null if the alias can't be found");
+        Asserts.assertNull(priv,
+                "Should return null if the alias can't be found");
+
+        final String serverAlias =
+                km.chooseServerAlias(null, null, null);
+        Asserts.assertNull(serverAlias,
+                "Should return null if the alias can't be chosen");
+        final String clientAlias =
+                km.chooseClientAlias(null, null, null);
+        Asserts.assertNull(clientAlias,
+                "Should return null if the alias can't be chosen");
     }
 
     @Test
@@ -164,7 +184,6 @@ public class NullCases {
 
     @Test
     public void nonexistentKSTest() {
-
         final X509Certificate[] certs = km.getCertificateChain("RSA.0.1");
         final PrivateKey priv = km.getPrivateKey("RSA.0.1");
 
