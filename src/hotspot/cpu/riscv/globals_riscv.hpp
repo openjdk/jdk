@@ -92,8 +92,6 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, TraceTraps, false, "Trace all traps the signal handler")         \
   product(bool, UseConservativeFence, false,                                     \
           "Extend i for r and o for w in the pred/succ flags of fence")          \
-  product(bool, AvoidUnalignedAccesses, true,                                    \
-          "Avoid generating unaligned memory accesses")                          \
   product(bool, UseRVA20U64, true, "Use RVA20U64 profile")                       \
   product(bool, UseRVA22U64, false, EXPERIMENTAL, "Use RVA22U64 profile")        \
   product(bool, UseRVA23U64, false, EXPERIMENTAL, "Use RVA23U64 profile")        \
