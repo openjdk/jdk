@@ -103,8 +103,8 @@ public class ToolTabSnippetTest extends UITesting {
             inputSink.write("(" + TAB);
             waitOutput(out, "\\(\n" +
                             resource("jshell.console.completion.current.signatures") + "\n" +
-                            "JShellTest\\(String str\\)\n" +
-                            "JShellTest\\(String str, int i\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m, int i\\)\n" +
                             "\n" +
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest\\(");
@@ -138,8 +138,8 @@ public class ToolTabSnippetTest extends UITesting {
                             "str   \n" +
                             "\n" +
                             resource("jshell.console.completion.current.signatures") + "\n" +
-                            "JShellTest\\(String str\\)\n" +
-                            "JShellTest\\(String str, int i\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m\\)\n" +
+                            "JShellTest\\(\\u001B\\[1mString str\\u001B\\[0m, int i\\)\n" +
                             "\n" +
                             resource("jshell.console.see.documentation") +
                             REDRAW_PROMPT + "new JShellTest\\(");
