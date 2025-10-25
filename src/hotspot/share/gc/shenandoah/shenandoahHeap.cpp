@@ -424,6 +424,7 @@ jint ShenandoahHeap::initialize() {
 
     // We are initializing free set.  We ignore cset region tallies.
     size_t first_old, last_old, num_old;
+    ShenandoahRebuildLocker rebuild_locker(_free_set->lock());
     _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old, last_old, num_old);
     _free_set->finish_rebuild(young_cset_regions, old_cset_regions, num_old);
   }
@@ -2564,6 +2565,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
                           ShenandoahPhaseTimings::final_update_refs_rebuild_freeset :
                           ShenandoahPhaseTimings::degen_gc_final_update_refs_rebuild_freeset);
   ShenandoahHeapLocker locker(lock());
+  ShenandoahRebuildLocker rebuild_locker(_free_set->lock());
   size_t young_cset_regions, old_cset_regions;
   size_t first_old_region, last_old_region, old_region_count;
   _free_set->prepare_to_rebuild(young_cset_regions, old_cset_regions, first_old_region, last_old_region, old_region_count);
@@ -2589,8 +2591,8 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
 
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
     // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular
-    // regions in place when many of these regular regions have an abundant amount of available memory within them.  Fragmentation
-    // will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
+    // regions in place when many of these regular regions have an abundant amount of available memory within them.
+    // Fragmentation will decrease as promote-by-copy consumes the available memory within these partially consumed regions.
     //
     // We consider old-gen to have excessive fragmentation if more than 12.5% of old-gen is free memory that resides
     // within partially consumed regions of memory.
