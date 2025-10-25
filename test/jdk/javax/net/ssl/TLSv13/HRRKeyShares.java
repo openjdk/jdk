@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,8 +22,7 @@
  */
 
 // SunJSSE does not support dynamic system properties, no way to re-use
-// system properties in samevm/agentvm mode.  For further debugging output
-// set the -Djavax.net.debug=ssl:handshake property on the @run lines.
+// system properties in samevm/agentvm mode.
 
 /*
  * @test
@@ -48,6 +47,16 @@ import jdk.test.lib.Utils;
 
 
 public class HRRKeyShares {
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
 
     // Some TLS constants we'll use for testing
     private static final int TLS_REC_HANDSHAKE = 22;
@@ -209,6 +218,11 @@ public class HRRKeyShares {
     }
 
     public static void main(String args[]) throws Exception {
+
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,handshake");
+        }
+
         System.out.println("Test 1: Good HRR exchange using secp384r1");
         hrrKeyShareTest(NG_SECP384R1, true);
         System.out.println();
