@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,13 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import java.security.*;
-import java.security.interfaces.*;
-import java.security.spec.*;
+import jtreg.SkippedException;
+
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.security.PublicKey;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.util.stream.IntStream;
 
 /**
- * @test
+ * @test id=sha
  * @bug 8244154 8242332
  * @summary Generate a <digest>withRSASSA-PSS signature and verify it using
  *         PKCS11 provider
@@ -34,13 +44,28 @@ import java.util.stream.IntStream;
  * @modules jdk.crypto.cryptoki
  * @run main SignatureTestPSS2
  */
+
+/**
+ * @test id=sha3
+ * @bug 8244154 8242332
+ * @summary Generate a <digest>withRSASSA-PSS signature and verify it using
+ *         PKCS11 provider
+ * @library /test/lib ..
+ * @modules jdk.crypto.cryptoki
+ * @run main SignatureTestPSS2 sha3
+ */
 public class SignatureTestPSS2 extends PKCS11Test {
 
     // PKCS11 does not support RSASSA-PSS keys yet
     private static final String KEYALG = "RSA";
-    private static final String[] SIGALGS = {
+
+    private static String[] SIGALGS = null;
+
+    private static final String[] SHA_SIGALGS = {
             "SHA224withRSASSA-PSS", "SHA256withRSASSA-PSS",
-            "SHA384withRSASSA-PSS", "SHA512withRSASSA-PSS",
+            "SHA384withRSASSA-PSS", "SHA512withRSASSA-PSS"
+    };
+    private static final String[] SHA3_SIGALGS = {
             "SHA3-224withRSASSA-PSS", "SHA3-256withRSASSA-PSS",
             "SHA3-384withRSASSA-PSS", "SHA3-512withRSASSA-PSS"
     };
@@ -53,6 +78,8 @@ public class SignatureTestPSS2 extends PKCS11Test {
     private static final int UPDATE_TIMES = 2;
 
     public static void main(String[] args) throws Exception {
+        SIGALGS = (args.length > 0 && "sha3".equals(args[0])) ? SHA3_SIGALGS : SHA_SIGALGS;
+
         main(new SignatureTestPSS2(), args);
     }
 
@@ -63,9 +90,7 @@ public class SignatureTestPSS2 extends PKCS11Test {
             try {
                 sig = Signature.getInstance(sa, p);
             } catch (NoSuchAlgorithmException e) {
-                System.out.println("Skip testing " + sa +
-                    " due to no support");
-                return;
+                throw new SkippedException("No support for " + sa);
             }
             for (int i : KEYSIZES) {
                 runTest(sig, i);
@@ -94,7 +119,7 @@ public class SignatureTestPSS2 extends PKCS11Test {
                  SignatureException | NoSuchProviderException ex) {
             throw new RuntimeException(ex);
         } catch (InvalidAlgorithmParameterException ex2) {
-            System.out.println("Skip test due to " + ex2);
+            throw new SkippedException(ex2.toString());
         }
     }
 
