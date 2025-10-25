@@ -328,9 +328,38 @@ void CompilerConfig::set_compilation_policy_flags() {
       }
     }
   }
+#ifdef COMPILER2
+  else if (HotCodeGrouper && FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+    FLAG_SET_ERGO(SegmentedCodeCache, true);
+  }
+
+  if (HotCodeGrouper) {
+    if (FLAG_IS_DEFAULT(NMethodRelocation)) {
+      FLAG_SET_ERGO(NMethodRelocation, true);
+    }
+
+    if (!NMethodRelocation) {
+      vm_exit_during_initialization("HotCodeGrouper requires NMethodRelocation enabled");
+    }
+
+    if (!SegmentedCodeCache) {
+      vm_exit_during_initialization("HotCodeGrouper requires SegmentedCodeCache enabled");
+    }
+
+    if (!is_c2_enabled()) {
+      vm_exit_during_initialization("HotCodeGrouper requires C2 enabled");
+    }
+  } else if (HotCodeHeapSize > 0) {
+    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeGrouper enabled");
+  }
+#else
+  if (HotCodeHeapSize > 0) {
+    vm_exit_during_initialization("HotCodeHeapSize requires C2 present");
+  }
+#endif // COMPILER2
 
   if (CompileThresholdScaling < 0) {
-    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling", nullptr);
+    vm_exit_during_initialization("Negative value specified for CompileThresholdScaling");
   }
 
   if (CompilationModeFlag::disable_intermediate()) {
