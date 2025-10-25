@@ -244,6 +244,8 @@ public:
   // See comment in ShenandoahScanRemembered
   inline void mark_read_table_as_clean();
 
+  inline void mark_write_table_as_clean();
+
   // Merge any dirty values from write table into the read table, while leaving
   // the write table unchanged.
   void merge_write_table(HeapWord* start, size_t word_count);
@@ -768,6 +770,8 @@ public:
   // concurrently operate on the "read" table while mutators effect changes on
   // the "write" table.
   void mark_read_table_as_clean();
+
+  void mark_write_table_as_clean();
 
   // Swaps read and write card tables pointers in effect setting a clean card
   // table for the next GC cycle.
