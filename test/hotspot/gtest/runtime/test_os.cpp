@@ -1195,3 +1195,17 @@ TEST_VM(os, dll_load_null_error_buf) {
   void* lib = os::dll_load("NoSuchLib", nullptr, 0);
   ASSERT_NULL(lib);
 }
+
+#if !defined(_WINDOWS)
+TEST_VM(os, FirstNativeFrameMark) {
+  {
+    NativeCallStack ncs(0);
+    EXPECT_TRUE(ncs.frames() >= 1) << "expected no less than 1 frame, but saw " << ncs.frames();
+  }
+  {
+    os::FirstNativeFrameMark fnfm;
+    NativeCallStack ncs(0);
+    EXPECT_TRUE(ncs.frames() <= 1) << "expected no more than 1 frame, but saw " << ncs.frames();
+  }
+}
+#endif
