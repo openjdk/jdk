@@ -63,7 +63,7 @@ protected:
         total += _cohort_populations[i];
       }
     }
-    return total;
+    return total * HeapWordSize;
   }
 
   void promote_all_tenurable(const size_t tenuring_threshold) {
@@ -85,6 +85,13 @@ protected:
 TEST_F(ShenandoahAgeCensusTest, initialize) {
   const ShenandoahAgeCensus census(1);
   EXPECT_EQ(census.tenuring_threshold(), ShenandoahAgeCensus::MAX_COHORTS);
+}
+
+TEST_F(ShenandoahAgeCensusTest, get_tenurable_bytes) {
+  ShenandoahAgeCensus census(1);
+  update(census);
+  EXPECT_EQ(get_total_population_older_than(1), census.get_tenurable_bytes(1));
+  EXPECT_LT(census.get_tenurable_bytes(2), census.get_tenurable_bytes(1));
 }
 
 TEST_F(ShenandoahAgeCensusTest, ignore_small_populations) {
