@@ -38,8 +38,7 @@ public class SharedStringsUtils {
 
     private static String[][] vmOptionCombos = {
         {},
-        {"-XX:+UseStringDeduplication"},
-        {"-XX:-CompactStrings"}
+        {"-XX:+UseStringDeduplication"}
     };
 
     private static String childVMOptionsPrefix[] = {};

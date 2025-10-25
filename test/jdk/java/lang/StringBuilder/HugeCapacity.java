@@ -32,35 +32,28 @@ import java.util.Arrays;
  *          necessary
  * @modules java.base/jdk.internal.util
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 8G)
- * @run main/othervm -Xms8G -Xmx8G -XX:-CompactStrings -Xlog:gc HugeCapacity false
- * @run main/othervm -Xms8G -Xmx8G -XX:+CompactStrings -Xlog:gc HugeCapacity true
+ * @run main/othervm -Xms8G -Xmx8G -Xlog:gc HugeCapacity
  */
 
 public class HugeCapacity {
     private static int failures = 0;
 
     public static void main(String[] args) {
-        if (args.length == 0) {
-           throw new IllegalArgumentException("Need the argument");
-        }
-        boolean isCompact = Boolean.parseBoolean(args[0]);
-
-        testLatin1(isCompact);
+        testLatin1();
         testUtf16();
         testHugeInitialString();
         testHugeInitialCharSequence();
-        testHugePlus(isCompact);
+        testHugePlus();
         if (failures > 0) {
             throw new RuntimeException(failures + " tests failed");
         }
     }
 
-    private static void testLatin1(boolean isCompact) {
+    private static void testLatin1() {
         try {
-            int divisor = isCompact ? 2 : 4;
             StringBuilder sb = new StringBuilder();
-            sb.ensureCapacity(Integer.MAX_VALUE / divisor);
-            sb.ensureCapacity(Integer.MAX_VALUE / divisor + 1);
+            sb.ensureCapacity(Integer.MAX_VALUE / 2);
+            sb.ensureCapacity(Integer.MAX_VALUE / 2 + 1);
         } catch (OutOfMemoryError oom) {
             oom.printStackTrace();
             failures++;
@@ -112,9 +105,9 @@ public class HugeCapacity {
         public String toString() { return ""; }
     }
 
-    // Test creating and appending the max size string for -XX:+CompactStrings and -XX:-CompactStrings
-    private static void testHugePlus(boolean isCompact) {
-        int repeatCount = (isCompact) ? Integer.MAX_VALUE / 2 - 1 : Integer.MAX_VALUE / 4 - 1;
+    // Test creating and appending the max size string
+    private static void testHugePlus() {
+        int repeatCount = Integer.MAX_VALUE / 2 - 1;
         char[] chars = new char[repeatCount];
         char[] aChar = {'A', '\uff21'};
         for (char ch : aChar) {

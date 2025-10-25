@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.replace.
- * @run testng/othervm -XX:+CompactStrings Replace
- * @run testng/othervm -XX:-CompactStrings Replace
+ * @run testng/othervm Replace
  */
 
 public class Replace extends CompactString {

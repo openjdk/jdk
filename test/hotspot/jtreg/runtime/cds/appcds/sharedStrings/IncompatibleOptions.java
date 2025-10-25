@@ -80,8 +80,6 @@ import jdk.test.whitebox.gc.GC;
 public class IncompatibleOptions {
     static final String OBJ_ALIGNMENT_MISMATCH =
         "The shared archive file's ObjectAlignmentInBytes of .* does not equal the current ObjectAlignmentInBytes of";
-    static final String COMPACT_STRING_MISMATCH =
-        "The shared archive file's CompactStrings setting .* does not equal the current CompactStrings setting";
     static final String COMPRESSED_OOPS_NOT_CONSISTENT =
         "The saved state of UseCompressedOops and UseCompressedClassPointers is different from runtime, CDS will be disabled.";
     static String appJar;
@@ -139,13 +137,6 @@ public class IncompatibleOptions {
         // Implicitly archive without compressed oops and run with.
         testDump(12, "-XX:+UseG1GC", "-Xmx32G", null, false);
         testExec(12, "-XX:+UseG1GC", "-Xmx1G", null, true);
-        // CompactStrings must match between dump time and run time
-        testDump(13, "-XX:+UseG1GC", "-XX:-CompactStrings", null, false);
-        testExec(13, "-XX:+UseG1GC", "-XX:+CompactStrings",
-                 COMPACT_STRING_MISMATCH, true);
-        testDump(14, "-XX:+UseG1GC", "-XX:+CompactStrings", null, false);
-        testExec(14, "-XX:+UseG1GC", "-XX:-CompactStrings",
-                 COMPACT_STRING_MISMATCH, true);
     }
 
     static void testDump(int testCaseNr, String collectorOption, String extraOption,

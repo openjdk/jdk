@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.startsWith.
- * @run testng/othervm -XX:+CompactStrings StartsWith
- * @run testng/othervm -XX:-CompactStrings StartsWith
+ * @run testng/othervm StartsWith
  */
 
 public class StartsWith extends CompactString {

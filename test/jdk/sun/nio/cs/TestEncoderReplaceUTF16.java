@@ -46,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          java.base/sun.nio.cs
  * @build TestEncoderReplaceLatin1
  * @run junit/timeout=40 TestEncoderReplaceUTF16
- * @run junit/timeout=40/othervm -XX:-CompactStrings TestEncoderReplaceUTF16
  */
 
 class TestEncoderReplaceUTF16 {

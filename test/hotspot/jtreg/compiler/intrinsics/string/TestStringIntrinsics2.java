@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8145336
- * @summary PPC64: fix string intrinsics after CompactStrings change
+ * @summary PPC64: fix string intrinsics
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  *

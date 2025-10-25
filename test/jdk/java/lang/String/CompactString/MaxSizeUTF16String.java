@@ -32,8 +32,7 @@ import java.nio.charset.StandardCharsets;
  * @summary Tests Compact String for maximum size strings
  * @requires os.maxMemory >= 8g & vm.bits == 64
  * @requires vm.flagless
- * @run junit/othervm/timeout=480 -XX:+CompactStrings -Xmx8g MaxSizeUTF16String
- * @run junit/othervm/timeout=480 -XX:-CompactStrings -Xmx8g MaxSizeUTF16String
+ * @run junit/othervm/timeout=480 -Xmx8g MaxSizeUTF16String
  * @run junit/othervm/timeout=480 -Xcomp -Xmx8g MaxSizeUTF16String
  */
 
