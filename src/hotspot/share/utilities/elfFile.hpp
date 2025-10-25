@@ -72,6 +72,7 @@ typedef Elf32_Sym       Elf_Sym;
 #include "memory/allocation.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/decoder.hpp"
+#include "utilities/quickSort.hpp"
 
 #ifdef ASSERT
 // Helper macros to print different log levels during DWARF parsing
@@ -201,6 +202,9 @@ class ElfFile: public CHeapObj<mtInternal> {
 
   bool get_source_info(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
 
+#ifdef ASSERT
+  const char* filepath() const { return _filepath; }
+#endif
  private:
   // sanity check, if the file is a real elf file
   static bool is_elf_file(Elf_Ehdr&);
@@ -435,6 +439,57 @@ class DwarfFile : public ElfFile {
     bool read_non_null_char(char* result);
   };
 
+  struct ArangesEntry {
+    uintptr_t beginning_address;
+    uintptr_t end_address;
+    uint32_t debug_info_offset;
+
+    ArangesEntry() : beginning_address(0), end_address(0), debug_info_offset(0) {}
+    ArangesEntry(uintptr_t begin, uintptr_t end, uint32_t offset)
+    : beginning_address(begin), end_address(end), debug_info_offset(offset) {}
+  };
+
+  class DebugAranges;
+
+  // Cache for .debug_aranges to enable binary search for address lookup.
+  // DebugAranges uses this cache to resolve the compilation_unit_offset, rather than doing a linear scan on the files
+  // in each invocation of DebugAranges::find_compilation_unit_offset
+  struct ArangesCache {
+    friend DebugAranges;
+
+    ArangesEntry* _entries;
+    size_t _count;
+    size_t _capacity;
+    bool _initialized;
+    bool _failed;
+
+   public:
+    ArangesCache() : _entries(nullptr), _count(0), _capacity(0), _initialized(false), _failed(false) {}
+    ArangesCache(const ArangesCache&) = delete;
+    ArangesCache& operator=(const ArangesCache&) = delete;
+    ~ArangesCache() {
+      this->free();
+    }
+
+    void destroy(bool failed) {
+      this->free();
+      _count = 0;
+      _capacity = 0;
+      _failed = failed;
+    }
+    bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset) const;
+    bool valid() const { return _initialized && !_failed; }
+
+   private:
+    static int compare_aranges_entries(const ArangesEntry& a, const ArangesEntry& b);
+    void free() {
+      if (_entries != nullptr) {
+        FREE_C_HEAP_ARRAY(ArangesEntry, _entries);
+        _entries = nullptr;
+      }
+    }
+  };
+
   // (2) Processing the .debug_aranges section to find the compilation unit which covers offset_in_library.
   // This is specified in section 6.1.2 of the DWARF 4 spec.
   //
@@ -482,7 +537,19 @@ class DwarfFile : public ElfFile {
       uintptr_t range_length = 0;
     };
 
+    enum class CacheHint {
+      // Do not retry as linear scan won't be able to read this either.
+      FAILED,
+
+      // Cache is usable, no need to fallback to linear scan.
+      VALID,
+
+      // Cache is unusable, fallback to linear scan.
+      TRY_LINEAR_SCAN,
+    };
+
     DwarfFile* _dwarf_file;
+    ArangesCache _cache;
     MarkedDwarfFileReader _reader;
     uintptr_t _section_start_address;
 
@@ -498,10 +565,12 @@ class DwarfFile : public ElfFile {
     bool is_terminating_entry(const DwarfFile::DebugAranges::DebugArangesSetHeader& header,
                               const AddressDescriptor& descriptor);
    public:
-    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _reader(dwarf_file->fd()),
+    DebugAranges(DwarfFile* dwarf_file) : _dwarf_file(dwarf_file), _cache(), _reader(dwarf_file->fd()),
                                           _section_start_address(0), _entry_end(0) {}
     bool find_compilation_unit_offset(uint32_t offset_in_library, uint32_t* compilation_unit_offset);
 
+    // Build cache of all address ranges for binary search in a single pass
+    CacheHint ensure_cached();
   };
 
   // (3a-c,e) The compilation unit is read from the .debug_info section. The structure of .debug_info is shown in the
@@ -884,7 +953,8 @@ class DwarfFile : public ElfFile {
   };
 
  public:
-  DwarfFile(const char* filepath) : ElfFile(filepath) {}
+  DwarfFile(const char* filepath) : ElfFile(filepath), _debug_aranges(this) {
+  }
 
   /*
    * Starting point of reading line number and filename information from the DWARF file.
@@ -897,6 +967,9 @@ class DwarfFile : public ElfFile {
    *  More details about the different phases can be found at the associated methods.
    */
   bool get_filename_and_line_number(uint32_t offset_in_library, char* filename, size_t filename_len, int* line, bool is_pc_after_call);
+
+ private:
+  DebugAranges _debug_aranges;
 };
 
 #endif // !_WINDOWS && !__APPLE__
