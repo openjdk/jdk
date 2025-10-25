@@ -966,7 +966,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   if (req.is_mutator_alloc()) {
 
     if (!ShenandoahAllocFailureALot || !should_inject_alloc_failure()) {
-      result = allocate_memory_under_lock(req, in_new_region);
+      result = allocate_memory_for_mutator(req, in_new_region);
     }
 
     // Check that gc overhead is not exceeded.
@@ -998,7 +998,7 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
       const size_t original_count = shenandoah_policy()->full_gc_count();
       while (result == nullptr && should_retry_allocation(original_count)) {
         control_thread()->handle_alloc_failure(req, true);
-        result = allocate_memory_under_lock(req, in_new_region);
+        result = allocate_memory_for_mutator(req, in_new_region);
       }
       if (result != nullptr) {
         // If our allocation request has been satisfied after it initially failed, we count this as good gc progress
@@ -1041,6 +1041,26 @@ HeapWord* ShenandoahHeap::allocate_memory(ShenandoahAllocRequest& req) {
   }
 
   return result;
+}
+
+HeapWord* ShenandoahHeap::allocate_memory_for_mutator(ShenandoahAllocRequest& req, bool& in_new_region) {
+  assert(req.is_mutator_alloc(), "Sanity");
+  assert(!req.is_old(), "Sanity");
+  shenandoah_assert_not_heaplocked();
+  ShenandoahFreeSet* free_set = ShenandoahHeap::free_set();
+  if (ShenandoahHeapRegion::requires_humongous(req.size())) {
+    in_new_region = true;
+    if (req.type() == ShenandoahAllocRequest::_alloc_cds) {
+      return free_set->allocate_contiguous_cds(req);
+    } else {
+      return free_set->allocate_humongous(req);
+    }
+  }
+  if (req.is_lab_alloc()) {
+    return free_set->try_allocate_single_for_mutator<true>(req, in_new_region);
+  } else {
+    return free_set->try_allocate_single_for_mutator<false>(req, in_new_region);
+  }
 }
 
 inline bool ShenandoahHeap::should_retry_allocation(size_t original_full_gc_count) const {
@@ -2847,7 +2867,7 @@ void ShenandoahHeap::complete_loaded_archive_space(MemRegion archive_space) {
 
   for (size_t idx = begin_reg_idx; idx <= end_reg_idx; idx++) {
     ShenandoahHeapRegion* r = get_region(idx);
-    assert(r->is_regular(), "Must be regular");
+    assert(r->is_regular(), "Must be regular, state: %s", r->region_state_to_string(r->state()));
     assert(r->is_young(), "Must be young");
     assert(idx == end_reg_idx || r->top() == r->end(),
            "All regions except the last one should be full: " PTR_FORMAT " " PTR_FORMAT,
