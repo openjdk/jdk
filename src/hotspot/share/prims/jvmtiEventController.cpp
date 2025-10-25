@@ -1219,6 +1219,7 @@ JvmtiEventController::vm_init() {
 
 void
 JvmtiEventController::vm_death() {
+  // No new events except vm_death can be generated after this point.
   AtomicAccess::store(&_execution_finished, true);
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
@@ -1229,6 +1230,7 @@ JvmtiEventController::vm_death() {
   // they are actually posted on the ServiceThrea
   ServiceThread::clear_deferred_events_queue();
 
+  // Some events might be still in callback for daemons threads and ServiceThread.
   const double start = os::elapsedTime();
   const double max_wait_time = 60;
   while (in_callback_count() > 0) {
@@ -1238,8 +1240,3 @@ JvmtiEventController::vm_death() {
     }
   }
 }
-
-bool JvmtiEventController::is_execution_finished() {
-  return AtomicAccess::load(&_execution_finished);
-}
-

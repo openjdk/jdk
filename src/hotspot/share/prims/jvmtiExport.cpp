@@ -138,6 +138,9 @@ public:
   }
 };
 
+// The JVMTI_...__BLOCK are used to ensure that vm_death is the last posted event.
+// The callbacks are not executed after _execution_finished is set to true
+// and the _in_callback_count contains the number of callbacks still in progress.
 #define JVMTI_JAVA_EVENT_CALLBACK_BLOCK(thread) JvmtiJavaThreadEventTransition jet(thread); if (JvmtiEventController::is_execution_finished()) { return; }
 #define JVMTI_EVENT_CALLBACK_BLOCK(thread) JvmtiThreadEventTransition jet(thread); if (JvmtiEventController::is_execution_finished()) { return; }
 
@@ -779,7 +782,8 @@ void JvmtiExport::post_vm_death() {
 
   JvmtiTagMap::flush_all_object_free_events();
 
-  // It is needed to disable event generation before setting DEAD phase.
+  // It is needed to disable event generation before setting DEAD phase and wait
+  // until already executing events are finished.
   // The VM_DEATH should be the last posted event.
   JvmtiEventController::vm_death();
 
