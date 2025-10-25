@@ -35,6 +35,7 @@
 #include "gc/g1/g1Policy.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
 #include "utilities/align.hpp"
 
 G1Allocator::G1Allocator(G1CollectedHeap* heap) :
@@ -202,7 +203,8 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
 }
 
 size_t G1Allocator::used_in_alloc_regions() {
-  assert(Heap_lock->owner() != nullptr, "Should be owned on this thread's behalf.");
+  assert(Heap_lock->owner() != nullptr || SafepointSynchronize::is_at_safepoint(),
+         "Should be owned on this thread's behalf or at safepoint.");
   size_t used = 0;
   for (uint i = 0; i < _num_alloc_regions; i++) {
     used += mutator_alloc_region(i)->used_in_alloc_regions();
