@@ -215,7 +215,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
-  _compact_strings = CompactStrings;
   _compact_headers = UseCompactObjectHeaders;
   if (CDSConfig::is_dumping_heap()) {
     _narrow_oop_mode = CompressedOops::mode();
@@ -288,7 +287,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- obj_alignment:                  %d", _obj_alignment);
   st->print_cr("- narrow_oop_base:                " INTPTR_FORMAT, p2i(_narrow_oop_base));
   st->print_cr("- narrow_oop_shift                %d", _narrow_oop_shift);
-  st->print_cr("- compact_strings:                %d", _compact_strings);
   st->print_cr("- compact_headers:                %d", _compact_headers);
   st->print_cr("- max_heap_size:                  %zu", _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
@@ -1926,13 +1924,6 @@ bool FileMapHeader::validate() {
     AOTMetaspace::report_loading_error("The %s's ObjectAlignmentInBytes of %d"
                                           " does not equal the current ObjectAlignmentInBytes of %d.",
                                           file_type, _obj_alignment, ObjectAlignmentInBytes);
-    return false;
-  }
-  if (_compact_strings != CompactStrings) {
-    AOTMetaspace::report_loading_error("The %s's CompactStrings setting (%s)"
-                                          " does not equal the current CompactStrings setting (%s).", file_type,
-                                          _compact_strings ? "enabled" : "disabled",
-                                          CompactStrings   ? "enabled" : "disabled");
     return false;
   }
   bool jvmci_compiler_is_enabled = CompilerConfig::is_jvmci_compiler_enabled();

@@ -32,7 +32,6 @@
  *
  * @requires sun.arch.data.model == "64"
  * @run main/othervm -Xverify:all -Xmx4g ImplicitStringConcatOOME
- * @run main/othervm -Xverify:all -Xmx4g -XX:-CompactStrings ImplicitStringConcatOOME
  */
 
 import java.lang.reflect.Field;
@@ -107,7 +106,7 @@ public class ImplicitStringConcatOOME {
         }
         try {
             // Compact Strings meant capacity for UTF16 strings were cut in
-            // half, regardless of -XX:+CompactStrings setting
+            // half
             String res =
                     s000 + s001 + s002 + s003 + s004 + s005 + s006 + s007 + s008 + s009 +
                     s010 + s011 + s012 + s013 + s014 + s015 + s016 + s017 + s018 + s019 +

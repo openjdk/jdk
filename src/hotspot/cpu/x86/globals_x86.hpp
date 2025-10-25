@@ -80,8 +80,6 @@ define_pd_global(bool, RewriteFrequentPairs, true);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
-define_pd_global(bool, CompactStrings, true);
-
 define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(intx, InitArrayShortSize, 8*BytesPerLong);

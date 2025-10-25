@@ -35,9 +35,7 @@ import static org.testng.Assert.*;
  * @library /test/lib
  * @build jdk.test.lib.util.SerializationUtils
  * @summary Tests Compact String. This one is testing StringBuilder serialization
- *          among -XX:+CompactStrings/-XX:-CompactStrings/LegacyStringBuilder
- * @run testng/othervm -XX:+CompactStrings CompactStringBuilderSerialization
- * @run testng/othervm -XX:-CompactStrings CompactStringBuilderSerialization
+ * @run testng/othervm CompactStringBuilderSerialization
  */
 
 public class CompactStringBuilderSerialization {

@@ -30,8 +30,7 @@ import static org.testng.Assert.assertEquals;
  * @test
  * @bug 8077559
  * @summary Tests Compact String. This one is for String.length.
- * @run testng/othervm -XX:+CompactStrings Length
- * @run testng/othervm -XX:-CompactStrings Length
+ * @run testng/othervm Length
  */
 
 public class Length extends CompactString {

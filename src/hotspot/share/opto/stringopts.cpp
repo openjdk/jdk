@@ -1644,20 +1644,18 @@ Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, No
     Node* size = kit.load_array_length(src_array);
     __ set(count, size);
     // Non-constant source string
-    if (CompactStrings) {
-      // Emit runtime check for coder
-      Node* coder = kit.load_String_coder(str, true);
-      __ if_then(coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1)); {
-        // Source is Latin1
-        copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
-      } __ else_();
-    }
+
+    // Emit runtime check for coder
+    Node* coder = kit.load_String_coder(str, true);
+    __ if_then(coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1)); {
+      // Source is Latin1
+      copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
+    } __ else_();
+
     // Source is UTF16 (destination too). Simply emit a char arraycopy.
     arraycopy(kit, ideal, src_array, dst_array, T_CHAR, start, __ value(count));
 
-    if (CompactStrings) {
-      __ end_if();
-    }
+    __ end_if();
   }
 
   // Finally sync IdealKit and GraphKit.
@@ -1736,7 +1734,6 @@ jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
   const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
   ciInstance* str_instance = str_type->const_oop()->as_instance();
   jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset()).as_byte();
-  assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
   return coder;
 }
 
@@ -1816,12 +1813,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   Node* length = __ intcon(0);
   // If at least one argument is UTF16 encoded, we can fix the encoding.
   bool coder_fixed = false;
-
-  if (!CompactStrings) {
-    // Fix encoding of result string to UTF16
-    coder_fixed = true;
-    coder = __ intcon(java_lang_String::CODER_UTF16);
-  }
 
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
@@ -1993,9 +1984,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 
   Node* result;
   if (!kit.stopped()) {
-    assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
-           "Result string must be UTF16 encoded if CompactStrings is disabled");
-
     Node* dst_array = nullptr;
     if (sc->num_arguments() == 1 &&
         (sc->mode(0) == StringConcat::StringMode ||

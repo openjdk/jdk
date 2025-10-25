@@ -26,10 +26,10 @@
  * @bug 8158228
  * @summary Tests if mismatched char load from stable byte[] returns correct result
  *
- * @run main/othervm -XX:-CompactStrings -XX:TieredStopAtLevel=1 -Xcomp
+ * @run main/othervm -XX:TieredStopAtLevel=1 -Xcomp
  *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,*::charAt
  *                   compiler.stable.TestStableMismatched
- * @run main/othervm -XX:-CompactStrings -XX:-TieredCompilation -Xcomp
+ * @run main/othervm -XX:-TieredCompilation -Xcomp
  *                   -XX:CompileOnly=compiler.stable.TestStableMismatched::test,*::charAt
  *                   compiler.stable.TestStableMismatched
  */

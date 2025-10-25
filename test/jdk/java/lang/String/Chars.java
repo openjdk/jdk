@@ -25,8 +25,7 @@
  * @test
  * @bug 8054307 8311906 8321514
  * @summary test String chars() and codePoints()
- * @run main/othervm -XX:+CompactStrings Chars
- * @run main/othervm -XX:-CompactStrings Chars
+ * @run main/othervm Chars
  */
 
 import java.util.Arrays;

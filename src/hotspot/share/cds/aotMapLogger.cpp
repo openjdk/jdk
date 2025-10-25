@@ -678,7 +678,6 @@ class AOTMapLogger::FakeString : public AOTMapLogger::FakeOop {
 public:
   bool is_latin1() {
     jbyte coder = raw_oop()->byte_field(java_lang_String::coder_offset());
-    assert(CompactStrings || coder == java_lang_String::CODER_UTF16, "Must be UTF16 without CompactStrings");
     return coder == java_lang_String::CODER_LATIN1;
   }
 
