@@ -72,8 +72,6 @@ define_pd_global(bool, PreserveFramePointer,  false);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
-define_pd_global(bool, CompactStrings, true);
-
 // 2x unrolled loop is shorter with more than 9 HeapWords.
 define_pd_global(intx, InitArrayShortSize, 9*BytesPerLong);
 

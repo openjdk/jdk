@@ -69,8 +69,6 @@ define_pd_global(bool, PreserveFramePointer, false);
 
 define_pd_global(uintx, TypeProfileLevel, 111);
 
-define_pd_global(bool, CompactStrings, true);
-
 // Clear short arrays bigger than one word in an arch-specific way
 define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 

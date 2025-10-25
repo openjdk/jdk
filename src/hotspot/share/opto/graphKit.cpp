@@ -4116,9 +4116,6 @@ Node* GraphKit::load_String_value(Node* str, bool set_ctrl) {
 }
 
 Node* GraphKit::load_String_coder(Node* str, bool set_ctrl) {
-  if (!CompactStrings) {
-    return intcon(java_lang_String::CODER_UTF16);
-  }
   int coder_offset = java_lang_String::coder_offset();
   const TypeInstPtr* string_type = TypeInstPtr::make(TypePtr::NotNull, C->env()->String_klass(),
                                                      false, nullptr, 0);

@@ -40,9 +40,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import static java.lang.Character.digit;
-import static java.lang.String.COMPACT_STRINGS;
-import static java.lang.String.LATIN1;
-import static java.lang.String.UTF16;
 
 /**
  * The {@code Integer} class is the {@linkplain
@@ -159,47 +156,25 @@ public final class Integer extends Number
             return toString(i);
         }
 
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[33];
-            boolean negative = (i < 0);
-            int charPos = 32;
-
-            if (!negative) {
-                i = -i;
-            }
-
-            while (i <= -radix) {
-                buf[charPos--] = digits[-(i % radix)];
-                i = i / radix;
-            }
-            buf[charPos] = digits[-i];
-
-            if (negative) {
-                buf[--charPos] = '-';
-            }
-
-            return StringLatin1.newString(buf, charPos, (33 - charPos));
-        }
-        return toStringUTF16(i, radix);
-    }
-
-    private static String toStringUTF16(int i, int radix) {
-        byte[] buf = new byte[33 * 2];
+        byte[] buf = new byte[33];
         boolean negative = (i < 0);
         int charPos = 32;
+
         if (!negative) {
             i = -i;
         }
+
         while (i <= -radix) {
-            StringUTF16.putChar(buf, charPos--, digits[-(i % radix)]);
+            buf[charPos--] = digits[-(i % radix)];
             i = i / radix;
         }
-        StringUTF16.putChar(buf, charPos, digits[-i]);
+        buf[charPos] = digits[-i];
 
         if (negative) {
-            StringUTF16.putChar(buf, --charPos, '-');
+            buf[--charPos] = '-';
         }
-        return StringUTF16.newString(buf, charPos, (33 - charPos));
+
+        return StringLatin1.newString(buf, charPos, (33 - charPos));
     }
 
     /**
