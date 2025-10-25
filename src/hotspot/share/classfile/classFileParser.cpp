@@ -5524,6 +5524,9 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   _orig_cp_size = cp_size;
   if (is_hidden()) { // Add a slot for hidden class name.
     cp_size++;
+    // Check for overflow.  cp_size is a u2.
+    precond(sizeof(cp_size) == sizeof(u2));
+    guarantee_property(cp_size > _orig_cp_size, "Overflow in constant pool size for hidden class %s", CHECK);
   }
 
   _cp = ConstantPool::allocate(_loader_data,
