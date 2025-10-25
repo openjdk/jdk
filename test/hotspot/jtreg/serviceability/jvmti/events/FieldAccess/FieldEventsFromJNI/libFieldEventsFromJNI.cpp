@@ -22,6 +22,7 @@
  */
 
 #include <inttypes.h>
+#include <atomic>
 
 #include "jvmti.h"
 #include "jni.h"
@@ -29,8 +30,9 @@
 
 jvmtiEnv* jvmti_env;
 
-static int access_cnt = 0;
-static int modify_cnt = 0;
+// The event counters are used to check events from differen threads.
+static std::atomic<jint> access_cnt{0};
+static std::atomic<jint> modify_cnt{0};
 
 
 static const char* TEST_CLASS_NAME    = "LFieldEventsFromJNI;";
@@ -135,7 +137,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 extern "C" {
 JNIEXPORT void JNICALL
 Java_FieldEventsFromJNI_enableEventsAndAccessField(
-    JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
+    JNIEnv *jni, jobject self, jint numOfEventsExpected, jthread eventThread) {
 
   jvmtiError err = JVMTI_ERROR_NONE;
 
@@ -168,7 +170,7 @@ Java_FieldEventsFromJNI_enableEventsAndAccessField(
     fatal(jni, "The field value is incorrect.");
   }
 
-  if (access_cnt != isEventExpected) {
+  if (access_cnt != numOfEventsExpected) {
     fatal(jni, "The field access count is incorrect.");
   }
   jni->ReleaseStringUTFChars(jname, name_str);
@@ -176,7 +178,7 @@ Java_FieldEventsFromJNI_enableEventsAndAccessField(
 
 JNIEXPORT void JNICALL
 Java_FieldEventsFromJNI_enableEventsAndModifyField(
-    JNIEnv *jni, jobject self, jboolean isEventExpected, jthread eventThread) {
+    JNIEnv *jni, jobject self, jint numOfEventsExpected, jthread eventThread) {
   jvmtiError err = JVMTI_ERROR_NONE;
   jclass cls = jni->GetObjectClass(self);
   if (cls == nullptr) {
@@ -201,7 +203,7 @@ Java_FieldEventsFromJNI_enableEventsAndModifyField(
   err = jvmti_env->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_FIELD_MODIFICATION, eventThread);
   check_jvmti_error(err, "SetEventNotificationMode");
 
-  if (modify_cnt != isEventExpected) {
+  if (modify_cnt != numOfEventsExpected) {
     fatal(jni, "The field access count should be 1.");
   }
 }

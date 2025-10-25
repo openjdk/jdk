@@ -32,12 +32,12 @@ public class FieldEventsFromJNI {
     private String accessField = "accessFieldValue";
     private String modifyField = "modifyFieldValue";
 
-    private native void enableEventsAndAccessField(boolean isEventExpected, Thread eventThread);
-    private native void enableEventsAndModifyField(boolean isEventExpected, Thread eventThread);
+    private native void enableEventsAndAccessField(int numOfEventsExpected, Thread eventThread);
+    private native void enableEventsAndModifyField(int numOfEventsExpected, Thread eventThread);
 
-    void javaMethod(boolean isEventExpected, Thread eventThread) {
-        enableEventsAndAccessField(isEventExpected, eventThread);
-        enableEventsAndModifyField(isEventExpected, eventThread);
+    void javaMethod(int numOfEventsExpected, Thread eventThread) {
+        enableEventsAndAccessField(numOfEventsExpected, eventThread);
+        enableEventsAndModifyField(numOfEventsExpected, eventThread);
     }
 
     final static Object lock = new Object();
@@ -65,10 +65,10 @@ public class FieldEventsFromJNI {
 
         FieldEventsFromJNI testObject = new FieldEventsFromJNI();
         // Enable events while the thread is in the same JNI call.
-        testObject.javaMethod(true, Thread.currentThread());
+        testObject.javaMethod(1, Thread.currentThread());
         // Verify that field access from JNI doesn't fail if events are
         // not enaled on this thread.
-        testObject.javaMethod(false, anotherThread);
+        testObject.javaMethod(0, anotherThread);
         anotherThread.interrupt();
         anotherThread.join();
     }
