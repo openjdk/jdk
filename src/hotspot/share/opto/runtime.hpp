@@ -48,6 +48,11 @@
 // it calls the C++ code "xxx_C".  The generated nmethod is saved in the
 // CodeCache.  Exception handlers use the nmethod to get the callee-save
 // register OopMaps.
+//
+// Please note that correctly matching the type of the call with the specified
+// signature. Even if you don't plan on consuming the output of the call, C2
+// needs this information to correctly track returned oops and avoid strange
+// deoptimization crashes (JDK-8347463).
 class CallInfo;
 
 //

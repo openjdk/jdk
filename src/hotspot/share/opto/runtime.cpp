@@ -857,8 +857,9 @@ static const TypeFunc* make_jfr_write_checkpoint_Type() {
   const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms, fields);
 
   // create result type (range)
-  fields = TypeTuple::fields(0);
-  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms, fields);
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInstPtr::BOTTOM;
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms + 1, fields);
   return TypeFunc::make(domain, range);
 }
 
