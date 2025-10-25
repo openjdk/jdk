@@ -52,7 +52,7 @@
  * COMMENTS
  *     Converted the test to use GetThreadState instead of GetThreadStatus.
  *     Test fixed according to test bug:
- *     4935244 TEST BUG: wrong interrupt status flag tests.
+ *     4935244 TEST BUG: wrong interrupted status flag tests.
  *     Fixed according to test bug:
  *     6405644 TEST_BUG: no proper sync with agent thread in sp02t001/sp02t003
  *

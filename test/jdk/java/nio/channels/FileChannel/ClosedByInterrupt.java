@@ -144,9 +144,9 @@ public class ClosedByInterrupt {
             } catch (ClosedByInterruptException e) {
                 if (interruptible) {
                     if (Thread.interrupted()) {
-                        expected(e + " thrown and interrupt status set");
+                        expected(e + " thrown and interrupted status set");
                     } else {
-                        unexpected(e + " thrown but interrupt status not set");
+                        unexpected(e + " thrown but interrupted status not set");
                     }
                 } else {
                     unexpected(e);

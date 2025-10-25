@@ -57,12 +57,12 @@ public class SwallowedInterruptedException {
 
                     if (!Thread.currentThread().isInterrupted()) {
                         fail.set(new AssertionError(
-                            "Future.get completed with interrupt status not set"));
+                            "Future.get completed with interrupted status not set"));
                     }
                 } catch (InterruptedException ex) {
                     if (Thread.currentThread().isInterrupted()) {
                         fail.set(new AssertionError(
-                            "InterruptedException with interrupt status set"));
+                            "InterruptedException with interrupted status set"));
                     }
                 } catch (Throwable ex) {
                     fail.set(ex);

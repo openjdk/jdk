@@ -39,7 +39,7 @@ public class MemDiag implements Runnable {
 
         public void run() {
                 System.out.println(Runtime.getRuntime().freeMemory());
-                // Ensure that interrupt status is not lost
+                // Ensure that interrupted status is not lost
                 if (Thread.currentThread().isInterrupted())
                         return;
                 try {

@@ -328,7 +328,7 @@ public abstract class ServerSocketChannel
      *          If another thread interrupts the current thread
      *          while the accept operation is in progress, thereby
      *          closing the channel and setting the current thread's
-     *          interrupt status
+     *          interrupted status
      *
      * @throws  NotYetBoundException
      *          If this channel's socket has not yet been bound

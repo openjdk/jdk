@@ -25,7 +25,7 @@
  * @test
  * @bug 8205612
  * @run testng CallWithInterruptSet
- * @summary Test invoking Files methods with the interrupt status set
+ * @summary Test invoking Files methods with the interrupted status set
  */
 
 import java.io.InputStream;

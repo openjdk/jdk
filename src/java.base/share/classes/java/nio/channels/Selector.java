@@ -236,7 +236,7 @@ import java.util.function.Consumer;
  *
  *   <li><p> By invoking the blocked thread's {@link
  *   java.lang.Thread#interrupt() interrupt} method, in which case its
- *   interrupt status will be set and the selector's {@link #wakeup wakeup}
+ *   interrupted status will be set and the selector's {@link #wakeup wakeup}
  *   method will be invoked. </p></li>
  *
  * </ul>

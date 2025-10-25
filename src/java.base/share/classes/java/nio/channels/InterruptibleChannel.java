@@ -45,11 +45,11 @@ import java.io.IOException;
  * another thread may invoke the blocked thread's {@link Thread#interrupt()
  * interrupt} method.  This will cause the channel to be closed, the blocked
  * thread to receive a {@link ClosedByInterruptException}, and the blocked
- * thread's interrupt status to be set.
+ * thread's interrupted status to be set.
  *
- * <p> If a thread's interrupt status is already set and it invokes a blocking
+ * <p> If a thread's interrupted status is already set and it invokes a blocking
  * I/O operation upon a channel then the channel will be closed and the thread
- * will immediately receive a {@link ClosedByInterruptException}; its interrupt
+ * will immediately receive a {@link ClosedByInterruptException}; its interrupted
  * status will remain set.
  *
  * <p> A channel supports asynchronous closing and interruption if, and only

@@ -53,7 +53,7 @@ class SleepWithDuration {
     }
 
     /**
-     * Test Thread.sleep with interrupt status set.
+     * Test Thread.sleep with interrupted status set.
      */
     @Test
     void testSleepWithInterruptStatusSet() throws Exception {
@@ -94,7 +94,7 @@ class SleepWithDuration {
             Thread.sleep(Duration.ofSeconds(60));
             fail();
         } catch (InterruptedException e) {
-            // interrupt status should be cleared
+            // interrupted status should be cleared
             assertFalse(Thread.interrupted());
         } finally {
             wakerThread.join();

@@ -169,7 +169,7 @@ class Parking {
     }
 
     /**
-     * Park with interrupt status set.
+     * Park with interrupted status set.
      */
     @Test
     void testPark8() throws Exception {
@@ -196,7 +196,7 @@ class Parking {
     }
 
     /**
-     * Park while holding monitor and with interrupt status set.
+     * Park while holding monitor and with interrupted status set.
      */
     @Test
     void testPark10() throws Exception {
@@ -318,7 +318,7 @@ class Parking {
     }
 
     /**
-     * Park with parkNanos and interrupt status set.
+     * Park with parkNanos and interrupted status set.
      */
     @Test
     void testParkNanos8() throws Exception {
@@ -345,7 +345,7 @@ class Parking {
     }
 
     /**
-     * Park with parkNanos while holding monitor and with interrupt status set.
+     * Park with parkNanos while holding monitor and with interrupted status set.
      */
     @Test
     void testParkNanos10() throws Exception {

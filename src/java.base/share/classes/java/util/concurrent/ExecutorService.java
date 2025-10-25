@@ -133,7 +133,7 @@ import java.util.List;
  *   } catch (InterruptedException ex) {
  *     // (Re-)Cancel if current thread also interrupted
  *     pool.shutdownNow();
- *     // Preserve interrupt status
+ *     // Preserve interrupted status
  *     Thread.currentThread().interrupt();
  *   }
  * }}</pre>
@@ -375,7 +375,7 @@ public interface ExecutorService extends Executor, AutoCloseable {
      * <p> If interrupted while waiting, this method stops all executing tasks as
      * if by invoking {@link #shutdownNow()}. It then continues to wait until all
      * actively executing tasks have completed. Tasks that were awaiting
-     * execution are not executed. The interrupt status will be re-asserted
+     * execution are not executed. The interrupted status will be re-asserted
      * before this method returns.
      *
      * <p> If already terminated, invoking this method has no effect.

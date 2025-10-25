@@ -61,7 +61,7 @@ public class CompilerThreadPool {
         } catch (InterruptedException ie) {
             // (Re-)Cancel if current thread also interrupted
             pool.shutdownNow();
-            // Preserve interrupt status
+            // Preserve interrupted status
             Thread.currentThread().interrupt();
         }
     }

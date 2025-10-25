@@ -383,7 +383,7 @@ public class Object {
             try {
                 wait0(timeoutMillis);
             } catch (InterruptedException e) {
-                // virtual thread's interrupt status needs to be cleared
+                // virtual thread's interrupted status needs to be cleared
                 vthread.getAndClearInterrupt();
                 throw e;
             }

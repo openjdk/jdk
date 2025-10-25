@@ -36,7 +36,7 @@
  *       - sleeping on Thread.sleep()
  *     then agent part of the test calls InterruptThread for these threads
  *     and the debugee checks that:
- *       - the running thread get interrupt status
+ *       - the running thread get interrupted status
  *       - the waiting and sleeping threads get InterruptedException
  * COMMENTS
  *

@@ -334,7 +334,7 @@ public class Semaphore implements java.io.Serializable {
      * while waiting for a permit then it will continue to wait, but the
      * time at which the thread is assigned a permit may change compared to
      * the time it would have received the permit had no interruption
-     * occurred.  When the thread does return from this method its interrupt
+     * occurred.  When the thread does return from this method its interrupted
      * status will be set.
      */
     public void acquireUninterruptibly() {
@@ -494,7 +494,7 @@ public class Semaphore implements java.io.Serializable {
      * <p>If the current thread is {@linkplain Thread#interrupt interrupted}
      * while waiting for permits then it will continue to wait and its
      * position in the queue is not affected.  When the thread does return
-     * from this method its interrupt status will be set.
+     * from this method its interrupted status will be set.
      *
      * @param permits the number of permits to acquire
      * @throws IllegalArgumentException if {@code permits} is negative
