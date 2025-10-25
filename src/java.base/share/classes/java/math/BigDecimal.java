@@ -155,6 +155,7 @@ import jdk.internal.vm.annotation.Stable;
  * <tr><th scope="row">Multiply</th><td>multiplier.scale() + multiplicand.scale()</td>
  * <tr><th scope="row">Divide</th><td>dividend.scale() - divisor.scale()</td>
  * <tr><th scope="row">Square root</th><td>ceil(radicand.scale()/2.0)</td>
+ * <tr><th scope="row">n<sup>th</sup> root</th><td>ceil((double) radicand.scale()/n)</td>
  * </tbody>
  * </table>
  *
@@ -2152,13 +2153,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * <p>The preferred scale of the returned result is equal to
      * {@code Math.ceilDiv(this.scale(), n)}. The value of the returned result is
-     * always within 1.1 ulps of the exact decimal value for the
-     * precision in question, and if {@code n > 0}, the result is within
-     * one ulp of the exact decimal value.  If the rounding mode is {@link
+     * always within one ulp of the exact decimal value for the
+     * precision in question.  If the rounding mode is {@link
      * RoundingMode#HALF_UP HALF_UP}, {@link RoundingMode#HALF_DOWN
      * HALF_DOWN}, or {@link RoundingMode#HALF_EVEN HALF_EVEN}, the
-     * result is within 0.55 ulps of the exact decimal value, and if {@code n > 0},
-     * the result is within one half an ulp of the exact decimal value.
+     * result is within one half an ulp of the exact decimal value.
      *
      * <p>Special case:
      * <ul>
@@ -2273,30 +2272,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        // Handle negative degrees
-        RoundingMode workingRM = mc.roundingMode;
-        if (n < 0) {
-            // Swap rounding mode as the root will be inverted
-            workingRM = switch (workingRM) {
-            case DOWN, FLOOR -> RoundingMode.UP;
-            case UP, CEILING -> RoundingMode.DOWN;
-            case HALF_DOWN   -> RoundingMode.HALF_UP;
-            case HALF_UP     -> RoundingMode.HALF_DOWN;
-            case HALF_EVEN   -> RoundingMode.HALF_EVEN;
-            default -> throw new AssertionError("Unexpected value for RoundingMode: " + workingRM);
-            };
-        }
         // To allow BigInteger.nthRoot() to be used to get the root,
         // it is necessary to normalize the input so that
         // its integer part is sufficient to get the root
         // with the desired precision.
 
-        final boolean halfWay = isHalfWay(workingRM);
-        /* If n < 0 and no halfway rounding, the root's inversion gives an error of 1 ulp,
-         * so we add one more digit to the integer root, so that it has an error of 0.1 ulps,
-         * and therefore the error of the inverted root is 1+0.1 ulps.
-         * Same reasoning for halfway rounding yields to half of the error just found.
-         */
+        final boolean halfWay = isHalfWay(mc.roundingMode);
+        // If n < 0, add a digit to speed up correct rounding
         final long rootDigits = mc.precision + (halfWay ? 1L : 0L) + (n < 0 ? 1L : 0L);
         // To obtain an n-th root with k digits,
         // the radicand must have at least n*(k-1)+1 digits.
@@ -2310,56 +2292,104 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigDecimal working = new BigDecimal(x.intVal, x.intCompact, checkScaleNonZero(x.scale - normScale), x.precision);
         BigInteger workingInt = working.toBigInteger();
 
-        BigInteger root;
-        long resultScale = normScale / nAbs;
-        // Round the root with the specified settings
-        if (halfWay) { // half-way rounding
-            BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
-            // remove the one-tenth digit
-            BigInteger[] quotRem10 = rootRem[0].divideAndRemainder(BigInteger.TEN);
-            root = quotRem10[0];
-            resultScale--;
+        if (n > 0) {
+            BigInteger root;
+            long resultScale = normScale / nAbs;
+            // Round the root with the specified settings
+            if (halfWay) { // half-way rounding
+                BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
+                // remove the one-tenth digit
+                BigInteger[] quotRem10 = rootRem[0].divideAndRemainder(BigInteger.TEN);
+                root = quotRem10[0];
+                resultScale--;
 
-            boolean increment = false;
-            int digit = quotRem10[1].intValue();
-            if (digit > 5) {
-                increment = true;
-            } else if (digit == 5) {
-                if (workingRM == RoundingMode.HALF_UP
-                        || workingRM == RoundingMode.HALF_EVEN && root.testBit(0)
-                        // Check if remainder is non-zero
-                        || rootRem[1].signum != 0
-                        || !working.isInteger()) {
+                boolean increment = false;
+                int digit = quotRem10[1].intValue();
+                if (digit > 5) {
                     increment = true;
+                } else if (digit == 5) {
+                    if (mc.roundingMode == RoundingMode.HALF_UP
+                            || mc.roundingMode == RoundingMode.HALF_EVEN && root.testBit(0)
+                            // Check if remainder is non-zero
+                            || rootRem[1].signum != 0 || !working.isInteger()) {
+                        increment = true;
+                    }
+                }
+
+                if (increment)
+                    root = root.add(1L);
+            } else {
+                switch (mc.roundingMode) {
+                case DOWN, FLOOR -> root = workingInt.nthRoot(nAbs); // No need to round
+
+                case UP, CEILING -> {
+                    BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
+                    root = rootRem[0];
+                    // Check if remainder is non-zero
+                    if (rootRem[1].signum != 0 || !working.isInteger())
+                        root = root.add(1L);
+                }
+
+                default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
                 }
             }
 
-            if (increment)
-                root = root.add(1L);
-        } else {
-            switch (workingRM) {
-            case DOWN, FLOOR -> root = workingInt.nthRoot(nAbs); // No need to round
-
-            case UP, CEILING -> {
-                BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
-                root = rootRem[0];
-                // Check if remainder is non-zero
-                if (rootRem[1].signum != 0 || !working.isInteger())
-                    root = root.add(1L);
-            }
-
-            default -> throw new AssertionError("Unexpected value for RoundingMode: " + workingRM);
-            }
-        }
-
-        if (n > 0) {
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
             // Adjust to requested precision and preferred
             // scale as appropriate.
             if (result.scale > preferredScale) // else can't increase result's precision to fit the preferred scale
                 result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
-        } else {
-            result = ONE.divide(new BigDecimal(root, checkScaleNonZero(resultScale)), mc);
+        } else { // Handle negative degrees
+            long invPrecL = mc.precision + (halfWay ? 1L : 0L);
+            int invPrec = (int) invPrecL;
+            if (invPrec != invPrecL)
+                throw new ArithmeticException("Overflow");
+
+            MathContext roundMc = new MathContext(invPrec, RoundingMode.DOWN);
+            BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
+            BigDecimal[] invRem = ONE.divideAndRemainder(working, roundMc);
+            result = ONE.divide(new BigDecimal(rootRem[0], checkScaleNonZero(normScale / nAbs)), roundMc);
+            // 1/rootRem[0] >= 1/working, so result >= invRem[0]
+
+            int cmp;
+            BigDecimal ulp = result.ulp();
+            while ((cmp = result.pow(nAbs).compareMagnitude(invRem[0])) > 0)
+                result = result.subtract(ulp);
+
+            if (halfWay) {
+                // remove the one-tenth digit from result
+                BigInteger[] quotRem10 = result.unscaledValue().divideAndRemainder(BigInteger.TEN);
+                result = new BigDecimal(quotRem10[0], checkScaleNonZero(result.scale - 1L));
+
+                boolean increment = false;
+                int digit = quotRem10[1].intValue();
+                if (digit > 5) {
+                    increment = true;
+                } else if (digit == 5) {
+                    if (mc.roundingMode == RoundingMode.HALF_UP
+                            || mc.roundingMode == RoundingMode.HALF_EVEN && quotRem10[0].testBit(0)
+                            // Check if remainder is non-zero
+                            || cmp != 0 || invRem[1].signum() != 0) {
+                        increment = true;
+                    }
+                }
+
+                if (increment)
+                    result = result.add(ulp);
+            } else {
+                switch (mc.roundingMode) {
+                case DOWN, FLOOR -> {} // result is already rounded down
+
+                case UP, CEILING -> {
+                    // Check if remainder is non-zero
+                    if (cmp != 0 || invRem[1].signum() != 0)
+                        result = result.add(ulp);
+                }
+
+                default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
+                }
+            }
+
             // Adjust to requested precision and preferred
             // scale as appropriate.
             result = result.adjustToPreferredScale(preferredScale, mc.precision);
