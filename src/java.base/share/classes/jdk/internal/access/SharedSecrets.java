@@ -25,6 +25,7 @@
 
 package jdk.internal.access;
 
+import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.Stable;
 
 import javax.crypto.SealedObject;
@@ -60,6 +61,9 @@ import javax.security.auth.x500.X500Principal;
  * </strong>
  */
 
+// Static fields in this class are stateless, so the values initialized in the
+// AOT assembly phase can be safely cached.
+@AOTSafeClassInitializer
 public class SharedSecrets {
     // This field is not necessarily stable
     private static JavaAWTFontAccess javaAWTFontAccess;
