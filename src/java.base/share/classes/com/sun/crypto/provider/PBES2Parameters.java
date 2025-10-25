@@ -241,10 +241,6 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
                 + "not an ASN.1 SEQUENCE tag");
         }
         DerValue pBKDF2_params = kdf.data.getDerValue();
-        if (pBKDF2_params.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBKDF2 parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
 
         var kdfParams = new PBKDF2Parameters(pBKDF2_params);
         String kdfAlgo = kdfParams.getPrfAlgo();
@@ -304,9 +300,10 @@ abstract class PBES2Parameters extends AlgorithmParametersSpi {
         DerOutputStream out = new DerOutputStream();
 
         DerOutputStream pBES2_params = new DerOutputStream();
-        pBES2_params.write(DerValue.tag_Sequence,
-                // keysize encoded as octets
-                PBKDF2Parameters.encode(salt, iCount, keysize/8, kdfAlgo_OID));
+
+        // keysize encoded as octets
+        pBES2_params.writeBytes(PBKDF2Parameters.encode(salt, iCount,
+                keysize/8, kdfAlgo_OID));
 
         DerOutputStream encryptionScheme = new DerOutputStream();
         // algorithm is id-aes128-CBC or id-aes256-CBC

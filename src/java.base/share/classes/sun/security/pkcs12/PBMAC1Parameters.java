@@ -26,8 +26,10 @@
 package sun.security.pkcs12;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 
 import sun.security.util.*;
+import sun.security.x509.AlgorithmId;
 
 /**
  * This class implements the parameter set used with password-based
@@ -106,10 +108,6 @@ final class PBMAC1Parameters {
                 + "not an ASN.1 SEQUENCE tag");
         }
         DerValue pBKDF2_params = kdf.data.getDerValue();
-        if (pBKDF2_params.tag != DerValue.tag_Sequence) {
-            throw new IOException("PBKDF2 parameter parsing error: "
-                + "not an ASN.1 SEQUENCE tag");
-        }
 
         this.kdfParams = new PBKDF2Parameters(pBKDF2_params);
     }
@@ -118,23 +116,21 @@ final class PBMAC1Parameters {
      * Encode PBMAC1 parameters from components.
      */
     static byte[] encode(byte[] salt, int iterationCount, int keyLength,
-            String kdfHmac, String hmac, byte[] digest) {
+            String kdfHmac, String hmac, byte[] digest)
+            throws IOException, NoSuchAlgorithmException {
 
         DerOutputStream out = new DerOutputStream();
         DerOutputStream tmp0 = new DerOutputStream();
         DerOutputStream tmp1 = new DerOutputStream();
         DerOutputStream tmp2 = new DerOutputStream();
         DerOutputStream tmp3 = new DerOutputStream();
-        DerOutputStream tmp4 = new DerOutputStream();
-
-        // messageAuthScheme AlgorithmIdentifier {{PBMAC1-MACs}}
-        tmp4.putOID(ObjectIdentifier.of(KnownOIDs.findMatch(hmac)));
-        tmp4.putNull();
 
         // keyDerivationFunc AlgorithmIdentifier {{PBMAC1-KDFs}}
-        tmp3.write(DerValue.tag_Sequence, PBKDF2Parameters.encode(salt,
+        tmp3.writeBytes(PBKDF2Parameters.encode(salt,
                 iterationCount, keyLength, kdfHmac));
-        tmp3.write(DerValue.tag_Sequence, tmp4);
+
+        // messageAuthScheme AlgorithmIdentifier {{PBMAC1-MACs}}
+        tmp3.write(AlgorithmId.get(hmac));
 
         // id-PBMAC1 OBJECT IDENTIFIER ::= { pkcs-5 14 }
         tmp2.putOID(ObjectIdentifier.of(KnownOIDs.PBMAC1));

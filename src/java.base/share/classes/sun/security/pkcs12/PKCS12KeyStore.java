@@ -350,7 +350,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                 try {
                     cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
                 } finally {
-                    sun.security.util.KeyUtil.destroySecretKeys(skey);
+                    KeyUtil.destroySecretKeys(skey);
                 }
                 byte[] keyInfo = cipher.doFinal(encryptedKey);
                 /*
@@ -888,7 +888,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, skey, algParams);
             } finally {
-                sun.security.util.KeyUtil.destroySecretKeys(skey);
+                KeyUtil.destroySecretKeys(skey);
             }
             byte[] encryptedKey = cipher.doFinal(data);
             algid = new AlgorithmId(pbeOID, cipher.getParameters());
@@ -1238,7 +1238,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             macIterationCount = defaultMacIterationCount();
         }
         if (password != null && !macAlgorithm.equalsIgnoreCase("NONE")) {
-            byte[] macData = MacData.calculateMac(password, authenticatedSafe,
+            byte[] macData = MacData.generateMac(password, authenticatedSafe,
                     macAlgorithm, macIterationCount, getSalt());
             pfx.write(macData);
         }
@@ -1822,7 +1822,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             try {
                 cipher.init(Cipher.ENCRYPT_MODE, skey, algParams);
             } finally {
-                sun.security.util.KeyUtil.destroySecretKeys(skey);
+                KeyUtil.destroySecretKeys(skey);
             }
             encryptedData = cipher.doFinal(data);
 
@@ -2032,7 +2032,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                         try {
                             cipher.init(Cipher.DECRYPT_MODE, skey, algParams);
                         } finally {
-                            sun.security.util.KeyUtil.destroySecretKeys(skey);
+                            KeyUtil.destroySecretKeys(skey);
                         }
                         loadSafeContents(new DerInputStream(cipher.doFinal(rawData)));
                         return null;
@@ -2071,7 +2071,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     macAlgorithm = macData.getMacAlgorithm();
                     macIterationCount = ic;
                     RetryWithZero.run(pass -> {
-                        macData.processMacData(pass, authSafeData);
+                        macData.verifyMac(pass, authSafeData);
                         return (Void) null;
                     }, password);
                 } catch (Exception e) {

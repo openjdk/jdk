@@ -27,6 +27,8 @@ package sun.security.util;
 
 import java.io.IOException;
 
+import sun.security.x509.AlgorithmId;
+
 /**
  * This class implements the parameter set used with password-based
  * key derivation function 2 (PBKDF2), which is defined in PKCS#5 as follows:
@@ -89,6 +91,10 @@ public final class PBKDF2Parameters {
      */
     public PBKDF2Parameters(DerValue pBKDF2_params) throws IOException {
 
+        if (pBKDF2_params.tag != DerValue.tag_Sequence) {
+            throw new IOException("PBKDF2 parameter parsing error: "
+                + "not an ASN.1 SEQUENCE tag");
+        }
         DerValue specified = pBKDF2_params.data.getDerValue();
         // the 'specified' ASN.1 CHOICE for 'salt' is supported
         if (specified.tag == DerValue.tag_OctetString) {
@@ -152,20 +158,19 @@ public final class PBKDF2Parameters {
         DerOutputStream tmp0 = new DerOutputStream();
         DerOutputStream tmp1 = new DerOutputStream();
 
-        // prf AlgorithmIdentifier {{PBKDF2-PRFs}}
-        tmp1.putOID(prf);
-        tmp1.putNull();
-
         tmp0.putOctetString(salt);
         tmp0.putInteger(iterationCount);
         tmp0.putInteger(keyLength);
-        tmp0.write(DerValue.tag_Sequence, tmp1);
+
+        // prf AlgorithmIdentifier {{PBKDF2-PRFs}}
+        tmp0.write(new AlgorithmId(prf));
 
         // id-PBKDF2 OBJECT IDENTIFIER ::= {pkcs-5 12}
         out.putOID(ObjectIdentifier.of(KnownOIDs.PBKDF2WithHmacSHA1));
         out.write(DerValue.tag_Sequence, tmp0);
 
-        return out.toByteArray();
+        return new DerOutputStream().write(DerValue.tag_Sequence, out)
+                .toByteArray();
     }
 
     /**
