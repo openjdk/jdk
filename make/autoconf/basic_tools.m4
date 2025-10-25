@@ -207,27 +207,12 @@ AC_DEFUN([BASIC_CHECK_GNU_MAKE],
   UTIL_SETUP_TOOL(MAKE,
   [
     # Try our hardest to locate a correct version of GNU make
-    UTIL_LOOKUP_PROGS(CHECK_GMAKE, gmake)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(CHECK_GMAKE, gmake)
     BASIC_CHECK_MAKE_VERSION("$CHECK_GMAKE", [gmake in PATH])
 
     if test "x$FOUND_MAKE" = x; then
-      UTIL_LOOKUP_PROGS(CHECK_MAKE, make)
+      UTIL_LOOKUP_TOOLCHAIN_PROGS(CHECK_MAKE, make)
       BASIC_CHECK_MAKE_VERSION("$CHECK_MAKE", [make in PATH])
-    fi
-
-    if test "x$FOUND_MAKE" = x; then
-      if test "x$TOOLCHAIN_PATH" != x; then
-        # We have a toolchain path, check that as well before giving up.
-        OLD_PATH=$PATH
-        PATH=$TOOLCHAIN_PATH:$PATH
-        UTIL_LOOKUP_PROGS(CHECK_TOOLSDIR_GMAKE, gmake)
-        BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_GMAKE", [gmake in tools-dir])
-        if test "x$FOUND_MAKE" = x; then
-          UTIL_LOOKUP_PROGS(CHECK_TOOLSDIR_MAKE, make)
-          BASIC_CHECK_MAKE_VERSION("$CHECK_TOOLSDIR_MAKE", [make in tools-dir])
-        fi
-        PATH=$OLD_PATH
-      fi
     fi
 
     if test "x$FOUND_MAKE" = x; then
@@ -378,7 +363,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_COMPLEX_TOOLS],
 
   # Check if it's a GNU date compatible version
   AC_MSG_CHECKING([if date is a GNU compatible version])
-  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox"`
+  check_date=`$DATE --version 2>&1 | $GREP "GNU\|BusyBox\|uutils"`
   if test "x$check_date" != x; then
     AC_MSG_RESULT([yes])
     IS_GNU_DATE=yes

@@ -43,19 +43,27 @@ struct JfrCPUTimeSampleRequest {
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
 // Designed to be only used under lock and read linearly
+// The lock in question is the tri-state CPU time JFR lock in JfrThreadLocal
+// This allows us to skip most of the atomic accesses and memory barriers,
+// holding a lock acts as a memory barrier
+// Only the _lost_samples property is atomic, as it can be accessed even after
+// acquiring the lock failed.
+// Important to note is that the queue is also only accessed under lock in signal
+// handlers.
 class JfrCPUTimeTraceQueue {
-
-  // the default queue capacity, scaled if the sampling period is smaller than 10ms
-  // when the thread is started
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
 
   JfrCPUTimeSampleRequest* _data;
   u4 _capacity;
   // next unfilled index
-  volatile u4 _head;
+  u4 _head;
 
+  // the only property accessible without a lock
   volatile u4 _lost_samples;
 
+  u4 _lost_samples_due_to_queue_full;
+
+  static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
+  static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
 public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
@@ -79,14 +87,20 @@ public:
 
   u4 lost_samples() const;
 
+  // the only method callable without holding a lock
   void increment_lost_samples();
+
+  void increment_lost_samples_due_to_queue_full();
 
   // returns the previous lost samples count
   u4 get_and_reset_lost_samples();
 
-  void resize(u4 capacity);
+  u4 get_and_reset_lost_samples_due_to_queue_full();
 
-  void resize_for_period(u4 period_millis);
+  void resize_if_needed();
+
+  // init the queue capacity
+  void init();
 
   void clear();
 
@@ -130,6 +144,8 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
   static void send_lost_event(const JfrTicks& time, traceid tid, s4 lost_samples);
 
   static void trigger_async_processing_of_cpu_time_jfr_requests();
+
+  DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool runnable);)
 };
 
 #else
@@ -150,6 +166,7 @@ private:
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
+  DEBUG_ONLY(static bool set_out_of_stack_walking_enabled(bool runnable));
 };
 
 #endif // defined(LINUX)

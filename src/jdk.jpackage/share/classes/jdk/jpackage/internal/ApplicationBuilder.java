@@ -86,6 +86,9 @@ final class ApplicationBuilder {
 
     ApplicationBuilder initFromExternalApplication(ExternalApplication app,
             Function<LauncherInfo, Launcher> mapper) {
+
+        externalApp = Objects.requireNonNull(app);
+
         if (version == null) {
             version = app.getAppVersion();
         }
@@ -110,6 +113,19 @@ final class ApplicationBuilder {
 
     Optional<ApplicationLaunchers> launchers() {
         return Optional.ofNullable(launchers);
+    }
+
+    Optional<ExternalApplication> externalApplication() {
+        return Optional.ofNullable(externalApp);
+    }
+
+    Optional<String> mainLauncherClassName() {
+        return launchers()
+                .map(ApplicationLaunchers::mainLauncher)
+                .flatMap(Launcher::startupInfo)
+                .map(LauncherStartupInfo::qualifiedClassName).or(() -> {
+                    return externalApplication().map(ExternalApplication::getMainClass);
+                });
     }
 
     ApplicationBuilder appImageLayout(AppImageLayout v) {
@@ -153,9 +169,30 @@ final class ApplicationBuilder {
     }
 
     static Launcher overrideLauncherStartupInfo(Launcher launcher, LauncherStartupInfo startupInfo) {
-        return new Launcher.Stub(launcher.name(), Optional.of(startupInfo),
-                launcher.fileAssociations(), launcher.isService(), launcher.description(),
-                launcher.icon(), launcher.defaultIconResourceName(), launcher.extraAppImageFileData());
+        return new Launcher.Stub(
+                launcher.name(),
+                Optional.of(startupInfo),
+                launcher.fileAssociations(),
+                launcher.isService(),
+                launcher.description(),
+                launcher.icon(),
+                launcher.defaultIconResourceName(),
+                launcher.extraAppImageFileData());
+    }
+
+    static Application overrideAppImageLayout(Application app, AppImageLayout appImageLayout) {
+        return new Application.Stub(
+                app.name(),
+                app.description(),
+                app.version(),
+                app.vendor(),
+                app.copyright(),
+                app.srcDir(),
+                app.contentDirs(),
+                Objects.requireNonNull(appImageLayout),
+                app.runtimeBuilder(),
+                app.launchers(),
+                app.extraAppImageFileData());
     }
 
     record MainLauncherStartupInfo(String qualifiedClassName) implements LauncherStartupInfo {
@@ -187,6 +224,7 @@ final class ApplicationBuilder {
     private String vendor;
     private String copyright;
     private Path srcDir;
+    private ExternalApplication externalApp;
     private List<Path> contentDirs;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;

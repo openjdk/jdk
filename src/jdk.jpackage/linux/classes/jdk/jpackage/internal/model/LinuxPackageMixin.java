@@ -32,11 +32,6 @@ import java.util.Optional;
 public interface LinuxPackageMixin {
 
     /**
-     * Overrides {@link Package#packageLayout()}.
-     */
-    AppImageLayout packageLayout();
-
-    /**
      * Gets the name of the start menu group where to create shortcuts for
      * application launchers of this package.
      *
@@ -88,7 +83,7 @@ public interface LinuxPackageMixin {
     /**
      * Default implementation of {@link LinuxPackageMixin} interface.
      */
-    record Stub(AppImageLayout packageLayout, String menuGroupName,
+    record Stub(String menuGroupName,
             Optional<String> category, Optional<String> additionalDependencies,
             Optional<String> release, String arch) implements LinuxPackageMixin {
     }

@@ -551,7 +551,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         JCExpression vartype = copy(t.vartype, p);
         if (t.nameexpr == null) {
             JCExpression init = copy(t.init, p);
-            return M.at(t.pos).VarDef(mods, t.name, vartype, init);
+            return M.at(t.pos).VarDef(mods, t.name, vartype, init, t.declKind, t.typePos);
         } else {
             JCExpression nameexpr = copy(t.nameexpr, p);
             return M.at(t.pos).ReceiverVarDef(mods, nameexpr, vartype);

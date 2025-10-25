@@ -271,6 +271,18 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.7 (VS2022)"
       #elif _MSC_VER == 1938
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.8 (VS2022)"
+      #elif _MSC_VER == 1939
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.9 (VS2022)"
+      #elif _MSC_VER == 1940
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.10 (VS2022)"
+      #elif _MSC_VER == 1941
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.11 (VS2022)"
+      #elif _MSC_VER == 1942
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.12 (VS2022)"
+      #elif _MSC_VER == 1943
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.13 (VS2022)"
+      #elif _MSC_VER == 1944
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.14 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif
@@ -323,19 +335,6 @@ unsigned int Abstract_VM_Version::jvm_version() {
          ((Abstract_VM_Version::vm_minor_version() & 0xFF) << 16) |
          ((Abstract_VM_Version::vm_security_version() & 0xFF) << 8) |
          (Abstract_VM_Version::vm_build_number() & 0xFF);
-}
-
-const char* Abstract_VM_Version::extract_features_string(const char* cpu_info_string,
-                                                         size_t cpu_info_string_len,
-                                                         size_t features_offset) {
-  assert(features_offset <= cpu_info_string_len, "");
-  if (features_offset < cpu_info_string_len) {
-    assert(cpu_info_string[features_offset + 0] == ',', "");
-    assert(cpu_info_string[features_offset + 1] == ' ', "");
-    return cpu_info_string + features_offset + 2; // skip initial ", "
-  } else {
-    return ""; // empty
-  }
 }
 
 bool Abstract_VM_Version::print_matching_lines_from_file(const char* filename, outputStream* st, const char* keywords_to_match[]) {

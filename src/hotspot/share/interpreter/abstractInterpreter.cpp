@@ -22,23 +22,22 @@
  *
  */
 
-#include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/aotMetaspace.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/bytecodeStream.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
-#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
-#include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
+#include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -259,7 +258,8 @@ bool AbstractInterpreter::is_not_reached(const methodHandle& method, int bci) {
       case Bytecodes::_invokedynamic: {
         assert(invoke_bc.has_index_u4(code), "sanity");
         int method_index = invoke_bc.get_index_u4(code);
-        return cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        bool is_resolved = cpool->resolved_indy_entry_at(method_index)->is_resolved();
+        return !is_resolved;
       }
       case Bytecodes::_invokevirtual:   // fall-through
       case Bytecodes::_invokeinterface: // fall-through

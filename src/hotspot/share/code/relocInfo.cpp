@@ -406,11 +406,12 @@ void CallRelocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer
   pd_set_call_destination(callee);
 }
 
-
 #ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
 void trampoline_stub_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest) {
   // Finalize owner destination only for nmethods
   if (dest->blob() != nullptr) return;
+  // We either relocate a nmethod residing in CodeCache or just generated code from CodeBuffer
+  assert(src->blob() == nullptr || nativeCall_at(owner())->raw_destination() == owner(), "destination should be empty");
   pd_fix_owner_after_move();
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@
 
 #include "cds/heapShared.hpp"
 #include "memory/iterator.hpp"
+#include "oops/oopHandle.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/hashTable.hpp"
 
 class InstanceKlass;
 class Symbol;
@@ -47,7 +48,7 @@ class CDSHeapVerifier : public KlassClosure {
     Symbol* _name;
   };
 
-  ResourceHashtable<oop, StaticFieldInfo,
+  HashTable<oop, StaticFieldInfo,
       15889, // prime number
       AnyObj::C_HEAP,
       mtClassShared,
@@ -79,8 +80,8 @@ public:
   // Overrides KlassClosure::do_klass()
   virtual void do_klass(Klass* k);
 
-  // For ResourceHashtable::iterate()
-  inline bool do_entry(oop& orig_obj, HeapShared::CachedOopInfo& value);
+  // For HashTable::iterate()
+  inline bool do_entry(OopHandle& orig_obj, HeapShared::CachedOopInfo& value);
 
   static void verify();
 

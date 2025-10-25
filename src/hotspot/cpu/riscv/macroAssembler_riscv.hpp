@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2024, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -849,9 +849,6 @@ public:
   void push_cont_fastpath(Register java_thread = xthread);
   void pop_cont_fastpath(Register java_thread = xthread);
 
-  void inc_held_monitor_count(Register tmp);
-  void dec_held_monitor_count(Register tmp);
-
   // if heap base register is used - reinit it with the correct value
   void reinit_heapbase();
 
@@ -1430,6 +1427,9 @@ public:
 
   void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
   void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
+
+  // Helper routine processing the slow path of NaN when converting float to float16
+  void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {

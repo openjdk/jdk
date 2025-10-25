@@ -85,7 +85,7 @@ bool AOTConstantPoolResolver::is_class_resolution_deterministic(InstanceKlass* c
   if (resolved_class->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(resolved_class);
 
-    if (!ik->is_shared() && SystemDictionaryShared::is_excluded_class(ik)) {
+    if (!ik->in_aot_cache() && SystemDictionaryShared::is_excluded_class(ik)) {
       return false;
     }
 
@@ -225,7 +225,38 @@ void AOTConstantPoolResolver::preresolve_field_and_method_cp_entries(JavaThread*
       Bytecodes::Code raw_bc = bcs.raw_code();
       switch (raw_bc) {
       case Bytecodes::_getfield:
+      // no-fast bytecode
+      case Bytecodes::_nofast_getfield:
+      // fast bytecodes
+      case Bytecodes::_fast_agetfield:
+      case Bytecodes::_fast_bgetfield:
+      case Bytecodes::_fast_cgetfield:
+      case Bytecodes::_fast_dgetfield:
+      case Bytecodes::_fast_fgetfield:
+      case Bytecodes::_fast_igetfield:
+      case Bytecodes::_fast_lgetfield:
+      case Bytecodes::_fast_sgetfield:
+        raw_bc = Bytecodes::_getfield;
+        maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
+        if (HAS_PENDING_EXCEPTION) {
+          CLEAR_PENDING_EXCEPTION; // just ignore
+        }
+        break;
+
       case Bytecodes::_putfield:
+      // no-fast bytecode
+      case Bytecodes::_nofast_putfield:
+      // fast bytecodes
+      case Bytecodes::_fast_aputfield:
+      case Bytecodes::_fast_bputfield:
+      case Bytecodes::_fast_zputfield:
+      case Bytecodes::_fast_cputfield:
+      case Bytecodes::_fast_dputfield:
+      case Bytecodes::_fast_fputfield:
+      case Bytecodes::_fast_iputfield:
+      case Bytecodes::_fast_lputfield:
+      case Bytecodes::_fast_sputfield:
+        raw_bc = Bytecodes::_putfield;
         maybe_resolve_fmi_ref(ik, m, raw_bc, bcs.get_index_u2(), preresolve_list, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           CLEAR_PENDING_EXCEPTION; // just ignore

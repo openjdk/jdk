@@ -44,7 +44,7 @@ import jtreg.SkippedException;
  * @library /test/lib
  * @modules java.base/jdk.internal.platform
  * @build MetricsMemoryTester
- * @run main TestDockerMemoryMetricsSubgroup
+ * @run main/timeout=480 TestDockerMemoryMetricsSubgroup
  */
 
 public class TestDockerMemoryMetricsSubgroup {

@@ -68,10 +68,6 @@ import static java.lang.String.UTF16;
  * Delight</cite>, (Addison Wesley, 2002) and <cite>Hacker's
  * Delight, Second Edition</cite>, (Pearson Education, 2013).
  *
- * @author  Lee Boynton
- * @author  Arthur van Hoff
- * @author  Josh Bloch
- * @author  Joseph D. Darcy
  * @since   1.0
  */
 @jdk.internal.ValueBased
@@ -395,15 +391,9 @@ public final class Long extends Number
         // assert shift > 0 && shift <=5 : "Illegal shift value";
         int mag = Long.SIZE - Long.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[chars];
-            formatUnsignedLong0(val, shift, buf, 0, chars);
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[chars * 2];
-            formatUnsignedLong0UTF16(val, shift, buf, 0, chars);
-            return new String(buf, UTF16);
-        }
+        byte[] buf = new byte[chars];
+        formatUnsignedLong0(val, shift, buf, 0, chars);
+        return String.newStringWithLatin1Bytes(buf);
     }
 
     /**
@@ -428,27 +418,6 @@ public final class Long extends Number
     }
 
     /**
-     * Format a long (treated as unsigned) into a byte buffer (UTF16 version). If
-     * {@code len} exceeds the formatted ASCII representation of {@code val},
-     * {@code buf} will be padded with leading zeroes.
-     *
-     * @param val the unsigned long to format
-     * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
-     * @param buf the byte buffer to write to
-     * @param offset the offset in the destination buffer to start at
-     * @param len the number of characters to write
-     */
-    private static void formatUnsignedLong0UTF16(long val, int shift, byte[] buf, int offset, int len) {
-        int charPos = offset + len;
-        int radix = 1 << shift;
-        int mask = radix - 1;
-        do {
-            StringUTF16.putChar(buf, --charPos, Integer.digits[((int) val) & mask]);
-            val >>>= shift;
-        } while (charPos > offset);
-    }
-
-    /**
      * Returns a {@code String} object representing the specified
      * {@code long}.  The argument is converted to signed decimal
      * representation and returned as a string, exactly as if the
@@ -460,15 +429,9 @@ public final class Long extends Number
      */
     public static String toString(long i) {
         int size = DecimalDigits.stringSize(i);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
-            DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
-            return new String(buf, LATIN1);
-        } else {
-            byte[] buf = new byte[size * 2];
-            DecimalDigits.uncheckedGetCharsUTF16(i, size, buf);
-            return new String(buf, UTF16);
-        }
+        byte[] buf = new byte[size];
+        DecimalDigits.uncheckedGetCharsLatin1(i, size, buf);
+        return String.newStringWithLatin1Bytes(buf);
     }
 
     /**
