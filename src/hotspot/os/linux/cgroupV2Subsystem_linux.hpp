@@ -145,8 +145,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     /* One unified controller */
     CgroupV2Controller _unified;
     /* Caching wrappers for cpu/memory metrics */
-    CachingCgroupController<CgroupMemoryController>* _memory = nullptr;
-    CachingCgroupController<CgroupCpuController>* _cpu = nullptr;
+    CachingCgroupController<CgroupMemoryController, jlong>* _memory = nullptr;
+    CachingCgroupController<CgroupCpuController, double>* _cpu = nullptr;
 
     CgroupCpuacctController* _cpuacct = nullptr;
 
@@ -168,8 +168,8 @@ class CgroupV2Subsystem: public CgroupSubsystem {
     const char * container_type() override {
       return "cgroupv2";
     }
-    CachingCgroupController<CgroupMemoryController>* memory_controller() override { return _memory; }
-    CachingCgroupController<CgroupCpuController>* cpu_controller() override { return _cpu; }
+    CachingCgroupController<CgroupMemoryController, jlong>* memory_controller() override { return _memory; }
+    CachingCgroupController<CgroupCpuController, double>* cpu_controller() override { return _cpu; }
     CgroupCpuacctController* cpuacct_controller() override { return _cpuacct; };
 };
 
