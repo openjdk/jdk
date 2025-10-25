@@ -30,6 +30,7 @@
 #include "utilities/ostream.hpp"
 #include "utilities/quickSort.hpp"
 
+extern "C" int printf(const char *,...);
 const LogSelection LogSelection::Invalid;
 
 LogSelection::LogSelection() : _ntags(0), _tags(), _wildcard(false), _level(LogLevel::Invalid), _tag_sets_selected(0) {
