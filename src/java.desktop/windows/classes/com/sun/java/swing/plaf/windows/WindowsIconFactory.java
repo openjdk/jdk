@@ -28,6 +28,7 @@ package com.sun.java.swing.plaf.windows;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.ComponentOrientation;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -914,8 +915,13 @@ public final class WindowsIconFactory implements Serializable
                     }
                 }
                 if (icon != null) {
-                    icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
-                                   y + OFFSET);
+                    if (!c.getComponentOrientation().equals(ComponentOrientation.RIGHT_TO_LEFT)) {
+                        icon.paintIcon(c, g, x + VistaMenuItemCheckIconFactory.getIconWidth(),
+                                y + OFFSET);
+                    } else {
+                        icon.paintIcon(c, g, x + OFFSET,
+                                y + OFFSET);
+                    }
                 }
             }
             private static WindowsMenuItemUIAccessor getAccessor(

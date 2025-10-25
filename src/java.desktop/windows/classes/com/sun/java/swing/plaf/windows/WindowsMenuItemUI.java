@@ -38,6 +38,7 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
@@ -201,8 +202,9 @@ public final class WindowsMenuItemUI extends BasicMenuItemUI {
 
         if (lh.getCheckIcon() != null && lh.useCheckAndArrow()) {
             Rectangle rect = lr.getTextRect();
-
-            rect.x += lh.getAfterCheckIconGap();
+            if (menuItem.getHorizontalTextPosition() != SwingConstants.LEADING) {
+                rect.x += lh.getAfterCheckIconGap();
+            }
 
             lr.setTextRect(rect);
         }
