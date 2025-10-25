@@ -78,14 +78,21 @@ public class DHKEM implements KEMSpi {
             byte[] pkEm = params.SerializePublicKey(pkE);
             byte[] pkRm = params.SerializePublicKey(pkR);
             byte[] kem_context = concat(pkEm, pkRm);
+            byte[] key = null;
             try {
                 byte[] dh = params.DH(skE, pkR);
-                byte[] key = params.ExtractAndExpand(dh, kem_context);
+                key = params.ExtractAndExpand(dh, kem_context);
                 return new KEM.Encapsulated(
                         new SecretKeySpec(key, from, to - from, algorithm),
                         pkEm, null);
             } catch (Exception e) {
                 throw new ProviderException("internal error", e);
+            } finally {
+                // `key` has been cloned into the `SecretKeySpec` within the
+                // returned `KEM.Encapsulated`, so it can now be cleared.
+                if (key != null) {
+                    Arrays.fill(key, (byte)0);
+                }
             }
         }
 
@@ -98,17 +105,22 @@ public class DHKEM implements KEMSpi {
             if (encapsulation.length != params.Npk) {
                 throw new DecapsulateException("incorrect encapsulation size");
             }
+            byte[] key = null;
             try {
                 PublicKey pkE = params.DeserializePublicKey(encapsulation);
                 byte[] dh = params.DH(skR, pkE);
                 byte[] pkRm = params.SerializePublicKey(pkR);
                 byte[] kem_context = concat(encapsulation, pkRm);
-                byte[] key = params.ExtractAndExpand(dh, kem_context);
+                key = params.ExtractAndExpand(dh, kem_context);
                 return new SecretKeySpec(key, from, to - from, algorithm);
             } catch (IOException | InvalidKeyException e) {
                 throw new DecapsulateException("Cannot decapsulate", e);
             } catch (Exception e) {
                 throw new ProviderException("internal error", e);
+            } finally {
+                if (key != null) {
+                    Arrays.fill(key, (byte)0);
+                }
             }
         }
 
