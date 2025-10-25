@@ -541,22 +541,6 @@ address StubGenerator::generate_orderaccess_fence() {
 }
 
 
-// Support for intptr_t get_previous_sp()
-//
-// This routine is used to find the previous stack pointer for the
-// caller.
-address StubGenerator::generate_get_previous_sp() {
-  StubId stub_id = StubId::stubgen_get_previous_sp_id;
-  StubCodeMark mark(this, stub_id);
-  address start = __ pc();
-
-  __ movptr(rax, rsp);
-  __ addptr(rax, 8); // return address is at the top of the stack.
-  __ ret(0);
-
-  return start;
-}
-
 //----------------------------------------------------------------------------------------------------
 // Support for void verify_mxcsr()
 //
@@ -4083,8 +4067,6 @@ void StubGenerator::generate_initial_stubs() {
   StubRoutines::_catch_exception_entry = generate_catch_exception();
 
   // platform dependent
-  StubRoutines::x86::_get_previous_sp_entry = generate_get_previous_sp();
-
   StubRoutines::x86::_verify_mxcsr_entry    = generate_verify_mxcsr();
 
   StubRoutines::x86::_f2i_fixup             = generate_f2i_fixup();
