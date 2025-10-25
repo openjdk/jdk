@@ -37,8 +37,8 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
-#include "runtime/threadSMR.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframe_hp.hpp"
 #include "runtime/vmOperations.hpp"
@@ -289,7 +289,6 @@ VM_ChangeSingleStep::VM_ChangeSingleStep(bool on)
 
 class JvmtiEventControllerPrivate : public AllStatic {
   static bool _initialized;
-
 public:
   static void set_should_post_single_step(bool on);
   static void enter_interp_only_mode(JvmtiThreadState *state);

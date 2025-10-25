@@ -301,7 +301,6 @@ bool              JvmtiExport::_can_hotswap_or_post_breakpoint            = fals
 bool              JvmtiExport::_can_modify_any_class                      = false;
 bool              JvmtiExport::_can_walk_any_space                        = false;
 
-
 uint64_t          JvmtiExport::_redefinition_count                        = 0;
 bool              JvmtiExport::_all_dependencies_are_recorded             = false;
 
@@ -2547,9 +2546,6 @@ void JvmtiExport::post_compiled_method_load(JvmtiEnv* env, nmethod *nm) {
   // Pass inlining information through the void pointer
   JvmtiCompiledMethodLoadEventMark jem(thread, nm, inlinerecord);
   JVMTI_JAVA_EVENT_CALLBACK_BLOCK(thread)
-  if (!env->is_enabled(JVMTI_EVENT_COMPILED_METHOD_LOAD)) {
-    return;
-  }
   (*callback)(env->jvmti_external(), jem.jni_methodID(),
               jem.code_size(), jem.code_data(), jem.map_length(),
               jem.map(), jem.compile_info());
