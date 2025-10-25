@@ -188,14 +188,6 @@ void ServiceThread::enqueue_deferred_event(JvmtiDeferredEvent* event) {
   Service_lock->notify_all();
  }
 
-void ServiceThread::clear_deferred_events_queue() {
-  // All jvmti events should be already disabled before calling this method.
-  MonitorLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  while (_jvmti_service_queue.has_events()) {
-    _jvmti_service_queue.dequeue();
-  }
-}
-
 void ServiceThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   JavaThread::oops_do_no_frames(f, cf);
   // The ServiceThread "owns" the JVMTI Deferred events, scan them here

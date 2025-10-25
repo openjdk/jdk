@@ -51,7 +51,6 @@ class ServiceThread : public JavaThread {
 
   // Add event to the service thread event queue.
   static void enqueue_deferred_event(JvmtiDeferredEvent* event);
-  static void clear_deferred_events_queue();
 
   // GC support
   void oops_do_no_frames(OopClosure* f, NMethodClosure* cf);

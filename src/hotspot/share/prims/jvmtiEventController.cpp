@@ -1219,16 +1219,12 @@ JvmtiEventController::vm_init() {
 
 void
 JvmtiEventController::vm_death() {
-  // No new events except vm_death can be generated after this point.
+  // No new event callbacks except vm_death can be called after this point.
   AtomicAccess::store(&_execution_finished, true);
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::vm_death();
   }
-
-  // The deferred events are already posted, so it is needed to wait until
-  // they are actually posted on the ServiceThrea
-  ServiceThread::clear_deferred_events_queue();
 
   // Some events might be still in callback for daemons threads and ServiceThread.
   const double start = os::elapsedTime();
