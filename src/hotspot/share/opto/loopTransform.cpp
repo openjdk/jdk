@@ -1970,8 +1970,19 @@ void PhaseIdealLoop::do_unroll(IdealLoopTree *loop, Node_List &old_new, bool adj
     if (opaq == nullptr) {
       return;
     }
-    // Zero-trip test uses an 'opaque' node which is not shared.
-    assert(opaq->outcnt() == 1 && opaq->in(1) == limit, "");
+    // Zero-trip test uses an 'opaque' node which is not shared, otherwise bail out.
+    if (opaq->outcnt() != 1 || opaq->in(1) != limit) {
+#ifdef ASSERT
+      // In rare cases, loop cloning (as for peeling, for instance) can break this by replacing
+      // limit and the input of opaq by equivalent but distinct phis.
+      // Next IGVN should clean it up. Let's try to detect we are in such a case.
+      Unique_Node_List& worklist = loop->_phase->_igvn._worklist;
+      assert(C->major_progress(), "The operation that replaced limit and opaq->in(1) (e.g. peeling) should have set major_progress");
+      assert(opaq->in(1)->is_Phi() && limit->is_Phi(), "Nodes limit and opaq->in(1) should have been replaced by PhiNodes by fix_data_uses from clone_loop.");
+      assert(worklist.member(opaq->in(1)) && worklist.member(limit), "Nodes limit and opaq->in(1) differ and should have been recorded for IGVN.");
+#endif
+      return;
+    }
   }
 
   C->set_major_progress();
