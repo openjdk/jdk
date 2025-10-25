@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,8 @@
 
 /*
  * @test
- * @bug 4160406 4705734 4707389 4826774 4895911 4421494 6358355 7021568 7039369 4396272
+ * @bug 4160406 4705734 4707389 4826774 4895911 4421494 6358355 7021568
+ *      7039369 4396272 8366017
  * @summary Test for Double.parseDouble method and acceptance regex
  */
 
@@ -759,6 +760,39 @@ public class ParseDouble {
             throw new RuntimeException("Inconsistent conversion");
     }
 
+    private static void testFastPaths() {
+        /* Exercises the fast paths in jdk.internal.math.FloatingDecimal. */
+        check("1", 1.0);
+        check("2.34000e2", 234.0);
+        check("9.223e18", 9.223e18);
+        check("9.876e18", 9.876e18);
+        check("9223372036854776833", 9.223372036854778E18);
+        check("9223372036854776832", 9.223372036854776E18);
+
+        check("1.23", 1.23);
+        check("0.000234", 2.34E-4);
+        check("3.45e23", 3.45E23);
+        check("576460752303423616e20", 5.764607523034236E37);
+
+        check("1e37", 1.0E37);
+        check("8999e34", 8.999E37);
+        check("0.9999e36", 9.999E35);
+        check("0.9876e37", 9.876E36);
+
+        check("1.2e-200", 1.2E-200);
+        check("2.3e100", 2.3E100);
+        check("1.2000000000000000003e-200", 1.2E-200);
+        check("2.3000000000000000004e100", 2.3E100);
+        check("5.249320425370670463e308", Double.POSITIVE_INFINITY);
+        check("5.2493204253706704633e308", Double.POSITIVE_INFINITY);
+
+        check("1.2e-320", 1.2E-320);
+        check("1.2000000000000000003e-320", 1.2E-320);
+
+        check("2.225073858507201383e-308", Double.MIN_NORMAL);
+        check("2.2250738585072013831e-308", Double.MIN_NORMAL);
+    }
+
     public static void main(String[] args) throws Exception {
         rudimentaryTest();
 
@@ -775,5 +809,8 @@ public class ParseDouble {
         testSubnormalPowers();
         testPowers();
         testStrictness();
+
+        testFastPaths();
     }
+
 }
