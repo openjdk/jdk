@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration label="Custom" version="2.0">
+  <event name="jdk.JavaErrorThrow">
+    <setting name="enabled" control="enable-errors">true</setting>
+    <setting name="stackTrace">true</setting>
+  </event>
+</configuration>
