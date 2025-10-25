@@ -40,14 +40,6 @@
 #define amd64 1
 #endif
 
-#if defined(i386) && !defined(i586)
-#define i586 1
-#endif
-
-#ifdef i586
-#include "sun_jvm_hotspot_debugger_x86_X86ThreadContext.h"
-#endif
-
 #ifdef amd64
 #include "sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext.h"
 #endif
@@ -411,7 +403,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   return (err == PS_OK)? array : 0;
 }
 
-#if defined(i586) || defined(amd64) || defined(ppc64) || defined(ppc64le) || defined(aarch64) || defined(riscv64)
+#if defined(amd64) || defined(ppc64) || defined(ppc64le) || defined(aarch64) || defined(riscv64)
 extern "C"
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jint lwp_id) {
@@ -433,9 +425,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   }
 
 #undef NPRGREG
-#ifdef i586
-#define NPRGREG sun_jvm_hotspot_debugger_x86_X86ThreadContext_NPRGREG
-#endif
 #ifdef amd64
 #define NPRGREG sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_NPRGREG
 #endif
@@ -455,27 +444,6 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   regs = env->GetLongArrayElements(array, &isCopy);
 
 #undef REG_INDEX
-
-#ifdef i586
-#define REG_INDEX(reg) sun_jvm_hotspot_debugger_x86_X86ThreadContext_##reg
-
-  regs[REG_INDEX(GS)]  = (uintptr_t) gregs.xgs;
-  regs[REG_INDEX(FS)]  = (uintptr_t) gregs.xfs;
-  regs[REG_INDEX(ES)]  = (uintptr_t) gregs.xes;
-  regs[REG_INDEX(DS)]  = (uintptr_t) gregs.xds;
-  regs[REG_INDEX(EDI)] = (uintptr_t) gregs.edi;
-  regs[REG_INDEX(ESI)] = (uintptr_t) gregs.esi;
-  regs[REG_INDEX(FP)] = (uintptr_t) gregs.ebp;
-  regs[REG_INDEX(SP)] = (uintptr_t) gregs.esp;
-  regs[REG_INDEX(EBX)] = (uintptr_t) gregs.ebx;
-  regs[REG_INDEX(EDX)] = (uintptr_t) gregs.edx;
-  regs[REG_INDEX(ECX)] = (uintptr_t) gregs.ecx;
-  regs[REG_INDEX(EAX)] = (uintptr_t) gregs.eax;
-  regs[REG_INDEX(PC)] = (uintptr_t) gregs.eip;
-  regs[REG_INDEX(CS)]  = (uintptr_t) gregs.xcs;
-  regs[REG_INDEX(SS)]  = (uintptr_t) gregs.xss;
-
-#endif /* i586 */
 
 #ifdef amd64
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_amd64_AMD64ThreadContext_##reg
