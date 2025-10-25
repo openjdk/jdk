@@ -85,8 +85,8 @@ public class Basic {
     static final String libpath = System.getenv("LIBPATH");
 
     /* Used for regex String matching for long error messages */
-    static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error=13)";
-    static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error=2)";
+    static final String PERMISSION_DENIED_ERROR_MSG = "(Permission denied|error:13)";
+    static final String NO_SUCH_FILE_ERROR_MSG = "(No such file|error:2)";
     static final String SPAWNHELPER_FAILURE_MSG = "(Possible reasons:)";
 
     /**
