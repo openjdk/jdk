@@ -25,9 +25,6 @@
 
 package java.sql;
 
-import java.util.regex.Pattern;
-import static java.util.stream.Collectors.joining;
-
 /**
  * <P>The object used for executing a static SQL statement
  * and returning the results it produces.
@@ -1395,6 +1392,9 @@ public interface Statement extends Wrapper, AutoCloseable {
      * </tbody>
      * </table>
      * </blockquote>
+     * @implSpec
+     * The default implementation creates the literal as:
+     * {@code "'" + val.replace("'", "''") + "'"}.
      * @implNote
      * JDBC driver implementations may need to provide their own implementation
      * of this method in order to meet the requirements of the underlying
@@ -1407,17 +1407,16 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @since 9
      */
-     default String enquoteLiteral(String val)  throws SQLException {
-         return "'" + val.replace("'", "''") +  "'";
+     default String enquoteLiteral(String val) throws SQLException {
+         return SQLUtils.enquoteLiteral(val);
     }
-
 
      /**
      * Returns a SQL identifier. If {@code identifier} is a simple SQL identifier:
      * <ul>
-     * <li>Return the original value if {@code alwaysQuote} is
+     * <li>Return the original value if {@code alwaysDelimit} is
      * {@code false}</li>
-     * <li>Return a delimited identifier if {@code alwaysQuote} is
+     * <li>Return a delimited identifier if {@code alwaysDelimit} is
      * {@code true}</li>
      * </ul>
      *
@@ -1455,7 +1454,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * <thead>
      * <tr>
      * <th scope="col">identifier</th>
-     * <th scope="col">alwaysQuote</th>
+     * <th scope="col">alwaysDelimit</th>
      * <th scope="col">Result</th></tr>
      * </thead>
      * <tbody>
@@ -1507,8 +1506,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      * of this method in order to meet the requirements of the underlying
      * datasource.
      * @param identifier a SQL identifier
-     * @param alwaysQuote indicates if a simple SQL identifier should be
-     * returned as a quoted identifier
+     * @param alwaysDelimit indicates if a simple SQL identifier should be
+     * returned as a delimited identifier
      * @return A simple SQL identifier or a delimited identifier
      * @throws SQLException if identifier is not a valid identifier
      * @throws SQLFeatureNotSupportedException if the datasource does not support
@@ -1517,22 +1516,8 @@ public interface Statement extends Wrapper, AutoCloseable {
      *
      * @since 9
      */
-    default String enquoteIdentifier(String identifier, boolean alwaysQuote) throws SQLException {
-        int len = identifier.length();
-        if (len < 1 || len > 128) {
-            throw new SQLException("Invalid name");
-        }
-        if (Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches()) {
-            return alwaysQuote ?  "\"" + identifier + "\"" : identifier;
-        }
-        if (identifier.matches("^\".+\"$")) {
-            identifier = identifier.substring(1, len - 1);
-        }
-        if (Pattern.compile("[^\u0000\"]+").matcher(identifier).matches()) {
-            return "\"" + identifier + "\"";
-        } else {
-            throw new SQLException("Invalid name");
-        }
+    default String enquoteIdentifier(String identifier, boolean alwaysDelimit) throws SQLException {
+        return SQLUtils.enquoteIdentifier(identifier, alwaysDelimit);
     }
 
     /**
@@ -1542,8 +1527,9 @@ public interface Statement extends Wrapper, AutoCloseable {
      * determine a valid simple SQL identifier:
      * <ul>
      * <li>The string is not enclosed in double quotes</li>
-     * <li>The first character is an alphabetic character from a through z, or
-     * from A through Z</li>
+     * <li>The first character is an alphabetic character from a ({@code '\u005Cu0061'})
+     * through z ({@code '\u005Cu007A'}), or from A ({@code '\u005Cu0041'})
+     * through Z ({@code '\u005Cu005A'})</li>
      * <li>The string only contains alphanumeric characters or the character
      * "_"</li>
      * <li>The string is between 1 and 128 characters in length inclusive</li>
@@ -1597,9 +1583,7 @@ public interface Statement extends Wrapper, AutoCloseable {
      * @since 9
      */
     default boolean isSimpleIdentifier(String identifier) throws SQLException {
-        int len = identifier.length();
-        return len >= 1 && len <= 128
-                && Pattern.compile("[\\p{Alpha}][\\p{Alnum}_]*").matcher(identifier).matches();
+        return SQLUtils.isSimpleIdentifier(identifier);
     }
 
     /**
@@ -1628,7 +1612,10 @@ public interface Statement extends Wrapper, AutoCloseable {
     * </tbody>
     * </table>
     * </blockquote>
-    * @implNote
+    * @implSpec
+    * The default implementation creates the literal as:
+    * {@code "N'" + val.replace("'", "''") + "'"}.
+    *  @implNote
     * JDBC driver implementations may need to provide their own implementation
     * of this method in order to meet the requirements of the underlying
     * datasource. An implementation of enquoteNCharLiteral may accept a different
@@ -1643,7 +1630,7 @@ public interface Statement extends Wrapper, AutoCloseable {
     *
     * @since 9
     */
-    default String enquoteNCharLiteral(String val)  throws SQLException {
-        return "N'" + val.replace("'", "''") +  "'";
+    default String enquoteNCharLiteral(String val) throws SQLException {
+        return SQLUtils.enquoteNCharLiteral(val);
    }
 }
