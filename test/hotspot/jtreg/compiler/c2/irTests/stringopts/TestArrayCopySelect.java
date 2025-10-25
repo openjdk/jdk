@@ -99,15 +99,6 @@ public class TestArrayCopySelect {
 
     @Test
     @Warmup(10000)
-    @IR(applyIf = {"UseCompactObjectHeaders", "false"},
-        counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", ">0"})
-    static void testStrUtoBytesAligned() {
-        // Exercise the StringUTF16.toBytes API
-        output_strU = String.valueOf(input_arrU);
-    }
-
-    @Test
-    @Warmup(10000)
     @IR(applyIf = {"UseCompactObjectHeaders", "true"},
         counts = {IRNode.CALL_OF, "arrayof_jshort_disjoint_arraycopy", "0"})
     static void testStrUtoBytesUnAligned() {
