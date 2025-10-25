@@ -32,19 +32,22 @@ import java.util.List;
  * The {@link CodeFrame} represents a frame (i.e. scope) of code, appending {@link Code} to the {@code 'codeList'}
  * as {@link Token}s are rendered, and adding names to the {@link NameSet}s with {@link Template#addStructuralName}/
  * {@link Template#addDataName}. {@link Hook}s can be added to a frame, which allows code to be inserted at that
- * location later. When a {@link Hook} is {@link Hook#anchor}ed, it separates the Template into an outer and inner
- * {@link CodeFrame}, ensuring that names that are added inside the inner frame are only available inside that frame.
+ * location later.
  *
  * <p>
- * On the other hand, each {@link TemplateFrame} represents the frame (or scope) of exactly one use of a
- * Template.
+ * The {@link CodeFrame} thus implements the {@link Name} non-transparency aspect of {@link ScopeToken}.
  *
  * <p>
- * For simple Template nesting, the {@link CodeFrame}s and {@link TemplateFrame}s overlap exactly.
- * However, when using {@link Hook#insert}, we simply nest {@link TemplateFrame}s, going further "in",
- * but we jump to an outer {@link CodeFrame}, ensuring that we insert {@link Code} at the outer frame,
- * and operating on the names of the outer frame. Once the {@link Hook#insert}ion is complete, we jump
- * back to the caller {@link TemplateFrame} and {@link CodeFrame}.
+ * The {@link CodeFrame}s are nested relative to the order of the final rendered code. This can
+ * diverge from the nesting order of the {@link Template} when using {@link Hook#insert}, where
+ * the execution jumps from the current (caller) {@link CodeFrame} scope to the scope of the
+ * {@link Hook#anchor}. This ensures that the {@link Name}s of the anchor scope are accessed,
+ * and not of the ones from the caller scope. Once the {@link Hook#insert}ion is complete, we
+ * jump back to the caller {@link CodeFrame}.
+ *
+ * <p>
+ * Note, that {@link CodeFrame}s and {@link TemplateFrame}s often go together, but can also
+ * diverge.
  */
 class CodeFrame {
     public final CodeFrame parent;
@@ -78,25 +81,16 @@ class CodeFrame {
     }
 
     /**
-     * Creates a normal frame, which has a {@link #parent} and which defines an inner
-     * {@link NameSet}, for the names that are generated inside this frame. Once this
-     * frame is exited, the name from inside this frame are not available anymore.
+     * Creates a normal frame, which has a {@link #parent}. It can either be
+     * transparent for names, meaning that names are added and accessed to and
+     * from an outer frame. Names that are added in a transparent frame are
+     * still available in the outer frames, as far out as the next non-transparent
+     * frame. If a frame is non-transparent, this frame defines an inner
+     * {@link NameSet}, for the names that are generated inside this frame. Once
+     * this frame is exited, the names from inside this frame are not available.
      */
-    public static CodeFrame make(CodeFrame parent) {
-        return new CodeFrame(parent, false);
-    }
-
-    /**
-     * Creates a special frame, which has a {@link #parent} but uses the {@link NameSet}
-     * from the parent frame, allowing {@link Template#addDataName}/
-     * {@link Template#addStructuralName} to persist in the outer frame when the current frame
-     * is exited. This is necessary for {@link Hook#insert},  where we would possibly want to
-     * make field or variable definitions during the insertion that are not just local to the
-     * insertion but affect the {@link CodeFrame} that we {@link Hook#anchor} earlier and are
-     * now {@link Hook#insert}ing into.
-     */
-    public static CodeFrame makeTransparentForNames(CodeFrame parent) {
-        return new CodeFrame(parent, true);
+    public static CodeFrame make(CodeFrame parent, boolean isTransparentForNames) {
+        return new CodeFrame(parent, isTransparentForNames);
     }
 
     void addString(String s) {

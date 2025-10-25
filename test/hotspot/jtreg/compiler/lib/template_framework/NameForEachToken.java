@@ -23,9 +23,19 @@
 
 package compiler.lib.template_framework;
 
-import java.util.List;
+import java.util.function.Function;
 
 /**
- * Represents the {@link Hook#anchor} with its inner scope.
+ * Represents the for-each execution of the provided function and (optional) hashtag replacement
+ * keys for name and type of each name.
  */
-record HookAnchorToken(Hook hook, ScopeToken innerScope) implements Token {}
+record NameForEachToken<N>(
+        NameSet.Predicate predicate,
+        String name,
+        String type,
+        Function<N, ScopeToken> function) implements Token {
+
+    ScopeToken getScopeToken(Name n) {
+        return function().apply((N)n);
+    }
+}
