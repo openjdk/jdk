@@ -98,13 +98,10 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
-<<<<<<< HEAD
         this.upgrade = isUpgradeRequest(reqHdrs);
-=======
         this.attributes = perExchangeAttributes
             ? new ConcurrentHashMap<>()
             : getHttpContext().getAttributes();
->>>>>>> upstream/master
         /* ros only used for headers, body written directly to stream */
         this.ros = req.outputStream();
         this.ris = req.inputStream();
