@@ -22,6 +22,7 @@
  *
  */
 
+#include "jfr/jni/jfrJavaSupport.hpp"
 #include "jfr/metadata/jfrSerializer.hpp"
 #include "jfr/periodic/sampling/jfrSampleMonitor.hpp"
 #include "jfr/periodic/sampling/jfrSampleRequest.hpp"
@@ -35,6 +36,7 @@
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
@@ -43,6 +45,36 @@
 #include "runtime/suspendedThreadTask.hpp"
 #include "runtime/threadSMR.inline.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
+
+class JfrAsyncEventRequest : public CHeapObj<mtTracing> {
+private:
+  jobject        _target;
+  AsyncCallback  _callback;
+  void*          _context;  // Callback context
+
+public:
+  JfrAsyncEventRequest(JavaThread* const jt, jobject target, AsyncCallback callback, void* context);
+  virtual ~JfrAsyncEventRequest();
+
+  jobject target()         const { return _target; }
+  AsyncCallback callback() const { return _callback; }
+  void* context()          const { return _context; }
+};
+
+JfrAsyncEventRequest::JfrAsyncEventRequest(JavaThread* const jt,
+                                           jobject target,
+                                           AsyncCallback callback,
+                                           void* context) :
+   _callback(callback), _context(context) {
+   _target = JfrJavaSupport::global_jni_handle(target, jt);
+}
+
+JfrAsyncEventRequest::~JfrAsyncEventRequest() {
+  JfrJavaSupport::destroy_global_jni_handle(_target);
+}
+
+// Asynchronoys event request queue.
+typedef GrowableArrayCHeap<const JfrAsyncEventRequest*, mtTracing> JfrAsyncEventRequestQueue;
 
 // The JfrSamplerThread suspends, if necessary, JavaThreads for sampling.
 // It creates a sample description of the top Java frame, called a Jfr Sample Request.
@@ -62,6 +94,8 @@ class JfrSamplerThread : public NonJavaThread {
   const u4 _max_frames;
   volatile bool _disenrolled;
 
+  JfrAsyncEventRequestQueue _async_request_queue;
+
   JavaThread* next_thread(ThreadsList* t_list, JavaThread* first_sampled, JavaThread* current);
   void task_stacktrace(JfrSampleRequestType type, JavaThread** last_thread);
   JfrSamplerThread(int64_t java_period_millis, int64_t native_period_millis, u4 max_frames);
@@ -72,9 +106,11 @@ class JfrSamplerThread : public NonJavaThread {
   void disenroll();
   void set_java_period(int64_t period_millis);
   void set_native_period(int64_t period_millis);
-  bool sample_java_thread(JavaThread* jt);
-  bool sample_native_thread(JavaThread* jt);
+  bool sample_java_thread(JavaThread* jt, AsyncCallback callback, void* context);
+  bool sample_native_thread(JavaThread* jt, AsyncCallback callback, void* context);
 
+  void enqueue_request(const JfrAsyncEventRequest* req);
+  void drain_async_event_queue();
  protected:
   void run();
   virtual void post_run();
@@ -96,7 +132,8 @@ JfrSamplerThread::JfrSamplerThread(int64_t java_period_millis, int64_t native_pe
   _native_period_millis(native_period_millis),
   _cur_index(-1),
   _max_frames(max_frames),
-  _disenrolled(true) {
+  _disenrolled(true),
+  _async_request_queue() {
   assert(_java_period_millis >= 0, "invariant");
   assert(_native_period_millis >= 0, "invariant");
 }
@@ -128,6 +165,12 @@ void JfrSamplerThread::disenroll() {
     _disenrolled = true;
     log_trace(jfr)("Disenrolling thread sampler");
   }
+}
+
+void JfrSamplerThread::enqueue_request(const JfrAsyncEventRequest* req) {
+  MonitorLocker locker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
+  _async_request_queue.append(req);
+  locker.notify();
 }
 
 // Currently we only need to serialize a single thread state
@@ -170,7 +213,7 @@ void JfrSamplerThread::run() {
       continue;
     }
 
-    const int64_t now_ms = get_monotonic_ms();
+    int64_t now_ms = get_monotonic_ms();
 
     /*
      * Let I be java_period or native_period.
@@ -181,13 +224,21 @@ void JfrSamplerThread::run() {
      * could potentially overflow without parenthesis (UB). Also note that
      * L - N < 0. Avoid UB, by adding parenthesis.
      */
-    const int64_t next_j = java_period_millis + (last_java_ms - now_ms);
-    const int64_t next_n = native_period_millis + (last_native_ms - now_ms);
+    int64_t next_j = java_period_millis + (last_java_ms - now_ms);
+    int64_t next_n = native_period_millis + (last_native_ms - now_ms);
 
-    const int64_t sleep_to_next = MIN2<int64_t>(next_j, next_n);
+    int64_t sleep_to_next = MIN2<int64_t>(next_j, next_n);
 
-    if (sleep_to_next > 0) {
-      os::naked_sleep(sleep_to_next);
+    {
+      MonitorLocker locker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
+      while(sleep_to_next > 0 && !locker.wait(sleep_to_next)) {
+        // wakeup before timeout, likely there are async events, process them.
+        drain_async_event_queue();
+        now_ms = get_monotonic_ms();
+        next_j = java_period_millis + (last_java_ms - now_ms);
+        next_n = native_period_millis + (last_native_ms - now_ms);
+        sleep_to_next = MIN2<int64_t>(next_j, next_n);
+      }
     }
 
     // Note, this code used to check (next_j - sleep_to_next) <= 0,
@@ -199,6 +250,65 @@ void JfrSamplerThread::run() {
     if (next_n <= sleep_to_next) {
       task_stacktrace(NATIVE_SAMPLE, &_last_thread_native);
       last_native_ms = get_monotonic_ms();
+    }
+
+    {
+      MonitorLocker locker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
+      drain_async_event_queue();
+    }
+  }
+}
+
+void JfrSamplerThread::drain_async_event_queue() {
+  assert_lock_strong(JfrAsyncEventRequest_lock);
+  if (_async_request_queue.is_empty()) {
+    return;
+  }
+
+  // Make a snapshot, so we don't block request threads while processing
+  // the existing events
+  ResourceMark rm;
+  GrowableArray<const JfrAsyncEventRequest*> requests;
+  for (int index = 0; index < _async_request_queue.length(); index++) {
+    const JfrAsyncEventRequest* req = _async_request_queue.at(index);
+    requests.append(req);
+  }
+  _async_request_queue.clear();
+
+  {
+    // We don't need the lock to process the snapshot
+    MutexUnlocker unlocker(JfrAsyncEventRequest_lock, Mutex::_no_safepoint_check_flag);
+    ThreadsListHandle tlh;
+    for (int index = 0; index < requests.length(); index++) {
+      const JfrAsyncEventRequest* req = requests.at(index);
+      oop thread_oop = JNIHandles::resolve_non_null(req->target());
+      assert(thread_oop != nullptr, "invariant");
+
+      if (java_lang_VirtualThread::is_instance(thread_oop)) {
+        thread_oop = java_lang_VirtualThread::carrier_thread(thread_oop);
+      }
+      bool success = false;
+      if (thread_oop != nullptr) {
+        JavaThread* jt = java_lang_Thread::thread_acquire(thread_oop);
+        if (jt != nullptr && tlh.includes(jt)) {
+          JavaThreadState stat = jt->thread_state();
+          if (stat == _thread_in_Java) {
+            success = sample_java_thread(jt, req->callback(), req->context());
+          } else if (stat == _thread_in_native || stat == _thread_blocked) {
+            success = sample_native_thread(jt, req->callback(), req->context());
+          }
+        }
+      }
+
+      if (!success) {
+        req->callback()(ABORT_EVENT, req->context(), nullptr, nullptr, 0, 0);
+      }
+    }
+
+    // Block GCs while releasing global references
+    MutexLocker threads_locker(Threads_lock);
+    for (int index = 0; index < requests.length(); index++) {
+      delete requests.at(index);
     }
   }
 }
@@ -251,10 +361,10 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
     }
     bool success;
     if (JAVA_SAMPLE == type) {
-      success = sample_java_thread(current);
+      success = sample_java_thread(current, nullptr /* callback */, nullptr /* context */);
     } else {
       assert(type == NATIVE_SAMPLE, "invariant");
-      success = sample_native_thread(current);
+      success = sample_native_thread(current, nullptr /* callback */, nullptr /* context */);
     }
     if (success) {
       num_samples++;
@@ -273,13 +383,20 @@ void JfrSamplerThread::task_stacktrace(JfrSampleRequestType type, JavaThread** l
 }
 
 // Platform-specific thread suspension and CPU context retrieval.
+
 class OSThreadSampler : public SuspendedThreadTask {
  private:
   JfrSampleResult _result;
+  AsyncCallback  _callback;
+  void*          _context;
+
  public:
-  OSThreadSampler(JavaThread* jt) : SuspendedThreadTask(jt),
-                                    _result(THREAD_SUSPENSION_ERROR) {}
-  void request_sample() { run(); }
+  OSThreadSampler(JavaThread* jt, AsyncCallback callback, void* context) :
+    SuspendedThreadTask(jt), _result(THREAD_SUSPENSION_ERROR),
+    _callback(callback), _context(context) {}
+  void request_sample() {
+    run();
+  }
   JfrSampleResult result() const { return _result; }
 
   void do_task(const SuspendedThreadTaskContext& context) {
@@ -288,7 +405,7 @@ class OSThreadSampler : public SuspendedThreadTask {
     if (jt->thread_state() == _thread_in_Java) {
       JfrThreadLocal* const tl = jt->jfr_thread_local();
       if (tl->sample_state() == NO_SAMPLE) {
-        _result = JfrSampleRequestBuilder::build_java_sample_request(context.ucontext(), tl, jt);
+        _result = JfrSampleRequestBuilder::build_java_sample_request(context.ucontext(), tl, jt, _callback, _context);
       }
     }
   }
@@ -296,12 +413,12 @@ class OSThreadSampler : public SuspendedThreadTask {
 
 // Sampling a thread in state _thread_in_Java
 // involves a platform-specific thread suspend and CPU context retrieval.
-bool JfrSamplerThread::sample_java_thread(JavaThread* jt) {
+bool JfrSamplerThread::sample_java_thread(JavaThread* jt, AsyncCallback callback, void* data) {
   if (jt->thread_state() != _thread_in_Java) {
     return false;
   }
 
-  OSThreadSampler sampler(jt);
+  OSThreadSampler sampler(jt, callback, data);
   sampler.request_sample();
 
   if (sampler.result() != SAMPLE_JAVA) {
@@ -324,11 +441,11 @@ bool JfrSamplerThread::sample_java_thread(JavaThread* jt) {
 
 static JfrSamplerThread* _sampler_thread = nullptr;
 
-// We can sample a JavaThread running in state _thread_in_native
+// We can sample a JavaThread running in state _thread_in_native and _thread_blocked
 // without thread suspension and CPU context retrieval,
 // if we carefully order the loads of the thread state.
-bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
-  if (jt->thread_state() != _thread_in_native) {
+bool JfrSamplerThread::sample_native_thread(JavaThread* jt, AsyncCallback callback, void* context) {
+  if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_blocked) {
     return false;
   }
 
@@ -359,7 +476,7 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
     return false;
   }
 
-  if (jt->thread_state() != _thread_in_native) {
+  if (jt->thread_state() != _thread_in_native && jt->thread_state() != _thread_blocked) {
     assert_lock_strong(Threads_lock);
     JfrSampleMonitor jsm(tl);
     if (jsm.is_waiting()) {
@@ -372,7 +489,12 @@ bool JfrSamplerThread::sample_native_thread(JavaThread* jt) {
     return false;
   }
 
-  return JfrThreadSampling::process_native_sample_request(tl, jt, _sampler_thread);
+  return JfrThreadSampling::process_native_sample_request(tl, jt, Thread::current(), callback, context);
+}
+
+void JfrThreadSampler::sample_thread(JavaThread* const jt, jobject target, AsyncCallback callback, void* context) {
+  JfrAsyncEventRequest* request = new JfrAsyncEventRequest(jt, target, callback, context);
+  _sampler_thread->enqueue_request(request);
 }
 
 void JfrSamplerThread::set_java_period(int64_t period_millis) {
@@ -440,7 +562,9 @@ void JfrThreadSampler::create_sampler(int64_t java_period_millis, int64_t native
 }
 
 void JfrThreadSampler::update_run_state(int64_t java_period_millis, int64_t native_period_millis) {
-  if (java_period_millis > 0 || native_period_millis > 0) {
+  // If event is ever enabled, there may be asynchronous events, so we will need the sampler thread
+  // running, even sampling periods are zeros.
+  if (java_period_millis >= 0 || native_period_millis >= 0) {
     if (_sampler_thread == nullptr) {
       create_sampler(java_period_millis, native_period_millis);
     } else {

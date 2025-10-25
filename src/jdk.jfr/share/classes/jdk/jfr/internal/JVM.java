@@ -768,4 +768,15 @@ public final class JVM {
      * @return the unloaded IDs, or null if no unloading has occurred.
      */
     public static native long[] drainStaleMethodTracerIds();
+
+    /**
+     * Sends an asynchronous event to target thread
+     * @param target            target thread to execute the event
+     * @param eventId           event Id
+     * @param hasDuration       if the event has duration
+     * @param hasEventThread    if the event has event thread
+     * @param hasStackTrace     if the event has stack trace
+     * @param payload           event payload
+     */
+    public static native void sendAsyncEvent(Thread target, long eventId, boolean hasDuration, boolean hasEventThread, boolean hasStackTrace, byte[] payload);
 }
