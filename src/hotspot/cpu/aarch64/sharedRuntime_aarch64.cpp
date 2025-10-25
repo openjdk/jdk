@@ -1707,7 +1707,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   const Register obj_reg  = r19;  // Will contain the oop
   const Register lock_reg = r13;  // Address of compiler lock object (BasicLock)
   const Register old_hdr  = r13;  // value of old header at unlock time
-  const Register lock_tmp = r14;  // Temporary used by lightweight_lock/unlock
+  const Register lock_tmp = r14;  // Temporary used by fast_lock/unlock
   const Register tmp = lr;
 
   Label slow_path_lock;
@@ -1724,7 +1724,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     // Load the oop from the handle
     __ ldr(obj_reg, Address(oop_handle_reg, 0));
 
-    __ lightweight_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
+    __ fast_lock(lock_reg, obj_reg, swap_reg, tmp, lock_tmp, slow_path_lock);
 
     // Slow path will re-enter here
     __ bind(lock_done);
@@ -1833,7 +1833,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       save_native_result(masm, ret_type, stack_slots);
     }
 
-    __ lightweight_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
+    __ fast_unlock(obj_reg, old_hdr, swap_reg, lock_tmp, slow_path_unlock);
 
     // slow path re-enters here
     __ bind(unlock_done);

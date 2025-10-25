@@ -6138,11 +6138,11 @@ void MacroAssembler::zap_from_to(Register low, Register high, Register val, Regi
 }
 #endif // !PRODUCT
 
-// Implements lightweight-locking.
+// Implements fast-locking.
 //  - obj: the object to be locked, contents preserved.
 //  - temp1, temp2: temporary registers, contents destroyed.
 //  Note: make sure Z_R1 is not manipulated here when C2 compiler is in play
-void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Register temp1, Register temp2, Label& slow) {
+void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1, Register temp2, Label& slow) {
 
   assert_different_registers(basic_lock, obj, temp1, temp2);
 
@@ -6203,11 +6203,11 @@ void MacroAssembler::lightweight_lock(Register basic_lock, Register obj, Registe
   z_alsi(in_bytes(ls_top_offset), Z_thread, oopSize);
 }
 
-// Implements lightweight-unlocking.
+// Implements fast-unlocking.
 // - obj: the object to be unlocked
 // - temp1, temp2: temporary registers, will be destroyed
 // - Z_R1_scratch: will be killed in case of Interpreter & C1 Compiler
-void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register temp2, Label& slow) {
+void MacroAssembler::fast_unlock(Register obj, Register temp1, Register temp2, Label& slow) {
 
   assert_different_registers(obj, temp1, temp2);
 
@@ -6264,7 +6264,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   NearLabel not_unlocked;
   z_tmll(mark, markWord::unlocked_value);
   z_braz(not_unlocked);
-  stop("lightweight_unlock already unlocked");
+  stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif // ASSERT
 
@@ -6289,7 +6289,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register temp1, Register t
   bind(unlocked);
 }
 
-void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Register tmp1, Register tmp2) {
   assert_different_registers(obj, box, tmp1, tmp2, Z_R0_scratch);
 
   // Handle inflated monitor.
@@ -6314,8 +6314,8 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   const int mark_offset        = oopDesc::mark_offset_in_bytes();
   const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
 
-  BLOCK_COMMENT("compiler_fast_lightweight_locking {");
-  { // lightweight locking
+  BLOCK_COMMENT("compiler_fast_locking {");
+  { // Fast locking
 
     // Push lock to the lock stack and finish successfully. MUST reach to with flag == EQ
     NearLabel push;
@@ -6362,9 +6362,9 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     z_cgr(obj, obj); // set the CC to EQ, as it could be changed by alsi
     z_bru(locked);
   }
-  BLOCK_COMMENT("} compiler_fast_lightweight_locking");
+  BLOCK_COMMENT("} compiler_fast_locking");
 
-  BLOCK_COMMENT("handle_inflated_monitor_lightweight_locking {");
+  BLOCK_COMMENT("handle_inflated_monitor_locking {");
   { // Handle inflated monitor.
     bind(inflated);
 
@@ -6441,7 +6441,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
     // set the CC now
     z_cgr(obj, obj);
   }
-  BLOCK_COMMENT("} handle_inflated_monitor_lightweight_locking");
+  BLOCK_COMMENT("} handle_inflated_monitor_locking");
 
   bind(locked);
 
@@ -6464,7 +6464,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(Register obj, Registe
   // C2 uses the value of flag (NE vs EQ) to determine the continuation.
 }
 
-void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Register box, Register tmp1, Register tmp2) {
+void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Register tmp1, Register tmp2) {
   assert_different_registers(obj, box, tmp1, tmp2);
 
   // Handle inflated monitor.
@@ -6479,8 +6479,8 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
   const int mark_offset        = oopDesc::mark_offset_in_bytes();
   const ByteSize ls_top_offset = JavaThread::lock_stack_top_offset();
 
-  BLOCK_COMMENT("compiler_fast_lightweight_unlock {");
-  { // Lightweight Unlock
+  BLOCK_COMMENT("compiler_fast_unlock {");
+  { // Fast Unlock
     NearLabel push_and_slow_path;
 
     // Check if obj is top of lock-stack.
@@ -6525,7 +6525,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     NearLabel not_unlocked;
     z_tmll(mark, markWord::unlocked_value);
     z_braz(not_unlocked);
-    stop("lightweight_unlock already unlocked");
+    stop("fast_unlock already unlocked");
     bind(not_unlocked);
 #endif // ASSERT
 
@@ -6546,7 +6546,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(Register obj, Regis
     z_ltgr(obj, obj); // object is not null here
     z_bru(slow_path);
   }
-  BLOCK_COMMENT("} compiler_fast_lightweight_unlock");
+  BLOCK_COMMENT("} compiler_fast_unlock");
 
   { // Handle inflated monitor.
 

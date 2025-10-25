@@ -222,8 +222,8 @@ inline Assembler::AvxVectorLen C2_MacroAssembler::vector_length_encoding(int vle
 // box: on-stack box address -- KILLED
 // rax: tmp -- KILLED
 // t  : tmp -- KILLED
-void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Register rax_reg,
-                                              Register t, Register thread) {
+void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
+                                  Register t, Register thread) {
   assert(rax_reg == rax, "Used for CAS");
   assert_different_registers(obj, box, rax_reg, t, thread);
 
@@ -247,7 +247,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 
   const Register mark = t;
 
-  { // Lightweight Lock
+  { // Fast Lock
 
     Label push;
 
@@ -415,7 +415,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register box, Regist
 // A perfectly viable alternative is to elide the owner check except when
 // Xcheck:jni is enabled.
 
-void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, Register t, Register thread) {
+void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, Register thread) {
   assert(reg_rax == rax, "Used for CAS");
   assert_different_registers(obj, reg_rax, t);
 
@@ -430,16 +430,16 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   const Register box = reg_rax;
 
   Label dummy;
-  C2FastUnlockLightweightStub* stub = nullptr;
+  C2FastUnlockStub* stub = nullptr;
 
   if (!Compile::current()->output()->in_scratch_emit_size()) {
-    stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, mark, reg_rax, thread);
+    stub = new (Compile::current()->comp_arena()) C2FastUnlockStub(obj, mark, reg_rax, thread);
     Compile::current()->output()->add_stub(stub);
   }
 
   Label& push_and_slow_path = stub == nullptr ? dummy : stub->push_and_slow_path();
 
-  { // Lightweight Unlock
+  { // Fast Unlock
 
     // Load top.
     movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
