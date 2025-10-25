@@ -26,7 +26,7 @@
  * @bug     6207984 6272521 6192552 6269713 6197726 6260652 5073546 4137464
  *          4155650 4216399 4294891 6282555 6318622 6355327 6383475 6420753
  *          6431845 4802633 6570566 6570575 6570631 6570924 6691185 6691215
- *          4802647 7123424 8024709 8193128 8327858
+ *          4802647 7123424 8024709 8193128 8327858 8368178
  * @summary Run many tests on many Collection and Map implementations
  * @author  Martin Buchholz
  * @modules java.base/java.util:open
@@ -472,8 +472,10 @@ public class MOAT {
 
     private static void testEmptyList(List<?> c) {
         testEmptyCollection(c);
+        THROWS(NoSuchElementException.class, c::getFirst, c::getLast);
         equal(c.hashCode(), 1);
         equal2(c, Collections.<Integer>emptyList());
+        equal2(c, c.reversed());
     }
 
     private static <T> void testEmptySet(Set<T> c) {
@@ -1232,6 +1234,10 @@ public class MOAT {
         var t = new ArrayList<>(l);
         check(t.equals(l));
         check(l.equals(t));
+        if (!l.isEmpty()) {
+            equal(l.getFirst(), l.get(0));
+            equal(l.getLast(), l.get(l.size() - 1));
+        }
     }
 
     private static void testCollection(Collection<Integer> c) {

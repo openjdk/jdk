@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,6 +135,13 @@ public class NCopies {
         check(Collections.nCopies(0, null).equals(Collections.nCopies(0, "non-null")));
     }
 
+    private static void checkReversed() {
+        List<String> copies = Collections.nCopies(10, "content");
+        check(copies.equals(copies.reversed()));
+        List<String> empty = Collections.nCopies(0, "content");
+        check(empty.equals(empty.reversed()));
+    }
+
     public static void main(String[] args) {
         try {
             List<String> empty = Collections.nCopies(0, "foo");
@@ -148,6 +155,8 @@ public class NCopies {
             checkHashCode();
 
             checkEquals();
+
+            checkReversed();
 
         } catch (Throwable t) { unexpected(t); }
 
