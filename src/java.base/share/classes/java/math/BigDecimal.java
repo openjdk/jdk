@@ -2346,10 +2346,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 throw new ArithmeticException("Overflow");
 
             root = workingInt.nthRoot(nAbs);
-            BigDecimal[] invRem = ONE.divideAndRemainder(working, new MathContext(invPrec, RoundingMode.DOWN));
+            BigDecimal[] invRem = ONE.divideAndRemainder(x, new MathContext(invPrec, RoundingMode.DOWN));
             result = ONE.divide(new BigDecimal(root, checkScaleNonZero(normScale / nAbs)),
                     invRem[0].scale, RoundingMode.DOWN);
-            // 1/root >= 1/working, so result >= invRem[0]
+            // 1/(root*10^(-normScale / nAbs)) >= 1/x, so result >= invRem[0]
 
             int cmp;
             BigDecimal ulp = result.ulp();
