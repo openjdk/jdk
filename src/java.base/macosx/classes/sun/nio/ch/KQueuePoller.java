@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 package sun.nio.ch;
 
 import java.io.IOException;
+import java.lang.foreign.MemorySegment;
+
 import static sun.nio.ch.KQueue.*;
 
 /**
@@ -34,13 +36,13 @@ class KQueuePoller extends Poller {
     private final int kqfd;
     private final int filter;
     private final int maxEvents;
-    private final long address;
+    private final MemorySegment pollArray;
 
     KQueuePoller(boolean subPoller, boolean read) throws IOException {
         this.kqfd = KQueue.create();
         this.filter = (read) ? EVFILT_READ : EVFILT_WRITE;
         this.maxEvents = (subPoller) ? 64 : 512;
-        this.address = KQueue.allocatePollArray(maxEvents);
+        this.pollArray = KQueue.allocatePollArray(maxEvents);
     }
 
     @Override
@@ -65,11 +67,11 @@ class KQueuePoller extends Poller {
 
     @Override
     int poll(int timeout) throws IOException {
-        int n = KQueue.poll(kqfd, address, maxEvents, timeout);
+        int n = KQueue.poll(kqfd, pollArray, maxEvents, timeout);
         int i = 0;
         while (i < n) {
-            long keventAddress = KQueue.getEvent(address, i);
-            int fdVal = KQueue.getDescriptor(keventAddress);
+            MemorySegment eventMS = KQueue.getEvent(pollArray, i);
+            int fdVal = (int) KQueue.getDescriptor(eventMS);
             polled(fdVal);
             i++;
         }
