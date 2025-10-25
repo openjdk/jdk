@@ -25,6 +25,7 @@
 * @test
 * @bug 8338021 8342677 8349522
 * @summary Add IR validation tests for newly added saturated vector add / sub operations
+* @requires vm.opt.EnableVectorSupport == true
 * @modules jdk.incubator.vector
 * @library /test/lib /
 * @run driver compiler.vectorapi.VectorSaturatedOperationsTest
