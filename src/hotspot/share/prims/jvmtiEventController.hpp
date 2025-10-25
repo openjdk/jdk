@@ -197,9 +197,10 @@ private:
   // for all environments, global array indexed by jvmtiEvent
   static JvmtiEventEnabled _universal_global_event_enabled;
 
-  // This field is used to wait until all event callbacks are finished.
+  // These fields are used to synchronize stop posting events and
+  // wait until already executing callbacks are finished.
+  volatile static bool _execution_finished;
   volatile static int   _in_callback_count;
-  static volatile bool _execution_finished;
 
 public:
   static bool is_enabled(jvmtiEvent event_type);

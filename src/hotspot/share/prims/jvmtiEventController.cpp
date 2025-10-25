@@ -1056,6 +1056,7 @@ JvmtiEventControllerPrivate::vm_init() {
 
 void
 JvmtiEventControllerPrivate::vm_death() {
+  // events are disabled, see JvmtiEventController::_execution_finished
   JvmtiEventControllerPrivate::recompute_enabled();
 }
 
