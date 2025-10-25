@@ -96,19 +96,22 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    }
 
    private boolean isValidFrame(Address nextCFA, ThreadContext context) {
-     return (nextCFA != null) &&
-             !nextCFA.lessThan(context.getRegisterAsAddress(AMD64ThreadContext.RSP));
+     return nextCFA != null;
    }
 
-   private Address getNextCFA(DwarfParser nextDwarf, ThreadContext context) {
+   private Address getNextCFA(DwarfParser nextDwarf, ThreadContext context, Address senderFP) {
      Address nextCFA;
 
+     if (senderFP == null) {
+       senderFP = cfa.getAddressAt(0);  // RBP by default
+     }
+
      if (nextDwarf == null) { // Next frame is Java
-       nextCFA = (dwarf == null) ? cfa.getAddressAt(0) // Current frame is Java (Use RBP)
+       nextCFA = (dwarf == null) ? senderFP // Current frame is Java
                                  : cfa.getAddressAt(dwarf.getBasePointerOffsetFromCFA()); // Current frame is Native
      } else { // Next frame is Native
-       if (dwarf == null) { // Current frame is Java (Use RBP)
-         nextCFA = cfa.getAddressAt(0);
+       if (dwarf == null) { // Current frame is Java
+         nextCFA = senderFP;
        } else { // Current frame is Native
          int nextCFAReg = nextDwarf.getCFARegister();
          if (!dwarf.isBPOffsetAvailable() && // Use RBP as CFA
@@ -132,14 +135,19 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
    }
 
    @Override
-   public CFrame sender(ThreadProxy thread) {
+   public CFrame sender(ThreadProxy th) {
+     return sender(th, null, null);
+   }
+
+   @Override
+   public CFrame sender(ThreadProxy th, Address fp, Address pc) {
      if (finalFrame) {
        return null;
      }
 
-     ThreadContext context = thread.getContext();
+     ThreadContext context = th.getContext();
 
-     Address nextPC = getNextPC(dwarf != null);
+     Address nextPC = pc != null ? pc : getNextPC(dwarf != null);
      if (nextPC == null) {
        return null;
      }
@@ -165,7 +173,7 @@ public final class LinuxAMD64CFrame extends BasicCFrame {
        }
      }
 
-     Address nextCFA = getNextCFA(nextDwarf, context);
+     Address nextCFA = getNextCFA(nextDwarf, context, fp);
      return isValidFrame(nextCFA, context) ? new LinuxAMD64CFrame(dbg, nextCFA, nextPC, nextDwarf)
                                            : null;
    }

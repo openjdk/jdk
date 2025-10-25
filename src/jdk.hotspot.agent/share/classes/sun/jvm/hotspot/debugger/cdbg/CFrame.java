@@ -36,6 +36,11 @@ public interface CFrame {
   /** Returns null when no more frames on stack */
   public CFrame sender(ThreadProxy th);
 
+  /** Find sender frame with given FP and PC */
+  public default CFrame sender(ThreadProxy th, Address fp, Address pc) {
+    return sender(th);
+  }
+
   /** Get the program counter of this frame */
   public Address pc();
 
