@@ -374,6 +374,13 @@ bool ParallelScavengeHeap::check_gc_overhead_limit() {
     bool little_mutator_time = _size_policy->mutator_time_percent() * 100 < (100 - GCTimeLimit);
     bool little_free_space = check_gc_heap_free_limit(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes())
                           && check_gc_heap_free_limit(  _old_gen->free_in_bytes(),   _old_gen->capacity_in_bytes());
+
+    log_debug(gc)("GC Overhead Limit: GC Time %f Free Space Young %f Old %f Counter %zu",
+                  (100 - _size_policy->mutator_time_percent()),
+                  percent_of(_young_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  percent_of(_old_gen->free_in_bytes(), _young_gen->capacity_in_bytes()),
+                  _gc_overhead_counter);
+
     if (little_mutator_time && little_free_space) {
       _gc_overhead_counter++;
       if (_gc_overhead_counter >= GCOverheadLimitThreshold) {
@@ -426,7 +433,7 @@ HeapWord* ParallelScavengeHeap::satisfy_failed_allocation(size_t size, bool is_t
   }
 
   if (check_gc_overhead_limit()) {
-    log_info(gc)("GCOverheadLimitThreshold %zu reached.", GCOverheadLimitThreshold);
+    log_info(gc)("GC Overhead Limit exceeded too often (%zu).", GCOverheadLimitThreshold);
     return nullptr;
   }
 
