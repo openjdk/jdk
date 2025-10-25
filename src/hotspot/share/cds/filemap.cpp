@@ -117,7 +117,6 @@ template <int N> static void get_header_version(char (&header_version) [N]) {
 
     // Append the hash code as eight hex digits.
     os::snprintf_checked(&header_version[JVM_IDENT_MAX-9], 9, "%08x", hash);
-    header_version[JVM_IDENT_MAX-1] = 0;  // Null terminate.
   }
 
   assert(header_version[JVM_IDENT_MAX-1] == 0, "must be");

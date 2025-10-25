@@ -705,11 +705,9 @@ bool SystemProcessInterface::SystemProcesses::ProcessIterator::is_valid_entry(st
 
   if (atoi(entry->d_name) != 0) {
     jio_snprintf(buffer, PATH_MAX, "/proc/%s", entry->d_name);
-    buffer[PATH_MAX - 1] = '\0';
 
     if (is_dir(buffer)) {
       jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", entry->d_name);
-      buffer[PATH_MAX - 1] = '\0';
       if (fsize(buffer, size) != OS_ERR) {
         return true;
       }
@@ -724,7 +722,6 @@ void SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_name() {
   char  buffer[PATH_MAX];
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/stat", _entry->d_name);
-  buffer[PATH_MAX - 1] = '\0';
   if ((fp = os::fopen(buffer, "r")) != nullptr) {
     if (fgets(buffer, PATH_MAX, fp) != nullptr) {
       char* start, *end;
@@ -752,7 +749,6 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_cmdline() {
   char* cmdline = nullptr;
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/cmdline", _entry->d_name);
-  buffer[PATH_MAX - 1] = '\0';
   if ((fp = os::fopen(buffer, "r")) != nullptr) {
     size_t size = 0;
     char   dummy;
@@ -787,7 +783,6 @@ char* SystemProcessInterface::SystemProcesses::ProcessIterator::get_exe_path() {
   char buffer[PATH_MAX];
 
   jio_snprintf(buffer, PATH_MAX, "/proc/%s/exe", _entry->d_name);
-  buffer[PATH_MAX - 1] = '\0';
   return os::realpath(buffer, _exePath, PATH_MAX);
 }
 
@@ -1001,7 +996,6 @@ int64_t NetworkPerformanceInterface::NetworkPerformance::read_counter(const char
     return -1;
   }
 
-  buf[num_bytes] = '\0';
   int64_t value = strtoll(buf, nullptr, 10);
 
   return value;
