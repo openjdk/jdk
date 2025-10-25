@@ -65,7 +65,6 @@ Thread::Thread(MemTag mem_tag) {
   // stack and get_thread
   set_stack_base(nullptr);
   set_stack_size(0);
-  _lgrp_id = -1;
   DEBUG_ONLY(clear_suspendible_thread();)
   DEBUG_ONLY(clear_indirectly_suspendible_thread();)
   DEBUG_ONLY(clear_indirectly_safepoint_thread();)
