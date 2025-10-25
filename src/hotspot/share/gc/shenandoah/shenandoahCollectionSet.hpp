@@ -109,14 +109,14 @@ public:
   // Prints a summary of the collection set when gc+ergo=info
   void summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const;
 
-  // Returns the amount of live bytes in young regions in the collection set. It is not known how many of these bytes will be promoted.
-  inline size_t get_young_bytes_reserved_for_evacuation() const;
+  // Returns the amount of live bytes in young regions with an age below the tenuring threshold.
+  inline size_t get_live_bytes_in_untenurable_regions() const;
 
   // Returns the amount of live bytes in old regions in the collection set.
-  inline size_t get_old_bytes_reserved_for_evacuation() const;
+  inline size_t get_live_bytes_in_old_regions() const;
 
-  // Returns the amount of live bytes in young regions with an age above the tenuring threshold.
-  inline size_t get_young_bytes_to_be_promoted() const;
+  // Returns the amount of live bytes in young regions with an age at or above the tenuring threshold.
+  inline size_t get_live_bytes_in_tenurable_regions() const;
 
   // Returns the amount of free bytes in young regions in the collection set.
   size_t get_young_available_bytes_collected() const { return _young_available_bytes_collected; }
@@ -125,7 +125,7 @@ public:
   inline size_t get_old_garbage() const;
 
   bool is_preselected(size_t region_idx) {
-    assert(_preselected_regions != nullptr, "Missing etsablish after abandon");
+    assert(_preselected_regions != nullptr, "Missing establish after abandon");
     return _preselected_regions[region_idx];
   }
 
