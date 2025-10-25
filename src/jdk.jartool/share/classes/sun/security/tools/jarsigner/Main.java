@@ -240,6 +240,7 @@ public class Main {
     private boolean signerSelfSigned = false;
     private boolean allAliasesFound = true;
     private boolean hasMultipleManifests = false;
+    private boolean weakKeyStore = false;
 
     private Throwable chainNotValidatedReason = null;
     private Throwable tsaChainNotValidatedReason = null;
@@ -1482,6 +1483,12 @@ public class Main {
             warnings.add(rb.getString("external.file.attributes.detected"));
         }
 
+        if (weakKeyStore) {
+            warnings.add(String.format(rb.getString(
+                    "jks.storetype.warning"),
+                    store.getType(), keystore));
+        }
+
         if ((strict) && (!errors.isEmpty())) {
             result = isSigning
                     ? rb.getString("jar.signed.with.signer.errors.")
@@ -2421,6 +2428,10 @@ public class Main {
                         if (is != null) {
                             is.close();
                         }
+                    }
+                    if (store.getType().equalsIgnoreCase("JKS")
+                            || store.getType().equalsIgnoreCase("JCEKS")) {
+                        weakKeyStore = true;
                     }
                 }
                 Enumeration<String> aliases = store.aliases();
