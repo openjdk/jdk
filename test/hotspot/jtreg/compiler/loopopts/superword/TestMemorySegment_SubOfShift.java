@@ -30,17 +30,17 @@ import compiler.lib.ir_framework.*;
 
 /*
  * @test
- * @bug 8324751
+ * @bug 8324751 8369435
  * @summary Reported issue: JDK-8359688: C2 SuperWord: missing RCE with MemorySegment
  *          The examples are generated from TestAliasingFuzzer.java
  *          So if you see something change here, you may want to investigate if we
  *          can also tighten up the IR rules there.
  * @library /test/lib /
- * @run driver compiler.loopopts.superword.TestMemorySegment_8359688
+ * @run driver compiler.loopopts.superword.TestMemorySegment_SubOfShift
  */
 
 
-public class TestMemorySegment_8359688 {
+public class TestMemorySegment_SubOfShift {
 
     public static MemorySegment b = MemorySegment.ofArray(new long[4 * 30_000]);
 
@@ -61,17 +61,13 @@ public class TestMemorySegment_8359688 {
 
     @Test
     @Arguments(setup = "setup")
-    @IR(counts = {IRNode.STORE_VECTOR, "= 0",
-                  IRNode.REPLICATE_L,  "= 0",
+    @IR(counts = {IRNode.STORE_VECTOR, "> 0",
+                  IRNode.REPLICATE_L,  "= 1",
                   ".*multiversion.*",  "= 0"}, // AutoVectorization Predicate SUFFICES, there is no aliasing
         phase = CompilePhase.PRINT_IDEAL,
         applyIfPlatform = {"64-bit", "true"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"})
-    // Does not manage to remove all RangeChecks -> no vectorization
-    // If you see this IR rule fail: investigate JDK-8359688, possibly close it and fix this IR rule!
-    // Also: consider renaming the file to something more descriptive: what have you fixed with this?
-    // And: you may now be able to tighten IR rules in TestAliasingFuzzer.java
     public static void test1(MemorySegment b, int ivLo, int ivHi, int invar) {
         for (int i = ivLo; i < ivHi; i++) {
             b.setAtIndex(ValueLayout.JAVA_LONG_UNALIGNED, 30_000L - (long)i + (long)invar, 42);
