@@ -35,6 +35,7 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
+#include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
@@ -495,6 +496,10 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
+  if (JvmtiEventController::is_execution_finished()) {
+    now_enabled &= VM_DEATH_BIT;
+  }
+
   // Set/reset the event enabled under the tagmap lock.
   set_enabled_events_with_lock(env, now_enabled);
 
@@ -535,6 +540,10 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
     break;
   default:
     break;
+  }
+
+  if (JvmtiEventController::is_execution_finished()) {
+    now_enabled &= VM_DEATH_BIT;
   }
 
   // if anything changed do update
@@ -1047,7 +1056,7 @@ JvmtiEventControllerPrivate::vm_init() {
 
 void
 JvmtiEventControllerPrivate::vm_death() {
-  // events are disabled (phase has changed)
+  // events are disabled, see JvmtiEventController::_execution_finished
   JvmtiEventControllerPrivate::recompute_enabled();
 }
 
@@ -1058,6 +1067,9 @@ JvmtiEventControllerPrivate::vm_death() {
 //
 
 JvmtiEventEnabled JvmtiEventController::_universal_global_event_enabled;
+
+volatile bool JvmtiEventController::_execution_finished = false;
+volatile int  JvmtiEventController::_in_callback_count = 0;
 
 bool
 JvmtiEventController::is_global_event(jvmtiEvent event_type) {
@@ -1207,8 +1219,20 @@ JvmtiEventController::vm_init() {
 
 void
 JvmtiEventController::vm_death() {
+  // No new event callbacks except vm_death can be called after this point.
+  AtomicAccess::store(&_execution_finished, true);
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::vm_death();
+  }
+
+  // Some events might be still in callback for daemons threads and ServiceThread.
+  const double start = os::elapsedTime();
+  const double max_wait_time = 60;
+  while (in_callback_count() > 0) {
+    os::naked_short_sleep(100);
+    if (os::elapsedTime() - start > max_wait_time) {
+      break;
+    }
   }
 }
