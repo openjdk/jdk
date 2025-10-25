@@ -25,7 +25,6 @@
 
 package jdk.internal.net.http;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.net.ConnectException;
@@ -412,7 +411,7 @@ class MultiExchange<T> implements Cancelable {
                             } else
                                 return handleNoBody(r, exch);
                         }
-                        return exch.readBodyAsync(responseHandler)
+                        return exch.readBodyAsync(responseHandler, this::cancelTimer)
                             .thenApply((T body) -> setNewResponse(r.request, r, body, exch));
                     }).exceptionallyCompose(this::whenCancelled);
     }
@@ -467,6 +466,8 @@ class MultiExchange<T> implements Cancelable {
 
     private CompletableFuture<Response> responseAsyncImpl(final boolean applyReqFilters) {
         if (currentreq.timeout().isPresent()) {
+            // Retried/Forwarded requests should reset the timer, if present
+            cancelTimer();
             responseTimerEvent = ResponseTimerEvent.of(this);
             client.registerTimer(responseTimerEvent);
         }
@@ -502,7 +503,6 @@ class MultiExchange<T> implements Cancelable {
                         }
                         return completedFuture(response);
                     } else {
-                        cancelTimer();
                         setNewResponse(currentreq, response, null, exch);
                         if (currentreq.isWebSocket()) {
                             // need to close the connection and open a new one.
@@ -520,11 +520,18 @@ class MultiExchange<T> implements Cancelable {
                     } })
                 .handle((response, ex) -> {
                     // 5. handle errors and cancel any timer set
-                    cancelTimer();
                     if (ex == null) {
                         assert response != null;
                         return completedFuture(response);
                     }
+
+                    // Cancel the timer. Note that we only do so if the
+                    // response has completed exceptionally. That is, we don't
+                    // cancel the timer if there are no exceptions, since the
+                    // response body might still get consumed, and it is
+                    // still subject to the response timer.
+                    cancelTimer();
+
                     // all exceptions thrown are handled here
                     final RetryContext retryCtx = checkRetryEligible(ex, exch);
                     assert retryCtx != null : "retry context is null";
