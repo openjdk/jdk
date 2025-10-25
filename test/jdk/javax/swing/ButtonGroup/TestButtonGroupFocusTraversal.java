@@ -89,7 +89,7 @@ public class TestButtonGroupFocusTraversal {
                 radioButton2.setSelected(true);
                 checkBox2.setSelected(true);
 
-                frame = new JFrame("Test");
+                frame = new JFrame("TestButtonGroupFocusTraversal");
                 frame.setLayout(new FlowLayout());
 
                 Container pane = frame.getContentPane();
