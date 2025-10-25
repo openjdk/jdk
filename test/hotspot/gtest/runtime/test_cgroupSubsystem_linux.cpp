@@ -104,35 +104,35 @@ TEST(cgroupTest, read_numerical_key_value_failure_cases) {
   const char* base_with_slash = path.as_string(true);
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
-  constexpr julong bad = 0xBAD;
-  julong x = bad;
+  constexpr uint64_t bad = 0xBAD;
+  uint64_t x = bad;
 
   fill_file(test_file, "foo ");
-  bool is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  bool is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_FALSE(is_ok) << "Value is missing in key/value case, expecting false";
   EXPECT_EQ(bad, x) << "x must be unchanged";
 
   x = bad;
   fill_file(test_file, "faulty_start foo 101");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_FALSE(is_ok) << "key must be at the start";
   EXPECT_EQ(bad, x) << "x must be unchanged";
 
   x = bad;
   fill_file(test_file, nullptr);
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_FALSE(is_ok) << "key not in empty file";
   EXPECT_EQ(bad, x) << "x must be unchanged";
 
   x = bad;
   fill_file(test_file, "foo\n");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_FALSE(is_ok) << "key must have a value";
   EXPECT_EQ(bad, x) << "x must be unchanged";
 
   x = bad;
   fill_file(test_file, "foof 1002");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_FALSE(is_ok) << "key must be exact match";
   EXPECT_EQ(bad, x) << "x must be unchanged";
 
@@ -150,43 +150,43 @@ TEST(cgroupTest, read_numerical_key_value_success_cases) {
   const char* base_with_slash = path.as_string(true);
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
-  constexpr julong bad = 0xBAD;
-  julong x = bad;
+  constexpr uint64_t bad = 0xBAD;
+  uint64_t x = bad;
 
   fill_file(test_file, "foo 100");
-  bool is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  bool is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_TRUE(is_ok);
-  EXPECT_EQ((julong)100, x);
+  EXPECT_EQ((uint64_t)100, x);
 
   x = bad;
   fill_file(test_file, "foo\t111");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_TRUE(is_ok);
-  EXPECT_EQ((julong)111, x);
+  EXPECT_EQ((uint64_t)111, x);
 
   x = bad;
   fill_file(test_file, "foo\nbar 333\nfoo\t111");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_TRUE(is_ok);
-  EXPECT_EQ((julong)111, x);
+  EXPECT_EQ((uint64_t)111, x);
 
   x = bad;
   fill_file(test_file, "foof 100\nfoo 133");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_TRUE(is_ok);
-  EXPECT_EQ((julong)133, x);
+  EXPECT_EQ((uint64_t)133, x);
 
   x = bad;
   fill_file(test_file, "foo\t333\nfoot 999");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_TRUE(is_ok);
-  EXPECT_EQ((julong)333, x);
+  EXPECT_EQ((uint64_t)333, x);
 
   x = bad;
   fill_file(test_file, "foo 1\nfoo car");
-  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", &x);
+  is_ok = controller->read_numerical_key_value(base_with_slash, "foo", x);
   EXPECT_TRUE(is_ok);
-  EXPECT_EQ((julong)1, x);
+  EXPECT_EQ((uint64_t)1, x);
 
   // Cleanup
   delete_file(test_file);
@@ -195,10 +195,10 @@ TEST(cgroupTest, read_numerical_key_value_success_cases) {
 TEST(cgroupTest, read_number_null) {
   TestController* null_path_controller = new TestController((char*)nullptr);
   const char* test_file_path = "/not-used";
-  constexpr julong bad = 0xBAD;
-  julong a = bad;
+  constexpr uint64_t bad = 0xBAD;
+  uint64_t a = bad;
   // null subsystem_path() case
-  bool is_ok = null_path_controller->read_number(test_file_path, &a);
+  bool is_ok = null_path_controller->read_number(test_file_path, a);
   EXPECT_FALSE(is_ok) << "Null subsystem path should be an error";
   EXPECT_EQ(bad, a) << "Expected untouched scan value";
 }
@@ -221,9 +221,9 @@ TEST(cgroupTest, read_string_beyond_max_path) {
 TEST(cgroupTest, read_number_file_not_exist) {
   TestController* unknown_path_ctrl = new TestController((char*)"/do/not/exist");
   const char* test_file_path = "/file-not-found";
-  constexpr julong bad = 0xBAD;
-  julong result = bad;
-  bool is_ok = unknown_path_ctrl->read_number(test_file_path, &result);
+  constexpr uint64_t bad = 0xBAD;
+  uint64_t result = bad;
+  bool is_ok = unknown_path_ctrl->read_number(test_file_path, result);
   EXPECT_FALSE(is_ok) << "File not found should be an error";
   EXPECT_EQ(bad, result) << "Expected untouched scan value";
 }
@@ -232,10 +232,10 @@ TEST(cgroupTest, read_numerical_key_value_null) {
   TestController* null_path_controller = new TestController((char*)nullptr);
   const char* test_file_path = "/not-used";
   const char* key = "something";
-  constexpr julong bad = 0xBAD;
-  julong a = bad;
+  constexpr uint64_t bad = 0xBAD;
+  uint64_t a = bad;
   // null subsystem_path() case
-  bool is_ok = null_path_controller->read_numerical_key_value(test_file_path, key, &a);
+  bool is_ok = null_path_controller->read_numerical_key_value(test_file_path, key, a);
   EXPECT_FALSE(is_ok) << "Null subsystem path should be an error";
   EXPECT_EQ(bad, a) << "Expected untouched scan value";
 }
@@ -243,7 +243,7 @@ TEST(cgroupTest, read_numerical_key_value_null) {
 TEST(cgroupTest, read_number_tests) {
   char* test_file = temp_file("cgroups");
   const char* b = basename(test_file);
-  constexpr julong bad = 0xBAD;
+  constexpr uint64_t bad = 0xBAD;
   EXPECT_TRUE(b != nullptr) << "basename was null";
   stringStream path;
   path.print_raw(os::file_separator());
@@ -252,44 +252,49 @@ TEST(cgroupTest, read_number_tests) {
   fill_file(test_file, "8888");
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
-  julong foo = bad;
-  bool ok = controller->read_number(base_with_slash, &foo);
+  uint64_t foo = bad;
+  bool ok = controller->read_number(base_with_slash, foo);
   EXPECT_TRUE(ok) << "Number parsing should have been successful";
-  EXPECT_EQ((julong)8888, foo) << "Wrong value for 'foo' (NOTE: 0xBAD == " << 0xBAD << ")";
+  EXPECT_EQ((uint64_t)8888, foo) << "Wrong value for 'foo' (NOTE: 0xBAD == " << 0xBAD << ")";
 
   // Some interface files might have negative values, ensure we can read
-  // them and manually cast them as needed.
+  // them and manually cast them as needed. For example, on cgv1, the cpu.cfs_quota_us
+  // file might be set to -1 to indicate no cpu quota setup.
   fill_file(test_file, "-1");
   foo = bad;
-  ok = controller->read_number(base_with_slash, &foo);
+  ok = controller->read_number(base_with_slash, foo);
   EXPECT_TRUE(ok) << "Number parsing should have been successful";
-  EXPECT_EQ((jlong)-1, (jlong)foo) << "Wrong value for 'foo' (NOTE: 0xBAD == " << 0xBAD << ")";
+  EXPECT_EQ((int)-1, (int)foo) << "Wrong value for 'foo' (NOTE: 0xBAD == " << 0xBAD << ")";
 
   foo = bad;
   fill_file(test_file, nullptr);
-  ok = controller->read_number(base_with_slash, &foo);
+  ok = controller->read_number(base_with_slash, foo);
   EXPECT_FALSE(ok) << "Empty file should have failed";
   EXPECT_EQ(bad, foo) << "foo was altered";
 
   // Some interface files have numbers as well as the string
   // 'max', which means unlimited.
-  jlong result = -10;
+  uint64_t result = 0;
+  uint64_t unlimited = std::numeric_limits<uint64_t>::max();
   fill_file(test_file, "max\n");
-  ok = controller->read_number_handle_max(base_with_slash, &result);
+  ok = controller->read_number_handle_max(base_with_slash, result);
   EXPECT_TRUE(ok) << "Number parsing for 'max' string should have been successful";
-  EXPECT_EQ((jlong)-1, result) << "'max' means unlimited (-1)";
+  EXPECT_EQ(unlimited, result) << "'max' means unlimited (-1)";
 
-  result = -10;
+  result = 0;
   fill_file(test_file, "11114\n");
-  ok = controller->read_number_handle_max(base_with_slash, &result);
+  ok = controller->read_number_handle_max(base_with_slash, result);
   EXPECT_TRUE(ok) << "Number parsing for should have been successful";
-  EXPECT_EQ((jlong)11114, result) << "Incorrect result";
+  EXPECT_EQ((uint64_t)11114, result) << "Incorrect result";
 
-  result = -10;
+  result = 0;
+  // This is a contrived test case not matching cgroup interface files
+  // in the wild where numbers are positive. The value is deliberately
+  // negative. Yet it should work
   fill_file(test_file, "-51114\n");
-  ok = controller->read_number_handle_max(base_with_slash, &result);
+  ok = controller->read_number_handle_max(base_with_slash, result);
   EXPECT_TRUE(ok) << "Number parsing for should have been successful";
-  EXPECT_EQ((jlong)-51114, result) << "Incorrect result";
+  EXPECT_EQ((int)-51114, (int)result) << "Incorrect result";
 
   delete_file(test_file);
 }
@@ -372,28 +377,28 @@ TEST(cgroupTest, read_number_tuple_test) {
   fill_file(test_file, "max 10000");
 
   TestController* controller = new TestController((char*)os::get_temp_directory());
-  jlong result = -10;
-  bool ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, &result);
+  uint64_t result = 0;
+  bool ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, result);
   EXPECT_TRUE(ok) << "Should be OK to read value";
-  EXPECT_EQ((jlong)-1, result) << "max should be unlimited (-1)";
+  EXPECT_EQ(value_unlimited, result) << "max should be unlimited (-1)";
 
-  result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, false /* use_first */, &result);
+  result = 0;
+  ok = controller->read_numerical_tuple_value(base_with_slash, false /* use_first */, result);
   EXPECT_TRUE(ok) << "Should be OK to read the value";
-  EXPECT_EQ((jlong)10000, result);
+  EXPECT_EQ((uint64_t)10000, result);
 
   // non-max strings
   fill_file(test_file, "abc 10000");
-  result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, &result);
+  result = 0;
+  ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, result);
   EXPECT_FALSE(ok) << "abc should not be parsable";
-  EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
+  EXPECT_EQ((uint64_t)0, result) << "result value should be unchanged";
 
   fill_file(test_file, nullptr);
-  result = -10;
-  ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, &result);
+  result = 0;
+  ok = controller->read_numerical_tuple_value(base_with_slash, true /* use_first */, result);
   EXPECT_FALSE(ok) << "Empty file should be an error";
-  EXPECT_EQ((jlong)-10, result) << "result value should be unchanged";
+  EXPECT_EQ((uint64_t)0, result) << "result value should be unchanged";
 
   delete_file(test_file);
 }
@@ -407,20 +412,20 @@ TEST(cgroupTest, read_numerical_key_beyond_max_path) {
   TestController* too_large_path_controller = new TestController(larger_than_max);
   const char* test_file_path = "/file-not-found";
   const char* key = "something";
-  julong a = 0xBAD;
-  bool is_ok = too_large_path_controller->read_numerical_key_value(test_file_path, key, &a);
+  uint64_t a = 0xBAD;
+  bool is_ok = too_large_path_controller->read_numerical_key_value(test_file_path, key, a);
   EXPECT_FALSE(is_ok) << "Too long path should be an error";
-  EXPECT_EQ((julong)0xBAD, a) << "Expected untouched scan value";
+  EXPECT_EQ((uint64_t)0xBAD, a) << "Expected untouched scan value";
 }
 
 TEST(cgroupTest, read_numerical_key_file_not_exist) {
   TestController* unknown_path_ctrl = new TestController((char*)"/do/not/exist");
   const char* test_file_path = "/file-not-found";
   const char* key = "something";
-  julong a = 0xBAD;
-  bool is_ok = unknown_path_ctrl->read_numerical_key_value(test_file_path, key, &a);
+  uint64_t a = 0xBAD;
+  bool is_ok = unknown_path_ctrl->read_numerical_key_value(test_file_path, key, a);
   EXPECT_FALSE(is_ok) << "File not found should be an error";
-  EXPECT_EQ((julong)0xBAD, a) << "Expected untouched scan value";
+  EXPECT_EQ((uint64_t)0xBAD, a) << "Expected untouched scan value";
 }
 
 TEST(cgroupTest, set_cgroupv1_subsystem_path) {
