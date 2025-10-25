@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/method.hpp"
+#include "oops/method.inline.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/trainingData.hpp"
 #include "runtime/arguments.hpp"
@@ -352,6 +353,8 @@ void MethodTrainingData::prepare(Visitor& visitor) {
     _final_counters = holder()->method_counters();
     _final_profile  = holder()->method_data();
     assert(_final_profile == nullptr || _final_profile->method() == holder(), "");
+    _invocation_count = holder()->invocation_count();
+    _backedge_count = holder()->backedge_count();
   }
   for (int i = 0; i < CompLevel_count - 1; i++) {
     CompileTrainingData* ctd = _last_toplevel_compiles[i];

@@ -748,6 +748,9 @@ class MethodTrainingData : public TrainingData {
   MethodCounters* _final_counters;
   MethodData*     _final_profile;
 
+  int _invocation_count;
+  int _backedge_count;
+
   MethodTrainingData();
   MethodTrainingData(Method* method, KlassTrainingData* ktd) : TrainingData(method) {
     _klass = ktd;
@@ -758,6 +761,8 @@ class MethodTrainingData : public TrainingData {
     _highest_top_level = CompLevel_none;
     _level_mask = 0;
     _was_toplevel = false;
+    _invocation_count = 0;
+    _backedge_count = 0;
   }
 
   static int level_mask(int level) {
@@ -772,6 +777,8 @@ class MethodTrainingData : public TrainingData {
   bool saw_level(CompLevel l) const { return (_level_mask & level_mask(l)) != 0; }
   int highest_top_level()     const { return _highest_top_level; }
   MethodData* final_profile() const { return _final_profile; }
+  int invocation_count() const { return _invocation_count; }
+  int backedge_count() const { return _backedge_count; }
 
   Symbol* name() const {
     precond(has_holder());

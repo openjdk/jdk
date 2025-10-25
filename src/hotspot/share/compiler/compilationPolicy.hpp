@@ -263,14 +263,15 @@ class CompilationPolicy : AllStatic {
   static CompLevel common(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD, bool disable_feedback = false);
 
   template<typename Predicate>
-  static CompLevel transition_from_none(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback);
+  static CompLevel transition_from_none(const methodHandle& method, CompLevel cur_level, bool disable_feedback);
   template<typename Predicate>
-  static CompLevel transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, bool delay_profiling, bool disable_feedback);
+  static CompLevel transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, bool disable_feedback);
   template<typename Predicate>
   static CompLevel transition_from_full_profile(const methodHandle& method, CompLevel cur_level);
   template<typename Predicate>
-  static CompLevel standard_transition(const methodHandle& method, CompLevel cur_level, bool delayprof, bool disable_feedback);
+  static CompLevel standard_transition(const methodHandle& method, CompLevel cur_level, bool disable_feedback);
 
+  static bool should_delay_standard_transition(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd);
   static CompLevel trained_transition_from_none(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
   static CompLevel trained_transition_from_limited_profile(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
   static CompLevel trained_transition_from_full_profile(const methodHandle& method, CompLevel cur_level, MethodTrainingData* mtd, JavaThread* THREAD);
@@ -284,7 +285,7 @@ class CompilationPolicy : AllStatic {
   // level.
   static CompLevel loop_event(const methodHandle& method, CompLevel cur_level, JavaThread* THREAD);
   static void print_counters_on(outputStream* st, const char* prefix, Method* m);
-  static void print_training_data_on(outputStream* st, const char* prefix, Method* method);
+  static void print_training_data_on(outputStream* st, const char* prefix, Method* method, CompLevel cur_level);
   // Has a method been long around?
   // We don't remove old methods from the compile queue even if they have
   // very low activity (see select_task()).
