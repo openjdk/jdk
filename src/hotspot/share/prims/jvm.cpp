@@ -828,10 +828,9 @@ JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
   Klass* from_class = (from_class_oop == nullptr)
                            ? (Klass*)nullptr
                            : java_lang_Class::as_Klass(from_class_oop);
-  oop class_loader = nullptr;
-  if (from_class != nullptr) {
-    class_loader = from_class->class_loader();
-  }
+  assert(from_class != nullptr, "must be");
+  oop class_loader = from_class->class_loader();
+
   Handle h_loader(THREAD, class_loader);
   jclass result = find_class_from_class_loader(env, h_name, init, h_loader, true, thread);
 
