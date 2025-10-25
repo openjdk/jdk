@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,14 @@
  * @bug 8133747 8218458
  * @summary Running with NMT detail should produce expected stack traces.
  * @library /test/lib
+ * @library /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.debug
+ * @build jdk.test.whitebox.WhiteBox
  * @compile ../modules/CompilerUtils.java
- * @run driver CheckForProperDetailStackTrace
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI CheckForProperDetailStackTrace
  */
 
 import jdk.test.lib.Platform;
@@ -40,6 +43,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import jdk.test.whitebox.WhiteBox;
 
 /**
  * We are checking for details that should be seen with NMT detail enabled.
@@ -59,7 +63,10 @@ public class CheckForProperDetailStackTrace {
     private static final Path SRC_DIR = Paths.get(TEST_SRC, "src");
     private static final Path MODS_DIR = Paths.get(TEST_CLASSES, "mods");
 
-    private static final boolean expectSourceInformation = Platform.isLinux() || Platform.isWindows();
+    // Windows has source information only in full pdbs, not in stripped pdbs
+    private static boolean expectSourceInformation = Platform.isLinux() || Platform.isWindows();
+
+    static WhiteBox wb = WhiteBox.getWhiteBox();
 
     /* The stack trace we look for by default. Note that :: has been replaced by .*
        to make sure it matches even if the symbol is not unmangled.
@@ -136,6 +143,10 @@ public class CheckForProperDetailStackTrace {
         if (!stackTraceMatches(toMatch, output)) {
             output.reportDiagnosticSummary();
             throw new RuntimeException("Expected stack trace missing from output");
+        }
+
+        if (wb.hasExternalSymbolsStripped()) {
+            expectSourceInformation = false;
         }
 
         System.out.println("Looking for source information:");
