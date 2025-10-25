@@ -35,8 +35,12 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
   Collector,                    // Region is in the Collector free set: available memory is reserved for evacuations.
   OldCollector,                 // Region is in the Old Collector free set:
-                                //    available memory is reserved for old evacuations and for promotions..
-  NotFree                       // Region is in no free set: it has no available memory
+                                //    available memory is reserved for old evacuations and for promotions.
+  NotFree                       // Region is in no free set: it has no available memory.  Consult region affiliation
+                                //    to determine whether this retired region is young or old.  If young, the region
+                                //    is considered to be part of the Mutator partition.  (When we retire from the
+                                //    Collector partition, we decrease total_region_count for Collector and increaese
+                                //    for Mutator, making similar adjustments to used (net impact on available is neutral).
 };
 
 // ShenandoahRegionPartitions provides an abstraction to help organize the implementation of ShenandoahFreeSet.  This
@@ -45,55 +49,83 @@ enum class ShenandoahFreeSetPartitionId : uint8_t {
 // for which the ShenandoahFreeSetPartitionId is not equal to NotFree.
 class ShenandoahRegionPartitions {
 
-private:
+using idx_t = ShenandoahSimpleBitMap::idx_t;
+
+public:
   // We do not maintain counts, capacity, or used for regions that are not free.  Informally, if a region is NotFree, it is
   // in no partition.  NumPartitions represents the size of an array that may be indexed by Mutator or Collector.
   static constexpr ShenandoahFreeSetPartitionId NumPartitions     =      ShenandoahFreeSetPartitionId::NotFree;
   static constexpr int                          IntNumPartitions  =  int(ShenandoahFreeSetPartitionId::NotFree);
   static constexpr uint                         UIntNumPartitions = uint(ShenandoahFreeSetPartitionId::NotFree);
 
-  const ssize_t _max;           // The maximum number of heap regions
+private:
+  const idx_t _max;           // The maximum number of heap regions
   const size_t _region_size_bytes;
   const ShenandoahFreeSet* _free_set;
   // For each partition, we maintain a bitmap of which regions are affiliated with his partition.
   ShenandoahSimpleBitMap _membership[UIntNumPartitions];
-
   // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
   // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
   // represents its least index, and its _rightmosts[p] its greatest index. Empty intervals are indicated by the
   // canonical [_max, -1].
-  ssize_t _leftmosts[UIntNumPartitions];
-  ssize_t _rightmosts[UIntNumPartitions];
+  idx_t _leftmosts[UIntNumPartitions];
+  idx_t _rightmosts[UIntNumPartitions];
 
   // Allocation for humongous objects needs to find regions that are entirely empty.  For each partion p, _leftmosts_empty[p]
   // represents the first region belonging to this partition that is completely empty and _rightmosts_empty[p] represents the
   // last region that is completely empty.  If there is no completely empty region in this partition, this is represented
   // by the canonical [_max, -1].
-  ssize_t _leftmosts_empty[UIntNumPartitions];
-  ssize_t _rightmosts_empty[UIntNumPartitions];
+  idx_t _leftmosts_empty[UIntNumPartitions];
+  idx_t _rightmosts_empty[UIntNumPartitions];
 
-  // For each partition p, _capacity[p] represents the total amount of memory within the partition at the time
-  // of the most recent rebuild, _used[p] represents the total amount of memory that has been allocated within this
-  // partition (either already allocated as of the rebuild, or allocated since the rebuild).  _capacity[p] and _used[p]
-  // are denoted in bytes.  Note that some regions that had been assigned to a particular partition at rebuild time
-  // may have been retired following the rebuild.  The tallies for these regions are still reflected in _capacity[p]
-  // and _used[p], even though the region may have been removed from the free set.
+  // For each partition p:
+  //  _capacity[p] represents the total amount of memory within the partition, including retired regions, as adjusted
+  //                       by transfers of memory between partitions
+  //  _used[p] represents the total amount of memory that has been allocated within this partition (either already
+  //                       allocated as of the rebuild, or allocated since the rebuild).
+  //  _available[p] represents the total amount of memory that can be allocated within partition p, calculated from
+  //                       _capacity[p] minus _used[p], where the difference is computed and assigned under heap lock
+  //
+  //  _region_counts[p] represents the number of regions associated with the partition which currently have available memory.
+  //                       When a region is retired from partition p, _region_counts[p] is decremented.
+  //  total_region_counts[p] is _capacity[p] / RegionSizeBytes.
+  //  _empty_region_counts[p] is number of regions associated with p which are entirely empty
+  //
+  // capacity and used values are expressed in bytes.
+  //
+  // When a region is retired, the used[p] is increased to account for alignment waste.  capacity is unaffected.
+  //
+  // When a region is "flipped", we adjust capacities and region counts for original and destination partitions.  We also
+  // adjust used values when flipping from mutator to collector.  Flip to old collector does not need to adjust used because
+  // only empty regions can be flipped to old collector.
+  //
+  // All memory quantities (capacity, available, used) are represented in bytes.
+
   size_t _capacity[UIntNumPartitions];
+
   size_t _used[UIntNumPartitions];
   size_t _available[UIntNumPartitions];
+
+  // Measured in bytes.
+  size_t _allocated_since_gc_start[UIntNumPartitions];
+
+  // Some notes:
+  //  total_region_counts[p] is _capacity[p] / region_size_bytes
+  //  retired_regions[p] is total_region_counts[p] - _region_counts[p]
+  //  _empty_region_counts[p] <= _region_counts[p] <= total_region_counts[p]
+  //  affiliated regions is total_region_counts[p] - empty_region_counts[p]
+  //  used_regions is affilaited_regions * region_size_bytes
+  //  _available[p] is _capacity[p] - _used[p]
   size_t _region_counts[UIntNumPartitions];
+  size_t _empty_region_counts[UIntNumPartitions];
+
+  // Humongous waste, in bytes, can exist in Mutator partition for recently allocated humongous objects
+  // and in OldCollector partition for humongous objects that have been promoted in place.
+  size_t _humongous_waste[UIntNumPartitions];
 
   // For each partition p, _left_to_right_bias is true iff allocations are normally made from lower indexed regions
   // before higher indexed regions.
   bool _left_to_right_bias[UIntNumPartitions];
-
-  // Shrink the intervals associated with partition when region idx is removed from this free set
-  inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx);
-
-  // Shrink the intervals associated with partition when regions low_idx through high_idx inclusive are removed from this free set
-  inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
-                                                                ssize_t low_idx, ssize_t high_idx);
-  inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t capacity);
 
   inline bool is_mutator_partition(ShenandoahFreeSetPartitionId p);
   inline bool is_young_collector_partition(ShenandoahFreeSetPartitionId p);
@@ -101,8 +133,8 @@ private:
   inline bool available_implies_empty(size_t available);
 
 #ifndef PRODUCT
-  void dump_bitmap_row(ssize_t region_idx) const;
-  void dump_bitmap_range(ssize_t start_region_idx, ssize_t end_region_idx) const;
+  void dump_bitmap_row(idx_t region_idx) const;
+  void dump_bitmap_range(idx_t start_region_idx, idx_t end_region_idx) const;
   void dump_bitmap() const;
 #endif
 public:
@@ -110,6 +142,11 @@ public:
   ~ShenandoahRegionPartitions() {}
 
   static const size_t FreeSetUnderConstruction = SIZE_MAX;
+
+  inline idx_t max() const { return _max; }
+
+  // At initialization, reset OldCollector tallies
+  void initialize_old_collector();
 
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
@@ -119,69 +156,115 @@ public:
     _membership[int(p)].set_bit(idx);
   }
 
+  // Clear the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
+  inline void raw_clear_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
+    _membership[int(p)].clear_bit(idx);
+  }
+
+  inline void one_region_is_no_longer_empty(ShenandoahFreeSetPartitionId partition);
+
   // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
   // to represent empty Collector free set.  We use this at the end of rebuild_free_set() to avoid the overhead of making
   // many redundant incremental adjustments to the mutator intervals as the free set is being rebuilt.
-  void establish_mutator_intervals(ssize_t mutator_leftmost, ssize_t mutator_rightmost,
-                                   ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
-                                   size_t mutator_region_count, size_t mutator_used);
+  void establish_mutator_intervals(idx_t mutator_leftmost, idx_t mutator_rightmost,
+                                   idx_t mutator_leftmost_empty, idx_t mutator_rightmost_empty,
+                                   size_t total_mutator_regions, size_t empty_mutator_regions,
+                                   size_t mutator_region_count, size_t mutator_used, size_t mutator_humongous_words_waste);
 
   // Set the OldCollector intervals, usage, and capacity according to arguments.  We use this at the end of rebuild_free_set()
   // to avoid the overhead of making many redundant incremental adjustments to the mutator intervals as the free set is being
   // rebuilt.
-  void establish_old_collector_intervals(ssize_t old_collector_leftmost, ssize_t old_collector_rightmost,
-                                         ssize_t old_collector_leftmost_empty, ssize_t old_collector_rightmost_empty,
-                                         size_t old_collector_region_count, size_t old_collector_used);
+  void establish_old_collector_intervals(idx_t old_collector_leftmost, idx_t old_collector_rightmost,
+                                         idx_t old_collector_leftmost_empty, idx_t old_collector_rightmost_empty,
+                                         size_t total_old_collector_region_count, size_t old_collector_empty,
+                                         size_t old_collector_regions, size_t old_collector_used,
+                                         size_t old_collector_humongous_words_waste);
+
+  void establish_interval(ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx,
+                          idx_t low_empty_idx, idx_t high_empty_idx);
+
+  // Shrink the intervals associated with partition when region idx is removed from this free set
+  inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx);
+
+  // Shrink the intervals associated with partition when regions low_idx through high_idx inclusive are removed from this free set
+  void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
+                                                         idx_t low_idx, idx_t high_idx, size_t num_regions);
+
+  void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, idx_t idx, size_t capacity);
+  void expand_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
+                                                         idx_t low_idx, idx_t high_idx,
+                                                         idx_t low_empty_idx, idx_t high_empty_idx);
 
   // Retire region idx from within partition, , leaving its capacity and used as part of the original free partition's totals.
   // Requires that region idx is in in the Mutator or Collector partitions.  Hereafter, identifies this region as NotFree.
   // Any remnant of available memory at the time of retirement is added to the original partition's total of used bytes.
-  void retire_from_partition(ShenandoahFreeSetPartitionId p, ssize_t idx, size_t used_bytes);
+  // Return the number of waste bytes (if any).
+  size_t retire_from_partition(ShenandoahFreeSetPartitionId p, idx_t idx, size_t used_bytes);
 
   // Retire all regions between low_idx and high_idx inclusive from within partition.  Requires that each region idx is
   // in the same Mutator or Collector partition.  Hereafter, identifies each region as NotFree.   Assumes that each region
   // is now considered fully used, since the region is presumably used to represent a humongous object.
-  void retire_range_from_partition(ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx);
+  void retire_range_from_partition(ShenandoahFreeSetPartitionId partition, idx_t low_idx, idx_t high_idx);
+
+  void unretire_to_partition(ShenandoahHeapRegion* region, ShenandoahFreeSetPartitionId which_partition);
 
   // Place region idx into free set which_partition.  Requires that idx is currently NotFree.
-  void make_free(ssize_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);
+  void make_free(idx_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);
 
-  // Place region idx into free partition new_partition, adjusting used and capacity totals for the original and new partition
-  // given that available bytes can still be allocated within this region.  Requires that idx is currently not NotFree.
-  void move_from_partition_to_partition(ssize_t idx, ShenandoahFreeSetPartitionId orig_partition,
+  // Place region idx into free partition new_partition, not adjusting used and capacity totals for the original and new partition.
+  // available represents bytes that can still be allocated within this region.  Requires that idx is currently not NotFree.
+  size_t move_from_partition_to_partition_with_deferred_accounting(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
+                                                                   ShenandoahFreeSetPartitionId new_partition, size_t available);
+
+  // Place region idx into free partition new_partition, adjusting used and capacity totals for the original and new partition.
+  // available represents bytes that can still be allocated within this region.  Requires that idx is currently not NotFree.
+  void move_from_partition_to_partition(idx_t idx, ShenandoahFreeSetPartitionId orig_partition,
                                         ShenandoahFreeSetPartitionId new_partition, size_t available);
 
-  const char* partition_membership_name(ssize_t idx) const;
+  void transfer_used_capacity_from_to(ShenandoahFreeSetPartitionId from_partition, ShenandoahFreeSetPartitionId to_partition,
+                                      size_t regions);
+
+  const char* partition_membership_name(idx_t idx) const;
 
   // Return the index of the next available region >= start_index, or maximum_regions if not found.
-  inline ssize_t find_index_of_next_available_region(ShenandoahFreeSetPartitionId which_partition, ssize_t start_index) const;
+  inline idx_t find_index_of_next_available_region(ShenandoahFreeSetPartitionId which_partition,
+                                                        idx_t start_index) const;
 
   // Return the index of the previous available region <= last_index, or -1 if not found.
-  inline ssize_t find_index_of_previous_available_region(ShenandoahFreeSetPartitionId which_partition, ssize_t last_index) const;
+  inline idx_t find_index_of_previous_available_region(ShenandoahFreeSetPartitionId which_partition,
+                                                            idx_t last_index) const;
 
   // Return the index of the next available cluster of cluster_size regions >= start_index, or maximum_regions if not found.
-  inline ssize_t find_index_of_next_available_cluster_of_regions(ShenandoahFreeSetPartitionId which_partition,
-                                                                 ssize_t start_index, size_t cluster_size) const;
+  inline idx_t find_index_of_next_available_cluster_of_regions(ShenandoahFreeSetPartitionId which_partition,
+                                                               idx_t start_index, size_t cluster_size) const;
 
   // Return the index of the previous available cluster of cluster_size regions <= last_index, or -1 if not found.
-  inline ssize_t find_index_of_previous_available_cluster_of_regions(ShenandoahFreeSetPartitionId which_partition,
-                                                                     ssize_t last_index, size_t cluster_size) const;
+  inline idx_t find_index_of_previous_available_cluster_of_regions(ShenandoahFreeSetPartitionId which_partition,
+                                                                   idx_t last_index, size_t cluster_size) const;
 
-  inline bool in_free_set(ShenandoahFreeSetPartitionId which_partition, ssize_t idx) const {
+  inline bool in_free_set(ShenandoahFreeSetPartitionId which_partition, idx_t idx) const {
     return _membership[int(which_partition)].is_set(idx);
   }
 
   // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently in any partition.
   // This does not enforce that free_set membership implies allocation capacity.
-  inline ShenandoahFreeSetPartitionId membership(ssize_t idx) const;
+  inline ShenandoahFreeSetPartitionId membership(idx_t idx) const {
+    assert (idx < _max, "index is sane: %zu < %zu", idx, _max);
+    ShenandoahFreeSetPartitionId result = ShenandoahFreeSetPartitionId::NotFree;
+    for (uint partition_id = 0; partition_id < UIntNumPartitions; partition_id++) {
+      if (_membership[partition_id].is_set(idx)) {
+        assert(result == ShenandoahFreeSetPartitionId::NotFree, "Region should reside in only one partition");
+        result = (ShenandoahFreeSetPartitionId) partition_id;
+      }
+    }
+    return result;
+  }
 
 #ifdef ASSERT
   // Returns true iff region idx's membership is which_partition.  If which_partition represents a free set, asserts
   // that the region has allocation capacity.
-  inline bool partition_id_matches(ssize_t idx, ShenandoahFreeSetPartitionId which_partition) const;
+  inline bool partition_id_matches(idx_t idx, ShenandoahFreeSetPartitionId which_partition) const;
 #endif
-
-  inline size_t max_regions() const { return _max; }
 
   inline size_t region_size_bytes() const { return _region_size_bytes; };
 
@@ -192,14 +275,54 @@ public:
   //     leftmost() and leftmost_empty() return _max, rightmost() and rightmost_empty() return 0
   //   otherwise, expect the following:
   //     0 <= leftmost <= leftmost_empty <= rightmost_empty <= rightmost < _max
-  inline ssize_t leftmost(ShenandoahFreeSetPartitionId which_partition) const;
-  inline ssize_t rightmost(ShenandoahFreeSetPartitionId which_partition) const;
-  ssize_t leftmost_empty(ShenandoahFreeSetPartitionId which_partition);
-  ssize_t rightmost_empty(ShenandoahFreeSetPartitionId which_partition);
+  inline idx_t leftmost(ShenandoahFreeSetPartitionId which_partition) const;
+  inline idx_t rightmost(ShenandoahFreeSetPartitionId which_partition) const;
+  idx_t leftmost_empty(ShenandoahFreeSetPartitionId which_partition);
+  idx_t rightmost_empty(ShenandoahFreeSetPartitionId which_partition);
 
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
+  inline void increase_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline void decrease_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline size_t get_region_counts(ShenandoahFreeSetPartitionId which_partition) {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    return _region_counts[int(which_partition)];
+  }
+
+  inline void increase_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline void decrease_empty_region_counts(ShenandoahFreeSetPartitionId which_partition, size_t regions);
+  inline size_t get_empty_region_counts(ShenandoahFreeSetPartitionId which_partition) {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    return _empty_region_counts[int(which_partition)];
+  }
+
+  inline void increase_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_capacity(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline size_t get_capacity(ShenandoahFreeSetPartitionId which_partition) {
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    return _capacity[int(which_partition)];
+  }
+
+  inline void increase_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_available(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline size_t get_available(ShenandoahFreeSetPartitionId which_partition);
+
   inline void increase_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_used(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline size_t get_used(ShenandoahFreeSetPartitionId which_partition) {
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    return _used[int(which_partition)];
+  }
+
+  inline void increase_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes);
+  inline void decrease_humongous_waste(ShenandoahFreeSetPartitionId which_partition, size_t bytes) {
+    shenandoah_assert_heaplocked();
+    assert (which_partition < NumPartitions, "Partition must be valid");
+    assert(_humongous_waste[int(which_partition)] >= bytes, "Cannot decrease waste beyond what is there");
+    _humongous_waste[int(which_partition)] -= bytes;
+  }
+
+  inline size_t get_humongous_waste(ShenandoahFreeSetPartitionId which_partition);
 
   inline void set_bias_from_left_to_right(ShenandoahFreeSetPartitionId which_partition, bool value) {
     assert (which_partition < NumPartitions, "selected free set must be valid");
@@ -227,8 +350,15 @@ public:
     assert(_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)],
            "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
            _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
-           partition_membership_name(ssize_t(which_partition)));
+           partition_membership_name(idx_t(which_partition)));
     return _available[int(which_partition)];
+  }
+
+  // Returns bytes of humongous waste
+  inline size_t humongous_waste(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    // This may be called with or without the global heap lock.  Changes to _humongous_waste[] are always made with heap lock.
+    return _humongous_waste[int(which_partition)];
   }
 
   // Return available_in assuming caller does not hold the heap lock.  In production builds, available is
@@ -243,17 +373,12 @@ public:
            (_available[int(which_partition)] == _capacity[int(which_partition)] - _used[int(which_partition)]),
            "Expect available (%zu) equals capacity (%zu) - used (%zu) for partition %s",
            _available[int(which_partition)], _capacity[int(which_partition)], _used[int(which_partition)],
-           partition_membership_name(ssize_t(which_partition)));
+           partition_membership_name(idx_t(which_partition)));
 #endif
     return _available[int(which_partition)];
   }
 
-  inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
-    shenandoah_assert_heaplocked();
-    assert (which_partition < NumPartitions, "selected free set must be valid");
-    _capacity[int(which_partition)] = value;
-    _available[int(which_partition)] = value - _used[int(which_partition)];
-  }
+  inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value);
 
   inline void set_used_by(ShenandoahFreeSetPartitionId which_partition, size_t value) {
     shenandoah_assert_heaplocked();
@@ -284,7 +409,7 @@ public:
   //       idx >= leftmost &&
   //       idx <= rightmost
   //     }
-  void assert_bounds() NOT_DEBUG_RETURN;
+  void assert_bounds(bool validate_totals) NOT_DEBUG_RETURN;
 };
 
 // Publicly, ShenandoahFreeSet represents memory that is available to mutator threads.  The public capacity(), used(),
@@ -312,9 +437,12 @@ public:
 //     during the next GC pass.
 
 class ShenandoahFreeSet : public CHeapObj<mtGC> {
+using idx_t = ShenandoahSimpleBitMap::idx_t;
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+
+  size_t _total_humongous_waste;
 
   HeapWord* allocate_aligned_plab(size_t size, ShenandoahAllocRequest& req, ShenandoahHeapRegion* r);
 
@@ -329,6 +457,105 @@ private:
   ssize_t _alloc_bias_weight;
 
   const ssize_t INITIAL_ALLOC_BIAS_WEIGHT = 256;
+
+  // bytes used by young
+  size_t _total_young_used;
+  template<bool UsedByMutatorChanged, bool UsedByCollectorChanged>
+  inline void recompute_total_young_used() {
+    if (UsedByMutatorChanged || UsedByCollectorChanged) {
+      shenandoah_assert_heaplocked();
+      _total_young_used = (_partitions.used_by(ShenandoahFreeSetPartitionId::Mutator) +
+                           _partitions.used_by(ShenandoahFreeSetPartitionId::Collector));
+    }
+  }
+
+  // bytes used by old
+  size_t _total_old_used;
+  template<bool UsedByOldCollectorChanged>
+  inline void recompute_total_old_used() {
+    if (UsedByOldCollectorChanged) {
+      shenandoah_assert_heaplocked();
+      _total_old_used =_partitions.used_by(ShenandoahFreeSetPartitionId::OldCollector);
+    }
+  }
+
+public:
+  // We make this public so that native code can see its value
+  // bytes used by global
+  size_t _total_global_used;
+private:
+  // Prerequisite: _total_young_used and _total_old_used are valid
+  template<bool UsedByMutatorChanged, bool UsedByCollectorChanged, bool UsedByOldCollectorChanged>
+  inline void recompute_total_global_used() {
+    if (UsedByMutatorChanged || UsedByCollectorChanged || UsedByOldCollectorChanged) {
+      shenandoah_assert_heaplocked();
+      _total_global_used = _total_young_used + _total_old_used;
+    }
+  }
+
+  template<bool UsedByMutatorChanged, bool UsedByCollectorChanged, bool UsedByOldCollectorChanged>
+  inline void recompute_total_used() {
+    recompute_total_young_used<UsedByMutatorChanged, UsedByCollectorChanged>();
+    recompute_total_old_used<UsedByOldCollectorChanged>();
+    recompute_total_global_used<UsedByMutatorChanged, UsedByCollectorChanged, UsedByOldCollectorChanged>();
+  }
+
+  size_t _young_affiliated_regions;
+  size_t _old_affiliated_regions;
+  size_t _global_affiliated_regions;
+
+  size_t _young_unaffiliated_regions;
+  size_t _global_unaffiliated_regions;
+
+  size_t _total_young_regions;
+  size_t _total_global_regions;
+
+  size_t _mutator_bytes_allocated_since_gc_start;
+
+  // If only affiliation changes are promote-in-place and generation sizes have not changed,
+  //    we have AffiliatedChangesAreGlobalNeutral
+  // If only affiliation changes are non-empty regions moved from Mutator to Collector and young size has not changed,
+  //    we have AffiliatedChangesAreYoungNeutral
+  // If only unaffiliated changes are empty regions from Mutator to/from Collector, we have UnaffiliatedChangesAreYoungNeutral
+  template<bool MutatorEmptiesChanged, bool CollectorEmptiesChanged, bool OldCollectorEmptiesChanged,
+           bool MutatorSizeChanged, bool CollectorSizeChanged, bool OldCollectorSizeChanged,
+           bool AffiliatedChangesAreYoungNeutral, bool AffiliatedChangesAreGlobalNeutral,
+           bool UnaffiliatedChangesAreYoungNeutral>
+  inline void recompute_total_affiliated() {
+    shenandoah_assert_heaplocked();
+    size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
+    if (!UnaffiliatedChangesAreYoungNeutral && (MutatorEmptiesChanged || CollectorEmptiesChanged)) {
+      _young_unaffiliated_regions = (_partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Mutator) +
+                                     _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::Collector));
+    }
+    if (!AffiliatedChangesAreYoungNeutral &&
+        (MutatorSizeChanged || CollectorSizeChanged || MutatorEmptiesChanged || CollectorEmptiesChanged)) {
+      _young_affiliated_regions = ((_partitions.get_capacity(ShenandoahFreeSetPartitionId::Mutator) +
+                                    _partitions.get_capacity(ShenandoahFreeSetPartitionId::Collector)) / region_size_bytes -
+                                   _young_unaffiliated_regions);
+    }
+    if (OldCollectorSizeChanged || OldCollectorEmptiesChanged) {
+      _old_affiliated_regions = (_partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / region_size_bytes -
+                                 _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector));
+    }
+    if (!AffiliatedChangesAreGlobalNeutral &&
+        (MutatorEmptiesChanged || CollectorEmptiesChanged || OldCollectorEmptiesChanged)) {
+      _global_unaffiliated_regions =
+        _young_unaffiliated_regions + _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+    }
+    if (!AffiliatedChangesAreGlobalNeutral &&
+        (MutatorSizeChanged || CollectorSizeChanged || MutatorEmptiesChanged || CollectorEmptiesChanged ||
+         OldCollectorSizeChanged || OldCollectorEmptiesChanged)) {
+      _global_affiliated_regions = _young_affiliated_regions + _old_affiliated_regions;
+    }
+#ifdef ASSERT
+    if (ShenandoahHeap::heap()->mode()->is_generational()) {
+      assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
+      assert(_old_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_old_used, "sanity");
+    }
+    assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
+#endif
+  }
 
   // Increases used memory for the partition if the allocation is successful. `in_new_region` will be set
   // if this is the first allocation in the region.
@@ -346,6 +573,8 @@ private:
   //
   // Precondition: ShenandoahHeapRegion::requires_humongous(req.size())
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req, bool is_humongous);
+
+  bool transfer_one_region_from_mutator_to_old_collector(size_t idx, size_t alloc_capacity);
 
   // Change region r from the Mutator partition to the GC's Collector or OldCollector partition.  This requires that the
   // region is entirely empty.
@@ -374,7 +603,8 @@ private:
 
   // Search for allocation in region with same affiliation as request, using given iterator.
   template<typename Iter>
-  HeapWord* allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation, ShenandoahAllocRequest& req, bool& in_new_region);
+  HeapWord* allocate_with_affiliation(Iter& iterator, ShenandoahAffiliation affiliation,
+                                      ShenandoahAllocRequest& req, bool& in_new_region);
 
   // Return true if the respective generation for this request has free regions.
   bool can_allocate_in_new_region(const ShenandoahAllocRequest& req);
@@ -392,6 +622,10 @@ private:
 
   inline bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
 
+  void transfer_empty_regions_from_to(ShenandoahFreeSetPartitionId source_partition,
+                                      ShenandoahFreeSetPartitionId dest_partition,
+                                      size_t num_regions);
+
   size_t transfer_empty_regions_from_collector_set_to_mutator_set(ShenandoahFreeSetPartitionId which_collector,
                                                                   size_t max_xfer_regions,
                                                                   size_t& bytes_transferred);
@@ -399,12 +633,8 @@ private:
                                                                       size_t max_xfer_regions,
                                                                       size_t& bytes_transferred);
 
-
   // Determine whether we prefer to allocate from left to right or from right to left within the OldCollector free-set.
   void establish_old_collector_alloc_bias();
-
-  // Set max_capacity for young and old generations
-  void establish_generation_sizes(size_t young_region_count, size_t old_region_count);
   size_t get_usable_free_words(size_t free_bytes) const;
 
   // log status, assuming lock has already been acquired by the caller.
@@ -415,9 +645,81 @@ public:
 
   ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions);
 
+  inline size_t max_regions() const { return _partitions.max(); }
+  ShenandoahFreeSetPartitionId membership(size_t index) const { return _partitions.membership(index); }
+  inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
+                                                                idx_t low_idx, idx_t high_idx, size_t num_regions) {
+    return _partitions.shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx, num_regions);
+  }
+
+  void reset_bytes_allocated_since_gc_start(size_t initial_bytes_allocated);
+
+  void increase_bytes_allocated(size_t bytes);
+
+  inline size_t get_bytes_allocated_since_gc_start() const {
+    return _mutator_bytes_allocated_since_gc_start;
+  }
+
   // Public because ShenandoahRegionPartitions assertions require access.
   inline size_t alloc_capacity(ShenandoahHeapRegion *r) const;
   inline size_t alloc_capacity(size_t idx) const;
+
+  // Return bytes used by old
+  inline size_t old_used() {
+    return _total_old_used;
+  }
+
+  ShenandoahFreeSetPartitionId prepare_to_promote_in_place(size_t idx, size_t bytes);
+  void account_for_pip_regions(size_t mutator_regions, size_t mutator_bytes, size_t collector_regions, size_t collector_bytes);
+
+  // This is used for unit testing.  Not for preoduction.  Invokes exit() if old cannot be resized.
+  void resize_old_collector_capacity(size_t desired_regions);
+
+  // Return bytes used by young
+  inline size_t young_used() {
+    return _total_young_used;
+  }
+
+  // Return bytes used by global
+  inline size_t global_used() {
+    return _total_global_used;
+  }
+
+  size_t global_unaffiliated_regions() {
+    return _global_unaffiliated_regions;
+  }
+
+  size_t young_unaffiliated_regions() {
+    return _young_unaffiliated_regions;
+  }
+
+  size_t old_unaffiliated_regions() {
+    return _partitions.get_empty_region_counts(ShenandoahFreeSetPartitionId::OldCollector);
+  }
+
+  size_t young_affiliated_regions() {
+    return _young_affiliated_regions;
+  }
+
+  size_t old_affiliated_regions() {
+    return _old_affiliated_regions;
+  }
+
+  size_t global_affiliated_regions() {
+    return _global_affiliated_regions;
+  }
+
+  size_t total_young_regions() {
+    return _total_young_regions;
+  }
+
+  size_t total_old_regions() {
+    return _partitions.get_capacity(ShenandoahFreeSetPartitionId::OldCollector) / ShenandoahHeapRegion::region_size_bytes();
+  }
+
+  size_t total_global_regions() {
+    return _total_global_regions;
+  }
 
   void clear();
 
@@ -464,6 +766,8 @@ public:
   // for evacuation, invoke this to make regions available for mutator allocations.
   void move_regions_from_collector_to_mutator(size_t cset_regions);
 
+  void transfer_humongous_regions_from_mutator_to_old_collector(size_t xfer_regions, size_t humongous_waste_words);
+
   void recycle_trash();
 
   // Acquire heap lock and log status, assuming heap lock is not acquired by the caller.
@@ -481,6 +785,12 @@ public:
   inline size_t capacity()  const { return _partitions.capacity_of(ShenandoahFreeSetPartitionId::Mutator);             }
   inline size_t used()      const { return _partitions.used_by(ShenandoahFreeSetPartitionId::Mutator);                 }
   inline size_t available() const { return _partitions.available_in_not_locked(ShenandoahFreeSetPartitionId::Mutator); }
+
+  inline size_t total_humongous_waste() const      { return _total_humongous_waste; }
+  inline size_t humongous_waste_in_mutator() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::Mutator); }
+  inline size_t humongous_waste_in_old() const { return _partitions.humongous_waste(ShenandoahFreeSetPartitionId::OldCollector); }
+
+  void decrease_humongous_waste_for_regular_bypass(ShenandoahHeapRegion* r, size_t waste);
 
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
 
@@ -539,7 +849,8 @@ public:
   // Ensure that Collector has at least to_reserve bytes of available memory, and OldCollector has at least old_reserve
   // bytes of available memory.  On input, old_region_count holds the number of regions already present in the
   // OldCollector partition.  Upon return, old_region_count holds the updated number of regions in the OldCollector partition.
-  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count);
+  void reserve_regions(size_t to_reserve, size_t old_reserve, size_t &old_region_count,
+                       size_t &young_used_regions, size_t &old_used_regions, size_t &young_used_bytes, size_t &old_used_bytes);
 
   // Reserve space for evacuations, with regions reserved for old evacuations placed to the right
   // of regions reserved of young evacuations.
