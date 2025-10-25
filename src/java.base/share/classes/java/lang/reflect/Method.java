@@ -25,6 +25,11 @@
 
 package java.lang.reflect;
 
+import java.lang.annotation.Annotation;
+import java.lang.annotation.AnnotationFormatError;
+import java.nio.ByteBuffer;
+import java.util.StringJoiner;
+
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
@@ -34,19 +39,15 @@ import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
+import sun.reflect.annotation.AnnotationParser;
+import sun.reflect.annotation.AnnotationType;
 import sun.reflect.annotation.ExceptionProxy;
 import sun.reflect.annotation.TypeNotPresentExceptionProxy;
-import sun.reflect.generics.repository.GenericDeclRepository;
-import sun.reflect.generics.repository.MethodRepository;
 import sun.reflect.generics.factory.CoreReflectionFactory;
 import sun.reflect.generics.factory.GenericsFactory;
+import sun.reflect.generics.repository.GenericDeclRepository;
+import sun.reflect.generics.repository.MethodRepository;
 import sun.reflect.generics.scope.MethodScope;
-import sun.reflect.annotation.AnnotationType;
-import sun.reflect.annotation.AnnotationParser;
-import java.lang.annotation.Annotation;
-import java.lang.annotation.AnnotationFormatError;
-import java.nio.ByteBuffer;
-import java.util.StringJoiner;
 
 /**
  * A {@code Method} provides information about, and access to, a single method
@@ -95,6 +96,9 @@ public final class Method extends Executable {
     private @Stable MethodAccessor methodAccessor;
     // End shared states
     private int hash; // not shared right now, eligible if expensive
+
+    // reflect capability
+    private ReflectPrivilege reflectPrivilege;
 
     // Generics infrastructure
     private String getGenericSignature() {return signature;}
@@ -168,11 +172,44 @@ public final class Method extends Executable {
     }
 
     /**
+     * Returns a copy of the method with the specific {@code ReflectPrivilege} bound.
+     * <p>
+     * If the method is already bound to a {@code ReflectPrivilege}, and the bound
+     * ReflectPrivilege objct is the same as the given one, then this method returns
+     * this method object itself.
+     *
+     * @param privilege the reflect capability to be associated with this method
+     * @return this Method object. // TBD return a copy, if already bound to something?
+     * @throws NullPointerException if {@code privilege} is null
+     * @throws IllegalAccessException   if this method is not accessible to the given reflect capability
+     */
+    public Method bind(ReflectPrivilege privilege) throws IllegalAccessException {
+        if (privilege == null) {
+            throw new NullPointerException("The access privilege object is null");
+        }
+        if (this.reflectPrivilege == privilege) {
+            return this;
+        }
+        var m = this.root.copy();
+        m.methodAccessor = reflectionFactory.newMethodAccessor(
+            m,
+            privilege.lookup().unreflect(m),
+            isCallerSensitive()
+        );
+        m.reflectPrivilege = privilege;
+        return m;
+    }
+
+    /**
      * @throws InaccessibleObjectException {@inheritDoc}
      */
     @Override
     @CallerSensitive
     public void setAccessible(boolean flag) {
+        if (reflectPrivilege != null) {
+            throw new InaccessibleObjectException(
+                "Can not change accessibility of Method bound to a ReflectCapability");
+        }
         if (flag) checkCanSetAccessible(Reflection.getCallerClass());
         setAccessible0(flag);
     }
@@ -561,8 +598,67 @@ public final class Method extends Executable {
         if (ma == null) {
             ma = acquireMethodAccessor();
         }
-
         return callerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
+    }
+
+    /**
+     * Invokes the underlying method represented by this {@code Method}, using
+     * the specified {@code FullPrivilege} associated with this method, to emulate
+     * the bytecode behaviors of the caller class of the {@code FullPrivilege}.
+     *
+     * <p> Individual parameters are automatically unwrapped to match primitive
+     * formal parameters, and both primitive and reference parameters are subject
+     * to method invocation conversions as necessary.
+     * <p>
+     * If the underlying method is static, then the specified {@code obj}
+     * argument is ignored. It may be null.
+     * <p>
+     * If the number of formal parameters required by the underlying method is
+     * 0, the supplied {@code args} array may be of length 0 or null.
+     *
+     * @param obj the object the underlying method is invoked from
+     * @param args the arguments used for the method call
+     * @return the result of dispatching the method represented by this object
+     * on {@code obj} with parameters {@code args}
+     * @throws IllegalAccessException if this {@code Method} object is enforcing
+     * Java language access control and the underlying method is inaccessible.
+     * @throws IllegalArgumentException if the method is an instance method and
+     * the specified object argument is not an instance of the class or
+     * interface declaring the underlying method (or of a subclass or
+     * implementor thereof); if the number of actual and formal parameters
+     * differ; if an unwrapping conversion for primitive arguments fails; or if,
+     * after possible unwrapping, a parameter value cannot be converted to the
+     * corresponding formal parameter type by a method invocation conversion.
+     * @throws InvocationTargetException if the underlying method throws an
+     * exception.
+     * @throws NullPointerException if the specified object is null and the
+     * method is an instance method.
+     * @throws ExceptionInInitializerError if the initialization provoked by
+     * this method fails.
+     */
+    public Object invokeWithPivilege(Object obj, Object... args)
+            throws IllegalAccessException, InvocationTargetException {
+        boolean isCallerSensitive = isCallerSensitive();
+        if (override) {
+            throw new IllegalAccessError("Cannot invoke override method with privilege");
+        }
+        if (reflectPrivilege == null) {
+            throw new IllegalAccessError("Cannot invoke this method without privilege");
+        }
+        Class<?> caller = null;
+        if (isCallerSensitive) {
+            caller = Reflection.getCallerClass();
+        }
+        // to use the one with the object instead of the root (?)
+        MethodAccessor ma = methodAccessor;
+        if (ma == null) {
+            methodAccessor = ma = reflectionFactory.newMethodAccessor(
+                this,
+                reflectPrivilege.lookup().unreflect(this),
+                isCallerSensitive()
+            );
+        }
+        return isCallerSensitive ? ma.invoke(obj, args, caller) : ma.invoke(obj, args);
     }
 
     /**
