@@ -4071,7 +4071,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     Node* outer_sfpt = head->outer_safepoint();
     Node* in = outer_sfpt->in(0);
     Node* outer_out = head->outer_loop_exit();
-    lazy_replace(outer_out, in);
+    replace_node_and_forward_ctrl(outer_out, in);
     _igvn.replace_input_of(outer_sfpt, 0, C->top());
   }
 
@@ -4080,7 +4080,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // state of the loop.  It's safe in this case to replace it with the
   // result_mem.
   _igvn.replace_node(store->in(MemNode::Memory), result_mem);
-  lazy_replace(exit, result_ctrl);
+  replace_node_and_forward_ctrl(exit, result_ctrl);
   _igvn.replace_node(store, result_mem);
   // Any uses the increment outside of the loop become the loop limit.
   _igvn.replace_node(head->incr(), head->limit());
