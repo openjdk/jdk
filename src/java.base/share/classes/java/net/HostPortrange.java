@@ -60,6 +60,15 @@ class HostPortrange {
     }
 
     HostPortrange(String scheme, String host) {
+        // Defensive validation first
+        if (host == null || host.isEmpty()) {
+            throw new IllegalArgumentException("empty authority");
+        }
+
+        // A leading ':' means missing host, which is invalid for URLPermission authorities
+        if (host.charAt(0) == ':') {
+            throw new IllegalArgumentException("missing host in authority: " + host);
+        }
         // Parse the host name.  A name has up to three components, the
         // hostname, a port number, or two numbers representing a port
         // range.   "www.example.com:8080-9090" is a valid host name.
