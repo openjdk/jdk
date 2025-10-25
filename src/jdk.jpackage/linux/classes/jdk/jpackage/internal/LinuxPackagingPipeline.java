@@ -25,17 +25,20 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.ApplicationImageUtils.createLauncherIconResource;
-import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
+import jdk.jpackage.internal.PackagingPipeline.AppImageBuildEnv;
 import jdk.jpackage.internal.PackagingPipeline.BuildApplicationTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.Launcher;
+import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.resources.ResourceLocator;
 
 final class LinuxPackagingPipeline {
@@ -45,14 +48,20 @@ final class LinuxPackagingPipeline {
         LAUNCHER_ICONS
     }
 
-    static PackagingPipeline.Builder build() {
-        return PackagingPipeline.buildStandard()
+    static PackagingPipeline.Builder build(Optional<LinuxPackage> pkg) {
+        var builder = PackagingPipeline.buildStandard()
                 .task(LinuxAppImageTaskID.LAUNCHER_LIB)
                         .addDependent(PrimaryTaskID.BUILD_APPLICATION_IMAGE)
                         .applicationAction(LinuxPackagingPipeline::writeLauncherLib).add()
                 .task(LinuxAppImageTaskID.LAUNCHER_ICONS)
                         .addDependent(BuildApplicationTaskID.CONTENT)
                         .applicationAction(LinuxPackagingPipeline::writeLauncherIcons).add();
+
+        pkg.ifPresent(_ -> {
+            builder.task(LinuxAppImageTaskID.LAUNCHER_ICONS).noaction().add();
+        });
+
+        return builder;
     }
 
     private static void writeLauncherLib(
@@ -68,8 +77,8 @@ final class LinuxPackagingPipeline {
     private static void writeLauncherIcons(
             AppImageBuildEnv<Application, ApplicationLayout> env) throws IOException {
 
-        for (var launcher : env.app().launchers()) {
-            createLauncherIconResource(env.app(), launcher, env.env()::createResource).ifPresent(iconResource -> {
+        env.app().launchers().stream().filter(Launcher::hasCustomIcon).forEach(launcher -> {
+            createLauncherIconResource(launcher, env.env()::createResource).ifPresent(iconResource -> {
                 String iconFileName = launcher.executableName() + ".png";
                 Path iconTarget = env.resolvedLayout().desktopIntegrationDirectory().resolve(iconFileName);
                 try {
@@ -78,7 +87,7 @@ final class LinuxPackagingPipeline {
                     throw new UncheckedIOException(ex);
                 }
             });
-        }
+        });
     }
 
     static final LinuxApplicationLayout APPLICATION_LAYOUT = LinuxApplicationLayout.create(

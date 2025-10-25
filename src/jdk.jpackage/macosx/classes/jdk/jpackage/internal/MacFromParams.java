@@ -92,7 +92,9 @@ final class MacFromParams {
         final var superAppBuilder = createApplicationBuilder(params, toFunction(launcherParams -> {
             var launcher = launcherFromParams.create(launcherParams);
             return MacLauncher.create(launcher);
-        }), APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout.map(RuntimeLayout::unresolve));
+        }), (MacLauncher _, Launcher launcher) -> {
+            return MacLauncher.create(launcher);
+        }, APPLICATION_LAYOUT, RUNTIME_BUNDLE_LAYOUT, predefinedRuntimeLayout.map(RuntimeLayout::unresolve));
 
         if (hasPredefinedAppImage(params)) {
             // Set the main launcher start up info.

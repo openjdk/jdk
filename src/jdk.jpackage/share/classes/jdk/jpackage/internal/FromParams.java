@@ -47,6 +47,7 @@ import static jdk.jpackage.internal.StandardBundlerParam.NAME;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_APP_IMAGE_FILE;
 import static jdk.jpackage.internal.StandardBundlerParam.PREDEFINED_RUNTIME_IMAGE;
+import static jdk.jpackage.internal.StandardBundlerParam.RESOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.SOURCE_DIR;
 import static jdk.jpackage.internal.StandardBundlerParam.VENDOR;
 import static jdk.jpackage.internal.StandardBundlerParam.VERSION;
@@ -60,6 +61,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
@@ -76,14 +78,16 @@ import jdk.jpackage.internal.util.function.ThrowingFunction;
 
 final class FromParams {
 
-    static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
+    static <T extends Launcher> ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
+            BiFunction<T, Launcher, T> launcherOverrideCtor,
             ApplicationLayout appLayout) throws ConfigException, IOException {
-        return createApplicationBuilder(params, launcherMapper, appLayout, RuntimeLayout.DEFAULT, Optional.of(RuntimeLayout.DEFAULT));
+        return createApplicationBuilder(params, launcherMapper, launcherOverrideCtor, appLayout, RuntimeLayout.DEFAULT, Optional.of(RuntimeLayout.DEFAULT));
     }
 
-    static ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
+    static <T extends Launcher> ApplicationBuilder createApplicationBuilder(Map<String, ? super Object> params,
             Function<Map<String, ? super Object>, Launcher> launcherMapper,
+            BiFunction<T, Launcher, T> launcherOverrideCtor,
             ApplicationLayout appLayout, RuntimeLayout runtimeLayout,
             Optional<RuntimeLayout> predefinedRuntimeLayout) throws ConfigException, IOException {
 
@@ -133,7 +137,9 @@ final class FromParams {
                     jlinkOptionsBuilder.apply();
                 });
 
-                appBuilder.launchers(launchers).runtimeBuilder(runtimeBuilderBuilder.create());
+                final var normalizedLaunchers = ApplicationBuilder.normalizeIcons(launchers, RESOURCE_DIR.findIn(params), launcherOverrideCtor);
+
+                appBuilder.launchers(normalizedLaunchers).runtimeBuilder(runtimeBuilderBuilder.create());
             }
         }
 
