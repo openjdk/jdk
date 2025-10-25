@@ -387,6 +387,28 @@ source %{
     return false;
   }
 
+  // Return true if the input/output mask of the operation must be a packed
+  // boolean vector represented as bytes with 0x00/0x01 as element values.
+  //
+  // By default, all the mask query operations without predicate support
+  // requires the mask to be saved in a boolean vector.
+  bool Matcher::mask_op_uses_packed_vector(int opcode, const TypeVect* vt) {
+    switch (opcode) {
+      case Op_VectorMaskFirstTrue:
+      case Op_VectorMaskLastTrue:
+      case Op_VectorMaskTrueCount:
+        // These ops are implemented with predicate instructions if input
+        // mask is a predciate.
+        return vt->isa_vectmask() == nullptr;
+      case Op_VectorMaskToLong:
+      case Op_VectorLongToMask:
+        // These two ops are implemented with vector instructions on all
+        // architectures. SVE does not have native predicate instructions.
+        return true;
+    }
+    return false;
+  }
+
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n) {
     assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
@@ -6243,31 +6265,44 @@ instruct vmask_tolong_neon(iRegLNoSp dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vmask_tolong_sve(iRegLNoSp dst, pReg src, vReg tmp1, vReg tmp2) %{
-  predicate(UseSVE > 0);
+instruct vmask_tolong_sve(iRegLNoSp dst, vReg src, vReg tmp) %{
+  predicate(UseSVE > 0 && !VM_Version::supports_svebitperm());
+  match(Set dst (VectorMaskToLong src));
+  effect(TEMP tmp);
+  format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    __ sve_vmask_tolong($dst$$Register, $src$$FloatRegister,
+                        $tmp$$FloatRegister, Matcher::vector_length(this, $src));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vmask_tolong_sve2(iRegLNoSp dst, vReg src, vReg tmp1, vReg tmp2) %{
+  predicate(VM_Version::supports_svebitperm());
   match(Set dst (VectorMaskToLong src));
   effect(TEMP tmp1, TEMP tmp2);
-  format %{ "vmask_tolong_sve $dst, $src\t# KILL $tmp1, $tmp2" %}
+  format %{ "vmask_tolong_sve2 $dst, $src\t# KILL $tmp1, $tmp2" %}
   ins_encode %{
-    __ sve_vmask_tolong($dst$$Register, $src$$PRegister,
-                        Matcher::vector_element_basic_type(this, $src),
-                        Matcher::vector_length(this, $src),
-                        $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    __ sve2_vmask_tolong($dst$$Register, $src$$FloatRegister,
+                         $tmp1$$FloatRegister, $tmp2$$FloatRegister,
+                         Matcher::vector_length(this, $src));
   %}
   ins_pipe(pipe_slow);
 %}
 
 // fromlong
 
-instruct vmask_fromlong(pReg dst, iRegL src, vReg tmp1, vReg tmp2) %{
+instruct vmask_fromlong(vReg dst, iRegL src, vReg tmp) %{
   match(Set dst (VectorLongToMask src));
-  effect(TEMP tmp1, TEMP tmp2);
-  format %{ "vmask_fromlong $dst, $src\t# vector (sve2). KILL $tmp1, $tmp2" %}
+  effect(TEMP_DEF dst, TEMP tmp);
+  format %{ "vmask_fromlong $dst, $src\t# vector (sve2). KILL $tmp" %}
   ins_encode %{
-    __ sve_vmask_fromlong($dst$$PRegister, $src$$Register,
-                          Matcher::vector_element_basic_type(this),
-                          Matcher::vector_length(this),
-                          $tmp1$$FloatRegister, $tmp2$$FloatRegister);
+    __ sve_vmask_fromlong($dst$$FloatRegister, $src$$Register,
+                          $tmp$$FloatRegister, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

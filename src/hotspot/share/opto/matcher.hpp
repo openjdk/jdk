@@ -333,6 +333,10 @@ public:
 
   static bool vector_rearrange_requires_load_shuffle(BasicType elem_bt, int vlen);
 
+  // Return true if the input/output mask of the operation must be a packed
+  // boolean vector represented as bytes with 0x00/0x01 as element values.
+  static bool mask_op_uses_packed_vector(int opcode, const TypeVect* vt);
+
   static const RegMask* predicate_reg_mask(void);
 
   // Vector width in bytes
