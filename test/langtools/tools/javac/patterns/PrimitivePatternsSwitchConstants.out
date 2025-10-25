@@ -1,0 +1,11 @@
+PrimitivePatternsSwitchConstants.java:43:18: compiler.err.prob.found.req: (compiler.misc.inconvertible.types: int, java.lang.Long)
+PrimitivePatternsSwitchConstants.java:9:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchConstants.java:13:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchConstants.java:17:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchConstants.java:21:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchConstants.java:25:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchConstants.java:29:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchConstants.java:42:9: compiler.err.not.exhaustive.statement
+- compiler.note.preview.filename: PrimitivePatternsSwitchConstants.java, DEFAULT
+- compiler.note.preview.recompile
+8 errors
