@@ -42,7 +42,6 @@ import java.awt.Component;
 import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.KeyboardFocusManager;
-import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 
@@ -51,24 +50,10 @@ public class TestButtonGroupFocusTraversal {
     private static JTextField textFieldFirst, textFieldLast;
     private static JToggleButton toggleButton1, toggleButton2;
     private static JCheckBox checkBox1, checkBox2;
-    private static boolean toggleButtonActionPerformed;
-    private static boolean checkboxActionPerformed;
+    private static volatile boolean toggleButtonActionPerformed;
+    private static volatile boolean checkboxActionPerformed;
     private static JRadioButton radioButton1, radioButton2;
     private static Robot robot;
-
-    private static void blockTillDisplayed(Component comp) {
-        Point p = null;
-        while (p == null) {
-            try {
-                p = comp.getLocationOnScreen();
-            } catch (IllegalStateException e) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException ie) {
-                }
-            }
-        }
-    }
 
     private static void createUI() throws Exception {
         SwingUtilities.invokeAndWait(new Runnable() {
@@ -172,19 +157,13 @@ public class TestButtonGroupFocusTraversal {
                 createUI();
 
                 robot.waitForIdle();
-                robot.delay(200);
-
-                blockTillDisplayed(frame);
+                robot.delay(500);
 
                 SwingUtilities.invokeAndWait(textFieldFirst::requestFocus);
 
                 if (!textFieldFirst.equals(KeyboardFocusManager.getCurrentKeyboardFocusManager()
                         .getFocusOwner())) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    robot.delay(100);
                     SwingUtilities.invokeAndWait(textFieldFirst::requestFocus);
                 }
 
