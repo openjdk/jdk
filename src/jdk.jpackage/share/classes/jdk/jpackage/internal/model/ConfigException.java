@@ -46,7 +46,7 @@ import jdk.jpackage.internal.util.StringBundle;
  *         .create();
  * }
  */
-public class ConfigException extends Exception {
+public class ConfigException extends RuntimeException {
     private static final long serialVersionUID = 1L;
     private final String advice;
 
@@ -58,6 +58,10 @@ public class ConfigException extends Exception {
     public ConfigException(String msg, String advice, Throwable cause) {
         super(msg, cause);
         this.advice = advice;
+    }
+
+    public ConfigException(String msg, Throwable cause) {
+        this(msg, null, cause);
     }
 
     public ConfigException(Throwable cause) {
