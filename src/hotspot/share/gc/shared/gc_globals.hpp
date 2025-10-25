@@ -268,8 +268,9 @@
   product(bool, AlwaysActAsServerClassMachine, false,                       \
           "Always act like a server-class machine")                         \
                                                                             \
-  product_pd(uint64_t, MaxRAM,                                              \
-          "Real memory size (in bytes) used to set maximum heap size")      \
+  product(uint64_t, MaxRAM, 0,                                              \
+          "(Deprecated) Real memory size (in bytes) used to set maximum "   \
+          "heap size")                                                     \
           range(0, 0XFFFFFFFFFFFFFFFF)                                      \
                                                                             \
   product(bool, AggressiveHeap, false,                                      \
