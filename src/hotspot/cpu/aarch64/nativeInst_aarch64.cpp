@@ -133,7 +133,6 @@ void NativeMovConstReg::verify() {
 
 
 intptr_t NativeMovConstReg::data() const {
-  // das(uint64_t(instruction_address()),2);
   address addr = MacroAssembler::target_addr_for_insn(instruction_address());
   if (maybe_cpool_ref(instruction_address())) {
     return *(intptr_t*)addr;
@@ -144,6 +143,7 @@ intptr_t NativeMovConstReg::data() const {
 
 void NativeMovConstReg::set_data(intptr_t x) {
   if (maybe_cpool_ref(instruction_address())) {
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     address addr = MacroAssembler::target_addr_for_insn(instruction_address());
     *(intptr_t*)addr = x;
   } else {
@@ -349,8 +349,6 @@ bool NativeInstruction::is_stop() {
 }
 
 //-------------------------------------------------------------------
-
-void NativeGeneralJump::verify() {  }
 
 // MT-safe patching of a long jump instruction.
 void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer) {
