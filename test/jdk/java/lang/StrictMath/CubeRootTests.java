@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -471,6 +471,7 @@ public class CubeRootTests {
             {0x0.0000ffffffap-1022,     0x1.ffffffcp-347},
             {0x0.0000ffffffff8p-1022,   0x1.ffffffffaaaabp-347},
             {0x0.0fffffffffffbp-1022,   0x1.fffffffffffcbp-343},
+            {-0x1.0edb6c7fa500fp-531,   -0x1.04dc0b189b6cep-177}, // next down from Julia value
 
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
