@@ -23,8 +23,6 @@
  *
  */
 
-#ifdef _LP64
-
 #include "memory/metaspace.hpp"
 #include "oops/compressedKlass.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -54,5 +52,3 @@ char* CompressedKlassPointers::reserve_address_space_for_compressed_classes(size
 
   return result;
 }
-
-#endif // _LP64

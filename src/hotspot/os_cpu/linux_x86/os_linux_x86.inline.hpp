@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,11 @@
 
 // See http://www.technovelty.org/code/c/reading-rdtsc.htl for details
 inline jlong os::rdtsc() {
-#ifndef AMD64
-  // 64 bit result in edx:eax
-  uint64_t res;
-  __asm__ __volatile__ ("rdtsc" : "=A" (res));
-  return (jlong)res;
-#else
   uint64_t res;
   uint32_t ts1, ts2;
   __asm__ __volatile__ ("rdtsc" : "=a" (ts1), "=d" (ts2));
   res = ((uint64_t)ts1 | (uint64_t)ts2 << 32);
   return (jlong)res;
-#endif // AMD64
 }
 
 #endif // OS_CPU_LINUX_X86_OS_LINUX_X86_INLINE_HPP

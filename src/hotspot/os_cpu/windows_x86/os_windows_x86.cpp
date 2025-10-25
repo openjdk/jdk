@@ -160,7 +160,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   return true;
 }
 
-#if defined(_M_AMD64)
+#if defined(_WINDOWS)
 //-----------------------------------------------------------------------------
 bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   // handle exception caused by native method modifying control word
