@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @bug 8226374 8242929
- * @library /javax/net/ssl/templates
+ * @bug 8226374 8242929 8366364
+ * @library /test/lib
+ *          /javax/net/ssl/templates
  * @summary Restrict signature algorithms and named groups
  * @run main/othervm RestrictNamedGroup x25519
  * @run main/othervm RestrictNamedGroup X448
@@ -38,11 +39,13 @@
  * @run main/othervm RestrictNamedGroup ffdhe8192
  */
 
+import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Utils.runAndCheckException;
+
 import java.security.Security;
 import java.util.Arrays;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLException;
 
 public class RestrictNamedGroup extends SSLSocketTemplate {
 
@@ -88,19 +91,14 @@ public class RestrictNamedGroup extends SSLSocketTemplate {
      * Run the test case.
      */
     public static void main(String[] args) throws Exception {
-        // Named group is set as per run argument with no change in it's alphabet
+        // Named group is set as per run argument with no change in its alphabet
         Security.setProperty("jdk.tls.disabledAlgorithms", args[0]);
         System.setProperty("jdk.tls.namedGroups", args[0]);
 
         for (index = 0; index < protocols.length; index++) {
-            try {
-                (new RestrictNamedGroup()).run();
-            } catch (SSLException | IllegalStateException ssle) {
-                // The named group should be restricted.
-                continue;
-            }
-
-            throw new Exception("The test case should be disabled");
+            runAndCheckException(() -> new RestrictNamedGroup().run(),
+                    ex -> assertTrue(ex instanceof NoClassDefFoundError
+                            || ex instanceof ExceptionInInitializerError));
         }
     }
 }
