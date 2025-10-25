@@ -168,6 +168,9 @@ final class VirtualThread extends BaseVirtualThread {
     // notified by Object.notify/notifyAll while waiting in Object.wait
     private volatile boolean notified;
 
+    // true when waiting in Object.wait, false for VM internal uninterruptible Object.wait
+    private volatile boolean interruptibleWait;
+
     // timed-wait support
     private byte timedWaitSeqNo;
 
@@ -599,6 +602,7 @@ final class VirtualThread extends BaseVirtualThread {
         // Object.wait
         if (s == WAITING || s == TIMED_WAITING) {
             int newState;
+            boolean interruptible = interruptibleWait;
             if (s == WAITING) {
                 setState(newState = WAIT);
             } else {
@@ -628,7 +632,7 @@ final class VirtualThread extends BaseVirtualThread {
             }
 
             // may have been interrupted while in transition to wait state
-            if (interrupted && compareAndSetState(newState, UNBLOCKED)) {
+            if (interruptible && interrupted && compareAndSetState(newState, UNBLOCKED)) {
                 submitRunContinuation();
                 return;
             }

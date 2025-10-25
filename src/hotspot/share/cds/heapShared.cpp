@@ -1809,7 +1809,8 @@ void HeapShared::check_special_subgraph_classes() {
           name != vmSymbols::java_lang_ArrayStoreException() &&
           name != vmSymbols::java_lang_ClassCastException() &&
           name != vmSymbols::java_lang_InternalError() &&
-          name != vmSymbols::java_lang_NullPointerException()) {
+          name != vmSymbols::java_lang_NullPointerException() &&
+          name != vmSymbols::jdk_internal_vm_PreemptedException()) {
         ResourceMark rm;
         fatal("special subgraph cannot have objects of type %s", subgraph_k->external_name());
       }

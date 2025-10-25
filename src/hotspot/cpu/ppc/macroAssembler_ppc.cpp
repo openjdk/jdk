@@ -757,10 +757,11 @@ void MacroAssembler::clobber_nonvolatile_registers() {
       R31
   };
   Register bad = regs[0];
-  load_const_optimized(bad, 0xbad0101babe11111);
+  load_const_optimized(bad, 0xbad0101babe00000);
   for (uint32_t i = 1; i < (sizeof(regs) / sizeof(Register)); i++) {
-    mr(regs[i], bad);
+    addi(regs[i], regs[0], regs[i]->encoding());
   }
+  addi(regs[0], regs[0], regs[0]->encoding());
   BLOCK_COMMENT("} clobber nonvolatile registers");
 }
 #endif // ASSERT
@@ -4341,21 +4342,36 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen,
   bind(L_done);
 }   // multiply_to_len
 
-void MacroAssembler::asm_assert(bool check_equal, const char *msg) {
 #ifdef ASSERT
+void MacroAssembler::asm_assert(AsmAssertCond cond, const char *msg) {
   Label ok;
-  if (check_equal) {
+  switch (cond) {
+  case eq:
     beq(CR0, ok);
-  } else {
+    break;
+  case ne:
     bne(CR0, ok);
+    break;
+  case ge:
+    bge(CR0, ok);
+    break;
+  case gt:
+    bgt(CR0, ok);
+    break;
+  case lt:
+    blt(CR0, ok);
+    break;
+  case le:
+    ble(CR0, ok);
+    break;
+  default:
+    assert(false, "unknown cond:%d", cond);
   }
   stop(msg);
   bind(ok);
-#endif
 }
 
-#ifdef ASSERT
-void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_offset,
+void MacroAssembler::asm_assert_mems_zero(AsmAssertCond cond, int size, int mem_offset,
                                           Register mem_base, const char* msg) {
   switch (size) {
     case 4:
@@ -4369,7 +4385,7 @@ void MacroAssembler::asm_assert_mems_zero(bool check_equal, int size, int mem_of
     default:
       ShouldNotReachHere();
   }
-  asm_assert(check_equal, msg);
+  asm_assert(cond, msg);
 }
 #endif // ASSERT
 

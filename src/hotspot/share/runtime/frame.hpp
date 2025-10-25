@@ -456,7 +456,8 @@ class frame {
 
   // Oops-do's
   void oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) const;
-  void oops_interpreted_do(OopClosure* f, const RegisterMap* map, bool query_oop_map_cache = true) const;
+  template <typename RegisterMapT>
+  void oops_interpreted_do(OopClosure* f, const RegisterMapT* map, bool query_oop_map_cache = true) const;
 
  private:
   void oops_interpreted_arguments_do(Symbol* signature, bool has_receiver, OopClosure* f) const;

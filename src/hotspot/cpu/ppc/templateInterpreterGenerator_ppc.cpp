@@ -702,6 +702,11 @@ address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter()
 
   __ load_const_optimized(R25_templateTableBase, (address)Interpreter::dispatch_table((TosState)0), R12_scratch2);
   __ restore_interpreter_state(R11_scratch1, false, true /*restore_top_frame_sp*/);
+  // Restore registers that are preserved across vthread preemption
+  assert(__ nonvolatile_accross_vthread_preemtion(R31) && __ nonvolatile_accross_vthread_preemtion(R24), "");
+  __ ld(R3_ARG1, _abi0(callers_sp), R1_SP); // load FP
+  __ ld(R31, _ijava_state_neg(lresult), R3_ARG1);
+  __ ld(R24, _ijava_state_neg(fresult), R3_ARG1);
   __ blr();
 
   return start;
@@ -1249,7 +1254,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   const Register pending_exception    = R0;
   const Register result_handler_addr  = R31;
   const Register native_method_fd     = R12_scratch2; // preferred in MacroAssembler::branch_to
-  const Register access_flags         = R22_tmp2;
+  const Register access_flags         = R24_tmp4;
   const Register active_handles       = R11_scratch1; // R26_monitor saved to state.
   const Register sync_state           = R12_scratch2;
   const Register sync_state_addr      = sync_state;   // Address is dead after use.
