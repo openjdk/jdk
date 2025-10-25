@@ -289,7 +289,7 @@ VM_ChangeSingleStep::VM_ChangeSingleStep(bool on)
 
 class JvmtiEventControllerPrivate : public AllStatic {
   static bool _initialized;
-  static bool _execution_finished;
+
 public:
   static void set_should_post_single_step(bool on);
   static void enter_interp_only_mode(JvmtiThreadState *state);
@@ -336,7 +336,6 @@ public:
 };
 
 bool JvmtiEventControllerPrivate::_initialized = false;
-bool JvmtiEventControllerPrivate::_execution_finished = false;
 
 void JvmtiEventControllerPrivate::set_should_post_single_step(bool on) {
   // we have permission to do this, VM op doesn't
@@ -498,7 +497,7 @@ JvmtiEventControllerPrivate::recompute_env_enabled(JvmtiEnvBase* env) {
     break;
   }
 
-  if (_execution_finished) {
+  if (JvmtiEventController::is_execution_finished()) {
     now_enabled &= VM_DEATH_BIT;
   }
 
@@ -544,7 +543,7 @@ JvmtiEventControllerPrivate::recompute_env_thread_enabled(JvmtiEnvThreadState* e
     break;
   }
 
-  if (_execution_finished) {
+  if (JvmtiEventController::is_execution_finished()) {
     now_enabled &= VM_DEATH_BIT;
   }
 
@@ -1058,7 +1057,6 @@ JvmtiEventControllerPrivate::vm_init() {
 
 void
 JvmtiEventControllerPrivate::vm_death() {
-  _execution_finished = true;
   JvmtiEventControllerPrivate::recompute_enabled();
 }
 
@@ -1069,6 +1067,9 @@ JvmtiEventControllerPrivate::vm_death() {
 //
 
 JvmtiEventEnabled JvmtiEventController::_universal_global_event_enabled;
+
+volatile bool JvmtiEventController::_execution_finished = false;
+volatile int  JvmtiEventController::_in_callback_count = 0;
 
 bool
 JvmtiEventController::is_global_event(jvmtiEvent event_type) {
@@ -1218,6 +1219,7 @@ JvmtiEventController::vm_init() {
 
 void
 JvmtiEventController::vm_death() {
+  AtomicAccess::store(&_execution_finished, true);
   if (JvmtiEnvBase::environments_might_exist()) {
     MutexLocker mu(JvmtiThreadState_lock);
     JvmtiEventControllerPrivate::vm_death();
@@ -1229,10 +1231,15 @@ JvmtiEventController::vm_death() {
 
   const double start = os::elapsedTime();
   const double max_wait_time = 60;
-  while (JvmtiExport::in_callback_count() > 0) {
+  while (in_callback_count() > 0) {
     os::naked_short_sleep(100);
     if (os::elapsedTime() - start > max_wait_time) {
       break;
     }
   }
 }
+
+bool JvmtiEventController::is_execution_finished() {
+  return AtomicAccess::load(&_execution_finished);
+}
+

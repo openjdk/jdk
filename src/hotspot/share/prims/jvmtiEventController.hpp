@@ -197,6 +197,10 @@ private:
   // for all environments, global array indexed by jvmtiEvent
   static JvmtiEventEnabled _universal_global_event_enabled;
 
+  // This field is used to wait until all event callbacks are finished.
+  volatile static int   _in_callback_count;
+  static volatile bool _execution_finished;
+
 public:
   static bool is_enabled(jvmtiEvent event_type);
 
@@ -245,6 +249,20 @@ public:
   static void vm_start();
   static void vm_init();
   static void vm_death();
+  static bool is_execution_finished();
+
+  static void inc_in_callback_count() {
+    AtomicAccess::inc(&_in_callback_count);
+  }
+  static void dec_in_callback_count() {
+    AtomicAccess::dec(&_in_callback_count);
+  }
+
+  static int in_callback_count() {
+   int result = AtomicAccess::load(&_in_callback_count);
+   assert(result >= 0, "Should be positive");
+   return result;
+  }
 };
 
 #endif // SHARE_PRIMS_JVMTIEVENTCONTROLLER_HPP
