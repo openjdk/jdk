@@ -25,12 +25,14 @@ package org.openjdk.bench.java.lang.stable;
 
 import org.openjdk.jmh.annotations.*;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.lang.LazyConstant;
 import java.util.function.Supplier;
 
 /**
- * Benchmark measuring StableValue performance
+ * Benchmark measuring lazy constant performance
  */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
@@ -47,10 +49,10 @@ public class StableValueBenchmark {
     private static final int VALUE = 42;
     private static final int VALUE2 = 23;
 
-    private static final StableValue<Integer> STABLE = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> STABLE2 = init(StableValue.of(), VALUE2);
-    private static final StableValue<Integer> DCL = init(StableValue.of(), VALUE);
-    private static final StableValue<Integer> DCL2 = init(StableValue.of(), VALUE2);
+    private static final LazyConstant<Integer> STABLE = init(VALUE);
+    private static final LazyConstant<Integer> STABLE2 = init(VALUE2);
+    private static final Supplier<Integer> DCL = new Dcl<>(() -> VALUE);
+    private static final Supplier<Integer> DCL2 = new Dcl<>(() -> VALUE2);
     private static final AtomicReference<Integer> ATOMIC = new AtomicReference<>(VALUE);
     private static final AtomicReference<Integer> ATOMIC2 = new AtomicReference<>(VALUE2);
     private static final Holder HOLDER = new Holder(VALUE);
@@ -58,23 +60,19 @@ public class StableValueBenchmark {
     private static final RecordHolder RECORD_HOLDER = new RecordHolder(VALUE);
     private static final RecordHolder RECORD_HOLDER2 = new RecordHolder(VALUE2);
 
-    private final StableValue<Integer> stable = init(StableValue.of(), VALUE);
-    private final StableValue<Integer> stable2 = init(StableValue.of(), VALUE2);
-    private final StableValue<Integer> stableNull = StableValue.of();
-    private final StableValue<Integer> stableNull2 = StableValue.of();
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_42 = LazyConstant.of(() -> Optional.of(42));
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_42_2 = LazyConstant.of(() -> Optional.of(42));
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_EMPTY = LazyConstant.of(Optional::empty);
+    private static final LazyConstant<Optional<Integer>> OPTIONAL_EMPTY2 = LazyConstant.of(Optional::empty);
+
+    private final LazyConstant<Integer> stable = init(VALUE);
+    private final LazyConstant<Integer> stable2 = init(VALUE2);
     private final Supplier<Integer> dcl = new Dcl<>(() -> VALUE);
     private final Supplier<Integer> dcl2 = new Dcl<>(() -> VALUE2);
     private final AtomicReference<Integer> atomic = new AtomicReference<>(VALUE);
     private final AtomicReference<Integer> atomic2 = new AtomicReference<>(VALUE2);
     private final Supplier<Integer> supplier = () -> VALUE;
     private final Supplier<Integer> supplier2 = () -> VALUE2;
-
-
-    @Setup
-    public void setup() {
-        stableNull.trySet(null);
-        stableNull2.trySet(null);
-    }
 
     @Benchmark
     public int atomic() {
@@ -88,12 +86,7 @@ public class StableValueBenchmark {
 
     @Benchmark
     public int stable() {
-        return stable.orElseThrow() + stable2.orElseThrow();
-    }
-
-    @Benchmark
-    public int stableNull() {
-        return (stableNull.orElseThrow() == null ? VALUE : VALUE2) + (stableNull2.orElseThrow() == null ? VALUE : VALUE2);
+        return stable.get() + stable2.get();
     }
 
     // Reference case
@@ -109,12 +102,22 @@ public class StableValueBenchmark {
 
     @Benchmark
     public int staticDcl() {
-        return DCL.orElseThrow() + DCL2.orElseThrow();
+        return DCL.get() + DCL2.get();
     }
 
     @Benchmark
     public int staticHolder() {
         return HOLDER.get() + HOLDER2.get();
+    }
+
+    @Benchmark
+    public int staticOptional42() {
+        return OPTIONAL_42.get().orElseThrow() + OPTIONAL_42_2.get().orElseThrow();
+    }
+
+    @Benchmark
+    public boolean staticOptionalEmpty() {
+        return OPTIONAL_EMPTY.get().isEmpty() ^ OPTIONAL_EMPTY2.get().isEmpty();
     }
 
     @Benchmark
@@ -124,42 +127,39 @@ public class StableValueBenchmark {
 
     @Benchmark
     public int staticStable() {
-        return STABLE.orElseThrow() + STABLE2.orElseThrow();
+        return STABLE.get() + STABLE2.get();
     }
 
 
-    private static StableValue<Integer> init(StableValue<Integer> m, Integer value) {
-        m.trySet(value);
-        return m;
+    private static LazyConstant<Integer> init(Integer value) {
+        return LazyConstant.of(() -> value);
     }
 
     private static final class Holder {
 
-        private final StableValue<Integer> delegate = StableValue.of();
+        private final LazyConstant<Integer> delegate;
 
         Holder(int value) {
-            delegate.setOrThrow(value);
+            delegate = LazyConstant.of(() -> value);
         }
 
         int get() {
-            return delegate.orElseThrow();
+            return delegate.get();
         }
 
     }
 
-    private record RecordHolder(StableValue<Integer> delegate) {
+    private record RecordHolder(LazyConstant<Integer> delegate) {
 
         RecordHolder(int value) {
-            this(StableValue.of());
-            delegate.setOrThrow(value);
+            this(LazyConstant.of(() -> value));
         }
 
         int get() {
-            return delegate.orElseThrow();
+            return delegate.get();
         }
 
     }
-
 
     // Handles null values
     public static class Dcl<V> implements Supplier<V> {
@@ -167,7 +167,6 @@ public class StableValueBenchmark {
         private final Supplier<V> supplier;
 
         private volatile V value;
-        private boolean bound;
 
         public Dcl(Supplier<V> supplier) {
             this.supplier = supplier;
@@ -177,15 +176,10 @@ public class StableValueBenchmark {
         public V get() {
             V v = value;
             if (v == null) {
-                if (!bound) {
-                    synchronized (this) {
-                        v = value;
-                        if (v == null) {
-                            if (!bound) {
-                                value = v = supplier.get();
-                                bound = true;
-                            }
-                        }
+                synchronized (this) {
+                    v = value;
+                    if (v == null) {
+                        value = v = supplier.get();
                     }
                 }
             }
