@@ -2292,8 +2292,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigDecimal working = new BigDecimal(x.intVal, x.intCompact, checkScaleNonZero(x.scale - normScale), x.precision);
         BigInteger workingInt = working.toBigInteger();
 
+        BigInteger root;
         if (n > 0) {
-            BigInteger root;
             long resultScale = normScale / nAbs;
             // Round the root with the specified settings
             if (halfWay) { // half-way rounding
@@ -2345,11 +2345,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (invPrec != invPrecL)
                 throw new ArithmeticException("Overflow");
 
-            MathContext roundMc = new MathContext(invPrec, RoundingMode.DOWN);
-            BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
-            BigDecimal[] invRem = ONE.divideAndRemainder(working, roundMc);
-            result = ONE.divide(new BigDecimal(rootRem[0], checkScaleNonZero(normScale / nAbs)), roundMc);
-            // 1/rootRem[0] >= 1/working, so result >= invRem[0]
+            root = workingInt.nthRoot(nAbs);
+            BigDecimal[] invRem = ONE.divideAndRemainder(working, new MathContext(invPrec, RoundingMode.DOWN));
+            result = ONE.divide(new BigDecimal(root, checkScaleNonZero(normScale / nAbs)),
+                    invRem[0].scale, RoundingMode.DOWN);
+            // 1/root >= 1/working, so result >= invRem[0]
 
             int cmp;
             BigDecimal ulp = result.ulp();
