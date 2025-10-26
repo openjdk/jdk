@@ -81,27 +81,24 @@ public class SATestUtils {
 
     /**
      * Checks whether the test runs on older glibc or not.
-     * On Linux, check glibc version before the test and return true if it is
-     * 2.39 or later. The test which needs to unwind native call stacks like
-     * "jhsdb jstack --mixed" should be skip the test when this checker method
-     * returns false.
+     * On Linux, check glibc version before the test and throws SkipException
+     * if its version is 2.38 or earlier.
      * The problem is not to unwind all of call stacks the process is running on
      * older glibc. It happens Debian 12, Ubuntu 22.04 (glibc 2.35) and
      * Ubuntu 23.04 (glibc 2.37) at least. It works on Ubuntu 24.04 (glibc 2.39).
      * The problem happenes both AMD64 and AArch64.
      *
-     * @return true if the test runs on modern glibc (2.39 or later).
      * @throws SkippedException if the test runs on older glibc (2.38 or earlier).
      */
     @SuppressWarnings("restricted")
-    public static boolean skipIfRunsOnOlderGLIBC() {
+    public static void skipIfRunsOnOlderGLIBC() {
         var linker = Linker.nativeLinker();
         var lookup = linker.defaultLookup();
         var sym = lookup.find("gnu_get_libc_version");
         if (sym.isEmpty()) {
             // Maybe the platform is not on glibc (Windows, Mac, musl on Alpine).
             // Go ahead.
-            return true;
+            return;
         }
 
         // Call gnu_get_libc_version()
@@ -131,7 +128,9 @@ public class SATestUtils {
         int major = Integer.parseInt(ver[0]);
         int minor = Integer.parseInt(ver[1]);
 
-        return major > 2 || (major == 2 && minor >= 39);
+        if (!(major > 2 || (major == 2 && minor >= 39))) {
+            throw new SkippedException("Older glibc version.");
+        }
     }
 
     /**
