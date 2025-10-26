@@ -29,41 +29,20 @@
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:+StressLoopPeeling
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test1
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test1
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -XX:PerMethodTrapLimit=0
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  *
- * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test2
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test2
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -XX:PerMethodTrapLimit=0
- *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo2
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo2
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  *
- * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test2
- *                   -XX:-TieredCompilation
- *                   -Xbatch
- *                   -XX:PerMethodTrapLimit=0
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:-LoopMultiversioning
- *                   -XX:-RangeCheckElimination
- *                   -XX:-SplitIfBlocks
- *                   -XX:-UseOnStackReplacement
- *                   -XX:LoopMaxUnroll=2
- *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo2
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
- *
- * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test3
- *                   -XX:-TieredCompilation
- *                   -Xbatch
- *                   -XX:PerMethodTrapLimit=0
- *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo3
- *                   -XX:-RangeCheckElimination
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
- *
- * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::test3
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test2
  *                   -XX:-TieredCompilation
  *                   -Xbatch
  *                   -XX:PerMethodTrapLimit=0
@@ -73,14 +52,35 @@
  *                   -XX:-SplitIfBlocks
  *                   -XX:-UseOnStackReplacement
  *                   -XX:LoopMaxUnroll=2
- *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling::foo3
- *                   compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo2
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  *
- * @run main compiler.loopopts.TooStrictAssertForUnrollAfterStressPeeling
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test3
+ *                   -XX:-TieredCompilation
+ *                   -Xbatch
+ *                   -XX:PerMethodTrapLimit=0
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo3
+ *                   -XX:-RangeCheckElimination
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
+ *
+ * @run main/othervm -XX:CompileOnly=compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::test3
+ *                   -XX:-TieredCompilation
+ *                   -Xbatch
+ *                   -XX:PerMethodTrapLimit=0
+ *                   -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:-LoopMultiversioning
+ *                   -XX:-RangeCheckElimination
+ *                   -XX:-SplitIfBlocks
+ *                   -XX:-UseOnStackReplacement
+ *                   -XX:LoopMaxUnroll=2
+ *                   -XX:CompileCommand=inline,compiler.loopopts.TooStrictAssertForUnrollAfterPeeling::foo3
+ *                   compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
+ *
+ * @run main compiler.loopopts.TooStrictAssertForUnrollAfterPeeling
  */
 package compiler.loopopts;
 
-public class TooStrictAssertForUnrollAfterStressPeeling {
+public class TooStrictAssertForUnrollAfterPeeling {
     static int iArr[] = new int[400];
     static boolean flag;
 
