@@ -2341,6 +2341,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             final long resPrec = mc.precision + (halfWay ? 1L : 0L);
             final int rootPrec1 = (int) rootDigits - 1;
             final int fracZeros = rootPrec1 - (root.equals(bigTenToThe(rootPrec1)) ? 1 : 0);
+            // Ensure result's precision is exactly resPrec
             result = ONE.divide(new BigDecimal(root, checkScaleNonZero(resultScale)),
                     checkScaleNonZero(fracZeros - resultScale + resPrec), RoundingMode.DOWN);
 
