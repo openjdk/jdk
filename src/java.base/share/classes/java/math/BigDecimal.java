@@ -2292,6 +2292,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         BigDecimal working = new BigDecimal(x.intVal, x.intCompact, checkScaleNonZero(x.scale - normScale), x.precision);
         BigInteger workingInt = working.toBigInteger();
 
+        // Compute and round the root
         BigInteger root;
         if (n > 0) {
             long resultScale = normScale / nAbs;
@@ -2335,10 +2336,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
 
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
-            // Adjust to requested precision and preferred
-            // scale as appropriate.
-            if (result.scale > preferredScale) // else can't increase result's precision to fit the preferred scale
-                result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
         } else { // Handle negative degrees
             final long resPrecL = mc.precision + (halfWay ? 1L : 0L);
             final int resPrec = (int) resPrecL;
@@ -2348,6 +2345,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             root = workingInt.nthRoot(nAbs);
             result = ONE.divide(new BigDecimal(root, checkScaleNonZero(normScale / nAbs)),
                     new MathContext(resPrec, RoundingMode.DOWN));
+
+            // Ensure result's precision is exactly resPrec
+            final int precDiff = resPrec - result.precision();
+            if (precDiff != 0)
+                result = result.setScale(checkScaleNonZero((long) result.scale + precDiff));
+
             BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) result.scale * nAbs), RoundingMode.DOWN);
             // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, and since result is rounded down,
             // either result^nAbs > inverse, or else all result's digits are correct
@@ -2396,11 +2399,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
                 }
             }
-
-            // Adjust to requested precision and preferred
-            // scale as appropriate.
-            result = result.adjustToPreferredScale(preferredScale, mc.precision);
         }
+        // Adjust to requested precision and preferred scale as appropriate.
+        if (result.scale > preferredScale) // else can't increase result's precision to fit the preferred scale
+            result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
+
         return signum > 0 ? result : result.negate();
     }
 
