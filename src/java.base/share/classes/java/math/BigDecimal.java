@@ -2340,20 +2340,25 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (result.scale > preferredScale) // else can't increase result's precision to fit the preferred scale
                 result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
         } else { // Handle negative degrees
-            long invPrecL = mc.precision + (halfWay ? 1L : 0L);
-            int invPrec = (int) invPrecL;
-            if (invPrec != invPrecL)
+            final long resPrecL = mc.precision + (halfWay ? 1L : 0L);
+            final int resPrec = (int) resPrecL;
+            if (resPrec != resPrecL)
                 throw new ArithmeticException("Overflow");
 
             root = workingInt.nthRoot(nAbs);
-            BigDecimal[] invRem = ONE.divideAndRemainder(x, new MathContext(invPrec, RoundingMode.DOWN));
             result = ONE.divide(new BigDecimal(root, checkScaleNonZero(normScale / nAbs)),
-                    invRem[0].scale, RoundingMode.DOWN);
-            // 1/(root*10^(-normScale / nAbs)) >= 1/x, so result >= invRem[0]
+                    new MathContext(resPrec, RoundingMode.DOWN));
+
+            BigDecimal ulp = result.ulp();
+            // if unscaled value is a power of 10, result must maintain the same precision
+            if (result.stripTrailingZeros().unscaledValue().equals(BigInteger.ONE))
+                ulp = ulp.scaleByPowerOfTen(-1);
+
+            BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) ulp.scale * nAbs), RoundingMode.DOWN);
+            // 1/(root*10^(-normScale / nAbs)) >= 1/x, so result >= inverse
 
             int cmp;
-            BigDecimal ulp = result.ulp();
-            while ((cmp = result.pow(nAbs).compareMagnitude(invRem[0])) > 0)
+            while ((cmp = result.pow(nAbs).compareMagnitude(inverse)) > 0)
                 result = result.subtract(ulp);
 
             if (halfWay) {
@@ -2369,7 +2374,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     if (mc.roundingMode == RoundingMode.HALF_UP
                             || mc.roundingMode == RoundingMode.HALF_EVEN && quotRem10[0].testBit(0)
                             // Check if remainder is non-zero
-                            || cmp != 0 || invRem[1].signum() != 0) {
+                            || cmp != 0 || ONE.compareMagnitude(inverse.multiply(x)) != 0) {
                         increment = true;
                     }
                 }
@@ -2382,7 +2387,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 case UP, CEILING -> {
                     // Check if remainder is non-zero
-                    if (cmp != 0 || invRem[1].signum() != 0)
+                    if (cmp != 0 || ONE.compareMagnitude(inverse.multiply(x)) != 0)
                         result = result.add(ulp);
                 }
 
