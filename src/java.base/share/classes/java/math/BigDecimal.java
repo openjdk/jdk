@@ -2294,8 +2294,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         // Compute and round the root
         BigInteger root;
+        long resultScale = normScale / nAbs;
         if (n > 0) {
-            long resultScale = normScale / nAbs;
             // Round the root with the specified settings
             if (halfWay) { // half-way rounding
                 BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
@@ -2337,19 +2337,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
         } else { // Handle negative degrees
-            final long resPrecL = mc.precision + (halfWay ? 1L : 0L);
-            final int resPrec = (int) resPrecL;
-            if (resPrec != resPrecL)
-                throw new ArithmeticException("Overflow");
-
             root = workingInt.nthRoot(nAbs);
-            result = ONE.divide(new BigDecimal(root, checkScaleNonZero(normScale / nAbs)),
-                    new MathContext(resPrec, RoundingMode.DOWN));
-
-            // Ensure result's precision is exactly resPrec
-            final int precDiff = resPrec - result.precision();
-            if (precDiff != 0)
-                result = result.setScale(checkScaleNonZero((long) result.scale + precDiff));
+            final long resPrec = mc.precision + (halfWay ? 1L : 0L);
+            final int rootPrec1 = (int) rootDigits - 1;
+            final int fracZeros = rootPrec1 - (root.equals(bigTenToThe(rootPrec1)) ? 1 : 0);
+            result = ONE.divide(new BigDecimal(root, checkScaleNonZero(resultScale)),
+                    checkScaleNonZero(fracZeros - resultScale + resPrec), RoundingMode.DOWN);
 
             BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) result.scale * nAbs), RoundingMode.DOWN);
             // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, and since result is rounded down,
