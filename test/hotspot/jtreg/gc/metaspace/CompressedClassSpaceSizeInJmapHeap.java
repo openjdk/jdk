@@ -69,11 +69,11 @@ public class CompressedClassSpaceSizeInJmapHeap {
         pb.redirectError(err);
 
         // If we attempt to attach to LingeredApp before it has initialized, the heap dump request will fail, so we allow 3 tries
-        int allowed_tries = 3;
+        int allowedTries = 3;
         int exitValue;
         do {
             exitValue = run(pb);
-        } while ((exitValue != 0) && (allowed_tries-- > 0));
+        } while ((exitValue != 0) && (allowedTries-- > 0));
         if (exitValue != 0) {
             throw new Exception("jmap -heap exited with error code: " + exitValue);
         }
