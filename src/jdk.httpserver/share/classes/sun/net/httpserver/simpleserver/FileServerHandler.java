@@ -28,6 +28,7 @@ package sun.net.httpserver.simpleserver;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.RandomAccessFile;
 import java.io.UncheckedIOException;
 import java.lang.System.Logger;
 import java.net.URI;
@@ -35,8 +36,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.UnaryOperator;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
@@ -272,16 +275,123 @@ public final class FileServerHandler implements HttpHandler {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", mediaType(path.toString()));
         respHdrs.set("Last-Modified", getLastModified(path));
+        respHdrs.set("Accept-Ranges", "bytes"); // Only 'bytes' is supported today.
         if (writeBody) {
-            exchange.sendResponseHeaders(200, Files.size(path));
-            try (InputStream fis = Files.newInputStream(path);
-                 OutputStream os = exchange.getResponseBody()) {
-                fis.transferTo(os);
+            if (exchange.getRequestHeaders().containsKey("Range")) {
+                long fileSize = Files.size(path);
+                List<RangeEntry> ranges =
+                        parseRangeHeader(exchange.getRequestHeaders().getFirst("Range"), fileSize);
+                if (ranges == null) {
+                    respHdrs.set("Content-Range", "bytes */%d".formatted(fileSize));
+                    exchange.sendResponseHeaders(416, -1); // Range Not Satisfiable
+                    return;
+                }
+                servePartialContents(exchange, path, ranges);
+            }
+            else {
+                exchange.sendResponseHeaders(200, Files.size(path));
+                try (InputStream fis = Files.newInputStream(path);
+                     OutputStream os = exchange.getResponseBody()) {
+                    fis.transferTo(os);
+                }
             }
         } else {
             respHdrs.set("Content-Length", Long.toString(Files.size(path)));
             exchange.sendResponseHeaders(200, -1);
         }
+    }
+
+    private List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
+        if (!rangeHeader.startsWith("bytes=")) {
+            return null;  // only 'bytes' unit is supported.
+        }
+        String rangesPart = rangeHeader.substring("bytes=".length());
+        List<RangeEntry> ranges = new ArrayList<>();
+        for (String spec : rangesPart.split(",")) {
+            spec = spec.trim();
+            int dashPos = spec.indexOf('-');
+            if (dashPos == -1) {
+                return null;  // '-' is always required.
+            }
+            String startStr = spec.substring(0, dashPos).trim();
+            String endStr = spec.substring(dashPos + 1).trim();
+            long start, end;
+            try {
+                if (startStr.isEmpty()) {  // "-<suffix-length>"
+                    long suffixLength = Long.parseLong(endStr);
+                    if (suffixLength <= 0) {
+                        return null;
+                    }
+                    start = Math.max(0, fileSize - suffixLength);
+                    end = fileSize - 1;
+                } else {  // "<start>-<end>" or "<start>-"
+                    start = Long.parseLong(startStr);
+                    end = endStr.isEmpty() ? fileSize - 1 : Long.parseLong(endStr);
+                }
+            } catch (NumberFormatException e) {
+                return null;  // invalid number format
+            }
+
+            if (start < 0 || end >= fileSize || start > end)
+                return null;  // invalid range values
+
+            ranges.add(new RangeEntry(start, end));
+        }
+        return ranges;
+    }
+
+    private void servePartialContents(HttpExchange exchange, Path path, List<RangeEntry> ranges)
+            throws IOException
+    {
+        var respHdrs = exchange.getResponseHeaders();
+        String fileContentType = mediaType(path.toString());
+        String boundary = UUID.randomUUID().toString();
+        long fileSize = Files.size(path);
+        boolean isSingleRange = ranges.size() == 1;
+        long responseLength;
+        if (isSingleRange) {
+            respHdrs.set("Content-Type", fileContentType);
+            RangeEntry range = ranges.get(0);
+            respHdrs.set("Content-Range",
+                    "bytes %d-%d/%d".formatted(range.start, range.end, fileSize));
+            responseLength = range.end - range.start + 1;
+        } else {
+            respHdrs.set("Content-Type", "multipart/byteranges; boundary=" + boundary);
+            responseLength = 0;  // 0 for chunked transfer encoding
+        }
+        exchange.sendResponseHeaders(206, responseLength); // Partial Content
+        try (RandomAccessFile raf = new RandomAccessFile(path.toFile(), "r");
+             OutputStream os = exchange.getResponseBody()) {
+            for (RangeEntry range : ranges) {
+                if (!isSingleRange) {
+                    os.write(("--" + boundary + "\r\n").getBytes(UTF_8));
+                    os.write(("Content-Type: " + fileContentType + "\r\n").getBytes(UTF_8));
+                    os.write("Content-Range: bytes %d-%d/%d\r\n\r\n"
+                            .formatted(range.start, range.end, fileSize).getBytes(UTF_8));
+                }
+                raf.seek(range.start);
+                long bytesToWrite = range.end - range.start + 1;
+                byte[] buffer = new byte[8192];
+                while (bytesToWrite > 0) {
+                    int len = raf.read(buffer, 0, (int) Math.min(buffer.length, bytesToWrite));
+                    if (len == -1) {
+                        break;  // EOF
+                    }
+                    os.write(buffer, 0, len);
+                    bytesToWrite -= len;
+                }
+                if (!isSingleRange) {
+                    os.write("\r\n".getBytes(UTF_8));
+                }
+            }
+            if (!isSingleRange) {
+                String closingBoundary = "--" + boundary + "--\r\n";
+                os.write(closingBoundary.getBytes(UTF_8));
+            }
+        }
+    }
+
+    private record RangeEntry(long start, long end) {
     }
 
     private void listFiles(HttpExchange exchange, Path path, boolean writeBody)
