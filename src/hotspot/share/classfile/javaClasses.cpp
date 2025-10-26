@@ -258,6 +258,11 @@ public:
 };
 
 void java_lang_String::set_compact_strings(bool value) {
+  if (!value) {
+      warning("CompactStrings has been specified as disabled via -XX:-CompactStrings, "
+              "but CompactStrings is deprecated and this option will be removed in a future release. "
+              "CompactStrings will remain enabled for compatibility.");
+  }
   CompactStringsFixup fix(value);
   vmClasses::String_klass()->do_local_static_fields(&fix);
 }
