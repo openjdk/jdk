@@ -2348,19 +2348,20 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             root = workingInt.nthRoot(nAbs);
             result = ONE.divide(new BigDecimal(root, checkScaleNonZero(normScale / nAbs)),
                     new MathContext(resPrec, RoundingMode.DOWN));
-
-            BigDecimal ulp = result.ulp();
-            // if unscaled value is a power of 10, result must maintain the same precision
-            if (result.stripTrailingZeros().unscaledValue().equals(BigInteger.ONE))
-                ulp = ulp.scaleByPowerOfTen(-1);
-
-            BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) ulp.scale * nAbs), RoundingMode.DOWN);
+            BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) result.scale * nAbs), RoundingMode.DOWN);
             // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, and since result is rounded down,
             // either result^nAbs > inverse, or else all result's digits are correct
 
             int cmp;
-            while ((cmp = result.pow(nAbs).compareMagnitude(inverse)) > 0)
+            BigDecimal ulp = result.ulp();
+            while ((cmp = result.pow(nAbs).compareMagnitude(inverse)) > 0) {
+                // if result's scale will increase, increase also inverse's scale
+                if (result.isPowerOfTen()) {
+                    ulp = ulp.scaleByPowerOfTen(-1);
+                    inverse = ONE.divide(x, checkScaleNonZero((long) ulp.scale * nAbs), RoundingMode.DOWN);
+                }
                 result = result.subtract(ulp);
+            }
 
             if (halfWay) {
                 // remove the one-tenth digit from result
@@ -2429,6 +2430,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             case HALF_DOWN, HALF_UP, HALF_EVEN -> true;
             case FLOOR, CEILING, DOWN, UP, UNNECESSARY -> false;
         };
+    }
+
+    private boolean isPowerOfTen() {
+        return this.stripTrailingZeros().unscaledValue().equals(BigInteger.ONE);
     }
 
     /**
