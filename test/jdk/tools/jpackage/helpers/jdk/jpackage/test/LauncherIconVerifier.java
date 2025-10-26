@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public final class LauncherIconVerifier {
     public LauncherIconVerifier() {
@@ -37,17 +38,31 @@ public final class LauncherIconVerifier {
 
     public LauncherIconVerifier setExpectedIcon(Path v) {
         expectedIcon = v;
+        expectedDefault = false;
         return this;
     }
 
     public LauncherIconVerifier setExpectedDefaultIcon() {
+        expectedIcon = null;
         expectedDefault = true;
         return this;
+    }
+
+    public LauncherIconVerifier setExpectedNoIcon() {
+        return setExpectedIcon(null);
     }
 
     public LauncherIconVerifier verifyFileInAppImageOnly(boolean v) {
         verifyFileInAppImageOnly = true;
         return this;
+    }
+
+    public boolean expectDefaultIcon() {
+        return expectedDefault;
+    }
+
+    public Optional<Path> expectIcon() {
+        return Optional.ofNullable(expectedIcon);
     }
 
     public void applyTo(JPackageCommand cmd) throws IOException {
@@ -70,7 +85,7 @@ public final class LauncherIconVerifier {
                 WinExecutableIconVerifier.verifyLauncherIcon(cmd, launcherName, expectedIcon, expectedDefault);
             }
         } else if (expectedDefault) {
-            TKit.assertPathExists(iconPath, true);
+            TKit.assertFileExists(iconPath);
         } else if (expectedIcon == null) {
             TKit.assertPathExists(iconPath, false);
         } else {
