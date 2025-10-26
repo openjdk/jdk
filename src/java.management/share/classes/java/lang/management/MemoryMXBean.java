@@ -302,7 +302,7 @@ public interface MemoryMXBean extends PlatformManagedObject {
     @SuppressWarnings("doclint:reference")
     default public long getTotalGcCpuTime() {
         return -1;
-    };
+    }
 
     /**
      * Tests if verbose output for the memory system is enabled.

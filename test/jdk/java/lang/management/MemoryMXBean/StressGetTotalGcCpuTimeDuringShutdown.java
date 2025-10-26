@@ -22,45 +22,57 @@
  */
 
 /*
- * @test
+ * @test id=Parallel
+ * @requires vm.gc.Parallel
  * @bug     8368527
- * @library /test/lib
  * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
- *
- * @run main/othervm -XX:+UseSerialGC GetTotalGcCpuTime _
- * @run main/othervm -XX:+UseParallelGC GetTotalGcCpuTime _
- * @run main/othervm -XX:+UseG1GC GetTotalGcCpuTime _
- * @run main/othervm -XX:+UseZGC GetTotalGcCpuTime _
+ * @library /test/lib
+ * @run main/othervm -XX:+UseParallelGC StressGetTotalGcCpuTimeDuringShutdown
  */
 
-import jdk.test.lib.process.OutputAnalyzer;
-import static jdk.test.lib.process.ProcessTools.createTestJavaProcessBuilder;
-import static jdk.test.lib.process.ProcessTools.executeProcess;
+/*
+ * @test id=G1
+ * @requires vm.gc.G1
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseG1GC StressGetTotalGcCpuTimeDuringShutdown
+ */
+
+/*
+ * @test id=ZGC
+ * @requires vm.gc.Z
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseZGC StressGetTotalGcCpuTimeDuringShutdown
+ */
+
+/*
+ * @test id=Shenandoah
+ * @requires vm.gc.Shenandoah
+ * @bug     8368527
+ * @summary Stress MemoryMXBean.getTotalGcCpuTime during shutdown
+ * @library /test/lib
+ * @run main/othervm -XX:+UseShenandoahGC StressGetTotalGcCpuTimeDuringShutdown
+ */
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.ThreadMXBean;
 
-public class GetTotalGcCpuTime {
+public class StressGetTotalGcCpuTimeDuringShutdown {
     static final ThreadMXBean mxThreadBean = ManagementFactory.getThreadMXBean();
     static final MemoryMXBean mxMemoryBean = ManagementFactory.getMemoryMXBean();
 
     public static void main(String[] args) throws Exception {
-        if (args.length > 0) {
-            ProcessBuilder pb = createTestJavaProcessBuilder("GetTotalGcCpuTime");
-            OutputAnalyzer output = executeProcess(pb);
-            output.shouldNotContain("GC CPU time should");
-            output.shouldHaveExitValue(0);
-            return;
-        }
-
         try {
             if (!mxThreadBean.isThreadCpuTimeEnabled()) {
                 return;
             }
         } catch (UnsupportedOperationException e) {
             if (mxMemoryBean.getTotalGcCpuTime() != -1) {
-                throw new Error("GC CPU time should be -1");
+                throw new RuntimeException("GC CPU time should be -1");
             }
             return;
         }
@@ -71,13 +83,12 @@ public class GetTotalGcCpuTime {
                 while (true) {
                     long gcCpuTimeFromThread = mxMemoryBean.getTotalGcCpuTime();
                     if (gcCpuTimeFromThread < -1) {
-                        throw new Error("GC CPU time should never be less than -1 but was " + gcCpuTimeFromThread);
+                        throw new RuntimeException("GC CPU time should never be less than -1 but was " + gcCpuTimeFromThread);
                     }
                 }
             });
+            t.setDaemon(true);
             t.start();
         }
-
-        System.exit(0);
     }
 }
