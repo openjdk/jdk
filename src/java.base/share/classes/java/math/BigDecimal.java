@@ -2355,7 +2355,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 ulp = ulp.scaleByPowerOfTen(-1);
 
             BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) ulp.scale * nAbs), RoundingMode.DOWN);
-            // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, so result^nAbs >= inverse
+            // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, and since result is rounded down,
+            // either result^nAbs > inverse, or else all result's digits are correct
 
             int cmp;
             while ((cmp = result.pow(nAbs).compareMagnitude(inverse)) > 0)
@@ -2380,7 +2381,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
 
                 if (increment)
-                    result = result.add(ulp);
+                    result = result.add(result.ulp());
             } else {
                 switch (mc.roundingMode) {
                 case DOWN, FLOOR -> {} // result is already rounded down
@@ -2388,7 +2389,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 case UP, CEILING -> {
                     // Check if remainder is non-zero
                     if (cmp != 0 || ONE.compareMagnitude(inverse.multiply(x)) != 0)
-                        result = result.add(ulp);
+                        result = result.add(result.ulp());
                 }
 
                 default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
