@@ -2355,7 +2355,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 ulp = ulp.scaleByPowerOfTen(-1);
 
             BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) ulp.scale * nAbs), RoundingMode.DOWN);
-            // 1/(root*10^(-normScale / nAbs)) >= 1/x, so result >= inverse
+            // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, so result^nAbs >= inverse
 
             int cmp;
             while ((cmp = result.pow(nAbs).compareMagnitude(inverse)) > 0)
