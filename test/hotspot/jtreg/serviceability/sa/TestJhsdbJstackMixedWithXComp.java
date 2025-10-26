@@ -22,23 +22,14 @@
  * questions.
  */
 
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.SA.SATestUtils;
 import jdk.test.lib.Utils;
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.process.OutputAnalyzer;
-
-import jtreg.SkippedException;
 
 /**
  * @test
@@ -47,59 +38,9 @@ import jtreg.SkippedException;
  * @requires os.family == "linux"
  * @requires (os.arch == "amd64" | os.arch == "aarch64" | os.arch == "riscv64")
  * @library /test/lib
- * @run main/othervm --enable-native-access=ALL-UNNAMED TestJhsdbJstackMixedWithXComp
+ * @run driver TestJhsdbJstackMixedWithXComp
  */
 public class TestJhsdbJstackMixedWithXComp {
-
-    /**
-     * On Linux, check glibc version before the test and return true if it is
-     * 2.39 or later. The test which needs to unwind native call stacks like
-     * "jhsdb jstack --mixed" should be skip the test when this checker method
-     * returns false.
-     * The problem is not to unwind all of call stacks the process is running on
-     * older glibc. It happens Debian 12, Ubuntu 22.04 (glibc 2.35) and
-     * Ubuntu 23.04 (glibc 2.37) at least. It works on Ubuntu 24.04 (glibc 2.39).
-     * The problem happenes both AMD64 and AArch64.
-     */
-    private static boolean canAttachLinuxOnCurrentGLIBC() {
-        var linker = Linker.nativeLinker();
-        var lookup = linker.defaultLookup();
-        var sym = lookup.find("gnu_get_libc_version");
-        if (sym.isEmpty()) {
-            // Maybe the platform is not on glibc (Windows, Mac, musl on Alpine).
-            // Go ahead.
-            return true;
-        }
-
-        // Call gnu_get_libc_version()
-        var desc = FunctionDescriptor.of(ValueLayout.ADDRESS);
-        var func = linker.downcallHandle(sym.get(), desc);
-        MemorySegment result;
-        try {
-            result = (MemorySegment)func.invoke();
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-
-        // Set the length of glibc version because FFM does not know memory size
-        // returned by gnu_get_libc_version().
-        var strlenSym = lookup.find("strlen");
-        var strlenDesc = FunctionDescriptor.of(linker.canonicalLayouts().get("size_t"), ValueLayout.ADDRESS);
-        var strlenFunc = linker.downcallHandle(strlenSym.get(), strlenDesc);
-        long len;
-        try {
-            len = (long)strlenFunc.invoke(result);
-        } catch (Throwable t) {
-            throw new RuntimeException(t);
-        }
-
-        result = result.reinterpret(len + 1); // includes NUL
-        String[] ver = result.getString(0, StandardCharsets.US_ASCII).split("\\.");
-        int major = Integer.parseInt(ver[0]);
-        int minor = Integer.parseInt(ver[1]);
-
-        return major > 2 || (major == 2 && minor >= 39);
-    }
 
     private static void runJstack(LingeredApp app) throws Exception {
         JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhsdb");
@@ -145,9 +86,7 @@ public class TestJhsdbJstackMixedWithXComp {
 
     public static void main(String... args) throws Exception {
         SATestUtils.skipIfCannotAttach(); // throws SkippedException if attach not expected to work.
-        if (!canAttachLinuxOnCurrentGLIBC()) {
-            throw new SkippedException("SA Attach not expected to work. glibc is 2.38 or earlier.");
-        }
+        SATestUtils.skipIfRunsOnOlderGLIBC(); // throws SkippedException if this test runs on older GLIBC.
 
         LingeredApp app = null;
 
