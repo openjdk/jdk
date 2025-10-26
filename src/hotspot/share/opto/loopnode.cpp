@@ -5094,7 +5094,7 @@ void PhaseIdealLoop::build_and_optimize() {
   if (C->failing()) { return; }
 
   if (_verify_only) {
-    C->set_major_progress(old_progress);
+    C->restore_major_progress(old_progress);
     assert(C->unique() == unique, "verification _mode made Nodes? ? ?");
     assert(_igvn._worklist.size() == orig_worklist_size, "shouldn't push anything");
     return;
@@ -5139,7 +5139,7 @@ void PhaseIdealLoop::build_and_optimize() {
 #endif
 
   if (skip_loop_opts) {
-    C->set_major_progress(old_progress);
+    C->restore_major_progress(old_progress);
     return;
   }
 
@@ -5160,7 +5160,7 @@ void PhaseIdealLoop::build_and_optimize() {
       }
     }
 
-    C->set_major_progress(old_progress);
+    C->restore_major_progress(old_progress);
     return;
   }
 
@@ -5332,7 +5332,7 @@ void PhaseIdealLoop::verify() const {
   assert(success, "VerifyLoopOptimizations failed");
 
   // Major progress was cleared by creating a verify version of PhaseIdealLoop.
-  C->set_major_progress(old_progress);
+  C->restore_major_progress(old_progress);
 }
 
 // Perform a BFS starting at n, through all inputs.

@@ -600,7 +600,7 @@ public:
   int               do_cleanup() const          { return _do_cleanup; }
   bool              major_progress() const      { return _major_progress; }
   void          set_major_progress()            { _major_progress = true; }
-  void          set_major_progress(bool progress) { _major_progress = progress; }
+  void          restore_major_progress(bool progress) { _major_progress = _major_progress || progress; }
   void        clear_major_progress()            { _major_progress = false; }
   int               max_inline_size() const     { return _max_inline_size; }
   void          set_freq_inline_size(int n)     { _freq_inline_size = n; }
