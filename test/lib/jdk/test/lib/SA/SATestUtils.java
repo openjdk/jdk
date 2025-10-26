@@ -26,7 +26,8 @@ import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 
-import java.lang.foreign.FunctionDescriptor;                                import java.lang.foreign.Linker;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.io.IOException;
