@@ -2338,12 +2338,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
         } else { // Handle negative degrees
             root = workingInt.nthRoot(nAbs);
+            final BigDecimal scaledRoot = new BigDecimal(root, checkScaleNonZero(resultScale));
             final long resPrec = mc.precision + (halfWay ? 1L : 0L);
-            final int rootPrec1 = (int) rootDigits - 1;
-            final int fracZeros = rootPrec1 - (root.equals(bigTenToThe(rootPrec1)) ? 1 : 0);
+            final int fracZeros = (int) rootDigits - 1 - (scaledRoot.isPowerOfTen() ? 1 : 0);
             // Ensure result's precision is exactly resPrec
-            result = ONE.divide(new BigDecimal(root, checkScaleNonZero(resultScale)),
-                    checkScaleNonZero(fracZeros - resultScale + resPrec), RoundingMode.DOWN);
+            result = ONE.divide(scaledRoot, checkScaleNonZero(fracZeros - resultScale + resPrec), RoundingMode.DOWN);
 
             BigDecimal inverse = ONE.divide(x, checkScaleNonZero((long) result.scale * nAbs), RoundingMode.DOWN);
             // (1/(root*10^(-normScale / nAbs)))^nAbs >= 1/x, and since result is rounded down,
