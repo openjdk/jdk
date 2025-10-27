@@ -41,6 +41,7 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.ConsoleHandler;
@@ -117,12 +118,56 @@ public class SimpleFileServerTest {
         }
     }
 
-    @Test
-    public void testSingleClosedRangeFileGET() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testFileSingleRangeGET"));
+    @Test(dataProvider = "singleRanges")
+    public void testSingleRangedRangeFileGET(String rangeSpec, String expectedRangeSpec, String expectedBody) throws Exception {
+        var root = Files.createDirectories(TEST_DIR.resolve("testFileSingleRangeGET"));
         var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
         var lastModified = getLastModified(file);
-        var expectedLength = "4";
+        var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
+        var expectedEtag = createETag(file);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
+                    .header("Range", "bytes=" + rangeSpec)
+                    .build();
+            var response = client.send(request, BodyHandlers.ofString());
+            assertEquals(response.statusCode(), 206);
+            assertEquals(response.body(), expectedBody);
+            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.headers().firstValue("content-range").get(), "bytes " + expectedRangeSpec + "/9");
+            assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @DataProvider(name = "singleRanges")
+    public Object[][] singleRangeProvider() {
+        return new Object[][]{
+                // The file content is "123456789" (9 bytes)
+                // {rangeSpec, expectedRangeSpec, expectedBody}
+                {"0-3", "0-3", "1234"},
+                {"2-5", "2-5", "3456"},
+                {"6-8", "6-8", "789"},
+                {"0-",  "0-8", "123456789"},
+                {"3-",  "3-8", "456789"},
+                {"-3",  "6-8", "789"},
+                {"-1",  "8-8", "9"}
+        };
+    }
+
+    @Test
+    public void testMatchETagRangeFileGet() throws Exception {
+        var root = Files.createDirectory(TEST_DIR.resolve("testFileMatchETagRangeGET"));
+        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var lastModified = getLastModified(file);
+        var expectedEtag = createETag(file);
 
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         server.start();
@@ -130,69 +175,16 @@ public class SimpleFileServerTest {
             var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
             var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
                     .header("Range", "bytes=2-5")
+                    .header("If-Match", expectedEtag)
                     .build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 206);
             assertEquals(response.body(), "3456");
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
             assertEquals(response.headers().firstValue("content-range").get(), "bytes 2-5/9");
-        } finally {
-            server.stop(0);
-        }
-    }
-
-    @Test
-    public void testSingleOpenRangeFileGET() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testFileSingleOpenRangeGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
-        var lastModified = getLastModified(file);
-        var expectedLength = "3";
-
-        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        server.start();
-        try {
-            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
-                    .header("Range", "bytes=6-")
-                    .build();
-            var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 206);
-            assertEquals(response.body(), "789");
-            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
-            assertEquals(response.headers().firstValue("content-range").get(), "bytes 6-8/9");
-        } finally {
-            server.stop(0);
-        }
-    }
-
-    @Test
-    public void testSingleSuffixRangeFileGET() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testFileSingleSuffixRangeGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
-        var lastModified = getLastModified(file);
-        var expectedLength = "5";
-
-        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
-        server.start();
-        try {
-            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
-            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
-                    .header("Range", "bytes=-5")
-                    .build();
-            var response = client.send(request, BodyHandlers.ofString());
-            assertEquals(response.statusCode(), 206);
-            assertEquals(response.body(), "56789");
-            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
-            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
-            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
-            assertEquals(response.headers().firstValue("content-range").get(), "bytes 4-8/9");
+            assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
         } finally {
             server.stop(0);
         }
@@ -203,6 +195,7 @@ public class SimpleFileServerTest {
         var root = Files.createDirectory(TEST_DIR.resolve("testFileMultipleOpenSuffixRangesGET"));
         var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
         var lastModified = getLastModified(file);
+        var expectedEtag = createETag(file);
 
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         server.start();
@@ -217,7 +210,8 @@ public class SimpleFileServerTest {
             assertTrue(contentType.startsWith("multipart/byteranges; boundary="));
 
             String boundary = contentType.substring("multipart/byteranges; boundary=".length());
-            String[] parts = response.body().split(Pattern.quote("--" + boundary));            assertEquals(parts.length, 5);  // 3 parts + preamble + epilogue
+            String[] parts = response.body().split(Pattern.quote("--" + boundary));
+            assertEquals(parts.length, 5);  // 3 parts + preamble + epilogue
             {
                 String[] firstPartLines = parts[1].trim().split("\r\n");
                 assertEquals(firstPartLines[0], "Content-Type: text/plain");
@@ -238,6 +232,7 @@ public class SimpleFileServerTest {
             }
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
         } finally {
             server.stop(0);
         }
@@ -337,6 +332,7 @@ public class SimpleFileServerTest {
         var file = Files.writeString(root.resolve("aFile.txt"), "some text", CREATE);
         var lastModified = getLastModified(file);
         var expectedLength = Long.toString(Files.size(file));
+        var expectedEtag = createETag(file);
 
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
         server.start();
@@ -350,6 +346,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
             assertEquals(response.body(), "");
         } finally {
             server.stop(0);
@@ -582,6 +579,34 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-length").get(), "0");
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
             assertEquals(response.body(), "");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    public void testMismatchETagRangeFileGET() throws Exception {
+        var root = Files.createDirectory(TEST_DIR.resolve("testFileMismatchETagRangeGET"));
+        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var lastModified = getLastModified(file);
+        var expectedEtag = createETag(file);
+
+        var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
+        server.start();
+        try {
+            var client = HttpClient.newBuilder().proxy(NO_PROXY).build();
+            var request = HttpRequest.newBuilder(uri(server, "aFile.txt"))
+                    .header("Range", "bytes=2-5")
+                    .header("If-Range", "\"meowmeow\"")
+                    .build();
+            var response = client.send(request, BodyHandlers.ofString());
+            // If the ETag does not match, the server should ignore the Range header and serve the entire file.
+            assertEquals(response.statusCode(), 200);
+            assertEquals(response.body(), "123456789");
+            assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
+            assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
+            assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
         } finally {
             server.stop(0);
         }
@@ -939,5 +964,12 @@ public class SimpleFileServerTest {
     static String getLastModified(Path path) throws IOException {
         return Files.getLastModifiedTime(path).toInstant().atZone(ZoneId.of("GMT"))
                 .format(DateTimeFormatter.RFC_1123_DATE_TIME);
+    }
+
+    public String createETag( Path path) throws IOException {
+        var attrs = Files.readAttributes(path, BasicFileAttributes.class);
+        long size = attrs.size();
+        long lastModified = attrs.lastModifiedTime().toMillis();
+        return "W/\"%x-%x\"".formatted(size, lastModified);
     }
 }
