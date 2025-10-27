@@ -67,7 +67,8 @@ JavaThread* CDSConfig::_dumper_thread = nullptr;
 
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
-  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+  return (is_dumping_aot_linked_classes()   ? IS_DUMPING_AOT_LINKED_CLASSES : 0) |
+         (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
          (is_dumping_method_handles()       ? IS_DUMPING_METHOD_HANDLES : 0) |
          (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
          (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
@@ -470,10 +471,6 @@ void CDSConfig::check_aot_flags() {
     assert(strcmp(AOTMode, "create") == 0, "checked by AOTModeConstraintFunc");
     check_aotmode_create();
   }
-
-  // This is an old flag used by CDS regression testing only. It doesn't apply
-  // to the AOT workflow.
-  FLAG_SET_ERGO(AllowArchivingWithJavaAgent, false);
 }
 
 void CDSConfig::check_aotmode_off() {
@@ -716,13 +713,6 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
     }
   }
 
-  if (is_dumping_classic_static_archive() && AOTClassLinking) {
-    if (JvmtiAgentList::disable_agent_list()) {
-      FLAG_SET_ERGO(AllowArchivingWithJavaAgent, false);
-      log_warning(cds)("Disabled all JVMTI agents with -Xshare:dump -XX:+AOTClassLinking");
-    }
-  }
-
   return true;
 }
 
@@ -755,6 +745,13 @@ void CDSConfig::setup_compiler_args() {
 
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
+
+  if (is_dumping_dynamic_archive() && AOTClassLinking) {
+    if (FLAG_IS_CMDLINE(AOTClassLinking)) {
+      log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
+    }
+    FLAG_SET_ERGO(AOTClassLinking, false);
+  }
 
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
     assert(!is_dumping_static_archive(), "cannot be dumping both static and dynamic archives");
@@ -862,7 +859,11 @@ CDSConfig::DumperThreadMark::~DumperThreadMark() {
 
 bool CDSConfig::current_thread_is_vm_or_dumper() {
   Thread* t = Thread::current();
-  return t != nullptr && (t->is_VM_thread() || t == _dumper_thread);
+  return t->is_VM_thread() || t == _dumper_thread;
+}
+
+bool CDSConfig::current_thread_is_dumper() {
+  return Thread::current() == _dumper_thread;
 }
 
 const char* CDSConfig::type_of_archive_being_loaded() {
@@ -942,8 +943,9 @@ bool CDSConfig::is_preserving_verification_constraints() {
     return AOTClassLinking;
   } else if (is_dumping_final_static_archive()) { // writing AOT cache
     return is_dumping_aot_linked_classes();
+  } else if (is_dumping_classic_static_archive()) {
+    return is_dumping_aot_linked_classes();
   } else {
-    // For simplicity, we don't support this optimization with the old CDS workflow.
     return false;
   }
 }
@@ -1010,11 +1012,10 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_preimage_static_archive()) {
-    return false;
-  } else if (is_dumping_dynamic_archive()) {
-    return is_using_full_module_graph() && AOTClassLinking;
-  } else if (is_dumping_static_archive()) {
+  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+    // FMG is required to guarantee that all cached boot/platform/app classes
+    // are visible in the production run, so they can be unconditionally
+    // loaded during VM bootstrap.
     return is_dumping_full_module_graph() && AOTClassLinking;
   } else {
     return false;

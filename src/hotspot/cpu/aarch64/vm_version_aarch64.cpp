@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2020, Red Hat Inc. All rights reserved.
+ * Copyright 2025 Arm Limited and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,10 +223,13 @@ void VM_Version::initialize() {
   // Neoverse
   //   N1: 0xd0c
   //   N2: 0xd49
+  //   N3: 0xd8e
   //   V1: 0xd40
   //   V2: 0xd4f
+  //   V3: 0xd84
   if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) ||
-                          model_is(0xd40) || model_is(0xd4f))) {
+                          model_is(0xd40) || model_is(0xd4f) ||
+                          model_is(0xd8e) || model_is(0xd84))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -260,7 +264,9 @@ void VM_Version::initialize() {
   // Neoverse
   //   V1: 0xd40
   //   V2: 0xd4f
-  if (_cpu == CPU_ARM && (model_is(0xd40) || model_is(0xd4f))) {
+  //   V3: 0xd84
+  if (_cpu == CPU_ARM &&
+      (model_is(0xd40) || model_is(0xd4f) || model_is(0xd84))) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }

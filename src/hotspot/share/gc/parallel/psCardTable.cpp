@@ -382,9 +382,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
   preprocess_card_table_parallel(object_start, old_gen_bottom, old_gen_top, stripe_index, n_stripes);
 
   // Sync with other workers.
-  Atomic::dec(&_preprocessing_active_workers);
+  AtomicAccess::dec(&_preprocessing_active_workers);
   SpinYield spin_yield;
-  while (Atomic::load_acquire(&_preprocessing_active_workers) > 0) {
+  while (AtomicAccess::load_acquire(&_preprocessing_active_workers) > 0) {
     spin_yield.wait();
   }
 
