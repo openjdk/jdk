@@ -86,6 +86,7 @@ ifneq ($(BUILD_CRYPTO), false)
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
         EXTRA_HEADER_DIRS := java.base:libjava, \
+        EXTRA_SRC := $(TOPDIR)/src/java.security.jgss/share/native/libkrb5shared, \
         DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
         LIBS_macosx := \
             -framework Cocoa \
@@ -95,6 +96,23 @@ ifneq ($(BUILD_CRYPTO), false)
 
     TARGETS += $(BUILD_LIBOSXKRB5)
   endif
+
+  ifeq ($(call isTargetOs, linux), true)
+    ifeq ($(ENABLE_LIBLINUXKRB5), true)
+      $(eval $(call SetupJdkLibrary, BUILD_LIBLINUXKRB5, \
+          NAME := linuxkrb5, \
+          OPTIMIZATION := LOW, \
+          DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
+          EXTRA_HEADER_DIRS := java.base:libjava, \
+          EXTRA_SRC := $(TOPDIR)/src/java.security.jgss/share/native/libkrb5shared, \
+          CFLAGS_linux := $(KRB5_CFLAGS) $(COM_ERR_CFLAGS), \
+          LIBS_linux := $(KRB5_LIBS) $(COM_ERR_LIBS), \
+      ))
+
+      TARGETS += $(BUILD_LIBLINUXKRB5)
+    endif
+  endif
+
 endif
 
 ################################################################################
