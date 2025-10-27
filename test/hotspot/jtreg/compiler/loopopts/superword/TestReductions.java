@@ -1594,6 +1594,16 @@ public class TestReductions {
     // I think this could vectorize, but currently does not. Filed: JDK-8370673
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
+    // TODO: it seems we support this after all on NEON? Investigate!
+    //       Concerning: reduction is done in scalar. But we also have
+    //       a scalar element-wise operation or MulVL ... but it is not
+    //       recommended that it is used, see:
+    //       Matcher::match_rule_supported_auto_vectorization
+    //       This probably explains the slowdown we see in the benchmark!
+    //       We should thus also revise all other occurances of MulVL.
+    //       Maybe we also have to fix the code that moves the reduction
+    //       out of the loop, because it seems to introduce the MulVL,
+    //       but probably should not.
     private static long longMulSimple() {
         long acc = 1; // neutral element
         for (int i = 0; i < SIZE; i++) {
@@ -1648,8 +1658,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.AND_REDUCTION_V, "> 0",
                   IRNode.AND_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While AndReductionV is implemented in NEON (see longAndSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longAndDotProduct() {
@@ -1665,8 +1678,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,  "> 0",
                   IRNode.OR_REDUCTION_V, "> 0",
                   IRNode.OR_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While OrReductionV is implemented in NEON (see longOrSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longOrDotProduct() {
@@ -1684,6 +1700,9 @@ public class TestReductions {
                   IRNode.XOR_VL,          "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While MaxReductionV is implemented in NEON (see longXorSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longXorDotProduct() {
@@ -1716,11 +1735,14 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,    "> 0",
                   IRNode.MUL_REDUCTION_VL, "> 0",
                   IRNode.MUL_VL,           "> 0"},
-        applyIfCPUFeatureOr = {"avx512dq", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx512dq", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"avx512dq", "false", "sse4.1", "true"})
     // I think this could vectorize, but currently does not. Filed: JDK-8370673
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // MulVL is not implemented on NEON, so we also not have the reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMulDotProduct() {
@@ -1736,11 +1758,14 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx512", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
     // I think this could vectorize, but currently does not. Filed: JDK-8370671
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While MaxReductionV is implemented in NEON (see longMinSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMinDotProduct() {
@@ -1756,11 +1781,14 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx512", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
     // I think this could vectorize, but currently does not. Filed: JDK-8370671
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While MaxReductionV is implemented in NEON (see longMaxSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMaxDotProduct() {
@@ -1777,8 +1805,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.AND_REDUCTION_V, "> 0",
                   IRNode.AND_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While AndReductionV is implemented in NEON (see longAndSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longAndBig() {
@@ -1794,8 +1825,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,  "> 0",
                   IRNode.OR_REDUCTION_V, "> 0",
                   IRNode.OR_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While OrReductionV is implemented in NEON (see longOrSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longOrBig() {
@@ -1811,8 +1845,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.XOR_REDUCTION_V, "> 0",
                   IRNode.XOR_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While MaxReductionV is implemented in NEON (see longXorSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longXorBig() {
@@ -1862,11 +1899,14 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx512", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
     // I think this could vectorize, but currently does not. Filed: JDK-8370671
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While MaxReductionV is implemented in NEON (see longMinSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMinBig() {
@@ -1882,11 +1922,14 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
+        applyIfCPUFeature = {"avx512", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
     // I think this could vectorize, but currently does not. Filed: JDK-8370671
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // While MaxReductionV is implemented in NEON (see longMaxSimple), MulVL is not.
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMaxBig() {
