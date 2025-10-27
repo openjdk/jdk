@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires !vm.graal.enabled
+ * @requires vm.opt.StressMethodHandleLinkerInlining == null | !vm.opt.StressMethodHandleLinkerInlining
  * @requires vm.opt.StressUnstableIfTraps == null | !vm.opt.StressUnstableIfTraps
  * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.vm.annotation
