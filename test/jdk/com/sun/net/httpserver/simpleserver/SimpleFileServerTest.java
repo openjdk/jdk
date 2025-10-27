@@ -971,10 +971,10 @@ public class SimpleFileServerTest {
                 .format(DateTimeFormatter.RFC_1123_DATE_TIME);
     }
 
-    public String createETag( Path path) throws IOException {
+    public String createETag(Path path) throws IOException {
         var attrs = Files.readAttributes(path, BasicFileAttributes.class);
         long size = attrs.size();
         long lastModified = attrs.lastModifiedTime().toMillis();
-        return "W/\"%x-%x\"".formatted(size, lastModified);
+        return "\"%x-%x\"".formatted(size, lastModified);
     }
 }

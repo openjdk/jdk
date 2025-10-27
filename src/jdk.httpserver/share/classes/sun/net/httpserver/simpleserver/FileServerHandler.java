@@ -317,7 +317,7 @@ public final class FileServerHandler implements HttpHandler {
         var attrs = Files.readAttributes(path, BasicFileAttributes.class);
         long size = attrs.size();
         long lastModified = attrs.lastModifiedTime().toMillis();
-        return "W/\"%x-%x\"".formatted(size, lastModified);
+        return "\"%x-%x\"".formatted(size, lastModified);
     }
 
     private List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
