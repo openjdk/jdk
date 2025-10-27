@@ -3053,7 +3053,7 @@ private:
         resolve<use_compressed, typename BarrierSet::GetType<BarrierSet::bs_name>::type>(); \
       }                                                                 \
         break;
-      FOR_EACH_CONCRETE_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
+      FOR_EACH_BARRIER_SET_DO(BARRIER_SET_RESOLVE_BARRIER_CLOSURE)
 #undef BARRIER_SET_RESOLVE_BARRIER_CLOSURE
 
     default:
