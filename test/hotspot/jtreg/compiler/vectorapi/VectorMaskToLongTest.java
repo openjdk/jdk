@@ -237,9 +237,15 @@ public class VectorMaskToLongTest {
     }
 
     @Test
+    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 0" },
+        applyIfCPUFeature = { "svebitperm", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 1",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 0" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
@@ -251,9 +257,15 @@ public class VectorMaskToLongTest {
     }
 
     @Test
+    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 0" },
+        applyIfCPUFeature = { "svebitperm", "true" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 1",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
-        applyIfCPUFeatureOr = { "svebitperm", "true", "avx2", "true", "rvv", "true" })
+        applyIfCPUFeatureOr = { "avx512", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
+                   IRNode.VECTOR_MASK_TO_LONG, "= 0" },
+        applyIfCPUFeatureAnd = { "avx2", "true", "avx512", "false" })
     @IR(counts = { IRNode.VECTOR_LONG_TO_MASK, "= 0",
                    IRNode.VECTOR_MASK_TO_LONG, "= 1" },
         applyIfCPUFeatureAnd = { "asimd", "true", "svebitperm", "false" })
