@@ -91,7 +91,7 @@ class CgroupV1MemoryController final : public CgroupMemoryController {
     jlong kernel_memory_max_usage_in_bytes();
     void print_version_specific_info(outputStream* st, julong upper_mem_bound) override;
     bool needs_hierarchy_adjustment() override {
-      return reader()->needs_hierarchy_adjustment() || uses_mem_hierarchy();
+      return reader()->needs_hierarchy_adjustment();
     }
     bool is_read_only() override {
       return reader()->is_read_only();
