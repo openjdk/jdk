@@ -908,7 +908,7 @@ public:
                                                   _recent_alloc_obj = obj;
                                            }
 
-  void         record_optimization_event(OptimizationEvent event) PRODUCT_RETURN; 
+  void         record_optimization_event(OptimizationEvent event) PRODUCT_RETURN;
 
   void         record_dead_node(uint idx)  { if (_dead_node_list.test_set(idx)) return;
                                              _dead_node_count++;
