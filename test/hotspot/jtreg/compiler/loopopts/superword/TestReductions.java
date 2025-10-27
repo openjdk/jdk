@@ -1943,7 +1943,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -1960,7 +1960,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2012,7 +2012,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2029,7 +2029,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2081,7 +2081,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2098,7 +2098,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2156,7 +2156,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2173,7 +2173,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2225,7 +2225,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2242,7 +2242,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2294,7 +2294,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
@@ -2311,7 +2311,7 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
