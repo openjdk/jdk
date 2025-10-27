@@ -29,7 +29,7 @@
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  *
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -Xmx128m -XX:ShenandoahGCMode=passive -XX:+ShenandoahCardBarrier TestPassiveModeWithCardBarrier
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+UseShenandoahGC -Xmx128m -XX:ShenandoahGCMode=passive -XX:+ShenandoahCardBarrier TestPassiveModeWithCardBarrier
  */
 
 import java.util.*;
