@@ -290,29 +290,6 @@ public class SingleByte
             repl = newReplacement[0];
         }
 
-        public int encode(char[] src, int sp, int len, byte[] dst) {
-            int dp = 0;
-            int sl = sp + Math.min(len, dst.length);
-            while (sp < sl) {
-                char c = src[sp++];
-                int b = encode(c);
-                if (b != UNMAPPABLE_ENCODING) {
-                    dst[dp++] = (byte)b;
-                    continue;
-                }
-                if (Character.isHighSurrogate(c) && sp < sl &&
-                    Character.isLowSurrogate(src[sp])) {
-                    if (len > dst.length) {
-                        sl++;
-                        len--;
-                    }
-                    sp++;
-                }
-                dst[dp++] = repl;
-            }
-            return dp;
-        }
-
         @Override
         public int encodeFromLatin1(byte[] src, int sp, int len, byte[] dst) {
             int dp = 0;
