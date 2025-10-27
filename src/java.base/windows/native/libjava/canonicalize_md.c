@@ -268,64 +268,6 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
     return -1;
 }
 
-/* Convert a pathname to canonical form.  The input prefix is assumed
-   to be in canonical form already, and the trailing filename must not
-   contain any wildcard, dot/double dot, or other "tricky" characters
-   that are rejected by the canonicalize() routine above.  This
-   routine is present to allow the canonicalization prefix cache to be
-   used while still returning canonical names with the correct
-   capitalization. */
-int
-wcanonicalizeWithPrefix(WCHAR *canonicalPrefix, WCHAR *pathWithCanonicalPrefix, WCHAR *result, int size)
-{
-    WIN32_FIND_DATAW fd;
-    HANDLE h;
-    WCHAR *src, *dst, *dend;
-    WCHAR *pathbuf;
-    int pathlen;
-
-    src = pathWithCanonicalPrefix;
-    dst = result;        /* Place results here */
-    dend = dst + size;   /* Don't go to or past here */
-
-
-    if ((pathlen=(int)wcslen(pathWithCanonicalPrefix)) > MAX_PATH - 1) {
-        pathbuf = getPrefixed(pathWithCanonicalPrefix, pathlen);
-        h = FindFirstFileW(pathbuf, &fd);    /* Look up prefix */
-        free(pathbuf);
-    } else
-        h = FindFirstFileW(pathWithCanonicalPrefix, &fd);    /* Look up prefix */
-    if (h != INVALID_HANDLE_VALUE) {
-        /* Lookup succeeded; append true name to result and continue */
-        FindClose(h);
-        if (!(dst = wcp(dst, dend, L'\0',
-                        canonicalPrefix,
-                        canonicalPrefix + wcslen(canonicalPrefix)))) {
-            return -1;
-        }
-        if (!(dst = wcp(dst, dend, L'\\',
-                        fd.cFileName,
-                        fd.cFileName + wcslen(fd.cFileName)))) {
-            return -1;
-        }
-    } else {
-        if (!lastErrorReportable()) {
-            if (!(dst = wcp(dst, dend, L'\0', src, src + wcslen(src)))) {
-                return -1;
-            }
-        } else {
-            return -1;
-        }
-    }
-
-    if (dst >= dend) {
-        errno = ENAMETOOLONG;
-        return -1;
-    }
-    *dst = L'\0';
-    return 0;
-}
-
 /* Non-Wide character version of canonicalize.
    Converts to wchar and delegates to wcanonicalize. */
 JNIEXPORT int
