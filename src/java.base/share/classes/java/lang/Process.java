@@ -206,6 +206,10 @@ public abstract class Process implements Closeable {
      * response, and close the streams and process:
      * {@snippet class=ProcessExamples region=example}
      *
+     * @implNote
+     * Concrete implementations that override this class are strongly encouraged to
+     * override this method and invoke the superclass {@code close} method.
+     *
      * @implSpec
      * The {@code outputWriter} and {@code outputStream} to the process are closed.
      * The {@code inputReader} and {@code inputStream} from the process are closed.
