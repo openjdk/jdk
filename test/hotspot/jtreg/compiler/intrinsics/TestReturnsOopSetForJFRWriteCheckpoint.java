@@ -26,16 +26,15 @@ package compiler.intrinsics;
 import compiler.lib.ir_framework.*;
 
 import jdk.jfr.Event;
-import jdk.jfr.Name;
 import jdk.jfr.Recording;
 
 /**
  * @test
  * @summary Tests that the getEventWriter call to write_checkpoint correctly
  *          reports returning an oop
- * @requires vm.hasJFR & vm.continuations
+ * @bug 8347463
+ * @requires vm.hasJFR
  * @library /test/lib /
- * @modules jdk.jfr/jdk.jfr.internal
  * @run driver compiler.intrinsics.TestReturnsOopSetForJFRWriteCheckpoint
  */
 public class TestReturnsOopSetForJFRWriteCheckpoint {
@@ -52,14 +51,12 @@ public class TestReturnsOopSetForJFRWriteCheckpoint {
     // it, we look for a non-void return type (which comes hand-in-hand
     // with the returns_oop information).
     @Test
-    @IR(failOn = { IRNode.STATIC_CALL_OF_METHOD, "write_checkpoint.*void"})
+    @IR(counts = { IRNode.STATIC_CALL_OF_METHOD, "write_checkpoint\s+java/lang/Object\s+\\*", "1" })
     public void myTest() {
         try (Recording r = new Recording()) {
             r.start();
-
             emitEvent();
         }
-
     }
 
     @ForceInline
@@ -68,4 +65,3 @@ public class TestReturnsOopSetForJFRWriteCheckpoint {
         t.commit();
     }
 }
-
