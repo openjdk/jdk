@@ -290,9 +290,7 @@ public class TestStringCoding {
     }
 
     private static String prettyPrintBytes(byte[] bs) {
-        return IntStream.range(0, bs.length)
-                .mapToObj(i -> String.format("0x%02X", bs[i] & 0xFF))
-                .collect(Collectors.joining(", ", "[", "]"));
+        return "[" + HexFormat.ofDelimiter(", ").withPrefix("0x").formatHex(bs) + "]";
     }
 
 }
