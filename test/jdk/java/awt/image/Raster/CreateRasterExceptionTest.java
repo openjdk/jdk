@@ -1185,7 +1185,7 @@ public class CreateRasterExceptionTest {
                    "Got expected exception for null bandoffsets");
             System.out.println(t);
         }
-      
+
         try {
             /* @throws IllegalArgumentException if {@code dataType} is
              * not one of the supported data types for this sample model
