@@ -212,8 +212,10 @@ inline intptr_t* AnchorMark::anchor_mark_set_pd() {
   if (_top_frame.is_interpreted_frame()) {
     // In case the top frame is interpreted we need to set up the anchor using
     // the last_sp saved in the frame (remove possible alignment added while
-    // thawing, see ThawBase::finish_thaw()). We also need to clear the last_sp
-    // saved in the frame as it is not expected to be set in case we preempt again.
+    // thawing, see ThawBase::finish_thaw()). We also clear last_sp to match
+    // the behavior when calling the VM from the interpreter (we check for this
+    // in FreezeBase::prepare_freeze_interpreted_top_frame, which can be reached
+    // if preempting again at redo_vmcall()).
     _last_sp_from_frame = _top_frame.interpreter_frame_last_sp();
     assert(_last_sp_from_frame != nullptr, "");
     _top_frame.interpreter_frame_set_last_sp(nullptr);
