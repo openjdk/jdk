@@ -328,7 +328,8 @@ public class Credentials {
         if (ticketCache == null) {
             // The default ticket cache on Windows and Mac is not a file.
             if (OperatingSystem.isWindows() ||
-                    OperatingSystem.isMacOS()) {
+                    OperatingSystem.isMacOS() ||
+                        OperatingSystem.isLinux()) {
                 Credentials creds = acquireDefaultCreds();
                 if (creds == null) {
                     if (DEBUG != null) {
@@ -411,7 +412,7 @@ public class Credentials {
     // It assumes that the GSS call has
     // the privilege to access the default cache file.
 
-    // This method is only called on Windows and Mac OS X, the native
+    // This method is only called on Windows, Mac OS X and Linux, the native
     // acquireDefaultNativeCreds is also available on these platforms.
     public static synchronized Credentials acquireDefaultCreds() {
         Credentials result = null;
@@ -528,6 +529,8 @@ public class Credentials {
     static void ensureLoaded() {
         if (OperatingSystem.isMacOS()) {
             System.loadLibrary("osxkrb5");
+        } else if (OperatingSystem.isLinux()) {
+            System.loadLibrary("linuxkrb5");
         } else {
             System.loadLibrary("w2k_lsa_auth");
         }
