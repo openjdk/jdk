@@ -75,6 +75,6 @@ public class TestSplitThruPhiRemoveDeadNodesFromLoopBody {
     public static void main(String[] strArr) {
         for (int i = 0; i < 1_000; i++) {
             test();
-	}
+        }
     }
 }
