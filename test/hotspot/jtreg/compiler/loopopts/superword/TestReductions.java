@@ -1604,8 +1604,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370671
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMinSimple() {
@@ -1621,8 +1624,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370671
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMaxSimple() {
@@ -1724,8 +1730,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370671
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMinDotProduct() {
@@ -1741,8 +1750,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370671
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMaxDotProduct() {
@@ -1844,8 +1856,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MIN_REDUCTION_V, "> 0",
                   IRNode.MIN_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370671
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMinBig() {
@@ -1861,8 +1876,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,   "> 0",
                   IRNode.MAX_REDUCTION_V, "> 0",
                   IRNode.MAX_VL,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512", "false", "avx2", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370671
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMaxBig() {
