@@ -2208,12 +2208,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
          * using the following relations, assuming n > 0:
          *
          * x = y * 10 ^ exp
-         * nthRoot(x, n) = nthRoot(y, n) * 10^(exp / n) if exp mod n == 0
-         * nthRoot(x, n) = nthRoot(y*10^(exp mod n), n) * 10^((exp - (exp mod n))/n) otherwise
+         * rootn(x, n) = rootn(y, n) * 10^(exp / n) if exp mod n == 0
+         * rootn(x, n) = rootn(y*10^(exp mod n), n) * 10^((exp - (exp mod n))/n) otherwise
          *
          * where exp mod n == Math.floorMod(exp, n).
          *
-         * Then use BigInteger.nthRoot() on the reduced value to compute
+         * Then use BigInteger.rootn() on the reduced value to compute
          * the numerical digits of the desired result.
          *
          * Finally, scale back to the desired exponent range and
@@ -2273,7 +2273,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             }
         }
 
-        // To allow BigInteger.nthRoot() to be used to get the root,
+        // To allow BigInteger.rootn() to be used to get the root,
         // it is necessary to normalize the input so that
         // its integer part is sufficient to get the root
         // with the desired precision.
