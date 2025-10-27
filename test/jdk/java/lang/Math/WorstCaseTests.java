@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  */
 
 /**
- * This test contains two distinct kinds of worst-case inputs:
+ * This test contains three distinct kinds of worst-case inputs:
  *
  * 1) Exact numerical results that are nearly half-way between
  * representable numbers or very close to a representable
@@ -42,6 +42,9 @@
  *
  * 2) Worst-case errors as observed empirically across different
  * implementations that are not correctly rounded.
+ *
+ * 3) Worst-case values found in the Julia environment, which uses a
+ * fork of FDLIBM.
  *
  * For the first category, the "Table Maker's Dilemma" results from
  * Jean-Michel Muller and Vincent Lef&egrave;vre, are used.
@@ -69,6 +72,8 @@
  * from "Accuracy of Mathematical Functions in Single, Double, Double
  * Extended, and Quadruple Precision" by Brian Gladman, Vincenzo
  * Innocente and Paul Zimmermann.
+ *
+ * For the third category, see the preprint https://arxiv.org/abs/2509.05666
  *
  * From https://openlibm.org/, "The OpenLibm code derives from the
  * FreeBSD msun and OpenBSD libm implementations, which in turn derive
@@ -143,6 +148,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm
             {+0x1.2e8f20cf3cbe7p+8,     0x1.6a2a59cc78bf7p436},
+            // Julia worst-case observed error
+            {-0x1.6251620687bf3p9,      0x0.c980224219398p-1022},
             // Other worst-case observed errors
             {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
             {+0x1.fce66609f7428p+5,     0x1.b59724cb0bc4cp91},
@@ -188,7 +195,9 @@ public class WorstCaseTests {
             {+0x1.DE7CD6751029Ap16,     +0x1.76E7E5D7B6EABp+3},
 
             // Worst-case observed error for OpenLibm
-            {+0x1.48ae5a67204f5p+0,     0x1.ffd10abffc3fep-3},
+            {+0x1.48ae5a67204f5p+0,     +0x1.ffd10abffc3fep-3},
+            // Julia worst-case observed error
+            {+0x1.14fad2c09e275p0,      +0x1.42a13ec2691dbp-4},
             // Other worst-case observed errors
             {+0x1.1211bef8f68e9p+0,     +0x1.175caeca67f84p-4},
             {+0x1.008000db2e8bep+0,     +0x1.ff83959f5cc1fp-10},
@@ -238,6 +247,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm
             {+0x1.4d84db080b9fdp+21,    +0x1.6e21c4ff6aec3p-1},
+            // Worst-case observed error for Julia
+            {+0x1.5a8e729e7934p102,     +0x1.6deadddde6752p-1},
             // Other worst-case observed errors
             {-0x1.f8b791cafcdefp+4,     -0x1.073ca87470df9p-3 },
             {-0x1.0e16eb809a35dp+944,   +0x1.b5e361ed01dacp-2},
@@ -285,7 +296,10 @@ public class WorstCaseTests {
             {+0x1.E264357EA0E29p-1,     +0x1.3AA301F6EBB1Dp+0},
 
             // Worst-case observed error for OpenLibm
-            {-0x1.004d1c5a9400bp-1,    -0x1.0c6e322e8a28bp-1},
+            {-0x1.004d1c5a9400bp-1,     -0x1.0c6e322e8a28bp-1},
+            // Julia worst-case observed error
+            {-0x1.012d405d9408ep-1,     -0x1.0d7142df4968fp-1},
+
             // Other worst-case observed errors
             {-0x1.0000045b2c904p-3,     -0x1.00abe5252746cp-3},
             {+0x1.6c042a6378102p-1,     +0x1.94eda53f72c5ap-1},
@@ -334,6 +348,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm
             {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1},
+            // Julia worst-case observed error
+            {-0x1.4e4cb79b5b5a2p930,    0x1.70f851fbdea52p-1},
             // Other worst-case observed errors
             {-0x1.7120161c92674p+0,     +0x1.0741fb7683849p-3},
             {-0x1.d19ebc5567dcdp+311,   -0x1.b5d2f45f68958p-2},
@@ -374,6 +390,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm
             {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
+            // Julia worst-case observed error
+            {-0x1.0b7c63033d6cp-1,      +0x1.0f6c7f5db3b93p1},
             // Other worst-case observed errors
             {+0x1.dffffb3488a4p-1,      0x1.6bf3a4a4f4dcbp-2},
             {+0x1.6c05eb219ec46p-1,     0x1.8f4f472807261p-1},
@@ -418,6 +436,9 @@ public class WorstCaseTests {
 
             // Worst-case observed error for OpenLibm, outside of 1 ulp error
             // {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64934p-1}, // 1.02
+
+            // Worst-case observed error for Julia, outside of 1 ulp error
+            // {0x1.e608f1390d9fp293,     -0x1.9942a10545924p-1}, // 1.04
         };
 
         for(double[] testCase: testCases) {
@@ -456,6 +477,8 @@ public class WorstCaseTests {
 
             // Worst-case observed error
             {0x1.62ff6a1682c25p-1,      +0x1.3666b15c8756ap-1},
+            // Julia worst-case observed error
+            {0x1.66340e55ce1adp-1,      +0x1.388f4792eaa82p-1},
             // Other worst-case observed errors
             {+0x1.f9004c4fef9eap-4,  0x1.f67727f5618f2p-4},
             {-0x1.ffff8020d3d1dp-7, -0x1.fff4d5e4886c7p-7},
@@ -554,6 +577,10 @@ public class WorstCaseTests {
             {+0x1.E07E71BFCF06Fp+5,      +0x1.91EC4412C344Fp+85},
             {+0x1.54CD1FEA7663Ap+7,      +0x1.C90810D354618p+244},
             {+0x1.D6479EBA7C971p+8,      +0x1.62A88613629B5p+677},
+
+            // Julia worst-case observed error, 1.9 ulps;
+            // added to hyperbolics testing in StrictMath.
+            // {-0x1.633c654fee2bap9,       -0x1.fdf25fc26e7cp1023},
         };
 
         for(double[] testCase: testCases) {
@@ -582,6 +609,10 @@ public class WorstCaseTests {
             {+0x1.A6031CD5F93BAp-1,     +0x1.5BFF041B260FDp+0},
             {+0x1.104B648F113A1p+0,     +0x1.9EFDCA62B7009p+0},
             {+0x1.EA5F2F2E4B0C5p+1,     +0x17.10DB0CD0FED5p+0},
+
+            // Julia worst-case observed error, 1.9 ulps;
+            // added to hyperbolics testing in StrictMath.
+            // {-0x1.633c654fee2bap9,      0x1.fdf25fc26e7cp1023},
         };
 
         for(double[] testCase: testCases) {
