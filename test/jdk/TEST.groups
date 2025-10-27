@@ -332,8 +332,6 @@ jdk_tools = \
 jdk_jfr = \
     jdk/jfr
 
-x = jdk/jfr/event/gc/detailed/TestStringDeduplicationEvent.java
-
 jdk_jpackage = \
     tools/jpackage
 
