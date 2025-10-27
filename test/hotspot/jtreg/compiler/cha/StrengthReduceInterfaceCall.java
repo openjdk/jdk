@@ -55,6 +55,9 @@ package compiler.cha;
 
 import jdk.internal.vm.annotation.DontInline;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+
 import static compiler.cha.Utils.*;
 
 public class StrengthReduceInterfaceCall {
@@ -66,6 +69,18 @@ public class StrengthReduceInterfaceCall {
         run(ThreeLevelHierarchyAbstractVsDefault.class);
         run(ThreeLevelDefaultHierarchy.class);
         run(ThreeLevelDefaultHierarchy1.class);
+
+        // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
+            run(ObjectToString.TestMH.class, ObjectToString.class);
+            run(ObjectHashCode.TestMH.class, ObjectHashCode.class);
+            run(TwoLevelHierarchyLinear.TestMH.class, TwoLevelHierarchyLinear.class);
+            run(ThreeLevelHierarchyLinear.TestMH.class, ThreeLevelHierarchyLinear.class);
+            run(ThreeLevelHierarchyAbstractVsDefault.TestMH.class, ThreeLevelHierarchyAbstractVsDefault.class);
+            run(ThreeLevelDefaultHierarchy.TestMH.class, ThreeLevelDefaultHierarchy.class);
+            run(ThreeLevelDefaultHierarchy1.TestMH.class, ThreeLevelDefaultHierarchy1.class);
+        }
+
         System.out.println("TEST PASSED");
     }
 
@@ -87,7 +102,7 @@ public class StrengthReduceInterfaceCall {
         static class DJ2 implements J { public String toString() { return "DJ2"; }}
 
         @Override
-        public Object test(I i) { return ObjectToStringHelper.testHelper(i); /* invokeinterface I.toString() */ }
+        public Object test(I i) throws Throwable { return ObjectToStringHelper.testHelper(i); /* invokeinterface I.toString() */ }
 
         @TestCase
         public void testMono() {
@@ -155,6 +170,20 @@ public class StrengthReduceInterfaceCall {
             });
             assertCompiled();
         }
+
+        public static class TestMH extends ObjectToString {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "toString", String.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return (String)TEST_MH.invokeExact(obj); // invokeinterface I.toString()
+            }
+        }
     }
 
     public static class ObjectHashCode extends ATest<ObjectHashCode.I> {
@@ -175,7 +204,7 @@ public class StrengthReduceInterfaceCall {
         static class DJ2 implements J { public int hashCode() { return super.hashCode(); }}
 
         @Override
-        public Object test(I i) {
+        public Object test(I i) throws Throwable {
             return ObjectHashCodeHelper.testHelper(i); /* invokeinterface I.hashCode() */
         }
 
@@ -242,6 +271,20 @@ public class StrengthReduceInterfaceCall {
             });
             assertCompiled();
         }
+
+        public static class TestMH extends ObjectHashCode {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "hashCode", int.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return (int)TEST_MH.invokeExact(obj); // invokeinterface I.hashCode()
+            }
+        }
     }
 
     public static class TwoLevelHierarchyLinear extends ATest<TwoLevelHierarchyLinear.I> {
@@ -263,7 +306,7 @@ public class StrengthReduceInterfaceCall {
         static class DJ2 implements J { public Object m() { return WRONG; }}
 
         @DontInline
-        public Object test(I i) {
+        public Object test(I i) throws Throwable {
             return i.m();
         }
 
@@ -366,6 +409,20 @@ public class StrengthReduceInterfaceCall {
             });
             assertCompiled();
         }
+
+        public static class TestMH extends TwoLevelHierarchyLinear {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokeinterface I.m()
+            }
+        }
     }
 
     public static class ThreeLevelHierarchyLinear extends ATest<ThreeLevelHierarchyLinear.I> {
@@ -385,7 +442,7 @@ public class StrengthReduceInterfaceCall {
         static class DJ implements J { public Object m() { return WRONG;   }}
 
         @DontInline
-        public Object test(I i) {
+        public Object test(I i) throws Throwable {
             return i.m(); // I <: J.m ABSTRACT
         }
 
@@ -404,10 +461,16 @@ public class StrengthReduceInterfaceCall {
             assertCompiled(); // No deopt on not-yet-seen receiver
 
             // 2. No dependency invalidation: different context
-            initialize(DJ.class,  //      DJ.m                    <: intf J.m ABSTRACT
-                       K1.class,  // intf K1            <: intf I <: intf J.m ABSTRACT
-                       K2.class); // intf K2.m ABSTRACT <: intf I <: intf J.m ABSTRACT
-            assertCompiled();
+            if (contextClass() == I.class) {
+                initialize(DJ.class,  //      DJ.m                    <: intf J.m ABSTRACT
+                           K1.class,  // intf K1            <: intf I <: intf J.m ABSTRACT
+                           K2.class); // intf K2.m ABSTRACT <: intf I <: intf J.m ABSTRACT
+                assertCompiled();
+            } else if (contextClass() == J.class) {
+                // no classes to initialize w/o breaking a dependency
+            } else {
+                throw new InternalError("unsupported context: " + contextClass());
+            }
 
             // 3. Dependency invalidation: DI.m <: I
             initialize(DI.class); //      DI.m          <: intf I <: intf J.m ABSTRACT
@@ -491,6 +554,30 @@ public class StrengthReduceInterfaceCall {
             });
             assertCompiled();
         }
+
+        Class<?> contextClass() {
+            return I.class;
+        }
+
+        public static class TestMH extends ThreeLevelHierarchyLinear {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            Class<?> contextClass() {
+                return J.class;
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokeinterface I.m()
+            }
+        }
+
     }
 
     public static class ThreeLevelHierarchyAbstractVsDefault extends ATest<ThreeLevelHierarchyAbstractVsDefault.I> {
@@ -503,7 +590,7 @@ public class StrengthReduceInterfaceCall {
         static class C  implements I { public Object m() { return CORRECT; }}
 
         @DontInline
-        public Object test(I i) {
+        public Object test(I i) throws Throwable {
             return i.m(); // intf I.m OVERPASS
         }
 
@@ -598,6 +685,20 @@ public class StrengthReduceInterfaceCall {
             });
             assertCompiled();
         }
+
+        public static class TestMH extends ThreeLevelHierarchyAbstractVsDefault {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokeinterface I.m()
+            }
+        }
     }
 
     public static class ThreeLevelDefaultHierarchy extends ATest<ThreeLevelDefaultHierarchy.I> {
@@ -617,7 +718,7 @@ public class StrengthReduceInterfaceCall {
         static class DK3 implements K3 {}
 
         @DontInline
-        public Object test(I i) {
+        public Object test(I i) throws Throwable {
             return i.m();
         }
 
@@ -636,11 +737,17 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
 
             // 2. No dependency invalidation
-            initialize(DJ.class,    //      DJ.m                               <: intf J.m ABSTRACT
-                       K1.class,   // intf  K1            <: intf I            <: intf J.m ABSTRACT
-                       K2.class,   // intf  K2.m ABSTRACT <: intf I            <: intf J.m ABSTRACT
-                       DK3.class); //      DK3.m          <: intf K3.m DEFAULT <: intf J.m ABSTRACT
-            assertCompiled();
+            if (contextClass() == I.class) {
+                initialize(DJ.class,   //       DJ.m                               <: intf J.m ABSTRACT
+                           K1.class,   // intf  K1            <: intf I            <: intf J.m ABSTRACT
+                           K2.class,   // intf  K2.m ABSTRACT <: intf I            <: intf J.m ABSTRACT
+                           DK3.class); //      DK3.m          <: intf K3.m DEFAULT <: intf J.m ABSTRACT
+                assertCompiled();
+            } else if (contextClass() == J.class) {
+                // no classes to initialize w/o breaking a dependency
+            } else {
+                throw new InternalError("unsupported context: " + contextClass());
+            }
 
             // 3. Dependency invalidation
             initialize(DI.class); // DI.m <: intf I <: intf J.m ABSTRACT
@@ -666,6 +773,29 @@ public class StrengthReduceInterfaceCall {
             });
             assertCompiled();
         }
+
+        Class<?> contextClass() {
+            return I.class;
+        }
+
+        public static class TestMH extends ThreeLevelDefaultHierarchy {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            Class<?> contextClass() {
+                return J.class;
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokeinterface I.m()
+            }
+        }
     }
 
     public static class ThreeLevelDefaultHierarchy1 extends ATest<ThreeLevelDefaultHierarchy1.I> {
@@ -686,7 +816,7 @@ public class StrengthReduceInterfaceCall {
         static class DJ2 implements J2 { public Object m() { return WRONG; }}
 
         @DontInline
-        public Object test(I i) {
+        public Object test(I i) throws Throwable {
             return i.m();
         }
 
@@ -705,11 +835,20 @@ public class StrengthReduceInterfaceCall {
             assertCompiled();
 
             // 2. No dependency invalidation
-            initialize(DJ1.class,
-                       DJ2.class,
-                       K1.class,
-                       K2.class,
-                       K3.class);
+            if (contextClass() == I.class) {
+                initialize(DJ1.class, //      DJ1.m                               <: intf J1
+                           DJ2.class, //      DJ2.m                               <:          intf J2.m ABSTRACT
+                           K1.class,  // intf  K1            <: intf I            <: intf J1, intf J2.m ABSTRACT
+                           K2.class,  // intf  K2.m ABSTRACT <: intf I            <: intf J1, intf J2.m ABSTRACT
+                           K3.class); // intf  K3.m DEFAULT  <: intf I            <: intf J1, intf J2.m ABSTRACT
+            } else if (contextClass() == J2.class) {
+                initialize(DJ1.class, //      DJ1.m                               <: intf J1
+                           K1.class,  // intf  K1            <: intf I            <: intf J1, intf J2.m ABSTRACT
+                           K2.class,  // intf  K2.m ABSTRACT <: intf I            <: intf J1, intf J2.m ABSTRACT
+                           K3.class); // intf  K3.m DEFAULT  <: intf I            <: intf J1, intf J2.m ABSTRACT
+            } else {
+                throw new InternalError("unsupported context: " + contextClass());
+            }
             assertCompiled();
 
             // 3. Dependency invalidation
@@ -741,6 +880,29 @@ public class StrengthReduceInterfaceCall {
                 test(j);
             });
             assertCompiled();
+        }
+
+        Class<?> contextClass() {
+            return I.class;
+        }
+
+        public static class TestMH extends ThreeLevelDefaultHierarchy1 {
+            static final MethodHandle TEST_MH = findVirtualHelper(I.class, "m", Object.class, MethodHandles.lookup());
+
+            @Override
+            public void checkInvalidReceiver() {
+                // receiver type check failures trigger nmethod invalidation
+            }
+
+            @Override
+            Class<?> contextClass() {
+                return J2.class;
+            }
+
+            @Override
+            public Object test(I obj) throws Throwable {
+                return TEST_MH.invokeExact(obj); // invokeinterface I.m()
+            }
         }
     }
 }
