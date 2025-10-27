@@ -1111,7 +1111,7 @@ void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
   }
 }
 
-void PrintProperties::print_node_properties(Node* node, Compile* C){
+void PrintProperties::print_node_properties(Node* node, Compile* C) {
   const jushort flags = node->flags();
   print_property((flags & Node::Flag_is_Copy), "is_copy");
   print_property((flags & Node::Flag_rematerialize), "rematerialize");
@@ -1128,7 +1128,10 @@ void PrintProperties::print_node_properties(Node* node, Compile* C){
     print_property(!(C->matcher()->is_shared(node)), "is_shared", IdealGraphPrinter::FALSE_VALUE);
     print_property(C->matcher()->is_dontcare(node), "is_dontcare");
     print_property(!(C->matcher()->is_dontcare(node)),"is_dontcare", IdealGraphPrinter::FALSE_VALUE);
-    print_property((C->matcher()->find_old_node(node) != nullptr), "old_node_idx", C->matcher()->find_old_node(node)->_idx);
+    Node* old = C->matcher()->find_old_node(node);
+    if (old != nullptr) {
+      print_property(true, "old_node_idx", C->matcher()->find_old_node(node)->_idx);
+    }
   }
 }
 
@@ -1163,23 +1166,22 @@ void PrintProperties::print_lrg_properties(const LRG &lrg, const char *buffer) {
 }
 
 void PrintProperties::print_property(int flag, const char* name) {
-  if (flag) {
+  if (flag != 0) {
     _printer->print_prop(name, IdealGraphPrinter::TRUE_VALUE);
   }
 }
 
 void PrintProperties::print_property(int flag, const char* name, const char* val) {
-  if (flag) {
+  if (flag != 0) {
     _printer->print_prop(name, val);
   }
 }
 
 void PrintProperties::print_property(int flag, const char* name, int val) {
-  if (flag) {
+  if (flag != 0) {
     _printer->print_prop(name, val);
   }
 }
-
 
 extern const char *NodeClassNames[];
 

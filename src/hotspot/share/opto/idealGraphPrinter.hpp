@@ -31,7 +31,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/xmlstream.hpp"
 
-
 #ifndef PRODUCT
 
 class Compile;
@@ -172,15 +171,15 @@ private:
 class PrintProperties
 {
 private:
-  IdealGraphPrinter *_printer;
+  IdealGraphPrinter* _printer;
 
 public:
-  PrintProperties(IdealGraphPrinter *printer) : _printer(printer) {}
-  void print_node_properties(Node *node, Compile *C);
-  void print_lrg_properties(const LRG &lrg, const char *buffer);
-  void print_property(int flag, const char *name);
-  void print_property(int flag, const char *name, const char *val);
-  void print_property(int flag, const char *name, int val);
+  PrintProperties(IdealGraphPrinter* printer) : _printer(printer) {}
+  void print_node_properties(Node* node, Compile* C);
+  void print_lrg_properties(const LRG &lrg, const char* buffer);
+  void print_property(int flag, const char* name);
+  void print_property(int flag, const char* name, const char* val);
+  void print_property(int flag, const char* name, int val);
 };
 
 #endif
