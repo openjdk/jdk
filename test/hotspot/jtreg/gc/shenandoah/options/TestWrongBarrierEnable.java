@@ -37,9 +37,22 @@ import jdk.test.lib.process.OutputAnalyzer;
 public class TestWrongBarrierEnable {
 
     public static void main(String[] args) throws Exception {
-        String[] concurrent = { "ShenandoahSATBBarrier" };
+        String[] concurrent = {
+                "ShenandoahLoadRefBarrier",
+                "ShenandoahSATBBarrier",
+                "ShenandoahCASBarrier",
+                "ShenandoahCloneBarrier",
+                "ShenandoahStackWatermarkBarrier",
+        };
         String[] generational = { "ShenandoahCardBarrier" };
-        String[] all = { "ShenandoahSATBBarrier", "ShenandoahCardBarrier" };
+        String[] all = {
+                "ShenandoahLoadRefBarrier",
+                "ShenandoahSATBBarrier",
+                "ShenandoahCASBarrier",
+                "ShenandoahCloneBarrier",
+                "ShenandoahStackWatermarkBarrier",
+                "ShenandoahCardBarrier"
+        };
 
         shouldPassAll("-XX:ShenandoahGCHeuristics=adaptive",   concurrent);
         shouldPassAll("-XX:ShenandoahGCHeuristics=static",     concurrent);
