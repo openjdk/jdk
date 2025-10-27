@@ -31,11 +31,11 @@ import java.util.Arrays;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class CaseFolding {
+public class GenerateCaseFolding {
 
     public static void main(String[] args) throws Throwable {
         if (args.length != 3) {
-            System.err.println("Usage: java CaseFolding TemplateFile CaseFolding.txt CaseFolding.java");
+            System.err.println("Usage: java GenerateCaseFolding TemplateFile CaseFolding.txt CaseFolding.java");
             System.exit(1);
         }
         var templateFile = Paths.get(args[0]);
@@ -44,24 +44,19 @@ public class CaseFolding {
 
         // java.lang
         var supportedTypes = "^.*; [CF]; .*$";  // full/1:M case folding
-        var caseFoldingEntries = Files.lines(caseFoldingTxt)
+        String[][] caseFoldings = Files.lines(caseFoldingTxt)
                 .filter(line -> !line.startsWith("#") && line.matches(supportedTypes))
                 .map(line -> {
                     var fields = line.split("; ");
-                    var cp = Integer.parseInt(fields[0], 16);
+                    var cp = fields[0];
                     fields = fields[2].trim().split(" ");
-                    var folding = new int[fields.length];
-                    for (int i = 0; i < folding.length; i++) {
-                        folding[i] = Integer.parseInt(fields[i], 16);
-                    }
-                    return String.format("\t\tnew CaseFoldingEntry(0x%04x, %s)",
-                            cp,
-                            Arrays.stream(folding)
-                                    .mapToObj(f -> String.format("0x%04x", f))
-                                    .collect(Collectors.joining(", ", "new int[] {", "}"))
-                    );
+                    var folding = new String[fields.length + 1];
+                    folding[0] = cp;
+                    System.arraycopy(fields, 0, folding, 1, fields.length);
+                    return folding;
                 })
-                .collect(Collectors.joining(",\n", "", ""));
+                .toArray(size -> new String[size][]);
+
         // util.regex
         var expandedSupportedTypes = "^.*; [CTS]; .*$";
         var expanded_caseFoldingEntries = Files.lines(caseFoldingTxt)
@@ -86,9 +81,45 @@ public class CaseFolding {
         Files.write(
                 genSrcFile,
                 Files.lines(templateFile)
-                        .map(line -> line.contains("%%%Entries") ? caseFoldingEntries : line)
+                        .map(line -> line.contains("%%%Entries") ? genFoldingEntries(caseFoldings) : line)
                         .map(line -> line.contains("%%%Expanded_Case_Map_Entries") ? T_0x0131_0x49 + expanded_caseFoldingEntries : line)
                         .collect(Collectors.toList()),
                 StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    private static String genFoldingEntries(String[][] foldings) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("    private static final int[] CASE_FOLDING_CPS = {\n");
+        int width = 10;
+        for (int i = 0; i < foldings.length; i++) {
+            if (i % width == 0)
+                sb.append("        ");
+            sb.append(String.format("0X%s", foldings[i][0]));
+            if (i < foldings.length - 1)
+                sb.append(", ");
+            if (i % width == width - 1 || i == foldings.length - 1)
+                sb.append("\n");
+        }
+        sb.append("    };\n\n");
+
+        sb.append("    private static final int[][] CASE_FOLDING_VALUES = {\n");
+        width = 6;
+        for (int i = 0; i < foldings.length; i++) {
+            if (i % width == 0)
+                sb.append("        "); // indent
+            var folding = foldings[i];
+            sb.append(Arrays.stream(folding)
+                            .skip(1)
+                            .map(f -> String.format("0X%s", f))
+                            .collect(Collectors.joining(", ", "{", "}"))
+            );
+            if (i < foldings.length - 1)
+                sb.append(", ");
+            if (i % width == width - 1 || i == foldings.length - 1) {
+                sb.append("\n");
+            }
+        }
+        sb.append("    };\n");
+        return sb.toString();
     }
 }

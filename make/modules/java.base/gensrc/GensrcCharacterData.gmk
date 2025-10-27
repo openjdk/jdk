@@ -73,7 +73,7 @@ TARGETS += $(GENSRC_CHARACTERDATA)
 ################################################################################
 
 
-GENSRC_STRINGCASEFOLDING := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/java/lang/CaseFolding.java
+GENSRC_STRINGCASEFOLDING := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/lang/CaseFolding.java
 
 STRINGCASEFOLDING_TEMPLATE := $(MODULE_SRC)/share/classes/jdk/internal/lang/CaseFolding.java.template
 CASEFOLDINGTXT := $(MODULE_SRC)/share/data/unicodedata/CaseFolding.txt

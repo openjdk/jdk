@@ -33,7 +33,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import jdk.internal.java.lang.CaseFolding;
+import jdk.internal.lang.CaseFolding;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -62,10 +62,6 @@ final class StringLatin1 {
 
     static int length(byte[] value) {
         return value.length;
-    }
-
-    static int codePointAt(byte[] value, int index, int end) {
-        return value[index] & 0xff;
     }
 
     static char[] toChars(byte[] value) {
@@ -241,7 +237,6 @@ final class StringLatin1 {
                 return compareToFC0(value, k, len, other, k, olen);
             }
             return Character.toLowerCase(c1) - Character.toLowerCase(c2);
-
         }
         return len - olen;
     }

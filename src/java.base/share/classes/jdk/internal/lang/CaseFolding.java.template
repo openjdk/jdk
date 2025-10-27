@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.java.lang;
+package jdk.internal.lang;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -36,187 +36,114 @@ import static java.util.Map.entry;
  * Utility class that handles Unicode case folding properties defined in
  * CasingFolding.txt, including 1:M full case folding.
  */
- public final class CaseFolding {
+public final class CaseFolding {
 
     private CaseFolding()  {}
 
-    /**
-     * Tests whether the specified code point is already in its case-folded form.
-     * <p>
-     * A code point is considered folded if it does not have an explicit case
-     * folding mapping in the Unicode CaseFolding data.
-     *
-     * @param  cp
-     *         the Unicode code point to test
-     * @return {@code true} if the given code point has no case
-     *         folding mapping (that is, it is already folded);
-     *         {@code false} otherwise
-     *
-     * @see #fold(int)
-     */
- 	public static boolean isFolded(int cp) {
-		return caseFoldingMap.get(cp) == null;
-	}
-
-    /**
-     * Tests whether the specified code point has a folding mapping entry defined.
-     *
-     * @param  cp
-     *         the Unicode code point to test
-     * @return {@code true} if the given code point has a case folding mapping entry
-     *         defined in (@code caseFoldingMap}, {@code false} otherwise
-     */
+   /**
+    * Tests whether the specified code point has a folding mapping entry defined.
+    *
+    * @param  cp
+    *         the Unicode code point to test
+    * @return {@code true} if the given code point has a case folding mapping entry
+    *         defined in (@code caseFoldingMap}, {@code false} otherwise
+    */
     public static boolean isDefined(int cp) {
-        return caseFoldingMap.get(cp) != null;
-    }
+         return getDefined(cp) != null;
+     }
 
-    /**
-     * Returns the case-folded form of the specified code point, according
-     * to the Unicode case folding mappings.
-     * <p>
-     * If the code point has no case folding mapping, this method returns
-     * the original code point as a single-element array. Otherwise, it
-     * returns the mapped form, which may consist of one or more {@code char}
-     * values (to support 1:M mappings).
-     *
-     * @param  cp
-     *         the Unicode code point to fold
-     * @return an array of {@code char} values representing the
-     *         case-folded form of the input code point
-     *
-     * @see #isFolded(int)
-     */
-    public static int[] fold(int cp) {
-        var entry = caseFoldingMap.get(cp);
-        if (entry != null)
-          return entry.folding;
-        return new int[] { cp };
+   /**
+    * Returns the case-folded form of the specified code point defined
+	* by the Unicode case folding mappings.
+    * <p>
+    * If the code point has no case folding mapping defined, this method
+	* returns null. Otherwise, it returns the mapped form, which may consist
+	* of one or more {@code char} values (to support 1:M mappings).
+    *
+    * @param  cp
+    *         the Unicode code point to fold
+    * @return an array of {@code char} values representing the
+    *         case-folded form of the input code point, null if
+	*         there is no mapping defined.
+    */
+    public static int[] foldIfDefined(int cp) {
+        return getDefined(cp);
     }
 
    /**
-     * Returns the case-folded form of the specified code point defined
-	 * by the Unicode case folding mappings.
-     * <p>
-     * If the code point has no case folding mapping defined, this method
-	 * returns null. Otherwise, it returns the mapped form, which may consist
-	 * of one or more {@code char} values (to support 1:M mappings).
-     *
-     * @param  cp
-     *         the Unicode code point to fold
-     * @return an array of {@code char} values representing the
-     *         case-folded form of the input code point, null if
-	 *         there is no mapping defined.
-     */
-    public static int[] foldIfDefined(int cp) {
-        var entry = caseFoldingMap.get(cp);
-        return entry != null ? entry.folding : null;
+    * Returns the case-folded form of the specified code point, if there
+    * is a 1:1 mapping defined by the Unicode case folding mappings.
+    * <p>
+    * If the code point has no case folding mapping defined, or if it has
+    * a 1:M (one-to-many) mapping, this method returns {@code -1}.
+    * Otherwise, it returns the single mapped code point.
+    *
+    * @param  cp
+    *         the Unicode code point to fold
+    * @return the case-folded code point, or {@code -1} if no 1:1 mapping
+    *         is defined
+    */
+    public static int foldIfDefined11(int cp) {
+        var folding = getDefined(cp);
+        return folding != null && folding.length == 1 ? folding[0] : -1;
     }
 
-    /**
-     * Returns a case-folded copy of the given {@code String} object, using the
-     * Unicode case folding mappings defined in
-     * <a href="https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt">
-     * Unicode Case Folding Properties</a>.
-     * <p>
-     * This is a convenience method intended primarily for testing
-     * {@link #isFolded(int)} and {@link #fold(int)}. Its implementation is
-     * not optimized for performance and should not be used in performance-
-     * sensitive contexts. It exists only until a dedicated
-     * {@code String.toCaseFold()} method is introduced.
-     *
-     * @param s
-     *        the input string
-     * @return a {@code String} containing the case-folded form of the input string
-     */
-    public static String fold(String s) {
-        int first;
-        int len = s.length();
-        int cpCnt = 1;
-        for (first = 0; first < len; first += cpCnt) {
-            int cp = s.codePointAt(first);
-            if (!CaseFolding.isFolded(cp)) {
-                break;
-            }
-            cpCnt = Character.charCount(cp);
-        }
-        if (first == len) {
-            return s;
-        }
-        StringBuilder sb = new StringBuilder(len);
-        sb.append(s, 0, first);
-        for (int i = first; i < len; i += cpCnt) {
-            int cp = s.codePointAt(i);
-            if (CaseFolding.isFolded(cp)) {
-                sb.appendCodePoint(cp);
-            } else {
-                int[] folded = CaseFolding.fold(cp);
-                 if (folded != null) {
-                     for (int f : folded) {
-                         sb.appendCodePoint(f);
-                     }
-                 }
-            }
-            cpCnt = Character.charCount(cp);
-        }
-        return sb.toString();
-    }
-
-    /**
-     * Returns an expansion set to "close" a given regex Unicode character class range for case-sensitive
-     * matching, according to the
-     * <a href="https://www.unicode.org/reports/tr18/#Simple_Loose_Matches">Simple Loose Matches</a>
-     * rule defined in Unicode Technical Standard #18: Unicode Regular Expressions.
-     * <p>
-     * To conform with Level 1 of UTS #18, specifically RL1.5: Simple Loose Matches, simple case folding must
-     * be applied to literals and (optionally) to character classes. When applied to character classes, each
-     * character class is expected to be closed under simple case folding. See the standard for the
-     * detailed explanation and example of "closed".
-     * <p>
-     * RL1.5 states: To meet this requirement, an implementation that supports case-sensitive matching should
-     * <ol>
-     * <li>Provide at least the simple, default Unicode case-insensitive matching, and</li>
-     * <li>Specify which character properties or constructs are closed under the matching.</li>
-     * </ol>
-     * <p>
-     * In the {@code  Pattern} implementation, 5 types of constructs maybe case-sensitive when matching:
-     * back-refs, string slice (sequences), single, family(char-property) and class range. Single and
-     * family may appears independently or within a class.
-     * <p>
-     * For loose/case-insensitive matching, the back-refs, slices and singles apply {code toUpperCase} and
-     * {@code toLowerCase} to both the pattern and the input string. This effectively 'close' the class for
-     * matching.
-     * <p>
-     * The family/char-properties are not "closed" and should remain unchanged. This is acceptable per RL1.5,
-     * if their behavior is clearly specified.
-     * <p>
-     * This method addresses that requirement for the "range" construct within in character class by computing
-     * the additional characters that should be included to close the range under simple case folding:
-     * <p>
-     * For each character in the input range {@code [start, end]} (inclusive), if the character has a simple
-     * case folding mapping in Unicode's CaseFolding.txt, the mapping is not a round-trip map, and the mapped
-     * character is not already in the range, then that mapped character (typically lowercase) is added to
-     * the expansion set.
-     * <p>
-     * This allows regex character class "range" implementation to use the returned expansion set to support
-     * additional case-insensitive matching, without duplicating characters already covered by the existing
-     * regex range implementation. The expectation is the matching is done using both the uppercase and
-     * lowercase forms of the input character, for example
-     *
-     * <pre>{@code
-     *
-     *     ch -> inRange(lower, Character.toUpperCase(ch), upper) ||
-     *           inRange(lower, Character.toLower(ch), upper) ||
-     *           additionalClosingCharacters.contains(Character.toUpperCase(ch)) ||
-     *           additionalClosingCharacters.contains(Character.toUpperCase(ch))
-     * }</pre>
-     *
-     * <p>
-     * @spec https://www.unicode.org/reports/tr18/#Simple_Loose_Matches
-     * @param start the starting code point of the character range
-     * @param end the ending code point of the character range
-     * @return a {@code int[]} containing the all simple case equivalents of characters in the range, excluding
-     *         those already in the range
-     */
+   /**
+    * Returns an expansion set to "close" a given regex Unicode character class range for case-sensitive
+    * matching, according to the
+    * <a href="https://www.unicode.org/reports/tr18/#Simple_Loose_Matches">Simple Loose Matches</a>
+    * rule defined in Unicode Technical Standard #18: Unicode Regular Expressions.
+    * <p>
+    * To conform with Level 1 of UTS #18, specifically RL1.5: Simple Loose Matches, simple case folding must
+    * be applied to literals and (optionally) to character classes. When applied to character classes, each
+    * character class is expected to be closed under simple case folding. See the standard for the
+    * detailed explanation and example of "closed".
+    * <p>
+    * RL1.5 states: To meet this requirement, an implementation that supports case-sensitive matching should
+    * <ol>
+    * <li>Provide at least the simple, default Unicode case-insensitive matching, and</li>
+    * <li>Specify which character properties or constructs are closed under the matching.</li>
+    * </ol>
+    * <p>
+    * In the {@code  Pattern} implementation, 5 types of constructs maybe case-sensitive when matching:
+    * back-refs, string slice (sequences), single, family(char-property) and class range. Single and
+    * family may appears independently or within a class.
+    * <p>
+    * For loose/case-insensitive matching, the back-refs, slices and singles apply {code toUpperCase} and
+    * {@code toLowerCase} to both the pattern and the input string. This effectively 'close' the class for
+    * matching.
+    * <p>
+    * The family/char-properties are not "closed" and should remain unchanged. This is acceptable per RL1.5,
+    * if their behavior is clearly specified.
+    * <p>
+    * This method addresses that requirement for the "range" construct within in character class by computing
+    * the additional characters that should be included to close the range under simple case folding:
+    * <p>
+    * For each character in the input range {@code [start, end]} (inclusive), if the character has a simple
+    * case folding mapping in Unicode's CaseFolding.txt, the mapping is not a round-trip map, and the mapped
+    * character is not already in the range, then that mapped character (typically lowercase) is added to
+    * the expansion set.
+    * <p>
+    * This allows regex character class "range" implementation to use the returned expansion set to support
+    * additional case-insensitive matching, without duplicating characters already covered by the existing
+    * regex range implementation. The expectation is the matching is done using both the uppercase and
+    * lowercase forms of the input character, for example
+    *
+    * <pre>{@code
+    *
+    *     ch -> inRange(lower, Character.toUpperCase(ch), upper) ||
+    *           inRange(lower, Character.toLower(ch), upper) ||
+    *           additionalClosingCharacters.contains(Character.toUpperCase(ch)) ||
+    *           additionalClosingCharacters.contains(Character.toUpperCase(ch))
+    * }</pre>
+    *
+    * <p>
+    * @spec https://www.unicode.org/reports/tr18/#Simple_Loose_Matches
+    * @param start the starting code point of the character range
+    * @param end the ending code point of the character range
+    * @return a {@code int[]} containing the all simple case equivalents of characters in the range, excluding
+    *         those already in the range
+    */
     public static int[] getClassRangeClosingCharacters(int start, int end) {
         int[] expanded = new int[expanded_case_cps.length];
         int off = 0;
@@ -240,69 +167,48 @@ import static java.util.Map.entry;
       .mapToInt(Integer::intValue)
       .toArray();
 
+    private static final int HASH_CP = 0;
+    private static final int HASH_INDEX = 1;
+    private static final int HASH_NEXT = 2;
 
-     private static class CaseFoldingEntry {
-        final int cp;
-        final int[] folding;
-        CaseFoldingEntry next = null;
-
-        CaseFoldingEntry(int cp, int[] folding) {
-            this.cp = cp;
-            this.folding = folding;
-        };
-    }
-
-    private static class CaseFoldingMap {
-
-        private final CaseFoldingEntry[] entries;
-
-        CaseFoldingMap(CaseFoldingEntry[] entries) {
-            this.entries = new CaseFoldingEntry[entries.length << 1];
-            for (var entry : entries) {
-                add(entry);
-            }
-        }
-
-        public CaseFoldingEntry get(int cp) {
-            var entries = this.entries;
-            var index = cp % entries.length;
-            for (var e = entries[index]; e != null; e = e.next) {
-                if (e.cp == cp)
-                    return e;
-            }
-            return null;
-        }
-
-        public int getDepth(int cp) {
-            var entries = this.entries;
-            var index = cp % entries.length;
-            int depth = 0;
-            for (var e = entries[index]; e != null; e = e.next) {
-                if (e.cp == cp)
+    private static int[][] hashKeys(int[] keys) {
+        var hashes = new int[keys.length << 1][3];  // cp + hash + next
+        var off = keys.length;
+        for (int i = 0; i < keys.length; i++) {
+            var cp = keys[i];
+            var hash = cp % keys.length;
+            while (hashes[hash][HASH_CP] != 0) {
+                var next = hashes[hash][HASH_NEXT];
+                if (next == 0) {
+                    hashes[hash][HASH_NEXT] = off;
+                    hash = off++;
                     break;
-                depth++;
-            }
-            return depth;
-        }
-
-        private void add(CaseFoldingEntry entry) {
-            int cp = entry.cp;
-            var entries = this.entries;
-            var index = cp % entries.length;
-            for (var e = entries[index]; e != null; e = e.next) {
-                if (e.cp == cp) {
-                    throw new IllegalArgumentException("Duplicated mapping entry : " +
-                            String.format("U+%04x", cp));
+                } else {
+                    hash = next;
                 }
             }
-            entry.next = entries[index];
-            entries[index] = entry;
+            hashes[hash][HASH_CP] = cp;
+            hashes[hash][HASH_INDEX] = i;
         }
+        return Arrays.copyOf(hashes, off);
     }
 
-    private final static CaseFoldingEntry[] caseFoldingEntries = {
-%%%Entries
-    };
+    private static int[] getDefined(int cp) {
+        var hashes = CASE_FOLDING_HASHES;
+        var length = CASE_FOLDING_CPS.length;  // hashed based on total defined.
+        var hash = cp % length;
+        while (hashes[hash][HASH_CP] != cp) {
+            var next = hashes[hash][HASH_NEXT];
+            if (next == 0) {
+                return null;   // hash miss
+            }
+            hash = next;
+        }
+        var index = hashes[hash][HASH_INDEX];
+        return CASE_FOLDING_VALUES[index];
+    }
 
-    private final static CaseFoldingMap caseFoldingMap = new CaseFoldingMap(caseFoldingEntries);
+%%%Entries
+
+    private static final int[][] CASE_FOLDING_HASHES = hashKeys(CASE_FOLDING_CPS);
 }

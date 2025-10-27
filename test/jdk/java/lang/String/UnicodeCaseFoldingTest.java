@@ -26,11 +26,12 @@
  * @summary tests unicode case-folding based String comparison and equality
  * @bug 4397357
  * @library /lib/testlibrary/java/lang
- * @compile --add-exports java.base/jdk.internal.java.lang=ALL-UNNAMED
+ * @compile --add-exports java.base/jdk.internal.lang=ALL-UNNAMED
  * UnicodeCaseFoldingTest.java
- * @run junit/othervm --add-exports java.base/jdk.internal.java.lang=ALL-UNNAMED
+ * @run junit/othervm --add-exports java.base/jdk.internal.lang=ALL-UNNAMED
  * UnicodeCaseFoldingTest
  */
+
 import java.nio.file.Files;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
@@ -43,7 +44,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import jdk.internal.java.lang.CaseFolding;
+import jdk.internal.lang.CaseFolding;
 
 public class UnicodeCaseFoldingTest {
 
@@ -63,7 +64,7 @@ public class UnicodeCaseFoldingTest {
                     var source = new String(Character.toChars(cp));
                     var expected = new String(folding, 0, folding.length);
                     // (1) Verify the folding result matches expected
-                    assertEquals(expected, CaseFolding.fold(source), "CaseFolding.fold()");
+                    assertEquals(expected, foldCase(source), "CaseFolding.fold()");
 
                     // (2) Verify compareToFoldCase() result
                     assertEquals(0, source.compareToFoldCase(expected), "source.compareToFoldCase(expected)");
@@ -127,13 +128,12 @@ public class UnicodeCaseFoldingTest {
             }
             if (Character.isSurrogate((char) cp)) {
                 continue; // skip surrogate code units
-
             }
             if (listed.contains(cp)) {
                 continue;          // already tested separately
             }
             String s = new String(Character.toChars(cp));
-            String folded = CaseFolding.fold(s);
+            String folded = foldCase(s);
             if (!s.equals(folded)) {
                 failures.add(String.format("Unexpected folding: U+%04X '%s' → '%s'", cp, s, folded));
             }
@@ -141,13 +141,13 @@ public class UnicodeCaseFoldingTest {
 
         assertEquals(0, failures.size(),
                 () -> "Some unlisted code points folded unexpectedly:\n"
-                + String.join("\n", failures));
+                        + String.join("\n", failures));
     }
 
     @ParameterizedTest(name = "CaseFold \"{0}\" → \"{1}\"")
     @MethodSource("caseFoldTestCases")
     void testIndividualCaseFolding(String input, String expected) {
-        assertEquals(expected, CaseFolding.fold(input));
+        assertEquals(expected, foldCase(input));
     }
 
     static Stream<Arguments> caseFoldTestCases() {
@@ -236,7 +236,7 @@ public class UnicodeCaseFoldingTest {
         assertEquals(0, s2.compareToFoldCase(s1));
         assertEquals(true, s1.equalsFoldCase(s2));
         assertEquals(true, s2.equalsFoldCase(s1));
-        assertEquals(CaseFolding.fold(s1), CaseFolding.fold(s2));
+        assertEquals(foldCase(s1), foldCase(s2));
     }
 
     static Stream<Arguments> caseFoldOrderingProvider() {
@@ -277,10 +277,42 @@ public class UnicodeCaseFoldingTest {
     @ParameterizedTest
     @MethodSource("roundTripProvider")
     void testCaseFoldRoundTrip(String s) {
-        String folded = CaseFolding.fold(s);
+        String folded = foldCase(s);
         assertEquals(0, s.compareToFoldCase(folded));
         assertEquals(0, folded.compareToFoldCase(s));
         assertEquals(true, s.equalsFoldCase(folded));
         assertEquals(true, folded.equalsFoldCase(s));
+    }
+
+    // helper to test the integrity of folding mapping
+    private static String foldCase(String s) {
+        int first;
+        int len = s.length();
+        int cpCnt = 1;
+        for (first = 0; first < len; first += cpCnt) {
+            int cp = s.codePointAt(first);
+            if (CaseFolding.isDefined(cp)) {
+                break;
+            }
+            cpCnt = Character.charCount(cp);
+        }
+        if (first == len) {
+            return s;
+        }
+        StringBuilder sb = new StringBuilder(len);
+        sb.append(s, 0, first);
+        for (int i = first; i < len; i += cpCnt) {
+            int cp = s.codePointAt(i);
+            int[] folded = CaseFolding.foldIfDefined(cp);
+            if (folded == null) {
+                sb.appendCodePoint(cp);
+            } else {
+                for (int f : folded) {
+                    sb.appendCodePoint(f);
+                }
+            }
+            cpCnt = Character.charCount(cp);
+        }
+        return sb.toString();
     }
 }
