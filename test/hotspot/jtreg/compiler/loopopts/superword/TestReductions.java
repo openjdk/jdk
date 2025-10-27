@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=no-vectorization
  * @bug 8340093
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
@@ -30,7 +30,7 @@
  */
 
 /*
- * @test
+ * @test id=vanilla
  * @bug 8340093
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
@@ -38,7 +38,7 @@
  */
 
 /*
- * @test
+ * @test id=force-vectorization
  * @bug 8340093
  * @summary Test vectorization of reduction loops.
  * @library /test/lib /
@@ -1903,8 +1903,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.ADD_VF,          "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "= 2"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "< 2"})
     // Not considered profitable by cost model, but if forced we can vectorize.
@@ -1923,8 +1927,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,    "> 0",
                   IRNode.MUL_REDUCTION_VF, "> 0",
                   IRNode.MUL_VF,           "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "= 2"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "< 2"})
     // Not considered profitable by cost model, but if forced we can vectorize.
@@ -1978,8 +1986,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.ADD_VF,          "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static float floatAddDotProduct() {
@@ -1995,8 +2007,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,    "> 0",
                   IRNode.MUL_REDUCTION_VF, "> 0",
                   IRNode.MUL_VF,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static float floatMulDotProduct() {
@@ -2047,8 +2063,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.ADD_VF,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static float floatAddBig() {
@@ -2064,8 +2084,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_F,    "> 0",
                   IRNode.MUL_REDUCTION_VF, "> 0",
                   IRNode.MUL_VF,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_F,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_F,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static float floatMulBig() {
@@ -2116,8 +2140,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,    "> 0",
                   IRNode.ADD_REDUCTION_VD, "> 0",
                   IRNode.ADD_VD,           "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "= 2"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "< 2"})
     // Not considered profitable by cost model, but if forced we can vectorize.
@@ -2136,8 +2164,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,    "> 0",
                   IRNode.MUL_REDUCTION_VD, "> 0",
                   IRNode.MUL_VD,           "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "= 2"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "< 2"})
     // Not considered profitable by cost model, but if forced we can vectorize.
@@ -2191,8 +2223,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.ADD_VD,          "= 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static double doubleAddDotProduct() {
@@ -2208,8 +2244,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,    "> 0",
                   IRNode.MUL_REDUCTION_VD, "> 0",
                   IRNode.MUL_VD,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static double doubleMulDotProduct() {
@@ -2260,8 +2300,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,   "> 0",
                   IRNode.ADD_REDUCTION_V, "> 0",
                   IRNode.ADD_VD,          "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static double doubleAddBig() {
@@ -2277,8 +2321,12 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_D,    "> 0",
                   IRNode.MUL_REDUCTION_VD, "> 0",
                   IRNode.MUL_VD,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeature = {"sse4.1", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_D,
+        applyIfCPUFeatureAnd = {"asimd", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370677
+    // But: it is not clear that it would be profitable, given the sequential reduction.
     @IR(failOn = IRNode.LOAD_VECTOR_D,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static double doubleMulBig() {
