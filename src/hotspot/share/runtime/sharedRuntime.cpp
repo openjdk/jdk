@@ -67,6 +67,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/osThread.hpp"
 #include "runtime/perfData.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -677,10 +678,13 @@ address SharedRuntime::get_poll_stub(address pc) {
            "polling page safepoint stub not created yet");
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
-  log_debug(safepoint)("... found polling page %s exception at pc = "
-                       INTPTR_FORMAT ", stub =" INTPTR_FORMAT,
+  log_trace(safepoint)("Polling page exception: thread = " INTPTR_FORMAT " [%d], pc = "
+                       INTPTR_FORMAT " (%s), stub = " INTPTR_FORMAT,
+                       p2i(Thread::current()),
+                       Thread::current()->osthread()->thread_id(),
+                       p2i(pc),
                        at_poll_return ? "return" : "loop",
-                       (intptr_t)pc, (intptr_t)stub);
+                       p2i(stub));
   return stub;
 }
 
@@ -787,7 +791,8 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
     if (t != nullptr) {
       return nm->code_begin() + t->pco();
     } else {
-      return Deoptimization::deoptimize_for_missing_exception_handler(nm);
+      bool make_not_entrant = true;
+      return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
     }
   }
 #endif // INCLUDE_JVMCI
@@ -843,6 +848,15 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 
   ExceptionHandlerTable table(nm);
   HandlerTableEntry *t = table.entry_for(catch_pco, handler_bci, scope_depth);
+
+  // If the compiler did not anticipate a recursive exception, resulting in an exception
+  // thrown from the catch bci, then the compiled exception handler might be missing.
+  // This is rare.  Just deoptimize and let the interpreter handle it.
+  if (t == nullptr && recursive_exception_occurred) {
+    bool make_not_entrant = false;
+    return Deoptimization::deoptimize_for_missing_exception_handler(nm, make_not_entrant);
+  }
+
   if (t == nullptr && (nm->is_compiled_by_c1() || handler_bci != -1)) {
     // Allow abbreviated catch tables.  The idea is to allow a method
     // to materialize its exceptions without committing to the exact

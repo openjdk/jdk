@@ -50,10 +50,12 @@ public:
 };
 
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
+                                                                           ShenandoahGeneration* generation,
                                                                            ShenandoahRegionIterator* iterator,
                                                                            bool concurrent, bool only_promote_regions) :
   WorkerTask("Shenandoah Evacuation"),
   _heap(heap),
+  _generation(generation),
   _regions(iterator),
   _concurrent(concurrent),
   _only_promote_regions(only_promote_regions)
@@ -170,13 +172,12 @@ void ShenandoahGenerationalEvacuationTask::maybe_promote_region(ShenandoahHeapRe
 // We identify the entirety of the region as DIRTY to force the next remembered set scan to identify the "interesting pointers"
 // contained herein.
 void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion* region) {
-  assert(!_heap->gc_generation()->is_old(), "Sanity check");
+  assert(!_generation->is_old(), "Sanity check");
   ShenandoahMarkingContext* const marking_context = _heap->young_generation()->complete_marking_context();
   HeapWord* const tams = marking_context->top_at_mark_start(region);
 
   {
     const size_t old_garbage_threshold = (ShenandoahHeapRegion::region_size_bytes() * ShenandoahOldGarbageThreshold) / 100;
-    shenandoah_assert_generations_reconciled();
     assert(!_heap->is_concurrent_old_mark_in_progress(), "Cannot promote in place during old marking");
     assert(region->garbage_before_padded_for_promote() < old_garbage_threshold, "Region %zu has too much garbage for promotion", region->index());
     assert(region->is_young(), "Only young regions can be promoted");
@@ -260,8 +261,7 @@ void ShenandoahGenerationalEvacuationTask::promote_in_place(ShenandoahHeapRegion
 void ShenandoahGenerationalEvacuationTask::promote_humongous(ShenandoahHeapRegion* region) {
   ShenandoahMarkingContext* marking_context = _heap->marking_context();
   oop obj = cast_to_oop(region->bottom());
-  assert(_heap->gc_generation()->is_mark_complete(), "sanity");
-  shenandoah_assert_generations_reconciled();
+  assert(_generation->is_mark_complete(), "sanity");
   assert(region->is_young(), "Only young regions can be promoted");
   assert(region->is_humongous_start(), "Should not promote humongous continuation in isolation");
   assert(_heap->is_tenurable(region), "Only promote regions that are sufficiently aged");

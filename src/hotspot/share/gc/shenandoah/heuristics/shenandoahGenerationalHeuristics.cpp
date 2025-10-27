@@ -75,7 +75,7 @@ void ShenandoahGenerationalHeuristics::choose_collection_set(ShenandoahCollectio
   // This counts bytes of garbage memory in regular regions to be promoted in place.
   size_t regular_regions_promoted_garbage = 0;
 
-  ShenandoahMarkingContext* context = ShenandoahHeap::heap()->marking_context();
+  ShenandoahMarkingContext* context = _generation->complete_marking_context();
   for (size_t i = 0; i < num_regions; i++) {
     ShenandoahHeapRegion* const region = heap->get_region(i);
     if (!_generation->contains(region)) {
