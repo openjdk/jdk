@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  *
  * @library /test/lib
  * @modules jdk.incubator.vector
- * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation $vectorteststype$
+ * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:{#if[FP16]?TieredStopAtLevel=3:-TieredCompilation} $vectorteststype$
  */
 
 #warn This file is preprocessed before being compiled
@@ -48,6 +48,10 @@ import jdk.incubator.vector.ByteVector;
 #if[Float]
 import jdk.incubator.vector.FloatVector;
 #end[Float]
+#if[Halffloat]
+import jdk.incubator.vector.Float16;
+import jdk.incubator.vector.HalffloatVector;
+#end[Halffloat]
 #if[Int]
 import jdk.incubator.vector.IntVector;
 #end[Int]
@@ -79,13 +83,15 @@ public class $vectorteststype$ extends AbstractVectorTest {
 
 #if[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
-                $Type$Vector.SPECIES_MAX;
+                $ElementType$Vector.SPECIES_MAX;
 #else[MaxBit]
     static final VectorSpecies<$Wideboxtype$> SPECIES =
-                $Type$Vector.SPECIES_$bits$;
+                $ElementType$Vector.SPECIES_$bits$;
 #end[MaxBit]
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static $abstractvectortype$ bcast_vec = $abstractvectortype$.broadcast(SPECIES, ($type$)10);
 
 #if[MaxBit]
     static VectorShape getMaxBit() {
@@ -111,8 +117,8 @@ public class $vectorteststype$ extends AbstractVectorTest {
     static void assertArraysStrictlyEquals($type$[] r, $type$[] a) {
         for (int i = 0; i < a.length; i++) {
 #if[FP]
-            $bitstype$ ir = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(r[i]);
-            $bitstype$ ia = $Wideboxtype$.$type$ToRaw$Bitstype$Bits(a[i]);
+            $bitstype$ ir = {#if[FP16]?r[i]:$Wideboxtype$.$type$ToRaw$Bitstype$Bits(r[i])};
+            $bitstype$ ia = {#if[FP16]?a[i]:$Wideboxtype$.$type$ToRaw$Bitstype$Bits(a[i])};
             if (ir != ia) {
 #if[Float]
                 Assert.fail(String.format("at index #%d, expected = %08X, actual = %08X", i, ia, ir));
@@ -408,7 +414,7 @@ relativeError));
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
                     idx = i + j;
-                    wrapped_index = Math.floorMod((int)order[idx], 2 * vector_len);
+                    wrapped_index = Math.floorMod({#if[FP16]?Float16.shortBitsToFloat16(order[idx]).intValue():(int)order[idx]}, 2 * vector_len);
                     is_exceptional_idx = wrapped_index >= vector_len;
                     oidx = is_exceptional_idx ? (wrapped_index - vector_len) : wrapped_index;
                     Assert.assertEquals(r[idx], (is_exceptional_idx ? b[i + oidx] : a[i + oidx]));
@@ -421,15 +427,17 @@ relativeError));
 
     static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = {#if[FP16]?Float16.shortBitsToFloat16(order[i+j]).intValue():(int)order[i+j]};
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -455,21 +463,23 @@ relativeError));
 
     static void assertSelectFromArraysEquals($type$[] r, $type$[] a, $type$[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = {#if[FP16]?Float16.shortBitsToFloat16(order[i+j]).intValue():(int)order[i+j]};
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                     else
                          Assert.assertEquals(r[i+j], ($type$)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], ($type$)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], ($type$)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -883,6 +893,26 @@ relativeError));
 
 #if[FP]
     static boolean isWithin1Ulp($type$ actual, $type$ expected) {
+#if[Halffloat]
+        Float16 act = Float16.shortBitsToFloat16(actual);
+        Float16 exp = Float16.shortBitsToFloat16(expected);
+        if (Float16.isNaN(exp) && !Float16.isNaN(act)) {
+            return false;
+        } else if (!Float16.isNaN(exp) && Float16.isNaN(act)) {
+             return false;
+        }
+
+        Float16 low = Float16.nextDown(exp);
+        Float16 high = Float16.nextUp(exp);
+
+        if (Float16.compare(low, exp) > 0) {
+            return false;
+        }
+
+        if (Float16.compare(high, exp) < 0) {
+            return false;
+        }
+#else[Halffloat]
         if ($Type$.isNaN(expected) && !$Type$.isNaN(actual)) {
             return false;
         } else if (!$Type$.isNaN(expected) && $Type$.isNaN(actual)) {
@@ -899,6 +929,7 @@ relativeError));
         if ($Type$.compare(high, expected) < 0) {
             return false;
         }
+#end[Halffloat]
 
         return true;
     }
@@ -908,11 +939,11 @@ relativeError));
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
             for (; i < a.length; i++) {
-                Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i])) == 0 ||
+                Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i])):mathf.apply(a[i])}) == 0 ||
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i])) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i]));
+            Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i])):mathf.apply(a[i])}) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i])), "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i]));
         }
     }
@@ -922,11 +953,11 @@ relativeError));
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
             for (; i < a.length; i++) {
-                Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i], b[i])) == 0 ||
+                Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[i])):mathf.apply(a[i], b[i])}) == 0 ||
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue($Type$.compare(r[i], mathf.apply(a[i], b[i])) == 0, "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
+            Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]}, {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[i])):mathf.apply(a[i], b[i])}) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i], b[i]));
         }
     }
@@ -937,14 +968,14 @@ relativeError));
         try {
             // Check that result is within 1 ulp of strict math or equivalent to math implementation.
             for (; i < a.length; i++) {
-                Assert.assertTrue($Type$.compare(r[i],
-                                  mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])) == 0 ||
+                Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]},
+                                  {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])):mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])}) == 0 ||
                                   isWithin1Ulp(r[i],
                                   strictmathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue($Type$.compare(r[i],
-                              mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])) == 0,
+            Assert.assertTrue($Wideboxtype$.compare({#if[FP16]?Float16.shortBitsToFloat16(r[i]):r[i]},
+                              {#if[FP16]?Float16.shortBitsToFloat16(mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])):mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()])}) == 0,
                               "at index #" + i + ", input1 = " + a[i] + ", input2 = " +
                               b[(i / SPECIES.length()) * SPECIES.length()] + ", actual = " + r[i] +
                               ", expected = " + mathf.apply(a[i], b[(i / SPECIES.length()) * SPECIES.length()]));
@@ -1139,6 +1170,14 @@ relativeError));
         }
     }
 
+    static $type$ genValue(int i) {
+#if[Halffloat]
+        return Float16.float16ToRawShortBits(Float16.valueOf(i));
+#else[Halffloat]
+        return ($type$) i;
+#end[Halffloat]
+    }
+
 #if[!Int]
 #if[!byteOrShort]
     static int intCornerCaseValue(int i) {
@@ -1157,19 +1196,19 @@ relativeError));
     }
 
     static final List<IntFunction<$type$[]>> INT_$TYPE$_GENERATORS = List.of(
-            withToString("$type$[-i * 5]", (int s) -> {
+            withToString("$ClassType$[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
-            withToString("$type$[i * 5]", (int s) -> {
+            withToString("$ClassType$[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(i * 5));
+                            i -> genValue(i * 5));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$ClassType$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
-            withToString("$type$[intCornerCaseValue(i)]", (int s) -> {
+            withToString("$ClassType$[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)intCornerCaseValue(i));
             })
@@ -1181,7 +1220,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
+#if[Halffloat]
+                Assert.assertEquals(r[i], (int)Float.float16ToFloat(a[i+offs]));
+#else[Halffloat]
                 Assert.assertEquals(r[i], (int)(a[i+offs]));
+#end[Halffloat]
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], (int)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
@@ -1205,20 +1248,28 @@ relativeError));
         }
     }
 
+    static $type$ genValue(long i) {
+#if[Halffloat]
+        return Float16.float16ToRawShortBits(Float16.valueOf(i));
+#else[Halffloat]
+        return ($type$) i;
+#end[Halffloat]
+    }
+
     static final List<IntFunction<$type$[]>> LONG_$TYPE$_GENERATORS = List.of(
-            withToString("$type$[-i * 5]", (int s) -> {
+            withToString("$ClassType$[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
-            withToString("$type$[i * 5]", (int s) -> {
+            withToString("$ClassType$[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(i * 5));
+                            i -> genValue(i * 5));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$ClassType$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
-            withToString("$type$[cornerCaseValue(i)]", (int s) -> {
+            withToString("$ClassType$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
                             i -> ($type$)longCornerCaseValue(i));
             })
@@ -1243,7 +1294,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
+#if[Halffloat]
+                Assert.assertEquals(r[i], (long)Float.float16ToFloat(a[i+offs]));
+#else[Halffloat]
                 Assert.assertEquals(r[i], (long)(a[i+offs]));
+#end[Halffloat]
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], (long)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
@@ -1255,7 +1310,11 @@ relativeError));
         int i = 0;
         try {
             for (; i < r.length; i++) {
+#if[Halffloat]
+                Assert.assertEquals(r[i], (double)Float.float16ToFloat(a[i+offs]));
+#else[Halffloat]
                 Assert.assertEquals(r[i], (double)(a[i+offs]));
+#end[Halffloat]
             }
         } catch (AssertionError e) {
             Assert.assertEquals(r[i], (double)(a[i+offs]), "at index #" + i + ", input = " + a[i+offs]);
@@ -1264,31 +1323,46 @@ relativeError));
 #end[!Double]
 
     static $bitstype$ bits($type$ e) {
-        return {#if[FP]? $Type$.$type$To$Bitstype$Bits(e): e};
+#if[FP16]
+        return e;
+#else[FP16]
+        return {#if[FP]?$Wideboxtype$.$type$To$Bitstype$Bits(e): e};
+#end[FP16]
     }
 
     static final List<IntFunction<$type$[]>> $TYPE$_GENERATORS = List.of(
-            withToString("$type$[-i * 5]", (int s) -> {
+            withToString("$ClassType$[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
-            withToString("$type$[i * 5]", (int s) -> {
+            withToString("$ClassType$[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)(i * 5));
+                            i -> genValue(i * 5));
             }),
-            withToString("$type$[i + 1]", (int s) -> {
+            withToString("$ClassType$[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ((($type$)(i + 1) == 0) ? 1 : ($type$)(i + 1)));
+                            i -> ((($type$)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
 #if[FP]
+#if[FP16]
+            withToString("$Wideboxtype$[0.01 + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
+            }),
+            withToString("$Wideboxtype$[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01f + (i / (i + 1))]", (int s) -> {
+                return fill(s * BUFFER_REPS,
+                            i -> (i % 17 == 0) ? cornerCaseValue(i) : Float.floatToFloat16((0.01f + ((float)i / (i + 1)))));
+            }),
+#else[FP16]
             withToString("$type$[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> ($type$)0.01 + (($type$)i / (i + 1)));
+                            i -> (($type$)0.01 + (($type$)i / (i + 1))));
             }),
             withToString("$type$[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> i % 17 == 0 ? cornerCaseValue(i) : ($type$)0.01 + (($type$)i / (i + 1)));
+                            i -> (i % 17 == 0) ? cornerCaseValue(i) : (($type$)0.01 + (($type$)i / (i + 1))));
             }),
+#end[FP16]
 #end[FP]
             withToString("$type$[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1678,6 +1752,18 @@ relativeError));
 
     static $type$ cornerCaseValue(int i) {
 #if[FP]
+#if[FP16]
+        return switch(i % 8) {
+            case 0  -> Float16.float16ToRawShortBits($Wideboxtype$.MAX_VALUE);
+            case 1  -> Float16.float16ToRawShortBits($Wideboxtype$.MIN_VALUE);
+            case 2  -> Float16.float16ToRawShortBits($Wideboxtype$.NEGATIVE_INFINITY);
+            case 3  -> Float16.float16ToRawShortBits($Wideboxtype$.POSITIVE_INFINITY);
+            case 4  -> Float16.float16ToRawShortBits($Wideboxtype$.NaN);
+            case 5  -> Float16.float16ToRawShortBits(Float16.shortBitsToFloat16((short)0x7FFA));
+            case 6  -> (($type$)0.0);
+            default -> (($type$)-0.0);
+        };
+#else[FP16]
         return switch(i % 8) {
             case 0  -> $Wideboxtype$.MAX_VALUE;
             case 1  -> $Wideboxtype$.MIN_VALUE;
@@ -1692,6 +1778,7 @@ relativeError));
             case 6  -> ($type$)0.0;
             default -> ($type$)-0.0;
         };
+#end[FP16]
 #else[FP]
         switch(i % 5) {
             case 0:
@@ -1809,6 +1896,44 @@ relativeError));
 #end[intOrLong]
     }
 #end[BITWISE]
+#if[Halffloat]
+
+    static boolean eq(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() == bt.floatValue();
+    }
+
+    static boolean neq(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() != bt.floatValue();
+    }
+
+    static boolean lt(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() < bt.floatValue();
+    }
+
+    static boolean le(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() <= bt.floatValue();
+    }
+
+    static boolean gt(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() > bt.floatValue();
+    }
+
+    static boolean ge(short a, short b) {
+        Float16 at = Float16.shortBitsToFloat16(a);
+        Float16 bt = Float16.shortBitsToFloat16(b);
+        return at.floatValue() >= bt.floatValue();
+    }
+#else[Halffloat]
 
     static boolean eq($type$ a, $type$ b) {
         return a == b;
@@ -1833,6 +1958,7 @@ relativeError));
     static boolean ge($type$ a, $type$ b) {
         return a >= b;
     }
+#end[Halffloat]
 #if[!FP]
 
     static boolean ult($type$ a, $type$ b) {
@@ -1853,11 +1979,28 @@ relativeError));
 #end[!FP]
 
     static $type$ firstNonZero($type$ a, $type$ b) {
-        return $Boxtype$.compare(a, ($type$) 0) != 0 ? a : b;
+        return $VecEleType$.compare(a, ($type$) 0) != 0 ? a : b;
     }
 
     @Test
     static void smokeTest1() {
+#if[Halffloat]
+        $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, Float16.float16ToRawShortBits(Float16.valueOf(-3)));
+        $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast(Float16.float16ToRawShortBits(Float16.valueOf(-3)));
+        assert(three.eq(three2).allTrue());
+        $abstractvectortype$ three3 = three2.broadcast(Float16.float16ToRawShortBits(Float16.valueOf(1))).broadcast(Float16.float16ToRawShortBits(Float16.valueOf(-3)));
+        assert(three.eq(three3).allTrue());
+        int scale = 2;
+        $abstractvectortype$ higher = three.addIndex(scale);
+        VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
+        assert(m.allTrue());
+        m = higher.min((Float16.float16ToRawShortBits(Float16.valueOf(-1)))).test(VectorOperators.IS_NEGATIVE);
+        assert(m.allTrue());
+        m = higher.test(VectorOperators.IS_FINITE);
+        assert(m.allTrue());
+        $type$ max = higher.reduceLanes(VectorOperators.MAX);
+        assert((short) Float.float16ToFloat(max) == -3 + scale * (SPECIES.length()-1));
+#else[Halffloat]
         $abstractvectortype$ three = $abstractvectortype$.broadcast(SPECIES, (byte)-3);
         $abstractvectortype$ three2 = ($abstractvectortype$) SPECIES.broadcast(-3);
         assert(three.eq(three2).allTrue());
@@ -1870,7 +2013,7 @@ relativeError));
         else if (ETYPE == byte.class && SPECIES.length() >= 64)
             scale = 1;
         $abstractvectortype$ higher = three.addIndex(scale);
-        VectorMask<$Boxtype$> m = three.compare(VectorOperators.LE, higher);
+        VectorMask<$Wideboxtype$> m = three.compare(VectorOperators.LE, higher);
         assert(m.allTrue());
         m = higher.min(($type$)-1).test(VectorOperators.IS_NEGATIVE);
         assert(m.allTrue());
@@ -1880,6 +2023,7 @@ relativeError));
 #end[FP]
         $type$ max = higher.reduceLanes(VectorOperators.MAX);
         assert(max == -3 + scale * (SPECIES.length()-1));
+#end[Halffloat]
     }
 
     private static $type$[]
@@ -1899,8 +2043,8 @@ relativeError));
         $abstractvectortype$ a = io.add(($type$)1); //[1,2]
         $abstractvectortype$ b = a.neg();  //[-1,-2]
         $type$[] abValues = bothToArray(a,b); //[1,2,-1,-2]
-        VectorShuffle<$Boxtype$> zip0 = VectorShuffle.makeZip(SPECIES, 0);
-        VectorShuffle<$Boxtype$> zip1 = VectorShuffle.makeZip(SPECIES, 1);
+        VectorShuffle<$Wideboxtype$> zip0 = VectorShuffle.makeZip(SPECIES, 0);
+        VectorShuffle<$Wideboxtype$> zip1 = VectorShuffle.makeZip(SPECIES, 1);
         $abstractvectortype$ zab0 = a.rearrange(zip0,b); //[1,-1]
         $abstractvectortype$ zab1 = a.rearrange(zip1,b); //[2,-2]
         $type$[] zabValues = bothToArray(zab0, zab1); //[1,-1,2,-2]
@@ -1911,8 +2055,8 @@ relativeError));
             manual[i+1] = abValues[a.length() + i/2];
         }
         Assert.assertEquals(Arrays.toString(zabValues), Arrays.toString(manual));
-        VectorShuffle<$Boxtype$> unz0 = VectorShuffle.makeUnzip(SPECIES, 0);
-        VectorShuffle<$Boxtype$> unz1 = VectorShuffle.makeUnzip(SPECIES, 1);
+        VectorShuffle<$Wideboxtype$> unz0 = VectorShuffle.makeUnzip(SPECIES, 0);
+        VectorShuffle<$Wideboxtype$> unz1 = VectorShuffle.makeUnzip(SPECIES, 1);
         $abstractvectortype$ uab0 = zab0.rearrange(unz0,zab1);
         $abstractvectortype$ uab1 = zab0.rearrange(unz1,zab1);
         $type$[] abValues1 = bothToArray(uab0, uab1);
@@ -1956,13 +2100,13 @@ relativeError));
         Assert.assertEquals(asFloating.species(), SPECIES);
     }
 #else[FP]
-#if[byteOrShort]
+#if[byte]
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     void viewAsFloatingLanesTest() {
         SPECIES.zero().viewAsFloatingLanes();
     }
-#else[byteOrShort]
+#else[byte]
 
     @Test
     void viewAsFloatingLanesTest() {
@@ -1973,7 +2117,7 @@ relativeError));
         Assert.assertEquals(asFloatingSpecies.length(), SPECIES.length());
         Assert.assertEquals(asFloating.viewAsIntegralLanes().species(), SPECIES);
     }
-#end[byteOrShort]
+#end[byte]
 #end[FP]
 #if[BITWISE]
 

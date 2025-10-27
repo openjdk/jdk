@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@ public class DoubleMaxVectorTests extends AbstractVectorTest {
                 DoubleVector.SPECIES_MAX;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static DoubleVector bcast_vec = DoubleVector.broadcast(SPECIES, (double)10);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
@@ -347,15 +349,17 @@ relativeError));
 
     static void assertSelectFromArraysEquals(double[] r, double[] a, double[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -381,21 +385,23 @@ relativeError));
 
     static void assertSelectFromArraysEquals(double[] r, double[] a, double[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                     else
                          Assert.assertEquals(r[i+j], (double)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], (double)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], (double)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -851,7 +857,7 @@ relativeError));
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue(Double.compare(r[i], mathf.apply(a[i], b[i])) == 0, "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
+            Assert.assertTrue(Double.compare(r[i], mathf.apply(a[i], b[i])) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i], b[i]));
         }
     }
@@ -1063,6 +1069,10 @@ relativeError));
         }
     }
 
+    static double genValue(int i) {
+        return (double) i;
+    }
+
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1081,15 +1091,15 @@ relativeError));
     static final List<IntFunction<double[]>> INT_DOUBLE_GENERATORS = List.of(
             withToString("double[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("double[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
+                            i -> (((double)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("double[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1123,18 +1133,22 @@ relativeError));
         }
     }
 
+    static double genValue(long i) {
+        return (double) i;
+    }
+
     static final List<IntFunction<double[]>> LONG_DOUBLE_GENERATORS = List.of(
             withToString("double[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("double[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
+                            i -> (((double)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1155,29 +1169,29 @@ relativeError));
     }
 
     static long bits(double e) {
-        return  Double.doubleToLongBits(e);
+        return Double.doubleToLongBits(e);
     }
 
     static final List<IntFunction<double[]>> DOUBLE_GENERATORS = List.of(
             withToString("double[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("double[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("double[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((double)(i + 1) == 0) ? 1 : (double)(i + 1)));
+                            i -> (((double)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("double[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (double)0.01 + ((double)i / (i + 1)));
+                            i -> ((double)0.01 + ((double)i / (i + 1))));
             }),
             withToString("double[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> i % 17 == 0 ? cornerCaseValue(i) : (double)0.01 + ((double)i / (i + 1)));
+                            i -> (i % 17 == 0) ? cornerCaseValue(i) : ((double)0.01 + ((double)i / (i + 1))));
             }),
             withToString("double[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -2101,8 +2115,6 @@ relativeError));
         assertBroadcastLongArraysEquals(r, a, b, mask, DoubleMaxVectorTests::ADD);
     }
 
-    static DoubleVector bv_MIN = DoubleVector.broadcast(SPECIES, (double)10);
-
     @Test(dataProvider = "doubleUnaryOpProvider")
     static void MINDoubleMaxVectorTestsWithMemOp(IntFunction<double[]> fa) {
         double[] a = fa.apply(SPECIES.length());
@@ -2111,14 +2123,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (double)10, DoubleMaxVectorTests::MIN);
     }
-
-    static DoubleVector bv_min = DoubleVector.broadcast(SPECIES, (double)10);
 
     @Test(dataProvider = "doubleUnaryOpProvider")
     static void minDoubleMaxVectorTestsWithMemOp(IntFunction<double[]> fa) {
@@ -2128,14 +2138,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.min(bv_min).intoArray(r, i);
+                av.min(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (double)10, DoubleMaxVectorTests::min);
     }
-
-    static DoubleVector bv_MIN_M = DoubleVector.broadcast(SPECIES, (double)10);
 
     @Test(dataProvider = "doubleUnaryOpMaskProvider")
     static void MINDoubleMaxVectorTestsMaskedWithMemOp(IntFunction<double[]> fa, IntFunction<boolean[]> fm) {
@@ -2147,14 +2155,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (double)10, mask, DoubleMaxVectorTests::MIN);
     }
-
-    static DoubleVector bv_MAX = DoubleVector.broadcast(SPECIES, (double)10);
 
     @Test(dataProvider = "doubleUnaryOpProvider")
     static void MAXDoubleMaxVectorTestsWithMemOp(IntFunction<double[]> fa) {
@@ -2164,14 +2170,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (double)10, DoubleMaxVectorTests::MAX);
     }
-
-    static DoubleVector bv_max = DoubleVector.broadcast(SPECIES, (double)10);
 
     @Test(dataProvider = "doubleUnaryOpProvider")
     static void maxDoubleMaxVectorTestsWithMemOp(IntFunction<double[]> fa) {
@@ -2181,14 +2185,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.max(bv_max).intoArray(r, i);
+                av.max(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (double)10, DoubleMaxVectorTests::max);
     }
-
-    static DoubleVector bv_MAX_M = DoubleVector.broadcast(SPECIES, (double)10);
 
     @Test(dataProvider = "doubleUnaryOpMaskProvider")
     static void MAXDoubleMaxVectorTestsMaskedWithMemOp(IntFunction<double[]> fa, IntFunction<boolean[]> fm) {
@@ -2200,7 +2202,7 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 DoubleVector av = DoubleVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
@@ -4924,7 +4926,7 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 
@@ -4965,7 +4967,7 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3068,6 +3068,19 @@ public abstract class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vec
      * @return a {@code DoubleVector} with the same shape and information content
      */
     public abstract DoubleVector reinterpretAsDoubles();
+
+    /**
+     * Reinterprets this vector as a vector of the same shape
+     * and contents but a lane type of {@code halffloat},
+     * where the lanes are assembled from successive bytes
+     * according to little-endian order.
+     * It is a convenience method for the expression
+     * {@code reinterpretShape(species().withLanes(halffloat.class))}.
+     * It may be considered an inverse to {@link Vector#reinterpretAsBytes()}.
+     *
+     * @return a {@code HalffloatVector} with the same shape and information content
+     */
+    public abstract HalffloatVector reinterpretAsHalffloats();
 
     /**
      * Views this vector as a vector of the same shape, length, and

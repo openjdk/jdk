@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -53,39 +53,58 @@ typeprefix=
 globalArgs=""
 #globalArgs="$globalArgs -KextraOverrides"
 
-for type in byte short int long float double
+for type in byte short int long float double halffloat
 do
+
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   TYPE="$(tr '[:lower:]' '[:upper:]' <<< ${type})"
+
+  case $type in
+    halffloat)
+       type=short
+       TYPE=SHORT
+       ;;
+  esac
+
   args=$globalArgs
   args="$args -K$type -Dtype=$type -DType=$Type -DTYPE=$TYPE"
 
   Boxtype=$Type
   Wideboxtype=$Boxtype
+  ElemLayout=$Type
 
   kind=BITWISE
 
   bitstype=$type
+  maskbitstype=$type
   Bitstype=$Type
   Boxbitstype=$Boxtype
 
   fptype=$type
   Fptype=$Type
   Boxfptype=$Boxtype
+  carriertype=$type
+  Carriertype=$Type
+  elemtype=$type
+  FPtype=$type
 
-  case $type in
-    byte)
+  case $Type in
+    Byte)
       Wideboxtype=Integer
       sizeInBytes=1
       args="$args -KbyteOrShort"
       ;;
-    short)
+    Short)
+      fptype=halffloat
+      Fptype=Halffloat
+      Boxfptype=Halffloat
       Wideboxtype=Integer
       sizeInBytes=2
       args="$args -KbyteOrShort"
       ;;
-    int)
+    Int)
       Boxtype=Integer
+      Carriertype=Integer
       Wideboxtype=Integer
       Boxbitstype=Integer
       fptype=float
@@ -94,35 +113,56 @@ do
       sizeInBytes=4
       args="$args -KintOrLong -KintOrFP -KintOrFloat"
       ;;
-    long)
+    Long)
       fptype=double
       Fptype=Double
       Boxfptype=Double
       sizeInBytes=8
       args="$args -KintOrLong -KlongOrDouble"
       ;;
-    float)
+    Float)
       kind=FP
       bitstype=int
+      maskbitstype=int
       Bitstype=Int
       Boxbitstype=Integer
       sizeInBytes=4
       args="$args -KintOrFP -KintOrFloat"
+      FPtype=FP32
       ;;
-    double)
+    Double)
       kind=FP
       bitstype=long
+      maskbitstype=long
       Bitstype=Long
       Boxbitstype=Long
       sizeInBytes=8
       args="$args -KintOrFP -KlongOrDouble"
+      FPtype=FP64
+      ;;
+    Halffloat)
+      kind=FP
+      bitstype=short
+      maskbitstype=short
+      Bitstype=Short
+      Boxbitstype=Short
+      sizeInBytes=2
+      carriertype=short
+      Carriertype=Short
+      FPtype=FP16
+      Boxtype=Float16
+      elemtype=Float16
+      ElemLayout=Short
+      args="$args -KbyteOrShort -KshortOrFP -KshortOrHalffloat"
       ;;
   esac
 
-  args="$args -K$kind -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
-  args="$args -Dbitstype=$bitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
+
+  args="$args -K$FPtype -K$kind -DBoxtype=$Boxtype -DWideboxtype=$Wideboxtype"
+  args="$args -DElemLayout=$ElemLayout -Dbitstype=$bitstype -Dmaskbitstype=$maskbitstype -DBitstype=$Bitstype -DBoxbitstype=$Boxbitstype"
   args="$args -Dfptype=$fptype -DFptype=$Fptype -DBoxfptype=$Boxfptype"
   args="$args -DsizeInBytes=$sizeInBytes"
+  args="$args -Dcarriertype=$carriertype -Delemtype=$elemtype -DCarriertype=$Carriertype"
 
   abstractvectortype=${typeprefix}${Type}Vector
   abstractbitsvectortype=${typeprefix}${Bitstype}Vector

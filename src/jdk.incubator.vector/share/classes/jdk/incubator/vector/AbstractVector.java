@@ -298,6 +298,15 @@ abstract class AbstractVector<E> extends Vector<E> {
      */
     @Override
     @ForceInline
+    public HalffloatVector reinterpretAsHalffloats() {
+        return (HalffloatVector) asVectorRaw(LaneType.HALFFLOAT);
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    @ForceInline
     public final <F>
     Vector<F> convert(Conversion<E,F> conv, int part) {
         // Shape invariance is simple to implement.
@@ -565,6 +574,8 @@ abstract class AbstractVector<E> extends Vector<E> {
             return FloatVector.fromMemorySegment(rsp.check(float.class), ms, 0, bo, m.check(float.class)).check0(rsp);
         case LaneType.SK_DOUBLE:
             return DoubleVector.fromMemorySegment(rsp.check(double.class), ms, 0, bo, m.check(double.class)).check0(rsp);
+        case LaneType.SK_HALFFLOAT:
+            return HalffloatVector.fromMemorySegment(rsp.check(Float16.class), ms, 0, bo, m.check(Float16.class)).check0(rsp);
         default:
             throw new AssertionError(rsp.toString());
         }
@@ -627,6 +638,13 @@ abstract class AbstractVector<E> extends Vector<E> {
                 }
                 return DoubleVector.fromArray(dsp.check(double.class), a, 0).check0(dsp);
             }
+            case LaneType.SK_HALFFLOAT: {
+                short[] a = new short[rlength];
+                for (int i = 0; i < limit; i++) {
+                    a[i] = Float16.float16ToRawShortBits(Float16.valueOf((float) lanes[i]));
+                }
+                return HalffloatVector.fromArray(dsp.check(Float16.class), a, 0).check0(dsp);
+            }
             default: break;
             }
         } else {
@@ -676,6 +694,13 @@ abstract class AbstractVector<E> extends Vector<E> {
                     a[i] = (double) lanes[i];
                 }
                 return DoubleVector.fromArray(dsp.check(double.class), a, 0).check0(dsp);
+            }
+            case LaneType.SK_HALFFLOAT: {
+                short[] a = new short[rlength];
+                for (int i = 0; i < limit; i++) {
+                    a[i] = Float16.float16ToRawShortBits(Float16.valueOf((float) lanes[i]));
+                }
+                return HalffloatVector.fromArray(dsp.check(Float16.class), a, 0).check0(dsp);
             }
             default: break;
             }

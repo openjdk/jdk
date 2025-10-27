@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,8 @@ public class Float128VectorTests extends AbstractVectorTest {
                 FloatVector.SPECIES_128;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static FloatVector bcast_vec = FloatVector.broadcast(SPECIES, (float)10);
 
 
     // for floating point addition reduction ops that may introduce rounding errors
@@ -342,15 +344,17 @@ relativeError));
 
     static void assertSelectFromArraysEquals(float[] r, float[] a, float[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -376,21 +380,23 @@ relativeError));
 
     static void assertSelectFromArraysEquals(float[] r, float[] a, float[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                     else
                          Assert.assertEquals(r[i+j], (float)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], (float)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], (float)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -846,7 +852,7 @@ relativeError));
                                     isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])));
             }
         } catch (AssertionError e) {
-            Assert.assertTrue(Float.compare(r[i], mathf.apply(a[i], b[i])) == 0, "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
+            Assert.assertTrue(Float.compare(r[i], mathf.apply(a[i], b[i])) == 0, "at index #" + i + ", input = " + a[i] + ", actual = " + r[i] + ", expected = " + mathf.apply(a[i], b[i]));
             Assert.assertTrue(isWithin1Ulp(r[i], strictmathf.apply(a[i], b[i])), "at index #" + i + ", input1 = " + a[i] + ", input2 = " + b[i] + ", actual = " + r[i] + ", expected (within 1 ulp) = " + strictmathf.apply(a[i], b[i]));
         }
     }
@@ -1058,6 +1064,10 @@ relativeError));
         }
     }
 
+    static float genValue(int i) {
+        return (float) i;
+    }
+
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -1076,15 +1086,15 @@ relativeError));
     static final List<IntFunction<float[]>> INT_FLOAT_GENERATORS = List.of(
             withToString("float[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("float[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
+                            i -> (((float)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("float[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1118,18 +1128,22 @@ relativeError));
         }
     }
 
+    static float genValue(long i) {
+        return (float) i;
+    }
+
     static final List<IntFunction<float[]>> LONG_FLOAT_GENERATORS = List.of(
             withToString("float[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("float[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
+                            i -> (((float)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("float[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1161,29 +1175,29 @@ relativeError));
     }
 
     static int bits(float e) {
-        return  Float.floatToIntBits(e);
+        return Float.floatToIntBits(e);
     }
 
     static final List<IntFunction<float[]>> FLOAT_GENERATORS = List.of(
             withToString("float[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("float[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("float[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((float)(i + 1) == 0) ? 1 : (float)(i + 1)));
+                            i -> (((float)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("float[0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (float)0.01 + ((float)i / (i + 1)));
+                            i -> ((float)0.01 + ((float)i / (i + 1))));
             }),
             withToString("float[i -> i % 17 == 0 ? cornerCaseValue(i) : 0.01 + (i / (i + 1))]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> i % 17 == 0 ? cornerCaseValue(i) : (float)0.01 + ((float)i / (i + 1)));
+                            i -> (i % 17 == 0) ? cornerCaseValue(i) : ((float)0.01 + ((float)i / (i + 1))));
             }),
             withToString("float[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -2107,8 +2121,6 @@ relativeError));
         assertBroadcastLongArraysEquals(r, a, b, mask, Float128VectorTests::ADD);
     }
 
-    static FloatVector bv_MIN = FloatVector.broadcast(SPECIES, (float)10);
-
     @Test(dataProvider = "floatUnaryOpProvider")
     static void MINFloat128VectorTestsWithMemOp(IntFunction<float[]> fa) {
         float[] a = fa.apply(SPECIES.length());
@@ -2117,14 +2129,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, Float128VectorTests::MIN);
     }
-
-    static FloatVector bv_min = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpProvider")
     static void minFloat128VectorTestsWithMemOp(IntFunction<float[]> fa) {
@@ -2134,14 +2144,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.min(bv_min).intoArray(r, i);
+                av.min(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, Float128VectorTests::min);
     }
-
-    static FloatVector bv_MIN_M = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpMaskProvider")
     static void MINFloat128VectorTestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
@@ -2153,14 +2161,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, mask, Float128VectorTests::MIN);
     }
-
-    static FloatVector bv_MAX = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpProvider")
     static void MAXFloat128VectorTestsWithMemOp(IntFunction<float[]> fa) {
@@ -2170,14 +2176,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, Float128VectorTests::MAX);
     }
-
-    static FloatVector bv_max = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpProvider")
     static void maxFloat128VectorTestsWithMemOp(IntFunction<float[]> fa) {
@@ -2187,14 +2191,12 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.max(bv_max).intoArray(r, i);
+                av.max(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (float)10, Float128VectorTests::max);
     }
-
-    static FloatVector bv_MAX_M = FloatVector.broadcast(SPECIES, (float)10);
 
     @Test(dataProvider = "floatUnaryOpMaskProvider")
     static void MAXFloat128VectorTestsMaskedWithMemOp(IntFunction<float[]> fa, IntFunction<boolean[]> fm) {
@@ -2206,7 +2208,7 @@ relativeError));
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 FloatVector av = FloatVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
@@ -4898,7 +4900,7 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 
@@ -4939,7 +4941,7 @@ relativeError));
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 

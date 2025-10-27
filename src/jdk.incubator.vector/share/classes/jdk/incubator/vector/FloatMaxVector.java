@@ -54,7 +54,11 @@ final class FloatMaxVector extends FloatVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
-    static final Class<Float> ETYPE = float.class; // used by the JVM
+    static final Class<Float> CTYPE = float.class; // carrier type used by the JVM
+
+    static final Class<Float> ETYPE = float.class; // vector element type used by the JVM
+
+    static final int VECTOR_OPER_TYPE = VECTOR_TYPE_PRIM;
 
     FloatMaxVector(float[] v) {
         super(v);
@@ -89,8 +93,11 @@ final class FloatMaxVector extends FloatVector {
     }
 
     @ForceInline
+    final Class<Float> carrierType() { return CTYPE; }
+
+    @ForceInline
     @Override
-    public final Class<Float> elementType() { return float.class; }
+    public final Class<Float> elementType() { return ETYPE; }
 
     @ForceInline
     @Override
@@ -514,7 +521,7 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     public int laneHelper(int i) {
         return (int) VectorSupport.extract(
-                     VCLASS, ETYPE, VLENGTH,
+                     VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                      this, i,
                      (vec, ix) -> {
                      float[] vecarr = vec.vec();
@@ -534,7 +541,7 @@ final class FloatMaxVector extends FloatVector {
     @ForceInline
     public FloatMaxVector withLaneHelper(int i, float e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i, (long)Float.floatToRawIntBits(e),
                                 (v, ix, bits) -> {
                                     float[] res = v.vec().clone();
@@ -547,7 +554,7 @@ final class FloatMaxVector extends FloatVector {
 
     static final class FloatMaxMask extends AbstractMask<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Float> ETYPE = float.class; // used by the JVM
+        static final Class<Float> CTYPE = float.class; // used by the JVM
 
         FloatMaxMask(boolean[] bits) {
             this(bits, 0);
@@ -649,7 +656,7 @@ final class FloatMaxVector extends FloatVector {
         /*package-private*/
         FloatMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (FloatMaxMask) VectorSupport.indexPartiallyInUpperRange(
-                FloatMaxMask.class, float.class, VLENGTH, offset, limit,
+                FloatMaxMask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, offset, limit,
                 (o, l) -> (FloatMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -665,8 +672,9 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public FloatMaxMask compress() {
             return (FloatMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                FloatMaxVector.class, FloatMaxMask.class, ETYPE, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+                FloatMaxVector.class, FloatMaxMask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
+                m1.trueCount()));
         }
 
 
@@ -677,7 +685,7 @@ final class FloatMaxVector extends FloatVector {
         public FloatMaxMask and(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, FloatMaxMask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, FloatMaxMask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -687,7 +695,7 @@ final class FloatMaxVector extends FloatVector {
         public FloatMaxMask or(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, FloatMaxMask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, FloatMaxMask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -697,7 +705,7 @@ final class FloatMaxVector extends FloatVector {
         public FloatMaxMask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, null, int.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, null, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -707,22 +715,25 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMaxMask.class, int.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, FloatMaxMask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMaxMask.class, int.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, FloatMaxMask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMaxMask.class, int.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, FloatMaxMask.class, int.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -731,7 +742,8 @@ final class FloatMaxVector extends FloatVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMaxMask.class, int.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, FloatMaxMask.class, int.class,
+                                                      VECTOR_OPER_TYPE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -741,7 +753,7 @@ final class FloatMaxVector extends FloatVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(FloatMaxMask.class, float.class, VLENGTH,
+            return VectorSupport.extract(FloatMaxMask.class, float.class, VECTOR_OPER_TYPE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -750,23 +762,23 @@ final class FloatMaxVector extends FloatVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, FloatMaxMask.class, int.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((FloatMaxMask)m).getBits()));
+            return VectorSupport.test(BT_ne, FloatMaxMask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> anyTrueHelper(((FloatMaxMask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, FloatMaxMask.class, int.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((FloatMaxMask)m).getBits()));
+            return VectorSupport.test(BT_overflow, FloatMaxMask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> allTrueHelper(((FloatMaxMask)m).getBits()));
         }
 
         @ForceInline
         /*package-private*/
         static FloatMaxMask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(FloatMaxMask.class, int.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(FloatMaxMask.class, int.class, VECTOR_OPER_TYPE, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -779,7 +791,7 @@ final class FloatMaxVector extends FloatVector {
 
     static final class FloatMaxShuffle extends AbstractShuffle<Float> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Integer> ETYPE = int.class; // used by the JVM
+        static final Class<Integer> CTYPE = int.class; // used by the JVM
 
         FloatMaxShuffle(int[] indices) {
             super(indices);

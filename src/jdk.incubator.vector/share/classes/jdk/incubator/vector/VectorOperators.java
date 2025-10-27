@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -694,6 +694,8 @@ public abstract class VectorOperators {
     public static final Conversion<Byte,Long> B2L = convert("B2L", 'C', byte.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code byteVal} to {@code (short)byteVal}. */
     public static final Conversion<Byte,Short> B2S = convert("B2S", 'C', byte.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code byteVal} to {@code (halffloat)byteVal}. */
+    public static final Conversion<Byte,Float16> B2H = convert("B2H", 'C', byte.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code doubleVal} to {@code (byte)doubleVal}. */
     public static final Conversion<Double,Byte> D2B = convert("D2B", 'C', double.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code doubleVal} to {@code (float)doubleVal}. */
@@ -704,6 +706,8 @@ public abstract class VectorOperators {
     public static final Conversion<Double,Long> D2L = convert("D2L", 'C', double.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code doubleVal} to {@code (short)doubleVal}. */
     public static final Conversion<Double,Short> D2S = convert("D2S", 'C', double.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code doubleVal} to {@code (halffloat)doubleVal}. */
+    public static final Conversion<Double,Float16> D2H = convert("D2H", 'C', double.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code floatVal} to {@code (byte)floatVal}. */
     public static final Conversion<Float,Byte> F2B = convert("F2B", 'C', float.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code floatVal} to {@code (double)floatVal}. */
@@ -714,6 +718,8 @@ public abstract class VectorOperators {
     public static final Conversion<Float,Long> F2L = convert("F2L", 'C', float.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code floatVal} to {@code (short)floatVal}. */
     public static final Conversion<Float,Short> F2S = convert("F2S", 'C', float.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code floatVal} to {@code (halffloat)floatVal}. */
+    public static final Conversion<Float,Float16> F2H = convert("F2H", 'C', float.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code intVal} to {@code (byte)intVal}. */
     public static final Conversion<Integer,Byte> I2B = convert("I2B", 'C', int.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code intVal} to {@code (double)intVal}. */
@@ -724,6 +730,8 @@ public abstract class VectorOperators {
     public static final Conversion<Integer,Long> I2L = convert("I2L", 'C', int.class, long.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code intVal} to {@code (short)intVal}. */
     public static final Conversion<Integer,Short> I2S = convert("I2S", 'C', int.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code intVal} to {@code (halffloat)intVal}. */
+    public static final Conversion<Integer,Float16> I2H = convert("I2H", 'C', int.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code longVal} to {@code (byte)longVal}. */
     public static final Conversion<Long,Byte> L2B = convert("L2B", 'C', long.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code longVal} to {@code (double)longVal}. */
@@ -734,6 +742,8 @@ public abstract class VectorOperators {
     public static final Conversion<Long,Integer> L2I = convert("L2I", 'C', long.class, int.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code longVal} to {@code (short)longVal}. */
     public static final Conversion<Long,Short> L2S = convert("L2S", 'C', long.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code longVal} to {@code (halffloat)longVal}. */
+    public static final Conversion<Long,Float16> L2H = convert("L2H", 'C', long.class, Float16.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (byte)shortVal}. */
     public static final Conversion<Short,Byte> S2B = convert("S2B", 'C', short.class, byte.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (double)shortVal}. */
@@ -744,6 +754,21 @@ public abstract class VectorOperators {
     public static final Conversion<Short,Integer> S2I = convert("S2I", 'C', short.class, int.class, VO_KIND_CAST, VO_ALL);
     /** Convert {@code shortVal} to {@code (long)shortVal}. */
     public static final Conversion<Short,Long> S2L = convert("S2L", 'C', short.class, long.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code shortVal} to {@code (halffloat)shortVal}. */
+    public static final Conversion<Short,Float16> S2H = convert("S2H", 'C', short.class, Float16.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code halffloatVal} to {@code (byte)halffloatVal}. */
+    public static final Conversion<Float16,Byte> H2B = convert("H2B", 'C', Float16.class, byte.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code halffloatVal} to {@code (short)halffloatVal}. */
+    public static final Conversion<Float16,Short> H2S = convert("H2S", 'C', Float16.class, short.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code halffloatVal} to {@code (double)halffloatVal}. */
+    public static final Conversion<Float16,Double> H2D = convert("H2D", 'C', Float16.class, double.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code halffloatVal} to {@code (float)halffloatVal}. */
+    public static final Conversion<Float16,Float> H2F = convert("H2F", 'C', Float16.class, float.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code halffloatVal} to {@code (int)halffloatVal}. */
+    public static final Conversion<Float16,Integer> H2I = convert("H2I", 'C', Float16.class, int.class, VO_KIND_CAST, VO_ALL);
+    /** Convert {@code halffloatVal} to {@code (long)halffloatVal}. */
+    public static final Conversion<Float16,Long> H2L = convert("H2L", 'C', Float16.class, long.class, VO_KIND_CAST, VO_ALL);
+
     /** Reinterpret bits of {@code doubleVal} as {@code long}. As if by {@link Double#doubleToRawLongBits(double)} */
     public static final Conversion<Double,Long> REINTERPRET_D2L = convert("REINTERPRET_D2L", 'R', double.class, long.class, VO_KIND_BITWISE, VO_ALL);
     /** Reinterpret bits of {@code floatVal} as {@code int}. As if by {@link Float#floatToRawIntBits(float)} */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ public class Short128VectorTests extends AbstractVectorTest {
                 ShortVector.SPECIES_128;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static ShortVector bcast_vec = ShortVector.broadcast(SPECIES, (short)10);
 
 
     private static final short CONST_SHIFT = Short.SIZE / 2;
@@ -324,15 +326,17 @@ public class Short128VectorTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(short[] r, short[] a, short[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -358,21 +362,23 @@ public class Short128VectorTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(short[] r, short[] a, short[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                     else
                          Assert.assertEquals(r[i+j], (short)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], (short)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], (short)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -966,6 +972,10 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
     }
 
+    static short genValue(int i) {
+        return (short) i;
+    }
+
 
     static void assertArraysEquals(int[] r, short[] a, int offs) {
         int i = 0;
@@ -1009,15 +1019,15 @@ public class Short128VectorTests extends AbstractVectorTest {
     static final List<IntFunction<short[]>> SHORT_GENERATORS = List.of(
             withToString("short[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (short)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("short[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (short)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("short[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((short)(i + 1) == 0) ? 1 : (short)(i + 1)));
+                            i -> (((short)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("short[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -1565,9 +1575,14 @@ public class Short128VectorTests extends AbstractVectorTest {
         Assert.assertEquals(asIntegral.species(), SPECIES);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     void viewAsFloatingLanesTest() {
-        SPECIES.zero().viewAsFloatingLanes();
+        Vector<?> asFloating = SPECIES.zero().viewAsFloatingLanes();
+        VectorSpecies<?> asFloatingSpecies = asFloating.species();
+        Assert.assertNotEquals(asFloatingSpecies.elementType(), SPECIES.elementType());
+        Assert.assertEquals(asFloatingSpecies.vectorShape(), SPECIES.vectorShape());
+        Assert.assertEquals(asFloatingSpecies.length(), SPECIES.length());
+        Assert.assertEquals(asFloating.viewAsIntegralLanes().species(), SPECIES);
     }
 
     @Test
@@ -3023,8 +3038,6 @@ public class Short128VectorTests extends AbstractVectorTest {
     }
 
 
-    static ShortVector bv_MIN = ShortVector.broadcast(SPECIES, (short)10);
-
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MINShort128VectorTestsWithMemOp(IntFunction<short[]> fa) {
         short[] a = fa.apply(SPECIES.length());
@@ -3033,14 +3046,12 @@ public class Short128VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Short128VectorTests::MIN);
     }
-
-    static ShortVector bv_min = ShortVector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void minShort128VectorTestsWithMemOp(IntFunction<short[]> fa) {
@@ -3050,14 +3061,12 @@ public class Short128VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.min(bv_min).intoArray(r, i);
+                av.min(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Short128VectorTests::min);
     }
-
-    static ShortVector bv_MIN_M = ShortVector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MINShort128VectorTestsMaskedWithMemOp(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -3069,14 +3078,12 @@ public class Short128VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, mask, Short128VectorTests::MIN);
     }
-
-    static ShortVector bv_MAX = ShortVector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void MAXShort128VectorTestsWithMemOp(IntFunction<short[]> fa) {
@@ -3086,14 +3093,12 @@ public class Short128VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Short128VectorTests::MAX);
     }
-
-    static ShortVector bv_max = ShortVector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpProvider")
     static void maxShort128VectorTestsWithMemOp(IntFunction<short[]> fa) {
@@ -3103,14 +3108,12 @@ public class Short128VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.max(bv_max).intoArray(r, i);
+                av.max(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (short)10, Short128VectorTests::max);
     }
-
-    static ShortVector bv_MAX_M = ShortVector.broadcast(SPECIES, (short)10);
 
     @Test(dataProvider = "shortUnaryOpMaskProvider")
     static void MAXShort128VectorTestsMaskedWithMemOp(IntFunction<short[]> fa, IntFunction<boolean[]> fm) {
@@ -3122,7 +3125,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 ShortVector av = ShortVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
@@ -6504,7 +6507,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 
@@ -6545,7 +6548,7 @@ public class Short128VectorTests extends AbstractVectorTest {
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ public class IntMaxVectorTests extends AbstractVectorTest {
                 IntVector.SPECIES_MAX;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static IntVector bcast_vec = IntVector.broadcast(SPECIES, (int)10);
 
     static VectorShape getMaxBit() {
         return VectorShape.S_Max_BIT;
@@ -329,15 +331,17 @@ public class IntMaxVectorTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(int[] r, int[] a, int[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -363,21 +367,23 @@ public class IntMaxVectorTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(int[] r, int[] a, int[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                     else
                          Assert.assertEquals(r[i+j], (int)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], (int)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], (int)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -971,6 +977,10 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
     }
 
+    static int genValue(int i) {
+        return (int) i;
+    }
+
 
     static void assertArraysEquals(int[] r, int[] a, int offs) {
         int i = 0;
@@ -1014,15 +1024,15 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     static final List<IntFunction<int[]>> INT_GENERATORS = List.of(
             withToString("int[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (int)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("int[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (int)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("int[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((int)(i + 1) == 0) ? 1 : (int)(i + 1)));
+                            i -> (((int)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("int[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -3081,8 +3091,6 @@ public class IntMaxVectorTests extends AbstractVectorTest {
     }
 
 
-    static IntVector bv_MIN = IntVector.broadcast(SPECIES, (int)10);
-
     @Test(dataProvider = "intUnaryOpProvider")
     static void MINIntMaxVectorTestsWithMemOp(IntFunction<int[]> fa) {
         int[] a = fa.apply(SPECIES.length());
@@ -3091,14 +3099,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (int)10, IntMaxVectorTests::MIN);
     }
-
-    static IntVector bv_min = IntVector.broadcast(SPECIES, (int)10);
 
     @Test(dataProvider = "intUnaryOpProvider")
     static void minIntMaxVectorTestsWithMemOp(IntFunction<int[]> fa) {
@@ -3108,14 +3114,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.min(bv_min).intoArray(r, i);
+                av.min(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (int)10, IntMaxVectorTests::min);
     }
-
-    static IntVector bv_MIN_M = IntVector.broadcast(SPECIES, (int)10);
 
     @Test(dataProvider = "intUnaryOpMaskProvider")
     static void MINIntMaxVectorTestsMaskedWithMemOp(IntFunction<int[]> fa, IntFunction<boolean[]> fm) {
@@ -3127,14 +3131,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (int)10, mask, IntMaxVectorTests::MIN);
     }
-
-    static IntVector bv_MAX = IntVector.broadcast(SPECIES, (int)10);
 
     @Test(dataProvider = "intUnaryOpProvider")
     static void MAXIntMaxVectorTestsWithMemOp(IntFunction<int[]> fa) {
@@ -3144,14 +3146,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (int)10, IntMaxVectorTests::MAX);
     }
-
-    static IntVector bv_max = IntVector.broadcast(SPECIES, (int)10);
 
     @Test(dataProvider = "intUnaryOpProvider")
     static void maxIntMaxVectorTestsWithMemOp(IntFunction<int[]> fa) {
@@ -3161,14 +3161,12 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.max(bv_max).intoArray(r, i);
+                av.max(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (int)10, IntMaxVectorTests::max);
     }
-
-    static IntVector bv_MAX_M = IntVector.broadcast(SPECIES, (int)10);
 
     @Test(dataProvider = "intUnaryOpMaskProvider")
     static void MAXIntMaxVectorTestsMaskedWithMemOp(IntFunction<int[]> fa, IntFunction<boolean[]> fm) {
@@ -3180,7 +3178,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 IntVector av = IntVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
@@ -6562,7 +6560,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 
@@ -6603,7 +6601,7 @@ public class IntMaxVectorTests extends AbstractVectorTest {
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
+        for (int i = 0; i < a.length; i++) {
             ra += r[i];
         }
 

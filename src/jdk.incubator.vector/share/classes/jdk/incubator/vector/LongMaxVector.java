@@ -54,7 +54,11 @@ final class LongMaxVector extends LongVector {
 
     static final int VLENGTH = VSPECIES.laneCount(); // used by the JVM
 
-    static final Class<Long> ETYPE = long.class; // used by the JVM
+    static final Class<Long> CTYPE = long.class; // carrier type used by the JVM
+
+    static final Class<Long> ETYPE = long.class; // vector element type used by the JVM
+
+    static final int VECTOR_OPER_TYPE = VECTOR_TYPE_PRIM;
 
     LongMaxVector(long[] v) {
         super(v);
@@ -89,8 +93,11 @@ final class LongMaxVector extends LongVector {
     }
 
     @ForceInline
+    final Class<Long> carrierType() { return CTYPE; }
+
+    @ForceInline
     @Override
-    public final Class<Long> elementType() { return long.class; }
+    public final Class<Long> elementType() { return ETYPE; }
 
     @ForceInline
     @Override
@@ -516,7 +523,7 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     public long laneHelper(int i) {
         return (long) VectorSupport.extract(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i,
                                 (vec, ix) -> {
                                     long[] vecarr = vec.vec();
@@ -536,7 +543,7 @@ final class LongMaxVector extends LongVector {
     @ForceInline
     public LongMaxVector withLaneHelper(int i, long e) {
         return VectorSupport.insert(
-                                VCLASS, ETYPE, VLENGTH,
+                                VCLASS, CTYPE, VECTOR_OPER_TYPE, VLENGTH,
                                 this, i, (long)e,
                                 (v, ix, bits) -> {
                                     long[] res = v.vec().clone();
@@ -549,7 +556,7 @@ final class LongMaxVector extends LongVector {
 
     static final class LongMaxMask extends AbstractMask<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         LongMaxMask(boolean[] bits) {
             this(bits, 0);
@@ -651,7 +658,7 @@ final class LongMaxVector extends LongVector {
         /*package-private*/
         LongMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (LongMaxMask) VectorSupport.indexPartiallyInUpperRange(
-                LongMaxMask.class, long.class, VLENGTH, offset, limit,
+                LongMaxMask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, offset, limit,
                 (o, l) -> (LongMaxMask) TRUE_MASK.indexPartiallyInRange(o, l));
         }
 
@@ -667,8 +674,9 @@ final class LongMaxVector extends LongVector {
         @ForceInline
         public LongMaxMask compress() {
             return (LongMaxMask)VectorSupport.compressExpandOp(VectorSupport.VECTOR_OP_MASK_COMPRESS,
-                LongMaxVector.class, LongMaxMask.class, ETYPE, VLENGTH, null, this,
-                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT, m1.trueCount()));
+                LongMaxVector.class, LongMaxMask.class, CTYPE, VECTOR_OPER_TYPE, VLENGTH, null, this,
+                (v1, m1) -> VSPECIES.iota().compare(VectorOperators.LT,
+                m1.trueCount()));
         }
 
 
@@ -679,7 +687,7 @@ final class LongMaxVector extends LongVector {
         public LongMaxMask and(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             LongMaxMask m = (LongMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_AND, LongMaxMask.class, null, long.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_AND, LongMaxMask.class, null, long.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a & b));
         }
@@ -689,7 +697,7 @@ final class LongMaxVector extends LongVector {
         public LongMaxMask or(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             LongMaxMask m = (LongMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_OR, LongMaxMask.class, null, long.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_OR, LongMaxMask.class, null, long.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
@@ -699,7 +707,7 @@ final class LongMaxVector extends LongVector {
         public LongMaxMask xor(VectorMask<Long> mask) {
             Objects.requireNonNull(mask);
             LongMaxMask m = (LongMaxMask)mask;
-            return VectorSupport.binaryOp(VECTOR_OP_XOR, LongMaxMask.class, null, long.class, VLENGTH,
+            return VectorSupport.binaryOp(VECTOR_OP_XOR, LongMaxMask.class, null, long.class, VECTOR_OPER_TYPE, VLENGTH,
                                           this, m, null,
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a ^ b));
         }
@@ -709,22 +717,25 @@ final class LongMaxVector extends LongVector {
         @Override
         @ForceInline
         public int trueCount() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, LongMaxMask.class, long.class, VLENGTH, this,
-                                                      (m) -> trueCountHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TRUECOUNT, LongMaxMask.class, long.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> trueCountHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int firstTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, LongMaxMask.class, long.class, VLENGTH, this,
-                                                      (m) -> firstTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_FIRSTTRUE, LongMaxMask.class, long.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> firstTrueHelper(m.getBits()));
         }
 
         @Override
         @ForceInline
         public int lastTrue() {
-            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, LongMaxMask.class, long.class, VLENGTH, this,
-                                                      (m) -> lastTrueHelper(m.getBits()));
+            return (int) VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_LASTTRUE, LongMaxMask.class, long.class,
+                                                            VECTOR_OPER_TYPE, VLENGTH, this,
+                                                            (m) -> lastTrueHelper(m.getBits()));
         }
 
         @Override
@@ -733,7 +744,8 @@ final class LongMaxVector extends LongVector {
             if (length() > Long.SIZE) {
                 throw new UnsupportedOperationException("too many lanes for one long");
             }
-            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, LongMaxMask.class, long.class, VLENGTH, this,
+            return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, LongMaxMask.class, long.class,
+                                                      VECTOR_OPER_TYPE, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
         }
 
@@ -743,7 +755,7 @@ final class LongMaxVector extends LongVector {
         @ForceInline
         public boolean laneIsSet(int i) {
             Objects.checkIndex(i, length());
-            return VectorSupport.extract(LongMaxMask.class, long.class, VLENGTH,
+            return VectorSupport.extract(LongMaxMask.class, long.class, VECTOR_OPER_TYPE, VLENGTH,
                                          this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
@@ -752,23 +764,23 @@ final class LongMaxVector extends LongVector {
         @Override
         @ForceInline
         public boolean anyTrue() {
-            return VectorSupport.test(BT_ne, LongMaxMask.class, long.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> anyTrueHelper(((LongMaxMask)m).getBits()));
+            return VectorSupport.test(BT_ne, LongMaxMask.class, long.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> anyTrueHelper(((LongMaxMask)m).getBits()));
         }
 
         @Override
         @ForceInline
         public boolean allTrue() {
-            return VectorSupport.test(BT_overflow, LongMaxMask.class, long.class, VLENGTH,
-                                         this, vspecies().maskAll(true),
-                                         (m, __) -> allTrueHelper(((LongMaxMask)m).getBits()));
+            return VectorSupport.test(BT_overflow, LongMaxMask.class, long.class, VECTOR_OPER_TYPE, VLENGTH,
+                                      this, vspecies().maskAll(true),
+                                      (m, __) -> allTrueHelper(((LongMaxMask)m).getBits()));
         }
 
         @ForceInline
         /*package-private*/
         static LongMaxMask maskAll(boolean bit) {
-            return VectorSupport.fromBitsCoerced(LongMaxMask.class, long.class, VLENGTH,
+            return VectorSupport.fromBitsCoerced(LongMaxMask.class, long.class, VECTOR_OPER_TYPE, VLENGTH,
                                                  (bit ? -1 : 0), MODE_BROADCAST, null,
                                                  (v, __) -> (v != 0 ? TRUE_MASK : FALSE_MASK));
         }
@@ -781,7 +793,7 @@ final class LongMaxVector extends LongVector {
 
     static final class LongMaxShuffle extends AbstractShuffle<Long> {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
-        static final Class<Long> ETYPE = long.class; // used by the JVM
+        static final Class<Long> CTYPE = long.class; // used by the JVM
 
         LongMaxShuffle(long[] indices) {
             super(indices);

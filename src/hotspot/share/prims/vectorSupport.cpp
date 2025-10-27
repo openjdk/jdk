@@ -55,7 +55,7 @@ BasicType VectorSupport::klass2bt(InstanceKlass* ik) {
   assert(ik->is_subclass_of(vmClasses::vector_VectorPayload_klass()), "%s not a VectorPayload", ik->name()->as_C_string());
   fieldDescriptor fd; // find_field initializes fd if found
   // static final Class<?> ETYPE;
-  Klass* holder = ik->find_field(vmSymbols::ETYPE_name(), vmSymbols::class_signature(), &fd);
+  Klass* holder = ik->find_field(vmSymbols::CTYPE_name(), vmSymbols::class_signature(), &fd);
 
   assert(holder != nullptr, "sanity");
   assert(fd.is_static(), "");
@@ -199,13 +199,17 @@ bool VectorSupport::is_unsigned_op(jint id) {
   }
 }
 
-int VectorSupport::vop2ideal(jint id, BasicType bt) {
+int VectorSupport::vop2ideal(jint id, BasicType bt, int operType) {
   VectorOperation vop = (VectorOperation)id;
   switch (vop) {
     case VECTOR_OP_ADD: {
       switch (bt) {
         case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
+        case T_SHORT:
+          if (operType == VECTOR_TYPE_FP16) {
+            return Op_AddHF;
+          }
+          // fall-through
         case T_INT:    return Op_AddI;
         case T_LONG:   return Op_AddL;
         case T_FLOAT:  return Op_AddF;
@@ -217,7 +221,11 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     case VECTOR_OP_SUB: {
       switch (bt) {
         case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
+        case T_SHORT:
+          if (operType == VECTOR_TYPE_FP16) {
+            return Op_SubHF;
+          }
+          // fall-through
         case T_INT:    return Op_SubI;
         case T_LONG:   return Op_SubL;
         case T_FLOAT:  return Op_SubF;
@@ -229,7 +237,11 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     case VECTOR_OP_MUL: {
       switch (bt) {
         case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
+        case T_SHORT:
+          if (operType == VECTOR_TYPE_FP16) {
+            return Op_MulHF;
+          }
+          // fall-through
         case T_INT:    return Op_MulI;
         case T_LONG:   return Op_MulL;
         case T_FLOAT:  return Op_MulF;
@@ -241,7 +253,11 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     case VECTOR_OP_DIV: {
       switch (bt) {
         case T_BYTE:   // fall-through
-        case T_SHORT:  // fall-through
+        case T_SHORT:
+          if (operType == VECTOR_TYPE_FP16) {
+            return Op_DivHF;
+          }
+          // fall-through
         case T_INT:    return Op_DivI;
         case T_LONG:   return Op_DivL;
         case T_FLOAT:  return Op_DivF;
@@ -254,6 +270,10 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       switch (bt) {
         case T_BYTE:
         case T_SHORT:
+          if (operType == VECTOR_TYPE_FP16) {
+            return Op_MinHF;
+          }
+          // fall-through
         case T_INT:    return Op_MinI;
         case T_LONG:   return Op_MinL;
         case T_FLOAT:  return Op_MinF;
@@ -266,6 +286,10 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
       switch (bt) {
         case T_BYTE:
         case T_SHORT:
+          if (operType == VECTOR_TYPE_FP16) {
+            return Op_MaxHF;
+          }
+          // fall-through
         case T_INT:    return Op_MaxI;
         case T_LONG:   return Op_MaxL;
         case T_FLOAT:  return Op_MaxF;
@@ -350,6 +374,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     }
     case VECTOR_OP_SQRT: {
       switch (bt) {
+        case T_SHORT:  return Op_SqrtHF;
         case T_FLOAT:  return Op_SqrtF;
         case T_DOUBLE: return Op_SqrtD;
         default: fatal("SQRT: %s", type2name(bt));
@@ -358,6 +383,7 @@ int VectorSupport::vop2ideal(jint id, BasicType bt) {
     }
     case VECTOR_OP_FMA: {
       switch (bt) {
+        case T_SHORT:  return Op_FmaHF;
         case T_FLOAT:  return Op_FmaF;
         case T_DOUBLE: return Op_FmaD;
         default: fatal("FMA: %s", type2name(bt));

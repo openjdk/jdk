@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,6 +62,8 @@ public class Long256VectorTests extends AbstractVectorTest {
                 LongVector.SPECIES_256;
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
+
+    static LongVector bcast_vec = LongVector.broadcast(SPECIES, (long)10);
 
 
     private static final long CONST_SHIFT = Long.SIZE / 2;
@@ -281,15 +283,17 @@ public class Long256VectorTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(long[] r, long[] a, long[] order, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
-                    Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
+                    Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
-            Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]]);
+            Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index]);
         }
     }
 
@@ -315,21 +319,23 @@ public class Long256VectorTests extends AbstractVectorTest {
 
     static void assertSelectFromArraysEquals(long[] r, long[] a, long[] order, boolean[] mask, int vector_len) {
         int i = 0, j = 0;
+        int idx = 0, wrapped_index = 0;
         try {
             for (; i < a.length; i += vector_len) {
                 for (j = 0; j < vector_len; j++) {
+                    idx = (int)order[i+j];
+                    wrapped_index = Integer.remainderUnsigned(idx, vector_len);
                     if (mask[j % SPECIES.length()])
-                         Assert.assertEquals(r[i+j], a[i+(int)order[i+j]]);
+                         Assert.assertEquals(r[i+j], a[i+wrapped_index]);
                     else
                          Assert.assertEquals(r[i+j], (long)0);
                 }
             }
         } catch (AssertionError e) {
-            int idx = i + j;
             if (mask[j % SPECIES.length()])
-                Assert.assertEquals(r[i+j], a[i+(int)order[i+j]], "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], a[i+wrapped_index], "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
             else
-                Assert.assertEquals(r[i+j], (long)0, "at index #" + idx + ", input = " + a[i+(int)order[i+j]] + ", mask = " + mask[j % SPECIES.length()]);
+                Assert.assertEquals(r[i+j], (long)0, "at index #" + idx + ", input = " + a[i+wrapped_index] + ", mask = " + mask[j % SPECIES.length()]);
         }
     }
 
@@ -923,6 +929,10 @@ public class Long256VectorTests extends AbstractVectorTest {
         }
     }
 
+    static long genValue(int i) {
+        return (long) i;
+    }
+
     static int intCornerCaseValue(int i) {
         switch(i % 5) {
             case 0:
@@ -941,15 +951,15 @@ public class Long256VectorTests extends AbstractVectorTest {
     static final List<IntFunction<long[]>> INT_LONG_GENERATORS = List.of(
             withToString("long[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (long)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("long[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (long)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("long[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((long)(i + 1) == 0) ? 1 : (long)(i + 1)));
+                            i -> (((long)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("long[intCornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -999,15 +1009,15 @@ public class Long256VectorTests extends AbstractVectorTest {
     static final List<IntFunction<long[]>> LONG_GENERATORS = List.of(
             withToString("long[-i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (long)(-i * 5));
+                            i -> genValue(-i * 5));
             }),
             withToString("long[i * 5]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (long)(i * 5));
+                            i -> genValue(i * 5));
             }),
             withToString("long[i + 1]", (int s) -> {
                 return fill(s * BUFFER_REPS,
-                            i -> (((long)(i + 1) == 0) ? 1 : (long)(i + 1)));
+                            i -> (((long)(i + 1) == 0) ? genValue(1) : genValue(i + 1)));
             }),
             withToString("long[cornerCaseValue(i)]", (int s) -> {
                 return fill(s * BUFFER_REPS,
@@ -3098,8 +3108,6 @@ public class Long256VectorTests extends AbstractVectorTest {
     }
 
 
-    static LongVector bv_MIN = LongVector.broadcast(SPECIES, (long)10);
-
     @Test(dataProvider = "longUnaryOpProvider")
     static void MINLong256VectorTestsWithMemOp(IntFunction<long[]> fa) {
         long[] a = fa.apply(SPECIES.length());
@@ -3108,14 +3116,12 @@ public class Long256VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (long)10, Long256VectorTests::MIN);
     }
-
-    static LongVector bv_min = LongVector.broadcast(SPECIES, (long)10);
 
     @Test(dataProvider = "longUnaryOpProvider")
     static void minLong256VectorTestsWithMemOp(IntFunction<long[]> fa) {
@@ -3125,14 +3131,12 @@ public class Long256VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.min(bv_min).intoArray(r, i);
+                av.min(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (long)10, Long256VectorTests::min);
     }
-
-    static LongVector bv_MIN_M = LongVector.broadcast(SPECIES, (long)10);
 
     @Test(dataProvider = "longUnaryOpMaskProvider")
     static void MINLong256VectorTestsMaskedWithMemOp(IntFunction<long[]> fa, IntFunction<boolean[]> fm) {
@@ -3144,14 +3148,12 @@ public class Long256VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MIN, bv_MIN_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MIN, bcast_vec, vmask).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (long)10, mask, Long256VectorTests::MIN);
     }
-
-    static LongVector bv_MAX = LongVector.broadcast(SPECIES, (long)10);
 
     @Test(dataProvider = "longUnaryOpProvider")
     static void MAXLong256VectorTestsWithMemOp(IntFunction<long[]> fa) {
@@ -3161,14 +3163,12 @@ public class Long256VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (long)10, Long256VectorTests::MAX);
     }
-
-    static LongVector bv_max = LongVector.broadcast(SPECIES, (long)10);
 
     @Test(dataProvider = "longUnaryOpProvider")
     static void maxLong256VectorTestsWithMemOp(IntFunction<long[]> fa) {
@@ -3178,14 +3178,12 @@ public class Long256VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.max(bv_max).intoArray(r, i);
+                av.max(bcast_vec).intoArray(r, i);
             }
         }
 
         assertArraysEquals(r, a, (long)10, Long256VectorTests::max);
     }
-
-    static LongVector bv_MAX_M = LongVector.broadcast(SPECIES, (long)10);
 
     @Test(dataProvider = "longUnaryOpMaskProvider")
     static void MAXLong256VectorTestsMaskedWithMemOp(IntFunction<long[]> fa, IntFunction<boolean[]> fm) {
@@ -3197,7 +3195,7 @@ public class Long256VectorTests extends AbstractVectorTest {
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 LongVector av = LongVector.fromArray(SPECIES, a, i);
-                av.lanewise(VectorOperators.MAX, bv_MAX_M, vmask).intoArray(r, i);
+                av.lanewise(VectorOperators.MAX, bcast_vec, vmask).intoArray(r, i);
             }
         }
 

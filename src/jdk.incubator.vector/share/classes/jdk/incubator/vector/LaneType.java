@@ -40,7 +40,8 @@ enum LaneType {
     BYTE(byte.class, Byte.class, byte[].class, 'I', -1, Byte.SIZE, T_BYTE),
     SHORT(short.class, Short.class, short[].class, 'I', -1, Short.SIZE, T_SHORT),
     INT(int.class, Integer.class, int[].class, 'I', -1, Integer.SIZE, T_INT),
-    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, T_LONG);
+    LONG(long.class, Long.class, long[].class, 'I', -1, Long.SIZE, T_LONG),
+    HALFFLOAT(Float16.class, Short.class, short[].class, 'F', 11, Float16.SIZE, T_HALFFLOAT);
 
     LaneType(Class<?> elementType,
              Class<?> genericElementType,
@@ -66,13 +67,18 @@ enum LaneType {
         // printName.  If we do unsigned or vector or bit lane types,
         // report that condition also.
         this.typeChar = genericElementType.getSimpleName().charAt(0);
-        assert("FDBSIL".indexOf(typeChar) == ordinal()) : this;
+        if (basicType == T_HALFFLOAT) {
+          assert("FDBSILS".indexOf(typeChar, "FDBSILS".indexOf(typeChar) + 1) == ordinal()) : this;
+        }
+        else {
+          assert("FDBSILS".indexOf(typeChar) == ordinal()) : this;
+        }
         // Same as in JVMS, org.objectweb.asm.Opcodes, etc.:
         this.basicType = basicType;
         assert(basicType ==
                ( (elementSizeLog2 - /*lg(Byte.SIZE)*/ 3)
                  | (elementKind == 'F' ? 4 : 8))) : this;
-        assert("....zcFDBSILoav..".charAt(basicType) == typeChar);
+        assert("....zSFDBSILSoav..".charAt(basicType) == typeChar);
     }
 
     final Class<?> elementType;
@@ -178,13 +184,14 @@ enum LaneType {
     // don't optimize properly; see JDK-8161245
 
     static final int
-        SK_FLOAT    = 1,
-        SK_DOUBLE   = 2,
-        SK_BYTE     = 3,
-        SK_SHORT    = 4,
-        SK_INT      = 5,
-        SK_LONG     = 6,
-        SK_LIMIT    = 7;
+        SK_FLOAT     = 1,
+        SK_DOUBLE    = 2,
+        SK_BYTE      = 3,
+        SK_SHORT     = 4,
+        SK_INT       = 5,
+        SK_LONG      = 6,
+        SK_HALFFLOAT = 7,
+        SK_LIMIT     = 8;
 
     /*package-private*/
     @ForceInline
