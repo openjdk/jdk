@@ -34,6 +34,7 @@ import java.lang.System.Logger;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -268,37 +269,55 @@ public final class FileServerHandler implements HttpHandler {
         }
     }
 
-
     private void serveFile(HttpExchange exchange, Path path, boolean writeBody)
         throws IOException
     {
         var respHdrs = exchange.getResponseHeaders();
         respHdrs.set("Content-Type", mediaType(path.toString()));
         respHdrs.set("Last-Modified", getLastModified(path));
-        respHdrs.set("Accept-Ranges", "bytes"); // Only 'bytes' is supported today.
-        if (writeBody) {
-            if (exchange.getRequestHeaders().containsKey("Range")) {
-                long fileSize = Files.size(path);
-                List<RangeEntry> ranges =
-                        parseRangeHeader(exchange.getRequestHeaders().getFirst("Range"), fileSize);
-                if (ranges == null) {
-                    respHdrs.set("Content-Range", "bytes */%d".formatted(fileSize));
-                    exchange.sendResponseHeaders(416, -1); // Range Not Satisfiable
-                    return;
-                }
-                servePartialContents(exchange, path, ranges);
-            }
-            else {
-                exchange.sendResponseHeaders(200, Files.size(path));
-                try (InputStream fis = Files.newInputStream(path);
-                     OutputStream os = exchange.getResponseBody()) {
-                    fis.transferTo(os);
-                }
-            }
-        } else {
+        respHdrs.set("Accept-Ranges", "bytes");
+        respHdrs.set("ETag", createETag(path));
+        if (!writeBody) {
             respHdrs.set("Content-Length", Long.toString(Files.size(path)));
             exchange.sendResponseHeaders(200, -1);
+            return;
         }
+        String rangeHeader = exchange.getRequestHeaders().getFirst("Range");
+        if (rangeHeader != null && handleRangedRequest(exchange, path, rangeHeader)) {
+            return;
+        }
+        exchange.sendResponseHeaders(200, Files.size(path));
+        try (InputStream fis = Files.newInputStream(path);
+             OutputStream os = exchange.getResponseBody()) {
+            fis.transferTo(os);
+        }
+    }
+
+    private boolean handleRangedRequest(HttpExchange exchange, Path path, String rangeHeader)
+            throws IOException
+    {
+        var reqHdrs = exchange.getRequestHeaders();
+        String ifRange = reqHdrs.getFirst("If-Range");
+        if (!(ifRange == null || ifRange.equals(createETag(path)) || ifRange.equals(getLastModified(path)))) {
+            return false; // etag or last-modified do not match with the resource, send the entire file
+        }
+        long fileSize = Files.size(path);
+        List<RangeEntry> ranges = parseRangeHeader(rangeHeader, fileSize);
+        if (ranges == null) {
+            var respHdrs = exchange.getResponseHeaders();
+            respHdrs.set("Content-Range", "bytes */%d".formatted(fileSize));
+            exchange.sendResponseHeaders(416, -1);
+            return true;
+        }
+        servePartialContents(exchange, path, ranges);
+        return true;
+    }
+
+    private String createETag( Path path) throws IOException {
+        var attrs = Files.readAttributes(path, BasicFileAttributes.class);
+        long size = attrs.size();
+        long lastModified = attrs.lastModifiedTime().toMillis();
+        return "W/\"%x-%x\"".formatted(size, lastModified);
     }
 
     private List<RangeEntry> parseRangeHeader(String rangeHeader, long fileSize) {
@@ -350,7 +369,6 @@ public final class FileServerHandler implements HttpHandler {
         boolean isSingleRange = ranges.size() == 1;
         long responseLength;
         if (isSingleRange) {
-            respHdrs.set("Content-Type", fileContentType);
             RangeEntry range = ranges.get(0);
             respHdrs.set("Content-Range",
                     "bytes %d-%d/%d".formatted(range.start, range.end, fileSize));
