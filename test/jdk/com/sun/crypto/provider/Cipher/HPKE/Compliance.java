@@ -33,6 +33,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.spec.NamedParameterSpec;
 
 import static javax.crypto.spec.HPKEParameterSpec.AEAD_AES_256_GCM;
 import static javax.crypto.spec.HPKEParameterSpec.KDF_HKDF_SHA256;
@@ -171,18 +172,26 @@ public class Compliance {
 
         // Cannot init sender with private key
         Asserts.assertThrows(InvalidKeyException.class,
-                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPrivate()));
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPrivate(), spec));
 
         // Cannot provide key encap msg to sender
         Asserts.assertThrows(InvalidAlgorithmParameterException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
-                        spec.withEncapsulation(new byte[32])));
+                        spec.withEncapsulation(encap)));
 
-        // Cannot init without algorithm identifiers
+        // Cannot init without HPKEParameterSpec
         Asserts.assertThrows(InvalidKeyException.class,
                 () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic()));
         Asserts.assertThrows(InvalidKeyException.class,
                 () -> c1.init(Cipher.DECRYPT_MODE, kp.getPrivate()));
+
+        // Cannot init with a spec not HPKEParameterSpec
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.ENCRYPT_MODE, kp.getPublic(),
+                        NamedParameterSpec.X25519));
+        Asserts.assertThrows(InvalidAlgorithmParameterException.class,
+                () -> c1.init(Cipher.DECRYPT_MODE, kp.getPrivate(),
+                        NamedParameterSpec.X25519));
 
         // Cannot init recipient with public key
         Asserts.assertThrows(InvalidKeyException.class,

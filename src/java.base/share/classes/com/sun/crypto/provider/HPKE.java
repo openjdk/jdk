@@ -396,16 +396,18 @@ public class HPKE extends CipherSpi {
                 }
                 checkMatch(false, pk, params.kem_id());
                 KEM.Encapsulated enc;
-                if (p.authKey() == null) {
-                    var e = kem().newEncapsulator(pk, rand);
-                    enc = e.encapsulate();
-                } else if (p.authKey() instanceof PrivateKey skS) {
-                    checkMatch(true, skS, params.kem_id());
-                    // AuthEncap not public KEM API but it's internally supported
-                    var e = new DHKEM().engineNewAuthEncapsulator(pk, skS, null, rand);
-                    enc = e.engineEncapsulate(0, e.engineSecretSize(), "Generic");
-                } else {
-                    throw new InvalidAlgorithmParameterException(
+                switch (p.authKey()) {
+                    case null -> {
+                        var e = kem().newEncapsulator(pk, rand);
+                        enc = e.encapsulate();
+                    }
+                    case PrivateKey skS -> {
+                        checkMatch(true, skS, params.kem_id());
+                        // AuthEncap not public KEM API but it's internally supported
+                        var e = new DHKEM().engineNewAuthEncapsulator(pk, skS, null, rand);
+                        enc = e.engineEncapsulate(0, e.engineSecretSize(), "Generic");
+                    }
+                    default -> throw new InvalidAlgorithmParameterException(
                             "Cannot auth with public key");
                 }
                 kemEncaps = enc.encapsulation();
@@ -421,17 +423,19 @@ public class HPKE extends CipherSpi {
                         throw new InvalidAlgorithmParameterException(
                                 "Must provide key encapsulation message on recipient side");
                     }
-                    if (p.authKey() == null) {
-                        var d = kem().newDecapsulator(sk);
-                        shared_secret = d.decapsulate(encap);
-                    } else if (p.authKey() instanceof PublicKey pkS) {
-                        checkMatch(true, pkS, params.kem_id());
-                        // AuthDecap not public KEM API but it's internally supported
-                        var d = new DHKEM().engineNewAuthDecapsulator(sk, pkS, null);
-                        shared_secret = d.engineDecapsulate(
-                                encap, 0, d.engineSecretSize(), "Generic");
-                    } else {
-                        throw new InvalidAlgorithmParameterException(
+                    switch (p.authKey()) {
+                        case null -> {
+                            var d = kem().newDecapsulator(sk);
+                            shared_secret = d.decapsulate(encap);
+                        }
+                        case PublicKey pkS -> {
+                            checkMatch(true, pkS, params.kem_id());
+                            // AuthDecap not public KEM API but it's internally supported
+                            var d = new DHKEM().engineNewAuthDecapsulator(sk, pkS, null);
+                            shared_secret = d.engineDecapsulate(
+                                    encap, 0, d.engineSecretSize(), "Generic");
+                        }
+                        default -> throw new InvalidAlgorithmParameterException(
                                 "Cannot auth with private key");
                     }
                 } catch (DecapsulateException e) {
@@ -450,32 +454,36 @@ public class HPKE extends CipherSpi {
         private static void checkMatch(boolean inSpec, AsymmetricKey k, int kem_id)
                 throws InvalidKeyException, InvalidAlgorithmParameterException {
             var p = k.getParams();
-            if (p instanceof ECParameterSpec ecp) {
-                if ((!ECUtil.equals(ecp, CurveDB.P_256)
-                        || kem_id != HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256)
-                        && (!ECUtil.equals(ecp, CurveDB.P_384)
-                        || kem_id != HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384)
-                        && (!ECUtil.equals(ecp, CurveDB.P_521)
-                        || kem_id != HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512)) {
-                    var name = ECUtil.getCurveName(ecp);
-                    throw new InvalidAlgorithmParameterException(
-                            name + " does not match " + kem_id);
+            switch (p) {
+                case ECParameterSpec ecp -> {
+                    if ((!ECUtil.equals(ecp, CurveDB.P_256)
+                            || kem_id != HPKEParameterSpec.KEM_DHKEM_P_256_HKDF_SHA256)
+                            && (!ECUtil.equals(ecp, CurveDB.P_384)
+                            || kem_id != HPKEParameterSpec.KEM_DHKEM_P_384_HKDF_SHA384)
+                            && (!ECUtil.equals(ecp, CurveDB.P_521)
+                            || kem_id != HPKEParameterSpec.KEM_DHKEM_P_521_HKDF_SHA512)) {
+                        var name = ECUtil.getCurveName(ecp);
+                        throw new InvalidAlgorithmParameterException(
+                                name + " does not match " + kem_id);
+                    }
                 }
-            } else if (p instanceof NamedParameterSpec ns) {
-                var name = ns.getName();
-                if ((!name.equalsIgnoreCase("x25519")
-                        || kem_id != HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256)
-                        && (!name.equalsIgnoreCase("x448")
-                        || kem_id != HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512)) {
-                    throw new InvalidAlgorithmParameterException(
-                            name + " does not match " + kem_id);
+                case NamedParameterSpec ns -> {
+                    var name = ns.getName();
+                    if ((!name.equalsIgnoreCase("x25519")
+                            || kem_id != HPKEParameterSpec.KEM_DHKEM_X25519_HKDF_SHA256)
+                            && (!name.equalsIgnoreCase("x448")
+                            || kem_id != HPKEParameterSpec.KEM_DHKEM_X448_HKDF_SHA512)) {
+                        throw new InvalidAlgorithmParameterException(
+                                name + " does not match " + kem_id);
+                    }
                 }
-            } else {
-                var msg = k.getClass() + " does not match " + kem_id;
-                if (inSpec) {
-                    throw new InvalidAlgorithmParameterException(msg);
-                } else {
-                    throw new InvalidKeyException(msg);
+                case null, default -> {
+                    var msg = k.getClass() + " does not match " + kem_id;
+                    if (inSpec) {
+                        throw new InvalidAlgorithmParameterException(msg);
+                    } else {
+                        throw new InvalidKeyException(msg);
+                    }
                 }
             }
         }
@@ -496,20 +504,22 @@ public class HPKE extends CipherSpi {
                     DHKEM.I2OSP(params.kem_id(), 2),
                     DHKEM.I2OSP(params.kdf_id(), 2),
                     DHKEM.I2OSP(params.aead_id(), 2));
-            kdfAlg = switch (params.kdf_id()) {
-                case HPKEParameterSpec.KDF_HKDF_SHA256 -> "HKDF-SHA256";
-                case HPKEParameterSpec.KDF_HKDF_SHA384 -> "HKDF-SHA384";
-                case HPKEParameterSpec.KDF_HKDF_SHA512 -> "HKDF-SHA512";
+            switch (params.kdf_id()) {
+                case HPKEParameterSpec.KDF_HKDF_SHA256 -> {
+                    kdfAlg = "HKDF-SHA256";
+                    kdfNh = 32;
+                }
+                case HPKEParameterSpec.KDF_HKDF_SHA384 -> {
+                    kdfAlg = "HKDF-SHA384";
+                    kdfNh = 48;
+                }
+                case HPKEParameterSpec.KDF_HKDF_SHA512 -> {
+                    kdfAlg = "HKDF-SHA512";
+                    kdfNh = 64;
+                }
                 default -> throw new InvalidAlgorithmParameterException(
                         "Unsupported kdf_id: " + params.kdf_id());
-            };
-            kdfNh = switch (params.kdf_id()) {
-                case HPKEParameterSpec.KDF_HKDF_SHA256 -> 32;
-                case HPKEParameterSpec.KDF_HKDF_SHA384 -> 48;
-                case HPKEParameterSpec.KDF_HKDF_SHA512 -> 64;
-                default -> throw new InvalidAlgorithmParameterException(
-                        "Unsupported kdf_id: " + params.kdf_id());
-            };
+            }
             aead = new AEAD(params.aead_id());
         }
 
