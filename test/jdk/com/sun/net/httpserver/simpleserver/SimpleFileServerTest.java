@@ -161,7 +161,8 @@ public class SimpleFileServerTest {
                 {"0-",  "0-9", "0123456789"},
                 {"3-",  "3-9", "3456789"},
                 {"-3",  "7-9", "789"},
-                {"-1",  "9-9", "9"}
+                {"-1",  "9-9", "9"},
+                {"-999", "0-9", "0123456789"}
         };
     }
 
@@ -209,7 +210,7 @@ public class SimpleFileServerTest {
                     .build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 206);
-            String contentType = response.headers().firstValue("Content-Type").orElse("");
+            String contentType = response.headers().firstValue("content-type").orElse("");
             assertTrue(contentType.startsWith("multipart/byteranges; boundary="));
 
             String boundary = contentType.substring("multipart/byteranges; boundary=".length());
@@ -554,7 +555,6 @@ public class SimpleFileServerTest {
                 {"meows", "1-2"},
                 {"bytes", "3-meow"},
                 {"bytes", "meow-5"},
-                {"bytes", "5-10"},
                 {"bytes", "100-"},
                 {"bytes", "100-120"},
                 {"bytes", "1-2,3-4,500-600"}

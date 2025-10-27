@@ -346,12 +346,15 @@ public final class FileServerHandler implements HttpHandler {
                 } else {  // "<start>-<end>" or "<start>-"
                     start = Long.parseLong(startStr);
                     end = endStr.isEmpty() ? fileSize - 1 : Long.parseLong(endStr);
+                    if (end >= fileSize) {
+                        end = fileSize - 1;
+                    }
                 }
             } catch (NumberFormatException e) {
                 return null;  // invalid number format
             }
 
-            if (start < 0 || end >= fileSize || start > end)
+            if (start < 0 || start > end)
                 return null;  // invalid range values
 
             ranges.add(new RangeEntry(start, end));
