@@ -402,7 +402,7 @@ public class Krb5InitCredential
      * @throws IOException if an I/O error occurs
      * @throws ClassNotFoundException if a serialized class cannot be loaded
      */
-    @java.io.Serial
+    @Serial
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         throw new InvalidObjectException("Krb5InitCredential not deserializable");
