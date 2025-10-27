@@ -339,9 +339,20 @@ public final class LauncherVerifier {
 
         TKit.assertTrue(entitlements.isPresent(), String.format("Check [%s] launcher is signed with entitlements", name));
 
+        var customFile = Optional.ofNullable(cmd.getArgumentValue("--mac-entitlements")).map(Path::of);
+        if (customFile.isEmpty()) {
+            // Try from the resource dir.
+            var resourceDirFile = Optional.ofNullable(cmd.getArgumentValue("--resource-dir")).map(Path::of).map(resourceDir -> {
+                return resourceDir.resolve(cmd.name() + ".entitlements");
+            }).filter(Files::exists);
+            if (resourceDirFile.isPresent()) {
+                customFile = resourceDirFile;
+            }
+        }
+
         Map<String, Object> expected;
-        if (cmd.hasArgument("--mac-entitlements")) {
-            expected = new PListReader(Files.readAllBytes(Path.of(cmd.getArgumentValue("--mac-entitlements")))).toMap(true);
+        if (customFile.isPresent()) {
+            expected = new PListReader(Files.readAllBytes(customFile.orElseThrow())).toMap(true);
         } else if (cmd.hasArgument("--mac-app-store")) {
             expected = DefaultEntitlements.APP_STORE;
         } else {
@@ -394,7 +405,7 @@ public final class LauncherVerifier {
     private static final class DefaultEntitlements {
         private static Map<String, Object> loadFromResources(String resourceName) {
             return ThrowingSupplier.toSupplier(() -> {
-                var bytes = ResourceLocator.class.getResourceAsStream("entitlements.plist").readAllBytes();
+                var bytes = ResourceLocator.class.getResourceAsStream(resourceName).readAllBytes();
                 return new PListReader(bytes).toMap(true);
             }).get();
         }
