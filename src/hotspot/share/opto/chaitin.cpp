@@ -1689,7 +1689,7 @@ uint PhaseChaitin::Select( ) {
           uint lrin1 = _lrg_map.find(in1);
           // If a def does not interfere with first input's def,
           // then bias its color towards its input's def.
-          if (lrin1 != 0 && lrg->_copy_bias == 0 && _ifg->test_edge_sq(lidx, lrin1) == 0) {
+          if (lrin1 != 0 && lrg->_copy_bias == 0) {
             lrg->_copy_bias = lrin1;
           }
         }
@@ -1701,7 +1701,7 @@ uint PhaseChaitin::Select( ) {
           uint lrin2 = _lrg_map.find(in2);
           // If a def does not interfere with second input's def,
           // then bias its color towards its input's def.
-          if (lrin2 != 0 && lrg->_copy_bias2 == 0 && _ifg->test_edge_sq(lidx, lrin2) == 0) {
+          if (lrin2 != 0 && lrg->_copy_bias2 == 0) {
             lrg->_copy_bias2 = lrin2;
           }
         }
