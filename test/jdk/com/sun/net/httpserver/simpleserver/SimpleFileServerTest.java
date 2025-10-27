@@ -92,6 +92,9 @@ public class SimpleFileServerTest {
             FileUtils.deleteFileTreeWithRetry(TEST_DIR);
         }
         Files.createDirectories(TEST_DIR);
+        // For improving performance, pre-create a file for range header support tests.
+        var tempRoot = Files.createDirectory(TEST_DIR.resolve("rangeTestFilePrep"));
+        Files.writeString(tempRoot.resolve("aFile.txt"), "0123456789", CREATE);
     }
 
     @Test
@@ -120,8 +123,8 @@ public class SimpleFileServerTest {
 
     @Test(dataProvider = "singleRanges")
     public void testSingleRangedRangeFileGET(String rangeSpec, String expectedRangeSpec, String expectedBody) throws Exception {
-        var root = Files.createDirectories(TEST_DIR.resolve("testFileSingleRangeGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
         var lastModified = getLastModified(file);
         var expectedLength = Integer.toString(expectedBody.getBytes(UTF_8).length);
         var expectedEtag = createETag(file);
@@ -140,7 +143,7 @@ public class SimpleFileServerTest {
             assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
-            assertEquals(response.headers().firstValue("content-range").get(), "bytes " + expectedRangeSpec + "/9");
+            assertEquals(response.headers().firstValue("content-range").get(), "bytes " + expectedRangeSpec + "/10");
             assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
         } finally {
             server.stop(0);
@@ -152,20 +155,20 @@ public class SimpleFileServerTest {
         return new Object[][]{
                 // The file content is "123456789" (9 bytes)
                 // {rangeSpec, expectedRangeSpec, expectedBody}
-                {"0-3", "0-3", "1234"},
-                {"2-5", "2-5", "3456"},
-                {"6-8", "6-8", "789"},
-                {"0-",  "0-8", "123456789"},
-                {"3-",  "3-8", "456789"},
-                {"-3",  "6-8", "789"},
-                {"-1",  "8-8", "9"}
+                {"0-3", "0-3", "0123"},
+                {"2-5", "2-5", "2345"},
+                {"6-9", "6-9", "6789"},
+                {"0-",  "0-9", "0123456789"},
+                {"3-",  "3-9", "3456789"},
+                {"-3",  "7-9", "789"},
+                {"-1",  "9-9", "9"}
         };
     }
 
     @Test
     public void testMatchETagRangeFileGet() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testFileMatchETagRangeGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
         var lastModified = getLastModified(file);
         var expectedEtag = createETag(file);
 
@@ -179,11 +182,11 @@ public class SimpleFileServerTest {
                     .build();
             var response = client.send(request, BodyHandlers.ofString());
             assertEquals(response.statusCode(), 206);
-            assertEquals(response.body(), "3456");
+            assertEquals(response.body(), "2345");
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
-            assertEquals(response.headers().firstValue("content-range").get(), "bytes 2-5/9");
+            assertEquals(response.headers().firstValue("content-range").get(), "bytes 2-5/10");
             assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
         } finally {
             server.stop(0);
@@ -192,8 +195,8 @@ public class SimpleFileServerTest {
 
     @Test
     public void testMultipleRangesFileGET() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testFileMultipleOpenSuffixRangesGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
         var lastModified = getLastModified(file);
         var expectedEtag = createETag(file);
 
@@ -215,19 +218,19 @@ public class SimpleFileServerTest {
             {
                 String[] firstPartLines = parts[1].trim().split("\r\n");
                 assertEquals(firstPartLines[0], "Content-Type: text/plain");
-                assertEquals(firstPartLines[1], "Content-Range: bytes 2-8/9");
-                assertEquals(firstPartLines[3], "3456789");
+                assertEquals(firstPartLines[1], "Content-Range: bytes 2-9/10");
+                assertEquals(firstPartLines[3], "23456789");
             }
             {
                 String[] secondPartLines = parts[2].trim().split("\r\n");
                 assertEquals(secondPartLines[0], "Content-Type: text/plain");
-                assertEquals(secondPartLines[1], "Content-Range: bytes 3-4/9");
-                assertEquals(secondPartLines[3], "45");
+                assertEquals(secondPartLines[1], "Content-Range: bytes 3-4/10");
+                assertEquals(secondPartLines[3], "34");
             }
             {
                 String[] thirdPartLines = parts[3].trim().split("\r\n");
                 assertEquals(thirdPartLines[0], "Content-Type: text/plain");
-                assertEquals(thirdPartLines[1], "Content-Range: bytes 6-8/9");
+                assertEquals(thirdPartLines[1], "Content-Range: bytes 7-9/10");
                 assertEquals(thirdPartLines[3], "789");
             }
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
@@ -560,8 +563,8 @@ public class SimpleFileServerTest {
 
     @Test(dataProvider = "invalidRanges")
     public void testInvalidRangeGET(String unit, String rangeSpec) throws Exception {
-        var root = Files.createDirectories(TEST_DIR.resolve("testInvalidRangeGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
         var lastModified = getLastModified(file);
 
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
@@ -575,7 +578,7 @@ public class SimpleFileServerTest {
 
             assertEquals(response.statusCode(), 416);
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
-            assertEquals(response.headers().firstValue("content-range").get(), "bytes */9");
+            assertEquals(response.headers().firstValue("content-range").get(), "bytes */10");
             assertEquals(response.headers().firstValue("content-length").get(), "0");
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
             assertEquals(response.body(), "");
@@ -586,9 +589,10 @@ public class SimpleFileServerTest {
 
     @Test
     public void testMismatchETagRangeFileGET() throws Exception {
-        var root = Files.createDirectory(TEST_DIR.resolve("testFileMismatchETagRangeGET"));
-        var file = Files.writeString(root.resolve("aFile.txt"), "123456789", CREATE);
+        var root = TEST_DIR.resolve("rangeTestFilePrep");
+        var file = root.resolve("aFile.txt");
         var lastModified = getLastModified(file);
+        var expectedLength = Long.toString(Files.size(file));
         var expectedEtag = createETag(file);
 
         var server = SimpleFileServer.createFileServer(LOOPBACK_ADDR, root, OutputLevel.VERBOSE);
@@ -602,10 +606,11 @@ public class SimpleFileServerTest {
             var response = client.send(request, BodyHandlers.ofString());
             // If the ETag does not match, the server should ignore the Range header and serve the entire file.
             assertEquals(response.statusCode(), 200);
-            assertEquals(response.body(), "123456789");
+            assertEquals(response.body(), "0123456789");
             assertEquals(response.headers().firstValue("content-type").get(), "text/plain");
             assertEquals(response.headers().firstValue("last-modified").get(), lastModified);
             assertEquals(response.headers().firstValue("accept-ranges").get(), "bytes");
+            assertEquals(response.headers().firstValue("content-length").get(), expectedLength);
             assertEquals(response.headers().firstValue("etag").get(), expectedEtag);
         } finally {
             server.stop(0);
