@@ -130,7 +130,16 @@ size_t MutableNUMASpace::unsafe_max_tlab_alloc(Thread *ignored) const {
   for (LGRPSpace* ls : *lgrp_spaces()) {
     s += ls->space()->free_in_bytes();
   }
-  return align_down(s / (size_t)lgrp_spaces()->length(), MinObjAlignmentInBytes);
+
+  size_t average_free_in_bytes = s / (size_t)lgrp_spaces()->length();
+
+  // free_in_bytes() is aligned to MinObjAlignmentInBytes, but averaging across
+  // all LGRPs can produce a non-aligned result. We align the value here because
+  // it may be used directly for TLAB allocation, which requires the allocation
+  // size to be properly aligned.
+  size_t aligned_average = align_down(average_free_in_bytes, MinObjAlignmentInBytes);
+
+  return aligned_average;
 }
 
 // Bias region towards the first-touching lgrp. Set the right page sizes.
