@@ -41,6 +41,7 @@ public class HiddenClassesTest {
     public static void main(String[] args) throws Exception {
         var cw = new ClassWriter(0);
         cw.visit(V17, ACC_PUBLIC, "Hidden", null, "java/lang/Object", null);
+        // This magic number causes a constant pool index overflow with this asm generated class.
         for (int i = 0; i < 65530; i++) {
             cw.newUTF8(Integer.toString(i));
         }
@@ -48,6 +49,10 @@ public class HiddenClassesTest {
             MethodHandles.lookup().defineHiddenClass(cw.toByteArray(), false);
             throw new RuntimeException("Test Failed: ClassFormatError expected.");
         } catch (ClassFormatError cfe) {
+            String message = cfe.getMessage();
+            if (message == null && message.contains("Overflow in constant pool size for hidden class")) {
+                throw new RuntimeException("Test Failed: wrong ClassFormatError " + cfe.getMessage());
+            }
             System.out.println("ClassFormatError thrown as expected. Message: " + cfe.getMessage());
         }
     }
