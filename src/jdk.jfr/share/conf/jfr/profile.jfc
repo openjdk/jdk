@@ -488,10 +488,12 @@
 
     <event name="jdk.StringDeduplicationStatistics">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.StringDeduplicationTimes">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="threshold">0 ms</setting>
     </event>
 
     <event name="jdk.PromotionFailed">
