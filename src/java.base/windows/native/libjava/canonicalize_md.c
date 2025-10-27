@@ -36,6 +36,7 @@
 
 #include <windows.h>
 #include <winbase.h>
+#include <wchar.h>
 #include <errno.h>
 
 /* We should also include jdk_util.h here, for the prototype of JDK_Canonicalize.
@@ -146,6 +147,45 @@ lastErrorReportable()
     return 1;
 }
 
+//
+// Get the final path of 'path' placing the result in 'finalPath'.
+// Zero is returned on success, non-zero on error.
+//
+int getFinalPath(WCHAR* path, WCHAR* finalPath, DWORD size)
+{
+    HANDLE h = CreateFileW(path,
+                           FILE_READ_ATTRIBUTES,
+                           FILE_SHARE_DELETE |
+                           FILE_SHARE_READ | FILE_SHARE_WRITE,
+                           NULL,
+                           OPEN_EXISTING,
+                           FILE_FLAG_BACKUP_SEMANTICS,
+                           NULL);
+
+    if (h != INVALID_HANDLE_VALUE) {
+        DWORD len = GetFinalPathNameByHandleW(h, finalPath, size, 0);
+        CloseHandle(h);
+        if (len > 0 && len <= size) {
+            if (finalPath[0] == L'\\' && finalPath[1] == L'\\' &&
+                finalPath[2] == L'?' && finalPath[3] == L'\\')
+            {
+                // Strip prefix (should be \\?\ or \\?\UNC)
+                int isUnc = (finalPath[4] == L'U' &&
+                             finalPath[5] == L'N' &&
+                             finalPath[6] == L'C');
+                int prefixLen = (isUnc) ? 7 : 4;
+                // the amount to copy includes terminator
+                int amountToCopy = len - prefixLen + 1;
+                wmemmove(finalPath, finalPath + prefixLen, amountToCopy);
+            }
+
+            return 0;
+        }
+    }
+
+    return -1;
+}
+
 /* Convert a pathname to canonical form.  The input orig_path is assumed to
    have been converted to native form already, via JVM_NativePath().  This is
    necessary because _fullpath() rejects duplicate separator characters on
@@ -237,6 +277,15 @@ wcanonicalize(WCHAR *orig_path, WCHAR *result, int size)
         if (h != INVALID_HANDLE_VALUE) {
             /* Lookup succeeded; append true name to result and continue */
             FindClose(h);
+
+            // If a reparse point is encountered, get the final path.
+            if ((fd.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
+                if (getFinalPath(path, result, size) != 0)
+                    goto err;
+                free(path);
+                return 0;
+            }
+
             if (!(dst = wcp(dst, dend, L'\\', fd.cFileName,
                             fd.cFileName + wcslen(fd.cFileName)))){
                 goto err;

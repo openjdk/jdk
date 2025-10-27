@@ -482,27 +482,7 @@ final class WinNTFileSystem extends FileSystem {
                 return path;
             return "" + ((char) (c-32)) + ':' + '\\';
         }
-        String canonicalPath = canonicalize0(path);
-        String finalPath = null;
-        try {
-            String fp = getFinalPath(canonicalPath);
-
-            // if getFinalPath converted a drive letter to a UNC-style path,
-            // then fall back to using the result of canonicalize0 because
-            // there does not appear to be a reliable way to map the prefix
-            // of the result of getFinalPath back to a drive letter
-            if (fp.charAt(0) == '\\' && fp.charAt(1) == '\\' &&
-                isLetter(canonicalPath.charAt(0)) &&
-                canonicalPath.charAt(1) == ':')
-            {
-                finalPath = canonicalPath;
-            } else {
-                finalPath = fp;
-            }
-        } catch (IOException ignored) {
-            finalPath = canonicalPath;
-        }
-        return finalPath;
+        return canonicalize0(path);
     }
 
     private native String canonicalize0(String path)
@@ -514,6 +494,7 @@ final class WinNTFileSystem extends FileSystem {
 
     private native String getFinalPath0(String path)
             throws IOException;
+
 
     /* -- Attribute accessors -- */
 
