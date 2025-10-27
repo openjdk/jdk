@@ -188,7 +188,7 @@ private:
           // fallthrough for fast failure for un-live regions:
         case ShenandoahVerifier::_verify_liveness_conservative:
           check(ShenandoahAsserts::_safe_oop, obj, obj_reg->has_live(ShenandoahHeap::heap()->marking_context(), obj_reg->index())
-                || (obj_reg->is_old() && _generation()->is_young()), "Object must belong to region with live data");
+                || (obj_reg->is_old() && _generation->is_young()), "Object must belong to region with live data");
           break;
         default:
           assert(false, "Unhandled liveness verification");
