@@ -853,6 +853,8 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
         field_val = transform_later(new DecodeNNode(field_val, field_val->get_ptr_type()));
       }
     }
+    DEBUG_ONLY(const Type* t = field_val->bottom_type();)
+    assert(t == field_type->filter(t), "field_val must be subtype of field_type");
     sfpt->add_req(field_val);
   }
 
