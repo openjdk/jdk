@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
@@ -344,6 +343,11 @@ static void call_initPhase3(TRAPS) {
 void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   TraceTime timer("Initialize java.lang classes", TRACETIME_LOG(Info, startuptime));
 
+  // This is before the execution of the very first Java bytecode.
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    AOTLinkedClassBulkLoader::link_classes(THREAD);
+  }
+
   initialize_class(vmSymbols::java_lang_String(), CHECK);
 
   // Inject CompactStrings value after the static initializers for String ran.
@@ -446,6 +450,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
+
+  // Deferred "static" initialization
+  NonJavaThread::init();
 
   // Initialize library-based TLS
   ThreadLocalStorage::init();
@@ -740,6 +747,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // and other cleanups.  Needs to start before the compilers start posting events.
   ServiceThread::initialize();
 
+  if (CDSConfig::is_using_aot_linked_classes()) {
+    nmethod::post_delayed_compiled_method_load_events();
+  }
+
   // Start the monitor deflation thread:
   MonitorDeflationThread::initialize();
 
@@ -772,7 +783,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
-    AOTLinkedClassBulkLoader::finish_loading_javabase_classes(CHECK_JNI_ERR);
+    AOTLinkedClassBulkLoader::init_javabase_classes(THREAD);
   }
 
   // Start string deduplication thread if requested.
@@ -791,7 +802,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   call_initPhase2(CHECK_JNI_ERR);
 
   if (CDSConfig::is_using_aot_linked_classes()) {
-    AOTLinkedClassBulkLoader::load_non_javabase_classes(THREAD);
+    AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
 #ifndef PRODUCT
   HeapShared::initialize_test_class_from_archive(THREAD);
@@ -889,10 +900,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   if (CDSConfig::is_dumping_classic_static_archive()) {
     // Classic -Xshare:dump, aka "old workflow"
-    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   } else if (CDSConfig::is_dumping_final_static_archive()) {
     tty->print_cr("Reading AOTConfiguration %s and writing AOTCache %s", AOTConfiguration, AOTCache);
-    AOTMetaspace::preload_and_dump(CHECK_JNI_ERR);
+    AOTMetaspace::dump_static_archive(CHECK_JNI_ERR);
   }
 
   if (log_is_enabled(Info, perf, class, link)) {

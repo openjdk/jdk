@@ -69,7 +69,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 6" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 6" }, applyIfCPUFeature = { "avx2", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 6" }, applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
     public static void testVectorMaskLaneIsSetByte_const() {
         Asserts.assertEquals(ma[0], mask_b.laneIsSet(0));
         Asserts.assertEquals(ma[0], mask_s.laneIsSet(0));
@@ -81,7 +81,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeature = { "avx", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeatureOr = { "avx", "true", "rvv", "true" })
     public static boolean testVectorMaskLaneIsSet_Byte_variable(int i) {
         return mask_b.laneIsSet(i);
     }
@@ -93,7 +93,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeature = { "avx", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeatureOr = { "avx", "true", "rvv", "true" })
     public static boolean testVectorMaskLaneIsSet_Short_variable(int i) {
         return mask_s.laneIsSet(i);
     }
@@ -105,7 +105,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeature = { "avx", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeatureOr = { "avx", "true", "rvv", "true" })
     public static boolean testVectorMaskLaneIsSet_Int_variable(int i) {
         return mask_i.laneIsSet(i);
     }
@@ -117,7 +117,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeature = { "avx2", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
     public static boolean testVectorMaskLaneIsSet_Long_variable(int i) {
         return mask_l.laneIsSet(i);
     }
@@ -129,7 +129,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeature = { "avx", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeatureOr = { "avx", "true", "rvv", "true" })
     public static boolean testVectorMaskLaneIsSet_Float_variable(int i) {
         return mask_f.laneIsSet(i);
     }
@@ -141,7 +141,7 @@ public class VectorMaskLaneIsSetTest {
 
     @Test
     @IR(counts = { IRNode.VECTOR_MASK_LANE_IS_SET, "= 1" }, applyIfCPUFeature = { "asimd", "true" })
-    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeature = { "avx2", "true" })
+    @IR(counts = { IRNode.VECTOR_MASK_TO_LONG, "= 1" }, applyIfCPUFeatureOr = { "avx2", "true", "rvv", "true" })
     public static boolean testVectorMaskLaneIsSet_Double_variable(int i) {
         return mask_d.laneIsSet(i);
     }

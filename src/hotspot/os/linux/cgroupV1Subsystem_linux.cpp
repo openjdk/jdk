@@ -136,35 +136,35 @@ bool CgroupV1Controller::needs_hierarchy_adjustment() {
 }
 
 static inline
-void verbose_log(julong read_mem_limit, julong host_mem) {
+void verbose_log(julong read_mem_limit, julong upper_mem_bound) {
   if (log_is_enabled(Debug, os, container)) {
     jlong mem_limit = (jlong)read_mem_limit; // account for negative values
-    if (mem_limit < 0 || read_mem_limit >= host_mem) {
+    if (mem_limit < 0 || read_mem_limit >= upper_mem_bound) {
       const char *reason;
       if (mem_limit == OSCONTAINER_ERROR) {
         reason = "failed";
       } else if (mem_limit == -1) {
         reason = "unlimited";
       } else {
-        assert(read_mem_limit >= host_mem, "Expected read value exceeding host_mem");
+        assert(read_mem_limit >= upper_mem_bound, "Expected read value exceeding upper memory bound");
         // Exceeding physical memory is treated as unlimited. This implementation
         // caps it at host_mem since Cg v1 has no value to represent 'max'.
         reason = "ignored";
       }
-      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", using host value " JLONG_FORMAT,
-                               reason, mem_limit, host_mem);
+      log_debug(os, container)("container memory limit %s: " JLONG_FORMAT ", upper bound is " JLONG_FORMAT,
+                               reason, mem_limit, upper_mem_bound);
     }
   }
 }
 
-jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
+jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong upper_bound) {
   julong memlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.limit_in_bytes", "Memory Limit", memlimit);
-  if (memlimit >= phys_mem) {
-    verbose_log(memlimit, phys_mem);
+  if (memlimit >= upper_bound) {
+    verbose_log(memlimit, upper_bound);
     return (jlong)-1;
   } else {
-    verbose_log(memlimit, phys_mem);
+    verbose_log(memlimit, upper_bound);
     return (jlong)memlimit;
   }
 }
@@ -181,10 +181,10 @@ jlong CgroupV1MemoryController::read_memory_limit_in_bytes(julong phys_mem) {
  *    * -1 if there isn't any limit in place (note: includes values which exceed a physical
  *      upper bound)
  */
-jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
+jlong CgroupV1MemoryController::read_mem_swap(julong upper_memsw_bound) {
   julong memswlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit", memswlimit);
-  if (memswlimit >= host_total_memsw) {
+  if (memswlimit >= upper_memsw_bound) {
     log_trace(os, container)("Memory and Swap Limit is: Unlimited");
     return (jlong)-1;
   } else {
@@ -192,8 +192,8 @@ jlong CgroupV1MemoryController::read_mem_swap(julong host_total_memsw) {
   }
 }
 
-jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(julong host_mem, julong host_swap) {
-  jlong memory_swap = read_mem_swap(host_mem + host_swap);
+jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
+  jlong memory_swap = read_mem_swap(upper_mem_bound + upper_swap_bound);
   if (memory_swap == -1) {
     return memory_swap;
   }
@@ -202,7 +202,7 @@ jlong CgroupV1MemoryController::memory_and_swap_limit_in_bytes(julong host_mem, 
   // supported.
   jlong swappiness = read_mem_swappiness();
   if (swappiness == 0 || memory_swap == OSCONTAINER_ERROR) {
-    jlong memlimit = read_memory_limit_in_bytes(host_mem);
+    jlong memlimit = read_memory_limit_in_bytes(upper_mem_bound);
     if (memory_swap == OSCONTAINER_ERROR) {
       log_trace(os, container)("Memory and Swap Limit has been reset to " JLONG_FORMAT " because swap is not supported", memlimit);
     } else {
@@ -220,9 +220,9 @@ jlong memory_swap_usage_impl(CgroupController* ctrl) {
   return (jlong)memory_swap_usage;
 }
 
-jlong CgroupV1MemoryController::memory_and_swap_usage_in_bytes(julong phys_mem, julong host_swap) {
-  jlong memory_sw_limit = memory_and_swap_limit_in_bytes(phys_mem, host_swap);
-  jlong memory_limit = read_memory_limit_in_bytes(phys_mem);
+jlong CgroupV1MemoryController::memory_and_swap_usage_in_bytes(julong upper_mem_bound, julong upper_swap_bound) {
+  jlong memory_sw_limit = memory_and_swap_limit_in_bytes(upper_mem_bound, upper_swap_bound);
+  jlong memory_limit = read_memory_limit_in_bytes(upper_mem_bound);
   if (memory_sw_limit > 0 && memory_limit > 0) {
     jlong delta_swap = memory_sw_limit - memory_limit;
     if (delta_swap > 0) {
@@ -238,10 +238,10 @@ jlong CgroupV1MemoryController::read_mem_swappiness() {
   return (jlong)swappiness;
 }
 
-jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong phys_mem) {
+jlong CgroupV1MemoryController::memory_soft_limit_in_bytes(julong upper_bound) {
   julong memsoftlimit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.soft_limit_in_bytes", "Memory Soft Limit", memsoftlimit);
-  if (memsoftlimit >= phys_mem) {
+  if (memsoftlimit >= upper_bound) {
     log_trace(os, container)("Memory Soft Limit is: Unlimited");
     return (jlong)-1;
   } else {
@@ -336,10 +336,10 @@ jlong CgroupV1MemoryController::kernel_memory_usage_in_bytes() {
   return (jlong)kmem_usage;
 }
 
-jlong CgroupV1MemoryController::kernel_memory_limit_in_bytes(julong phys_mem) {
+jlong CgroupV1MemoryController::kernel_memory_limit_in_bytes(julong upper_bound) {
   julong kmem_limit;
   CONTAINER_READ_NUMBER_CHECKED(reader(), "/memory.kmem.limit_in_bytes", "Kernel Memory Limit", kmem_limit);
-  if (kmem_limit >= phys_mem) {
+  if (kmem_limit >= upper_bound) {
     return (jlong)-1;
   }
   return (jlong)kmem_limit;
@@ -351,9 +351,9 @@ jlong CgroupV1MemoryController::kernel_memory_max_usage_in_bytes() {
   return (jlong)kmem_max_usage;
 }
 
-void CgroupV1MemoryController::print_version_specific_info(outputStream* st, julong phys_mem) {
+void CgroupV1MemoryController::print_version_specific_info(outputStream* st, julong mem_bound) {
   jlong kmem_usage = kernel_memory_usage_in_bytes();
-  jlong kmem_limit = kernel_memory_limit_in_bytes(phys_mem);
+  jlong kmem_limit = kernel_memory_limit_in_bytes(mem_bound);
   jlong kmem_max_usage = kernel_memory_max_usage_in_bytes();
 
   OSContainer::print_container_helper(st, kmem_limit, "kernel_memory_limit_in_bytes");

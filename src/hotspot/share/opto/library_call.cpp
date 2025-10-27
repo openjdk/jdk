@@ -3638,16 +3638,16 @@ bool LibraryCallKit::inline_native_getEventWriter() {
  * if (carrierThread != thread) { // is virtual thread
  *   const u2 vthread_epoch_raw = java_lang_Thread::jfr_epoch(thread);
  *   bool excluded = vthread_epoch_raw & excluded_mask;
- *   Atomic::store(&tl->_contextual_tid, java_lang_Thread::tid(thread));
- *   Atomic::store(&tl->_contextual_thread_excluded, is_excluded);
+ *   AtomicAccess::store(&tl->_contextual_tid, java_lang_Thread::tid(thread));
+ *   AtomicAccess::store(&tl->_contextual_thread_excluded, is_excluded);
  *   if (!excluded) {
  *     const u2 vthread_epoch = vthread_epoch_raw & epoch_mask;
- *     Atomic::store(&tl->_vthread_epoch, vthread_epoch);
+ *     AtomicAccess::store(&tl->_vthread_epoch, vthread_epoch);
  *   }
- *   Atomic::release_store(&tl->_vthread, true);
+ *   AtomicAccess::release_store(&tl->_vthread, true);
  *   return;
  * }
- * Atomic::release_store(&tl->_vthread, false);
+ * AtomicAccess::release_store(&tl->_vthread, false);
  */
 void LibraryCallKit::extend_setCurrentThread(Node* jt, Node* thread) {
   enum { _true_path = 1, _false_path = 2, PATH_LIMIT };

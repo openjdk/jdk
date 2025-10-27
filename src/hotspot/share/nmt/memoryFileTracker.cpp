@@ -42,7 +42,8 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
                                         MemTag mem_tag) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
   VMATree::RegionData regiondata(sidx, mem_tag);
-  VMATree::SummaryDiff diff = file->_tree.commit_mapping(offset, size, regiondata);
+  VMATree::SummaryDiff diff;
+  file->_tree.commit_mapping(offset, size, regiondata, diff);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);
@@ -51,7 +52,8 @@ void MemoryFileTracker::allocate_memory(MemoryFile* file, size_t offset,
 }
 
 void MemoryFileTracker::free_memory(MemoryFile* file, size_t offset, size_t size) {
-  VMATree::SummaryDiff diff = file->_tree.release_mapping(offset, size);
+  VMATree::SummaryDiff diff;
+  file->_tree.release_mapping(offset, size, diff);
   for (int i = 0; i < mt_number_of_tags; i++) {
     VirtualMemory* summary = file->_summary.by_tag(NMTUtil::index_to_tag(i));
     summary->reserve_memory(diff.tag[i].commit);

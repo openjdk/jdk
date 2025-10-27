@@ -31,7 +31,7 @@
 #include "memory/allocation.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"

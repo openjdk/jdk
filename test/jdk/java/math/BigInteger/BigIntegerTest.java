@@ -23,14 +23,13 @@
 
 /*
  * @test
+ * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465
+ *      8074460 8078672 8032027 8229845 8077587 8367365
+ * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
+ * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run main BigIntegerTest
- * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672 8032027 8229845 8077587
- * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
- * @run main/timeout=400 BigIntegerTest
- * @author madbot
- * @key randomness
+ * @run main/timeout=480 BigIntegerTest
  */
 
 import java.io.File;
@@ -1397,8 +1396,8 @@ public class BigIntegerTest {
     public static void main(String[] args) throws Exception {
         // subset zero indicates to run all subsets
         int subset = Integer.valueOf(System.getProperty("subset",
-            String.valueOf(1 + random.nextInt(3))));
-        if (subset < 0 || subset > 3) {
+            String.valueOf(1 + random.nextInt(4))));
+        if (subset < 0 || subset > 4) {
             throw new RuntimeException("Unknown subset " + subset);
         }
         if (subset == 0)
@@ -1443,11 +1442,6 @@ public class BigIntegerTest {
             square(ORDER_KARATSUBA_SQUARE);
             square(ORDER_TOOM_COOK_SQUARE);
 
-            squareRoot();
-            squareRootAndRemainder();
-            nthRoot();
-            nthRootAndRemainder();
-
             bitCount();
             bitLength();
             bitOps(order1);
@@ -1473,6 +1467,13 @@ public class BigIntegerTest {
             multiplyLarge();
             squareLarge();
             divideLarge();
+        }
+        if (subset == 0 || subset == 4) {
+            squareRoot();
+            squareRootAndRemainder();
+
+            nthRoot();
+            nthRootAndRemainder();
         }
 
         if (failure)

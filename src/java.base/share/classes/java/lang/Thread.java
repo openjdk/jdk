@@ -1528,36 +1528,6 @@ public class Thread implements Runnable {
     }
 
     /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @throws  UnsupportedOperationException always
-     *
-     * @deprecated This method was originally specified to "stop" a victim
-     *       thread by causing the victim thread to throw a {@link ThreadDeath}.
-     *       It was inherently unsafe. Stopping a thread caused it to unlock
-     *       all of the monitors that it had locked (as a natural consequence
-     *       of the {@code ThreadDeath} exception propagating up the stack). If
-     *       any of the objects previously protected by these monitors were in
-     *       an inconsistent state, the damaged objects became visible to
-     *       other threads, potentially resulting in arbitrary behavior.
-     *       Usages of {@code stop} should be replaced by code that simply
-     *       modifies some variable to indicate that the target thread should
-     *       stop running.  The target thread should check this variable
-     *       regularly, and return from its run method in an orderly fashion
-     *       if the variable indicates that it is to stop running.  If the
-     *       target thread waits for long periods (on a condition variable,
-     *       for example), the {@code interrupt} method should be used to
-     *       interrupt the wait.
-     *       For more information, see
-     *       <a href="{@docRoot}/java.base/java/lang/doc-files/threadPrimitiveDeprecation.html">Why
-     *       is Thread.stop deprecated and the ability to stop a thread removed?</a>.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void stop() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Interrupts this thread.
      *
      * <p> If this thread is blocked in an invocation of the {@link

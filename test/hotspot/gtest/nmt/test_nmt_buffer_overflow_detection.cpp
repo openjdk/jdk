@@ -164,4 +164,14 @@ TEST_VM(NMT, test_realloc) {
   }
 }
 
+TEST_VM_FATAL_ERROR_MSG(NMT, memory_corruption_call_stack, ".*header canary.*") {
+  if (MemTracker::tracking_level() != NMT_detail) {
+    guarantee(false, "fake message ignore this - header canary");
+  }
+  const size_t SIZE = 1024;
+  char* p = (char*)os::malloc(SIZE, mtTest);
+  *(p - 1) = 0;
+  os::free(p);
+}
+
 #endif // !INCLUDE_ASAN

@@ -90,7 +90,6 @@ class ExceptionCache : public CHeapObj<mtCode> {
 
 // cache pc descs found in earlier inquiries
 class PcDescCache {
-  friend class VMStructs;
  private:
   enum { cache_size = 4 };
   // The array elements MUST be volatile! Several threads may modify
@@ -155,6 +154,7 @@ public:
 //    - Scopes data array
 //    - Scopes pcs array
 //  - JVMCI speculations array
+//  - Nmethod reference counter
 
 #if INCLUDE_JVMCI
 class FailedSpeculation;
@@ -167,6 +167,8 @@ class nmethod : public CodeBlob {
   friend class CodeCache;  // scavengable oops
   friend class JVMCINMethodData;
   friend class DeoptimizationScope;
+
+  #define ImmutableDataReferencesCounterSize ((int)sizeof(int))
 
  private:
 
@@ -227,9 +229,6 @@ class nmethod : public CodeBlob {
   // All deoptee's will resume execution at this location described by
   // this offset.
   int _deopt_handler_offset;
-  // All deoptee's at a MethodHandle call site will resume execution
-  // at this location described by this offset.
-  int _deopt_mh_handler_offset;
   // Offset (from insts_end) of the unwind handler if it exists
   int16_t  _unwind_handler_offset;
   // Number of arguments passed on the stack
@@ -251,6 +250,7 @@ class nmethod : public CodeBlob {
 #if INCLUDE_JVMCI
   int      _speculations_offset;
 #endif
+  int      _immutable_data_reference_counter_offset;
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -268,7 +268,6 @@ class nmethod : public CodeBlob {
 
   // set during construction
   uint8_t _has_unsafe_access:1,        // May fault due to unsafe access.
-          _has_method_handle_invokes:1,// Has this method MethodHandle invokes?
           _has_wide_vectors:1,         // Preserve wide vectors at safepoints
           _has_monitors:1,             // Fastpath monitor detection for continuations
           _has_scoped_access:1,        // used by for shared scope closure (scopedMemoryAccess.cpp)
@@ -286,7 +285,7 @@ class nmethod : public CodeBlob {
   volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
 
   DeoptimizationStatus deoptimization_status() const {
-    return Atomic::load(&_deoptimization_status);
+    return AtomicAccess::load(&_deoptimization_status);
   }
 
   // Initialize fields to their default values
@@ -335,8 +334,11 @@ class nmethod : public CodeBlob {
 #endif
           );
 
+  nmethod(const nmethod &nm);
+
   // helper methods
   void* operator new(size_t size, int nmethod_size, int comp_level) throw();
+  void* operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw();
 
   // For method handle intrinsics: Try MethodNonProfiled, MethodProfiled and NonNMethod.
   // Attention: Only allow NonNMethod space for special nmethods which don't need to be
@@ -569,6 +571,12 @@ public:
 #endif
   );
 
+  // Relocate the nmethod to the code heap identified by code_blob_type.
+  // Returns nullptr if the code heap does not have enough space, the
+  // nmethod is unrelocatable, or the nmethod is invalidated during relocation,
+  // otherwise the relocated nmethod. The original nmethod will be marked not entrant.
+  nmethod* relocate(CodeBlobType code_blob_type);
+
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,
@@ -584,6 +592,8 @@ public:
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
   bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
+
+  bool is_relocatable();
 
   // Compiler task identification.  Note that all OSR methods
   // are numbered in an independent sequence if CICountOSR is true,
@@ -607,7 +617,6 @@ public:
   address stub_end              () const { return           code_end()     ; }
   address exception_begin       () const { return           header_begin() + _exception_offset        ; }
   address deopt_handler_begin   () const { return           header_begin() + _deopt_handler_offset    ; }
-  address deopt_mh_handler_begin() const { return           header_begin() + _deopt_mh_handler_offset ; }
   address unwind_handler_begin  () const { return _unwind_handler_offset != -1 ? (insts_end() - _unwind_handler_offset) : nullptr; }
   oop*    oops_begin            () const { return (oop*)    data_begin(); }
   oop*    oops_end              () const { return (oop*)    data_end(); }
@@ -638,10 +647,11 @@ public:
 #if INCLUDE_JVMCI
   address scopes_data_end       () const { return           _immutable_data + _speculations_offset ; }
   address speculations_begin    () const { return           _immutable_data + _speculations_offset ; }
-  address speculations_end      () const { return            immutable_data_end(); }
+  address speculations_end      () const { return           _immutable_data + _immutable_data_reference_counter_offset ; }
 #else
-  address scopes_data_end       () const { return            immutable_data_end(); }
+  address scopes_data_end       () const { return           _immutable_data + _immutable_data_reference_counter_offset ; }
 #endif
+  address immutable_data_references_counter_begin () const { return _immutable_data + _immutable_data_reference_counter_offset ; }
 
   // Sizes
   int immutable_data_size() const { return _immutable_data_size; }
@@ -746,9 +756,6 @@ public:
   bool  has_scoped_access() const                 { return _has_scoped_access; }
   void  set_has_scoped_access(bool z)             { _has_scoped_access = z; }
 
-  bool  has_method_handle_invokes() const         { return _has_method_handle_invokes; }
-  void  set_has_method_handle_invokes(bool z)     { _has_method_handle_invokes = z; }
-
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
 
@@ -819,12 +826,9 @@ public:
   ExceptionCache* exception_cache_entry_for_exception(Handle exception);
 
 
-  // MethodHandle
-  bool is_method_handle_return(address return_pc);
   // Deopt
   // Return true is the PC is one would expect if the frame is being deopted.
   inline bool is_deopt_pc(address pc);
-  inline bool is_deopt_mh_entry(address pc);
   inline bool is_deopt_entry(address pc);
 
   // Accessor/mutator for the original pc of a frame before a frame was deopted.
@@ -958,6 +962,11 @@ public:
   bool  load_reported() const                     { return _load_reported; }
   void  set_load_reported()                       { _load_reported = true; }
 
+  inline int  get_immutable_data_references_counter()           { return *((int*)immutable_data_references_counter_begin());  }
+  inline void set_immutable_data_references_counter(int count)  { *((int*)immutable_data_references_counter_begin()) = count; }
+
+  static void add_delayed_compiled_method_load_event(nmethod* nm) NOT_CDS_RETURN;
+
  public:
   // ScopeDesc retrieval operation
   PcDesc* pc_desc_at(address pc)   { return find_pc_desc(pc, false); }
@@ -991,6 +1000,9 @@ public:
 
   // Avoid hiding of parent's 'decode(outputStream*)' method.
   void decode(outputStream* st) const { decode2(st); } // just delegate here.
+
+  // AOT cache support
+  static void post_delayed_compiled_method_load_events() NOT_CDS_RETURN;
 
   // printing support
   void print_on_impl(outputStream* st) const;
@@ -1026,6 +1038,7 @@ public:
   // Logging
   void log_identity(xmlStream* log) const;
   void log_new_nmethod() const;
+  void log_relocated_nmethod(nmethod* original) const;
   void log_state_change(InvalidationReason invalidation_reason) const;
 
   // Prints block-level comments, including nmethod specific block labels:
@@ -1078,6 +1091,15 @@ public:
   };
 
   static const Vptr _vpntr;
+};
+
+struct NMethodMarkingScope : StackObj {
+  NMethodMarkingScope() {
+    nmethod::oops_do_marking_prologue();
+  }
+  ~NMethodMarkingScope() {
+    nmethod::oops_do_marking_epilogue();
+  }
 };
 
 #endif // SHARE_CODE_NMETHOD_HPP

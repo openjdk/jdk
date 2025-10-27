@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
@@ -64,29 +65,34 @@ public final class FileUtils {
 
         List<CopyAction> copyActions = new ArrayList<>();
 
-        Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
-            @Override
-            public FileVisitResult preVisitDirectory(final Path dir,
-                    final BasicFileAttributes attrs) {
-                if (isPathMatch(dir, excludes)) {
-                    return FileVisitResult.SKIP_SUBTREE;
-                } else {
-                    copyActions.add(new CopyAction(null, dest.resolve(src.
-                            relativize(dir))));
+        if (Files.isDirectory(src)) {
+            Files.walkFileTree(src, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(final Path dir,
+                        final BasicFileAttributes attrs) {
+                    if (isPathMatch(dir, excludes)) {
+                        return FileVisitResult.SKIP_SUBTREE;
+                    } else {
+                        copyActions.add(new CopyAction(null, dest.resolve(src.relativize(dir))));
+                        return FileVisitResult.CONTINUE;
+                    }
+                }
+
+                @Override
+                public FileVisitResult visitFile(final Path file,
+                        final BasicFileAttributes attrs) {
+                    if (!isPathMatch(file, excludes)) {
+                        copyActions.add(new CopyAction(file, dest.resolve(src.relativize(file))));
+                    }
                     return FileVisitResult.CONTINUE;
                 }
-            }
-
-            @Override
-            public FileVisitResult visitFile(final Path file,
-                    final BasicFileAttributes attrs) {
-                if (!isPathMatch(file, excludes)) {
-                    copyActions.add(new CopyAction(file, dest.resolve(src.
-                            relativize(file))));
-                }
-                return FileVisitResult.CONTINUE;
-            }
-        });
+            });
+        } else if (!isPathMatch(src, excludes)) {
+            Optional.ofNullable(dest.getParent()).ifPresent(dstDir -> {
+                copyActions.add(new CopyAction(null, dstDir));
+            });
+            copyActions.add(new CopyAction(src, dest));
+        }
 
         for (var copyAction : copyActions) {
             copyAction.apply(options);
