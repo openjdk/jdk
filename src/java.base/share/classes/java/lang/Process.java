@@ -199,7 +199,7 @@ public abstract class Process implements Closeable {
      * process to terminate. If interrupted while {@linkplain #waitFor waiting} for termination
      * the process is {@linkplain #destroyForcibly() forcibly destroyed} and
      * this method continues to wait for the process to terminate.
-     * The interrupt status is re-asserted before this method returns and
+     * The interrupted status is re-asserted before this method returns and
      * any {@code IOExceptions} are thrown.
      * <p>
      * Try-with-resources example to write text to a process, read back the
@@ -237,7 +237,7 @@ public abstract class Process implements Closeable {
                 while (!tryWait()) {
                     continue;
                 }
-                // Re-assert the interrupt
+                // Re-assert the interrupted status
                 Thread.currentThread().interrupt();
             }
             if (ioe != null) {

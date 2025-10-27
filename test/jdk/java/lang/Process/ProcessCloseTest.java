@@ -138,11 +138,11 @@ public class ProcessCloseTest {
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_INTERRUPT, // schedule an interrupt (in .2 sec)
                                 ProcessCommand.PROCESS_CLOSE,
-                                ProcessCommand.PROCESS_CHECK_INTERRUPT), // Verify re-interrupted
+                                ProcessCommand.PROCESS_CHECK_INTERRUPTED), // Verify interrupted status
                         List.of(ExitStatus.KILLED)), // And process was destroyed
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ProcessCommand.PROCESS_INTERRUPT), // interrupts the TWR/close
-                        List.of(ProcessCommand.PROCESS_CHECK_INTERRUPT, ExitStatus.KILLED)),
+                        List.of(ProcessCommand.PROCESS_CHECK_INTERRUPTED, ExitStatus.KILLED)),
                 Arguments.of(javaArgs(ChildCommand.SLEEP),
                         List.of(ExitStatus.NORMAL), // waitFor before T-W-R exit
                         List.of(ExitStatus.NORMAL)),
@@ -313,7 +313,7 @@ public class ProcessCloseTest {
         STDOUT_EXPECT_EMPTY(ProcessCommand::stdoutExpectEmpty),
         STDERR_EXPECT_EMPTY(ProcessCommand::stderrExpectEmpty),
         PROCESS_INTERRUPT(ProcessCommand::processInterruptThread),
-        PROCESS_CHECK_INTERRUPT(ProcessCommand::processAssertInterrupted),
+        PROCESS_CHECK_INTERRUPTED(ProcessCommand::processAssertInterrupted),
         ;
         private final Consumer<Process> command;
 
@@ -508,7 +508,7 @@ public class ProcessCloseTest {
             try {
                 Thread.sleep(sleepMS);
             } catch (InterruptedException ie) {
-                // Interrupted sleep, re-assert interrupt
+                // Interrupted sleep, re-assert interrupted status
                 System.err.println("Sleep interrupted");  // Note the interruption in the log
                 Thread.currentThread().interrupt();
             }
