@@ -75,9 +75,18 @@ public class TestMergeStoresAndAllocationElimination {
         // [2]=256         =          0x100
         // [3]=16777216    =     0x100_0000
         //
+        // This is serialized as a long and 3 ints, and that looks like 5 ints.
+        // This creates an array of 5 elements (and not 4):
+        // [0]             =            0x1
+        // [1]             =           0x10
+        // [2]             =      0x10_0000 -> this entry is "inserted"
+        // [3]             =          0x100
+        // [4]             =     0x100_0000
+        //
         // This creates the wrong state:
-        // 0x430_0021
-        if (flag) { System.out.println("unstable if"); }
+        // 0x30_0421
+        // And we can actually read that the arr.length is 5, below.
+        if (flag) { System.out.println("unstable if: " + arr.length); }
 
         // Delay the allocation elimination until after loop opts, so that it
         // happens after MergeStores. Without this, we would immediately
@@ -89,7 +98,7 @@ public class TestMergeStoresAndAllocationElimination {
         // Coming from the correct value, we should have transition of state:
         // 0x400_0321 -> 0x4321
         // But coming from the bad (rematerialized) state, we transition:
-        // 0x430_0021 -> 0x304021
+        // 0x30_0421 -> 0x30_4021
 
         // Tag each entry with an index number
         // We expect: 0x4321
