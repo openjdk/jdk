@@ -126,12 +126,6 @@ bool StringDedup::Config::ergo_initialize() {
                              "not supported by selected GC");
     FLAG_SET_ERGO(UseStringDeduplication, false);
     return true;
-  } else if (CDSConfig::is_dumping_heap()) {
-    // String deduplication can mess with the string interning logic during
-    // heap dumping.
-    log_warning(stringdedup)("String Deduplication disabled: "
-                             "not supported when heap dumping");
-    FLAG_SET_ERGO(UseStringDeduplication, false);
   }
 
   // UseStringDeduplication is enabled.  Check parameters.  These checks are
