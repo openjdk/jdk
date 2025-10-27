@@ -2385,9 +2385,10 @@ void LIRGenerator::do_Goto(Goto* x) {
     } else {
       // LIR_Address *counter_addr = new LIR_Address(md_reg, offset, T_INT);
       LIR_Opr tmp = new_register(T_INT);
-      LIR_Opr dummy = new_register(T_INT);
+      // LIR_Opr dummy = new_register(T_INT);
+      LIR_Opr dummy = LIR_OprFact::intConst(0);
       LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
-      __ increment_profile_ctr(inc, counter_addr, tmp, dummy);
+      __ increment_profile_ctr(inc, counter_addr, dummy, tmp);
     }
   }
 
@@ -3186,7 +3187,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     ShouldNotReachHere();
   }
   LIR_Address* counter = new LIR_Address(counter_holder, offset, T_INT);
-  LIR_Opr result = new_register(T_INT);
+  LIR_Opr result = notify ? new_register(T_INT) : LIR_OprFact::intConst(0);
   LIR_Opr tmp = new_register(T_INT);
   if (ProfileCaptureRatio == 1) {
     __ load(counter, result);

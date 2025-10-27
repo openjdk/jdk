@@ -2766,14 +2766,21 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 }
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr dest, LIR_Opr temp_op) {
-  Register temp = temp_op->as_register();
+  // Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
+  Register temp = temp_op->is_register() ? temp_op->as_register() : noreg;
   Address dest_adr = as_Address(addr->as_address_ptr());
 
   assert(ProfileCaptureRatio != 1, "ProfileCaptureRatio must be != 1");
 
+#ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("increment_profile_ctr" " {");
+  }
+#endif
+
   int profile_capture_ratio = ProfileCaptureRatio;
   int ratio_shift = exact_log2(profile_capture_ratio);
-  int threshold = (1ull << 32) >> ratio_shift;
+  auto threshold = (1ull << 32) >> ratio_shift;
 
   assert(threshold > 0, "must be");
 
@@ -2796,27 +2803,35 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
     switch (dest->type()) {
         case T_INT: {
           jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
-          __ movl(dest->as_register(), inc);
+          if (dest->is_register())  __ movl(dest->as_register(), inc);
           __ cmpl(r_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
 
-          __ movl(temp, dest_adr);
-          __ addl(temp, inc);
-          __ movl(dest_adr, temp);
-          __ movl(dest->as_register(), temp);
+          if (dest->is_register()) {
+            __ movl(temp, dest_adr);
+            __ addl(temp, inc);
+            __ movl(dest_adr, temp);
+            __ movl(dest->as_register(), temp);
+          } else {
+            __ addl(dest_adr, inc);
+          }
 
           break;
         }
         case T_LONG: {
           jint inc = incr->as_constant_ptr()->as_jint_bits() * profile_capture_ratio;
-          __ movq(dest->as_register_lo(), (jlong)inc);
+          if (dest->is_register())  __ movq(dest->as_register_lo(), (jlong)inc);
           __ cmpl(r_profile_rng, threshold);
           __ jccb(Assembler::aboveEqual, dont);
 
+          if (dest->is_register()) {
           __ movq(temp, dest_adr);
           __ addq(temp, inc);
           __ movq(dest_adr, temp);
           __ movq(dest->as_register_lo(), temp);
+          } else {
+            __ addq(dest_adr, inc);
+          }
 
           break;
         }
@@ -2824,6 +2839,12 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr incr, LIR_Opr addr, LIR_Opr de
         ShouldNotReachHere();
     }
   }
+  #ifndef PRODUCT
+  if (CommentedAssembly) {
+    __ block_comment("} " "increment_profile_ctr");
+  }
+#endif
+
   __ bind(dont);
 }
 

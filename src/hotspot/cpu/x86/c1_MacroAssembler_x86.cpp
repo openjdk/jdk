@@ -321,6 +321,11 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
 
 void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &skip) {
   if (ProfileCaptureRatio != 1) {
+#ifndef PRODUCT
+    if (CommentedAssembly) {
+      block_comment("step_profile_rng" " {");
+    }
+#endif
     step_random(state, temp);
 
     int ratio_shift = exact_log2(ProfileCaptureRatio);
@@ -328,6 +333,11 @@ void C1_MacroAssembler::step_profile_rng(Register state, Register temp, Label &s
 
     cmpl(state, threshold);
     jcc(Assembler::aboveEqual, skip);
+#ifndef PRODUCT
+    if (CommentedAssembly) {
+      block_comment("} " "step_profile_rng");
+    }
+#endif
   }
 }
 
