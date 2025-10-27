@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class LogStream;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahOldHeuristics;
