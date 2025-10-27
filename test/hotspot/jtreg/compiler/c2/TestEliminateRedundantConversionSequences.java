@@ -30,6 +30,7 @@
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
  *      -XX:-TieredCompilation -Xbatch -XX:VerifyIterativeGVN=1110
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN
  *      compiler.c2.TestEliminateRedundantConversionSequences
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *      -XX:CompileCommand=compileonly,compiler.c2.TestEliminateRedundantConversionSequences::test*
