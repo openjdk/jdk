@@ -578,7 +578,8 @@ public class WorstCaseTests {
             {+0x1.54CD1FEA7663Ap+7,      +0x1.C90810D354618p+244},
             {+0x1.D6479EBA7C971p+8,      +0x1.62A88613629B5p+677},
 
-            // Julia worst-case observed error, 1.9 ulps
+            // Julia worst-case observed error, 1.9 ulps;
+            // added to hyperbolics testing in StrictMath.
             // {-0x1.633c654fee2bap9,       -0x1.fdf25fc26e7cp1023},
         };
 
@@ -609,8 +610,9 @@ public class WorstCaseTests {
             {+0x1.104B648F113A1p+0,     +0x1.9EFDCA62B7009p+0},
             {+0x1.EA5F2F2E4B0C5p+1,     +0x17.10DB0CD0FED5p+0},
 
-            // Julia worst-case observed error, 1.9 ulps
-            // {0x1.8633c654fee2bp-831,    +0x1.fdf25fc26e7cp1023},
+            // Julia worst-case observed error, 1.9 ulps;
+            // added to hyperbolics testing in StrictMath.
+            // {-0x1.633c654fee2bap9,      0x1.fdf25fc26e7cp1023},
         };
 
         for(double[] testCase: testCases) {
