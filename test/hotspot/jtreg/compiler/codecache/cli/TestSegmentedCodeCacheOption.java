@@ -172,7 +172,7 @@ public class TestSegmentedCodeCacheOption {
         OPTION_VALUES_HOT {
             @Override
             public boolean isApplicable() {
-                return Platform.isServerCompiler();
+                return Platform.isServer() && !Platform.isEmulatedClient();
             }
 
             @Override
