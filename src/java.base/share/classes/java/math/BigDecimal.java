@@ -2444,11 +2444,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      *
      * <ul>
      *
-     * <li> For DOWN and FLOOR, |result|^n must be {@code <=} |input|
+     * <li> For DOWN and FLOOR if input > 0 and CEIL if input < 0,
+     * |result|^n must be {@code <=} |input|
      * and (|result|+ulp)^n must be {@code >} |input|.
      *
-     * <li>Conversely, for UP and CEIL, |result|^n must be {@code >=}
-     * |input| and (|result|-ulp)^n must be {@code <} |input|.
+     * <li>Conversely, for UP and FLOOR if input < 0 and CEIL if input > 0,
+     * |result|^n must be {@code >=} |input|
+     * and (|result|-ulp)^n must be {@code <} |input|.
      * </ul>
      */
     private boolean rootnResultAssertions(BigDecimal result, MathContext mc, int n) {
@@ -2458,8 +2460,15 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             "Bad signum of this and/or its root.";
 
         BigDecimal thisAbs = this.abs(), resAbs = result.abs();
-
         RoundingMode rm = mc.roundingMode;
+        if (this.signum() < 0) {
+            if (rm == RoundingMode.FLOOR) {
+                rm = RoundingMode.UP;
+            } else if (mc.roundingMode == RoundingMode.CEILING) {
+                rm = RoundingMode.DOWN;
+            }
+        }
+
         BigDecimal ulp = resAbs.ulp();
         BigDecimal neighborUp = resAbs.add(ulp);
         // Make neighbor down accurate even for powers of ten
