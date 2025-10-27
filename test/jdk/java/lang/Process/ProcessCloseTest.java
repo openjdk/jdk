@@ -148,7 +148,7 @@ public class ProcessCloseTest {
                         List.of(ExitStatus.NORMAL)),
                 Arguments.of(List.of("echo", "abc"),
                         List.of(ProcessCommand.PROCESS_CLOSE),
-                        List.of(ExitStatus.PIPE)),
+                        List.of(ExitStatus.RACY)),
                 Arguments.of(javaArgs(ChildCommand.STDOUT_ECHO),
                         List.of(ProcessCommand.STDOUT_WRITE,
                                 ProcessCommand.PROCESS_CLOSE),
