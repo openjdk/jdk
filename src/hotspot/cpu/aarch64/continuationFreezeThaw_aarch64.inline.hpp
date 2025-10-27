@@ -211,6 +211,8 @@ inline intptr_t* AnchorMark::anchor_mark_set_pd() {
     assert(_last_sp_from_frame != nullptr, "");
     _top_frame.interpreter_frame_set_last_sp(nullptr);
     if (sp != _last_sp_from_frame) {
+      // We need to move up return pc and fp. They will be read next in
+      // set_anchor() and set as _last_Java_pc and _last_Java_fp respectively.
       _last_sp_from_frame[-1] = (intptr_t)_top_frame.pc();
       _last_sp_from_frame[-2] = (intptr_t)_top_frame.fp();
     }
@@ -335,8 +337,8 @@ inline intptr_t* ThawBase::push_cleanup_continuation() {
   frame enterSpecial = new_entry_frame();
   intptr_t* sp = enterSpecial.sp();
 
+  // We only need to set the return pc. rfp will be restored back in gen_continuation_enter().
   sp[-1] = (intptr_t)ContinuationEntry::cleanup_pc();
-  sp[-2] = (intptr_t)enterSpecial.fp();
   return sp;
 }
 
@@ -344,6 +346,7 @@ inline intptr_t* ThawBase::push_preempt_adapter() {
   frame enterSpecial = new_entry_frame();
   intptr_t* sp = enterSpecial.sp();
 
+  // We only need to set the return pc. rfp will be restored back in generate_cont_preempt_stub().
   sp[-1] = (intptr_t)StubRoutines::cont_preempt_stub();
   return sp;
 }

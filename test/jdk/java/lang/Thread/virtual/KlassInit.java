@@ -25,42 +25,49 @@
  * @test id=default
  * @library /test/lib
  * @requires vm.continuations
- * @run junit/othervm/timeout=480 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
+ * @run junit/othervm/timeout=480 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit*
+ *      -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
 /*
  * @test id=Xint
  * @library /test/lib
  * @requires vm.continuations
- * @run junit/othervm/timeout=480 -Xint -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
+ * @run junit/othervm/timeout=480 -Xint -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit*
+ *      -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
 /*
  * @test id=Xcomp
  * @library /test/lib
  * @requires vm.continuations
- * @run junit/othervm/timeout=480 -Xcomp -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
+ * @run junit/othervm/timeout=480 -Xcomp -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit*
+ *      -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
 /*
  * @test id=Xcomp-TieredStopAtLevel1
  * @library /test/lib
  * @requires vm.continuations
- * @run junit/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
+ * @run junit/othervm/timeout=480 -Xcomp -XX:TieredStopAtLevel=1 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit*
+ *      -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
 /*
  * @test id=Xcomp-noTieredCompilation
  * @library /test/lib
  * @requires vm.continuations
- * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
+ * @run junit/othervm/timeout=480 -Xcomp -XX:-TieredCompilation -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit*
+ *      -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
 /*
  * @test id=gc
  * @library /test/lib
  * @requires vm.debug == true & vm.continuations
- * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000 -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
+ * @run junit/othervm/timeout=480 -XX:+UnlockDiagnosticVMOptions -XX:+FullGCALot -XX:FullGCALotInterval=1000
+ *      -XX:CompileCommand=exclude,KlassInit::lambda$testReleaseAtKlassInit* -XX:CompileCommand=exclude,KlassInit$$Lambda*::run
+ *      -XX:CompileCommand=exclude,KlassInit$1Driver::foo KlassInit
  */
 
 import java.util.ArrayList;

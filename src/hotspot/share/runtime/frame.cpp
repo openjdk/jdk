@@ -939,19 +939,8 @@ void frame::oops_interpreted_do(OopClosure* f, const RegisterMapT* map, bool que
       ResourceMark rm(thread);  // is this right ???
       Symbol* signature = call.signature();
       bool has_receiver = call.has_receiver();
-      // we are at a call site & the expression stack is not empty
-      // => process callee's arguments
-      //
-      // Note: The expression stack can be empty if an exception
-      //       occurred during method resolution/execution. In all
-      //       cases we empty the expression stack completely be-
-      //       fore handling the exception (the exception handling
-      //       code in the interpreter calls a blocking runtime
-      //       routine which can cause this code to be executed).
-      //       (was bug gri 7/27/98)
-      // if (dolog) {
-      //   log_trace(continuations, tracking)("Processing arguments");
-      // }
+      // We are at a call site & the expression stack is not empty
+      // so we might have callee arguments we need to process.
       oops_interpreted_arguments_do(signature, has_receiver, f);
     }
   }

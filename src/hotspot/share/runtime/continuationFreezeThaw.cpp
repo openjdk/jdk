@@ -1683,10 +1683,9 @@ static void jvmti_yield_cleanup(JavaThread* thread, ContinuationWrapper& cont) {
 static void jvmti_mount_end(JavaThread* current, ContinuationWrapper& cont, frame top, Continuation::preempt_kind pk) {
   assert(current->vthread() != nullptr, "must be");
 
-  HandleMarkCleaner hm(current);  // Cleanup vth and so._conth Handles
+  HandleMarkCleaner hm(current);  // Cleanup all handles (including so._conth) before returning to Java.
   Handle vth(current, current->vthread());
   ContinuationWrapper::SafepointOp so(current, cont);
-
   AnchorMark am(current, top);  // Set anchor so that the stack is walkable.
 
   JRT_BLOCK
@@ -2352,12 +2351,12 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
 #endif
 
 #ifdef ASSERT
-  set_anchor(_thread, rs.sp());
-  log_frames(_thread);
   if (LoomDeoptAfterThaw) {
+    frame top(rs.sp());
+    AnchorMark am(_thread, top);
+    log_frames(_thread);
     do_deopt_after_thaw(_thread);
   }
-  clear_anchor(_thread);
 #endif
 
   return rs.sp();
@@ -2684,7 +2683,7 @@ intptr_t* ThawBase::redo_vmcall(JavaThread* current, frame& top) {
   intptr_t* sp = top.sp();
 
   {
-    HandleMarkCleaner hmc(current);  // Cleanup so._conth Handle
+    HandleMarkCleaner hmc(current);  // Cleanup all handles (including so._conth) before returning to Java.
     ContinuationWrapper::SafepointOp so(current, _cont);
     AnchorMark am(current, top);    // Set the anchor so that the stack is walkable.
 
@@ -2731,10 +2730,9 @@ intptr_t* ThawBase::redo_vmcall(JavaThread* current, frame& top) {
 }
 
 void ThawBase::throw_interrupted_exception(JavaThread* current, frame& top) {
-  HandleMarkCleaner hm(current);  // Cleanup so._conth Handle
+  HandleMarkCleaner hm(current);  // Cleanup all handles (including so._conth) before returning to Java.
   ContinuationWrapper::SafepointOp so(current, _cont);
-  // Since we might safepoint set the anchor so that the stack can be walked.
-  set_anchor(current, top.sp());
+  AnchorMark am(current, top);  // Set the anchor so that the stack is walkable.
   JRT_BLOCK
     THROW(vmSymbols::java_lang_InterruptedException());
   JRT_BLOCK_END
