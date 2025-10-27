@@ -48,11 +48,14 @@ public class TestGlyphBGHeight {
     static JFrame frame;
 
     public static void main(String[] args) throws Exception {
+        int width = 100;
+        int height = 100;
+
         try {
             Robot robot = new Robot();
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame("TestGlyphBGHeight");
-                frame.setSize(100, 100);
+                frame.setSize(width, height);
                 frame.getContentPane().setLayout(new BorderLayout());
 
                 final JTextPane comp = new JTextPane();
@@ -77,17 +80,17 @@ public class TestGlyphBGHeight {
             robot.waitForIdle();
             robot.delay(1000);
 
-            BufferedImage img = new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB);
+            BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = (Graphics2D) img.getGraphics();
             frame.paint(g2d);
             ImageIO.write(img, "png", new File("AppTest.png"));
             g2d.dispose();
 
-            BufferedImage bimg = img.getSubimage(0, 80, 100, 1);
+            BufferedImage bimg = img.getSubimage(0, 80, width, 1);
             ImageIO.write(bimg, "png", new File("AppTest1.png"));
             robot.waitForIdle();
             robot.delay(1000);
-            for (int x = 10; x < 50; x++) {
+            for (int x = 10; x < width / 2; x++) {
                 Color col = new Color(bimg.getRGB(x, 0));
                 System.out.println(Integer.toHexString(bimg.getRGB(x, 0)));
                 if (col.equals(Color.YELLOW)) {
