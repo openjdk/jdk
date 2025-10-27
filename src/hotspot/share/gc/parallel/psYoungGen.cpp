@@ -356,7 +356,7 @@ void PSYoungGen::compute_desired_sizes(bool is_survivor_overflowing,
     // Keep survivor and adjust eden to meet min-gen-size
     eden_size = min_gen_size() - 2 * survivor_size;
   } else if (max_gen_size() < new_gen_size) {
-    log_info(gc, ergo)("Requested sizes exceeds MaxNewSize (K): %zu vs %zu)", new_gen_size/K, max_gen_size()/K);
+    log_info(gc, ergo)("Requested sizes exceeds MaxNewSize (K): %zu vs %zu", new_gen_size/K, max_gen_size()/K);
     // New capacity would exceed max; need to revise these desired sizes.
     // Favor survivor over eden in order to reduce promotion (overflow).
     if (2 * survivor_size >= max_gen_size()) {
