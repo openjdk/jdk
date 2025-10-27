@@ -2427,10 +2427,15 @@ void nmethod::purge(bool unregister_nmethod) {
     int reference_count = get_immutable_data_references_counter();
     assert(reference_count > 0, "immutable data has no references");
 
-    set_immutable_data_references_counter(reference_count - 1);
     // Free memory if this is the last nmethod referencing immutable data
-    if (reference_count == 0) {
+    if (reference_count == 1) {
+      // Updating the counter here is not necessary since the memory is
+      // being freed so only do it for debug builds to eliminate a write
+      DEBUG_ONLY(set_immutable_data_references_counter(reference_count - 1);)
+
       os::free(_immutable_data);
+    } else {
+      set_immutable_data_references_counter(reference_count - 1);
     }
 
     _immutable_data = blob_end(); // Valid not null address
