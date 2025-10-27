@@ -2087,10 +2087,10 @@ class CountedLoopConverter {
         _loop(loop),
         _iv_bt(iv_bt),
         _structure(LoopStructure(_head, _loop, _phase, _iv_bt)) {
-    assert(phase != nullptr, ""); // Fail early if mandatory parameters are null.
-    assert(head != nullptr, "");
-    assert(loop != nullptr, "");
-    assert(iv_bt == T_INT || iv_bt == T_LONG, ""); // Loops can be either int or long.
+    assert(phase != nullptr, "must be"); // Fail early if mandatory parameters are null.
+    assert(head != nullptr, "must be");
+    assert(loop != nullptr, "must be");
+    assert(iv_bt == T_INT || iv_bt == T_LONG, "either int or long loops");
   }
 
   bool is_counted_loop();
