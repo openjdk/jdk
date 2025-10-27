@@ -1005,7 +1005,9 @@ void IdealGraphPrinter::print(const char* name, Node* node, GrowableArray<const 
   head(PROPERTIES_ELEMENT);
   print_stack(fr, nullptr);
   if (_parse != nullptr) {
-    if (_parse->map() != nullptr) {
+    if (_parse->map() == nullptr) {
+      print_prop("map", "-");
+    } else {
       print_prop("map", _parse->map()->_idx);
     }
     print_prop("block", _parse->block()->rpo());
