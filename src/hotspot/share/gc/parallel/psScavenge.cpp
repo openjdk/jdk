@@ -521,31 +521,56 @@ void PSScavenge::clean_up_failed_promotion() {
 }
 
 bool PSScavenge::should_attempt_scavenge() {
-  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+  const bool ShouldRunYoungGC = true;
+  const bool ShouldRunFullGC = false;
 
+  ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
 
   if (!young_gen->to_space()->is_empty()) {
-    log_debug(gc, ergo)("To-space is not empty; should run full-gc instead.");
-    return false;
+    log_debug(gc, ergo)("To-space is not empty; run full-gc instead.");
+    return ShouldRunFullGC;
   }
 
-  // Test to see if the scavenge will likely fail.
+  // Check if the predicted promoted bytes will overflow free space in old-gen.
   PSAdaptiveSizePolicy* policy = heap->size_policy();
 
   size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
   size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
   // Total free size after possible old gen expansion
-  size_t free_in_old_gen = old_gen->max_gen_size() - old_gen->used_in_bytes();
-  bool result = promotion_estimate < free_in_old_gen;
+  size_t free_in_old_gen_with_expansion = old_gen->max_gen_size() - old_gen->used_in_bytes();
 
-  log_trace(gc, ergo)("%s scavenge: average_promoted %zu padded_average_promoted %zu free in old gen %zu",
-                result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
-                (size_t) policy->padded_average_promoted_in_bytes(),
-                free_in_old_gen);
+  log_trace(gc, ergo)("average_promoted %zu; padded_average_promoted %zu",
+              (size_t) policy->average_promoted_in_bytes(),
+              (size_t) policy->padded_average_promoted_in_bytes());
 
-  return result;
+  if (promotion_estimate >= free_in_old_gen_with_expansion) {
+    log_debug(gc, ergo)("Run full-gc; predicted promotion size >= max free space in old-gen: %zu >= %zu",
+      promotion_estimate, free_in_old_gen_with_expansion);
+    return ShouldRunFullGC;
+  }
+
+  if (UseAdaptiveSizePolicy) {
+    // Also checking OS has enough free memory to commit and expand old-gen.
+    // Otherwise, the recorded gc-pause-time might be inflated to include time
+    // of OS preparing free memory, resulting in inaccurate young-gen resizing.
+    assert(old_gen->committed().byte_size() >= old_gen->used_in_bytes(), "inv");
+    // Use uint64_t instead of size_t for 32bit compatibility.
+    uint64_t free_mem_in_os;
+    if (os::free_memory(free_mem_in_os)) {
+      size_t actual_free = (size_t)MIN2(old_gen->committed().byte_size() - old_gen->used_in_bytes() + free_mem_in_os,
+                                        (uint64_t)SIZE_MAX);
+      if (promotion_estimate > actual_free) {
+        log_debug(gc, ergo)("Run full-gc; predicted promotion size > free space in old-gen and OS: %zu > %zu",
+          promotion_estimate, actual_free);
+        return ShouldRunFullGC;
+      }
+    }
+  }
+
+  // No particular reasons to run full-gc, so young-gc.
+  return ShouldRunYoungGC;
 }
 
 // Adaptive size policy support.
