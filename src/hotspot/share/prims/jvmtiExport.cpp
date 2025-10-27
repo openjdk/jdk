@@ -794,7 +794,7 @@ void JvmtiExport::post_vm_death() {
 
       JavaThread *thread  = JavaThread::current();
       JvmtiEventMark jem(thread);
-      // JVMTI_JAVA_EVENT_CALLBACK_BLOCK shouldn't be used here
+      // JVMTI_JAVA_EVENT_CALLBACK_BLOCK must not be used here
       JvmtiJavaThreadEventTransition jet(thread);
       jvmtiEventVMDeath callback = env->callbacks()->VMDeath;
       if (callback != nullptr) {

@@ -199,7 +199,7 @@ private:
 
   // These fields are used to synchronize stop posting events and
   // wait until already executing callbacks are finished.
-  volatile static bool _execution_finished;
+  volatile static bool  _execution_finished;
   volatile static int   _in_callback_count;
 
 public:

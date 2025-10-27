@@ -35,7 +35,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
-#include "runtime/serviceThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
@@ -1226,9 +1225,12 @@ JvmtiEventController::vm_death() {
     JvmtiEventControllerPrivate::vm_death();
   }
 
-  // Some events might be still in callback for daemons threads and ServiceThread.
+  // Some events might be still in callback for daemons and VM internal threads.
   const double start = os::elapsedTime();
   const double max_wait_time = 60;
+  // The first time we see the callback count reach zero we know all actual
+  // callbacks are complete. The count could rise again, but those "callbacks"
+  // will immediately see `execution_finished()` and return (dropping the count).
   while (in_callback_count() > 0) {
     os::naked_short_sleep(100);
     if (os::elapsedTime() - start > max_wait_time) {
