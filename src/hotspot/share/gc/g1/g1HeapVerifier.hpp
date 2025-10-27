@@ -88,6 +88,9 @@ public:
 
   // Verify that the global card table and the thread's card tables are in sync.
   void verify_card_tables_in_sync() PRODUCT_RETURN;
+
+  // Verify that free regions's card table is all-clean.
+  void verify_free_regions_card_tables_clean() PRODUCT_RETURN;
 };
 
 #endif // SHARE_GC_G1_G1HEAPVERIFIER_HPP

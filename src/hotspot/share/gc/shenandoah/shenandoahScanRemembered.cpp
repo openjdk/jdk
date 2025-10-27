@@ -683,9 +683,9 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   struct ShenandoahRegionChunk assignment;
   while (_work_list->next(&assignment)) {
     ShenandoahHeapRegion* region = assignment._r;
-    log_debug(gc)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
-                  "%zu at offset %zu, size: %zu",
-                  worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
+    log_debug(gc, remset)("ShenandoahScanRememberedTask::do_work(%u), processing slice of region "
+                          "%zu at offset %zu, size: %zu",
+                          worker_id, region->index(), assignment._chunk_offset, assignment._chunk_size);
     if (region->is_old()) {
       size_t cluster_size =
         CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
