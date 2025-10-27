@@ -393,7 +393,6 @@ final class Renderer {
                 renderScopeToken(st, () -> {
                     addHashtagReplacement(lt.key(), lt.value());
                 });
-
             }
             case HookIsAnchoredToken hiat -> {
                 boolean isAnchored = currentCodeFrame.codeFrameForHook(hiat.hook()) != null;

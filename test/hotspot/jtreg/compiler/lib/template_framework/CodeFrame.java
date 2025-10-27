@@ -84,10 +84,10 @@ class CodeFrame {
      * Creates a normal frame, which has a {@link #parent}. It can either be
      * transparent for names, meaning that names are added and accessed to and
      * from an outer frame. Names that are added in a transparent frame are
-     * still available in he outer frames, as far out as the next non-transparent
+     * still available in the outer frames, as far out as the next non-transparent
      * frame. If a frame is non-transparent, this frame defines an inner
      * {@link NameSet}, for the names that are generated inside this frame. Once
-     * this frame is exited, the name from inside this frame are not available.
+     * this frame is exited, the names from inside this frame are not available.
      */
     public static CodeFrame make(CodeFrame parent, boolean isTransparentForNames) {
         return new CodeFrame(parent, isTransparentForNames);

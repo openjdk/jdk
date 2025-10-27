@@ -590,7 +590,6 @@ public class TestTutorial {
                 """
             )),
             Hooks.METHOD_HOOK.insert(scope(
-                let("value", 11),
                 """
                 System.out.println("Defining local variable $var");
                 int $var = 11;
