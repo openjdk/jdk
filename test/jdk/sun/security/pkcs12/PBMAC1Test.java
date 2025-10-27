@@ -175,6 +175,30 @@ public class PBMAC1Test {
                 .getMessage().contains("MAC iteration count too large: 5000001"));
         Asserts.assertTrue(Asserts.assertThrows(IOException.class, () -> loadAndStore(bigICt))
                 .getMessage().contains("MAC iteration count too large: 5000001"));
+
+        // Incorrect Salt
+        var incorrectSalt = """
+                MIGdAgEDMBEGCSqGSIb3DQEHAaAEBAIwADCBhDB1MFEGCSqGSIb3DQEFDjBEMDYGCSqGSIb3DQEF
+                DDApBBSakVhBLltKvqUj6EAxvWqJi+gc7AICJxACASAwCgYIKoZIhvcNAgkwCgYIKoZIhvcNAgkE
+                IG+euEHE8iN/2C7txbCjCJ9mU4TgEsHPsC9L3Rxa7malBAhOT1QgVVNFRAIBAQ==""";
+        Asserts.assertTrue(Asserts.assertThrows(IOException.class, () -> loadAndStore(incorrectSalt))
+                .getMessage().contains("Integrity check failed"));
+
+        // Incorrect Iteration Count
+        var incorrectIC = """
+                MIGdAgEDMBEGCSqGSIb3DQEHAaAEBAIwADCBhDB1MFEGCSqGSIb3DQEFDjBEMDYGCSqGSIb3DQEF
+                DDApBBSZkVhBLltKvqUj6EAxvWqJi+gc7AICKBACASAwCgYIKoZIhvcNAgkwCgYIKoZIhvcNAgkE
+                IG+euEHE8iN/2C7txbCjCJ9mU4TgEsHPsC9L3Rxa7malBAhOT1QgVVNFRAIBAQ==""";
+        Asserts.assertTrue(Asserts.assertThrows(IOException.class, () -> loadAndStore(incorrectIC))
+                .getMessage().contains("Integrity check failed"));
+
+        // Missing Key Length
+        var missingKeyLength = """
+                MIGaAgEDMBEGCSqGSIb3DQEHAaAEBAIwADCBgTByME4GCSqGSIb3DQEFDjBBMDMGCSqGSIb3DQEF
+                DDAmBBSZkVhBLltKvqUj6EAxvWqJi+gc7AICJxAwCgYIKoZIhvcNAgkwCgYIKoZIhvcNAgkEIG+e
+                uEHE8iN/2C7txbCjCJ9mU4TgEsHPsC9L3Rxa7malBAhOT1QgVVNFRAIBAQ==""";
+        Asserts.assertTrue(Asserts.assertThrows(IOException.class, () -> loadAndStore(missingKeyLength))
+                .getMessage().contains("missing keyLength field"));
     }
 
     static byte[] emptyP12() throws Exception {
