@@ -49,10 +49,11 @@
 // CodeCache.  Exception handlers use the nmethod to get the callee-save
 // register OopMaps.
 //
-// Please note that correctly matching the type of the call with the specified
-// signature. Even if you don't plan on consuming the output of the call, C2
-// needs this information to correctly track returned oops and avoid strange
-// deoptimization crashes (JDK-8347463).
+// Please ensure the return type of the runtime call matches its signature,
+// even if the return value is unused. This is crucial for correct handling
+// of runtime calls that return an oop and may trigger deoptimization
+// on return. See rematerialize_objects() in deoptimization.cpp.
+
 class CallInfo;
 
 //
