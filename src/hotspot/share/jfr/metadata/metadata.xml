@@ -1283,7 +1283,30 @@
     <Field type="ulong" name="regionsImmediate" label="Regions Immediate" />
     <Field type="ulong" contentType="bytes" name="immediateBytes" label="Immediate Bytes" />
   </Event>
-  
+
+  <Event name="StringDeduplicationStatistics" category="Java Virtual Machine, GC, Detailed" label="String Deduplication Statistics" stackTrace="false">
+    <Field type="ulong" name="inspected" label="Inspected" />
+    <Field type="ulong" name="known" label="Known" />
+    <Field type="ulong" name="shared" label="Shared" />
+    <Field type="ulong" name="newStrings" label="New Strings" />
+    <Field type="ulong" name="newBytes" contentType="bytes" label="New Bytes" />
+    <Field type="ulong" name="replaced" label="Replaced" />
+    <Field type="ulong" name="deleted" label="Deleted" />
+    <Field type="ulong" name="deduplicated" label="Deduplicated" />
+    <Field type="ulong" name="deduplicatedBytes" contentType="bytes" label="Deduplicated Bytes" />
+    <Field type="ulong" name="skippedDead" label="Skipped Dead" />
+    <Field type="ulong" name="skippedIncomplete" label="Skipped Incomplete" />
+    <Field type="ulong" name="skippedShared" label="Skipped Shared" />
+  </Event>
+
+  <Event name="StringDeduplicationTimes" category="Java Virtual Machine, GC, Detailed" label="String Deduplication Times" stackTrace="false">
+    <Field type="Tickspan" name="activeElapsed" label="Active Elapsed" />
+    <Field type="Tickspan" name="processElapsed" label="Process Elapsed" />
+    <Field type="Tickspan" name="idleElapsed" label="Idle Elapsed" />
+    <Field type="Tickspan" name="resizeTableElapsed" label="Resize Table Elapsed" />
+    <Field type="Tickspan" name="cleanupTableElapsed" label="Cleanup Table Elapsed" />
+  </Event>
+
   <Event name="Flush" category="Flight Recorder" label="Flush" thread="false" experimental="true">
     <Field type="ulong" name="flushId" label="Flush Identifier" relation="FlushId" />
     <Field type="ulong" name="elements" label="Elements Written" />
@@ -1343,29 +1366,6 @@
     <Field type="Tickspan" name="minimum" label="Minimum" description="An approximation of the minimum wall-clock time it took for the method to execute" />
     <Field type="Tickspan" name="average" label="Average" description="An approximation of the average wall-clock time it took for the method to execute" />
     <Field type="Tickspan" name="maximum" label="Maximum" description="An approximation of the maximum wall-clock time it took for the method to execute" />
-  </Event>
-
-  <Event name="StringDeduplicationStatistics" category="Java Virtual Machine, GC, Detailed" label="String Deduplication Statistics" description="String Deduplication Statistics" stackTrace="false" startTime="false">
-    <Field type="ulong" name="inspected" label="Inspected" />
-    <Field type="ulong" name="known" label="Known" />
-    <Field type="ulong" name="shared" label="Shared" />
-    <Field type="ulong" name="newStrings" label="New Strings" />
-    <Field type="ulong" name="newBytes" contentType="bytes" label="New Bytes" />
-    <Field type="ulong" name="replaced" label="Replaced" />
-    <Field type="ulong" name="deleted" label="Deleted" />
-    <Field type="ulong" name="deduplicated" label="Deduplicated" />
-    <Field type="ulong" name="deduplicatedBytes" contentType="bytes" label="Deduplicated Bytes" />
-    <Field type="ulong" name="skippedDead" label="Skipped Dead" />
-    <Field type="ulong" name="skippedIncomplete" label="Skipped Incomplete" />
-    <Field type="ulong" name="skippedShared" label="Skipped Shared" />
-  </Event>
-
-  <Event name="StringDeduplicationTimes" category="x" label="y" description="z" stackTrace="false" startTime="false">
-    <Field type="Tickspan" name="activeElapsed" label="Active Elapsed" />
-    <Field type="Tickspan" name="processElapsed" label="Process Elapsed" />
-    <Field type="Tickspan" name="idleElapsed" label="Idle Elapsed" />
-    <Field type="Tickspan" name="resizeTableElapsed" label="Resize Table Elapsed" />
-    <Field type="Tickspan" name="cleanupTableElapsed" label="Cleanup Table Elapsed" />
   </Event>
 
   <Type name="DeoptimizationReason" label="Deoptimization Reason">
