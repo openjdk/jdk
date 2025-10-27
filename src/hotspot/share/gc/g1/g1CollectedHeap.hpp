@@ -169,6 +169,17 @@ class G1CollectedHeap : public CollectedHeap {
   friend class G1CheckRegionAttrTableClosure;
 
 private:
+  // GC Overhead Limit functionality related members.
+  //
+  // The goal is to return null for allocations prematurely (before really going
+  // OOME) in case both GC CPU usage (>= GCTimeLimit) and not much available free
+  // memory (<= GCHeapFreeLimit) so that applications can exit gracefully or try
+  // to keep running by easing off memory.
+  uintx _gc_overhead_counter;        // The number of consecutive garbage collections we were over the limits.
+
+  void update_gc_overhead_counter();
+  bool gc_overhead_limit_exceeded();
+
   G1ServiceThread* _service_thread;
   G1ServiceTask* _periodic_gc_task;
   G1MonotonicArenaFreeMemoryTask* _free_arena_memory_task;
