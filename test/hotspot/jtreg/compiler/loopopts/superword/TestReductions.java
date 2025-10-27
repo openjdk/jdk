@@ -1587,8 +1587,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,    "> 0",
                   IRNode.MUL_REDUCTION_VL, "> 0",
                   IRNode.MUL_VL,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512dq", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512dq", "false", "sse4.1", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370673
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMulSimple() {
@@ -1713,8 +1716,11 @@ public class TestReductions {
     @IR(counts = {IRNode.LOAD_VECTOR_L,    "> 0",
                   IRNode.MUL_REDUCTION_VL, "> 0",
                   IRNode.MUL_VL,           "> 0"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"},
+        applyIfCPUFeatureOr = {"avx512dq", "true", "asimd", "true"},
         applyIf = {"AutoVectorizationOverrideProfitability", "> 0"})
+    @IR(failOn = IRNode.LOAD_VECTOR_L,
+        applyIfCPUFeatureAnd = {"avx512dq", "false", "sse4.1", "true"})
+    // I think this could vectorize, but currently does not. Filed: JDK-8370673
     @IR(failOn = IRNode.LOAD_VECTOR_L,
         applyIf = {"AutoVectorizationOverrideProfitability", "= 0"})
     private static long longMulDotProduct() {
