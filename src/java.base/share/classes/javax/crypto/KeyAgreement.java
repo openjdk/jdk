@@ -372,6 +372,11 @@ public class KeyAgreement {
                 implInit(spi, initType, key, params, random);
                 return;
             }
+
+            if (!serviceIterator.hasNext()) {
+                serviceIterator = GetInstance.getServices("KeyAgreement", algorithm);
+            }
+
             Exception lastException = null;
             while ((firstService != null) || serviceIterator.hasNext()) {
                 Service s;
