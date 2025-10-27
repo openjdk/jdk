@@ -82,11 +82,6 @@ final class ViewPanel extends javax.swing.JPanel {
         defaultViewComboBox.setToolTipText("View shown by default when a graph is opened.");
 
         graphNameSuffixField.setToolTipText("Single-line format string for node input lists. Properties are specified with brackets (example: \"[method]\").");
-        graphNameSuffixField.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                graphNameSuffixFieldActionPerformed(evt);
-            }
-        });
 
         org.openide.awt.Mnemonics.setLocalizedText(jLabel6, "Graph Name Suffix");
 
@@ -142,8 +137,6 @@ final class ViewPanel extends javax.swing.JPanel {
                     .add(jLabel3, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE, 18, org.jdesktop.layout.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap())
         );
-
-        graphNameSuffixField.getAccessibleContext().setAccessibleDescription("Single-line format string for graph name suffixes. Properties are specified with brackets (example: \"[method]\").");
 
         org.jdesktop.layout.GroupLayout layout = new org.jdesktop.layout.GroupLayout(this);
         this.setLayout(layout);

@@ -179,12 +179,6 @@
           <Properties>
             <Property name="toolTipText" type="java.lang.String" value="Single-line format string for node input lists. Properties are specified with brackets (example: &quot;[method]&quot;)."/>
           </Properties>
-          <AccessibilityProperties>
-            <Property name="AccessibleContext.accessibleDescription" type="java.lang.String" value="Single-line format string for graph name suffixes. Properties are specified with brackets (example: &quot;[method]&quot;)."/>
-          </AccessibilityProperties>
-          <Events>
-            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="graphNameSuffixFieldActionPerformed"/>
-          </Events>
           <AuxValues>
             <AuxValue name="JavaCodeGenerator_SerializeTo" type="java.lang.String" value="ViewPanel_graphNameSuffixField"/>
           </AuxValues>
