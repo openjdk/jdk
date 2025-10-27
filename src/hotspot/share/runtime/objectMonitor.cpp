@@ -1856,7 +1856,9 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   { // State transition wrappers
     OSThread* osthread = current->osthread();
     OSThreadWaitState osts(osthread, true);
+
     assert(current->thread_state() == _thread_in_vm, "invariant");
+
     {
       ThreadBlockInVM tbivm(current, false /* allow_suspend */);
       if (interrupted || HAS_PENDING_EXCEPTION) {
@@ -1909,8 +1911,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
     // Thread state is thread_in_vm and oop access is again safe,
     // although the raw address of the object may have changed.
     // (Don't cache naked oops over safepoints, of course).
-
-
 
     OrderAccess::fence();
 
@@ -1970,6 +1970,7 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
         current->_ParkEvent->unpark();
       }
     }
+
     if (wait_event.should_commit()) {
       post_monitor_wait_event(&wait_event, this, node._notifier_tid, millis, ret == OS_TIMEOUT);
     }
