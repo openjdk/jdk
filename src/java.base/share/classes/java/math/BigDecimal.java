@@ -2256,8 +2256,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     throw new ArithmeticException("Computed root not exact.");
                 }
             }
-            // Adjust to requested precision and preferred
-            // scale as appropriate.
+            // Test numerical properties at full precision before any scale adjustments.
+            assert rootnResultAssertions(result, mc, n);
+            // Adjust to requested precision and preferred scale as appropriate.
             return result.adjustToPreferredScale(preferredScale, mc.precision);
         }
 
@@ -2317,8 +2318,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     }
                 }
 
-                if (increment)
+                if (increment) {
                     root = root.add(1L);
+                }
             } else {
                 switch (mc.roundingMode) {
                 case DOWN, FLOOR -> root = workingInt.rootn(nAbs); // No need to round
@@ -2334,7 +2336,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 default -> throw new AssertionError("Unexpected value for RoundingMode: " + mc.roundingMode);
                 }
             }
-
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
         } else { // Handle negative degrees
             root = workingInt.rootn(nAbs);
@@ -2377,8 +2378,9 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     }
                 }
 
-                if (increment)
+                if (increment) {
                     result = result.add(result.ulp());
+                }
             } else {
                 switch (mc.roundingMode) {
                 case DOWN, FLOOR -> {} // result is already rounded down
@@ -2393,6 +2395,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
             }
         }
+        // Test numerical properties at full precision before any scale adjustments.
+        assert rootnResultAssertions(result, mc, n);
         // Adjust to requested precision and preferred scale as appropriate.
         if (result.scale > preferredScale) // else can't increase result's precision to fit the preferred scale
             result = stripZerosToMatchScale(result.intVal, result.intCompact, result.scale, preferredScale);
@@ -2430,6 +2434,96 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
     private boolean isPowerOfTen() {
         return this.stripTrailingZeros().unscaledValue().equals(BigInteger.ONE);
+    }
+
+    /**
+     * For nonzero values, check numerical correctness properties of
+     * the computed result for the chosen rounding mode.
+     *
+     * For the directed rounding modes:
+     *
+     * <ul>
+     *
+     * <li> For DOWN and FLOOR, |result|^n must be {@code <=} |input|
+     * and (|result|+ulp)^n must be {@code >} |input|.
+     *
+     * <li>Conversely, for UP and CEIL, |result|^n must be {@code >=}
+     * |input| and (|result|-ulp)^n must be {@code <} |input|.
+     * </ul>
+     */
+    private boolean rootnResultAssertions(BigDecimal result, MathContext mc, int n) {
+        // The starting value and result should be nonzero and have the same sign.
+        assert (result.signum() != 0 &&
+                this.signum() == result.signum()) :
+            "Bad signum of this and/or its root.";
+
+        BigDecimal thisAbs = this.abs(), resAbs = result.abs();
+
+        RoundingMode rm = mc.roundingMode;
+        BigDecimal ulp = resAbs.ulp();
+        BigDecimal neighborUp = resAbs.add(ulp);
+        // Make neighbor down accurate even for powers of ten
+        if (resAbs.isPowerOfTen()) {
+            ulp = ulp.scaleByPowerOfTen(-1);
+        }
+        BigDecimal neighborDown = resAbs.subtract(ulp);
+
+        switch (rm) {
+        case DOWN:
+        case FLOOR:
+            assert
+                resAbs.pow(n).compareTo(thisAbs)     <= 0 &&
+                neighborUp.pow(n).compareTo(thisAbs) > 0:
+            "Power of result out for bounds rounding " + rm;
+            return true;
+
+        case UP:
+        case CEILING:
+            assert
+                resAbs.pow(n).compareTo(thisAbs)       >= 0 &&
+                neighborDown.pow(n).compareTo(thisAbs) < 0:
+            "Power of result out for bounds rounding " + rm;
+            return true;
+
+
+        case HALF_DOWN:
+        case HALF_EVEN:
+        case HALF_UP:
+            BigDecimal err = resAbs.pow(n).subtract(thisAbs).abs();
+            BigDecimal errUp = neighborUp.pow(n).subtract(thisAbs);
+            BigDecimal errDown =  thisAbs.subtract(neighborDown.pow(n));
+            // All error values should be positive so don't need to
+            // compare absolute values.
+
+            int err_comp_errUp = err.compareTo(errUp);
+            int err_comp_errDown = err.compareTo(errDown);
+
+            assert
+                errUp.signum()   == 1 &&
+                errDown.signum() == 1 :
+            "Errors of neighbors powered don't have correct signs";
+
+            // For breaking a half-way tie, the return value may
+            // have a larger error than one of the neighbors. For
+            // example, the square root of 2.25 to a precision of
+            // 1 digit is either 1 or 2 depending on how the exact
+            // value of 1.5 is rounded. If 2 is returned, it will
+            // have a larger rounding error than its neighbor 1.
+            assert
+                err_comp_errUp   <= 0 ||
+                err_comp_errDown <= 0 :
+            "Computed root has larger error than neighbors for " + rm;
+
+            assert
+                ((err_comp_errUp   == 0 ) ? err_comp_errDown < 0 : true) &&
+                ((err_comp_errDown == 0 ) ? err_comp_errUp   < 0 : true) :
+                    "Incorrect error relationships";
+            // && could check for digit conditions for ties too
+            return true;
+
+        default: // Definition of UNNECESSARY already verified.
+            return true;
+        }
     }
 
     /**
