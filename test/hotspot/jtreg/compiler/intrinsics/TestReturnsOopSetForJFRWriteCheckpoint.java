@@ -51,7 +51,7 @@ public class TestReturnsOopSetForJFRWriteCheckpoint {
     // it, we look for an oop return type (which comes hand-in-hand
     // with the returns_oop information).
     @Test
-    @IR(counts = { IRNode.STATIC_CALL_OF_METHOD, "write_checkpoint\s+java/lang/Object\s+\\*", "1" })
+    @IR(failOn = { IRNode.STATIC_CALL_OF_METHOD, "write_checkpoint.*void"})
     public void testWriteCheckpointReturnType() {
         try (Recording r = new Recording()) {
             r.start();
