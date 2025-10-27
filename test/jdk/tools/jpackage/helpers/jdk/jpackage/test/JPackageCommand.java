@@ -67,9 +67,11 @@ import jdk.jpackage.internal.util.function.ThrowingSupplier;
  */
 public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
+    @SuppressWarnings("this-escape")
     public JPackageCommand() {
         prerequisiteActions = new Actions();
         verifyActions = new Actions();
+        excludeStandardAsserts(StandardAssert.MAIN_LAUNCHER_DESCRIPTION);
     }
 
     private JPackageCommand(JPackageCommand cmd, boolean immutable) {
@@ -85,7 +87,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         dmgInstallDir = cmd.dmgInstallDir;
         prerequisiteActions = new Actions(cmd.prerequisiteActions);
         verifyActions = new Actions(cmd.verifyActions);
-        appLayoutAsserts = cmd.appLayoutAsserts;
+        standardAsserts = cmd.standardAsserts;
         readOnlyPathAsserts = cmd.readOnlyPathAsserts;
         outputValidators = cmd.outputValidators;
         executeInDirectory = cmd.executeInDirectory;
@@ -199,6 +201,17 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand addArguments(String name, Path value) {
         return addArguments(name, value.toString());
+    }
+
+    public JPackageCommand mutate(Consumer<JPackageCommand> mutator) {
+        return mutate(List.of(mutator));
+    }
+
+    public JPackageCommand mutate(Iterable<Consumer<JPackageCommand>> mutators) {
+        for (var mutator : mutators) {
+            mutator.accept(this);
+        }
+        return this;
     }
 
     public boolean isImagePackageType() {
@@ -459,7 +472,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
         if (layout != null) {
         } else if (isRuntime()) {
-            layout = ApplicationLayout.javaRuntime();
+            layout = ApplicationLayout.platformJavaRuntime();
         } else {
             layout = ApplicationLayout.platformAppImage();
         }
@@ -933,7 +946,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
 
     public JPackageCommand assertImageCreated() {
         verifyIsOfType(PackageType.IMAGE);
-        assertAppLayout();
+        runStandardAsserts();
         return this;
     }
 
@@ -976,10 +989,10 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         void updateAndAssert() {
             final var newSnapshots = createSnapshots();
             for (final var a : asserts.keySet().stream().sorted().toList()) {
-                final var snapshopGroup = snapshots.get(a);
-                final var newSnapshopGroup = newSnapshots.get(a);
-                for (int i = 0; i < snapshopGroup.size(); i++) {
-                    TKit.PathSnapshot.assertEquals(snapshopGroup.get(i), newSnapshopGroup.get(i),
+                final var snapshotGroup = snapshots.get(a);
+                final var newSnapshotGroup = newSnapshots.get(a);
+                for (int i = 0; i < snapshotGroup.size(); i++) {
+                    snapshotGroup.get(i).assertEquals(newSnapshotGroup.get(i),
                             String.format("Check jpackage didn't modify ${%s}=[%s]", a, asserts.get(a).get(i)));
                 }
             }
@@ -1094,7 +1107,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 asSet::contains)).toArray(ReadOnlyPathAssert[]::new));
     }
 
-    public static enum AppLayoutAssert {
+    public static enum StandardAssert {
         APP_IMAGE_FILE(JPackageCommand::assertAppImageFile),
         PACKAGE_FILE(JPackageCommand::assertPackageFile),
         NO_MAIN_LAUNCHER_IN_RUNTIME(cmd -> {
@@ -1112,6 +1125,11 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
                 new LauncherVerifier(cmd).verify(cmd,
                         LauncherVerifier.Action.VERIFY_INSTALLED,
                         LauncherVerifier.Action.VERIFY_MAC_ENTITLEMENTS);
+            }
+        }),
+        MAIN_LAUNCHER_DESCRIPTION(cmd -> {
+            if (!cmd.isRuntime()) {
+                new LauncherVerifier(cmd).verify(cmd, LauncherVerifier.Action.VERIFY_DESCRIPTION);
             }
         }),
         MAIN_JAR_FILE(cmd -> {
@@ -1138,7 +1156,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         }),
         ;
 
-        AppLayoutAssert(Consumer<JPackageCommand> action) {
+        StandardAssert(Consumer<JPackageCommand> action) {
             this.action = action;
         }
 
@@ -1156,21 +1174,21 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
         private final Consumer<JPackageCommand> action;
     }
 
-    public JPackageCommand setAppLayoutAsserts(AppLayoutAssert ... asserts) {
+    public JPackageCommand setStandardAsserts(StandardAssert ... asserts) {
         verifyMutable();
-        appLayoutAsserts = Set.of(asserts);
+        standardAsserts = Set.of(asserts);
         return this;
     }
 
-    public JPackageCommand excludeAppLayoutAsserts(AppLayoutAssert... asserts) {
+    public JPackageCommand excludeStandardAsserts(StandardAssert... asserts) {
         var asSet = Set.of(asserts);
-        return setAppLayoutAsserts(appLayoutAsserts.stream().filter(Predicate.not(
-                asSet::contains)).toArray(AppLayoutAssert[]::new));
+        return setStandardAsserts(standardAsserts.stream().filter(Predicate.not(
+                asSet::contains)).toArray(StandardAssert[]::new));
     }
 
-    JPackageCommand assertAppLayout() {
-        for (var appLayoutAssert : appLayoutAsserts.stream().sorted().toList()) {
-            appLayoutAssert.action.accept(this);
+    JPackageCommand runStandardAsserts() {
+        for (var standardAssert : standardAsserts.stream().sorted().toList()) {
+            standardAssert.action.accept(this);
         }
         return this;
     }
@@ -1520,7 +1538,7 @@ public class JPackageCommand extends CommandArguments<JPackageCommand> {
     private Path winMsiLogFile;
     private Path unpackedPackageDirectory;
     private Set<ReadOnlyPathAssert> readOnlyPathAsserts = Set.of(ReadOnlyPathAssert.values());
-    private Set<AppLayoutAssert> appLayoutAsserts = Set.of(AppLayoutAssert.values());
+    private Set<StandardAssert> standardAsserts = Set.of(StandardAssert.values());
     private List<Consumer<Iterator<String>>> outputValidators = new ArrayList<>();
     private static InheritableThreadLocal<Optional<ToolProvider>> defaultToolProvider = new InheritableThreadLocal<>() {
         @Override
