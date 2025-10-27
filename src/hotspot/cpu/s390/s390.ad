@@ -4064,7 +4064,7 @@ instruct stkI_to_regI(iRegI dst, stackSlotI src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "L       $dst,$src\t # stk reload int" %}
   opcode(L_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -4076,7 +4076,7 @@ instruct regI_to_stkI(stackSlotI dst, iRegI src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "ST      $src,$dst\t # stk spill int" %}
   opcode(ST_ZOPC);
   ins_encode(z_form_rt_mem(src, dst)); // rs=rt
@@ -4088,7 +4088,7 @@ instruct stkL_to_regL(iRegL dst, stackSlotL src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LG      $dst,$src\t # stk reload long" %}
   opcode(LG_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -4111,7 +4111,7 @@ instruct stkP_to_regP(iRegP dst, stackSlotP src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LG      $dst,$src\t # stk reload ptr" %}
   opcode(LG_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -4123,7 +4123,7 @@ instruct regP_to_stkP(stackSlotP dst, iRegP src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "STG     $src,$dst\t # stk spill ptr" %}
   opcode(STG_ZOPC);
   ins_encode(z_form_rt_mem(src, dst)); // rs=rt
@@ -4159,7 +4159,7 @@ instruct stkD_to_regD(regD dst, stackSlotD src) %{
   match(Set dst src);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LD(Y)   $dst,$src\t # stk reload double" %}
   opcode(LD_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -4389,7 +4389,7 @@ instruct loadTOC(iRegL dst) %{
   effect(DEF dst);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   // TODO: check why this attribute causes many unnecessary rematerializations.
   //
   // The graphs I saw just had high register pressure. Further the
@@ -4485,7 +4485,7 @@ instruct loadConI_0(iRegI dst, immI_0 src, flagsReg cr) %{
 instruct loadConUI16(iRegI dst, uimmI16 src) %{
   match(Set dst src);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "LLILL    $dst,$src" %}
   opcode(LLILL_ZOPC);
   ins_encode(z_riform_unsigned(dst, src) );
@@ -4758,26 +4758,12 @@ instruct prefetchAlloc(memory mem) %{
 
 //----------Memory init instructions------------------------------------------
 
-/*
-// Move Immediate to 1-byte memory.
-instruct memInitB(memoryRSY mem, immI8 src) %{
-  match(Set mem (StoreB mem src));
-  ins_cost(MEMORY_REF_COST);
-  predicate(Immediate::is_uimm12((long)mem.disp));
-  // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE);
-  format %{ "MVI     $mem,$src\t # direct mem init 1" %}
-  ins_encode %{ __ z_mvi($mem$$Address, $src$$constant); %}
-  ins_pipe(pipe_class_dummy);
-%}
-*/
-
 // Move Immediate to 1-byte memory.
 instruct memInitB(memoryRSY mem, immI8 src) %{
   match(Set mem (StoreB mem src));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "MVIY     $mem,$src\t # direct mem init 1" %}
   ins_encode %{__ z_mviy($mem$$Address, $src$$constant); %}
   ins_pipe(pipe_class_dummy);
@@ -4878,7 +4864,7 @@ instruct loadNKlassCompactHeaders(iRegN dst, memory mem, flagsReg cr) %{
   ins_cost(MEMORY_REF_COST);
   format %{ "load_narrow_klass_compact $dst,$mem \t# compressed class ptr" %}
   // TODO: size()
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   ins_encode %{
     __ block_comment("load_narrow_klass_compact_c2 {");
     __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
@@ -4973,7 +4959,7 @@ instruct decodeN(iRegP dst, iRegN src, flagsReg cr) %{
   predicate(CompressedOops::base() == nullptr || !ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+  size(4 * (4 + 6));
   format %{ "decodeN  $dst,$src\t # (decode cOop)" %}
   ins_encode %{  __ oop_decoder($dst$$Register, $src$$Register, true); %}
   ins_pipe(pipe_class_dummy);
@@ -4998,7 +4984,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
             (CompressedOops::base()== nullptr || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+  size(4 * (4 + 6));
   format %{ "decodeN  $dst,$src\t # (decode cOop NN)" %}
   ins_encode %{ __ oop_decoder($dst$$Register, $src$$Register, false); %}
   ins_pipe(pipe_class_dummy);
@@ -5022,7 +5008,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
-    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+    size(4 * (4 + 6));
     format %{ "decodeN  $dst = ($src == 0) ? nullptr : ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, true, $base$$Register,
@@ -5037,7 +5023,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
-    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+    size(4 * (4 + 6 ));
     format %{ "decodeN  $dst = ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, false, $base$$Register,
@@ -5052,7 +5038,7 @@ instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   predicate(CompressedOops::base() != nullptr && ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(6 * Z_DISP3_SIZE + 5 * Z_DISP2_SIZE);
+  size(6 * 6 + 5 * 4);
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
@@ -5069,7 +5055,7 @@ instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
             CompressedOops::base() != nullptr && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE + 5 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
+  size(6 + 5 * (6 + 4));
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     iRegL base;
@@ -5090,7 +5076,7 @@ instruct encodeP(iRegN dst, iRegP src, flagsReg cr) %{
              !ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(4 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
+  size(4 * (6 + 4));
   format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, true, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
@@ -5114,7 +5100,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
              !ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+  size(4 * (4 + 6));
   format %{ "encodeP  $dst,$src\t # (encode cOop)" %}
   ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, Z_R1_scratch, -1, all_outs_are_Stores(this)); %}
   ins_pipe(pipe_class_dummy);
@@ -5127,7 +5113,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
     // TODO: s390 port size(VARIABLE_SIZE);
-    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+    size(4 * (4 + 6));
     format %{ "encodeP  $dst = ($src>>3) +$base + pow2_offset\t # (encode cOop)" %}
     ins_encode %{
       jlong offset = -(jlong)MacroAssembler::get_oop_base_pow2_offset
@@ -5144,7 +5130,7 @@ instruct encodeP_NN(iRegN dst, iRegP src, flagsReg cr) %{
     predicate(false);
     ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
     // TODO: s390 port size(VARIABLE_SIZE);
-    size(4 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+    size(4 * (4 + 6));
     format %{ "encodeP  $dst = ($src>>3) +$base + $pow2_offset\t # (encode cOop)" %}
     ins_encode %{ __ oop_encoder($dst$$Register, $src$$Register, false, $base$$Register, $pow2_offset$$constant); %}
     ins_pipe(pipe_class_dummy);
@@ -5158,7 +5144,7 @@ instruct encodeP_Ex(iRegN dst, iRegP src, flagsReg cr) %{
             (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(6 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+  size(6 * (4 + 6));
   expand %{
     immL baseImm %{ ((jlong)(intptr_t)CompressedOops::base()) >> CompressedOops::shift() %}
     immL_0 zero %{ (0) %}
@@ -5179,7 +5165,7 @@ instruct encodeP_NN_Ex(iRegN dst, iRegP src, flagsReg cr) %{
             (CompressedOops::base_overlaps() && ExpandLoadingBaseEncode_NN));
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(6 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
+  size(6 * (6 + 4));
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedOops::base() %}
     immL pow2_offset %{ -(jlong)MacroAssembler::get_oop_base_pow2_offset(((uint64_t)(intptr_t)CompressedOops::base())) %}
@@ -5355,7 +5341,7 @@ instruct membar_storestore() %{
 instruct castX2P(iRegP dst, iRegL src) %{
   match(Set dst (CastX2P src));
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "LGR     $dst,$src\t # CastX2P" %}
   ins_encode %{ __ lgr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -5365,7 +5351,7 @@ instruct castX2P(iRegP dst, iRegL src) %{
 instruct castP2X(iRegL dst, iRegP_N2P src) %{
   match(Set dst (CastP2X src));
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "LGR     $dst,$src\t # CastP2X" %}
   ins_encode %{ __ lgr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -5376,7 +5362,7 @@ instruct stfSSD(stackSlotD stkSlot, regD src) %{
   match(Set stkSlot src);   // chain rule
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ " STD   $src,$stkSlot\t # stk" %}
   opcode(STD_ZOPC);
   ins_encode(z_form_rt_mem(src, stkSlot));
@@ -5388,7 +5374,7 @@ instruct stfSSF(stackSlotF stkSlot, regF src) %{
   match(Set stkSlot src);   // chain rule
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "STE   $src,$stkSlot\t # stk" %}
   opcode(STE_ZOPC);
   ins_encode(z_form_rt_mem(src, stkSlot));
@@ -5401,7 +5387,7 @@ instruct cmovN_reg(cmpOp cmp, flagsReg cr, iRegN dst, iRegN_P2N src) %{
   match(Set dst (CMoveN (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveN,$cmp   $dst,$src" %}
   ins_encode(z_enc_cmov_reg(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5411,7 +5397,7 @@ instruct cmovN_imm(cmpOp cmp, flagsReg cr, iRegN dst, immN0 src) %{
   match(Set dst (CMoveN (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveN,$cmp   $dst,$src" %}
   ins_encode(z_enc_cmov_imm(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5421,7 +5407,7 @@ instruct cmovI_reg(cmpOp cmp, flagsReg cr, iRegI dst, iRegI src) %{
   match(Set dst (CMoveI (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveI,$cmp   $dst,$src" %}
   ins_encode(z_enc_cmov_reg(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5431,7 +5417,7 @@ instruct cmovI_imm(cmpOp cmp, flagsReg cr, iRegI dst, immI16 src) %{
   match(Set dst (CMoveI (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveI,$cmp   $dst,$src" %}
   ins_encode(z_enc_cmov_imm(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5441,7 +5427,7 @@ instruct cmovP_reg(cmpOp cmp, flagsReg cr, iRegP dst, iRegP_N2P src) %{
   match(Set dst (CMoveP (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveP,$cmp    $dst,$src" %}
   ins_encode(z_enc_cmov_reg(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5451,7 +5437,7 @@ instruct cmovP_imm(cmpOp cmp, flagsReg cr, iRegP dst, immP0 src) %{
   match(Set dst (CMoveP (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveP,$cmp  $dst,$src" %}
   ins_encode(z_enc_cmov_imm(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5461,7 +5447,7 @@ instruct cmovF_reg(cmpOpF cmp, flagsReg cr, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP1_SIZE);
+  size(4 + 2);
   format %{ "CMoveF,$cmp   $dst,$src" %}
   ins_encode %{
     // Don't emit code if operands are identical (same register).
@@ -5479,7 +5465,7 @@ instruct cmovD_reg(cmpOpF cmp, flagsReg cr, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP1_SIZE);
+  size(6);
   format %{ "CMoveD,$cmp   $dst,$src" %}
   ins_encode %{
     // Don't emit code if operands are identical (same register).
@@ -5497,7 +5483,7 @@ instruct cmovL_reg(cmpOp cmp, flagsReg cr, iRegL dst, iRegL src) %{
   match(Set dst (CMoveL (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveL,$cmp  $dst,$src" %}
   ins_encode(z_enc_cmov_reg(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5507,7 +5493,7 @@ instruct cmovL_imm(cmpOp cmp, flagsReg cr, iRegL dst, immL16 src) %{
   match(Set dst (CMoveL (Binary cmp cr) (Binary dst src)));
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "CMoveL,$cmp  $dst,$src" %}
   ins_encode(z_enc_cmov_imm(cmp,dst,src));
   ins_pipe(pipe_class_dummy);
@@ -5942,7 +5928,7 @@ instruct addI_reg_reg_CISC(iRegI dst, iRegI src, flagsReg cr) %{
   match(Set dst (AddI dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP1_SIZE);
+  size(2);
   format %{ "AR      $dst,$src\t # int  CISC ALU" %}
   opcode(AR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -5971,7 +5957,7 @@ instruct addI_reg_imm16_CISC(iRegI dst, immI16 con, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "AHI     $dst,$con\t # int  CISC ALU" %}
   opcode(AHI_ZOPC);
   ins_encode(z_riform_signed(dst, con));
@@ -5986,7 +5972,7 @@ instruct addI_reg_imm16_RISC(iRegI dst, iRegI src, immI16 con, flagsReg cr) %{
   predicate( VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "AHIK    $dst,$src,$con\t # int  RISC ALU" %}
   opcode(AHIK_ZOPC);
   ins_encode(z_rieform_d(dst, src, con));
@@ -6058,7 +6044,7 @@ instruct addI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "A(Y)    $dst, $src\t # int" %}
   opcode(AY_ZOPC, A_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -6099,7 +6085,7 @@ instruct addL_reg_reg_CISC(iRegL dst, iRegL src, flagsReg cr) %{
   match(Set dst (AddL dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "AGR     $dst, $src\t # long CISC ALU" %}
   opcode(AGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6160,7 +6146,7 @@ instruct addL_reg_imm16_CISC(iRegL dst, immL16 con, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "AGHI    $dst,$con\t # long CISC ALU" %}
   opcode(AGHI_ZOPC);
   ins_encode(z_riform_signed(dst, con));
@@ -6264,7 +6250,7 @@ instruct addP_reg_reg_CISC(iRegP dst, iRegL src, flagsReg cr) %{
   predicate(!PreferLAoverADD && !VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "ALGR    $dst,$src\t # ptr CICS ALU" %}
   opcode(ALGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6279,7 +6265,7 @@ instruct addP_reg_reg_RISC(iRegP dst, iRegP_N2P src1, iRegL src2, flagsReg cr) %
   predicate(!PreferLAoverADD && VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "ALGRK   $dst,$src1,$src2\t # ptr RISC ALU" %}
   opcode(ALGRK_ZOPC);
   ins_encode(z_rrfform(dst, src1, src2));
@@ -6306,7 +6292,7 @@ instruct addP_reg_imm16_CISC(iRegP dst, immL16 src, flagsReg cr) %{
   predicate(!PreferLAoverADD && !VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "AGHI    $dst,$src\t # ptr CISC ALU" %}
   opcode(AGHI_ZOPC);
   ins_encode(z_riform_signed(dst, src));
@@ -6320,7 +6306,7 @@ instruct addP_reg_imm16_RISC(iRegP dst, iRegP_N2P src, immL16 con, flagsReg cr) 
   predicate(!PreferLAoverADD && VM_Version::has_DistinctOpnds());
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "ALGHSIK $dst,$src,$con\t # ptr RISC ALU" %}
   opcode(ALGHSIK_ZOPC);
   ins_encode(z_rieform_d(dst, src, con));
@@ -6344,7 +6330,7 @@ instruct addP_reg_imm32(iRegP dst, immL32 src, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_HIGH);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "AGFI    $dst,$src\t # ptr" %}
   opcode(AGFI_ZOPC);
   ins_encode(z_rilform_signed(dst, src));
@@ -6380,7 +6366,7 @@ instruct addP_reg_reg_imm20(iRegP dst, memoryRegP src1, iRegL src2, immL20 con) 
   predicate(PreferLAoverADD);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LAY     $dst,$con($src1,$src2)\t # ptr d20(x,b)" %}
   opcode(LAY_ZOPC);
   ins_encode(z_rxyform_imm_reg_reg(dst, con, src1, src2));
@@ -6392,7 +6378,7 @@ instruct addP_regN_reg_imm20(iRegP dst, iRegP_N2P src1, iRegL src2, immL20 con) 
   predicate( PreferLAoverADD && CompressedOops::base() == nullptr && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LAY     $dst,$con($src1,$src2)\t # ptr d20(x,b)" %}
   opcode(LAY_ZOPC);
   ins_encode(z_rxyform_imm_reg_reg(dst, con, src1, src2));
@@ -6421,7 +6407,7 @@ instruct subI_reg_reg_CISC(iRegI dst, iRegI src, flagsReg cr) %{
   match(Set dst (SubI dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP1_SIZE);
+  size(2);
   format %{ "SR      $dst,$src\t # int  CISC ALU" %}
   opcode(SR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -6445,7 +6431,7 @@ instruct subI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "S(Y)    $dst, $src\t # int" %}
   opcode(SY_ZOPC, S_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -6468,7 +6454,7 @@ instruct subL_reg_reg_CISC(iRegL dst, iRegL src, flagsReg cr) %{
   match(Set dst (SubL dst src));
   effect(KILL cr);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "SGR     $dst,$src\t # int  CISC ALU" %}
   opcode(SGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6540,7 +6526,7 @@ instruct mulI_reg_imm16(iRegI dst, immI16 con) %{
   match(Set dst (MulI dst con));
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "MHI     $dst,$con" %}
   opcode(MHI_ZOPC);
   ins_encode(z_riform_signed(dst,con));
@@ -6562,7 +6548,7 @@ instruct mulI_Reg_mem(iRegI dst, memory src)%{
   match(Set dst (MulI dst (LoadI src)));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "MS(Y)   $dst, $src\t # int" %}
   opcode(MSY_ZOPC, MS_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -6575,7 +6561,7 @@ instruct mulL_reg_regI(iRegL dst, iRegI src) %{
   match(Set dst (MulL dst (ConvI2L src)));
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "MSGFR   $dst $src\t # long/int" %}
   opcode(MSGFR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -6597,7 +6583,7 @@ instruct mulL_reg_imm16(iRegL dst, immL16 src) %{
   match(Set dst (MulL dst src));
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "MGHI    $dst,$src\t # long" %}
   opcode(MGHI_ZOPC);
   ins_encode(z_riform_signed(dst, src));
@@ -6640,7 +6626,7 @@ instruct mulHiL_reg_reg(revenRegL Rdst, roddRegL Rsrc1, iRegL Rsrc2, iRegL Rtmp1
   effect(TEMP_DEF Rdst, USE_KILL Rsrc1, TEMP Rtmp1, KILL cr);
   ins_cost(7*DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(2 * Z_DISP3_SIZE + 5 * Z_DISP2_SIZE);
+  size(2 * 6+ 5 * 4);
   format %{ "MulHiL  $Rdst, $Rsrc1, $Rsrc2\t # Multiply High Long" %}
   ins_encode%{
     Register dst  = $Rdst$$Register;
@@ -6734,7 +6720,7 @@ instruct divI_reg_imm16(roddRegI dst, iRegI src1, immI16 src2, revenRegI tmp, fl
   effect(KILL tmp, KILL cr);  // R0 is killed, too.
   ins_cost(2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(4+ 4+ 4);
   format %{ "DIV_const  $dst,$src1,$src2" %}
   ins_encode %{
     // No sign extension of Rdividend needed here.
@@ -6756,7 +6742,7 @@ instruct udivI_reg_reg(roddRegI r5_rodd_dst, iRegI src2, revenRegI r4_reven_tmp,
   match(Set r5_rodd_dst (UDivI r5_rodd_dst src2));
   effect(TEMP r4_reven_tmp, KILL cr);
   // TODO: size(4);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "UDIV $r5_rodd_dst,$r5_rodd_dst,$src2" %}
   ins_encode %{
     Register b = $src2$$Register;
@@ -6837,7 +6823,7 @@ instruct udivL_reg_reg(roddRegL r5_rodd_dst, iRegL src, revenRegL r4_reven_tmp, 
   effect(TEMP r4_reven_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: size(4);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "UDIVG $r5_rodd_dst,$r5_rodd_dst,$src" %}
   ins_encode %{
     Register b            = $src$$Register;
@@ -6858,7 +6844,7 @@ instruct divL_reg_imm16(roddRegL dst, iRegL src1, immL16 src2, revenRegL tmp, fl
   effect(KILL tmp, KILL cr);  // R0 is killed, too.
   ins_cost(2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(12);
   format %{ "DIVG_const  $dst,$src1,$src2\t # long" %}
   ins_encode %{
     if ($src2$$constant != -1) {
@@ -6881,7 +6867,7 @@ instruct modI_reg_reg(revenRegI dst, iRegI src1, noOdd_iRegI src2, roddRegI tmp,
   effect(KILL tmp, KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(6 * Z_DISP2_SIZE);
+  size(6 * 4);
   format %{ "MOD_checked   $dst,$src1,$src2" %}
   ins_encode %{
     Register a = $src1$$Register;
@@ -6927,7 +6913,7 @@ instruct umodI_reg_reg(revenRegI r4_reven_dst, iRegI src2, roddRegI r5_rodd_tmp,
   effect(TEMP r5_rodd_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP1_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(2 + 4 + 4);
   format %{ "UMOD $r4_reven_dst,$r4_reven_dst,$src2" %}
   ins_encode %{
     Register b            = $src2$$Register;
@@ -6951,7 +6937,7 @@ instruct modI_reg_imm16(revenRegI dst, iRegI src1, immI16 src2, roddRegI tmp, fl
   effect(KILL tmp, KILL cr); // R0 is killed, too.
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(12);
   format %{ "MOD_const  $dst,src1,$src2" %}
   ins_encode %{
     assert_different_registers($dst$$Register, $src1$$Register);
@@ -6975,7 +6961,7 @@ instruct modL_reg_reg(revenRegL dst, roddRegL src1, iRegL src2, flagsReg cr) %{
   effect(KILL src1, KILL cr); // R0 is killed, too.
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(5 * Z_DISP2_SIZE);
+  size(5 * 4);
   format %{ "MODG_checked   $dst,$src1,$src2" %}
   ins_encode %{
     Register a = $src1$$Register;
@@ -7018,7 +7004,7 @@ instruct umodL_reg_reg(revenRegL r4_reven_dst, roddRegL r5_rodd_tmp, iRegL src2,
   effect(TEMP r5_rodd_tmp, KILL cr);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(12);
   format %{ "UMODG $r4_reven_dst,$r4_reven_dst,$src2" %}
   ins_encode %{
     Register b            = $src2$$Register;
@@ -7042,7 +7028,7 @@ instruct modL_reg_imm16(revenRegL dst, iRegL src1, immL16 src2, roddRegL tmp, fl
   effect(KILL tmp, KILL cr); // R0 is killed, too.
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(12);
   format %{ "MODG_const  $dst,src1,$src2\t # long" %}
   ins_encode %{
     int divisor = $src2$$constant;
@@ -7276,7 +7262,7 @@ instruct rotrI_reg_immI8(iRegI dst, iRegI src, immI8 rshift, immI8 lshift) %{
   match(Set dst (OrI (URShiftI src rshift) (LShiftI src lshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x1f));
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "RLL     $dst,$src,$rshift\t # ROTR32" %}
   opcode(RLL_ZOPC);
   ins_encode(z_rsyform_const(dst, src, rshift));
@@ -7288,7 +7274,7 @@ instruct rotrL_reg_immI8(iRegL dst, iRegL src, immI8 rshift, immI8 lshift) %{
   match(Set dst (OrL (URShiftL src rshift) (LShiftL src lshift)));
   predicate(0 == ((n->in(1)->in(2)->get_int() + n->in(2)->in(2)->get_int()) & 0x3f));
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "RLLG    $dst,$src,$rshift\t # ROTR64" %}
   opcode(RLLG_ZOPC);
   ins_encode(z_rsyform_const(dst, src, rshift));
@@ -7302,7 +7288,7 @@ instruct overflowAddI_reg_reg(flagsReg cr, iRegI op1, iRegI op2) %{
   match(Set cr (OverflowAddI op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP1_SIZE + Z_DISP1_SIZE);
+  size(4);
   format %{ "AR      $op1,$op2\t # overflow check int" %}
   ins_encode %{
     __ z_lr(Z_R0_scratch, $op1$$Register);
@@ -7315,7 +7301,7 @@ instruct overflowAddI_reg_imm(flagsReg cr, iRegI op1, immI op2) %{
   match(Set cr (OverflowAddI op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE * 2 + Z_DISP1_SIZE);
+  size(6 * 2 + 2);
   format %{ "AR      $op1,$op2\t # overflow check int" %}
   ins_encode %{
     __ load_const_optimized(Z_R0_scratch, $op2$$constant);
@@ -7328,7 +7314,7 @@ instruct overflowAddL_reg_reg(flagsReg cr, iRegL op1, iRegL op2) %{
   match(Set cr (OverflowAddL op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "AGR     $op1,$op2\t # overflow check long" %}
   ins_encode %{
     __ z_lgr(Z_R0_scratch, $op1$$Register);
@@ -7341,7 +7327,7 @@ instruct overflowAddL_reg_imm(flagsReg cr, iRegL op1, immL op2) %{
   match(Set cr (OverflowAddL op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE * 2 + Z_DISP2_SIZE);
+  size(6 * 2 + 4);
   format %{ "AGR     $op1,$op2\t # overflow check long" %}
   ins_encode %{
     __ load_const_optimized(Z_R0_scratch, $op2$$constant);
@@ -7354,7 +7340,7 @@ instruct overflowSubI_reg_reg(flagsReg cr, iRegI op1, iRegI op2) %{
   match(Set cr (OverflowSubI op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP1_SIZE + Z_DISP1_SIZE);
+  size(4);
   format %{ "SR      $op1,$op2\t # overflow check int" %}
   ins_encode %{
     __ z_lr(Z_R0_scratch, $op1$$Register);
@@ -7367,7 +7353,7 @@ instruct overflowSubI_reg_imm(flagsReg cr, iRegI op1, immI op2) %{
   match(Set cr (OverflowSubI op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(2 * (Z_DISP3_SIZE + Z_DISP1_SIZE));
+  size(2 * (6 + 2));
   format %{ "SR      $op1,$op2\t # overflow check int" %}
   ins_encode %{
     __ load_const_optimized(Z_R1_scratch, $op2$$constant);
@@ -7381,7 +7367,7 @@ instruct overflowSubL_reg_reg(flagsReg cr, iRegL op1, iRegL op2) %{
   match(Set cr (OverflowSubL op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(8);
   format %{ "SGR     $op1,$op2\t # overflow check long" %}
   ins_encode %{
     __ z_lgr(Z_R0_scratch, $op1$$Register);
@@ -7394,7 +7380,7 @@ instruct overflowSubL_reg_imm(flagsReg cr, iRegL op1, immL op2) %{
   match(Set cr (OverflowSubL op1 op2));
   effect(DEF cr, USE op1, USE op2);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(2 * (Z_DISP3_SIZE + Z_DISP2_SIZE));
+  size(2 * (6 + 4));
   format %{ "SGR     $op1,$op2\t # overflow check long" %}
   ins_encode %{
     __ load_const_optimized(Z_R1_scratch, $op2$$constant);
@@ -7911,7 +7897,7 @@ instruct sqrtD_mem(regD dst, memoryRX src) %{
   // CC remains unchanged.
   ins_cost(ALU_MEMORY_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "SQDB     $dst,$src\t # doubleMemory" %}
   opcode(SQDB_ZOPC);
   ins_encode(z_form_rt_memFP(dst, src));
@@ -7937,7 +7923,7 @@ instruct andI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "N(Y)    $dst, $src\t # int" %}
   opcode(NY_ZOPC, N_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8058,7 +8044,7 @@ instruct orI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "O(Y)    $dst, $src\t # int" %}
   opcode(OY_ZOPC, O_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8127,7 +8113,7 @@ instruct orL_reg_uimm32(iRegI dst, uimmL32 con, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_HIGH);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "OILF    $dst,$con\t # long" %}
   opcode(OILF_ZOPC);
   ins_encode(z_rilform_unsigned(dst,con));
@@ -8152,7 +8138,7 @@ instruct xorI_Reg_mem(iRegI dst, memory src, flagsReg cr)%{
   effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "X(Y)    $dst, $src\t # int" %}
   opcode(XY_ZOPC, X_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8409,7 +8395,7 @@ instruct convI2L_mem_zex(iRegL dst, memory src, immL_32bits mask) %{
   match(Set dst (AndL (ConvI2L (LoadI src)) mask));
   // Uses load_const_optmized, so size can vary.
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LLGF    $dst, $src \t # zero-extend int to long" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, src));
@@ -8458,7 +8444,7 @@ instruct MoveI2F_stack_reg(regF dst, stackSlotI src) %{
   match(Set dst (MoveI2F src));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "LE      $dst,$src\t # MoveI2F" %}
   opcode(LE_ZOPC);
   ins_encode(z_form_rt_mem(dst, src));
@@ -8541,7 +8527,7 @@ instruct convL2D_reg(regD dst, iRegL src) %{
 instruct convL2I_reg(iRegI dst, iRegL src) %{
   match(Set dst (ConvL2I src));
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP1_SIZE);
+  size(2);
   format %{ "LR      $dst,$src\t # long->int (if needed)" %}
   ins_encode %{ __ lr_if_needed($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
@@ -8575,7 +8561,7 @@ instruct rangeCheck_iReg_uimmI16(cmpOpT cmp, iRegI length, uimmI16 index, label 
             Matcher::branches_to_uncommon_trap(_leaf));
   ins_cost(1);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -8594,7 +8580,7 @@ instruct rangeCheck_iReg_iReg(cmpOpT cmp, iRegI index, iRegI length, label labl,
             Matcher::branches_to_uncommon_trap(_leaf));
   ins_cost(1);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -8613,7 +8599,7 @@ instruct rangeCheck_uimmI16_iReg(cmpOpT cmp, iRegI index, uimmI16 length, label 
             Matcher::branches_to_uncommon_trap(_leaf));
   ins_cost(1);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
 
   ins_is_TrapBasedCheckNode(true);
 
@@ -8702,7 +8688,7 @@ instruct compI_reg_mem(flagsReg cr, iRegI op1, memory op2)%{
   match(Set cr (CmpI op1 (LoadI op2)));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "C(Y)    $op1, $op2\t # int" %}
   opcode(CY_ZOPC, C_ZOPC);
   ins_encode(z_form_rt_mem_opt(op1, op2));
@@ -8733,7 +8719,7 @@ instruct compU_reg_mem(flagsReg cr, iRegI op1, memory op2)%{
   match(Set cr (CmpU op1 (LoadI op2)));
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CL(Y)   $op1, $op2\t # unsigned" %}
   opcode(CLY_ZOPC, CL_ZOPC);
   ins_encode(z_form_rt_mem_opt(op1, op2));
@@ -8890,7 +8876,7 @@ instruct z196_minI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP1_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(2+ 4+ 4);
   format %{ "MinI $dst $src1,$src2\t MinI (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -8924,7 +8910,7 @@ instruct z10_minI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(VM_Version::has_CompareBranch());
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(14);
   format %{ "MinI $dst $src1,$src2\t MinI (z10 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -8958,7 +8944,7 @@ instruct minI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(!VM_Version::has_CompareBranch());
   ins_cost(3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP1_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(14);
   format %{ "MinI $dst $src1,$src2\t MinI" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -8995,7 +8981,7 @@ instruct z196_minI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(3 * Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(3 * 6+ 4);
   format %{ "MinI $dst $src1,$src2\t MinI const32 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9020,7 +9006,7 @@ instruct minI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE + Z_DISP3_SIZE);
+  size(16);
   format %{ "MinI $dst $src1,$src2\t MinI const32" %}
   ins_encode %{
     Label done;
@@ -9041,7 +9027,7 @@ instruct z196_minI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(2  * ( Z_DISP2_SIZE + Z_DISP3_SIZE));
+  size(2  * ( 4+ 6));
   format %{ "MinI $dst $src1,$src2\t MinI const16 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9066,7 +9052,7 @@ instruct minI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(12);
   format %{ "MinI $dst $src1,$src2\t MinI const16" %}
   ins_encode %{
     Label done;
@@ -9087,7 +9073,7 @@ instruct z10_minI_reg_imm8(iRegI dst, iRegI src1, immI8 src2, flagsReg cr) %{
   predicate(VM_Version::has_CompareBranch());
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "MinI $dst $src1,$src2\t MinI const8 (z10 only)" %}
   ins_encode %{
     Label done;
@@ -9108,7 +9094,7 @@ instruct z196_maxI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP1_SIZE + Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "MaxI $dst $src1,$src2\t MaxI (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9141,7 +9127,7 @@ instruct z10_maxI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(VM_Version::has_CompareBranch());
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(14);
   format %{ "MaxI $dst $src1,$src2\t MaxI (z10 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9175,7 +9161,7 @@ instruct maxI_reg_reg(iRegI dst, iRegI src1, iRegI src2, flagsReg cr) %{
   predicate(!VM_Version::has_CompareBranch());
   ins_cost(3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP1_SIZE + 3 * Z_DISP2_SIZE);
+  size(2 + 3 * 4);
   format %{ "MaxI $dst $src1,$src2\t MaxI" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9214,7 +9200,7 @@ instruct z196_maxI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(3 * Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(3 * 6 + 4);
   format %{ "MaxI $dst $src1,$src2\t MaxI const32 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9239,7 +9225,7 @@ instruct maxI_reg_imm32(iRegI dst, iRegI src1, immI src2, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE * 2 + Z_DISP3_SIZE * 2);
+  size(4 * 2 + 6 * 2);
   format %{ "MaxI $dst $src1,$src2\t MaxI const32" %}
   ins_encode %{
     Label done;
@@ -9260,7 +9246,7 @@ instruct z196_maxI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   predicate(VM_Version::has_LoadStoreConditional());
   ins_cost(3 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(2 * (Z_DISP2_SIZE + Z_DISP3_SIZE));
+  size(2 * (4 + 6));
   format %{ "MaxI $dst $src1,$src2\t MaxI const16 (z196 only)" %}
   ins_encode %{
     Register Rdst = $dst$$Register;
@@ -9284,7 +9270,7 @@ instruct maxI_reg_imm16(iRegI dst, iRegI src1, immI16 src2, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(2 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(4 * Z_DISP2_SIZE);	
+  size(3 * 4);	
   format %{ "MaxI $dst $src1,$src2\t MaxI const16" %}
   ins_encode %{
     Label done;
@@ -9305,7 +9291,7 @@ instruct z10_maxI_reg_imm8(iRegI dst, iRegI src1, immI8 src2, flagsReg cr) %{
   predicate(VM_Version::has_CompareBranch());
   ins_cost(DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP2_SIZE + Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "MaxI $dst $src1,$src2\t MaxI const8" %}
   ins_encode %{
     Label done;
@@ -9326,7 +9312,7 @@ instruct absI_reg(iRegI dst, iRegI src, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_LOW);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP1_SIZE);
+  size(2);
   format %{ "LPR     $dst, $src" %}
   opcode(LPR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -9338,7 +9324,7 @@ instruct absL_reg(iRegL dst, iRegL src, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_LOW);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "LPGR     $dst, $src" %}
   opcode(LPGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -9350,7 +9336,7 @@ instruct negabsI_reg(iRegI dst, iRegI src, immI_0 zero, flagsReg cr) %{
   effect(KILL cr);
   ins_cost(DEFAULT_COST_LOW);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP1_SIZE);
+  size(2);
   format %{ "LNR     $dst, $src" %}
   opcode(LNR_ZOPC);
   ins_encode(z_rrform(dst, src));
@@ -9593,7 +9579,7 @@ instruct testAndBranchLoopEnd_Reg(cmpOpT boolnode, iRegI src1, iRegI src2, label
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end SHORT" %}
   opcode(CRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9608,7 +9594,7 @@ instruct cmpb_RegI(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, flagsReg
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CRJ,$boolnode  $src1,$src2,$labl\t # SHORT" %}
   opcode(CRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9623,7 +9609,7 @@ instruct cmpbU_RegI(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, flagsRe
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CLRJ,$boolnode  $src1,$src2,$labl\t # SHORT" %}
   opcode(CLRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9638,7 +9624,7 @@ instruct cmpb_RegL(cmpOpT boolnode, iRegL src1, iRegL src2, label labl, flagsReg
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CGRJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CGRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9658,7 +9644,7 @@ instruct cmpb_RegPP(cmpOpT boolnode, iRegP src1, iRegP src2, label labl, flagsRe
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CLGRJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9672,7 +9658,7 @@ instruct cmpb_RegNN(cmpOpT boolnode, iRegN src1, iRegN src2, label labl, flagsRe
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);	
+  size(6);	
   format %{ "CLGRJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGRJ_ZOPC);
   ins_encode(z_enc_cmpb_regreg(src1, src2, labl, boolnode));
@@ -9687,7 +9673,7 @@ instruct testAndBranchLoopEnd_Imm(cmpOpT boolnode, iRegI src1, immI8 src2, label
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end SHORT" %}
   opcode(CIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9702,7 +9688,7 @@ instruct cmpb_RegI_imm(cmpOpT boolnode, iRegI src1, immI8 src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);	
+  size(6);	
   format %{ "CIJ,$boolnode  $src1,$src2,$labl\t # SHORT" %}
   opcode(CIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9717,7 +9703,7 @@ instruct cmpbU_RegI_imm(cmpOpT boolnode, iRegI src1, uimmI8 src2, label labl, fl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CLIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9732,7 +9718,7 @@ instruct cmpb_RegL_imm(cmpOpT boolnode, iRegL src1, immL8 src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9752,7 +9738,7 @@ instruct cmpb_RegP_immP(cmpOpT boolnode, iRegP src1, immP8 src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CLGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9767,7 +9753,7 @@ instruct cmpb_RegN_immP0(cmpOpT boolnode, iRegN src1, immP0 src2, label labl, fl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CLGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9781,7 +9767,7 @@ instruct cmpb_RegN_imm(cmpOpT boolnode, iRegN src1, immN8 src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "CLGIJ,$boolnode $src1,$src2,$labl\t # SHORT" %}
   opcode(CLGIJ_ZOPC);
   ins_encode(z_enc_cmpb_regimm(src1, src2, labl, boolnode));
@@ -9799,7 +9785,7 @@ instruct testAndBranchLoopEnd_RegFar(cmpOpT boolnode, iRegI src1, iRegI src2, la
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end FAR" %}
   opcode(CR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9814,7 +9800,7 @@ instruct cmpb_RegI_Far(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "CRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9829,7 +9815,7 @@ instruct cmpbU_RegI_Far(cmpOpT boolnode, iRegI src1, iRegI src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "CLRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9844,7 +9830,7 @@ instruct cmpb_RegL_Far(cmpOpT boolnode, iRegL src1, iRegL src2, label labl, flag
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "CGRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CGR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9864,7 +9850,7 @@ instruct cmpb_RegPP_Far(cmpOpT boolnode, iRegP src1, iRegP src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "CLGRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9878,7 +9864,7 @@ instruct cmpb_RegNN_Far(cmpOpT boolnode, iRegN src1, iRegN src2, label labl, fla
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "CLGRJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGR_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regregFar(src1, src2, labl, boolnode));
@@ -9893,7 +9879,7 @@ instruct testAndBranchLoopEnd_ImmFar(cmpOpT boolnode, iRegI src1, immI8 src2, la
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "test_and_branch_loop_end,$boolnode  $src1,$src2,$labl\t # counted loop end FAR" %}
   opcode(CHI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9908,7 +9894,7 @@ instruct cmpb_RegI_imm_Far(cmpOpT boolnode, iRegI src1, immI8 src2, label labl, 
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "CIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CHI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9923,7 +9909,7 @@ instruct cmpbU_RegI_imm_Far(cmpOpT boolnode, iRegI src1, uimmI8 src2, label labl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "CLIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9938,7 +9924,7 @@ instruct cmpb_RegL_imm_Far(cmpOpT boolnode, iRegL src1, immL8 src2, label labl, 
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "CGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CGHI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9958,7 +9944,7 @@ instruct cmpb_RegP_immP_Far(cmpOpT boolnode, iRegP src1, immP8 src2, label labl,
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "CLGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9973,7 +9959,7 @@ instruct cmpb_RegN_immP0_Far(cmpOpT boolnode, iRegN src1, immP0 src2, label labl
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "CLGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -9987,7 +9973,7 @@ instruct cmpb_RegN_immN_Far(cmpOpT boolnode, iRegN src1, immN8 src2, label labl,
   predicate(VM_Version::has_CompareBranch());
   ins_cost(BRANCH_COST+DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP3_SIZE);
+  size(12);
   format %{ "CLGIJ,$boolnode   $src1,$src2,$labl\t # FAR(substituted)" %}
   opcode(CLGFI_ZOPC, BRCL_ZOPC);
   ins_encode(z_enc_cmpb_regimmFar(src1, src2, labl, boolnode));
@@ -10095,7 +10081,7 @@ instruct CallDynamicJavaDirect_dynTOC(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(7 * Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(7 * 6 + 4);
   format %{ "CALL,dynamic dynTOC $meth; ==> " %}
   ins_encode(z_enc_java_dynamic_call(meth));
   ins_pipe(pipe_class_dummy);
@@ -10108,7 +10094,7 @@ instruct CallRuntimeDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(3 * Z_DISP3_SIZE + Z_DISP1_SIZE);
+  size(3 * 6 + 2);
   ins_num_consts(1);
   ins_alignment(2);
   format %{ "CALL,runtime" %}
@@ -10122,7 +10108,7 @@ instruct CallLeafDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(3 * Z_DISP3_SIZE + Z_DISP1_SIZE);
+  size(3 * 6 + 2);
   ins_num_consts(1);
   ins_alignment(2);
   format %{ "CALL,runtime leaf $meth" %}
@@ -10136,7 +10122,7 @@ instruct CallLeafNoFPDirect(method meth) %{
   effect(USE meth);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(3 * Z_DISP3_SIZE + Z_DISP1_SIZE);
+  size(3 * 6 + 2);
   ins_num_consts(1);
   format %{ "CALL,runtime leaf nofp $meth" %}
   ins_encode( z_enc_java_to_runtime_call(meth) );
@@ -10216,7 +10202,7 @@ instruct RethrowException() %{
   match(Rethrow);
   ins_cost(CALL_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(2 * Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(2 * 6 + 4);
   format %{ "Jmp    rethrow_stub" %}
   ins_encode %{
     __ set_inst_mark();
@@ -10253,7 +10239,7 @@ instruct partialSubtypeCheck(rarg1RegP index, rarg2RegP sub, rarg3RegP super, fl
   effect(KILL pcc, KILL scratch1, KILL scratch2);
   ins_cost(20 * DEFAULT_COST); // slightly larger than the next version
   // TODO: s390 port size(FIXED_SIZE);
-  size(2 * Z_DISP3_SIZE + Z_DISP1_SIZE);
+  size(2 * 6 + 2);
   format %{ "  CALL   PartialSubtypeCheck\n" %}
   ins_encode %{
     AddressLiteral stub_address(StubRoutines::zarch::partial_subtype_check());
@@ -10321,7 +10307,7 @@ instruct cmpFastLockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iReg
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(22 * Z_DISP3_SIZE + 29 * Z_DISP2_SIZE + 42);
+  //size(22 * Z_DISP3_SIZE + 29 * Z_DISP2_SIZE + 100);
   format %{ "FASTLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
     __ fast_lock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
@@ -10337,7 +10323,7 @@ instruct cmpFastUnlockLightweight(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iR
   effect(TEMP tmp1, TEMP tmp2);
   ins_cost(100);
   // TODO: s390 port size(FIXED_SIZE);
-  size(20 * Z_DISP3_SIZE + 30 * Z_DISP2_SIZE + Z_DISP1_SIZE + 382);
+  // size(20 * Z_DISP3_SIZE + 30 * Z_DISP2_SIZE + Z_DISP1_SIZE + 382);
   format %{ "FASTUNLOCK  $oop, $box; KILL Z_ARG4, Z_ARG5" %}
   ins_encode %{
     __ fast_unlock_lightweight($oop$$Register, $box$$Register, $tmp1$$Register, $tmp2$$Register);
@@ -10961,7 +10947,7 @@ instruct expand_storeF(stackSlotF mem, regF src) %{
   predicate(false);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "STE      $src,$mem\t # replicate(float2stack)" %}
   opcode(STE_ZOPC, STE_ZOPC);
   ins_encode(z_form_rt_mem(src, mem));
@@ -10974,7 +10960,7 @@ instruct expand_LoadLogical_I2L(iRegL dst, stackSlotF mem) %{
   predicate(false);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LLGF     $dst,$mem\t # replicate(stack2reg(unsigned))" %}
   opcode(LLGF_ZOPC, LLGF_ZOPC);
   ins_encode(z_form_rt_mem(dst, mem));
@@ -10988,7 +10974,7 @@ instruct expand_Repl2I_reg(iRegL dst, iRegL src) %{
   predicate(false);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP3_SIZE + Z_DISP2_SIZE);
+  size(10);
   format %{ "REPLIC2F $dst,$src\t # replicate(pack2F)" %}
   ins_encode %{
     if ($dst$$Register == $src$$Register) {
@@ -11448,7 +11434,7 @@ instruct storeA8B(memory mem, iRegL src) %{
   predicate(n->as_StoreVector()->memory_size() == 8);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "STG     $src,$mem\t # ST(packed8B)" %}
   opcode(STG_ZOPC, STG_ZOPC);
   ins_encode(z_form_rt_mem_opt(src, mem));
@@ -11475,7 +11461,7 @@ instruct loadV8(iRegL dst, memory mem) %{
   predicate(n->as_LoadVector()->memory_size() == 8);
   ins_cost(MEMORY_REF_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
-  size(Z_DISP3_SIZE);
+  size(6);
   format %{ "LG      $dst,$mem\t # L(packed8B)" %}
   opcode(LG_ZOPC, LG_ZOPC);
   ins_encode(z_form_rt_mem_opt(dst, mem));
@@ -11823,7 +11809,7 @@ instruct bytes_reverse_long(iRegL dst, iRegL src) %{
   predicate(UseByteReverseInstruction);  // See Matcher::match_rule_supported
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
-  size(Z_DISP2_SIZE);
+  size(4);
   format %{ "LRVGR   $dst,$src\t # byte reverse long" %}
   opcode(LRVGR_ZOPC);
   ins_encode(z_rreform(dst, src));
@@ -11907,7 +11893,7 @@ instruct countTrailingZerosI(revenRegI dst, iRegI src, roddRegI tmp, flagsReg cr
   effect(TEMP_DEF dst, TEMP tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
-  size(3 * Z_DISP3_SIZE + 7 * Z_DISP2_SIZE + Z_DISP1_SIZE);
+  size(3 * 6 + 7 * 4 + 2);
   format %{ "LLGFR   $dst,$src  \t # clear upper 32 bits (we are dealing with int)\n\t"
             "LCGFR   $tmp,$src  \t # load 2's complement (32->64 bit)\n\t"
             "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
@@ -11961,7 +11947,7 @@ instruct countTrailingZerosL(revenRegI dst, iRegL src, roddRegL tmp, flagsReg cr
   effect(TEMP_DEF dst, KILL tmp, KILL cr);
   ins_cost(8 * DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);  // Emitted code depends on PreferLAoverADD being on/off.
-  size(5 * Z_DISP2_SIZE + Z_DISP2_SIZE);
+  size(6 * 4);
   format %{ "LCGR    $dst,$src  \t # preserve src\n\t"
             "NGR     $dst,$src  \t #\n\t"
             "AGHI    $dst,-1    \t # tmp1 = src-1\n\t"
