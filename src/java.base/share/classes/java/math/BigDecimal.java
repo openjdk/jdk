@@ -2181,7 +2181,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * {@code (mc.getRoundingMode() == RoundingMode.UNNECESSARY}) and
      * the exact result cannot fit in {@code mc.getPrecision()} digits.
      * @see #sqrt(MathContext)
-     * @see BigInteger#nthRoot(int)
+     * @see BigInteger#rootn(int)
      * @since 26
      * @apiNote Note that calling {@code rootn(2, mc)} is equivalent to calling {@code sqrt(mc)}.
      */
@@ -2237,7 +2237,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             //
             // where unscaledValue is an integer with the minimum
             // precision for the cohort of the numerical value and the scale is a multiple of n.
-            BigInteger[] rootRem = stripped.unscaledValue().nthRootAndRemainder(nAbs);
+            BigInteger[] rootRem = stripped.unscaledValue().rootnAndRemainder(nAbs);
             result = new BigDecimal(rootRem[0], stripped.scale / nAbs);
             // If result^nAbs != this numerically, the root isn't exact
             if (rootRem[1].signum != 0)
@@ -2298,7 +2298,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         if (n > 0) {
             // Round the root with the specified settings
             if (halfWay) { // half-way rounding
-                BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
+                BigInteger[] rootRem = workingInt.rootnAndRemainder(nAbs);
                 // remove the one-tenth digit
                 BigInteger[] quotRem10 = rootRem[0].divideAndRemainder(BigInteger.TEN);
                 root = quotRem10[0];
@@ -2321,10 +2321,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     root = root.add(1L);
             } else {
                 switch (mc.roundingMode) {
-                case DOWN, FLOOR -> root = workingInt.nthRoot(nAbs); // No need to round
+                case DOWN, FLOOR -> root = workingInt.rootn(nAbs); // No need to round
 
                 case UP, CEILING -> {
-                    BigInteger[] rootRem = workingInt.nthRootAndRemainder(nAbs);
+                    BigInteger[] rootRem = workingInt.rootnAndRemainder(nAbs);
                     root = rootRem[0];
                     // Check if remainder is non-zero
                     if (rootRem[1].signum != 0 || !working.isInteger())
@@ -2337,7 +2337,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
             result = new BigDecimal(root, checkScale(root, resultScale), mc); // mc ensures no increase of precision
         } else { // Handle negative degrees
-            root = workingInt.nthRoot(nAbs);
+            root = workingInt.rootn(nAbs);
             final BigDecimal scaledRoot = new BigDecimal(root, checkScaleNonZero(resultScale));
             final long resPrec = mc.precision + (halfWay ? 1L : 0L);
             final int fracZeros = (int) rootDigits - 1 - (scaledRoot.isPowerOfTen() ? 1 : 0);
