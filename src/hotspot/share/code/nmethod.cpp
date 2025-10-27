@@ -23,6 +23,7 @@
  */
 
 #include "asm/assembler.inline.hpp"
+#include "cds/cdsConfig.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
@@ -1147,7 +1148,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
     + align_up(speculations_len                  , oopSize)
 #endif
     + align_up(debug_info->data_size()           , oopSize)
-    + align_up(ImmutableDataReferencesCounterSize, oopSize);
+    + ImmutableDataReferencesCounterSize;
 
   // First, allocate space for immutable data in C heap.
   address immutable_data = nullptr;
@@ -1322,6 +1323,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = 0;
 #endif
+    _immutable_data_reference_counter_offset = 0;
 
     code_buffer->copy_code_and_locs_to(this);
     code_buffer->copy_values_to(this);
@@ -1420,15 +1422,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _method                       = nm._method;
   _osr_link                     = nullptr;
 
-  // Increment number of references to immutable data to share it between nmethods
-  _immutable_data_size          = nm._immutable_data_size;
-  if (_immutable_data_size > 0) {
-    _immutable_data             = nm._immutable_data;
-    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
-  } else {
-    _immutable_data             = blob_end();
-  }
-
   _exception_cache              = nullptr;
   _gc_data                      = nullptr;
   _oops_do_mark_nmethods        = nullptr;
@@ -1444,6 +1437,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _entry_offset                 = nm._entry_offset;
   _verified_entry_offset        = nm._verified_entry_offset;
   _entry_bci                    = nm._entry_bci;
+  _immutable_data_size          = nm._immutable_data_size;
 
   _skipped_instructions_size    = nm._skipped_instructions_size;
   _stub_offset                  = nm._stub_offset;
@@ -1462,6 +1456,15 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 #if INCLUDE_JVMCI
   _speculations_offset          = nm._speculations_offset;
 #endif
+  _immutable_data_reference_counter_offset = nm._immutable_data_reference_counter_offset;
+
+  // Increment number of references to immutable data to share it between nmethods
+  if (_immutable_data_size > 0) {
+    _immutable_data             = nm._immutable_data;
+    set_immutable_data_references_counter(get_immutable_data_references_counter() + 1);
+  } else {
+    _immutable_data             = blob_end();
+  }
 
   _orig_pc_offset               = nm._orig_pc_offset;
   _compile_id                   = nm._compile_id;
@@ -1751,9 +1754,11 @@ nmethod::nmethod(
 
 #if INCLUDE_JVMCI
     _speculations_offset  = _scopes_data_offset   + align_up(debug_info->data_size(), oopSize);
-    DEBUG_ONLY( int immutable_data_end_offset = _speculations_offset + align_up(speculations_len, oopSize) + align_up(ImmutableDataReferencesCounterSize, oopSize); )
+    _immutable_data_reference_counter_offset = _speculations_offset + align_up(speculations_len, oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
 #else
-    DEBUG_ONLY( int immutable_data_end_offset = _scopes_data_offset + align_up(debug_info->data_size(), oopSize) + align_up(ImmutableDataReferencesCounterSize, oopSize); )
+    _immutable_data_reference_counter_offset =  _scopes_data_offset + align_up(debug_info->data_size(), oopSize);
+    DEBUG_ONLY( int immutable_data_end_offset = _immutable_data_reference_counter_offset + ImmutableDataReferencesCounterSize; )
 #endif
     assert(immutable_data_end_offset <= immutable_data_size, "wrong read-only data size: %d > %d",
            immutable_data_end_offset, immutable_data_size);
@@ -2500,11 +2505,48 @@ void nmethod::post_compiled_method(CompileTask* task) {
   maybe_print_nmethod(directive);
 }
 
+#if INCLUDE_CDS
+static GrowableArrayCHeap<nmethod*, mtClassShared>* _delayed_compiled_method_load_events = nullptr;
+
+void nmethod::add_delayed_compiled_method_load_event(nmethod* nm) {
+  precond(CDSConfig::is_using_aot_linked_classes());
+  precond(!ServiceThread::has_started());
+
+  // We are still in single threaded stage of VM bootstrap. No need to lock.
+  if (_delayed_compiled_method_load_events == nullptr) {
+    _delayed_compiled_method_load_events = new GrowableArrayCHeap<nmethod*, mtClassShared>();
+  }
+  _delayed_compiled_method_load_events->append(nm);
+}
+
+void nmethod::post_delayed_compiled_method_load_events() {
+  precond(ServiceThread::has_started());
+  if (_delayed_compiled_method_load_events != nullptr) {
+    for (int i = 0; i < _delayed_compiled_method_load_events->length(); i++) {
+      nmethod* nm = _delayed_compiled_method_load_events->at(i);
+      nm->post_compiled_method_load_event();
+    }
+    delete _delayed_compiled_method_load_events;
+    _delayed_compiled_method_load_events = nullptr;
+  }
+}
+#endif
+
 // ------------------------------------------------------------------
 // post_compiled_method_load_event
 // new method for install_code() path
 // Transfer information from compilation to jvmti
 void nmethod::post_compiled_method_load_event(JvmtiThreadState* state) {
+#if INCLUDE_CDS
+  if (!ServiceThread::has_started()) {
+    // With AOT-linked classes, we could compile wrappers for native methods before the
+    // ServiceThread has been started, so we must delay the events to be posted later.
+    assert(state == nullptr, "must be");
+    add_delayed_compiled_method_load_event(this);
+    return;
+  }
+#endif
+
   // This is a bad time for a safepoint.  We don't want
   // this nmethod to get unloaded while we're queueing the event.
   NoSafepointVerifier nsv;
@@ -4264,6 +4306,46 @@ void nmethod::print_value_on_impl(outputStream* st) const {
 #if defined(SUPPORT_DATA_STRUCTS)
   print_on_with_msg(st, nullptr);
 #endif
+}
+
+void nmethod::print_code_snippet(outputStream* st, address addr) const {
+  if (entry_point() <= addr && addr < code_end()) {
+    // Pointing into the nmethod's code. Try to disassemble some instructions around addr.
+    // Determine conservative start and end points.
+    address start;
+    if (frame_complete_offset() != CodeOffsets::frame_never_safe &&
+        addr >= code_begin() + frame_complete_offset()) {
+      start = code_begin() + frame_complete_offset();
+    } else {
+      start = (addr < verified_entry_point()) ? entry_point() : verified_entry_point();
+    }
+    address start_for_hex_dump = start; // We can choose a different starting point for hex dump, below.
+    address end = code_end();
+
+    // Try using relocations to find closer instruction start and end points.
+    // (Some platforms have variable length instructions and can only
+    // disassemble correctly at instruction start addresses.)
+    RelocIterator iter((nmethod*)this, start);
+    while (iter.next() && iter.addr() < addr) { // find relocation before addr
+      // Note: There's a relocation which doesn't point to an instruction start:
+      // ZBarrierRelocationFormatStoreGoodAfterMov with ZGC on x86_64
+      // We could detect and skip it, but hex dump is still usable when
+      // disassembler produces garbage in such a very rare case.
+      start = iter.addr();
+      // We want at least 64 Bytes ahead in hex dump.
+      if (iter.addr() <= (addr - 64)) start_for_hex_dump = iter.addr();
+    }
+    if (iter.has_current()) {
+      if (iter.addr() == addr) iter.next(); // find relocation after addr
+      if (iter.has_current()) end = iter.addr();
+    }
+
+    // Always print hex. Disassembler may still have problems when hitting an incorrect instruction start.
+    os::print_hex_dump(st, start_for_hex_dump, end, 1, /* print_ascii=*/false);
+    if (!Disassembler::is_abstract()) {
+      Disassembler::decode(start, end, st);
+    }
+  }
 }
 
 #ifndef PRODUCT
