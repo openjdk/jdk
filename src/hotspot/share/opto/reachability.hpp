@@ -61,10 +61,10 @@ public:
   virtual const RegMask& in_RegMask(uint idx) const {
     // Fake input register mask for the referent: accepts all registers and all stack slots.
     // This avoids redundant register moves around reachability fences.
-    return RegMask::All;
+    return RegMask::ALL;
   }
   virtual const RegMask& out_RegMask() const {
-    return RegMask::Empty;
+    return RegMask::EMPTY;
   }
 
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
