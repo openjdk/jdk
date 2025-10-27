@@ -155,10 +155,6 @@ final class ViewPanel extends javax.swing.JPanel {
                 .addContainerGap(15, Short.MAX_VALUE))
         );
     }// </editor-fold>//GEN-END:initComponents
-
-    private void graphNameSuffixFieldActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_graphNameSuffixFieldActionPerformed
-        // TODO add your handling code here:
-    }//GEN-LAST:event_graphNameSuffixFieldActionPerformed
     void load() {
         nodeTextArea.setText(Settings.get().get(Settings.NODE_TEXT, Settings.NODE_TEXT_DEFAULT));
         nodeShortTextField.setText(Settings.get().get(Settings.NODE_SHORT_TEXT, Settings.NODE_SHORT_TEXT_DEFAULT));
