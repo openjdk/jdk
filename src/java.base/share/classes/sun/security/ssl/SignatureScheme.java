@@ -421,7 +421,15 @@ enum SignatureScheme {
             schemesToCheck = Arrays.asList(SignatureScheme.values());
         } else {
             schemesToCheck = Arrays.stream(config.signatureSchemes)
-                    .map(SignatureScheme::nameOf)
+                    .map(name -> {
+                        var ss = SignatureScheme.nameOf(name);
+                        if (ss == null && SSLLogger.isOn
+                                && SSLLogger.isOn("ssl,handshake")) {
+                            SSLLogger.warning("Unavailable configured "
+                                    + "signature scheme: " + name);
+                        }
+                        return ss;
+                    })
                     .filter(Objects::nonNull)
                     .toList();
         }
