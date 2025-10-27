@@ -2412,11 +2412,17 @@ void ShenandoahHeap::sync_pinned_region_status() {
 }
 
 #ifdef ASSERT
-void ShenandoahHeap::assert_pinned_region_status() {
+void ShenandoahHeap::assert_pinned_region_status() const {
+  assert_pinned_region_status(global_generation());
+}
+
+void ShenandoahHeap::assert_pinned_region_status(ShenandoahGeneration* generation) const {
   for (size_t i = 0; i < num_regions(); i++) {
     ShenandoahHeapRegion* r = get_region(i);
-    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-           "Region %zu pinning status is inconsistent", i);
+    if (generation->contains(r)) {
+      assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+             "Region %zu pinning status is inconsistent", i);
+    }
   }
 }
 #endif
