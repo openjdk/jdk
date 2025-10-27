@@ -113,7 +113,6 @@
   log_trace(os, container)(log_string " is: " JULONG_FORMAT, retval);                 \
 }
 
-
 class CgroupController: public CHeapObj<mtInternal> {
   protected:
     char* _cgroup_path;
