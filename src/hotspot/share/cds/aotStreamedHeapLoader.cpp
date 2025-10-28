@@ -577,6 +577,7 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
 
     size_t size = archive_object_size(archive_object);
     materialized_words += size;
+
     oop heap_object = heap_object_for_object_index(i);
     if (heap_object != nullptr) {
       // Lazy loading has already initialized the object; we must not mutate it
@@ -613,6 +614,7 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
         assert(value_object_index <= last_object_index, "Must be within this batch: %d <= %d", value_object_index, last_object_index);
         value_heap_object = allocate_object(archive_value_object, value_mark, value_size, CHECK_0);
         set_heap_object_for_object_index(value_object_index, value_heap_object);
+        materialized_words += value_size;
       } else {
         // In the uncommon case, multiple strings point to the value of an interned string.
         // The string can then be earlier in the batch.
@@ -633,7 +635,7 @@ size_t AOTStreamedHeapLoader::IterativeObjectLoader::materialize_range(int first
     set_heap_object_for_object_index(i, heap_object);
 
     if (is_normal_interned_string) {
-      // Skip over the object value, already materialized
+      // Skip over the string value, already materialized
       i++;
     }
   }
