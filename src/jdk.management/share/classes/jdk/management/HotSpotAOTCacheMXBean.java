@@ -33,7 +33,7 @@ import javax.management.ObjectName;
 /**
  * Management interface for the JDK's Ahead of Time (AOT) optimizations.
  *
- * Currently, {@code HotSpotAOTCacheMXBean} defines one operation at this time to end the AOT recording. 
+ * Currently, {@code HotSpotAOTCacheMXBean} defines one operation at this time to end the AOT recording.
  * More operations and/or properties may be added in a future release.
  *
  * <p> The management interface is registered with the platform {@link MBeanServer
@@ -70,14 +70,14 @@ public interface HotSpotAOTCacheMXBean extends PlatformManagedObject {
        *       into the AOT configuration file app.aotconfig. Subsequently, an AOT cache
        *       file can be created with the command:
        *
-       *       <p>java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig  -XX:AOTCache=app.aot ... 
+       *       <p>java -XX:AOTMode=create -XX:AOTConfiguration=app.aotconfig  -XX:AOTCache=app.aot ...
        * <blockquote>
        *
        * <p>For more information about creating and using the AOT artifacts, and detailed
        *  specification of the corresponding JVM command-line options, please refer
        * to https://openjdk.org/jeps/483 and https://openjdk.org/jeps/514.
        *
-       * <p>Note: Currently there are no APIs to start an AOT recording. AOT recordings must be 
+       * <p>Note: Currently there are no APIs to start an AOT recording. AOT recordings must be
        * started using JVM command-line options such as -XX:AOTCacheOutput.
        *
        * <p> There are also no APIs to querying whether the AOT recording is in progress, or what AOT
