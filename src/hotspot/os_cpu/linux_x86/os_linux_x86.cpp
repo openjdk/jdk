@@ -271,7 +271,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
           stub = SharedRuntime::handle_unsafe_access(thread, next_pc);
         }
       } else if (sig == SIGFPE &&
-          (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
+                 (info->si_code == FPE_INTDIV || info->si_code == FPE_FLTDIV)) {
         stub =
           SharedRuntime::
           continuation_for_implicit_exception(thread,

@@ -134,7 +134,6 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
   return exchange_value;
 }
 
-
 template<>
 struct AtomicAccess::PlatformOrderedStore<1, RELEASE_X_FENCE>
 {
