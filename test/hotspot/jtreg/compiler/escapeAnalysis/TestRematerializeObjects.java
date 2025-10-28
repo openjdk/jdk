@@ -22,7 +22,7 @@
  */
 
 /*
- * @test
+ * @test id=yEA
  * @bug 8370405
  * @summary Test elimination of array allocation, and the rematerialization.
  * @library /test/lib /
@@ -30,7 +30,7 @@
  */
 
 /*
- * @test
+ * @test id=nEA
  * @library /test/lib /
  * @run driver compiler.escapeAnalysis.TestRematerializeObjects nEA
  */
