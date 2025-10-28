@@ -31,7 +31,8 @@ package compiler.c2;
  *          the actual elimination does not verify for. That led to wrong results.
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.c2.TestMergeStoresAndAllocationElimination::test
  *                   -XX:CompileCommand=exclude,compiler.c2.TestMergeStoresAndAllocationElimination::dontinline
- *                   -XX:-TieredCompilation -Xbatch -XX:-CICompileOSR
+ *                   -XX:-TieredCompilation -Xbatch
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-CICompileOSR
  *                   compiler.c2.TestMergeStoresAndAllocationElimination
  * @run main compiler.c2.TestMergeStoresAndAllocationElimination
  */
