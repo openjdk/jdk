@@ -278,7 +278,8 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
                 if (results != null) {
                     for (EntryStatus status : results) {
                         if (status.checkResult == CheckResult.OK) {
-                            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                            if (SSLLogger.logging &&
+                                    SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                                 SSLLogger.fine("KeyMgr: choosing key: " + status);
                             }
                             return makeAlias(status);
@@ -294,13 +295,13 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
             }
         }
         if (allResults == null) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("KeyMgr: no matching key found");
             }
             return null;
         }
         Collections.sort(allResults);
-        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
             SSLLogger.fine(
                     "KeyMgr: no good matching key found, "
                     + "returning best match out of", allResults);
@@ -340,13 +341,13 @@ final class X509KeyManagerImpl extends X509KeyManagerCertChecking {
             }
         }
         if (allResults == null || allResults.isEmpty()) {
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
                 SSLLogger.fine("KeyMgr: no matching alias found");
             }
             return null;
         }
         Collections.sort(allResults);
-        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+        if (SSLLogger.logging && SSLLogger.isOn(SSLLogger.Opt.KEYMANAGER)) {
             SSLLogger.fine("KeyMgr: getting aliases", allResults);
         }
         return toAliases(allResults);
