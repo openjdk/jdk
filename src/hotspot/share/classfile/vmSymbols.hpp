@@ -55,7 +55,6 @@ class SerializeClosure;
 #define VM_SYMBOLS_DO(template, do_alias)                                                         \
   /* commonly used class, package, module names */                                                \
   template(java_base,                                 "java.base")                                \
-  template(jdk_jfr,                                   "jdk.jfr")                                  \
   template(java_lang_System,                          "java/lang/System")                         \
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \
