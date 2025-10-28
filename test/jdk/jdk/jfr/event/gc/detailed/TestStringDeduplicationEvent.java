@@ -43,8 +43,8 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm -Xbootclasspath/a:. --add-opens=java.base/java.lang=ALL-UNNAMED
  *                                       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                       -ea
- *                                       -XX:+UseSerialGC 
- *                                       -XX:+UseStringDeduplication 
+ *                                       -XX:+UseSerialGC
+ *                                       -XX:+UseStringDeduplication
  *                                       -XX:StringDeduplicationAgeThreshold=1
  *                                       -Xlog:stringdedup*=debug
  *                                       jdk.jfr.event.gc.detailed.TestStringDeduplicationEvent
@@ -61,8 +61,8 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm -Xbootclasspath/a:. --add-opens=java.base/java.lang=ALL-UNNAMED
  *                                       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                       -ea
- *                                       -XX:+UseParallelGC 
- *                                       -XX:+UseStringDeduplication 
+ *                                       -XX:+UseParallelGC
+ *                                       -XX:+UseStringDeduplication
  *                                       -XX:StringDeduplicationAgeThreshold=1
  *                                       -Xlog:stringdedup*=debug
  *                                       jdk.jfr.event.gc.detailed.TestStringDeduplicationEvent
@@ -79,8 +79,8 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm -Xbootclasspath/a:. --add-opens=java.base/java.lang=ALL-UNNAMED
  *                                       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                       -ea
- *                                       -XX:+UseG1GC 
- *                                       -XX:+UseStringDeduplication 
+ *                                       -XX:+UseG1GC
+ *                                       -XX:+UseStringDeduplication
  *                                       -XX:StringDeduplicationAgeThreshold=1
  *                                       -Xlog:stringdedup*=debug
  *                                       jdk.jfr.event.gc.detailed.TestStringDeduplicationEvent
@@ -97,8 +97,8 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm -Xbootclasspath/a:. --add-opens=java.base/java.lang=ALL-UNNAMED
  *                                       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                       -ea
- *                                       -XX:+UseZGC 
- *                                       -XX:+UseStringDeduplication 
+ *                                       -XX:+UseZGC
+ *                                       -XX:+UseStringDeduplication
  *                                       -XX:StringDeduplicationAgeThreshold=1
  *                                       -Xlog:stringdedup*=debug
  *                                       jdk.jfr.event.gc.detailed.TestStringDeduplicationEvent
@@ -115,8 +115,8 @@ import jdk.test.whitebox.WhiteBox;
  * @run main/othervm -Xbootclasspath/a:. --add-opens=java.base/java.lang=ALL-UNNAMED
  *                                       -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                                       -ea
- *                                       -XX:+UseShenandoahGC 
- *                                       -XX:+UseStringDeduplication 
+ *                                       -XX:+UseShenandoahGC
+ *                                       -XX:+UseStringDeduplication
  *                                       -XX:StringDeduplicationAgeThreshold=1
  *                                       -Xlog:stringdedup*=debug
  *                                       jdk.jfr.event.gc.detailed.TestStringDeduplicationEvent
